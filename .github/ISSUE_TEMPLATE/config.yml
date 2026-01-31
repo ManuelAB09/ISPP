@@ -1,0 +1,23 @@
+blank_issues_enabled: false
+
+about: |
+  Gracias por contribuir al proyecto. Antes de abrir un issue, selecciona
+  la plantilla que mejor describa tu caso:
+  - "Bug report" para errores.
+  - "Feature" para solicitudes técnicas o cambios de funcionalidades.
+  - "Task" para tareas generales o administrativas.
+
+
+recommended_templates:
+  - id: bug_report.md
+    name: "Bug report"
+    about: "Reporta errores - incluye pasos para reproducir y contexto."
+    recommended_labels: ["bug"]
+  - id: feature.md
+    name: "Feature"
+    about: "Solicitudes técnicas - describe la solución y criterios de aceptación."
+    recommended_labels: ["feature"]
+  - id: task.md
+    name: "Task"
+    about: "Tareas no técnicas - pasos a realizar y objetivo."
+    recommended_labels: ["task"]
