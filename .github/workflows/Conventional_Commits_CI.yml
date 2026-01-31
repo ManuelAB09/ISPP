@@ -1,0 +1,17 @@
+name: Commits Syntax Checker
+
+on:
+
+  push:
+  pull_request:
+
+jobs:
+  check:
+    name: Conventional Commits
+    runs-on: ubuntu-24.04
+
+    steps:
+
+
+      - name: Validate commit messages
+        uses: webiny/action-conventional-commits@v1.3.0
