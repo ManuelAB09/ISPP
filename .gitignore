@@ -1,0 +1,67 @@
+############################
+# Sistema operativo
+############################
+.DS_Store
+Thumbs.db
+.gradle/
+build/
+
+############################
+# IDEs / Editores
+############################
+.vscode/
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+############################
+# Java
+############################
+*.class
+*.jar
+*.war
+*.ear
+target/
+out/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+############################
+# React Native / Node
+############################
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# React Native build
+android/.gradle/
+android/app/build/
+ios/build/
+ios/Pods/
+
+############################
+# Variables de entorno
+############################
+.env
+.env.local
+.env.production
+.env.*
+
+############################
+# Logs
+############################
+*.log
+
+############################
+# Otros
+############################
+coverage/
