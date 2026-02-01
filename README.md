@@ -11,7 +11,7 @@ Aplicación para crear y gestionar comunidades de estudio, donde los usuarios pu
 
 ## 🛠️ Tecnologías
 - **Backend:** Java, Spring Boot, Maven
-- **Frontend:** React Native
+- **Frontend:** React 
 
 ## 📦 Estructura del proyecto
 - `/backend` - API y lógica de negocio
