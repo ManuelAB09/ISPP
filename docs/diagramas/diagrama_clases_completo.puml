@@ -1,0 +1,362 @@
+@startuml Diagrama_Clases_Completo
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor<<MVP>> LightGreen
+    BackgroundColor<<Extra>> LightBlue
+}
+
+title Diagrama de Clases - VibeStudy (Completo)
+
+' ============ ENUMS ============
+enum TipoPlan {
+    FREE
+    PREMIUM
+    CORPORATIVO
+}
+
+enum RolComunidad {
+    ADMIN
+    MIEMBRO
+}
+
+enum EstadoSolicitud {
+    PENDIENTE
+    ACEPTADA
+    RECHAZADA
+}
+
+enum EstadoAsistencia {
+    CONFIRMADA
+    CANCELADA
+    PENDIENTE
+}
+
+enum EstadoCompra {
+    PENDIENTE
+    COMPLETADA
+    FALLIDA
+    REEMBOLSADA
+}
+
+enum EstadoInvitacion {
+    ENVIADA
+    ACEPTADA
+    EXPIRADA
+    CANCELADA
+}
+
+enum TipoNotificacion {
+    EVENTO_NUEVO
+    SOLICITUD_ACEPTADA
+    MENSAJE_CHAT
+    ARCHIVO_NUEVO
+    RECORDATORIO
+    SUSCRIPCION_EXPIRA
+    COMUNIDAD_CONGELADA
+}
+
+enum TipoPlanComunidad {
+    FREE
+    PREMIUM
+    CORPORATIVO
+}
+
+enum EstadoComunidad {
+    ACTIVA
+    CONGELADA
+}
+
+' ============ CLASES MVP ============
+
+class Usuario <<MVP>> {
+    - id: Long
+    - email: String
+    - password: String
+    - nombre: String
+    - foto: String
+    - bio: String
+    - intereses: List<String>
+    - googleId: String
+    - twoFactorEnabled: Boolean
+    - createdAt: LocalDateTime
+    --
+    + registrar(): void
+    + iniciarSesion(): String
+    + cerrarSesion(): void
+    + actualizarPerfil(): void
+    + cambiarPassword(): void
+    + eliminarCuenta(): void
+    + recuperarPassword(): void
+}
+
+class Comunidad <<MVP>> {
+    - id: Long
+    - nombre: String
+    - descripcion: String
+    - privada: Boolean
+    - imagen: String
+    - maxMiembros: Integer
+    - tipoPlan: TipoPlanComunidad
+    - congelada: Boolean
+    - createdAt: LocalDateTime
+    --
+    + crear(): void
+    + configurarPrivacidad(): void
+    + verificarLimiteMiembros(): Boolean
+    + eliminar(): void
+    + agregarCategoria(): void
+    + congelar(): void
+    + descongelar(): void
+}
+
+class MiembroComunidad <<MVP>> {
+    - id: Long
+    - rol: RolComunidad
+    - fechaIngreso: LocalDateTime
+    --
+    + unirse(): void
+    + abandonar(): void
+    + expulsar(): void
+    + transferirAdmin(): void
+    + cambiarRol(): void
+}
+
+class SolicitudComunidad <<MVP>> {
+    - id: Long
+    - estado: EstadoSolicitud
+    - mensaje: String
+    - createdAt: LocalDateTime
+    --
+    + crear(): void
+    + aceptar(): void
+    + rechazar(): void
+}
+
+class Evento <<MVP>> {
+    - id: Long
+    - titulo: String
+    - descripcion: String
+    - fechaHora: LocalDateTime
+    - fechaFin: LocalDateTime
+    - ubicacion: String
+    - latitud: Double
+    - longitud: Double
+    - aforo: Integer
+    - privado: Boolean
+    - queLlevar: String
+    - esVirtual: Boolean
+    - enlaceVirtual: String
+    - cancelado: Boolean
+    - createdAt: LocalDateTime
+    - updatedAt: LocalDateTime
+    --
+    + crear(): void
+    + editar(): void
+    + cancelar(): void
+    + verificarAforo(): Boolean
+    + contarAsistentes(): Integer
+    + generarEnlaceVirtual(): String
+}
+
+class AsistenciaEvento <<MVP>> {
+    - id: Long
+    - estado: EstadoAsistencia
+    - createdAt: LocalDateTime
+    --
+    + confirmar(): void
+    + cancelar(): void
+}
+
+class InvitacionEvento <<MVP>> {
+    - id: Long
+    - estado: EstadoInvitacion
+    - createdAt: LocalDateTime
+    --
+    + enviar(): void
+    + aceptar(): void
+    + rechazar(): void
+}
+
+class Archivo <<MVP>> {
+    - id: Long
+    - nombre: String
+    - url: String
+    - tipo: String
+    - tamaño: Long
+    - precio: BigDecimal
+    - descargas: Integer
+    - createdAt: LocalDateTime
+    - updatedAt: LocalDateTime
+    --
+    + subir(): void
+    + descargar(): void
+    + visualizar(): void
+    + eliminar(): void
+    + vincularEvento(): void
+    + incrementarDescargas(): void
+}
+
+class Categoria <<MVP>> {
+    - id: Long
+    - nombre: String
+    - descripcion: String
+    - orden: Integer
+    - icono: String
+    --
+    + crear(): void
+    + editar(): void
+    + eliminar(): void
+    + reordenar(): void
+}
+
+class Suscripcion <<MVP>> {
+    - id: Long
+    - plan: TipoPlan
+    - fechaInicio: LocalDate
+    - fechaFin: LocalDate
+    - activa: Boolean
+    - descargasRestantes: Integer = 10
+    - autoRenovar: Boolean
+    - fechaGraciaFin: LocalDate
+    --
+    + suscribir(): void
+    + cancelar(): void
+    + renovar(): void
+    + usarDescarga(): void
+    + estaEnPeriodoGracia(): Boolean
+    + procesarFinGracia(): void
+}
+
+class Compra <<MVP>> {
+    - id: Long
+    - monto: BigDecimal
+    - metodoPago: String
+    - transaccionId: String
+    - estado: EstadoCompra
+    - fechaCompra: LocalDateTime
+    --
+    + procesar(): void
+    + reembolsar(): void
+}
+
+' ============ CLASES MVP (Mensaje ahora es MVP) ============
+class Mensaje <<MVP>> {
+    - id: Long
+    - contenido: String
+    - editado: Boolean
+    - createdAt: LocalDateTime
+    --
+    + enviar(): void
+    + editar(): void
+    + eliminar(): void
+}
+
+class Institucion <<Extra>> {
+    - id: Long
+    - nombre: String
+    - email: String
+    - logo: String
+    - dominio: String
+    - planContratado: TipoPlan
+    - maxUsuarios: Integer
+    - createdAt: LocalDateTime
+    --
+    + registrar(): void
+    + contratarPlan(): void
+    + invitarUsuario(): void
+}
+
+class InvitacionCorporativa <<Extra>> {
+    - id: Long
+    - email: String
+    - token: String
+    - estado: EstadoInvitacion
+    - fechaEnvio: LocalDateTime
+    - fechaExpiracion: LocalDateTime
+    --
+    + enviar(): void
+    + aceptar(): void
+    + cancelar(): void
+}
+
+class Notificacion <<Extra>> {
+    - id: Long
+    - tipo: TipoNotificacion
+    - titulo: String
+    - mensaje: String
+    - leida: Boolean
+    - enviadaPorEmail: Boolean
+    - createdAt: LocalDateTime
+    --
+    + crear(): void
+    + marcarLeida(): void
+    + enviarEmail(): void
+}
+
+class PreferenciasNotificacion <<Extra>> {
+    - id: Long
+    - emailEventos: Boolean
+    - emailMensajes: Boolean
+    - emailArchivos: Boolean
+    - emailSolicitudes: Boolean
+    --
+    + actualizar(): void
+}
+
+class GrabacionReunion <<Extra>> {
+    - id: Long
+    - url: String
+    - duracion: Integer
+    - tamaño: Long
+    - createdAt: LocalDateTime
+    --
+    + guardar(): void
+    + eliminar(): void
+}
+
+' ============ RELACIONES ============
+
+' Usuario relaciones
+Usuario "1" -- "0..*" MiembroComunidad : pertenece a >
+Usuario "1" -- "0..1" Suscripcion : tiene >
+Usuario "1" -- "0..*" Evento : crea >
+Usuario "1" -- "0..*" AsistenciaEvento : asiste a >
+Usuario "1" -- "0..*" Archivo : sube >
+Usuario "1" -- "0..*" Compra : realiza >
+Usuario "1" -- "0..*" Mensaje : envía >
+Usuario "1" -- "0..*" SolicitudComunidad : solicita >
+Usuario "1" -- "0..*" Notificacion : recibe >
+Usuario "1" -- "0..1" PreferenciasNotificacion : configura >
+
+' Comunidad relaciones
+Comunidad "1" -- "0..*" MiembroComunidad : tiene >
+Comunidad "1" -- "1" Usuario : creada por >
+Comunidad "1" -- "0..*" Evento : contiene >
+Comunidad "1" -- "0..*" Archivo : almacena >
+Comunidad "1" -- "0..*" Categoria : organiza >
+Comunidad "1" -- "0..*" Mensaje : contiene >
+Comunidad "1" -- "0..*" SolicitudComunidad : recibe >
+Comunidad "0..*" -- "0..1" Institucion : pertenece a >
+
+' Evento relaciones
+Evento "1" -- "0..*" AsistenciaEvento : tiene >
+Evento "1" -- "0..*" InvitacionEvento : invita a >
+Evento "0..1" -- "0..*" Archivo : asocia >
+Evento "1" -- "0..1" GrabacionReunion : tiene >
+InvitacionEvento "0..*" -- "1" Usuario : invita a >
+
+' Otras relaciones
+Archivo "1" -- "0..*" Compra : genera >
+Archivo "0..*" -- "1" Categoria : pertenece a >
+Institucion "1" -- "0..*" InvitacionCorporativa : genera >
+SolicitudComunidad "0..1" -- "1" Usuario : respondida por >
+
+' ============ LEYENDA ============
+legend right
+  |= Color |= Tipo |
+  | <#LightGreen> | MVP |
+  | <#LightBlue> | Extra |
+endlegend
+
+@enduml

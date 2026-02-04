@@ -1,0 +1,82 @@
+@startuml Casos_de_Uso_Gestion_Usuarios
+!theme plain
+skinparam actorStyle awesome
+skinparam usecase {
+    BackgroundColor<<MVP>> LightGreen
+    BackgroundColor<<Extra>> LightBlue
+}
+
+title Casos de Uso - Gestión de Usuarios
+
+left to right direction
+
+actor "Usuario No\nAutenticado" as UNA
+actor "Usuario\nAutenticado" as UA
+actor "Sistema" as SYS
+
+rectangle "Gestión de Usuarios" {
+    usecase "RF-01: Registrarse" as UC01 <<MVP>>
+    usecase "RF-02: Iniciar Sesión" as UC02 <<MVP>>
+    usecase "RF-03: Cerrar Sesión" as UC03 <<MVP>>
+    usecase "RF-04: Personalizar Perfil" as UC04 <<MVP>>
+    usecase "RF-05: Ver Perfil" as UC05 <<MVP>>
+    usecase "RF-06: Login con Google" as UC06 <<Extra>>
+    usecase "RF-07: Activar 2FA" as UC07 <<Extra>>
+    usecase "RF-08: Cambiar Contraseña" as UC08 <<MVP>>
+    usecase "RF-09: Eliminar Cuenta" as UC09 <<MVP>>
+    usecase "RF-10: Recuperar Contraseña" as UC10 <<MVP>>
+    usecase "RF-11: Detectar Dominio\nInstitucional" as UC11 <<MVP>>
+    
+    usecase "Validar Credenciales" as UCVal
+    usecase "Hashear Contraseña" as UCHash
+    usecase "Generar Token JWT" as UCToken
+    usecase "Enviar Email\nRecuperación" as UCEmail
+}
+
+' Relaciones Usuario No Autenticado
+UNA --> UC01
+UNA --> UC02
+UNA --> UC10
+
+' Relaciones Usuario Autenticado
+UA --> UC03
+UA --> UC04
+UA --> UC05
+UA --> UC07
+UA --> UC08
+UA --> UC09
+
+' Relaciones Sistema
+SYS --> UC11
+
+' Extends
+UC06 ..> UC02 : <<extend>>
+UC07 ..> UC02 : <<extend>>
+
+' Includes
+UC01 ..> UCHash : <<include>>
+UC01 ..> UC11 : <<include>>
+UC02 ..> UCVal : <<include>>
+UC02 ..> UCToken : <<include>>
+UC08 ..> UCHash : <<include>>
+UC10 ..> UCEmail : <<include>>
+
+note right of UC11
+  Activa automáticamente
+  funcionalidad Premium si
+  el email pertenece a una
+  institución contratada
+end note
+
+note right of UC06
+  Autenticación OAuth 2.0
+  con Google
+end note
+
+legend right
+  |= Color |= Tipo |
+  | <#LightGreen> | MVP |
+  | <#LightBlue> | Extra |
+endlegend
+
+@enduml

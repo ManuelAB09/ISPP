@@ -1,0 +1,108 @@
+@startuml Casos_de_Uso_Gestion_Eventos
+!theme plain
+skinparam actorStyle awesome
+skinparam usecase {
+    BackgroundColor<<MVP>> LightGreen
+    BackgroundColor<<Extra>> LightBlue
+}
+
+title Casos de Uso - Gestión de Eventos/Quedadas
+
+left to right direction
+
+actor "Miembro\nComunidad" as MC
+actor "Creador\nEvento" as CE
+actor "Usuario Premium" as UP
+actor "Google Maps API" as GM
+
+CE -up-|> MC
+UP -up-|> MC
+
+rectangle "Gestión de Eventos" {
+    usecase "RF-31: Crear Evento" as UC31 <<MVP>>
+    usecase "RF-32: Configurar Privacidad\nde Evento" as UC32 <<MVP>>
+    usecase "RF-32b: Invitar a\nEvento Privado" as UC32b <<MVP>>
+    usecase "RF-33: Definir Info Evento\n(título, descripción,\nfecha, ubicación, aforo)" as UC33 <<MVP>>
+    usecase "RF-34: Especificar\nQué Llevar" as UC34 <<MVP>>
+    usecase "RF-35: Seleccionar Ubicación\n(Google Maps)" as UC35 <<MVP>>
+    usecase "RF-36: Ver Ubicaciones\nRecomendadas" as UC36 <<MVP>>
+    usecase "RF-37: Unirse a Evento" as UC37 <<MVP>>
+    usecase "RF-38: Cancelar Asistencia" as UC38 <<MVP>>
+    usecase "RF-39: Ver Asistentes" as UC39 <<MVP>>
+    usecase "RF-40: Editar Evento" as UC40 <<MVP>>
+    usecase "RF-41: Cancelar Evento" as UC41 <<MVP>>
+    usecase "RF-42: Validar Límite\nde Aforo" as UC42 <<MVP>>
+    usecase "RF-43: Crear Reunión\nVirtual" as UC43 <<Extra>>
+    usecase "RF-44: Grabar Reunión" as UC44 <<Extra>>
+    
+    usecase "Notificar Asistentes" as UCNotif
+}
+
+' Miembro Comunidad
+MC --> UC31
+MC --> UC36
+MC --> UC37
+MC --> UC38
+MC --> UC39
+
+' Creador Evento
+CE --> UC32
+CE --> UC32b
+CE --> UC33
+CE --> UC34
+CE --> UC35
+CE --> UC40
+CE --> UC41
+CE --> UC43
+
+' Usuario Premium
+UP --> UC44
+
+' Google Maps API
+GM --> UC35
+GM --> UC36
+
+' Includes
+UC31 ..> UC32 : <<include>>
+UC31 ..> UC33 : <<include>>
+UC37 ..> UC42 : <<include>>
+UC41 ..> UCNotif : <<include>>
+
+' Extends
+UC34 ..> UC33 : <<extend>>
+UC43 ..> UC31 : <<extend>>
+UC44 ..> UC43 : <<extend>>
+
+note right of UC42
+  RN-05: Los eventos
+  respetan el aforo
+  máximo definido
+end note
+
+note right of UC43
+  Integración de
+  videollamadas
+  (futuro)
+end note
+
+note right of UC44
+  RN-09: Solo usuarios
+  premium pueden grabar
+  videollamadas de eventos
+  virtuales
+end note
+
+note bottom of UC32
+  RN-10: Eventos solo accesibles
+  para miembros de la comunidad.
+  Eventos privados: solo invitados
+  por el creador pueden acceder.
+end note
+
+legend right
+  |= Color |= Tipo |
+  | <#LightGreen> | MVP |
+  | <#LightBlue> | Extra |
+endlegend
+
+@enduml

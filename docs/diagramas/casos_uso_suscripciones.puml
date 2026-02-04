@@ -1,0 +1,94 @@
+@startuml Casos_de_Uso_Suscripciones
+!theme plain
+skinparam actorStyle awesome
+skinparam usecase {
+    BackgroundColor<<MVP>> LightGreen
+    BackgroundColor<<Extra>> LightBlue
+}
+
+title Casos de Uso - Suscripciones y Pagos
+
+left to right direction
+
+actor "Usuario\nAutenticado" as UA
+actor "Usuario\nPremium" as UP
+actor "Institución" as INST
+actor "Pasarela\nde Pago\n(Stripe)" as PP
+actor "Sistema" as SYS
+
+UP -up-|> UA
+
+rectangle "Suscripciones y Pagos" {
+    usecase "RF-53: Ver Planes\nDisponibles" as UC53 <<MVP>>
+    usecase "RF-54: Suscribirse a\nPlan Premium" as UC54 <<MVP>>
+    usecase "RF-55: Procesar Pago\n(Stripe)" as UC55 <<MVP>>
+    usecase "RF-56: Cancelar\nSuscripción" as UC56 <<MVP>>
+    usecase "RF-57: Ver Historial\nde Compras" as UC57 <<MVP>>
+    usecase "RF-58: Contratar Plan\nCorporativo" as UC58 <<Extra>>
+    usecase "RF-59: Registrar\nInstitución" as UC59 <<Extra>>
+    usecase "RF-60: Invitar Usuarios\npor Correo" as UC60 <<Extra>>
+    usecase "RF-61: Gestionar\nInvitaciones" as UC61 <<Extra>>
+    usecase "RF-62: Activar Beneficios\nCorporativos" as UC62 <<Extra>>
+    
+    usecase "Validar Tarjeta" as UCVal
+    usecase "Generar Factura" as UCFact
+    usecase "Enviar Email\nConfirmación" as UCEmail
+}
+
+' Usuario Autenticado
+UA --> UC53
+UA --> UC54
+UA --> UC57
+
+' Usuario Premium
+UP --> UC56
+
+' Institución
+INST --> UC58
+INST --> UC59
+INST --> UC60
+INST --> UC61
+
+' Pasarela de Pago
+PP --> UC55
+PP --> UCVal
+
+' Sistema
+SYS --> UC62
+
+' Includes
+UC54 ..> UC55 : <<include>>
+UC54 ..> UCEmail : <<include>>
+UC55 ..> UCVal : <<include>>
+UC55 ..> UCFact : <<include>>
+UC58 ..> UC55 : <<include>>
+
+' Extends
+UC62 ..> UC60 : <<extend>>
+
+note right of UC55
+  Integración con
+  Stripe como
+  pasarela de pagos
+end note
+
+note right of UC62
+  RN-07: Usuarios de
+  comunidades corporativas
+  tienen acceso premium
+  dentro de ellas
+end note
+
+note bottom of UC59
+  Perfil corporativo para
+  universidades, academias
+  y centros educativos
+end note
+
+legend right
+  |= Color |= Tipo |
+  | <#LightGreen> | MVP |
+  | <#LightBlue> | Extra |
+endlegend
+
+@enduml

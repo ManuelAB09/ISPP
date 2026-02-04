@@ -1,7 +1,41 @@
-# Elicitación de Requisitos - ISPP
+# Elicitación de Requisitos - VibeStudy
 
-> **Fecha:** Febrero 2025  
-> **Versión:** 1.0  
+### Grupo D - Turno de tarde
+
+![Logo App](../images/logoapp.png)
+
+---
+
+## Índice
+- 1. Introducción
+- 2. Requisitos Funcionales
+	- 2.1 Gestión de Usuarios
+	- 2.2 Gestión de Comunidades
+	- 2.3 Gestión de Eventos/Quedadas
+	- 2.4 Gestión de Contenido/Apuntes
+	- 2.5 Suscripciones y Pagos
+	- 2.6 Publicidad
+	- 2.7 Ajustes y Preferencias
+	- 2.8 Funcionalidades Premium
+- 3. Requisitos No Funcionales
+	- 3.1 Rendimiento
+	- 3.2 Seguridad
+	- 3.3 Usabilidad
+	- 3.4 Calidad de Código
+	- 3.5 Infraestructura
+	- 3.6 Documentación
+- 4. Requisitos de Información
+- 5. Reglas de Negocio
+	- 5.1 Plan Gratuito
+	- 5.2 Plan Premium
+	- 5.3 Plan Institucional B2B
+	- 5.4 Reglas Generales
+- 6. Actores del Sistema
+
+---
+
+> **Fecha:** Febrero 2026  
+> **Versión:** 2.0  
 > **Equipo:** Arquitectura/Integración
 > **Fuentes:** Informe de Producto, Reunión con Cliente (Manuel Artero)
 
@@ -9,11 +43,7 @@
 
 ## 1. Introducción
 
-Este documento recoge los requisitos elicitados para la plataforma web, una comunidad de estudiantes que facilita la organización de actividades de estudio colaborativo. Los requisitos se han obtenido mediante:
-
-- Análisis del Informe de Producto
-- Reunión con el cliente (Manuel Artero - Dirección)
-- Sesión de trabajo del equipo de Arquitectura
+Este documento recoge los requisitos elicitados para la plataforma **VibeStudy**, una comunidad de estudiantes que facilita la organización de actividades de estudio colaborativo.
 
 ---
 
@@ -32,88 +62,106 @@ Este documento recoge los requisitos elicitados para la plataforma web, una comu
 | **RF-07** | Autenticación de doble factor | El sistema permite activar 2FA opcional | Extra |
 | **RF-08** | Cambiar contraseña | Los usuarios pueden cambiar su contraseña | MVP |
 | **RF-09** | Eliminar cuenta | Los usuarios pueden eliminar su cuenta | MVP |
+| **RF-10** | Recuperar contraseña | El sistema permite recuperar la contraseña mediante email | MVP |
+| **RF-11** | Deteccion de dominio institucional | Si el email pertenece a una institucion contratada, activar funcionalidad Premium en las comunidades de la institución | MVP |
 
 ### 2.2 Gestión de Comunidades
 
 | ID | Requisito | Descripción | Tipo |
 |----|-----------|-------------|-----|
-| **RF-10** | Crear comunidad | Cualquier usuario puede crear una comunidad de estudio | MVP |
-| **RF-11** | Configurar privacidad | El creador decide si la comunidad es pública o privada | MVP |
-| **RF-12** | Límite de comunidades (Free) | Usuarios gratuitos pueden crear máximo 3 comunidades | MVP |
-| **RF-13** | Límite de miembros (Free) | Comunidades gratuitas tienen máximo 10-20 miembros | MVP |
-| **RF-14** | Unirse a comunidad pública | Los usuarios pueden unirse a comunidades públicas | MVP |
-| **RF-15** | Solicitar acceso a comunidad privada | Los usuarios pueden solicitar acceso a comunidades privadas | MVP |
-| **RF-16** | Buscar comunidades | El sistema permite buscar comunidades públicas por nombre/temática/localización | MVP |
-| **RF-17** | Explorar comunidades | Existe una sección para explorar comunidades públicas | MVP |
-| **RF-18** | Rol de administrador | El creador de la comunidad es automáticamente administrador | MVP |
-| **RF-19** | Aceptar/rechazar solicitudes | El admin puede aceptar o rechazar solicitudes de acceso | MVP |
-| **RF-20** | Expulsar miembros | El admin puede expulsar miembros de la comunidad | MVP |
-| **RF-21** | Abandonar comunidad | Los usuarios pueden salir de una comunidad voluntariamente | MVP |
-| **RF-22** | Transferir administración | Si el admin abandona, debe elegir un sucesor | MVP |
-| **RF-23** | Eliminar comunidad | El admin puede eliminar la comunidad completa | MVP |
-| **RF-24** | Definir categorías | El admin puede definir categorías para organizar contenido | MVP |
-| **RF-25** | Múltiples administradores | Permitir varios admins por comunidad | Extra |
-| **RF-26** | Comunidades premium (más miembros) | Usuarios premium pueden crear comunidades con más miembros | Extra |
-| **RF-27** | Comunidades corporativas ilimitadas | Instituciones pueden crear comunidades sin límite de miembros | Extra |
-| **RF-28** | Chat de comunidad | Chat en tiempo real dentro de cada comunidad | Extra |
+| **RF-12** | Crear comunidad | Cualquier usuario puede crear una comunidad de estudio | MVP |
+| **RF-13** | Configurar privacidad | El creador decide si la comunidad es pública o privada | MVP |
+| **RF-14** | Límite de comunidades (Free) | Usuarios gratuitos pueden crear y unirse a comunidades con límites establecidos | MVP |
+| **RF-15** | Más comunidades (Premium) | Usuarios premium pueden crear y administrar más comunidades que usuarios gratuitos | MVP |
+| **RF-16** | Unirse a comunidad pública | Los usuarios pueden unirse a comunidades públicas | MVP |
+| **RF-17** | Solicitar acceso a comunidad privada | Los usuarios pueden solicitar acceso a comunidades privadas | MVP |
+| **RF-18** | Buscar comunidades | El sistema permite buscar comunidades públicas por nombre/temática/localización | MVP |
+| **RF-19** | Explorar comunidades | Existe una sección para explorar comunidades públicas | MVP |
+| **RF-20** | Rol de administrador | El creador de la comunidad es automáticamente administrador | MVP |
+| **RF-21** | Aceptar/rechazar solicitudes | El admin puede aceptar o rechazar solicitudes de acceso | MVP |
+| **RF-22** | Expulsar miembros | El admin puede expulsar miembros de la comunidad | MVP |
+| **RF-23** | Abandonar comunidad | Los usuarios pueden salir de una comunidad voluntariamente | MVP |
+| **RF-24** | Transferir administración | Si el admin abandona, debe elegir un sucesor | MVP |
+| **RF-25** | Eliminar comunidad | El admin puede eliminar la comunidad completa | MVP |
+| **RF-26** | Definir categorías | El admin puede definir categorías para organizar contenido | MVP |
+| **RF-27** | Chat de comunidad | Chat en tiempo real dentro de cada comunidad | MVP |
+| **RF-28** | Múltiples administradores | Permitir varios admins por comunidad | Extra |
+| **RF-29** | Comunidades premium (más miembros) | Usuarios premium pueden crear comunidades con más miembros | Extra |
+| **RF-30** | Comunidades B2B ilimitadas | Instituciones B2B pueden crear comunidades de tamaño ilimitado para gestión de sus alumnos | Extra |
 
 ### 2.3 Gestión de Eventos/Quedadas
 
 | ID | Requisito | Descripción | Tipo |
 |----|-----------|-------------|-----|
-| **RF-29** | Crear evento | Los miembros de una comunidad pueden crear eventos de estudio | MVP |
-| **RF-30** | Configurar privacidad de evento | Los eventos pueden ser públicos o privados (independiente de la comunidad) | MVP |
-| **RF-31** | Información de evento | Eventos incluyen: título, descripción, fecha/hora, ubicación, aforo | MVP |
-| **RF-32** | Qué llevar | Se puede especificar qué materiales llevar al evento | MVP |
-| **RF-33** | Integración Google Maps | Selección de ubicación mediante mapa interactivo | MVP |
-| **RF-34** | Ubicaciones recomendadas | Mostrar lugares públicos recomendados (bibliotecas, etc.) | MVP |
-| **RF-35** | Unirse a evento | Los usuarios pueden confirmar asistencia a eventos | MVP |
-| **RF-36** | Cancelar asistencia | Los usuarios pueden cancelar su asistencia | MVP |
-| **RF-37** | Ver asistentes | Se puede ver la lista de asistentes confirmados | MVP |
-| **RF-38** | Editar evento | El creador puede modificar los detalles del evento | MVP |
-| **RF-39** | Cancelar evento | El creador puede cancelar un evento | MVP |
-| **RF-40** | Límite de aforo | Los eventos respetan el aforo máximo establecido | MVP |
-| **RF-41** | Reuniones virtuales | Integrar videollamadas dentro de eventos | Extra |
-| **RF-42** | Grabación de reuniones | Guardar grabaciones de sesiones de estudio | Extra |
+| **RF-31** | Crear evento | Los miembros de una comunidad pueden crear eventos de estudio | MVP |
+| **RF-32** | Configurar privacidad de evento | Los eventos pueden ser públicos (visibles para todos los miembros de la comunidad) o privados (solo accesibles para miembros invitados por el creador del evento) | MVP |
+| **RF-32b** | Invitar a evento privado | El creador de un evento privado puede invitar a miembros específicos de la comunidad | MVP |
+| **RF-33** | Información de evento | Eventos incluyen: título, descripción, fecha/hora, ubicación, aforo | MVP |
+| **RF-34** | Qué llevar | Se puede especificar qué materiales llevar al evento | MVP |
+| **RF-35** | Integración Google Maps | Selección de ubicación mediante mapa interactivo | MVP |
+| **RF-36** | Ubicaciones recomendadas | Mostrar lugares públicos recomendados (bibliotecas, etc.) | MVP |
+| **RF-37** | Unirse a evento | Los usuarios pueden confirmar asistencia a eventos | MVP |
+| **RF-38** | Cancelar asistencia | Los usuarios pueden cancelar su asistencia | MVP |
+| **RF-39** | Ver asistentes | Se puede ver la lista de asistentes confirmados | MVP |
+| **RF-40** | Editar evento | El creador puede modificar los detalles del evento | MVP |
+| **RF-41** | Cancelar evento | El creador puede cancelar un evento | MVP |
+| **RF-42** | Límite de aforo | Los eventos respetan el aforo máximo establecido | MVP |
+| **RF-43** | Reuniones virtuales | Integrar videollamadas dentro de eventos virtuales | Extra |
+| **RF-44** | Grabación de reuniones | Usuarios premium pueden grabar las videollamadas de eventos virtuales | Extra |
 
 ### 2.4 Gestión de Contenido/Apuntes
 
 | ID | Requisito | Descripción | Tipo |
 |----|-----------|-------------|-----|
-| **RF-43** | Subir archivos | Los miembros pueden subir apuntes/archivos a la comunidad | MVP |
-| **RF-44** | Organizar por categorías | Los archivos se organizan según las categorías del admin | MVP |
-| **RF-45** | Vincular a evento | Los archivos pueden asociarse a un evento específico | MVP |
-| **RF-46** | Visualizar archivos | Los miembros pueden ver los archivos subidos | MVP |
-| **RF-47** | Acceso a descarga | Los usuarios  pueden descargar archivos pagando | MVP |
-| **RF-48** | Eliminar archivos | El autor o admin puede eliminar archivos | MVP |
-| **RF-49** | Límite de descargas premium | Usuarios premium tienen X descargas gratuitas al mes | Extra |
+| **RF-45** | Subir archivos | Los miembros pueden subir apuntes/archivos a la comunidad | MVP |
+| **RF-46** | Organizar por categorías | Los archivos se organizan según las categorías del admin | MVP |
+| **RF-47** | Vincular a evento | Los archivos pueden asociarse a un evento específico | MVP |
+| **RF-48** | Visualizar archivos | Los miembros pueden ver los archivos subidos | MVP |
+| **RF-49** | Descargar con anuncios (Free) | Usuarios gratuitos pueden descargar apuntes pero deben ver anuncios durante el proceso | MVP |
+| **RF-50** | Descargar sin anuncios (Premium) | Usuarios premium pueden descargar archivos sin publicidad | MVP |
+| **RF-51** | Eliminar archivos | El autor o admin puede eliminar archivos | MVP |
+| **RF-52** | Resumen IA de apuntes | Usuarios premium pueden generar resúmenes automáticos de apuntes mediante IA | Extra |
 
 ### 2.5 Suscripciones y Pagos
 
 | ID | Requisito | Descripción | Tipo |
 |----|-----------|-------------|-----|
-| **RF-50** | Visualizar planes | Los usuarios pueden ver los diferentes planes disponibles | MVP |
-| **RF-51** | Suscribirse a plan premium | Proceso de pago para plan premium individual | MVP |
-| **RF-52** | Integración de pagos | Integración con pasarela de pagos (Stripe o similar) | MVP |
-| **RF-53** | Cancelar suscripción | Los usuarios pueden cancelar su suscripción | MVP |
-| **RF-54** | Plan corporativo | Instituciones pueden contratar plan para sus miembros | Extra |
-| **RF-55** | Invitación corporativa | Instituciones invitan usuarios por correo electrónico | Extra |
-| **RF-56** | Beneficios corporativos | Usuarios de comunidades corporativas tienen acceso premium dentro de ellas | Extra |
+| **RF-53** | Visualizar planes | Los usuarios pueden ver los tres planes disponibles (Gratuito, Premium, Institucional B2B) | MVP |
+| **RF-54** | Suscribirse a plan premium | Proceso de pago para plan premium individual | MVP |
+| **RF-55** | Integración de pagos | Integración con pasarela de pagos (Stripe o similar) | MVP |
+| **RF-56** | Cancelar suscripción | Los usuarios pueden cancelar su suscripción | MVP |
+| **RF-57** | Historial de compras | Los usuarios pueden ver su historial de compras y transacciones | MVP |
+| **RF-58** | Plan institucional B2B | Instituciones pueden contratar plan B2B con comunidades ilimitadas y todos sus alumnos con premium | Extra |
+| **RF-59** | Registro de institución | Las instituciones pueden registrarse con perfil corporativo | Extra |
+| **RF-60** | Invitación corporativa | Instituciones invitan usuarios por correo electrónico | Extra |
+| **RF-61** | Gestión de invitaciones | Las instituciones pueden ver y gestionar invitaciones enviadas | Extra |
+| **RF-62** | Premium automático B2B | Usuarios de instituciones B2B tienen automáticamente plan premium completo | Extra |
+| **RF-63** | Dashboard analítico B2B | Instituciones B2B tienen acceso a dashboard analítico de uso | Extra |
+| **RF-64** | Planes de estudio B2B | Instituciones B2B pueden crear y gestionar planes de estudio para sus alumnos | Extra |
 
 ### 2.6 Publicidad
 
 | ID | Requisito | Descripción | Tipo |
 |----|-----------|-------------|-----|
-| **RF-57** | Mostrar anuncios | Usuarios gratuitos ven publicidad en la aplicación | MVP |
-| **RF-58** | Sin anuncios premium | Usuarios premium no ven publicidad | MVP |
+| **RF-65** | Mostrar anuncios en descargas | Usuarios gratuitos ven publicidad al descargar apuntes de reuniones | MVP |
+| **RF-66** | Sin anuncios premium | Usuarios premium y B2B no ven publicidad | MVP |
 
 ### 2.7 Ajustes y Preferencias
 
 | ID | Requisito | Descripción | Tipo |
 |----|-----------|-------------|-----|
-| **RF-59** | Panel de ajustes | Sección de configuración de la cuenta | MVP |
-| **RF-60** | Configurar notificaciones | Preferencias de notificaciones por email | Extra |
-| **RF-61** | Notificaciones por email | Envío de emails para eventos importantes | Extra |
+| **RF-67** | Panel de ajustes | Sección de configuración de la cuenta | MVP |
+| **RF-68** | Configurar notificaciones | Preferencias de notificaciones por email | Extra |
+| **RF-69** | Notificaciones por email | Envío de emails para eventos importantes | Extra |
+
+### 2.8 Funcionalidades Premium
+
+| ID | Requisito | Descripción | Tipo |
+|----|-----------|-------------|-----|
+| **RF-70** | Iconos estéticos Discord | Usuarios premium tienen acceso a iconos y estética mejorada tipo Discord | Extra |
+| **RF-71** | Promoción como Profesor | Usuarios premium pueden promocionarse como profesores en la plataforma | Extra |
+| **RF-72** | Chatbot de comunidad | Todos los usuarios tienen acceso a chatbot de preguntas sobre el tópico de la comunidad | MVP |
+| **RF-73** | Invitar amigos a reuniones | Los usuarios pueden invitar amigos a reuniones/eventos | MVP |
 
 ---
 
@@ -179,29 +227,62 @@ Este documento recoge los requisitos elicitados para la plataforma web, una comu
 
 | ID | Entidad | Atributos Principales | Tipo |
 |----|---------|----------------------|-----|
-| **RI-01** | Usuario | id, email, password, nombre, foto, bio, suscripcion_id, created_at | MVP |
-| **RI-02** | Comunidad | id, nombre, descripcion, privada, imagen, creador_id, max_miembros, created_at | MVP |
+| **RI-01** | Usuario | id, email, password, nombre, foto, bio, intereses, google_id, two_factor_enabled, created_at | MVP |
+| **RI-02** | Comunidad | id, nombre, descripcion, privada, imagen, creador_id, max_miembros, tipoPlan (FREE/PREMIUM/CORPORATIVO), congelada, created_at | MVP |
 | **RI-03** | MiembroComunidad | id, usuario_id, comunidad_id, rol, fecha_ingreso | MVP |
-| **RI-04** | Evento | id, titulo, descripcion, fecha_hora, ubicacion, latitud, longitud, aforo, comunidad_id, creador_id | MVP |
-| **RI-05** | AsistenciaEvento | id, evento_id, usuario_id, confirmado, created_at | MVP |
-| **RI-06** | Archivo | id, nombre, url, tipo, tamaño, comunidad_id, evento_id, usuario_id, categoria_id, created_at | MVP |
-| **RI-07** | Categoria | id, nombre, comunidad_id | MVP |
-| **RI-08** | Suscripcion | id, plan, fecha_inicio, fecha_fin, activa | MVP |
-| **RI-09** | SolicitudComunidad | id, usuario_id, comunidad_id, estado, created_at | MVP |
+| **RI-04** | Evento | id, titulo, descripcion, fecha_hora, ubicacion, latitud, longitud, aforo, privado, que_llevar, es_virtual, enlace_virtual, comunidad_id, creador_id, created_at | MVP |
+| **RI-04b** | InvitacionEvento | id, evento_id, usuario_id, estado, created_at | MVP |
+| **RI-05** | AsistenciaEvento | id, evento_id, usuario_id, estado, created_at | MVP |
+| **RI-06** | Archivo | id, nombre, url, tipo, tamaño, precio, descargas, comunidad_id, evento_id, usuario_id, categoria_id, created_at | MVP |
+| **RI-07** | Categoria | id, nombre, descripcion, orden, comunidad_id | MVP |
+| **RI-08** | Suscripcion | id, plan, fecha_inicio, fecha_fin, activa, descargas_restantes, auto_renovar, fecha_gracia_fin | MVP |
+| **RI-09** | SolicitudComunidad | id, usuario_id, comunidad_id, estado, mensaje, respondido_por, created_at | MVP |
+| **RI-10** | Compra | id, usuario_id, archivo_id, monto, metodo_pago, transaccion_id, estado, fecha_compra | MVP |
+| **RI-11** | Mensaje | id, comunidad_id, usuario_id, contenido, editado, created_at | MVP |
+| **RI-12** | Institucion | id, nombre, email, logo, dominio, plan_contratado, max_usuarios, created_at | Extra |
+| **RI-13** | InvitacionCorporativa | id, institucion_id, email, token, estado, fecha_envio, fecha_expiracion | Extra |
+| **RI-14** | Notificacion | id, usuario_id, tipo, titulo, mensaje, leida, enviada_por_email, created_at | Extra |
+| **RI-15** | PreferenciasNotificacion | id, usuario_id, email_eventos, email_mensajes, email_archivos, email_solicitudes | Extra |
+| **RI-16** | GrabacionReunion | id, evento_id, url, duracion, tamaño, created_at | Extra |
 
 ---
 
 ## 5. Reglas de Negocio
 
+### 5.1 Plan Gratuito
 | ID | Regla | Tipo |
 |----|-------|-----|
-| **RN-01** | Un usuario gratuito puede crear máximo 3 comunidades | MVP |
-| **RN-02** | Una comunidad gratuita puede tener máximo 10-20 miembros simultáneos | MVP |
-| **RN-03** | Un usuario puede estar en máximo 3 comunidades como miembro (plan gratuito) | MVP |
-| **RN-05** | Los eventos respetan el aforo máximo definido | MVP |
-| **RN-06** | Si el único admin abandona la comunidad, debe transferir el rol | MVP |
-| **RN-07** | Los usuarios de comunidades corporativas tienen acceso premium dentro de ellas | Extra |
-| **RN-08** | Los usuarios premium pueden crear comunidades de más de 20 miembros | Extra |
+| **RN-01** | Usuarios gratuitos pueden crear y unirse a comunidades con límites establecidos | MVP |
+| **RN-02** | Usuarios gratuitos pueden descargar apuntes de reuniones pero deben ver anuncios | MVP |
+| **RN-03** | Usuarios gratuitos pueden invitar amigos a reuniones | MVP |
+| **RN-04** | Usuarios gratuitos pueden aceptar o rechazar miembros (si son admin) | MVP |
+| **RN-05** | Todos los usuarios tienen acceso al chatbot de preguntas sobre el tópico de la comunidad | MVP |
+
+### 5.2 Plan Premium
+| ID | Regla | Tipo |
+|----|-------|-----|
+| **RN-06** | Usuarios premium descargan archivos SIN anuncios | MVP |
+| **RN-07** | Usuarios premium tienen acceso a IA para resumen de apuntes | Extra |
+| **RN-08** | Usuarios premium tienen acceso a iconos y estética mejorada tipo Discord | Extra |
+| **RN-09** | Usuarios premium pueden crear más comunidades que usuarios gratuitos | MVP |
+| **RN-10** | Usuarios premium pueden promocionarse como Profesores en la plataforma | Extra |
+
+### 5.3 Plan Institucional B2B
+| ID | Regla | Tipo |
+|----|-------|-----|
+| **RN-11** | Instituciones B2B tienen acceso a Dashboard Analítico de uso | Extra |
+| **RN-12** | Instituciones B2B pueden crear comunidades de tamaño ilimitado para gestión de alumnos | Extra |
+| **RN-13** | Instituciones B2B pueden gestionar Planes de estudio | Extra |
+| **RN-14** | Todos los alumnos de instituciones B2B tienen automáticamente el plan premium | Extra |
+
+### 5.4 Reglas Generales
+| ID | Regla | Tipo |
+|----|-------|-----|
+| **RN-15** | Los eventos respetan el aforo máximo definido | MVP |
+| **RN-16** | Si el único admin abandona la comunidad, debe transferir el rol | MVP |
+| **RN-17** | Los eventos de una comunidad solo son accesibles para sus miembros. Los eventos privados además requieren invitación del creador | MVP |
+| **RN-18** | Si un usuario deja de ser premium, tiene 7 días de gracia para renovar su suscripción | MVP |
+| **RN-19** | Tras los 7 días sin renovar: pierde beneficios premium y vuelve a plan gratuito | MVP |
 
 ---
 
@@ -210,9 +291,13 @@ Este documento recoge los requisitos elicitados para la plataforma web, una comu
 | Actor | Descripción |
 |-------|-------------|
 | **Usuario no autenticado** | Visitante que puede ver información pública y registrarse |
-| **Usuario autenticado (Free)** | Usuario registrado con funcionalidades limitadas |
-| **Usuario Premium** | Usuario con suscripción que tiene acceso completo |
+| **Usuario Gratuito** | Usuario registrado con funcionalidades básicas: comunidades limitadas, descargas con anuncios, chatbot de comunidad |
+| **Usuario Premium** | Usuario con suscripción: sin anuncios, IA resumen, iconos Discord, más comunidades, promoción como Profesor |
+| **Usuario B2B** | Alumno de institución con plan B2B, tiene automáticamente todos los beneficios premium |
 | **Administrador de comunidad** | Usuario que gestiona una comunidad |
-| **Sistema** | Procesos automáticos (notificaciones, limpieza, etc.) |
+| **Institución B2B** | Organización (universidad, centro) con dashboard analítico, comunidades ilimitadas y planes de estudio |
+| **Profesor** | Usuario premium promocionado como profesor en la plataforma |
+| **Sistema** | Procesos automáticos (notificaciones, IA, chatbot, etc.) |
+| **Pasarela de Pago** | Sistema externo (Stripe) que procesa transacciones |
 
 ---
