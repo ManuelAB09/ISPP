@@ -1,43 +1,45 @@
-# Elicitación de Requisitos - VibeStudy
+# Elicitación de Requisitos
 
 ### Grupo D - Turno de tarde
 
-![Logo App](../images/logoapp.png)
+![Logo App](./images/logoapp.jpeg)
+
+---
+
+**Proyecto:** VibeStudy  
+**Documento:** Plan de proyecto  
+**Sprint:** Sprint 0  
+**Estado:** Borrador  
+**Fecha:** 08/02/2026  
+**Autor(es):** Manuel Artero Bellido, Manuel María Calderón Rodríguez
 
 ---
 
 ## Índice
-- 1. Introducción
-- 2. Requisitos Funcionales
-	- 2.1 Gestión de Usuarios
-	- 2.2 Gestión de Comunidades
-	- 2.3 Gestión de Eventos/Quedadas
-	- 2.4 Gestión de Contenido/Apuntes
-	- 2.5 Suscripciones y Pagos
-	- 2.6 Publicidad
-	- 2.7 Ajustes y Preferencias
-	- 2.8 Funcionalidades Premium
-- 3. Requisitos No Funcionales
-	- 3.1 Rendimiento
-	- 3.2 Seguridad
-	- 3.3 Usabilidad
-	- 3.4 Calidad de Código
-	- 3.5 Infraestructura
-	- 3.6 Documentación
-- 4. Requisitos de Información
-- 5. Reglas de Negocio
-	- 5.1 Plan Gratuito
-	- 5.2 Plan Premium
-	- 5.3 Plan Institucional B2B
-	- 5.4 Reglas Generales
-- 6. Actores del Sistema
-
----
-
-> **Fecha:** Febrero 2026  
-> **Versión:** 2.0  
-> **Equipo:** Arquitectura/Integración
-> **Fuentes:** Informe de Producto, Reunión con Cliente (Manuel Artero)
+1. [Introducción](#1-introducción)  
+2. [Requisitos Funcionales](#2-requisitos-funcionales)  
+  2.1 [Gestión de Usuarios](#21-gestión-de-usuarios)  
+  2.2 [Gestión de Comunidades](#22-gestión-de-comunidades)  
+  2.3 [Gestión de Eventos/Quedadas](#23-gestión-de-eventos-quedadas)  
+  2.4 [Gestión de Contenido/Apuntes](#24-gestión-de-contenido-apuntes)  
+  2.5 [Suscripciones y Pagos](#25-suscripciones-y-pagos)  
+  2.6 [Publicidad](#26-publicidad)  
+  2.7 [Ajustes y Preferencias](#27-ajustes-y-preferencias)  
+  2.8 [Funcionalidades Premium](#28-funcionalidades-premium)  
+3. [Requisitos No Funcionales](#3-requisitos-no-funcionales)  
+  3.1 [Rendimiento](#31-rendimiento)  
+  3.2 [Seguridad](#32-seguridad)  
+  3.3 [Usabilidad](#33-usabilidad)  
+  3.4 [Calidad de Código](#34-calidad-de-código)  
+  3.5 [Infraestructura](#35-infraestructura)  
+  3.6 [Documentación](#36-documentación)  
+4. [Requisitos de Información](#4-requisitos-de-información)  
+5. [Reglas de Negocio](#5-reglas-de-negocio)  
+  5.1 [Plan Gratuito](#51-plan-gratuito)  
+  5.2 [Plan Premium](#52-plan-premium)  
+  5.3 [Plan Institucional B2B](#53-plan-institucional-b2b)  
+  5.4 [Reglas Generales](#54-reglas-generales)  
+6. [Actores del Sistema](#6-actores-del-sistema)  
 
 ---
 

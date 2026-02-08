@@ -1,5 +1,37 @@
 # Informe de Definición de Producto: Plataforma de Comunidades de Estudio
 
+### Grupo D - Turno de tarde
+
+![Logo App](./images/logoapp.jpeg)
+
+---
+
+**Proyecto:** VibeStudy  
+**Documento:** Plan de proyecto  
+**Sprint:** Sprint 0  
+**Estado:** Borrador  
+**Fecha:** 08/02/2026  
+**Autor(es):** Manuel Artero Bellido
+
+---
+
+## Índice
+1. [Resumen Ejecutivo](#1-resumen-ejecutivo)
+2. [Alcance del MVP](#2-alcance-del-mvp)
+   - [A. Gestión de Comunidades y Actividades](#a-gestión-de-comunidades-y-actividades)
+   - [B. Repositorio de Contenidos](#b-repositorio-de-contenidos)
+   - [C. Sistema de Monetización y Accesos](#c-sistema-de-monetización-y-accesos)
+3. [Hoja de Ruta: Puntos de Extensión (Futuro)](#3-hoja-de-ruta-puntos-de-extensión-futuro)
+   - [IA Pre-Screening (Chatbot Evaluador)](#ia-pre-screening-chatbot-evaluador)
+   - [Marketplace de Apuntes (Peer-to-Peer)](#marketplace-de-apuntes-peer-to-peer)
+   - [Gamificación y Reputación](#gamificación-y-reputación)
+   - [Salas de Estudio Virtuales In-App](#salas-de-estudio-virtuales-in-app)
+   - [Dashboard Analítico para Instituciones](#dashboard-analítico-para-instituciones)
+4. [Arquitectura del sistema](#4-arquitectura-del-sistema)
+   - [Estrategia: Monolito Modular](#estrategia-monolito-modular)
+   - [Infraestructura](#infraestructura)
+
+---
 
 ## 1. Resumen Ejecutivo
 El objetivo es desarrollar una plataforma que conecte estudiantes para realizar actividades académicas conjuntas. La aplicación permite crear comunidades basadas en materias y cursos, gestionar encuentros presenciales o virtuales en ubicaciones específicas (bibliotecas, cafeterías) y compartir material de estudio.

@@ -1,8 +1,17 @@
 # Documento de Gestión de Equipo
 
-## Grupo D - Turno de tarde
+### Grupo D - Turno de tarde
 
-![Logo App](../images/logoapp.png)
+![Logo App](./images/logoapp.jpeg)
+
+---
+
+**Proyecto:** VibeStudy  
+**Documento:** Normativa  
+**Sprint:** Sprint 0  
+**Estado:** Aprobado  
+**Fecha:** 04/02/2026  
+**Autor(es):** Alejandro Soult Toscano
 
 ---
 
