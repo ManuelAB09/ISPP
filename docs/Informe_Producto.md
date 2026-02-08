@@ -2,73 +2,83 @@
 
 
 ## 1. Resumen Ejecutivo
-El objetivo es desarrollar una plataforma que conecte estudiantes para realizar actividades académicas conjuntas. La aplicación permite crear comunidades basadas en materias y cursos, gestionar encuentros presenciales o virtuales en ubicaciones específicas (bibliotecas, cafeterías) y compartir material de estudio.
+El objetivo es desarrollar una plataforma centrada en comunidades de aprendizaje que conecte alumnos entre sí y con profesores para organizar sesiones, gestionar material y coordinar tareas. El MVP integra Google Classroom para la gestión docente, permite la creación de grupos públicos y privados, gestión de meetings (visibles u ocultos en mapa) y funcionalidades de contratación y pago a profesores.
 
-**Modelo de Negocio:** Híbrido.
-* **B2C:** Freemium (Ads/Suscripción).
-* **B2B:** Licencias Institucionales (Universidades/Academias).
+**Modelo de Negocio:** Híbrido y orientado a transacciones y suscripciones.
+- **Profesores (B2C - sellers):** Pago por verificación/promoción para ser reconocidos oficialmente en la plataforma.
+- **Alumnos/Grupos (B2C - usuarios):** Suscripción o pago único para convertir grupos a premium (mayor aforo y funciones adicionales).
+- **Comisión por transacción:** Pequeña comisión sobre los pagos realizados a profesores (interés sobre la gestión de sueldos) como fuente recurrente.
+- **B2B (Academias):** Venta del modelo premium a academias.
 
 ---
 
 ## 2. Alcance del MVP (Producto Mínimo Viable)
 
+### En qué consiste nuestra aplicación (MVP)
 
-### A. Gestión de Comunidades y Actividades
-* **Creación de Comunidades:** Segmentación por Materia, Curso/Nivel y Tipo de Actividad (Lectura, Exámenes, Debate, Dudas).
-* **Gestión de Eventos (Meetups):**
-    * **Geolocalización:** Integración con Google Maps para ubicación libre y selección de lista predefinida (Bibliotecas/Salas).
-    * **Metadatos del evento:** Horario, Tecnología requerida, Aforo máximo.
-* **Sistema de Roles:** Administrador de comunidad (creador), Asistente.
+- Los alumnos pueden crear grupos sobre temas específicos de aprendizaje.
+- Estos grupos pueden o no tener profesores asociados.
+- Un grupo puede tener asociado un Classroom (Google Classroom) para gestionar material y tareas.
+- Los profesores pueden publicitarse en la aplicación.
+- Los profesores aparecen en un listado para que los alumnos puedan contactar con ellos.
+- Los grupos de alumnos pueden decidir contratar a un profesor.
+- En los grupos que tengan profesor se asociará automáticamente el Classroom del profesor, otorgando los permisos necesarios.
+- Alumnos y profesores usarán ese Classroom integrado para gestionar el material y las tareas.
+- El sueldo del profesor se gestionará a través de la aplicación (pagos y cobros integrados).
+- Se pueden crear meetings para quedar; pueden ser visibles o no en el mapa.
+- Hay 2 tipos de grupos: comunidad y privado.
+- Las comunidades son públicas: cualquiera puede unirse y tienen un límite alto de personas.
+- En las comunidades no se pueden contratar profesores y los meetings se verán siempre en el mapa.
+- Los grupos privados pueden contratar profesores, tienen limitación de plazas y en ellos los meetings pueden ocultarse del mapa.
 
-### B. Repositorio de Contenidos
-* Subida y organización de archivos (PDFs de apuntes, imágenes de exámenes resueltos).
-* Visualización de enlaces a grabaciones de reuniones pasadas.
+### Monetización (MVP)
 
-### C. Sistema de Monetización y Accesos
-* **Nivel Free:** Acceso a eventos, visualización de publicidad (Ads) y acceso de lectura restringido.
-* **Nivel Premium:** Sin publicidad, descarga de apuntes, visualización de vídeos y exámenes resueltos.
-* **Nivel Institucional (B2B):** Habilitación automática de funciones Premium para usuarios que se registren con un dominio de correo electrónico universitario/escolar contratado.
+- Los profesores deberán pagar para ser reconocidos oficialmente como tales en la plataforma (pago por verificación/promoción).
+- Los grupos pueden ampliarse convirtiéndose a premium (aumento de aforo mediante suscripción/pago único).
+- La aplicación cobrará un pequeño interés/comisión sobre los pagos realizados a los profesores.
+- La aplicación se venderá también a academias para que tengan la misma funcionalidad premium descrita a un plan más rebajado.
 
 ---
+
 
 ## 3. Hoja de Ruta: Puntos de Extensión (Futuro)
 
-1.  **IA Pre-Screening (Chatbot Evaluador)**
-    * *Descripción:* Un bot que genera 3-5 preguntas tipo test sobre el tema a tratar antes de permitir la inscripción a un evento.
-    * *Objetivo:* Asegurar la homogeneidad del nivel del grupo y evitar frustraciones.
+1. **Chatbot y Asistente IA**
+    - Descripción: Chatbot para ayudar a preparar reuniones, responder dudas y generar preguntas tipo test.
+    - Objetivo: Mejorar la calidad de los encuentros y facilitar la moderación.
 
-2.  **Marketplace de Apuntes (Peer-to-Peer)**
-    * *Descripción:* Permitir que los estudiantes vendan sus resúmenes de alta calidad dentro de la plataforma, cobrando la app una comisión.
-    * *Objetivo:* Incentivar la creación de contenido de calidad y generar ingresos extra.
+2. **Salas de Estudio Virtuales In-App**
+    - Descripción: Integración de videollamada y pizarra compartida dentro de la app. Además la sesión será grabada se subirá a Classroom.
+    - Objetivo: Facilitar sesiones síncronas sin salir del ecosistema.
 
-3.  **Gamificación y Reputación**
-    * *Descripción:* Sistema de medallas y niveles (ej: "Mentor", "Experto en Java").
-    * *Objetivo:* Aumentar la retención premiando la asistencia y la colaboración.
+3. **Sistema de Reputación y Feedback**
+    - Descripción: Medallas, reseñas y métricas de asistencia/participación para profesores y miembros.
+    - Objetivo: Generar confianza y mejorar el matching entre profesores y grupos.
 
-4.  **Salas de Estudio Virtuales In-App**
-    * *Descripción:* Integración de videollamada y pizarra compartida dentro de la propia app (sin salir a Zoom/Meet).
-    * *Objetivo:* Mantener al usuario en el ecosistema el 100% del tiempo.
+4. **Gestión Avanzada de Pagos y Nóminas para Profesores**
+    - Descripción: Funcionalidades para la planificación de cobros, liquidaciones periódicas y gestión fiscal básica.
+    - Objetivo: Simplificar la gestión económica de profesores y facilitar contratos dentro de la plataforma.
 
-5.  **Dashboard Analítico para Instituciones**
-    * *Descripción:* Panel para clientes B2B con métricas de uso (materias más estudiadas, horas de estudio, ocupación de salas).
-    * *Objetivo:* Aportar valor tangible para renovar licencias B2B.
+5. **Herramientas de Matching y Búsqueda Avanzada**
+    - Descripción: Algoritmos para recomendar profesores a grupos, sugerir grupos a alumnos y filtrar por especialidad, precio, valoración y disponibilidad.
+    - Objetivo: Aumentar la tasa de contratación y retención.
 
 ---
+
 
 ## 4. Arquitectura del sistema
 
 ### Estrategia: Monolito Modular
-Para optimizar costes en fase temprana y facilitar el despliegue en PaaS, pero permitiendo una futura extracción a microservicios.
+Para optimizar costes en fase temprana y facilitar el despliegue en PaaS, permitiendo extracción a microservicios en el futuro.
 
-* **Backend:** `Java` + `Spring Boot`.
-    * Organización interna por módulos: *Auth, Catalog, Meeting, Billing*...
-* **Frontend:** `ReactJS`
-* **Base de Datos:** `PostgreSQL` 
-* **Storage:** `AWS S3` 
+- **Backend:** `Java` + `Spring Boot`.
+    - Organización por módulos: `Auth`, `Groups`, `Meeting`, `Billing`, `Integration`.
+- **Frontend:** `ReactJS` + `TS`.
+- **Base de Datos:** `PostgreSQL`.
+- **Integraciones clave:** Google Classroom (gestión de material y tareas), Google Maps (ubicación de meetings), pasarelas de pago para gestión de sueldos.
 
 ### Infraestructura
-* **Entorno:** PaaS (Platform as a Service).
-* **Proveedores candidatos:** Railway, Render o Heroku.
-* **Justificación:** Coste bajo inicial, escalado vertical sencillo y configuración DevOps mínima.
-
+- **Entorno:** PaaS (Platform as a Service).
+- **Proveedores candidatos:** Railway, Render o Heroku.
+- **Justificación:** Coste bajo inicial, escalado vertical sencillo y configuración DevOps mínima.
 ---

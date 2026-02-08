@@ -1,6 +1,6 @@
 <div align="center">
   <h1>ISPP - Comunidades de Estudio</h1>
-  <p><strong>Grupo 9 de tarde</strong></p>
+  <p><strong>Grupo D de tarde</strong></p>
 </div>
 
 ---
