@@ -12,7 +12,7 @@
 **Documento:** Acta  
 **Sprint:** Sprint X  
 **Estado:** Aprobado  
-**Fecha:** DD/MM/YYYY  
+**Fecha:** DD/MM/2026  
 **Hora:** HH:MM – HH:MM  
 **Lugar:** Presencial / Online (Teams)  
 **Autor:** Nombre  
@@ -20,9 +20,15 @@
 ---
 
 ## Asistentes
-- Nombre Apellido
-- Nombre Apellido
-- Nombre Apellido
+- Nombre Apellido  
+- Nombre Apellido  
+- Nombre Apellido  
+...
+
+---
+
+## Objetivo general de la reunión
+
 ...
 
 ---
