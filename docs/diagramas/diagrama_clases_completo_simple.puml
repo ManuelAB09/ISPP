@@ -11,31 +11,35 @@ title Diagrama de Clases - VibeStudy (Completo - Solo Objetos)
 
 ' ============ ENUMS ============
 enum TipoPlan <<MVP>>
+enum TipoGrupo <<MVP>>
 enum TipoPlanComunidad <<MVP>>
 enum EstadoComunidad <<MVP>>
 enum RolComunidad <<MVP>>
 enum EstadoSolicitud <<MVP>>
 enum EstadoAsistencia <<MVP>>
-enum EstadoCompra <<MVP>>
+enum TipoTransaccion <<MVP>>
+enum EstadoTransaccion <<MVP>>
 enum EstadoInvitacion <<MVP>>
 enum TipoNotificacion <<Extra>>
 
 ' ============ CLASES MVP ============
 class Usuario <<MVP>>
+class Profesor <<MVP>>
 class Comunidad <<MVP>>
+class ClassroomAssociation <<MVP>>
 class MiembroComunidad <<MVP>>
 class SolicitudComunidad <<MVP>>
 class Evento <<MVP>>
 class AsistenciaEvento <<MVP>>
 class InvitacionEvento <<MVP>>
-class Archivo <<MVP>>
+class ArchivoAdjunto <<MVP>>
+class TransaccionPago <<MVP>>
 class Categoria <<MVP>>
 class Suscripcion <<MVP>>
-class Compra <<MVP>>
+class Institucion <<MVP>>
 
 ' ============ CLASES EXTRA ============
-class Mensaje <<MVP>>
-class Institucion <<Extra>>
+class Mensaje <<Extra>>
 class InvitacionCorporativa <<Extra>>
 class Notificacion <<Extra>>
 class PreferenciasNotificacion <<Extra>>
@@ -44,37 +48,43 @@ class GrabacionReunion <<Extra>>
 ' ============ RELACIONES ============
 
 ' Usuario relaciones
+Usuario "1" -- "0..1" Profesor : tiene perfil >
 Usuario "1" -- "0..*" MiembroComunidad : pertenece a >
 Usuario "1" -- "0..1" Suscripcion : tiene >
 Usuario "1" -- "0..*" Evento : crea >
 Usuario "1" -- "0..*" AsistenciaEvento : asiste a >
-Usuario "1" -- "0..*" Archivo : sube >
-Usuario "1" -- "0..*" Compra : realiza >
+Usuario "1" -- "0..*" ArchivoAdjunto : adjunta >
+Usuario "1" -- "0..*" TransaccionPago : realiza >
 Usuario "1" -- "0..*" Mensaje : envía >
 Usuario "1" -- "0..*" SolicitudComunidad : solicita >
 Usuario "1" -- "0..*" Notificacion : recibe >
 Usuario "1" -- "0..1" PreferenciasNotificacion : configura >
 
+' Profesor relaciones
+Profesor "0..*" -- "0..*" Comunidad : contratado por >
+Profesor "1" -- "0..*" TransaccionPago : recibe pagos >
+Profesor "1" -- "0..1" ClassroomAssociation : propietario >
+
 ' Comunidad relaciones
 Comunidad "1" -- "0..*" MiembroComunidad : tiene >
 Comunidad "1" -- "1" Usuario : creada por >
 Comunidad "1" -- "0..*" Evento : contiene >
-Comunidad "1" -- "0..*" Archivo : almacena >
+Comunidad "1" -- "0..*" ArchivoAdjunto : almacena >
 Comunidad "1" -- "0..*" Categoria : organiza >
 Comunidad "1" -- "0..*" Mensaje : contiene >
 Comunidad "1" -- "0..*" SolicitudComunidad : recibe >
+Comunidad "0..1" -- "0..1" ClassroomAssociation : tiene >
 Comunidad "0..*" -- "0..1" Institucion : pertenece a >
 
 ' Evento relaciones
 Evento "1" -- "0..*" AsistenciaEvento : tiene >
 Evento "1" -- "0..*" InvitacionEvento : invita a >
-Evento "0..1" -- "0..*" Archivo : asocia >
+Evento "0..1" -- "0..*" ArchivoAdjunto : asocia >
 Evento "1" -- "0..1" GrabacionReunion : tiene >
 InvitacionEvento "0..*" -- "1" Usuario : invita a >
 
 ' Otras relaciones
-Archivo "1" -- "0..*" Compra : genera >
-Archivo "0..*" -- "1" Categoria : pertenece a >
+ArchivoAdjunto "0..*" -- "0..1" Categoria : pertenece a >
 Institucion "1" -- "0..*" InvitacionCorporativa : genera >
 SolicitudComunidad "0..1" -- "1" Usuario : respondida por >
 

@@ -10,58 +10,67 @@ title Diagrama de Clases - VibeStudy (MVP - Solo Objetos)
 
 ' ============ ENUMS ============
 enum TipoPlan
+enum TipoGrupo
 enum TipoPlanComunidad
 enum EstadoComunidad
 enum RolComunidad
 enum EstadoSolicitud
 enum EstadoAsistencia
-enum EstadoCompra
+enum TipoTransaccion
+enum EstadoTransaccion
 enum EstadoInvitacion
 
 ' ============ CLASES MVP ============
 class Usuario
+class Profesor
 class Comunidad
+class ClassroomAssociation
 class MiembroComunidad
 class SolicitudComunidad
 class Evento
 class AsistenciaEvento
 class InvitacionEvento
-class Archivo
+class ArchivoAdjunto
+class TransaccionPago
 class Categoria
 class Suscripcion
-class Compra
-class Mensaje
+class Institucion
 
 ' ============ RELACIONES ============
 
 ' Usuario relaciones
+Usuario "1" -- "0..1" Profesor : tiene perfil >
 Usuario "1" -- "0..*" MiembroComunidad : pertenece a >
 Usuario "1" -- "0..1" Suscripcion : tiene >
 Usuario "1" -- "0..*" Evento : crea >
 Usuario "1" -- "0..*" AsistenciaEvento : asiste a >
-Usuario "1" -- "0..*" Archivo : sube >
-Usuario "1" -- "0..*" Compra : realiza >
-Usuario "1" -- "0..*" Mensaje : envía >
+Usuario "1" -- "0..*" ArchivoAdjunto : adjunta >
+Usuario "1" -- "0..*" TransaccionPago : realiza >
 Usuario "1" -- "0..*" SolicitudComunidad : solicita >
+
+' Profesor relaciones
+Profesor "0..*" -- "0..*" Comunidad : contratado por >
+Profesor "1" -- "0..*" TransaccionPago : recibe pagos >
+Profesor "1" -- "0..1" ClassroomAssociation : propietario >
 
 ' Comunidad relaciones
 Comunidad "1" -- "0..*" MiembroComunidad : tiene miembros >
 Comunidad "1" -- "1" Usuario : creada por >
 Comunidad "1" -- "0..*" Evento : contiene >
-Comunidad "1" -- "0..*" Archivo : almacena >
+Comunidad "1" -- "0..*" ArchivoAdjunto : almacena >
 Comunidad "1" -- "0..*" Categoria : organiza >
-Comunidad "1" -- "0..*" Mensaje : contiene >
 Comunidad "1" -- "0..*" SolicitudComunidad : recibe >
+Comunidad "0..1" -- "0..1" ClassroomAssociation : tiene >
+Comunidad "0..*" -- "0..1" Institucion : pertenece a >
 
 ' Evento relaciones
 Evento "1" -- "0..*" AsistenciaEvento : tiene >
 Evento "1" -- "0..*" InvitacionEvento : invita a >
-Evento "0..1" -- "0..*" Archivo : asocia >
+Evento "0..1" -- "0..*" ArchivoAdjunto : asocia >
 InvitacionEvento "0..*" -- "1" Usuario : invita a >
 
 ' Otras relaciones
-Archivo "1" -- "0..*" Compra : genera >
-Archivo "0..*" -- "0..1" Categoria : pertenece a >
+ArchivoAdjunto "0..*" -- "0..1" Categoria : pertenece a >
 SolicitudComunidad "0..1" -- "0..1" Usuario : respondida por >
 
 @enduml
