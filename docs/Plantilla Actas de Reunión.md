@@ -4,7 +4,7 @@
 
 ### Grupo D – Turno de tarde
 
-![Logo App](../images/logoapp.png)
+![Logo App](../images/logoapp.jpeg)
 
 ---
 
