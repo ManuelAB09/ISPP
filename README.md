@@ -1,6 +1,6 @@
 <div align="center">
   <h1>ISPP - Comunidades de Estudio</h1>
-  <p><strong>Grupo 9 de tarde</strong></p>
+  <p><strong>Grupo D - Turno de tarde</strong></p>
 </div>
 
 ---
@@ -51,5 +51,5 @@ Aplicación para crear y gestionar comunidades de estudio, donde los usuarios pu
 ---
 
 <div align="center">
-  <sub>Universidad de Sevilla - ISPP - Grupo 9 de tarde</sub>
+  <sub>Universidad de Sevilla - ISPP - Grupo D - Turno de tarde</sub>
 </div>
