@@ -97,7 +97,7 @@ Para optimizar costes en fase temprana y facilitar el despliegue en PaaS, permit
 
 - **Backend:** `Java` + `Spring Boot`.
     - Organización por módulos: `Auth`, `Groups`, `Meeting`, `Billing`, `Integration`.
-- **Frontend:** `ReactJS` + `TS`.
+- **Frontend:** `ReactJS` + `JS`.
 - **Base de Datos:** `PostgreSQL`.
 - **Integraciones clave:** Google Classroom (gestión de material y tareas), Google Maps (ubicación de meetings), pasarelas de pago para gestión de sueldos.
 
