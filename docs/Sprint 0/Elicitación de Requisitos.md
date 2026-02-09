@@ -1,9 +1,39 @@
-# Elicitación de Requisitos - ISPP
+# Elicitación de Requisitos
 
-> **Fecha:** Febrero 2025  
-> **Versión:** 1.0  
-> **Equipo:** Arquitectura/Integración
-> **Fuentes:** Informe de Producto, Reunión con Cliente (Manuel Artero)
+### Grupo D - Turno de tarde
+
+![Logo App](../images/logoapp.jpeg)
+
+---
+
+**Proyecto:** VibeStudy  
+**Documento:** Plan de proyecto  
+**Sprint:** Sprint 0  
+**Estado:** Borrador  
+**Fecha:** 08/02/2026  
+**Autor(es):** Manuel Artero Bellido, Manuel María Calderón Rodríguez
+
+---
+
+## Índice
+1. [Introducción](#1-introduccion)  
+2. [Requisitos Funcionales](#2-requisitos-funcionales)  
+  2.1. [Gestión de Usuarios](#21-gestion-de-usuarios)  
+  2.2. [Gestión de Comunidades](#22-gestion-de-comunidades)  
+  2.3. [Gestión de Eventos/Quedadas](#23-gestion-de-eventosquedadas)  
+  2.4. [Gestión de Contenido / Integración Classroom](#24-gestion-de-contenido--integracion-classroom)  
+  2.5. [Suscripciones y Pagos](#25-suscripciones-y-pagos)  
+  2.6. [Ajustes y Preferencias](#26-ajustes-y-preferencias)  
+3. [Requisitos No Funcionales](#3-requisitos-no-funcionales)  
+  3.1. [Rendimiento](#31-rendimiento)  
+  3.2. [Seguridad](#32-seguridad)  
+  3.3. [Usabilidad](#33-usabilidad)  
+  3.4. [Calidad de Código](#34-calidad-de-codigo)  
+  3.5. [Infraestructura](#35-infraestructura)  
+  3.6. [Documentación](#36-documentacion)  
+4. [Requisitos de Información](#4-requisitos-de-informacion)  
+5. [Reglas de Negocio](#5-reglas-de-negocio)  
+6. [Actores del Sistema](#6-actores-del-sistema)  
 
 ---
 
@@ -128,7 +158,6 @@ Este documento recoge los requisitos elicitados para la plataforma web, una comu
 | ID | Requisito | Descripción | Tipo |
 |----|-----------|-------------|-----|
 | **RNF-01** | Tiempo de carga | Las páginas deben cargar rápido para no afectar a la experiencia de usuario | MVP |
-
 
 ### 3.2 Seguridad
 

@@ -1,0 +1,343 @@
+@startuml Diagrama_Clases_MVP
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor LightGreen
+}
+
+title Diagrama de Clases - VibeStudy (Solo MVP)
+
+' ============ ENUMS ============
+enum TipoPlan {
+    FREE
+    PREMIUM
+}
+
+enum TipoPlanComunidad {
+    FREE
+    PREMIUM
+    CORPORATIVO
+}
+
+enum EstadoComunidad {
+    ACTIVA
+    CONGELADA
+}
+
+enum RolComunidad {
+    ADMIN
+    MIEMBRO
+}
+
+enum EstadoSolicitud {
+    PENDIENTE
+    ACEPTADA
+    RECHAZADA
+}
+
+enum EstadoAsistencia {
+    CONFIRMADA
+    CANCELADA
+}
+
+enum EstadoCompra {
+    PENDIENTE
+    COMPLETADA
+    FALLIDA
+}
+
+enum EstadoInvitacion {
+    PENDIENTE
+    ACEPTADA
+    RECHAZADA
+}
+
+' ============ CLASES MVP ============
+
+class Usuario {
+    - id: Long
+    - email: String
+    - password: String
+    - nombre: String
+    - foto: String
+    - bio: String
+    - intereses: List<String>
+    - createdAt: LocalDateTime
+    ==
+    <b>Reglas de Negocio:</b>
+    - Comunidades limitadas como admin (Free)
+    - Sin límite de comunidades como miembro
+    --
+    + registrar(): void
+    + iniciarSesion(): String
+    + cerrarSesion(): void
+    + actualizarPerfil(): void
+    + cambiarPassword(): void
+    + eliminarCuenta(): void
+    + recuperarPassword(): void
+    + esEmailInstitucional(): Boolean
+    + esPremium(): Boolean
+}
+
+class Comunidad {
+    - id: Long
+    - nombre: String
+    - descripcion: String
+    - privada: Boolean
+    - imagen: String
+    - maxMiembros: Integer
+    - tipoPlan: TipoPlanComunidad
+    - estado: EstadoComunidad
+    - createdAt: LocalDateTime
+    ==
+    <b>Reglas de Negocio:</b>
+    - Comunidad Free/admin no premium: miembros limitados
+    - El creador es automáticamente Admin
+    - Puede quedar CONGELADA si admin
+      deja de ser premium y no hay
+      candidato premium disponible
+    --
+    + crear(): void
+    + configurarPrivacidad(): void
+    + verificarLimiteMiembros(): Boolean
+    + eliminar(): void
+    + agregarCategoria(): void
+    + buscarPorNombre(): List<Comunidad>
+    + buscarPorTematica(): List<Comunidad>
+    + congelar(): void
+    + descongelar(): void
+}
+
+class MiembroComunidad {
+    - id: Long
+    - rol: RolComunidad
+    - fechaIngreso: LocalDateTime
+    --
+    + unirse(): void
+    + abandonar(): void
+    + expulsar(): void
+    + transferirAdmin(): void
+    + esAdmin(): Boolean
+}
+
+class SolicitudComunidad {
+    - id: Long
+    - estado: EstadoSolicitud
+    - mensaje: String
+    - createdAt: LocalDateTime
+    --
+    + crear(): void
+    + aceptar(): void
+    + rechazar(): void
+}
+
+class Evento {
+    - id: Long
+    - titulo: String
+    - descripcion: String
+    - fechaHora: LocalDateTime
+    - fechaFin: LocalDateTime
+    - ubicacion: String
+    - latitud: Double
+    - longitud: Double
+    - aforo: Integer
+    - privado: Boolean
+    - queLlevar: String
+    - esVirtual: Boolean
+    - enlaceVirtual: String
+    - cancelado: Boolean
+    - createdAt: LocalDateTime
+    ==
+    <b>Reglas de Negocio:</b>
+    - Respetar aforo máximo
+    - Solo accesible para miembros
+      de la comunidad
+    - Si es privado, solo invitados
+      por el creador pueden acceder
+    --
+    + crear(): void
+    + editar(): void
+    + cancelar(): void
+    + verificarAforo(): Boolean
+    + obtenerAsistentes(): List<Usuario>
+    + invitarMiembro(): void
+    + contarAsistentes(): Integer
+}
+
+class AsistenciaEvento {
+    - id: Long
+    - estado: EstadoAsistencia
+    - createdAt: LocalDateTime
+    --
+    + confirmar(): void
+    + cancelar(): void
+}
+
+class InvitacionEvento {
+    - id: Long
+    - estado: EstadoInvitacion
+    - createdAt: LocalDateTime
+    --
+    + enviar(): void
+    + aceptar(): void
+    + rechazar(): void
+}
+
+class Archivo {
+    - id: Long
+    - nombre: String
+    - url: String
+    - tipo: String
+    - tamaño: Long
+    - precio: BigDecimal
+    - descargas: Integer
+    - createdAt: LocalDateTime
+    ==
+    <b>Reglas de Negocio:</b>
+    - Free: descarga con anuncios
+    - Premium: descarga sin anuncios
+    - Autor siempre puede descargar
+    --
+    + subir(): void
+    + descargar(): void
+    + visualizar(): void
+    + eliminar(): void
+    + vincularEvento(): void
+    + tieneAcceso(usuario: Usuario): Boolean
+    + incrementarDescargas(): void
+}
+
+class Categoria {
+    - id: Long
+    - nombre: String
+    - descripcion: String
+    - orden: Integer
+    - icono: String
+    --
+    + crear(): void
+    + editar(): void
+    + eliminar(): void
+    + reordenar(): void
+}
+
+class Suscripcion {
+    - id: Long
+    - plan: TipoPlan
+    - fechaInicio: LocalDate
+    - fechaFin: LocalDate
+    - activa: Boolean
+    - autoRenovar: Boolean
+    - fechaGraciaFin: LocalDate
+    ==
+    <b>Reglas de Negocio:</b>
+    - Premium descarga sin anuncios
+    - 7 días de gracia al expirar
+    - Tras gracia: pierde beneficios premium
+    --
+    + suscribir(): void
+    + cancelar(): void
+    + renovar(): void
+    + estaActiva(): Boolean
+    + esPremium(): Boolean
+    + estaEnPeriodoGracia(): Boolean
+    + procesarFinGracia(): void
+}
+
+class Compra {
+    - id: Long
+    - monto: BigDecimal
+    - metodoPago: String
+    - transaccionId: String
+    - estado: EstadoCompra
+    - fechaCompra: LocalDateTime
+    --
+    + procesar(): void
+    + verificarEstado(): EstadoCompra
+}
+
+class Mensaje {
+    - id: Long
+    - contenido: String
+    - editado: Boolean
+    - createdAt: LocalDateTime
+    --
+    + enviar(): void
+    + editar(): void
+    + eliminar(): void
+}
+
+' ============ RELACIONES ============
+
+' Usuario relaciones
+Usuario "1" -- "0..*" MiembroComunidad : pertenece a >
+Usuario "1" -- "0..1" Suscripcion : tiene >
+Usuario "1" -- "0..*" Evento : crea >
+Usuario "1" -- "0..*" AsistenciaEvento : asiste a >
+Usuario "1" -- "0..*" Archivo : sube >
+Usuario "1" -- "0..*" Compra : realiza >
+Usuario "1" -- "0..*" Mensaje : envía >
+Usuario "1" -- "0..*" SolicitudComunidad : solicita >
+
+' Comunidad relaciones
+Comunidad "1" -- "0..*" MiembroComunidad : tiene miembros >
+Comunidad "1" -- "1" Usuario : creada por >
+Comunidad "1" -- "0..*" Evento : contiene >
+Comunidad "1" -- "0..*" Archivo : almacena >
+Comunidad "1" -- "0..*" Categoria : organiza >
+Comunidad "1" -- "0..*" Mensaje : contiene >
+Comunidad "1" -- "0..*" SolicitudComunidad : recibe >
+
+' Evento relaciones
+Evento "1" -- "0..*" AsistenciaEvento : tiene >
+Evento "1" -- "0..*" InvitacionEvento : invita a >
+Evento "0..1" -- "0..*" Archivo : asocia >
+InvitacionEvento "0..*" -- "1" Usuario : invita a >
+
+' Otras relaciones
+Archivo "1" -- "0..*" Compra : genera >
+Archivo "0..*" -- "0..1" Categoria : pertenece a >
+SolicitudComunidad "0..1" -- "0..1" Usuario : respondida por >
+
+' ============ NOTAS ============
+note top of Usuario
+  <b>Requisitos No Funcionales aplicables:</b>
+  - RNF-02: Contraseñas hasheadas
+  - RNF-03: Autenticación con JWT
+  - RNF-05: Validar datos de entrada
+end note
+
+note top of Comunidad
+  <b>Límites Plan Free:</b>
+  - RF-14: Comunidades limitadas
+  - RF-15: Miembros limitados (admin no premium)
+  
+  <b>Estados:</b>
+  - ACTIVA: Funcionamiento normal
+  - CONGELADA: Admin perdió premium y
+    no hay candidato premium disponible
+  
+  <b>Pérdida de Premium (RN-18 a RN-19):</b>
+  - 7 días de gracia para renovar
+  - Tras gracia: pierde beneficios premium
+end note
+
+note right of Archivo
+  <b>Almacenamiento:</b>
+  AWS S3 / MinIO
+  (RNF-21)
+  
+  <b>Descargas:</b>
+  - Free: con anuncios (RF-49)
+  - Premium: sin anuncios (RF-50)
+end note
+
+note bottom of Suscripcion
+  <b>Integración:</b>
+  Stripe como pasarela
+  de pagos (RF-55)
+  
+  <b>Período de Gracia:</b>
+  7 días tras expirar (RN-18)
+end note
+
+@enduml

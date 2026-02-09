@@ -1,5 +1,31 @@
-# Informe de Definición de Producto: Plataforma de Comunidades de Estudio
+# Informe de Producto: Plataforma de Comunidades de Estudio
 
+### Grupo D - Turno de tarde
+
+![Logo App](../images/logoapp.jpeg)
+
+---
+
+**Proyecto:** VibeStudy  
+**Documento:** Plan de proyecto  
+**Sprint:** Sprint 0  
+**Estado:** Aprobado  
+**Fecha:** 08/02/2026  
+**Autor(es):** Manuel Artero Bellido
+
+---
+
+## Índice
+1. [Resumen Ejecutivo](#1-resumen-ejecutivo)
+2. [Alcance del MVP (Producto Mínimo Viable)](#2-alcance-del-mvp-producto-minimo-viable)
+  - [En qué consiste nuestra aplicación (MVP)](#en-que-consiste-nuestra-aplicacion-mvp)
+  - [Monetización (MVP)](#monetizacion-mvp)
+3. [Hoja de Ruta: Puntos de Extensión (Futuro)](#3-hoja-de-ruta-puntos-de-extension-futuro)
+4. [Arquitectura del sistema](#4-arquitectura-del-sistema)
+  - [Estrategia: Monolito Modular](#estrategia-monolito-modular)
+  - [Infraestructura](#infraestructura)
+
+---
 
 ## 1. Resumen Ejecutivo
 El objetivo es desarrollar una plataforma centrada en comunidades de aprendizaje que conecte alumnos entre sí y con profesores para organizar sesiones, gestionar material y coordinar tareas. El MVP integra Google Classroom para la gestión docente, permite la creación de grupos públicos y privados, gestión de meetings (visibles u ocultos en mapa) y funcionalidades de contratación y pago a profesores.
@@ -40,7 +66,6 @@ El objetivo es desarrollar una plataforma centrada en comunidades de aprendizaje
 
 ---
 
-
 ## 3. Hoja de Ruta: Puntos de Extensión (Futuro)
 
 1. **Chatbot y Asistente IA**
@@ -65,7 +90,6 @@ El objetivo es desarrollar una plataforma centrada en comunidades de aprendizaje
 
 ---
 
-
 ## 4. Arquitectura del sistema
 
 ### Estrategia: Monolito Modular
@@ -81,4 +105,5 @@ Para optimizar costes en fase temprana y facilitar el despliegue en PaaS, permit
 - **Entorno:** PaaS (Platform as a Service).
 - **Proveedores candidatos:** Railway, Render o Heroku.
 - **Justificación:** Coste bajo inicial, escalado vertical sencillo y configuración DevOps mínima.
+
 ---

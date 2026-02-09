@@ -1,0 +1,95 @@
+@startuml Casos_de_Uso_Gestion_Comunidades
+!theme plain
+skinparam actorStyle awesome
+skinparam usecase {
+    BackgroundColor<<MVP>> LightGreen
+    BackgroundColor<<Extra>> LightBlue
+}
+
+title Casos de Uso - Gestión de Comunidades
+
+left to right direction
+
+actor "Usuario\nNo Autenticado" as UNA
+actor "Usuario Free" as UF
+actor "Usuario Premium" as UP
+actor "Admin\nComunidad" as AC
+
+UP -up-|> UF
+AC -up-|> UF
+
+rectangle "Gestión de Comunidades" {
+    usecase "RF-12: Crear Comunidad" as UC12 <<MVP>>
+    usecase "RF-13: Configurar Privacidad" as UC13 <<MVP>>
+    usecase "RF-14: Verificar Límite\nComunidades" as UC14 <<MVP>>
+    usecase "RF-15: Verificar Límite\nMiembros" as UC15 <<MVP>>
+    usecase "RF-16: Unirse a\nComunidad Pública" as UC16 <<MVP>>
+    usecase "RF-17: Solicitar Acceso\na Comunidad Privada" as UC17 <<MVP>>
+    usecase "RF-18: Buscar Comunidades" as UC18 <<MVP>>
+    usecase "RF-19: Explorar Comunidades" as UC19 <<MVP>>
+    usecase "RF-20: Asignar Rol Admin\n(automático al crear)" as UC20 <<MVP>>
+    usecase "RF-21: Aceptar/Rechazar\nSolicitudes" as UC21 <<MVP>>
+    usecase "RF-22: Expulsar Miembros" as UC22 <<MVP>>
+    usecase "RF-23: Abandonar Comunidad" as UC23 <<MVP>>
+    usecase "RF-24: Transferir\nAdministración" as UC24 <<MVP>>
+    usecase "RF-25: Eliminar Comunidad" as UC25 <<MVP>>
+    usecase "RF-26: Definir Categorías" as UC26 <<MVP>>
+    usecase "RF-27: Chat de Comunidad" as UC27 <<MVP>>
+    usecase "RF-28: Asignar Múltiples\nAdministradores" as UC28 <<Extra>>
+    usecase "RF-29: Comunidades Premium\n(más miembros)" as UC29 <<Extra>>
+    usecase "RF-30: Comunidades\nCorporativas" as UC30 <<Extra>>
+}
+
+' Usuario No Autenticado
+UNA --> UC18
+UNA --> UC19
+
+' Usuario Free
+UF --> UC12
+UF --> UC16
+UF --> UC17
+UF --> UC23
+UF --> UC27
+
+' Usuario Premium
+UP --> UC29
+
+' Admin Comunidad
+AC --> UC13
+AC --> UC21
+AC --> UC22
+AC --> UC24
+AC --> UC25
+AC --> UC26
+AC --> UC28
+
+' Includes
+UC12 ..> UC14 : <<include>>
+UC12 ..> UC20 : <<include>>
+UC16 ..> UC15 : <<include>>
+UC23 ..> UC24 : <<include>>\n[si es único admin]
+
+note right of UC14
+  RN-01: Usuario gratuito
+  comunidades limitadas como ADMIN
+  (sin límite como miembro)
+end note
+
+note right of UC15
+  RN-02: Comunidad con admin
+  no premium: miembros limitados
+end note
+
+note bottom of UC24
+  RN-06: Si único admin
+  abandona, debe elegir
+  sucesor obligatoriamente
+end note
+
+legend right
+  |= Color |= Tipo |
+  | <#LightGreen> | MVP |
+  | <#LightBlue> | Extra |
+endlegend
+
+@enduml

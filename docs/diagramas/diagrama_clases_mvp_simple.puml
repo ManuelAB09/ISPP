@@ -1,0 +1,67 @@
+@startuml Diagrama_Clases_MVP_Simple
+!theme plain
+skinparam classAttributeIconSize 0
+hide empty members
+skinparam class {
+    BackgroundColor LightGreen
+}
+
+title Diagrama de Clases - VibeStudy (MVP - Solo Objetos)
+
+' ============ ENUMS ============
+enum TipoPlan
+enum TipoPlanComunidad
+enum EstadoComunidad
+enum RolComunidad
+enum EstadoSolicitud
+enum EstadoAsistencia
+enum EstadoCompra
+enum EstadoInvitacion
+
+' ============ CLASES MVP ============
+class Usuario
+class Comunidad
+class MiembroComunidad
+class SolicitudComunidad
+class Evento
+class AsistenciaEvento
+class InvitacionEvento
+class Archivo
+class Categoria
+class Suscripcion
+class Compra
+class Mensaje
+
+' ============ RELACIONES ============
+
+' Usuario relaciones
+Usuario "1" -- "0..*" MiembroComunidad : pertenece a >
+Usuario "1" -- "0..1" Suscripcion : tiene >
+Usuario "1" -- "0..*" Evento : crea >
+Usuario "1" -- "0..*" AsistenciaEvento : asiste a >
+Usuario "1" -- "0..*" Archivo : sube >
+Usuario "1" -- "0..*" Compra : realiza >
+Usuario "1" -- "0..*" Mensaje : envía >
+Usuario "1" -- "0..*" SolicitudComunidad : solicita >
+
+' Comunidad relaciones
+Comunidad "1" -- "0..*" MiembroComunidad : tiene miembros >
+Comunidad "1" -- "1" Usuario : creada por >
+Comunidad "1" -- "0..*" Evento : contiene >
+Comunidad "1" -- "0..*" Archivo : almacena >
+Comunidad "1" -- "0..*" Categoria : organiza >
+Comunidad "1" -- "0..*" Mensaje : contiene >
+Comunidad "1" -- "0..*" SolicitudComunidad : recibe >
+
+' Evento relaciones
+Evento "1" -- "0..*" AsistenciaEvento : tiene >
+Evento "1" -- "0..*" InvitacionEvento : invita a >
+Evento "0..1" -- "0..*" Archivo : asocia >
+InvitacionEvento "0..*" -- "1" Usuario : invita a >
+
+' Otras relaciones
+Archivo "1" -- "0..*" Compra : genera >
+Archivo "0..*" -- "0..1" Categoria : pertenece a >
+SolicitudComunidad "0..1" -- "0..1" Usuario : respondida por >
+
+@enduml

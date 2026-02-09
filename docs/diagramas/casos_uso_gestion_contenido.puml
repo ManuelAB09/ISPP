@@ -1,0 +1,94 @@
+@startuml Casos_de_Uso_Gestion_Contenido
+!theme plain
+skinparam actorStyle awesome
+skinparam usecase {
+    BackgroundColor<<MVP>> LightGreen
+    BackgroundColor<<Extra>> LightBlue
+}
+
+title Casos de Uso - Gestión de Contenido/Apuntes
+
+left to right direction
+
+actor "Miembro\nComunidad" as MC
+actor "Autor\nArchivo" as AA
+actor "Admin\nComunidad" as AC
+actor "Usuario Premium" as UP
+actor "Pasarela\nde Pago" as PP
+
+AA -up-|> MC
+AC -up-|> MC
+UP -up-|> MC
+
+rectangle "Gestión de Contenido" {
+    usecase "RF-45: Subir Archivos" as UC45 <<MVP>>
+    usecase "RF-46: Organizar por\nCategorías" as UC46 <<MVP>>
+    usecase "RF-47: Vincular Archivo\na Evento" as UC47 <<MVP>>
+    usecase "RF-48: Visualizar\nArchivos" as UC48 <<MVP>>
+    usecase "RF-49: Descargar con
+Anuncios (Free)" as UC49 <<MVP>>
+    usecase "RF-50: Descargar sin
+Anuncios (Premium)" as UC50 <<MVP>>
+    usecase "RF-51: Eliminar Archivos" as UC51 <<MVP>>
+    usecase "RF-52: Descargas Premium
+(sin anuncios)" as UC52 <<MVP>>
+    
+    usecase "Procesar Pago" as UCPago
+    usecase "Validar Acceso" as UCAcceso
+    usecase "Almacenar en S3" as UCS3
+}
+
+' Miembro Comunidad
+MC --> UC45
+MC --> UC48
+MC --> UC49
+MC --> UC50
+
+' Autor Archivo
+AA --> UC47
+AA --> UC51
+
+' Admin Comunidad
+AC --> UC46
+AC --> UC51
+
+' Usuario Premium
+UP --> UC52
+
+' Pasarela de Pago
+PP --> UCPago
+
+' Includes
+UC45 ..> UCS3 : <<include>>
+UC49 ..> UCPago : <<include>>
+UC50 ..> UCAcceso : <<include>>
+
+' Extends
+UC47 ..> UC45 : <<extend>>
+UC52 ..> UC50 : <<extend>>
+
+note right of UC49
+  Usuarios Free pueden
+  descargar archivos pero
+  deben ver anuncios durante
+  el proceso de descarga
+end note
+
+note right of UC52
+  Usuarios Premium descargan
+  sin publicidad
+end note
+
+note bottom of UC50
+  Usuarios Premium:
+  - Descargan sin anuncios
+  - Autor siempre puede descargar
+end note
+
+legend right
+  |= Color |= Tipo |
+  | <#LightGreen> | MVP |
+  | <#LightBlue> | Extra |
+endlegend
+
+@enduml

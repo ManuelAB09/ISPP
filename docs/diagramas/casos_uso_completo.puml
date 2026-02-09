@@ -1,0 +1,209 @@
+@startuml Diagrama_Casos_de_Uso_Completo
+!theme plain
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+skinparam usecase {
+    BackgroundColor<<MVP>> LightGreen
+    BackgroundColor<<Extra>> LightBlue
+}
+
+title Diagrama de Casos de Uso - VibeStudy (Completo)
+
+left to right direction
+
+' === ACTORES ===
+actor "Usuario No Autenticado" as UNA
+actor "Usuario Free" as UF
+actor "Usuario Premium" as UP
+actor "Usuario Corporativo" as UC
+actor "Admin Comunidad" as AC
+actor "Institución" as INST
+actor "Sistema" as SYS
+actor "Pasarela de Pago" as PP
+
+' Herencia de actores
+UF -up-|> UNA
+UP -up-|> UF
+UC -up-|> UF
+AC -up-|> UF
+
+' === PAQUETES DE CASOS DE USO ===
+
+rectangle "Gestión de Usuarios" as GU {
+    usecase "Registrarse" as UC01 <<MVP>>
+    usecase "Iniciar Sesión" as UC02 <<MVP>>
+    usecase "Cerrar Sesión" as UC03 <<MVP>>
+    usecase "Personalizar Perfil" as UC04 <<MVP>>
+    usecase "Ver Perfil" as UC05 <<MVP>>
+    usecase "Cambiar Contraseña" as UC06 <<MVP>>
+    usecase "Recuperar Contraseña" as UC07 <<MVP>>
+    usecase "Eliminar Cuenta" as UC08 <<MVP>>
+    usecase "Login con Google" as UC09 <<Extra>>
+    usecase "Activar 2FA" as UC10 <<Extra>>
+    usecase "Detectar Dominio\nInstitucional" as UC11 <<MVP>>
+}
+
+rectangle "Gestión de Comunidades" as GC {
+    usecase "Crear Comunidad" as UC12 <<MVP>>
+    usecase "Configurar Privacidad\nComunidad" as UC13 <<MVP>>
+    usecase "Buscar Comunidades" as UC14 <<MVP>>
+    usecase "Explorar Comunidades" as UC15 <<MVP>>
+    usecase "Unirse a Comunidad\nPública" as UC16 <<MVP>>
+    usecase "Solicitar Acceso\nComunidad Privada" as UC17 <<MVP>>
+    usecase "Abandonar Comunidad" as UC18 <<MVP>>
+    usecase "Aceptar/Rechazar\nSolicitudes" as UC19 <<MVP>>
+    usecase "Expulsar Miembros" as UC20 <<MVP>>
+    usecase "Transferir\nAdministración" as UC21 <<MVP>>
+    usecase "Eliminar Comunidad" as UC22 <<MVP>>
+    usecase "Definir Categorías" as UC23 <<MVP>>
+    usecase "Chat de Comunidad" as UC24 <<MVP>>
+    usecase "Asignar Múltiples\nAdmins" as UC25 <<Extra>>
+    usecase "Mejorar Comunidad\na Premium" as UC26 <<Extra>>
+}
+
+rectangle "Gestión de Eventos" as GE {
+    usecase "Crear Evento" as UC27 <<MVP>>
+    usecase "Configurar Privacidad\nEvento" as UC28 <<MVP>>
+    usecase "Invitar a Evento\nPrivado" as UC28b <<MVP>>
+    usecase "Especificar Info\nEvento" as UC29 <<MVP>>
+    usecase "Seleccionar Ubicación\n(Google Maps)" as UC30 <<MVP>>
+    usecase "Ver Ubicaciones\nRecomendadas" as UC31 <<MVP>>
+    usecase "Unirse a Evento" as UC32 <<MVP>>
+    usecase "Cancelar Asistencia" as UC33 <<MVP>>
+    usecase "Ver Asistentes" as UC34 <<MVP>>
+    usecase "Editar Evento" as UC35 <<MVP>>
+    usecase "Cancelar Evento" as UC36 <<MVP>>
+    usecase "Crear Reunión Virtual" as UC37 <<Extra>>
+    usecase "Grabar Reunión" as UC38 <<Extra>>
+}
+
+rectangle "Gestión de Contenido" as GCO {
+    usecase "Subir Archivos" as UC39 <<MVP>>
+    usecase "Organizar por\nCategorías" as UC40 <<MVP>>
+    usecase "Vincular a Evento" as UC41 <<MVP>>
+    usecase "Visualizar Archivos" as UC42 <<MVP>>
+    usecase "Comprar Archivo" as UC43 <<MVP>>
+    usecase "Descargar Archivos" as UC44 <<MVP>>
+    usecase "Eliminar Archivos" as UC45 <<MVP>>
+    usecase "Descargar con
+Anuncios (Free)" as UC46a <<MVP>>
+    usecase "Descargar sin
+Anuncios (Premium)" as UC46b <<MVP>>
+}
+
+rectangle "Suscripciones y Pagos" as SP {
+    usecase "Ver Planes" as UC47 <<MVP>>
+    usecase "Suscribirse a\nPlan Premium" as UC48 <<MVP>>
+    usecase "Procesar Pago" as UC49 <<MVP>>
+    usecase "Cancelar Suscripción" as UC50 <<MVP>>
+    usecase "Ver Historial\nde Compras" as UC51 <<MVP>>
+    usecase "Gestionar Período\nde Gracia" as UC51b <<MVP>>
+    usecase "Reasignar Admin\nTras Pérdida Premium" as UC51c <<MVP>>
+    usecase "Contratar Plan\nCorporativo" as UC52 <<Extra>>
+    usecase "Registrar Institución" as UC53 <<Extra>>
+    usecase "Invitar Usuarios\nCorporativos" as UC54 <<Extra>>
+    usecase "Gestionar\nInvitaciones" as UC55 <<Extra>>
+}
+
+rectangle "Publicidad y Ajustes" as PA {
+    usecase "Mostrar Anuncios" as UC56 <<MVP>>
+    usecase "Panel de Ajustes" as UC57 <<MVP>>
+    usecase "Configurar\nNotificaciones" as UC58 <<Extra>>
+    usecase "Enviar Notificaciones\npor Email" as UC59 <<Extra>>
+}
+
+' === RELACIONES ===
+
+' Usuario No Autenticado
+UNA --> UC01
+UNA --> UC02
+UNA --> UC07
+UNA --> UC14
+UNA --> UC15
+
+' Usuario Free (hereda de UNA)
+UF --> UC03
+UF --> UC04
+UF --> UC05
+UF --> UC06
+UF --> UC08
+UF --> UC12
+UF --> UC16
+UF --> UC17
+UF --> UC18
+UF --> UC24
+UF --> UC27
+UF --> UC28
+UF --> UC28b
+UF --> UC29
+UF --> UC30
+UF --> UC31
+UF --> UC32
+UF --> UC33
+UF --> UC34
+UF --> UC39
+UF --> UC40
+UF --> UC41
+UF --> UC42
+UF --> UC43
+UF --> UC44
+UF --> UC47
+UF --> UC48
+UF --> UC51
+UF --> UC57
+
+' Usuario Free descarga con anuncios
+UF --> UC46a
+
+' Usuario Premium (hereda de UF)
+UP --> UC46b
+UP --> UC26
+
+' Admin Comunidad
+AC --> UC13
+AC --> UC19
+AC --> UC20
+AC --> UC21
+AC --> UC22
+AC --> UC23
+AC --> UC25
+AC --> UC35
+AC --> UC36
+AC --> UC45
+
+' Institución
+INST --> UC52
+INST --> UC53
+INST --> UC54
+INST --> UC55
+
+' Sistema
+SYS --> UC11
+SYS --> UC56
+SYS --> UC59
+SYS --> UC51b
+SYS --> UC51c
+
+' Pasarela de Pago
+PP --> UC49
+
+' === INCLUDES Y EXTENDS ===
+
+UC01 ..> UC11 : <<include>>
+UC48 ..> UC49 : <<include>>
+UC43 ..> UC49 : <<include>>
+UC52 ..> UC49 : <<include>>
+
+UC09 ..> UC02 : <<extend>>
+UC10 ..> UC02 : <<extend>>
+UC37 ..> UC27 : <<extend>>
+UC38 ..> UC37 : <<extend>>
+
+' Leyenda
+legend right
+  |= Color |= Tipo |
+  | <#LightGreen> | MVP |
+  | <#LightBlue> | Extra |
+endlegend
+
+@enduml

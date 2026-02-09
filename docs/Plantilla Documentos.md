@@ -1,0 +1,26 @@
+# Título del Documento
+
+## Subtítulo (si aplica)
+
+### Grupo D – Turno de tarde
+
+![Logo App](../images/logoapp.png)
+
+---
+
+**Proyecto:** VibeStudy  
+**Documento:** Tipo de documento (Acta / Plan de proyecto / Arquitectura / Normativa / Desarrollo)  
+**Sprint:** Sprint X  
+**Estado:** Borrador / En revisión / Aprobado  
+**Fecha:** DD/MM/YYYY  
+**Autor(es):** Nombre(s)
+
+---
+
+## Índice
+1. [NombreApartado1](#HiperenlaceTítuloApartado1)
+2. [NombreApartado2](#HiperenlaceTítuloApartado2)
+3. [NombreApartado3](#HiperenlaceTítuloApartado3)
+...
+
+---

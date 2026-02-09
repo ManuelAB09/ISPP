@@ -1,0 +1,77 @@
+@startuml Casos_de_Uso_Publicidad_Ajustes
+!theme plain
+skinparam actorStyle awesome
+skinparam usecase {
+    BackgroundColor<<MVP>> LightGreen
+    BackgroundColor<<Extra>> LightBlue
+}
+
+title Casos de Uso - Publicidad y Ajustes
+
+left to right direction
+
+actor "Usuario Free" as UF
+actor "Usuario Premium" as UP
+actor "Sistema" as SYS
+
+UP -up-|> UF
+
+rectangle "Publicidad" {
+    usecase "RF-63: Mostrar Anuncios" as UC63 <<MVP>>
+    usecase "RF-64: Ocultar Anuncios\n(Premium)" as UC64 <<MVP>>
+}
+
+rectangle "Ajustes y Preferencias" {
+    usecase "RF-65: Acceder Panel\nde Ajustes" as UC65 <<MVP>>
+    usecase "RF-66: Configurar\nNotificaciones" as UC66 <<Extra>>
+    usecase "RF-67: Recibir Notificaciones\npor Email" as UC67 <<Extra>>
+    
+    usecase "Cambiar Idioma" as UCIdioma
+    usecase "Gestionar Privacidad" as UCPriv
+}
+
+' Usuario Free
+UF --> UC65
+UF <-- UC63 : <<visualiza>>
+
+' Usuario Premium
+UP --> UC64
+
+' Sistema
+SYS --> UC63
+SYS --> UC67
+
+' Extends
+UC66 ..> UC65 : <<extend>>
+UCIdioma ..> UC65 : <<extend>>
+UCPriv ..> UC65 : <<extend>>
+
+' Includes
+UC67 ..> UC66 : <<include>>
+
+note right of UC63
+  Los usuarios gratuitos
+  visualizan publicidad
+  en la aplicación
+end note
+
+note right of UC64
+  RF-64: Usuarios premium
+  no ven publicidad
+end note
+
+note right of UC66
+  Preferencias de:
+  - Notificaciones push
+  - Emails de eventos
+  - Emails de mensajes
+  - Emails de archivos
+end note
+
+legend right
+  |= Color |= Tipo |
+  | <#LightGreen> | MVP |
+  | <#LightBlue> | Extra |
+endlegend
+
+@enduml
