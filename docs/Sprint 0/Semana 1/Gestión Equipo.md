@@ -31,7 +31,7 @@
 ---
 
 ## 1. Información del proyecto
-El proyecto a realizar trata de una plataforma web de comunidades de estudio llamada **StudYshare** que permite crear y unirse a grupos por materia o curso, organizar eventos y quedadas con geolocalización, y compartir y gestionar apuntes y recursos académicos. Incluye gestión de roles (administradores y miembros), herramientas de coordinación (eventos, repositorios y notificaciones) y un modelo freemium con opciones premium e institucionales para capacidades y permisos ampliados.
+El proyecto a realizar trata de una plataforma web de comunidades de estudio llamada **MeerKatters** que permite crear y unirse a grupos por materia o curso, organizar eventos y quedadas con geolocalización, y compartir y gestionar apuntes y recursos académicos. Incluye gestión de roles (administradores y miembros), herramientas de coordinación (eventos, repositorios y notificaciones) y un modelo freemium con opciones premium e institucionales para capacidades y permisos ampliados.
 
 ---
 
