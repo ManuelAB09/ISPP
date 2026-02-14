@@ -1,16 +1,17 @@
 # Acta de Reunión
 
-## [Tipo de reunión: Retrospectiva / Daily / Específica]
+## Retrospectiva
 
 ### Grupo D – Turno de tarde
 
-![Logo App](../images/logoapp.jpeg)
+![Logo App](../../images/logoapp.jpeg)
 
 ---
 
-**Proyecto:** VibeStudy  
+**Proyecto:** MeerKatters  
 **Documento:** Acta  
 **Sprint:** Sprint 0  
+**Semana:** Semana 2  
 **Estado:** Aprobado  
 **Fecha:** 06/02/2026  
 **Hora:** 16:00 – 18:00  

@@ -8,9 +8,10 @@
 
 ---
 
-**Proyecto:** VibeStudy  
+**Proyecto:** MeerKatters  
 **Documento:** Acta  
 **Sprint:** Sprint X  
+**Semana:** Semana X  
 **Estado:** Aprobado  
 **Fecha:** DD/MM/2026  
 **Hora:** HH:MM – HH:MM  

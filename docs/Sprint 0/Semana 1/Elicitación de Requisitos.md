@@ -2,13 +2,14 @@
 
 ### Grupo D - Turno de tarde
 
-![Logo App](../images/logoapp.jpeg)
+![Logo App](../../images/logoapp.jpeg)
 
 ---
 
-**Proyecto:** VibeStudy  
+**Proyecto:** MeerKatters  
 **Documento:** Plan de proyecto  
 **Sprint:** Sprint 0  
+**Semana:** Semana 1  
 **Estado:** Borrador  
 **Fecha:** 08/02/2026  
 **Autor(es):** Manuel Artero Bellido, Manuel María Calderón Rodríguez

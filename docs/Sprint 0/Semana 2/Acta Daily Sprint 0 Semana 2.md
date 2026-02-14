@@ -4,13 +4,14 @@
 
 ### Grupo D – Turno de tarde
 
-![Logo App](../images/logoapp.jpeg)
+![Logo App](../../images/logoapp.jpeg)
 
 ---
 
-**Proyecto:** VibeStudy  
+**Proyecto:** MeerKatters  
 **Documento:** Acta  
-**Sprint:** Sprint 1  
+**Sprint:** Sprint 0  
+**Semana:** Semana 2    
 **Estado:** Aprobado  
 **Fecha:** 09/02/2026  
 **Hora:** 18:00 – 18:30  

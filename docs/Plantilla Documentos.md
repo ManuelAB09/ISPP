@@ -8,9 +8,10 @@
 
 ---
 
-**Proyecto:** VibeStudy  
+**Proyecto:** MeerKatters  
 **Documento:** Tipo de documento (Acta / Plan de proyecto / Arquitectura / Normativa / Desarrollo)  
 **Sprint:** Sprint X  
+**Semana:** Semana X  
 **Estado:** Borrador / En revisión / Aprobado  
 **Fecha:** DD/MM/YYYY  
 **Autor(es):** Nombre(s)

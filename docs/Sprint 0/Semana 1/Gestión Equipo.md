@@ -2,13 +2,14 @@
 
 ### Grupo D - Turno de tarde
 
-![Logo App](./images/logoapp.jpeg)
+![Logo App](../../images/logoapp.jpeg)
 
 ---
 
-**Proyecto:** VibeStudy  
+**Proyecto:** MeerKatters  
 **Documento:** Normativa  
 **Sprint:** Sprint 0  
+**Semana:** Semana 1  
 **Estado:** Aprobado  
 **Fecha:** 04/02/2026  
 **Autor(es):** Alejandro Soult Toscano

@@ -1,16 +1,17 @@
 # Decisión del Stack Tecnológico
 
-## VibeStudy - Plataforma de Comunidades de Estudio
+## MeerKatters - Plataforma de Comunidades de Estudio
 
 ### Grupo D – Turno de tarde
 
-![Logo App](../images/logoapp.png)
+![Logo App](../../images/logoapp.jpeg)
 
 ---
 
-**Proyecto:** VibeStudy  
+**Proyecto:** MeerKatters  
 **Documento:** Arquitectura / Decisión Técnica  
-**Sprint:** Sprint 0
+**Sprint:** Sprint 0  
+**Semana:** Semana 2  
 **Estado:** En revisión  
 **Fecha:** 09/02/2026  
 **Autor(es):** Raimundo Jiménez Lara, Manuel Maria Calderon Rodriguez.
@@ -35,7 +36,7 @@
 
 ## 1. Introducción
 
-Este documento recoge el análisis y las decisiones tomadas respecto al stack tecnológico para el desarrollo de **VibeStudy**, una plataforma de comunidades de estudio que conecta alumnos entre sí y con profesores.
+Este documento recoge el análisis y las decisiones tomadas respecto al stack tecnológico para el desarrollo de **MeerKatters**, una plataforma de comunidades de estudio que conecta alumnos entre sí y con profesores.
 
 El objetivo es seleccionar tecnologías que:
 - Sean adecuadas para un MVP con posibilidad de escalado futuro

@@ -6,7 +6,7 @@ skinparam class {
     BackgroundColor LightGreen
 }
 
-title Diagrama de Clases - VibeStudy (MVP - Solo Objetos)
+title Diagrama de Clases - MeerKatters (MVP - Solo Objetos)
 
 ' ============ ENUMS ============
 enum TipoPlan
