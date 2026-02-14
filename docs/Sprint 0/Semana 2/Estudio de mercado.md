@@ -1,34 +1,34 @@
-# **ESTUDIO DE ANÁLISIS DEL MERCADO**
+# Estudio de análisis de mercado
 
-  
-![MeerKatters](../images/logoapp.jpeg)
+### Grupo D – Turno de tarde
 
-| Participantes |  |
-| :---: | :---: |
-| Nombres | Correos |
-| Benítez Galván, Mario | marbengal@alum.us.es |
-| Benito Merchán, Manuel Jesús | manbenmer1@alum.us.es |
-| Fernández Noguerol, Francisco | frafernog@alum.us.es |
-| García Barrena, Julio | julgarbar@alum.us.es |
-| Gutiérrez Arazo, Beatriz | beagutara@alum.us.es |
-| Peñaloza Friqui, Nora | norpenfri@alum.us.es |
+![Logo App](../../images/logoapp.jpeg)
 
-Fecha: 03 de febrero de 2026  
+---
 
+**Proyecto:** MeerKatters  
+**Documento:** Desarrollo  
+**Sprint:** Sprint 0  
+**Semana:** Semana 2  
+**Estado:** Aprobado  
+**Fecha:** 10/02/2026  
+**Autor(es):** Squad de Backend
 
-Índice
+---
 
-[APARTADO 1: INTRODUCCIÓN](#apartado-1-introducción)
+## Índice
 
-[APARTADO 2: OBJETIVOS DEL ESTUDIO](#apartado-2-objetivos-del-estudio)
+[1: INTRODUCCIÓN](#apartado-1-introducción)
 
-[APARTADO 3: EQUIPO Y RECURSOS](#apartado-3-equipo-y-recursos)
+[2: OBJETIVOS DEL ESTUDIO](#apartado-2-objetivos-del-estudio)
+
+[3: EQUIPO Y RECURSOS](#apartado-3-equipo-y-recursos)
 
 [3.1. Equipo](#31-equipo)
 
 [3.2 Presupuesto](#32-presupuesto)
 
-[APARTADO 4: ANÁLISIS DEL ENTORNO (PESTEL)](#apartado-4-análisis-del-entorno-pestel)
+[4: ANÁLISIS DEL ENTORNO (PESTEL)](#apartado-4-análisis-del-entorno-pestel)
 
 [4.1 Factores Políticos](#41-factores-políticos)
 
@@ -42,7 +42,7 @@ Fecha: 03 de febrero de 2026
 
 [4.6 Factores Legales](#46-factores-legales)
 
-[APARTADO 5: ANÁLISIS DEL MERCADO](#apartado-5-análisis-del-mercado)
+[5: ANÁLISIS DEL MERCADO](#apartado-5-análisis-del-mercado)
 
 [5.1 Tamaño y Estructura](#51-tamaño-y-estructura)
 
@@ -52,7 +52,7 @@ Fecha: 03 de febrero de 2026
 
 [5.4 Estacionalidad y Ciclos](#54-estacionalidad-y-ciclos)
 
-[APARTADO 6: ANÁLISIS DE LA COMPETENCIA](#apartado-6-análisis-de-la-competencia)
+[6: ANÁLISIS DE LA COMPETENCIA](#apartado-6-análisis-de-la-competencia)
 
 [6.1 Identificación de Competidores](#61-identificación-de-competidores)
 
@@ -62,7 +62,7 @@ Fecha: 03 de febrero de 2026
 
 [6.4 Matriz de Posicionamiento](#64-matriz-de-posicionamiento)
 
-[APARTADO 7: ANÁLISIS DAFO](#apartado-7-análisis-dafo)
+[7: ANÁLISIS DAFO](#apartado-7-análisis-dafo)
 
 [7.1 Fortalezas Internas](#71-fortalezas-internas)
 
@@ -72,7 +72,7 @@ Fecha: 03 de febrero de 2026
 
 [7.4 Amenazas Externas](#74-amenazas-externas)
 
-[APARTADO 8: CONCLUSIONES Y RECOMENDACIONES](#apartado-8-conclusiones-y-recomendaciones)
+[8: CONCLUSIONES Y RECOMENDACIONES](#apartado-8-conclusiones-y-recomendaciones)
 
 [8.1 Hallazgos Principales](#81-hallazgos-principales)
 
@@ -97,6 +97,8 @@ Fecha: 03 de febrero de 2026
 [C. Glosario de Términos](#c-glosario-de-términos)
 
 [D. Bibliografía y Fuentes](#d-bibliografía-y-fuentes)
+
+---
 
 # **APARTADO 1: INTRODUCCIÓN**
 

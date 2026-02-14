@@ -1,8 +1,36 @@
-**Análisis de Funcionalidades y Diferenciación**
+# Análisis de Competidores
 
-# COMPETIDOR: SUPERPROF
+### Grupo D – Turno de tarde
 
-## **1\. Información general del producto / competidor**
+![Logo App](../../images/logoapp.jpeg)
+
+---
+
+**Proyecto:** MeerKatters  
+**Documento:** Desarrollo  
+**Sprint:** Sprint 0  
+**Semana:** Semana 2  
+**Estado:** Aprobado  
+**Fecha:** 10/02/2026  
+**Autor(es):** Squad de Backend
+
+---
+
+## Índice
+
+- [Grupo D – Turno de tarde](#grupo-d-turno-de-tarde)
+- [Competidor: SUPERPROF](#Competidor-superprof)
+- [Competidor: DISCORD/REDDIT](#Competidor-discord-reddit)
+- [Competidor: LINKEDIN](#Competidor-linkedin)
+- [Competidor: WUOLAH](#Competidor-wuolah)
+- [Competidor: MICROSOFT TEAMS](#Competidor-microsoft-teams)
+- [Competidor: GOOGLE CLASSROOM](#Competidor-google-classroom)
+
+---
+
+# Competidor: SUPERPROF
+
+## **1\. Información general del producto / Competidor**
 
 * ***Nombre*****:** Superprof
 
@@ -110,9 +138,9 @@ Hay una oportunidad enorme en:
 
 * Acompañar al alumno antes, durante y después de la clase.
 
-# COMPETIDOR: DISCORD/REDDIT
+# Competidor: DISCORD/REDDIT
 
-## **1\. Información general del producto / competidor**
+## **1\. Información general del producto / Competidor**
 
 **Nombre:** Discord
 
@@ -220,9 +248,9 @@ Puntos clave destacados de mejora
 
 * Menos ruido social, más foco en aprender
 
-# COMPETIDOR: LINKEDIN
+# Competidor: LINKEDIN
 
-## **1\. Información general del producto / competidor**
+## **1\. Información general del producto / Competidor**
 
 **Nombre:** LinkedIn
 
@@ -346,9 +374,9 @@ Puntos clave destacados de mejora
 
 * Creación de vínculos entre alumnos, se fomenta el aprendizaje ameno como una actividad social, no individual
 
-# COMPETIDOR: WUOLAH
+# Competidor: WUOLAH
 
-## **1\. Información general del producto / competidor**
+## **1\. Información general del producto / Competidor**
 
 * ***Nombre*****:** Wuolah
 
@@ -434,9 +462,9 @@ En definitiva, Wuolah es una **herramienta de contenido unidireccional**, lo cua
 * Más contacto: se promueve el contacto entre usuarios en nuestra plataforma, en vez de que solo se puedan subir apuntes sin siquiera hablar con quienes lo visualizan o quien lo ha subido.  
 * Freemium más permisivo: nuestra aplicación no contendrá anuncios, lo que le hará mucho más atractiva respecto a Wuolah. 
 
-# COMPETIDOR: MICROSOFT TEAMS
+# Competidor: MICROSOFT TEAMS
 
-## **1\. Información general del producto / competidor**
+## **1\. Información general del producto / Competidor**
 
 * ***Nombre*****:** Microsoft Teams
 
@@ -499,9 +527,9 @@ En definitiva, Microsoft Teams es una **herramienta para la productividad en org
 * Más contacto: se promueve el contacto entre usuarios en nuestra plataforma. En vez de que solo se comuniquen las personas en función de su necesidad, también se comunicarán en función de su objetivo.  
 * Gestión segura de pagos y transacciones dentro de la aplicación, manteniendo el foco en el aprendizaje de los usuarios.
 
-# COMPETIDOR: GOOGLE CLASSROOM
+# Competidor: GOOGLE CLASSROOM
 
-## **1\. Información general del producto / competidor**
+## **1\. Información general del producto / Competidor**
 
 * ***Nombre*****:** Google Classroom
 
