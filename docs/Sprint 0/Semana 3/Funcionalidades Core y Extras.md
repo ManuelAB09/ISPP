@@ -1,8 +1,50 @@
 # Lista de Funcionalidades con Prioridad
 
-# MVP:
+### Grupo D – Turno de tarde
 
-## 1. Autenticación y Gestión de Cuenta
+![Logo App](../../images/logoapp.jpeg)
+
+---
+
+**Proyecto:** MeerKatters  
+**Documento:** Desarrollo  
+**Sprint:** Sprint 0  
+**Semana:** Semana 3  
+**Estado:** Aprobado  
+**Fecha:** 16/02/2026  
+**Autor(es):** Squad de Backend
+
+---
+
+## Índice
+
+1. [MVP](#1-mvp)  
+1.1. [Autenticación y Gestión de Cuenta](#11-autenticación-y-gestión-de-cuenta)  
+1.2. [Perfil de Profesor y Verificación](#12-perfil-de-profesor-y-verificación)  
+1.3. [Comunidades](#13-comunidades)  
+1.4. [Chat y Comunicación](#14-chat-y-comunicación)  
+1.5. [Eventos de Estudio](#15-eventos-de-estudio)  
+1.6. [Ubicación y Mapas](#16-ubicación-y-mapas)  
+1.7. [Integración con Google Classroom](#17-integración-con-google-classroom)  
+1.8. [Contratación de Profesores y Pagos](#18-contratación-de-profesores-y-pagos)  
+1.9. [Monetización y Planes](#19-monetización-y-planes)  
+2. [Funcionalidades Extra](#2-funcionalidades-extra)  
+2.1. [Sistema de Puntuación y Ranking](#21-sistema-de-puntuación-y-ranking)  
+2.2. [Gestión de Contenidos y Cuestionarios](#22-gestión-de-contenidos-y-cuestionarios)  
+2.3. [Videoconferencias y Aulas Virtuales](#23-videoconferencias-y-aulas-virtuales)  
+2.4. [Eventos y Calendarios](#24-eventos-y-calendarios)  
+2.5. [Mapas y Ubicación](#25-mapas-y-ubicación)  
+2.6. [Comunidades](#26-comunidades)  
+2.7. [Notificaciones](#27-notificaciones)  
+2.8. [Autenticación y Seguridad](#28-autenticación-y-seguridad)  
+2.9. [Acceso Premium y Roles](#29-acceso-premium-y-roles)  
+2.10. [Funcionalidades Adicionales](#210-funcionalidades-adicionales)  
+
+---
+
+## 1. MVP
+
+### 1.1 Autenticación y Gestión de Cuenta
 
 | Funcionalidad | Descripción | Prioridad |
 |---------------|-------------|-----------|
@@ -17,7 +59,7 @@
 
 ---
 
-## 2. Perfil de Profesor y Verificación
+### 1.2 Perfil de Profesor y Verificación
 
 | Funcionalidad | Descripción | Prioridad |
 |---------------|-------------|-----------|
@@ -28,7 +70,7 @@
 
 ---
 
-## 3. Comunidades
+### 1.3 Comunidades
 
 | Funcionalidad | Descripción | Prioridad |
 |---------------|-------------|-----------|
@@ -49,7 +91,7 @@
 
 ---
 
-## 4. Chat y Comunicación
+### 1.4 Chat y Comunicación
 
 | Funcionalidad | Descripción | Prioridad |
 |---------------|-------------|-----------|
@@ -59,7 +101,7 @@
 
 ---
 
-## 5. Eventos de Estudio
+### 1.5 Eventos de Estudio
 
 | Funcionalidad | Descripción | Prioridad |
 |---------------|-------------|-----------|
@@ -77,7 +119,7 @@
 
 ---
 
-## 6. Ubicación y Mapas
+### 1.6 Ubicación y Mapas
 
 | Funcionalidad | Descripción | Prioridad |
 |---------------|-------------|-----------|
@@ -87,7 +129,7 @@
 
 ---
 
-## 7. Integración con Google Classroom
+### 1.7 Integración con Google Classroom
 
 | Funcionalidad | Descripción | Prioridad |
 |---------------|-------------|-----------|
@@ -98,7 +140,7 @@
 
 ---
 
-## 8. Contratación de Profesores y Pagos
+### 1.8 Contratación de Profesores y Pagos
 
 | Funcionalidad | Descripción | Prioridad |
 |---------------|-------------|-----------|
@@ -114,7 +156,7 @@
 
 ---
 
-## 9. Monetización y Planes
+### 1.9 Monetización y Planes
 
 | Funcionalidad | Descripción | Prioridad |
 |---------------|-------------|-----------|
@@ -123,9 +165,9 @@
 
 
 
-## Funcionalidades Extra
+## 2. Funcionalidades Extra
 
-## 1. Sistema de Puntuación y Ranking
+### 2.1 Sistema de Puntuación y Ranking
 
 | Funcionalidad | Descripción | Prioridad |
 |---------------|-------------|-----------|
@@ -133,7 +175,7 @@
 | Ranking de usuarios | Cada usuario tiene un ranking dentro de su comunidad según participación en chats, cuestionarios y eventos. |  |
 | Ranking de cuestionarios | Los resultados de los cuestionarios pueden ser utilizados para clasificar a los participantes. |  |
 
-## 2. Gestión de Contenidos y Cuestionarios
+### 2.2 Gestión de Contenidos y Cuestionarios
 
 | Funcionalidad | Descripción | Prioridad |
 |---------------|-------------|-----------|
@@ -147,14 +189,14 @@
 | Chatbot de búsqueda de profesores | Asistente inteligente para encontrar profesores según tema. |  |
 | Tutorías programadas | Organización de sesiones individuales o grupales con profesores. |  |
 
-## 3. Videoconferencias y Aulas Virtuales
+### 2.3 Videoconferencias y Aulas Virtuales
 
 | Funcionalidad | Descripción | Prioridad |
 |---------------|-------------|-----------|
 | Google Meet integrado o herramienta similar | Videollamadas de hasta 60 minutos dentro de la plataforma. |  |
 | Grabación de sesiones | Guardado de videollamadas para revisión o subida a Classroom. |  |
 
-## 4. Eventos y Calendarios
+### 2.4 Eventos y Calendarios
 
 | Funcionalidad | Descripción | Prioridad |
 |---------------|-------------|-----------|
@@ -163,14 +205,14 @@
 | Recordatorios por email | Alertas automáticas de eventos importantes. |  |
 | Alarmas personalizables | Configuración de alarmas para eventos específicos. |  |
 
-## 5. Mapas y Ubicación
+### 2.5 Mapas y Ubicación
 
 | Funcionalidad | Descripción | Prioridad |
 |---------------|-------------|-----------|
 | Búsqueda por ubicación | Localización de profesores cercanos geográficamente. |  |
 | Mapa de meetings | Visualización de reuniones y eventos en Google Maps. |  |
 
-## 6. Comunidades
+### 2.6 Comunidades
 
 | Funcionalidad | Descripción | Prioridad |
 |---------------|-------------|-----------|
@@ -181,7 +223,7 @@
 | Anuncios y avisos | Mensajes importantes separados del chat principal. |  |
 | Sugerencias de comunidades | Recomendación de comunidades según intereses del usuario. |  |
 
-## 7. Notificaciones
+### 2.7 Notificaciones
 
 | Funcionalidad | Descripción | Prioridad |
 |---------------|-------------|-----------|
@@ -189,7 +231,7 @@
 | Preferencias de notificación por email | Personalización de qué notificaciones recibir por correo. |  |
 | Recordatorios de eventos | Alertas por correo de reuniones, exámenes o cuestionarios. |  |
 
-## 8. Autenticación y Seguridad
+### 2.8 Autenticación y Seguridad
 
 | Funcionalidad | Descripción | Prioridad |
 |---------------|-------------|-----------|
@@ -197,7 +239,7 @@
 | Permisos para Google Classroom | Autorización para integrar recursos y cursos de Classroom. |  |
 | Autenticación de doble factor | Seguridad adicional con segundo nivel de verificación. |  |
 
-## 9. Acceso Premium y Roles
+### 2.9 Acceso Premium y Roles
 
 | Funcionalidad | Descripción | Prioridad |
 |---------------|-------------|-----------|
@@ -205,7 +247,7 @@
 | Roles diferenciados | Distinción entre administradores, profesores y alumnos con permisos específicos. |  |
 | Múltiples administradores | Permite asignar varios responsables de la comunidad. |  |
 
-## 10. Funcionalidades Adicionales
+### 2.10 Funcionalidades Adicionales
 
 | Funcionalidad | Descripción | Prioridad |
 |---------------|-------------|-----------|

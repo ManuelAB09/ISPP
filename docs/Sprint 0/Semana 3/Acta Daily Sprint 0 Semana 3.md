@@ -28,13 +28,11 @@
 - Beatriz Gutierrez Arazo  
 - Manuel María Calderón Rodríguez
 
-
 ---
 
 ## Objetivo general de la reunión
 
 Realizar un segumiento del trabajo realizado por los distintos squads en el sprint 1 y priorizar el trabajo necesario a tener hecho para la presentación del jueves 19.
-
 
 ---
 
@@ -48,7 +46,6 @@ Manuel ha pedido que los líderes de cada squad digan cómo van las tareas.
 - Marketing: Nada nuevo.
 - RRSS: Redes sociales activas, encuestas de usuarios piloto.
 
-
 ### 2. Priorización del trabajo pendiente.
 Manuel ha aclarado cual es el trabajo prioritario restante a cada squad de cara a la siguiente presentación.
 - Todos: Diagrama de Gantt detallado del Sprint 1 y simplificado de los Sprints 2 y 3.
@@ -57,8 +54,6 @@ Manuel ha aclarado cual es el trabajo prioritario restante a cada squad de cara 
 - Marketing: Colaborar con la presentación.
 - RRSS: Seguir con las redes sociales y buscando usuarios piloto
 - Dirección: Hacer la presentación, redactar nuevo Commitment Agreement mejorado y evidenciar su cumplimiento. Además seguir con la gestión del equipo. 
-
-
 
 ## Observaciones adicionales
 No aplica.

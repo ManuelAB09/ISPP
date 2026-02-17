@@ -18,6 +18,59 @@
 
 ---
 
+## Índice
+
+- [Resumen Ejecutivo](#resumen-ejecutivo)
+- [Crédito Disponible](#crédito-disponible)
+  - [Azure for Students](#azure-for-students)
+  - [Servicios Gratuitos Incluidos](#servicios-gratuitos-incluidos)
+- [Desglose de Costes por Servicio](#desglose-de-costes-por-servicio)
+  - [Azure App Service (Aplicación Web)](#1-azure-app-service-aplicación-web)
+    - [Backend (Java/Spring Boot)](#backend-javaspring-boot)
+    - [Frontend (React/Nginx)](#frontend-reactnginx)
+    - [Alternativa: Azure Static Web Apps (Frontend)](#alternativa-azure-static-web-apps-frontend)
+  - [Azure Database for PostgreSQL](#2-azure-database-for-postgresql)
+    - [Alternativa más económica: Azure SQL Database](#alternativa-más-económica-azure-sql-database)
+  - [Servidor de Correos (SMTP)](#3-servidor-de-correos-smtp)
+    - [Opción A: Azure Communication Services (Email)](#opción-a-azure-communication-services-email)
+    - [Opción B: SendGrid (vía Azure Marketplace)](#opción-b-sendgrid-vía-azure-marketplace)
+    - [Opción C: SMTP Propio (VM)](#opción-c-smtp-propio-vm)
+  - [Otros Servicios Potenciales](#4-otros-servicios-potenciales)
+    - [Azure Blob Storage (Archivos/Imágenes)](#azure-blob-storage-archivosimágenes)
+    - [Azure Key Vault (Secretos)](#azure-key-vault-secretos)
+    - [Azure Monitor (Logs)](#azure-monitor-logs)
+- [Escenarios de Coste](#escenarios-de-coste)
+  - [Escenario 1: Mínimo Viable (Solo Desarrollo)](#escenario-1-mínimo-viable-solo-desarrollo)
+  - [Escenario 2: Recomendado (Desarrollo + Staging)](#escenario-2-recomendado-desarrollo--staging)
+  - [Escenario 3: Completo (Dev + Staging + "Prod")](#escenario-3-completo-dev--staging--prod)
+- [Estrategias de Ahorro](#estrategias-de-ahorro)
+  - [Apagar Recursos Fuera de Horario](#1-apagar-recursos-fuera-de-horario)
+  - [Usar Static Web Apps para Frontend](#2-usar-static-web-apps-para-frontend)
+  - [Compartir Base de Datos](#3-compartir-base-de-datos)
+  - [Usar Azure SQL Basic en lugar de PostgreSQL](#4-usar-azure-sql-basic-en-lugar-de-postgresql)
+  - [Eliminar Recursos No Utilizados](#5-eliminar-recursos-no-utilizados)
+- [Calculadora de Duración](#calculadora-de-duración)
+  - [Fórmula](#fórmula)
+  - [Ejemplos con $100 de crédito](#ejemplos-con-100-de-crédito)
+- [Configuración Recomendada para Estudiantes](#configuración-recomendada-para-estudiantes)
+  - [Arquitectura Optimizada](#arquitectura-optimizada)
+- [Monitoreo de Gastos](#monitoreo-de-gastos)
+  - [Configurar Alertas de Presupuesto](#1-configurar-alertas-de-presupuesto)
+  - [Ver Gastos Actuales](#2-ver-gastos-actuales)
+  - [Portal de Azure](#3-portal-de-azure)
+- [Plan de Contingencia](#plan-de-contingencia)
+  - [Si te quedas sin crédito:](#si-te-quedas-sin-crédito)
+- [Resumen de Costes Mensuales](#resumen-de-costes-mensuales)
+  - [Configuración Mínima Recomendada](#configuración-mínima-recomendada)
+  - [Duración Estimada con $100](#duración-estimada-con-100)
+- [Decisión Final del Equipo](#decisión-final-del-equipo)
+  - [Configuración Elegida](#configuración-elegida)
+  - [Justificación de las Decisiones](#justificación-de-las-decisiones)
+  - [Arquitectura Final](#arquitectura-final)
+- [Checklist de Optimización](#checklist-de-optimización)
+
+---
+
 ## Resumen Ejecutivo
 
 | Concepto | Valor |
