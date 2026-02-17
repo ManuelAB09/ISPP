@@ -19,6 +19,10 @@
   * Tutores fijan sus propias tarifas por hora/clases
 
   * No hay comisión directa por clase a los tutores (ellos conservan 100 % de sus ingresos)
+* **Tipo de competidor:** Competidor a nivel de negocio
+* **Factor común del mercado:** Mismo modelo de negocio
+* **Tipo de crecimiento:** Jugadores de nicho
+
 
 ## **2\. Funcionalidades actuales (¿qué tiene?)**
 
@@ -110,6 +114,21 @@ Hay una oportunidad enorme en:
 
 * Acompañar al alumno antes, durante y después de la clase.
 
+## **7\. Análisis de las 4P´s**
+### Product
+ - Producto más popular: Marketplace de clases particulares 1‑a‑1.
+ - Características: Catálogo enorme, perfiles de profesores, filtros, mensajería tras pagar. - Target: Estudiantes que buscan clases y profesores que buscan alumnos.
+ - Problema que resuelve: Encontrar profesores de cualquier materia y captar alumnos sin comisiones. 
+### Pricing
+ - Comparación: Suscripción para contactar profesores; precios fijados por el tutor.
+ - Descuentos: No suelen ofrecer promociones. 
+### Place 
+- Dónde compra el usuario: Web y app de Superprof. 
+- Canales recomendados: Marketplace, SEO, SEM, redes sociales.
+### Promotion 
+- Canales más efectivos: SEO por volumen de profesores y búsquedas locales. 
+- Mensaje: “Encuentra un profesor para cualquier cosa”. Funciona, pero el Pase Alumno genera mala reputación. 
+
 # COMPETIDOR: DISCORD/REDDIT
 
 ## **1\. Información general del producto / competidor**
@@ -133,6 +152,9 @@ Hay una oportunidad enorme en:
 * Suscripción premium (Discord Nitro/Reddit Gold)
 
 * Venta de mejoras cosméticas (emojis, calidad de *streaming*, personalización)
+* **Tipo de competidor:** Competidor aspiracional
+* **Factor común del mercado:** Mismo mercado
+* **Tipo de crecimiento:** Empresa consolidada
 
 ## **2\. Funcionalidades actuales (¿qué tiene?)**
 
@@ -220,43 +242,68 @@ Puntos clave destacados de mejora
 
 * Menos ruido social, más foco en aprender
 
+## **7. Análisis de las 4P´s**
+
+### Product
+ - Producto más popular: Servidores y comunidades con canales de texto, voz y vídeo.
+ - Características: Roles, permisos, bots, llamadas, streaming, comunidades escalables.
+ - Target: Gamers, comunidades online, grupos sociales, estudiantes informales.
+ - Problema que resuelve: Comunicación en tiempo real y creación de comunidades.
+
+### Pricing
+ - Comparación: Base gratuita muy potente; premium para extras cosméticos.
+ - Descuentos: Ocasionales, no relevantes.
+
+### Place
+ - Dónde está el usuario: Online, especialmente jóvenes y comunidades digitales.
+ - Canales recomendados: App stores, web, comunidades existentes.
+
+### Promotion
+ - Canales más efectivos: Viralidad, boca‑oreja, creadores de contenido.
+ - Mensaje: “Tu lugar para hablar”. Muy alineado con su audiencia.
+
+
 # COMPETIDOR: LINKEDIN
 
 ## **1\. Información general del producto / competidor**
 
-**Nombre:** LinkedIn
+* **Nombre:** LinkedIn
 
-**Modelo:** Red profesional global \+ plataforma de contenido \+ eventos \+ formación \+ reclutamiento
+* **Modelo:** Red profesional global \+ plataforma de contenido \+ eventos \+ formación \+ reclutamiento
 
-**Segmento:** Networking profesional / desarrollo de carrera / conocimiento profesional / comunidad experta
+* **Segmento:** Networking profesional / desarrollo de carrera / conocimiento profesional / comunidad experta
 
-**Clientes objetivo:**
+* **Clientes objetivo:**
 
-* Profesionales que buscan empleo, visibilidad o networking 
+  * Profesionales que buscan empleo, visibilidad o networking 
 
-* Empresas que buscan talento 
+  * Empresas que buscan talento 
 
-* Freelancers y expertos que construyen marca personal
+  * Freelancers y expertos que construyen marca personal
 
-* Creadores de contenido profesional
+  * Creadores de contenido profesional
 
-* Personas que buscan aprender habilidades laborales
+  * Personas que buscan aprender habilidades laborales
 
-* Comunidades profesionales y educativas informales
+  * Comunidades profesionales y educativas informales
 
-**Modelo de monetización:**
+* **Modelo de monetización:**
 
-* Suscripciones Premium (Career, Business, Sales Navigator, Recruiter)
+  * Suscripciones Premium (Career, Business, Sales Navigator, Recruiter)
 
-* LinkedIn Learning (cursos bajo demanda)
+  * LinkedIn Learning (cursos bajo demanda)
 
-* Publicidad B2B y B2C
+  * Publicidad B2B y B2C
 
-* Herramientas de reclutamiento para empresas
+  * Herramientas de reclutamiento para empresas
 
-* Eventos y promoción de contenido patrocinado
+  * Eventos y promoción de contenido patrocinado
 
-* Soluciones corporativas de formación y talento
+  * Soluciones corporativas de formación y talento
+* **Tipo de competidor:** Competidor aspiracional
+* **Factor común del mercado:** Mismo mercado
+* **Tipo de crecimiento:** Empresa consolidada
+
 
 ## **2\. Funcionalidades actuales (¿qué tiene?)**
 
@@ -346,6 +393,27 @@ Puntos clave destacados de mejora
 
 * Creación de vínculos entre alumnos, se fomenta el aprendizaje ameno como una actividad social, no individual
 
+## **7. Análisis de las 4P´s**
+
+### Product
+ - Producto más popular: Red profesional + contenido + networking + formación.
+ - Características: Identidad profesional, reputación, contenido experto, eventos, LinkedIn Learning.
+ - Target: Profesionales, empresas, freelancers, creadores de contenido.
+ - Problema que resuelve: Visibilidad profesional y acceso a expertos.
+
+### Pricing
+ - Comparación: Freemium con múltiples niveles premium; más caro que redes sociales.
+ - Descuentos: Pruebas gratuitas ocasionales.
+
+### Place
+ - Dónde está el usuario: Web y app móvil.
+ - Canales recomendados: SEO, contenido, partnerships corporativos.
+
+### Promotion
+ - Canales más efectivos: Contenido orgánico, influencers profesionales, eventos.
+ - Mensaje: “Conecta con oportunidades”. Muy alineado con su público.
+
+
 # COMPETIDOR: WUOLAH
 
 ## **1\. Información general del producto / competidor**
@@ -367,6 +435,10 @@ Puntos clave destacados de mejora
   * Publicidad y *partnerships:* banners, correos patrocinados y acuerdos con marcas dirigidas al público universitario (bancos, telecomunicaciones, etc.).
 
   * Licenciamiento B2B: venta de su biblioteca de contenidos o tecnología a instituciones educativas
+
+* **Tipo de competidor:** Competidor a nivel de negocio
+* **Factor común del mercado:** Mismo mercado
+* **Tipo de crecimiento:** Jugadores de nicho
 
 ## **2\. Funcionalidades actuales (¿qué tiene?)**
 
@@ -434,6 +506,27 @@ En definitiva, Wuolah es una **herramienta de contenido unidireccional**, lo cua
 * Más contacto: se promueve el contacto entre usuarios en nuestra plataforma, en vez de que solo se puedan subir apuntes sin siquiera hablar con quienes lo visualizan o quien lo ha subido.  
 * Freemium más permisivo: nuestra aplicación no contendrá anuncios, lo que le hará mucho más atractiva respecto a Wuolah. 
 
+## **7. Análisis de las 4P´s**
+
+### Product
+ - Producto más popular: Biblioteca masiva de apuntes universitarios.
+ - Características: Apuntes por universidad/asignatura, valoraciones, monetización, descargas gratuitas limitadas.
+ - Target: Estudiantes universitarios.
+ - Problema que resuelve: Acceso rápido a apuntes reales y específicos.
+
+### Pricing
+ - Comparación: Pago por documento + suscripción premium; modelo freemium con anuncios.
+ - Descuentos: No suelen ofrecer.
+
+### Place
+ - Dónde está el usuario: Web y app móvil.
+ - Canales recomendados: SEO por asignaturas, redes sociales universitarias, marketing en campus.
+
+### Promotion
+ - Canales más efectivos: TikTok, Instagram, campus marketing.
+ - Mensaje: “Hecho por estudiantes para estudiantes”. Muy potente.
+
+
 # COMPETIDOR: MICROSOFT TEAMS
 
 ## **1\. Información general del producto / competidor**
@@ -451,6 +544,10 @@ En definitiva, Wuolah es una **herramienta de contenido unidireccional**, lo cua
   * Suscripción: Microsoft Teams se ofrece tanto fuera como dentro del paquete empresarial de Microsoft 365 y se paga en función de los usuarios a los que se quiera dar de alta, excepto en los casos en los que el usuario sea un particular, donde es totalmente gratuito.
 
   * Funcionalidades premium: En función de las funcionalidades extras que se quieran usar (IA, seguridad o métricas) podrán existir cargos adicionales.
+* **Tipo de competidor:** Competidor aspiracional
+* **Factor común del mercado:** Misma audiencia objetivo
+* **Tipo de crecimiento:** Empresa consolidada
+
 
 ## **2\. Funcionalidades actuales (¿qué tiene?)**
 
@@ -499,6 +596,27 @@ En definitiva, Microsoft Teams es una **herramienta para la productividad en org
 * Más contacto: se promueve el contacto entre usuarios en nuestra plataforma. En vez de que solo se comuniquen las personas en función de su necesidad, también se comunicarán en función de su objetivo.  
 * Gestión segura de pagos y transacciones dentro de la aplicación, manteniendo el foco en el aprendizaje de los usuarios.
 
+## **7. Análisis de las 4P´s**
+
+### Product
+ - Producto más popular: Plataforma de colaboración (chat, videollamadas, archivos).
+ - Características: Integración con Microsoft 365, equipos, canales, permisos, grabaciones.
+ - Target: Empresas, centros educativos, equipos de trabajo.
+ - Problema que resuelve: Comunicación y productividad en organizaciones.
+
+### Pricing
+ - Comparación: Incluido en Microsoft 365; competitivo frente a Slack/Zoom.
+ - Descuentos: Dependen del paquete Microsoft 365.
+
+### Place
+ - Dónde está el usuario: Empresas e instituciones educativas.
+ - Canales recomendados: Distribución corporativa, licencias institucionales.
+
+### Promotion
+ - Canales más efectivos: Ecosistema Microsoft, acuerdos corporativos.
+ - Mensaje: “Colabora en un solo lugar”. Muy alineado con productividad.
+
+
 # COMPETIDOR: GOOGLE CLASSROOM
 
 ## **1\. Información general del producto / competidor**
@@ -516,6 +634,10 @@ En definitiva, Microsoft Teams es una **herramienta para la productividad en org
   * Suscripción: Centros educativos (colegios, institutos, universidades), profesores, administradores educativos y estudiantes dentro de instituciones académicas.
 
   * Funcionalidades premium: Existen versiones de pago de Google Workspace for Education que incluyen herramientas avanzadas como analíticas mejoradas, seguridad avanzada, gestión administrativa ampliada y funciones basadas en IA.
+* **Tipo de competidor:** Competidor aspiracional
+* **Factor común del mercado:** Mismo mercado
+* **Tipo de crecimiento:** Empresa consolidada
+
 
 ## **2\. Funcionalidades actuales (¿qué tiene?)**
 
@@ -573,3 +695,23 @@ En definitiva, Google Classroom es una herramienta centrada en la forma de ense�
 * Creación de experiencias híbridas online y presenciales gracias a funcionalidades como meetings con visibilidad en mapa.  
 * Mayor dinamismo en la formación de grupos y adaptación rápida a objetivos concretos de aprendizaje, frente a la estructura rígida de clases tradicionales.  
 * Incorporación de sistemas de monetización y pagos seguros enfocados a la educación colaborativa y autónoma.
+
+## **7. Análisis de las 4P´s**
+
+### Product
+ - Producto más popular: LMS para gestión de clases, tareas y evaluaciones.
+ - Características: Cursos, tareas, calificaciones, integración con Google Workspace.
+ - Target: Colegios, institutos, universidades, profesores y estudiantes.
+ - Problema que resuelve: Organización académica formal.
+
+### Pricing
+ - Comparación: Base gratuita; versiones premium para instituciones.
+ - Descuentos: No aplica.
+
+### Place
+ - Dónde está el usuario: Centros educativos.
+ - Canales recomendados: Integración institucional, Google Workspace.
+
+### Promotion
+ - Canales más efectivos: Adopción institucional, reputación Google.
+ - Mensaje: “Organiza tu aula fácilmente”. Muy alineado con educación formal.
