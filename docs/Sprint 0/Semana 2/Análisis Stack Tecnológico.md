@@ -29,8 +29,9 @@
 8. [Gestión de Dependencias y Build](#8-gestión-de-dependencias-y-build)
 9. [Integraciones y Servicios Externos](#9-integraciones-y-servicios-externos)
 10. [Resumen de Decisiones](#10-resumen-de-decisiones)
-11. [Plan de Contingencia](#11-plan-de-contingencia)
-12. [Conclusiones](#12-conclusiones)
+11. [Análisis de Riesgos del Equipo](#11-análisis-de-riesgos-del-equipo)
+12. [Plan de Contingencia](#12-plan-de-contingencia)
+13. [Conclusiones](#13-conclusiones)
 
 ---
 
@@ -280,15 +281,43 @@ Para cada categoría tecnológica se han evaluado las siguientes dimensiones:
 
 | Ventajas | Riesgos |
 |----------|---------|
-| $100 USD gratis para estudiantes (Azure for Students) | Sin experiencia previa del equipo en Azure |
+| $100 USD gratis para estudiantes (Azure for Students) | **Sin experiencia previa del equipo en Azure** |
 | Ecosistema completo y consistente (App, DB, Storage, Email) | Créditos pueden agotarse antes de lo esperado |
-| Azure Database for PostgreSQL con backups automáticos | Curva de aprendizaje para configuración inicial |
+| Azure Database for PostgreSQL con backups automáticos | **Curva de aprendizaje significativa para configuración inicial** |
 | Blob Storage para archivos adjuntos | Costes pueden escalar si no se monitorizan |
-| Azure Communication Services para emails transaccionales | Complejidad de la plataforma |
+| Azure Communication Services para emails transaccionales | **Complejidad de la plataforma (portal, CLI, ARM templates)** |
 | Despliegue continuo integrado con GitHub Actions | |
 | SSL/TLS gratuito | |
 | Escalado vertical y horizontal | |
 | Sin hibernación en tiers básicos | |
+
+#### Desafíos Específicos de Azure para el Equipo
+
+Dado que **ningún miembro del equipo tiene experiencia previa con Azure**, se identifican los siguientes desafíos concretos:
+
+| Área | Desafío | Impacto | Mitigación |
+|------|---------|---------|------------|
+| **Portal Azure** | Interfaz compleja con cientos de servicios | Alto - Tiempo perdido navegando | Usar Azure CLI en lugar del portal cuando sea posible |
+| **Nomenclatura** | Términos diferentes a otros clouds (Resource Groups, App Service Plans, Deployment Slots) | Medio - Confusión inicial | Crear glosario interno de términos Azure |
+| **Configuración App Service** | Application Settings, Connection Strings, Deployment Center | Alto - Errores de configuración | Seguir tutoriales oficiales paso a paso, documentar cada paso |
+| **PostgreSQL Flexible Server** | Networking (VNet, firewall rules), parámetros de servidor | Alto - Problemas de conectividad | Empezar con "Allow public access" para desarrollo |
+| **Deployment Slots** | No aplica en B1 (requiere S1 ~€58/mes); se usan 2 Web Apps como alternativa | Bajo - Concepto descartado | Documentado en CI_CD.md y Guia_Despliegue_Azure.md |
+| **GitHub Actions + Azure** | Service Principal, RBAC, secretos de conexión | Alto - Bloquea CI/CD si falla | Seguir guía oficial de Microsoft, reservar tiempo extra |
+| **Monitoreo de costes** | Cost Management, alertas de presupuesto, métricas | Medio - Riesgo de gastar créditos | Configurar alertas desde el día 1 |
+| **Logs y diagnóstico** | Application Insights, Log Analytics, métricas | Medio - Debugging más difícil | Habilitar logs básicos, aprender a usarlos progresivamente |
+
+#### Estimación de Tiempo Extra por Curva de Aprendizaje
+
+| Tarea | Sin experiencia Azure | Con experiencia Azure | Diferencia |
+|-------|----------------------|----------------------|------------|
+| Crear App Service + configurar | 4-6 horas | 30 min | +5 horas |
+| Configurar PostgreSQL | 3-4 horas | 20 min | +3.5 horas |
+| Configurar GitHub Actions CD | 4-5 horas | 1 hora | +4 horas |
+| Configurar 2 Web Apps (staging + prod) | 2-3 horas | 15 min | +2.5 horas |
+| Troubleshooting inicial | 8-10 horas | 2 horas | +8 horas |
+| **Total Sprint 1** | **~25 horas extra** | - | - |
+
+> **Nota**: Este tiempo extra está contemplado en el Sprint 1 de Arquitectura (ver Planning_Sprint_Arquitectura.md).
 
 #### Render
 
@@ -312,13 +341,13 @@ Para cada categoría tecnológica se han evaluado las siguientes dimensiones:
 
 | Servicio | Tier | Coste Estimado/Mes |
 |----------|------|-------------------|
-| App Service | B1 (Básico) | ~$13 |
-| Azure Database for PostgreSQL | Burstable B1ms | ~$15 |
-| Blob Storage | 5GB | ~$0.10 |
-| Communication Services | 1000 emails | ~$0.25 |
-| **Total estimado** | | **~$28-30/mes** |
+| App Service | B1 (Básico) | ~€11 |
+| Azure Database for PostgreSQL | Burstable B1ms | ~€12.50 |
+| Blob Storage | 5GB | ~€0.10 |
+| Communication Services | 1000 emails | ~€0.25 |
+| **Total estimado** | | **~€23-24/mes** |
 
-Con $100 de créditos: **~3-4 meses de desarrollo/testing**
+Con €83.72 de créditos ($100 USD): **~3.5 meses de desarrollo/testing**
 
 ### 6.5 Decisión: Azure como Plataforma Principal
 
@@ -648,20 +677,40 @@ Los meetings pueden mostrarse en un mapa (RF-39, RF-40, RF-47).
 
 | Criterio | Google Maps | Mapbox | OSM + Leaflet |
 |----------|-------------|--------|---------------|
+| **Experiencia equipo** | **Ninguna** | Ninguna | Ninguna |
 | Coste | $200 crédito/mes gratis | 50k cargas/mes gratis | Gratis |
 | Calidad datos | Alta | Alta | Variable por zona |
 | POIs (bibliotecas, etc.) | Sí | Limitado | Limitado |
 | Integración React | Alta (librerías maduras) | Alta | Media |
 | Geocoding | Incluido | Incluido | Requiere servicio externo |
+| Documentación | Excelente | Buena | Variable |
+
+#### Riesgos y Ventajas
+
+**Google Maps API**
+| Ventajas | Riesgos |
+|----------|---------|
+| Documentación extensa y ejemplos | Sin experiencia previa del equipo |
+| $200/mes de crédito gratuito | Requiere aprender la API y configuración |
+| Datos de POIs (bibliotecas, cafeterías) | Posibles costes si se excede el tier gratuito |
+| Librerías React maduras (@react-google-maps/api) | Configuración de API Key y restricciones |
+| Geocoding y Places incluidos | |
 
 #### Decisión: Google Maps API
 
 **Justificación:**
 - $200 de crédito mensual gratuito cubre el uso esperado
 - Datos de POIs (bibliotecas, espacios de estudio) más completos
-- Excelente integración con React (react-google-maps)
+- Mejor documentación que alternativas (importante dado que el equipo no tiene experiencia)
+- Librería `@react-google-maps/api` bien mantenida con buenos tutoriales
 - Consistente con otras integraciones Google (Classroom)
 - Geocoding y Places API incluidos
+
+**Nota sobre experiencia**: Aunque el equipo no ha trabajado con Google Maps API, se considera riesgo medio (no alto) porque:
+- La documentación de Google es excelente
+- La librería de React tiene muchos ejemplos
+- Es una integración aislada (no afecta al core de la app)
+- Se puede implementar progresivamente
 
 ---
 
@@ -720,9 +769,172 @@ Es requisito MVP integrar Google Classroom para gestión de material y tareas (R
 
 ---
 
-## 11. Plan de Contingencia
+## 11. Análisis de Riesgos del Equipo
 
-### 11.1 Escenario: Agotamiento de Créditos Azure
+### 11.1 Matriz de Experiencia del Equipo
+
+| Tecnología | Experiencia | Nivel | Riesgo |
+|------------|-------------|-------|--------|
+| React + JavaScript | Sí | Alta | Bajo |
+| Spring Boot + Java | Sí | Alta | Bajo |
+| PostgreSQL | Sí | Alta | Bajo |
+| Docker | Sí | Media | Medio-Bajo |
+| GitHub Actions | Sí | Media | Medio-Bajo |
+| Maven | Sí | Alta | Bajo |
+| **Azure (todos los servicios)** | No | Ninguna | **Alto** |
+| Stripe API | Sí | Media | Medio-Bajo |
+| **Google Maps API** | No | Ninguna | **Medio** |
+| Google Classroom API | No | Baja | Medio |
+| WebSocket/STOMP | Parcial | Baja | Medio |
+
+### 11.2 Análisis Detallado por Categoría de Riesgo
+
+#### Riesgo Alto: Azure
+
+**Situación**: Ningún miembro del equipo ha trabajado con Azure anteriormente. Es la única tecnología del stack donde el equipo parte de cero.
+
+**Problemas potenciales**:
+
+| Problema | Probabilidad | Impacto | Descripción |
+|----------|--------------|---------|-------------|
+| Configuración incorrecta de App Service | Alta | Alto | Variables de entorno mal configuradas, puertos incorrectos, problemas con Docker |
+| Problemas de conectividad con PostgreSQL | Alta | Alto | Firewall rules, connection strings, SSL certificates |
+| Fallos en pipeline CI/CD | Alta | Alto | Service Principal mal configurado, permisos RBAC insuficientes |
+| Gasto excesivo de créditos | Media | Alto | No configurar alertas, dejar recursos encendidos innecesariamente |
+| Tiempo de resolución de problemas elevado | Alta | Medio | Desconocimiento de herramientas de diagnóstico de Azure |
+| Conflictos de recursos entre 2 Web Apps | Media | Medio | Ambas apps comparten 1 vCPU y 1.75 GB en plan B1, riesgo de saturación |
+
+**Mitigaciones implementadas**:
+
+| Mitigación | Estado | Responsable |
+|------------|--------|-------------|
+| Reservar 25 horas extra en Sprint 1 para curva de aprendizaje | Planificado | Squad Arquitectura |
+| Documentar cada paso de configuración | Pendiente | Squad Arquitectura |
+| Configurar alertas de coste desde el día 1 | Pendiente | Squad Arquitectura |
+| Crear entorno de prueba antes de staging/prod | Pendiente | Squad Arquitectura |
+| Tener Plan B con Render preparado | Documentado | Squad Arquitectura |
+
+**Recursos de aprendizaje recomendados**:
+
+| Recurso | Tipo | Duración | URL |
+|---------|------|----------|-----|
+| Azure Fundamentals (AZ-900) | Curso gratuito | 4-6 horas | Microsoft Learn |
+| Deploy Spring Boot to Azure | Tutorial | 1-2 horas | learn.microsoft.com |
+| GitHub Actions + Azure | Tutorial | 1 hora | docs.github.com |
+| Azure for Students | Documentación | 30 min | azure.microsoft.com/students |
+
+#### Riesgo Medio: Google Maps API
+
+**Situación**: El equipo no ha trabajado con Google Maps API anteriormente. Necesario para mostrar meetings en mapa (RF-39, RF-40, RF-47).
+
+**Problemas potenciales**:
+
+| Problema | Probabilidad | Impacto |
+|----------|--------------|--------|
+| Configuración de API Key y restricciones | Media | Medio |
+| Integración con React (react-google-maps) | Media | Medio |
+| Geocoding y Places API | Media | Bajo |
+| Costes si se excede tier gratuito ($200/mes) | Baja | Medio |
+
+**Mitigaciones**:
+- Usar librería `@react-google-maps/api` (bien documentada)
+- Restringir API Key por dominio para evitar uso no autorizado
+- Implementar caché de geocoding para reducir llamadas
+- Monitorear uso en Google Cloud Console
+
+**Recursos de aprendizaje**:
+| Recurso | Duración |
+|---------|----------|
+| Google Maps Platform Documentation | 2-3 horas |
+| react-google-maps tutorial | 1-2 horas |
+| Codelabs de Google Maps | 1-2 horas |
+
+#### Riesgo Medio: Google Classroom API
+
+**Situación**: El equipo no ha integrado Google Classroom anteriormente. Requiere OAuth 2.0 y verificación de app.
+
+**Problemas potenciales**:
+
+| Problema | Probabilidad | Impacto |
+|----------|--------------|--------|
+| Proceso de verificación de app tarda semanas | Alta | Alto - Bloquea funcionalidad |
+| Scopes OAuth2 insuficientes | Media | Medio |
+| Límites de cuota (10k peticiones/100s) | Baja | Bajo |
+
+**Mitigaciones**:
+- Iniciar proceso de verificación de app en Sprint 2 (no esperar a tener el código listo)
+- Usar cuenta de servicio para testing mientras se verifica
+- Implementar caché de datos de Classroom para reducir peticiones
+
+#### Riesgo Medio: WebSocket/STOMP
+
+**Situación**: Experiencia parcial del equipo. Spring STOMP es conocido pero no en producción.
+
+**Problemas potenciales**:
+
+| Problema | Probabilidad | Impacto |
+|----------|--------------|--------|
+| Gestión de sesión WebSocket | Media | Medio |
+| Escalabilidad con múltiples instancias | Baja | Alto |
+| Reconexiones y heartbeats | Media | Medio |
+
+**Mitigaciones**:
+- Empezar con implementación básica single-instance
+- Redis como message broker si se necesita escalar
+- Documentar para migrar a Pusher/Ably si hay problemas
+
+#### Riesgo Bajo: React, Spring Boot, PostgreSQL
+
+**Situación**: El equipo tiene experiencia sólida con estas tecnologías.
+
+**Ventajas de esta base sólida**:
+- Permite dedicar tiempo a aprender Azure sin retrasos en desarrollo core
+- Debugging y troubleshooting más rápido
+- Estimaciones de tiempo más precisas
+- Menos errores en código de negocio
+- Onboarding de nuevos miembros más fácil
+
+### 11.3 Impacto en Timeline del Proyecto
+
+| Sprint | Tecnología crítica | Riesgo | Tiempo buffer |
+|--------|-------------------|--------|---------------|
+| Sprint 1 | Azure (App Service, PostgreSQL, CD) | Alto | +25 horas |
+| Sprint 2 | Azure (PostgreSQL avanzado, monitoring) | Medio | +8 horas |
+| Sprint 3 | Azure (optimización, costes) | Bajo | +4 horas |
+| Sprint N | Google Maps API | Medio | +6 horas |
+| Sprint N | Google Classroom API | Medio | +10 horas |
+| Sprint N | WebSocket/STOMP | Medio | +6 horas |
+
+### 11.4 Estrategia de Reducción de Riesgos
+
+```
+┌───────────────────────────────────────────────────────────┐
+│           ESTRATEGIA DE REDUCCIÓN DE RIESGOS              │
+├───────────────────────────────────────────────────────────┤
+│                                                           │
+│  1. CONOCIMIENTO SÓLIDO (React, Spring, PostgreSQL)       │
+│     └──→ Desarrollo core sin bloqueos                     │
+│     └──→ Estimaciones precisas                            │
+│                                                           │
+│  2. APRENDIZAJE FOCALIZADO (Azure)                        │
+│     └──→ Sprint 1 dedicado a infraestructura              │
+│     └──→ Documentar cada configuración                    │
+│     └──→ Pair programming en tareas Azure                 │
+│                                                           │
+│  3. PLAN DE CONTINGENCIA LISTO (Render)                   │
+│     └──→ El equipo YA conoce Render                       │
+│     └──→ Migración posible en <4 horas si falla Azure     │
+│                                                           │
+│  4. INTEGRACIONES PROGRESIVAS                             │
+│     └──→ Google Classroom: Iniciar verificación pronto    │
+└───────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 12. Plan de Contingencia
+
+### 12.1 Escenario: Agotamiento de Créditos Azure
 
 **Trigger:** Créditos de Azure se agotan antes de finalizar el proyecto o surgen problemas técnicos con Azure.
 
@@ -736,7 +948,7 @@ Es requisito MVP integrar Google Classroom para gestión de material y tareas (R
 | **Almacenamiento** | AWS S3 / Cloudflare R2 | R2 sin egress fees, S3 tier gratuito |
 | **Email** | Resend / SendGrid | APIs externas con tier gratuito |
 
-### 11.2 Mitigaciones para Render
+### 12.2 Mitigaciones para Render
 
 | Problema | Mitigación |
 |----------|------------|
@@ -745,7 +957,7 @@ Es requisito MVP integrar Google Classroom para gestión de material y tareas (R
 | Problemas con puertos SMTP | Usar API REST de Resend o SendGrid en lugar de SMTP directo |
 | Cold start (~30s) | Aceptable para MVP, optimizar con lazy loading |
 
-### 11.3 Comparativa BD Alternativas
+### 12.3 Comparativa BD Alternativas
 
 | Servicio | Tier Gratuito | Limitaciones |
 |----------|---------------|--------------|
@@ -756,7 +968,7 @@ Es requisito MVP integrar Google Classroom para gestión de material y tareas (R
 
 **Recomendación de Plan B para BD:** Neon por balance entre capacidad y fiabilidad.
 
-### 11.4 Comparativa Almacenamiento Alternativo
+### 12.4 Comparativa Almacenamiento Alternativo
 
 | Servicio | Tier Gratuito | Ventajas |
 |----------|---------------|----------|
@@ -766,7 +978,7 @@ Es requisito MVP integrar Google Classroom para gestión de material y tareas (R
 
 **Recomendación de Plan B para Storage:** Cloudflare R2 por el tier gratuito generoso y sin costes de egress.
 
-### 11.5 Servicios de Email Alternativos
+### 12.5 Servicios de Email Alternativos
 
 | Servicio | Tier Gratuito | Integración |
 |----------|---------------|-------------|
@@ -778,7 +990,7 @@ Es requisito MVP integrar Google Classroom para gestión de material y tareas (R
 
 ---
 
-## 12. Conclusiones
+## 13. Conclusiones
 
 El stack tecnológico seleccionado prioriza la **experiencia previa del equipo** como factor principal, lo que permitirá:
 
@@ -809,7 +1021,7 @@ El **Plan B con Render + Neon + Cloudflare R2 + Resend** está documentado y lis
                                    ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                       FRONTEND (React + JS)                             │
-│                      Azure App Service / Render                         │
+│                    Azure Static Web Apps / Render                       │
 └─────────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼
