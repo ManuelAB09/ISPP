@@ -1,5 +1,61 @@
 **Análisis de Funcionalidades y Diferenciación**
 
+# Índice
+
+- [SUPERPROF](#competidor-superprof)
+  - [1. Información general](#1-información-general-del-producto--competidor)
+  - [2. Funcionalidades actuales](#2-funcionalidades-actuales-qué-tiene)
+  - [3. Funcionalidades ausentes](#3-funcionalidades-ausentes-qué-no-tiene)
+  - [4. Funcionalidades mejorables](#4-funcionalidades-mejorables)
+  - [5. Diferenciadores actuales](#5-diferenciadores-actuales)
+  - [6. Oportunidades](#6-oportunidades-para-destacarnos)
+  - [7. Análisis de las 4P´s](#7-análisis-de-las-4p´s)
+
+- [DISCORD / REDDIT](#competidor-discordreddit)
+  - [1. Información general](#1-información-general-del-producto--competidor-1)
+  - [2. Funcionalidades actuales](#2-funcionalidades-actuales-qué-tiene-1)
+  - [3. Funcionalidades ausentes](#3-funcionalidades-ausentes-qué-no-tiene-1)
+  - [4. Funcionalidades mejorables](#4-funcionalidades-mejorables-1)
+  - [5. Diferenciadores actuales](#5-diferenciadores-actuales-1)
+  - [6. Oportunidades](#6-oportunidades-para-destacarnos-1)
+  - [7. Análisis de las 4P´s](#7-análisis-de-las-4p´s-1)
+
+- [LINKEDIN](#competidor-linkedin)
+  - [1. Información general](#1-información-general-del-producto--competidor-2)
+  - [2. Funcionalidades actuales](#2-funcionalidades-actuales-qué-tiene-2)
+  - [3. Funcionalidades ausentes](#3-funcionalidades-ausentes-qué-no-tiene-2)
+  - [4. Funcionalidades mejorables](#4-funcionalidades-mejorables-2)
+  - [5. Diferenciadores actuales](#5-diferenciadores-actuales-2)
+  - [6. Oportunidades](#6-oportunidades-para-destacarnos-2)
+  - [7. Análisis de las 4P´s](#7-análisis-de-las-4p´s-2)
+
+- [WUOLAH](#competidor-wuolah)
+  - [1. Información general](#1-información-general-del-producto--competidor-3)
+  - [2. Funcionalidades actuales](#2-funcionalidades-actuales-qué-tiene-3)
+  - [3. Funcionalidades ausentes](#3-funcionalidades-ausentes-qué-no-tiene-3)
+  - [4. Funcionalidades mejorables](#4-funcionalidades-mejorables-3)
+  - [5. Diferenciadores actuales](#5-diferenciadores-actuales-3)
+  - [6. Oportunidades](#6-oportunidades-para-destacarnos-3)
+  - [7. Análisis de las 4P´s](#7-análisis-de-las-4p´s-3)
+
+- [MICROSOFT TEAMS](#competidor-microsoft-teams)
+  - [1. Información general](#1-información-general-del-producto--competidor-4)
+  - [2. Funcionalidades actuales](#2-funcionalidades-actuales-qué-tiene-4)
+  - [3. Funcionalidades ausentes](#3-funcionalidades-ausentes-qué-no-tiene-4)
+  - [4. Funcionalidades mejorables](#4-funcionalidades-mejorables-4)
+  - [5. Diferenciadores actuales](#5-diferenciadores-actuales-4)
+  - [6. Oportunidades](#6-oportunidades-para-destacarnos-4)
+  - [7. Análisis de las 4P´s](#7-análisis-de-las-4p´s-4)
+
+- [GOOGLE CLASSROOM](#competidor-google-classroom)
+  - [1. Información general](#1-información-general-del-producto--competidor-5)
+  - [2. Funcionalidades actuales](#2-funcionalidades-actuales-qué-tiene-5)
+  - [3. Funcionalidades ausentes](#3-funcionalidades-ausentes-qué-no-tiene-5)
+  - [4. Funcionalidades mejorables](#4-funcionalidades-mejorables-5)
+  - [5. Diferenciadores actuales](#5-diferenciadores-actuales-5)
+  - [6. Oportunidades](#6-oportunidades-para-destacarnos-5)
+  - [7. Análisis de las 4P´s](#7-análisis-de-las-4p´s-5)
+
 # COMPETIDOR: SUPERPROF
 
 ## **1\. Información general del producto / competidor**
