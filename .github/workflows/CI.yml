@@ -1,0 +1,332 @@
+name: CI - Integración Continua
+
+# ════════════════════════════════════════════════════════════
+# Se ejecuta en cada push a cualquier rama del proyecto.
+# Jobs:
+#   1. conventional-commits  → Valida mensajes de commit
+#   2. lint-backend           → Checkstyle (Java)
+#   3. lint-frontend          → ESLint (React/JS)
+#   4. test-backend           → JUnit + JaCoCo + PostgreSQL
+#   5. test-frontend          → Jest + coverage
+#   6. sonarqube              → Análisis de calidad (trunk/main)
+# ════════════════════════════════════════════════════════════
+
+on:
+  push:
+    branches:
+      - main
+      - trunk
+      - 'feature/**'
+      - 'bugfix/**'
+      - 'hotfix/**'
+      - 'doc/**'
+      - 'test/**'
+
+permissions:
+  contents: read
+
+# ────────────────────────────────────────────────────────────
+jobs:
+
+  # ──────────────────────────────────────────
+  # 1. Validar Conventional Commits
+  # ──────────────────────────────────────────
+  conventional-commits:
+    name: Conventional Commits
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validar mensajes de commit
+        run: |
+          TYPES_RE='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-zA-Z0-9._\/-]+\))?(!)?: .+'
+          MERGE_RE='^Merge '
+          REVERT_RE='^Revert '
+          ERRORS=0
+
+          # Determinar rango de commits a validar
+          BEFORE="${{ github.event.before }}"
+          if [[ "$BEFORE" == "0000000000000000000000000000000000000000" ]]; then
+            # Rama nueva: comparar con trunk (o main si trunk no existe)
+            BASE=$(git merge-base origin/trunk HEAD 2>/dev/null \
+                || git merge-base origin/main HEAD 2>/dev/null \
+                || echo "")
+            if [[ -n "$BASE" ]]; then
+              COMMITS=$(git log --format="%H" "${BASE}..HEAD")
+            else
+              COMMITS=$(git log --format="%H" -1)
+            fi
+          else
+            COMMITS=$(git log --format="%H" "${BEFORE}..${{ github.sha }}")
+          fi
+
+          for SHA in $COMMITS; do
+            MSG=$(git log --format="%s" -1 "$SHA")
+
+            # Permitir merges y reverts automáticos de Git
+            if [[ "$MSG" =~ $MERGE_RE ]] || [[ "$MSG" =~ $REVERT_RE ]]; then
+              continue
+            fi
+
+            if ! [[ "$MSG" =~ $TYPES_RE ]]; then
+              echo "ERROR: Commit $SHA no sigue Conventional Commits:"
+              echo "  -> \"$MSG\""
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+
+          if [[ $ERRORS -gt 0 ]]; then
+            echo ""
+            echo "Se encontraron $ERRORS commit(s) inválidos."
+            echo "Formato: tipo(scope): descripción"
+            echo "Tipos:   feat | fix | docs | style | refactor | perf | test | build | ci | chore | revert"
+            exit 1
+          fi
+
+          echo "Todos los commits siguen Conventional Commits."
+
+  # ──────────────────────────────────────────
+  # 2. Lint Backend — Checkstyle (Java)
+  # ──────────────────────────────────────────
+  lint-backend:
+    name: Lint Backend (Checkstyle)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Maven
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('backend/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+
+      - name: Ejecutar Checkstyle
+        working-directory: backend
+        run: mvn checkstyle:check -B
+
+  # ──────────────────────────────────────────
+  # 3. Lint Frontend — ESLint (React/JS)
+  # ──────────────────────────────────────────
+  lint-frontend:
+    name: Lint Frontend (ESLint)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias
+        working-directory: frontend
+        run: npm ci
+
+      - name: Ejecutar ESLint
+        working-directory: frontend
+        run: npm run lint
+
+  # ──────────────────────────────────────────
+  # 4. Tests Backend — JUnit + JaCoCo
+  # ──────────────────────────────────────────
+  test-backend:
+    name: Tests Backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [lint-backend]
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: meerkattersd_test
+          POSTGRES_USER: meerkattersd_user
+          POSTGRES_PASSWORD: meerkattersd_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U meerkattersd_user -d meerkattersd_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Maven
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('backend/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+
+      - name: Ejecutar tests y cobertura (JaCoCo)
+        working-directory: backend
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/meerkattersd_test
+          SPRING_DATASOURCE_USERNAME: meerkattersd_user
+          SPRING_DATASOURCE_PASSWORD: meerkattersd_password
+          SPRING_PROFILES_ACTIVE: test
+        run: mvn verify -B
+
+      - name: Verificar cobertura mínima (70%)
+        working-directory: backend
+        run: |
+          REPORT="target/site/jacoco/jacoco.xml"
+          if [ ! -f "$REPORT" ]; then
+            echo "AVISO: No se encontró el reporte JaCoCo ($REPORT)."
+            echo "Asegúrate de configurar jacoco-maven-plugin en pom.xml."
+            exit 0
+          fi
+
+          COVERED=$(grep -oP '<counter type="INSTRUCTION"[^/]*covered="\K[0-9]+' "$REPORT" | tail -1)
+          MISSED=$(grep -oP '<counter type="INSTRUCTION"[^/]*missed="\K[0-9]+' "$REPORT" | tail -1)
+
+          if [[ -z "$COVERED" || -z "$MISSED" ]]; then
+            echo "AVISO: No se pudo leer la cobertura del reporte JaCoCo."
+            exit 0
+          fi
+
+          TOTAL=$((COVERED + MISSED))
+          PCT=$((COVERED * 100 / TOTAL))
+          echo "Cobertura de instrucciones: ${PCT}% (${COVERED}/${TOTAL})"
+
+          if [[ $PCT -lt 70 ]]; then
+            echo "ERROR: Cobertura insuficiente (${PCT}%). Mínimo requerido: 70%."
+            exit 1
+          fi
+
+          echo "Cobertura cumple el mínimo del 70%."
+
+      - name: Subir reporte JaCoCo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: backend/target/site/jacoco/
+          retention-days: 14
+
+  # ──────────────────────────────────────────
+  # 5. Tests Frontend — Jest
+  # ──────────────────────────────────────────
+  test-frontend:
+    name: Tests Frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [lint-frontend]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias
+        working-directory: frontend
+        run: npm ci
+
+      - name: Ejecutar tests con cobertura
+        working-directory: frontend
+        run: npm test -- --coverage --watchAll=false
+
+      - name: Subir reporte de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/
+          retention-days: 14
+
+  # ──────────────────────────────────────────
+  # 6. SonarQube — Análisis de calidad
+  #    Solo en trunk y main
+  # ──────────────────────────────────────────
+  sonarqube:
+    name: SonarQube
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [test-backend, test-frontend]
+    if: github.ref == 'refs/heads/trunk' || github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Maven
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('backend/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+
+      - name: Cache SonarQube
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+
+      - name: Análisis SonarQube (Backend)
+        working-directory: backend
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          mvn verify sonar:sonar \
+            -Dsonar.projectKey=meerkattersd-backend \
+            -Dsonar.host.url=$SONAR_HOST_URL \
+            -Dsonar.token=$SONAR_TOKEN \
+            -B
+
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Análisis SonarQube (Frontend)
+        working-directory: frontend
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          npx sonar-scanner \
+            -Dsonar.projectKey=meerkattersd-frontend \
+            -Dsonar.sources=src \
+            -Dsonar.host.url=$SONAR_HOST_URL \
+            -Dsonar.token=$SONAR_TOKEN

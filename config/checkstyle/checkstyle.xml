@@ -1,0 +1,159 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+  "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+  "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<!--
+  Configuración Checkstyle — MeerKatters
+  Basada en las directrices de estilo del proyecto (Gestión Equipo §10)
+  y las guías de Oracle/Google para Java.
+
+  Referencia en pom.xml:
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-checkstyle-plugin</artifactId>
+      <version>3.5.0</version>
+      <configuration>
+        <configLocation>../config/checkstyle/checkstyle.xml</configLocation>
+      </configuration>
+    </plugin>
+-->
+<module name="Checker">
+
+  <!-- ═══ Propiedades generales ═══ -->
+  <property name="charset" value="UTF-8"/>
+  <property name="severity" value="error"/>
+  <property name="fileExtensions" value="java"/>
+
+  <!-- ═══ No usar tabuladores ═══ -->
+  <module name="FileTabCharacter">
+    <property name="eachLine" value="true"/>
+  </module>
+
+  <!-- ═══ Longitud máxima de línea: 100 caracteres (Gestión Equipo §10) ═══ -->
+  <module name="LineLength">
+    <property name="max" value="100"/>
+    <property name="ignorePattern" value="^package.*|^import.*|a]? href|href|http://|https://|ftp://"/>
+  </module>
+
+  <!-- ═══ Archivo termina con nueva línea ═══ -->
+  <module name="NewlineAtEndOfFile"/>
+
+  <module name="TreeWalker">
+
+    <!-- ─── NOMENCLATURA ──────────────────────────── -->
+
+    <!-- Clases e interfaces: PascalCase -->
+    <module name="TypeName">
+      <property name="format" value="^[A-Z][a-zA-Z0-9]*$"/>
+    </module>
+
+    <!-- Métodos: lowerCamelCase -->
+    <module name="MethodName">
+      <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+    </module>
+
+    <!-- Variables locales: lowerCamelCase -->
+    <module name="LocalVariableName">
+      <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+    </module>
+
+    <!-- Variables de instancia: lowerCamelCase -->
+    <module name="MemberName">
+      <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+    </module>
+
+    <!-- Parámetros: lowerCamelCase -->
+    <module name="ParameterName">
+      <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+    </module>
+
+    <!-- Constantes: MAYÚSCULAS_CON_GUIONES_BAJOS -->
+    <module name="ConstantName">
+      <property name="format" value="^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"/>
+    </module>
+
+    <!-- Paquetes: minúsculas -->
+    <module name="PackageName">
+      <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]*)*$"/>
+    </module>
+
+    <!-- ─── FORMATO Y ESTRUCTURA ──────────────────── -->
+
+    <!-- Sangrado: 4 espacios -->
+    <module name="Indentation">
+      <property name="basicOffset" value="4"/>
+      <property name="braceAdjustment" value="0"/>
+      <property name="caseIndent" value="4"/>
+      <property name="throwsIndent" value="4"/>
+      <property name="lineWrappingIndentation" value="4"/>
+      <property name="arrayInitIndent" value="4"/>
+    </module>
+
+    <!-- Llaves: apertura en la misma línea -->
+    <module name="LeftCurly">
+      <property name="option" value="eol"/>
+    </module>
+
+    <!-- Llaves: cierre en nueva línea -->
+    <module name="RightCurly">
+      <property name="option" value="alone"/>
+      <property name="tokens" value="LITERAL_ELSE,METHOD_DEF,CTOR_DEF,CLASS_DEF"/>
+    </module>
+
+    <!-- Llaves obligatorias en if, else, for, while, do -->
+    <module name="NeedBraces"/>
+
+    <!-- Espacios alrededor de operadores -->
+    <module name="WhitespaceAround">
+      <property name="allowEmptyConstructors" value="true"/>
+      <property name="allowEmptyMethods" value="true"/>
+      <property name="allowEmptyTypes" value="true"/>
+    </module>
+
+    <!-- No espacio entre nombre de método y paréntesis -->
+    <module name="MethodParamPad"/>
+
+    <!-- Espacio después de coma -->
+    <module name="GenericWhitespace"/>
+
+    <!-- ─── BUENAS PRÁCTICAS ─────────────────────── -->
+
+    <!-- Evitar imports con wildcard (*) -->
+    <module name="AvoidStarImport"/>
+
+    <!-- Imports no usados -->
+    <module name="UnusedImports"/>
+
+    <!-- Orden de imports -->
+    <module name="ImportOrder">
+      <property name="groups" value="java,javax,org,com"/>
+      <property name="separated" value="true"/>
+      <property name="sortStaticImportsAlphabetically" value="true"/>
+    </module>
+
+    <!-- Un statement por línea -->
+    <module name="OneStatementPerLine"/>
+
+    <!-- No catch vacíos -->
+    <module name="EmptyCatchBlock">
+      <property name="exceptionVariableName" value="expected|ignore"/>
+    </module>
+
+    <!-- Modificadores en orden estándar -->
+    <module name="ModifierOrder"/>
+
+    <!-- Visibilidad: los campos deben ser private (con excepciones) -->
+    <module name="VisibilityModifier">
+      <property name="allowPublicFinalFields" value="true"/>
+      <property name="protectedAllowed" value="true"/>
+    </module>
+
+    <!-- Verificar que equals() y hashCode() se sobrescriben juntos -->
+    <module name="EqualsHashCode"/>
+
+    <!-- Verificar anotación @Override -->
+    <module name="MissingOverride"/>
+
+  </module>
+</module>

@@ -1,0 +1,47 @@
+name: Validar nombre de rama
+
+# ════════════════════════════════════════════════════════════
+# Valida que las ramas siguen la convención de nombres
+# del proyecto antes de permitir trabajar en ellas.
+#
+# Convención: tipo/descripcion o tipo/#issue_descripcion
+# Tipos: feature, bugfix, hotfix, doc, test, release
+# Ramas exentas: main, trunk, develop
+# ════════════════════════════════════════════════════════════
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - trunk
+      - develop
+
+jobs:
+  validate-branch-name:
+    name: Validar nombre de rama
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Comprobar convención de nombres
+        run: |
+          BRANCH="${GITHUB_REF#refs/heads/}"
+          echo "Rama: $BRANCH"
+
+          VALID_RE='^(feature|bugfix|hotfix|doc|test|release)/(#[0-9]+_)?[a-zA-Z0-9._-]+$'
+
+          if ! [[ "$BRANCH" =~ $VALID_RE ]]; then
+            echo ""
+            echo "ERROR: El nombre de la rama '$BRANCH' no sigue la convención."
+            echo ""
+            echo "Formato: tipo/descripcion  o  tipo/#123_descripcion"
+            echo "Tipos:   feature | bugfix | hotfix | doc | test | release"
+            echo ""
+            echo "Ejemplos válidos:"
+            echo "  feature/#42_login-google"
+            echo "  bugfix/corregir-validacion-jwt"
+            echo "  doc/actualizar-readme"
+            echo "  hotfix/#99_fix-deploy"
+            exit 1
+          fi
+
+          echo "Nombre de rama válido."

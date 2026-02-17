@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ============================================================
+# commit-msg hook — Validación de Conventional Commits
+# Proyecto: MeerKatters
+#
+# Instalar ejecutando:
+#   git config core.hooksPath .githooks
+# ============================================================
+
+COMMIT_MSG_FILE=${1:?"Uso: commit-msg <ruta-del-archivo-de-mensaje>"}
+
+# Leer todas las líneas del mensaje
+mapfile -t LINES < "$COMMIT_MSG_FILE" || LINES=()
+first_line="${LINES[0]:-}"
+
+# ── Permitir commits automáticos de Merge y Revert ──────────
+if [[ $first_line =~ ^Merge\  ]] || [[ $first_line =~ ^Revert\  ]]; then
+  exit 0
+fi
+
+# ── Tipos permitidos (política de commits del proyecto) ─────
+types_regex='feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert'
+header_re="^(${types_regex})(\([a-zA-Z0-9._\/-]+\))?(!)?: .+"
+
+# ── Validar que el mensaje no esté vacío ────────────────────
+if [[ -z "$first_line" ]]; then
+  echo "ERROR: El mensaje del commit no puede estar vacío."
+  exit 1
+fi
+
+# ── Validar formato Conventional Commits ────────────────────
+if ! [[ $first_line =~ $header_re ]]; then
+  echo "ERROR: El mensaje no sigue Conventional Commits."
+  echo ""
+  echo "  Formato: tipo(scope opcional)!?: descripción"
+  echo "  Tipos:   feat | fix | docs | style | refactor | perf | test | build | ci | chore | revert"
+  echo ""
+  echo "  Ejemplos válidos:"
+  echo "    feat: añade búsqueda de comunidades"
+  echo "    fix(auth): corrige validación de tokens JWT"
+  echo "    docs(api): actualiza documentación de endpoints"
+  echo "    refactor(groups)!: cambia estructura de módulo de comunidades"
+  exit 1
+fi
+
+# ── Advertencia: longitud del subject (máx. 50 caracteres) ──
+subject="${first_line#*: }"
+if (( ${#subject} > 50 )); then
+  echo "ADVERTENCIA: El subject supera 50 caracteres (${#subject}). Se recomienda <= 50." >&2
+fi
+
+# ── Advertencia: no terminar con punto ──────────────────────
+if [[ ${first_line: -1} == '.' ]]; then
+  echo "ADVERTENCIA: Se recomienda no terminar el título con punto." >&2
+fi
+
+# ── Línea en blanco entre título y cuerpo ───────────────────
+if ((${#LINES[@]} > 1)); then
+  second_line="${LINES[1]}"
+  if [[ -n "$second_line" ]]; then
+    echo "ERROR: Debe haber una línea en blanco entre el título y el cuerpo del commit."
+    echo "Sugerencia: añade una línea vacía después de la primera línea."
+    exit 1
+  fi
+fi
+
+# ── Breaking change: exigir footer BREAKING CHANGE ─────────
+if [[ $first_line =~ ^(${types_regex})(\([a-zA-Z0-9._\/-]+\))?(!):\  ]]; then
+  has_breaking_footer=0
+  for line in "${LINES[@]:2}"; do
+    if [[ $line =~ ^BREAKING[[:space:]-]CHANGE:\  ]]; then
+      has_breaking_footer=1
+      break
+    fi
+  done
+  if [[ $has_breaking_footer -eq 0 ]]; then
+    echo "ERROR: Se detectó '!' (breaking change) en el título."
+    echo "Debes añadir un footer: BREAKING CHANGE: <descripción>"
+    exit 1
+  fi
+fi
+
+exit 0
