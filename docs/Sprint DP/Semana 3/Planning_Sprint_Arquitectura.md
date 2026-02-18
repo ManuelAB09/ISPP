@@ -70,7 +70,7 @@ Desplegar la aplicación MeerKatters en Azure App Service como PaaS, incluyendo:
 | 1.0 | **Diseñar la API REST** (endpoints, DTOs, contratos) para que front y back puedan trabajar en paralelo | Ambos | 3 | S1 |
 | 1.1 | Activar Azure for Students y verificar créditos $100 | Persona 1 | 1 | S1 |
 | 1.2 | Instalar y configurar Azure CLI | Ambos | 1 | S1 |
-| 1.3 | Crear Resource Group único (`rg-meerkattersd`) | Persona 1 | 1 | S1 |
+| 1.3 | Crear Resource Group único (`rg-meerkatters`) | Persona 1 | 1 | S1 |
 | 1.4 | Crear 1 Plan B1 + 2 Web Apps (Producción y Staging) con Always On | Persona 1 | 2 | S1 |
 | 1.5 | Crear Static Web Apps (staging + prod, GRATIS) | Persona 2 | 2 | S1 |
 | 1.6 | Configurar GitHub Container Registry | Persona 1 | 1 | S1 |
@@ -111,7 +111,7 @@ gantt
 
 - [ ] **Contrato API REST diseñado** (endpoints, DTOs, acuerdos front/back)
 - [ ] Cuenta Azure activada con créditos verificados
-- [ ] Resource Group único `rg-meerkattersd` creado
+- [ ] Resource Group único `rg-meerkatters` creado
 - [ ] 1 App Service Plan B1 (~€11/mes) con 2 Web Apps (staging + prod), Always On en ambas
 - [ ] Static Web Apps (staging + producción) creadas
 - [ ] GitHub Container Registry configurado
@@ -136,8 +136,8 @@ gantt
 |----|-------|-------------|-------|--------|
 | 2.1 | Crear servidor Azure PostgreSQL Flexible B1ms (único) | Persona 1 | 2 | S1 |
 | 2.2 | Configurar firewall PostgreSQL (AllowAzureServices) | Persona 1 | 1 | S1 |
-| 2.3 | Crear schema `meerkattersd_staging` | Persona 1 | 1 | S1 |
-| 2.4 | Crear schema `meerkattersd_prod` | Persona 1 | 1 | S1 |
+| 2.3 | Crear schema `meerkatters_staging` | Persona 1 | 1 | S1 |
+| 2.4 | Crear schema `meerkatters_prod` | Persona 1 | 1 | S1 |
 | 2.5 | Configurar connection string Web App staging | Persona 2 | 2 | S1 |
 | 2.6 | Configurar connection string Web App producción | Persona 2 | 2 | S1 |
 | 2.7 | Probar conexión local a BD Azure | Ambos | 2 | S1 |
@@ -178,7 +178,7 @@ gantt
 ## Entregables Sprint 2
 
 - [ ] Servidor PostgreSQL Flexible B1ms creado
-- [ ] Schemas `meerkattersd_staging` y `meerkattersd_prod` creados
+- [ ] Schemas `meerkatters_staging` y `meerkatters_prod` creados
 - [ ] Connection strings configuradas en ambas Web Apps
 - [ ] **Backend staging conectado a BD (schema staging)**
 - [ ] **Backend producción conectado a BD (schema prod)**

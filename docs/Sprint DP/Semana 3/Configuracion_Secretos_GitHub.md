@@ -36,10 +36,10 @@ Esta configuración usa **2 Web Apps en un mismo App Service Plan B1** (~€11/m
 
 | Nombre | Valor de Ejemplo | Obligatorio |
 |--------|------------------|-------------|
-| `AZURE_BACKEND_APP` | `meerkattersd-backend` | Sí |
-| `AZURE_BACKEND_APP_STAGING` | `meerkattersd-backend-staging` | Sí |
-| `STAGING_API_URL` | `https://meerkattersd-backend-staging.azurewebsites.net` | Sí |
-| `PRODUCTION_API_URL` | `https://meerkattersd-backend.azurewebsites.net` | Sí |
+| `AZURE_BACKEND_APP` | `meerkatters-backend` | Sí |
+| `AZURE_BACKEND_APP_STAGING` | `meerkatters-backend-staging` | Sí |
+| `STAGING_API_URL` | `https://meerkatters-backend-staging.azurewebsites.net` | Sí |
+| `PRODUCTION_API_URL` | `https://meerkatters-backend.azurewebsites.net` | Sí |
 
 ---
 
@@ -84,10 +84,10 @@ Repite el proceso para producción con nombre: `AZURE_STATIC_WEB_APPS_TOKEN_PROD
 
 | Name | Value |
 |------|-------|
-| `AZURE_BACKEND_APP` | Nombre de tu Web App de producción (ej: `meerkattersd-backend`) |
-| `AZURE_BACKEND_APP_STAGING` | Nombre de tu Web App de staging (ej: `meerkattersd-backend-staging`) |
-| `STAGING_API_URL` | URL de staging (ej: `https://meerkattersd-backend-staging.azurewebsites.net`) |
-| `PRODUCTION_API_URL` | URL de producción (ej: `https://meerkattersd-backend.azurewebsites.net`) |
+| `AZURE_BACKEND_APP` | Nombre de tu Web App de producción (ej: `meerkatters-backend`) |
+| `AZURE_BACKEND_APP_STAGING` | Nombre de tu Web App de staging (ej: `meerkatters-backend-staging`) |
+| `STAGING_API_URL` | URL de staging (ej: `https://meerkatters-backend-staging.azurewebsites.net`) |
+| `PRODUCTION_API_URL` | URL de producción (ej: `https://meerkatters-backend.azurewebsites.net`) |
 
 ---
 
@@ -118,7 +118,7 @@ Guarda este ID, lo necesitarás.
 
 ```bash
 # Un solo Resource Group para todo (ahorro de costes)
-az group create --name rg-meerkattersd --location westeurope
+az group create --name rg-meerkatters --location westeurope
 ```
 
 ### Paso 4: Crear Service Principal (ÚNICO)
@@ -126,9 +126,9 @@ az group create --name rg-meerkattersd --location westeurope
 ```bash
 # Un solo Service Principal con acceso a todo el Resource Group
 az ad sp create-for-rbac \
-  --name "github-actions-meerkattersd" \
+  --name "github-actions-meerkatters" \
   --role contributor \
-  --scopes /subscriptions/<TU_SUBSCRIPTION_ID>/resourceGroups/rg-meerkattersd \
+  --scopes /subscriptions/<TU_SUBSCRIPTION_ID>/resourceGroups/rg-meerkatters \
   --sdk-auth
 ```
 
@@ -239,7 +239,7 @@ Para rotar las credenciales de un Service Principal:
 
 ```bash
 # Resetear el secreto
-az ad sp credential reset --name "github-actions-meerkattersd" --sdk-auth
+az ad sp credential reset --name "github-actions-meerkatters" --sdk-auth
 ```
 
 Actualiza el secreto en GitHub con el nuevo JSON.
@@ -256,16 +256,16 @@ Si te quedas sin créditos y necesitas migrar a la cuenta de otro compañero, el
    ```bash
    # El nuevo compañero ejecuta esto en su cuenta
    az login
-   az group create --name rg-meerkattersd --location westeurope
+   az group create --name rg-meerkatters --location westeurope
    # ... crear App Service, PostgreSQL, Static Web Apps
    ```
 
 2. **Crear nuevo Service Principal**:
    ```bash
    az ad sp create-for-rbac \
-     --name "github-actions-meerkattersd" \
+     --name "github-actions-meerkatters" \
      --role contributor \
-     --scopes /subscriptions/<NUEVO_SUBSCRIPTION_ID>/resourceGroups/rg-meerkattersd \
+     --scopes /subscriptions/<NUEVO_SUBSCRIPTION_ID>/resourceGroups/rg-meerkatters \
      --sdk-auth
    ```
 
@@ -292,10 +292,10 @@ Si te quedas sin créditos y necesitas migrar a la cuenta de otro compañero, el
 
 ```bash
 # Exportar de la cuenta vieja
-pg_dump -h viejo-servidor.postgres.database.azure.com -U admin -d meerkattersd > backup.sql
+pg_dump -h viejo-servidor.postgres.database.azure.com -U admin -d meerkatters > backup.sql
 
 # Importar en la cuenta nueva
-psql -h nuevo-servidor.postgres.database.azure.com -U admin -d meerkattersd < backup.sql
+psql -h nuevo-servidor.postgres.database.azure.com -U admin -d meerkatters < backup.sql
 ```
 
 ---

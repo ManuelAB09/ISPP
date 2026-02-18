@@ -122,7 +122,7 @@ Un único Resource Group para todos los recursos:
 
 ```bash
 az group create \
-  --name rg-meerkattersd \
+  --name rg-meerkatters \
   --location westeurope
 ```
 
@@ -134,8 +134,8 @@ az group create \
 
 ```bash
 az appservice plan create \
-  --name plan-meerkattersd \
-  --resource-group rg-meerkattersd \
+  --name plan-meerkatters \
+  --resource-group rg-meerkatters \
   --sku B1 \
   --is-linux
 ```
@@ -144,15 +144,15 @@ az appservice plan create \
 
 ```bash
 az webapp create \
-  --name meerkattersd-backend \
-  --resource-group rg-meerkattersd \
-  --plan plan-meerkattersd \
+  --name meerkatters-backend \
+  --resource-group rg-meerkatters \
+  --plan plan-meerkatters \
   --deployment-container-image-name ghcr.io/tu-org/tu-repo/backend:latest
 
 # Habilitar Always On
 az webapp config set \
-  --name meerkattersd-backend \
-  --resource-group rg-meerkattersd \
+  --name meerkatters-backend \
+  --resource-group rg-meerkatters \
   --always-on true
 ```
 
@@ -160,19 +160,19 @@ az webapp config set \
 
 ```bash
 az webapp create \
-  --name meerkattersd-backend-staging \
-  --resource-group rg-meerkattersd \
-  --plan plan-meerkattersd \
+  --name meerkatters-backend-staging \
+  --resource-group rg-meerkatters \
+  --plan plan-meerkatters \
   --deployment-container-image-name ghcr.io/tu-org/tu-repo/backend:staging
 
 # Habilitar Always On
 az webapp config set \
-  --name meerkattersd-backend-staging \
-  --resource-group rg-meerkattersd \
+  --name meerkatters-backend-staging \
+  --resource-group rg-meerkatters \
   --always-on true
 ```
 
-> **Nota:** Ambas Web Apps usan `--plan plan-meerkattersd` (el mismo plan B1). No se crea un segundo plan. El coste es €11/mes independientemente de cuántas Web Apps haya dentro.
+> **Nota:** Ambas Web Apps usan `--plan plan-meerkatters` (el mismo plan B1). No se crea un segundo plan. El coste es €11/mes independientemente de cuántas Web Apps haya dentro.
 
 ---
 
@@ -181,15 +181,15 @@ az webapp config set \
 ```bash
 # Static Web App para staging
 az staticwebapp create \
-  --name meerkattersd-frontend-staging \
-  --resource-group rg-meerkattersd \
+  --name meerkatters-frontend-staging \
+  --resource-group rg-meerkatters \
   --location westeurope2 \
   --sku Free
 
 # Static Web App para producción
 az staticwebapp create \
-  --name meerkattersd-frontend-prod \
-  --resource-group rg-meerkattersd \
+  --name meerkatters-frontend-prod \
+  --resource-group rg-meerkatters \
   --location westeurope2 \
   --sku Free
 ```
@@ -201,35 +201,35 @@ az staticwebapp create \
 ```bash
 # Crear servidor PostgreSQL Flexible B1ms
 az postgres flexible-server create \
-  --name meerkattersd-db \
-  --resource-group rg-meerkattersd \
+  --name meerkatters-db \
+  --resource-group rg-meerkatters \
   --location westeurope \
   --sku-name Standard_B1ms \
   --tier Burstable \
   --storage-size 32 \
   --version 16 \
-  --admin-user meerkattersd_admin \
+  --admin-user meerkatters_admin \
   --admin-password '<CONTRASEÑA_SEGURA>' \
   --yes
 
 # Permitir servicios de Azure
 az postgres flexible-server firewall-rule create \
-  --resource-group rg-meerkattersd \
-  --name meerkattersd-db \
+  --resource-group rg-meerkatters \
+  --name meerkatters-db \
   --rule-name AllowAzureServices \
   --start-ip-address 0.0.0.0 \
   --end-ip-address 0.0.0.0
 
 # Crear bases de datos (schemas)
 az postgres flexible-server db create \
-  --resource-group rg-meerkattersd \
-  --server-name meerkattersd-db \
-  --database-name meerkattersd_staging
+  --resource-group rg-meerkatters \
+  --server-name meerkatters-db \
+  --database-name meerkatters_staging
 
 az postgres flexible-server db create \
-  --resource-group rg-meerkattersd \
-  --server-name meerkattersd-db \
-  --database-name meerkattersd_prod
+  --resource-group rg-meerkatters \
+  --server-name meerkatters-db \
+  --database-name meerkatters_prod
 ```
 
 ---
@@ -240,11 +240,11 @@ az postgres flexible-server db create \
 
 ```bash
 az webapp config appsettings set \
-  --name meerkattersd-backend \
-  --resource-group rg-meerkattersd \
+  --name meerkatters-backend \
+  --resource-group rg-meerkatters \
   --settings \
-    SPRING_DATASOURCE_URL="jdbc:postgresql://meerkattersd-db.postgres.database.azure.com:5432/meerkattersd_prod" \
-    SPRING_DATASOURCE_USERNAME="meerkattersd_admin" \
+    SPRING_DATASOURCE_URL="jdbc:postgresql://meerkatters-db.postgres.database.azure.com:5432/meerkatters_prod" \
+    SPRING_DATASOURCE_USERNAME="meerkatters_admin" \
     SPRING_DATASOURCE_PASSWORD="<CONTRASEÑA>" \
     SPRING_PROFILES_ACTIVE="production" \
     WEBSITES_PORT="8080"
@@ -254,11 +254,11 @@ az webapp config appsettings set \
 
 ```bash
 az webapp config appsettings set \
-  --name meerkattersd-backend-staging \
-  --resource-group rg-meerkattersd \
+  --name meerkatters-backend-staging \
+  --resource-group rg-meerkatters \
   --settings \
-    SPRING_DATASOURCE_URL="jdbc:postgresql://meerkattersd-db.postgres.database.azure.com:5432/meerkattersd_staging" \
-    SPRING_DATASOURCE_USERNAME="meerkattersd_admin" \
+    SPRING_DATASOURCE_URL="jdbc:postgresql://meerkatters-db.postgres.database.azure.com:5432/meerkatters_staging" \
+    SPRING_DATASOURCE_USERNAME="meerkatters_admin" \
     SPRING_DATASOURCE_PASSWORD="<CONTRASEÑA>" \
     SPRING_PROFILES_ACTIVE="staging" \
     WEBSITES_PORT="8080"
@@ -272,9 +272,9 @@ az webapp config appsettings set \
 
 ```bash
 az ad sp create-for-rbac \
-  --name "github-actions-meerkattersd" \
+  --name "github-actions-meerkatters" \
   --role contributor \
-  --scopes /subscriptions/<TU_SUBSCRIPTION_ID>/resourceGroups/rg-meerkattersd \
+  --scopes /subscriptions/<TU_SUBSCRIPTION_ID>/resourceGroups/rg-meerkatters \
   --sdk-auth
 ```
 
@@ -296,10 +296,10 @@ Ver [Configuración de Secretos GitHub](Configuracion_Secretos_GitHub.md) para d
 
 | Nombre | Valor |
 |--------|-------|
-| `AZURE_BACKEND_APP` | `meerkattersd-backend` |
-| `AZURE_BACKEND_APP_STAGING` | `meerkattersd-backend-staging` |
-| `STAGING_API_URL` | `https://meerkattersd-backend-staging.azurewebsites.net` |
-| `PRODUCTION_API_URL` | `https://meerkattersd-backend.azurewebsites.net` |
+| `AZURE_BACKEND_APP` | `meerkatters-backend` |
+| `AZURE_BACKEND_APP_STAGING` | `meerkatters-backend-staging` |
+| `STAGING_API_URL` | `https://meerkatters-backend-staging.azurewebsites.net` |
+| `PRODUCTION_API_URL` | `https://meerkatters-backend.azurewebsites.net` |
 
 ---
 
@@ -309,30 +309,30 @@ Ver [Configuración de Secretos GitHub](Configuracion_Secretos_GitHub.md) para d
 
 | Entorno | Backend | Frontend |
 |---------|---------|----------|
-| Staging | `https://meerkattersd-backend-staging.azurewebsites.net/api/health` | URL de Static Web App staging |
-| Producción | `https://meerkattersd-backend.azurewebsites.net/api/health` | URL de Static Web App producción |
+| Staging | `https://meerkatters-backend-staging.azurewebsites.net/api/health` | URL de Static Web App staging |
+| Producción | `https://meerkatters-backend.azurewebsites.net/api/health` | URL de Static Web App producción |
 
 ### Comandos útiles
 
 ```bash
 # Ver logs de producción
-az webapp log tail --name meerkattersd-backend --resource-group rg-meerkattersd
+az webapp log tail --name meerkatters-backend --resource-group rg-meerkatters
 
 # Ver logs de staging
-az webapp log tail --name meerkattersd-backend-staging --resource-group rg-meerkattersd
+az webapp log tail --name meerkatters-backend-staging --resource-group rg-meerkatters
 
 # Reiniciar Web App
-az webapp restart --name meerkattersd-backend --resource-group rg-meerkattersd
+az webapp restart --name meerkatters-backend --resource-group rg-meerkatters
 
 # Verificar Always On
 az webapp config show \
-  --name meerkattersd-backend \
-  --resource-group rg-meerkattersd \
+  --name meerkatters-backend \
+  --resource-group rg-meerkatters \
   --query alwaysOn
 
 # Ver las Web Apps del plan
 az webapp list \
-  --resource-group rg-meerkattersd \
+  --resource-group rg-meerkatters \
   --query "[].{name:name, plan:appServicePlanId}" -o table
 ```
 
@@ -344,8 +344,8 @@ az webapp list \
 
 ```bash
 az appservice plan update \
-  --name plan-meerkattersd \
-  --resource-group rg-meerkattersd \
+  --name plan-meerkatters \
+  --resource-group rg-meerkatters \
   --sku B2
 ```
 
@@ -371,7 +371,7 @@ Con 2 apps Spring Boot en B1 (1.75 GB), vigilar el consumo:
 
 ```bash
 az monitor metrics list \
-  --resource "/subscriptions/<SUB_ID>/resourceGroups/rg-meerkattersd/providers/Microsoft.Web/serverfarms/plan-meerkattersd" \
+  --resource "/subscriptions/<SUB_ID>/resourceGroups/rg-meerkatters/providers/Microsoft.Web/serverfarms/plan-meerkatters" \
   --metric "MemoryPercentage" \
   --interval PT1H
 ```

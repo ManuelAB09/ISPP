@@ -156,13 +156,13 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_DB: meerkattersd_test
-          POSTGRES_USER: meerkattersd_user
-          POSTGRES_PASSWORD: meerkattersd_password
+          POSTGRES_DB: meerkatters_test
+          POSTGRES_USER: meerkatters_user
+          POSTGRES_PASSWORD: meerkatters_password
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U meerkattersd_user -d meerkattersd_test"
+          --health-cmd="pg_isready -U meerkatters_user -d meerkatters_test"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
@@ -187,9 +187,9 @@ jobs:
       - name: Ejecutar tests y cobertura (JaCoCo)
         working-directory: backend
         env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/meerkattersd_test
-          SPRING_DATASOURCE_USERNAME: meerkattersd_user
-          SPRING_DATASOURCE_PASSWORD: meerkattersd_password
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/meerkatters_test
+          SPRING_DATASOURCE_USERNAME: meerkatters_user
+          SPRING_DATASOURCE_PASSWORD: meerkatters_password
           SPRING_PROFILES_ACTIVE: test
         run: mvn verify -B
 
@@ -307,7 +307,7 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         run: |
           mvn verify sonar:sonar \
-            -Dsonar.projectKey=meerkattersd-backend \
+            -Dsonar.projectKey=meerkatters-backend \
             -Dsonar.host.url=$SONAR_HOST_URL \
             -Dsonar.token=$SONAR_TOKEN \
             -B
@@ -326,7 +326,7 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         run: |
           npx sonar-scanner \
-            -Dsonar.projectKey=meerkattersd-frontend \
+            -Dsonar.projectKey=meerkatters-frontend \
             -Dsonar.sources=src \
             -Dsonar.host.url=$SONAR_HOST_URL \
             -Dsonar.token=$SONAR_TOKEN

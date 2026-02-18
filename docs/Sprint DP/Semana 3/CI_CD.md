@@ -333,10 +333,10 @@ Configurar en **Settings → Secrets and variables → Actions → Variables**:
 
 | Variable | Valor de ejemplo | Obligatorio |
 |----------|------------------|-------------|
-| `AZURE_BACKEND_APP` | `meerkattersd-backend` | Sí |
-| `AZURE_BACKEND_APP_STAGING` | `meerkattersd-backend-staging` | Sí |
-| `STAGING_API_URL` | `https://meerkattersd-backend-staging.azurewebsites.net` | Sí |
-| `PRODUCTION_API_URL` | `https://meerkattersd-backend.azurewebsites.net` | Sí |
+| `AZURE_BACKEND_APP` | `meerkatters-backend` | Sí |
+| `AZURE_BACKEND_APP_STAGING` | `meerkatters-backend-staging` | Sí |
+| `STAGING_API_URL` | `https://meerkatters-backend-staging.azurewebsites.net` | Sí |
+| `PRODUCTION_API_URL` | `https://meerkatters-backend.azurewebsites.net` | Sí |
 
 > **Nota:** Se necesitan **2 variables de app-name** porque son Web Apps independientes (sin deployment slots).
 
@@ -396,7 +396,7 @@ Si alguno de estos supuestos cambia, hay que actualizar los archivos indicados.
 | Versión Java | 21 (Temurin) | `CI.yml` → `setup-java` |
 | Versión Node.js | 20 LTS | `CI.yml` → `setup-node` |
 | PostgreSQL tests | 16 | `CI.yml` → servicio `postgres` |
-| BD de test | `meerkattersd_test` / `meerkattersd_user` / `meerkattersd_password` | `CI.yml` → `services.postgres.env` + `SPRING_DATASOURCE_*` |
+| BD de test | `meerkatters_test` / `meerkatters_user` / `meerkatters_password` | `CI.yml` → `services.postgres.env` + `SPRING_DATASOURCE_*` |
 | Perfil Spring Boot test | `test` | `CI.yml` → `SPRING_PROFILES_ACTIVE` |
 | App Service Plan | 1 plan B1 (~€11/mes) con 2 Web Apps (staging + prod), Always On en ambas | `CD_*.yml`, `Guia_Despliegue_Azure.md` |
 | Si B1 insuficiente | Escalar a B2 (~€22/mes, 2 vCPU, 3.5 GB) | Cambiar tier del plan, sin cambiar estructura |

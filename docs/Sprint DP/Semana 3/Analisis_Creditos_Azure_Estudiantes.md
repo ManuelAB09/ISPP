@@ -219,10 +219,10 @@ Además del crédito, tienes acceso a servicios gratuitos durante 12 meses:
 # Añadir a Azure Automation o ejecutar manualmente
 
 # Apagar a las 20:00
-az webapp stop --name meerkattersd-backend-staging --resource-group rg-staging
+az webapp stop --name meerkatters-backend-staging --resource-group rg-staging
 
 # Encender a las 08:00
-az webapp start --name meerkattersd-backend-staging --resource-group rg-staging
+az webapp start --name meerkatters-backend-staging --resource-group rg-staging
 ```
 
 **Ahorro potencial**: Si apagas 12h/día = ~€5.50/mes en App Service
@@ -250,8 +250,8 @@ Usar una sola instancia de PostgreSQL con múltiples bases de datos:
 
 ```sql
 -- En lugar de 2 servidores, usar 2 bases de datos en 1 servidor
-CREATE DATABASE meerkattersd_staging;
-CREATE DATABASE meerkattersd_production;
+CREATE DATABASE meerkatters_staging;
+CREATE DATABASE meerkatters_production;
 ```
 
 **Ahorro**: €12.50/mes
@@ -271,7 +271,7 @@ Si puedes adaptar la aplicación:
 az consumption usage list --top 10
 
 # Eliminar grupos de recursos completos cuando no se necesiten
-az group delete --name rg-meerkattersd-staging --yes
+az group delete --name rg-meerkatters-staging --yes
 ```
 
 ---
@@ -325,7 +325,7 @@ Duración (meses) = Crédito Disponible / Coste Mensual
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │         PostgreSQL Flexible B1ms (~€12.50)            │   │
 │  │              2 schemas:                               │   │
-│  │         meerkattersd_staging / meerkattersd_prod      │   │
+│  │         meerkatters_staging / meerkatters_prod        │   │
 │  └──────────────────────────────────────────────────────┘   │
 │                            │                                 │
 │                            ▼                                 │
