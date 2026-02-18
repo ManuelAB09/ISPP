@@ -2,7 +2,7 @@
 
 ## MeerKatters - Plataforma de Comunidades de Estudio
 
-### Grupo D – Turno de tarde
+### Grupo 9 – Turno de tarde
 
 ![Logo App](../../images/logoapp.jpeg)
 
@@ -10,7 +10,7 @@
 
 **Proyecto:** MeerKatters  
 **Documento:** Planificación de Sprints / Arquitectura  
-**Sprint:** Sprint 0  
+**Sprint:** Sprint DP  
 **Semana:** Semana 3  
 **Estado:** Aprobado  
 **Fecha:** 16/02/2026  

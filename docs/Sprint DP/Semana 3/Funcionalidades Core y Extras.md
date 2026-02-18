@@ -1,6 +1,6 @@
 # Lista de Funcionalidades con Prioridad
 
-### Grupo D – Turno de tarde
+### Grupo 9 – Turno de tarde
 
 ![Logo App](../../images/logoapp.jpeg)
 
@@ -8,7 +8,7 @@
 
 **Proyecto:** MeerKatters  
 **Documento:** Desarrollo  
-**Sprint:** Sprint 0  
+**Sprint:** Sprint DP  
 **Semana:** Semana 3  
 **Estado:** Aprobado  
 **Fecha:** 16/02/2026  

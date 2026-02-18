@@ -2,7 +2,7 @@
 
 ## Retrospectiva
 
-### Grupo D – Turno de tarde
+### Grupo 9 – Turno de tarde
 
 ![Logo App](../../images/logoapp.jpeg)
 
@@ -10,7 +10,7 @@
 
 **Proyecto:** MeerKatters  
 **Documento:** Acta  
-**Sprint:** Sprint 0  
+**Sprint:** Sprint DP  
 **Semana:** Semana 2  
 **Estado:** Aprobado  
 **Fecha:** 06/02/2026  

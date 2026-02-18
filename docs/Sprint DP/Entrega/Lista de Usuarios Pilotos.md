@@ -1,6 +1,12 @@
 # Lista de Usuarios Pilotos
 
-### Grupo D – Turno de tarde
+## Índice
+1. [Listado](#1-listado)
+2. [Acciones a realizar](#2-acciones-a-realizar)
+
+---
+
+### Grupo 9 – Turno de tarde
 
 ![Logo App](../../images/logoapp.jpeg)
 
@@ -8,13 +14,15 @@
 
 **Proyecto:** MeerKatters  
 **Documento:** Entrega  
-**Sprint:** Sprint 0  
+**Sprint:** Sprint DP  
 **Semana:** Semana 3  
-**Estado:** Borrador 
+**Estado:** Aprobado 
 **Fecha:** 18/02/2026  
 **Autor(es):** Alejandro Soult Toscano
 
 ---
+
+## 1. Listado
 
 | Nombre | Correo Electrónico | Tipo de usuario |
 |---|---|---|
@@ -72,3 +80,9 @@
 | Aitor Rodríguez Dueñas | arodriguez56@us.es | Profesor |
 | Manuel Márquez Pinto | manuelmarqpinto@gmail.com | Alumno |
 | Diego López Caballero | dieg3p@gmail.com | Alumno |
+
+---
+
+## 2. Acciones a realizar
+
+Ya que actualmente no nos encontramos en una fase de desarrollo de la aplicación, seguiremos intentando conseguir más usuarios piloto, y una vez comience el desarrollo, se les irá informando mediante correo electrónico para que empiecen a dar feedback sobre la aplicación.

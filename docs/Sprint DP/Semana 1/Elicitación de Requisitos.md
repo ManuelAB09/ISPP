@@ -1,6 +1,6 @@
 # Elicitación de Requisitos
 
-### Grupo D - Turno de tarde
+### Grupo 9 - Turno de tarde
 
 ![Logo App](../../images/logoapp.jpeg)
 
@@ -8,9 +8,9 @@
 
 **Proyecto:** MeerKatters  
 **Documento:** Plan de proyecto  
-**Sprint:** Sprint 0  
+**Sprint:** Sprint DP  
 **Semana:** Semana 1  
-**Estado:** Borrador  
+**Estado:** Aprobado  
 **Fecha:** 08/02/2026  
 **Autor(es):** Manuel Artero Bellido, Manuel María Calderón Rodríguez
 

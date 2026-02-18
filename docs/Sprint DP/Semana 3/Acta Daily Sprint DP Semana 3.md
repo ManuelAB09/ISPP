@@ -2,7 +2,7 @@
 
 ## [Tipo de reunión: Daily ]
 
-### Grupo D – Turno de tarde
+### Grupo 9 – Turno de tarde
 
 ![Logo App](../../images/logoapp.jpeg)
 
@@ -10,7 +10,7 @@
 
 **Proyecto:** MeerKatters  
 **Documento:** Acta  
-**Sprint:** Sprint 0  
+**Sprint:** Sprint DP  
 **Semana:** Semana 3  
 **Estado:** Aprobado  
 **Fecha:** D16/02/2026  
@@ -32,7 +32,7 @@
 
 ## Objetivo general de la reunión
 
-Realizar un segumiento del trabajo realizado por los distintos squads en el sprint 1 y priorizar el trabajo necesario a tener hecho para la presentación del jueves 19.
+Realizar un segumiento del trabajo realizado por los distintos squads en el sprint DP y priorizar el trabajo necesario a tener hecho para la presentación del jueves 19.
 
 ---
 

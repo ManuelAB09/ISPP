@@ -2,7 +2,7 @@
 
 ## Específica: Kick Off
 
-### Grupo D – Turno de tarde
+### Grupo 9 – Turno de tarde
 
 ![Logo App](../../images/logoapp.jpeg)
 
@@ -10,7 +10,7 @@
 
 **Proyecto:** MeerKatters  
 **Documento:** Acta  
-**Sprint:** Sprint 0  
+**Sprint:** Sprint DP  
 **Semana:** Semana 1  
 **Estado:** Aprobado  
 **Fecha:** 02/02/2026  
@@ -42,7 +42,7 @@
 
 ## Objetivo general de la reunión
 
-Reunión de bienvenida al proyecto y comunicación de temas importantes, seguimiento de sprint 0.
+Reunión de bienvenida al proyecto y comunicación de temas importantes, seguimiento de sprint DP.
 
 ---
 
@@ -66,7 +66,7 @@ Alejandro ha pedido que se estandaricen los elementos del código como nombres d
 
 El código se estandarizará, estando las normas de estilo en el futuro documento de Gestión de Equipo.
 
-### 5. Seguimiento Sprint 0
+### 5. Seguimiento Sprint DP
 Alejandro ha pedido que los líderes de cada squad digan cómo van las tareas.
 - Backend: Bea ha dicho que el estudio de mercado va bien, qué podría estar para el siguiente día.
 - Frontend: Manu ha dicho que han recopilado funcionalidades principales para ver qué pantallas se hacen, y que ese día la organización estaría hecho. También que quisieran una muestra de logos o colores para las pantallas.
