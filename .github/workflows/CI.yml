@@ -129,7 +129,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configurar Node.js 24
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: 'npm'
@@ -247,7 +247,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configurar Node.js 24
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: 'npm'
@@ -321,7 +321,7 @@ jobs:
             -B
 
       - name: Configurar Node.js 24
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: 'npm'
