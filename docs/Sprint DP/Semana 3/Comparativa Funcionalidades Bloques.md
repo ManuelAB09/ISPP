@@ -1,3 +1,21 @@
+# Comparativa con la competencia por bloques 
+
+### Grupo D – Turno de tarde
+
+![Logo App](../../images/logoapp.jpeg)
+
+---
+
+**Proyecto:** MeerKatters  
+**Documento:** Desarrollo  
+**Sprint:** Sprint 0  
+**Semana:** Semana 3  
+**Estado:** Aprobado  
+**Fecha:** 18/02/2026  
+**Autor(es):** Squad de Backend
+
+---
+
 |  | ![MeerKatters](../../images/logoapp.jpeg) | ![][Discord] | ![][Reddit] | ![][LinkedIn] | ![][Wuolah] | ![][Superprof] | ![][GoogleClassroom] | ![][Teams] |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Funcionalidades core** |  |  |  |  |  |  |  |  |
