@@ -48,7 +48,7 @@ jobs:
 
     steps:
       - name: Checkout (commit que disparó el CI)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
@@ -92,7 +92,7 @@ jobs:
 
     steps:
       - name: Checkout (commit que disparó el CI)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
