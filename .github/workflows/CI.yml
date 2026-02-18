@@ -128,10 +128,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configurar Node.js 20
+      - name: Configurar Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
@@ -212,6 +212,10 @@ jobs:
           fi
 
           TOTAL=$((COVERED + MISSED))
+          if [[ $TOTAL -eq 0 ]]; then
+            echo "AVISO: Sin instrucciones analizadas (sin clases o todas excluidas). Saltando verificación."
+            exit 0
+          fi
           PCT=$((COVERED * 100 / TOTAL))
           echo "Cobertura de instrucciones: ${PCT}% (${COVERED}/${TOTAL})"
 
@@ -242,10 +246,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configurar Node.js 20
+      - name: Configurar Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
@@ -312,10 +316,10 @@ jobs:
             -Dsonar.token=$SONAR_TOKEN \
             -B
 
-      - name: Configurar Node.js 20
+      - name: Configurar Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 

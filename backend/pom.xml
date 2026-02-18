@@ -83,6 +83,12 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.12</version>
+                <configuration>
+                    <!-- La clase main de arranque no necesita cobertura -->
+                    <excludes>
+                        <exclude>es/us/meerkatters/Application.class</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>

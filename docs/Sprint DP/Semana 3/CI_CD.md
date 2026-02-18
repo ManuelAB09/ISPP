@@ -394,7 +394,7 @@ Si alguno de estos supuestos cambia, hay que actualizar los archivos indicados.
 | Directorio backend | `backend/` | `CI.yml`, `CD_*.yml`, `.githooks/pre-commit` |
 | Directorio frontend | `frontend/` | `CI.yml`, `CD_*.yml`, `.githooks/pre-commit` |
 | Versión Java | 21 (Temurin) | `CI.yml` → `setup-java` |
-| Versión Node.js | 20 LTS | `CI.yml` → `setup-node` |
+| Versión Node.js | 24 | `CI.yml` → `setup-node` |
 | PostgreSQL tests | 16 | `CI.yml` → servicio `postgres` |
 | BD de test | `meerkatters_test` / `meerkatters_user` / `meerkatters_password` | `CI.yml` → `services.postgres.env` + `SPRING_DATASOURCE_*` |
 | Perfil Spring Boot test | `test` | `CI.yml` → `SPRING_PROFILES_ACTIVE` |
