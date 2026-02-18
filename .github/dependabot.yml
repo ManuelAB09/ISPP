@@ -1,6 +1,11 @@
 # ═══════════════════════════════════════════════════════
 # Dependabot — Actualización automática de dependencias
 # ═══════════════════════════════════════════════════════
+#
+# Estrategia de agrupación:
+#   - minor + patch → 1 PR agrupado por ecosistema (auto-mergeable si CI ✅)
+#   - major         → PR individual por dependencia (requiere revisión manual)
+# ═══════════════════════════════════════════════════════
 
 version: 2
 updates:
@@ -17,6 +22,11 @@ updates:
       - "backend"
     commit-message:
       prefix: "build(deps)"
+    groups:
+      backend-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
 
   # npm (frontend)
   - package-ecosystem: "npm"
@@ -31,6 +41,11 @@ updates:
       - "frontend"
     commit-message:
       prefix: "build(deps)"
+    groups:
+      frontend-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
@@ -45,3 +60,8 @@ updates:
       - "ci"
     commit-message:
       prefix: "ci(deps)"
+    groups:
+      actions-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"

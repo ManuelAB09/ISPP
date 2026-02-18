@@ -1,0 +1,42 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Dependabot Auto-merge
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Activa auto-merge en PRs de Dependabot cuando:
+#   Es una actualización minor o patch (nunca major)
+#   Los checks de CI han pasado (gh pr merge --auto lo garantiza)
+#
+# Las actualizaciones major se dejan SIN auto-merge para revisión manual,
+# ya que pueden introducir breaking changes.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: Dependabot auto-merge
+
+on:
+  pull_request
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    name: Auto-merge minor/patch
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+
+    steps:
+      - name: Obtener metadatos del PR
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Activar auto-merge (solo minor y patch)
+        if: |
+          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+          steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
