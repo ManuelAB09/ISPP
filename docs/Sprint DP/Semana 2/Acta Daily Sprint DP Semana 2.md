@@ -2,7 +2,7 @@
 
 ## Daily
 
-### Grupo D – Turno de tarde
+### Grupo 9 – Turno de tarde
 
 ![Logo App](../../images/logoapp.jpeg)
 
@@ -10,7 +10,7 @@
 
 **Proyecto:** MeerKatters  
 **Documento:** Acta  
-**Sprint:** Sprint 0  
+**Sprint:** Sprint DP  
 **Semana:** Semana 2    
 **Estado:** Aprobado  
 **Fecha:** 09/02/2026  
@@ -31,13 +31,13 @@
 
 ## Objetivo general de la reunión
 
-Realizar un segumiento del trabajo realizado por los distintos squads en el sprint 1
+Realizar un segumiento del trabajo realizado por los distintos squads en el sprint DP
 
 ---
 
 ## Desarrollo de la reunión
 
-### 1. Seguimiento Sprint 1
+### 1. Seguimiento Sprint DP
 Alejandro ha pedido que los líderes de cada squad digan cómo van las tareas.
 - Backend: Se ha finalizado el informe de productos y el análisis de mercado con la comparación con la competencia.
 - Frontend: Manu ha dicho que, debido a la reciente finalización del informe de producto, aún estám desarrollando los mockups en su squad. Para darles un día más, se ha decidido que los mockups se van a poner en una presentación en Figma aparte, para poder trabajar en paralelo mientras se realiza la presentación en PowerPoint principal.

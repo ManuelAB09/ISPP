@@ -1,6 +1,6 @@
 # Documento de Gestión de Equipo
 
-### Grupo D - Turno de tarde
+### Grupo 9 - Turno de tarde
 
 ![Logo App](../../images/logoapp.jpeg)
 
@@ -8,7 +8,7 @@
 
 **Proyecto:** MeerKatters  
 **Documento:** Normativa  
-**Sprint:** Sprint 0  
+**Sprint:** Sprint DP  
 **Semana:** Semana 1  
 **Estado:** Aprobado  
 **Fecha:** 04/02/2026  

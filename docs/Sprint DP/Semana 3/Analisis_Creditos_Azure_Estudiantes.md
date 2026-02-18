@@ -2,7 +2,7 @@
 
 ## MeerKatters - Plataforma de Comunidades de Estudio
 
-### Grupo D – Turno de tarde
+### Grupo 9 – Turno de tarde
 
 ![Logo App](../../images/logoapp.jpeg)
 
@@ -10,7 +10,7 @@
 
 **Proyecto:** MeerKatters  
 **Documento:** Análisis Técnico / Infraestructura  
-**Sprint:** Sprint 0  
+**Sprint:** Sprint DP  
 **Semana:** Semana 3  
 **Estado:** Aprobado  
 **Fecha:** 16/02/2026  
@@ -301,43 +301,43 @@ Duración (meses) = Crédito Disponible / Coste Mensual
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    CONFIGURACIÓN ESTUDIANTES                │
+│                    CONFIGURACIÓN ESTUDIANTES                 │
 ├─────────────────────────────────────────────────────────────┤
-│                                                             │
+│                                                              │
 │  ┌──────────────────────────────────────────────────────┐   │
-│  │            Azure Static Web Apps (FREE)              │   │
-│  │                    Frontend React                    │   │
-│  │              staging + production                    │   │
-│  │                       €0/mes                         │   │
+│  │            Azure Static Web Apps (FREE)               │   │
+│  │                    Frontend React                     │   │
+│  │              staging + production                     │   │
+│  │                       €0/mes                          │   │
 │  └──────────────────────────────────────────────────────┘   │
-│                            │                                │
-│                            ▼                                │
+│                            │                                 │
+│                            ▼                                 │
 │  ┌──────────────────────────────────────────────────────┐   │
-│  │        App Service Plan B1 (~€11/mes)                │   │
+│  │        App Service Plan B1 (~€11/mes)                 │   │
 │  │  ┌─────────────────┐  ┌─────────────────────────┐    │   │
 │  │  │ Web App Staging │  │ Web App Producción      │    │   │
 │  │  │ (Docker)        │  │ (Docker)                │    │   │
-│  │  │ Always On: Si   │  │ Always On: Si           │    │   │
+│  │  │ Always On: Si    │  │ Always On: Si            │    │   │
 │  │  └─────────────────┘  └─────────────────────────┘    │   │
 │  └──────────────────────────────────────────────────────┘   │
-│                            │                                │
-│                            ▼                                │
+│                            │                                 │
+│                            ▼                                 │
 │  ┌──────────────────────────────────────────────────────┐   │
-│  │         PostgreSQL Flexible B1ms (~€12.50)           │   │
-│  │              2 schemas:                              │   │
-│  │         meerkattersd_staging / meerkattersd_prod     │   │
+│  │         PostgreSQL Flexible B1ms (~€12.50)            │   │
+│  │              2 schemas:                               │   │
+│  │         meerkattersd_staging / meerkattersd_prod      │   │
 │  └──────────────────────────────────────────────────────┘   │
-│                            │                                │
-│                            ▼                                │
+│                            │                                 │
+│                            ▼                                 │
 │  ┌──────────────────────────────────────────────────────┐   │
-│  │             SendGrid Free (3000 emails)              │   │
-│  │                    o                                 │   │
-│  │      Azure Communication Services (1000 free)        │   │
+│  │             SendGrid Free (3000 emails)               │   │
+│  │                    o                                  │   │
+│  │      Azure Communication Services (1000 free)         │   │
 │  └──────────────────────────────────────────────────────┘   │
-│                                                             │
-│                    COSTE TOTAL: ~€23.50/mes                 │
-│                    DURACIÓN: ~3.5 meses                     │
-│                                                             │
+│                                                              │
+│                    COSTE TOTAL: ~€23.50/mes                  │
+│                    DURACIÓN: ~3.5 meses                      │
+│                                                              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -475,45 +475,45 @@ Tras analizar las opciones y considerando que **el tier B1 (Basic) NO soporta de
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                       AZURE (€83.72 créditos)                       │
-│                                                                     │
-│  ┌────────────────────────────────────────────────────────────────┐ │
-│  │              Azure Static Web Apps (GRATIS)                    │ │
-│  │         ┌─────────────────┐  ┌─────────────────┐               │ │
-│  │         │ Frontend        │  │ Frontend        │               │ │
-│  │         │ Staging         │  │ Producción      │               │ │
-│  │         └─────────────────┘  └─────────────────┘               │ │
-│  └────────────────────────────────────────────────────────────────┘ │
-│                                                                     │
-│  ┌────────────────────────────────────────────────────────────────┐ │
-│  │              App Service Plan B1 (~€11/mes)                    │ │
-│  │     1 vCPU  │  1.75 GB RAM  │  Always On  │  Linux             │ │
-│  │                                                                │ │
-│  │  ┌─────────────────────┐  ┌─────────────────────────────────┐  │ │
-│  │  │  Web App: Staging   │  │  Web App: Producción            │  │ │
-│  │  │  (Docker)           │  │  (Docker)                       │  │ │
-│  │  │  Always On: Si      │  │  Always On: Si                  │  │ │
-│  │  └─────────────────────┘  └─────────────────────────────────┘  │ │
-│  └────────────────────────────────────────────────────────────────┘ │
-│                                                                     │
-│  ┌────────────────────────────────────────────────────────────────┐ │
-│  │              PostgreSQL Flexible B1ms (~€12.50/mes)            │ │
-│  │         schema staging    │    schema production               │ │
-│  └────────────────────────────────────────────────────────────────┘ │
-│                                                                     │
-│                    TOTAL AZURE: ~€23.50/mes                         │
+│                       AZURE (€83.72 créditos)                        │
+│                                                                      │
+│  ┌────────────────────────────────────────────────────────────────┐  │
+│  │              Azure Static Web Apps (GRATIS)                    │  │
+│  │         ┌─────────────────┐  ┌─────────────────┐              │  │
+│  │         │ Frontend        │  │ Frontend        │              │  │
+│  │         │ Staging         │  │ Producción      │              │  │
+│  │         └─────────────────┘  └─────────────────┘              │  │
+│  └────────────────────────────────────────────────────────────────┘  │
+│                                                                      │
+│  ┌────────────────────────────────────────────────────────────────┐  │
+│  │              App Service Plan B1 (~€11/mes)                    │  │
+│  │     1 vCPU  │  1.75 GB RAM  │  Always On  │  Linux             │  │
+│  │                                                                │  │
+│  │  ┌─────────────────────┐  ┌─────────────────────────────────┐ │  │
+│  │  │  Web App: Staging   │  │  Web App: Producción            │ │  │
+│  │  │  (Docker)           │  │  (Docker)                       │ │  │
+│  │  │  Always On: Si       │  │  Always On: Si                   │ │  │
+│  │  └─────────────────────┘  └─────────────────────────────────┘ │  │
+│  └────────────────────────────────────────────────────────────────┘  │
+│                                                                      │
+│  ┌────────────────────────────────────────────────────────────────┐  │
+│  │              PostgreSQL Flexible B1ms (~€12.50/mes)            │  │
+│  │         schema staging    │    schema production              │  │
+│  └────────────────────────────────────────────────────────────────┘  │
+│                                                                      │
+│                    TOTAL AZURE: ~€23.50/mes                          │
 └─────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────┐
-│                      RENDER (FREE TIER)                             │
-│                                                                     │
-│  ┌───────────┐ ┌───────────┐ ┌───────────┐ ┌───────────┐            │
-│  │ Demo      │ │ Demo      │ │ Demo      │ │ Demo      │ ...        │
-│  │ Sprint 1  │ │ Sprint 2  │ │ Sprint 3  │ │ Sprint N  │            │
-│  │ (Back+    │ │ (Back+    │ │ (Back+    │ │ (Back+    │            │
-│  │  Front)   │ │  Front)   │ │  Front)   │ │  Front)   │            │
-│  └───────────┘ └───────────┘ └───────────┘ └───────────┘            │
-│                                                                     │
+│                      RENDER (FREE TIER)                              │
+│                                                                      │
+│  ┌───────────┐ ┌───────────┐ ┌───────────┐ ┌───────────┐           │
+│  │ Demo      │ │ Demo      │ │ Demo      │ │ Demo      │ ...       │
+│  │ Sprint 1  │ │ Sprint 2  │ │ Sprint 3  │ │ Sprint N  │           │
+│  │ (Back+    │ │ (Back+    │ │ (Back+    │ │ (Back+    │           │
+│  │  Front)   │ │  Front)   │ │  Front)   │ │  Front)   │           │
+│  └───────────┘ └───────────┘ └───────────┘ └───────────┘           │
+│                                                                      │
 │  → Hibernan tras 15min de inactividad                               │
 │  → Cold start ~30s cuando se accede                                 │
 │  → TOTAL RENDER: €0/mes                                             │

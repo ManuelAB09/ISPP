@@ -1,6 +1,6 @@
 # Estudio de análisis de mercado
 
-### Grupo D – Turno de tarde
+### Grupo 9 – Turno de tarde
 
 ![Logo App](../../images/logoapp.jpeg)
 
@@ -8,7 +8,7 @@
 
 **Proyecto:** MeerKatters  
 **Documento:** Desarrollo  
-**Sprint:** Sprint 0  
+**Sprint:** Sprint DP  
 **Semana:** Semana 2  
 **Estado:** Aprobado  
 **Fecha:** 10/02/2026  

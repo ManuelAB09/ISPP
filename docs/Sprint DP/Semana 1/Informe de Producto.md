@@ -1,6 +1,6 @@
 # Informe de Producto: Plataforma de Comunidades de Estudio
 
-### Grupo D - Turno de tarde
+### Grupo 9 - Turno de tarde
 
 ![Logo App](../../images/logoapp.jpeg)
 
@@ -8,7 +8,7 @@
 
 **Proyecto:** MeerKatters  
 **Documento:** Plan de proyecto  
-**Sprint:** Sprint 0
+**Sprint:** Sprint DP
 **Semana:** Semana 1    
 **Estado:** Aprobado  
 **Fecha:** 08/02/2026  
