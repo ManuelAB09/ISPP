@@ -6,7 +6,7 @@ name: Validar nombre de rama
 #
 # Convención: tipo/descripcion o tipo/#issue_descripcion
 # Tipos: feature, bugfix, hotfix, doc, test, release
-# Ramas exentas: main, trunk, develop
+# Ramas exentas: main, trunk, develop, dependabot/**
 # ════════════════════════════════════════════════════════════
 
 on:
@@ -15,6 +15,7 @@ on:
       - main
       - trunk
       - develop
+      - 'dependabot/**'
 
 jobs:
   validate-branch-name:

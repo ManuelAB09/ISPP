@@ -3,8 +3,12 @@
 ############################
 .DS_Store
 Thumbs.db
+
+############################
+# Gradle (por si)
+############################
 .gradle/
-build/
+gradle/wrapper/gradle-wrapper.jar
 
 ############################
 # IDEs / Editores
@@ -22,7 +26,7 @@ build/
 *.suo
 
 ############################
-# Java
+# Java / Maven (Backend)
 ############################
 *.class
 *.jar
@@ -34,15 +38,35 @@ out/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+# Configuración local con credenciales
+application-local.properties
+application-local.yml
+application-secret.properties
+application-secret.yml
+
+# Keystores / certificados / claves privadas
+*.jks
+*.p12
+*.keystore
+*.pem
+*.key
+*.crt
+
 ############################
-# React Native / Node
+# Node / React (Frontend)
 ############################
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# React Native build
+# Artefacto de compilación React
+frontend/build/
+
+# Cobertura de tests
+frontend/coverage/
+
+# React Native build (por si)
 android/.gradle/
 android/app/build/
 ios/build/
@@ -61,7 +85,3 @@ ios/Pods/
 ############################
 *.log
 
-############################
-# Otros
-############################
-coverage/
