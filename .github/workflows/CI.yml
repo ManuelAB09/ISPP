@@ -310,6 +310,10 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         run: |
+          if [[ -z "$SONAR_TOKEN" || -z "$SONAR_HOST_URL" ]]; then
+            echo "SONAR_TOKEN o SONAR_HOST_URL no configurados. Saltando análisis."
+            exit 0
+          fi
           mvn verify sonar:sonar \
             -Dsonar.projectKey=meerkatters-backend \
             -Dsonar.host.url=$SONAR_HOST_URL \
@@ -329,6 +333,10 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         run: |
+          if [[ -z "$SONAR_TOKEN" || -z "$SONAR_HOST_URL" ]]; then
+            echo "SONAR_TOKEN o SONAR_HOST_URL no configurados. Saltando análisis."
+            exit 0
+          fi
           npx sonar-scanner \
             -Dsonar.projectKey=meerkatters-frontend \
             -Dsonar.sources=src \
