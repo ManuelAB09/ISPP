@@ -47,7 +47,7 @@ enum EstadoAsistencia {
 
 enum TipoTransaccion {
     PAGO_VERIFICACION
-    PAGO_PROFESOR
+    PAGO_TUTOR
     SUSCRIPCION
     COMISION
 }
@@ -76,6 +76,8 @@ class Usuario {
     - intereses: List<String>
     - googleId: String
     - visibleEnListados: Boolean
+    - plan: TipoPlan
+    - esTutor: Boolean
     - createdAt: LocalDateTime
     ==
     <b>Reglas de Negocio:</b>
@@ -91,12 +93,12 @@ class Usuario {
     + vincularGoogleClassroom(): void
 }
 
-class Profesor {
+class Tutor {
     - id: Long
     - especialidades: List<String>
     - tarifaHora: BigDecimal
     - verificado: Boolean
-    - classroomId: String
+    - classroomConectado: Boolean
     - bio: String
     - disponibilidad: String
     - createdAt: LocalDateTime
@@ -111,6 +113,7 @@ class Profesor {
     + editarPerfil(): void
     + solicitarVerificacion(): void
     + conectarClassroom(): void
+    + desconectarClassroom(): void
 }
 
 class Comunidad {
@@ -120,15 +123,17 @@ class Comunidad {
     - tipoGrupo: TipoGrupo
     - imagen: String
     - maxMiembros: Integer
+    - miembrosActuales: Integer
     - tipoPlan: TipoPlanComunidad
     - estado: EstadoComunidad
+    - tieneClassroom: Boolean
     - createdAt: LocalDateTime
     ==
     <b>Reglas de Negocio:</b>
     - COMUNIDAD_PUBLICA: meetings siempre
-      visibles, NO puede contratar profesor
+      visibles, NO puede contratar tutor
     - GRUPO_PRIVADO: puede ocultar meetings,
-      puede contratar profesor
+      puede contratar tutor
     - Premium amplía aforo (RF-32)
     --
     + crear(): void
@@ -136,7 +141,7 @@ class Comunidad {
     + verificarLimiteMiembros(): Boolean
     + eliminar(): void
     + agregarCategoria(): void
-    + contratarProfesor(): void
+    + contratarTutor(): void
     + buscarPorNombre(): List<Comunidad>
 }
 
@@ -148,7 +153,7 @@ class ClassroomAssociation {
     ==
     <b>Nota:</b>
     Vincula grupo con
-    Google Classroom del profesor
+    Google Classroom del tutor
     --
     + asociar(): void
     + desvincular(): void
@@ -188,11 +193,13 @@ class Evento {
     - latitud: Double
     - longitud: Double
     - aforo: Integer
+    - asistentesConfirmados: Integer
     - queLlevar: String
     - visibleEnMapa: Boolean
     - esVirtual: Boolean
     - enlaceVirtual: String
     - cancelado: Boolean
+    - motivoCancelacion: String
     - createdAt: LocalDateTime
     ==
     <b>Reglas de Negocio:</b>
@@ -256,12 +263,13 @@ class TransaccionPago {
     - moneda: String
     - comision: BigDecimal
     - estado: EstadoTransaccion
+    - descripcion: String
     - iniciadoAt: LocalDateTime
     - completadoAt: LocalDateTime
     ==
     <b>Tipos:</b>
-    - PAGO_VERIFICACION: profesor (RF-61)
-    - PAGO_PROFESOR: sueldo (RF-62)
+    - PAGO_VERIFICACION: tutor (RF-61)
+    - PAGO_TUTOR: sueldo (RF-62)
     - SUSCRIPCION: premium (RF-55)
     - COMISION: % sobre pagos (RF-62)
     --
@@ -322,7 +330,7 @@ class Institucion {
 ' ============ RELACIONES ============
 
 ' Usuario relaciones
-Usuario "1" -- "0..1" Profesor : tiene perfil >
+Usuario "1" -- "0..1" Tutor : tiene perfil >
 Usuario "1" -- "0..*" MiembroComunidad : pertenece a >
 Usuario "1" -- "0..1" Suscripcion : tiene >
 Usuario "1" -- "0..*" Evento : crea >
@@ -331,10 +339,10 @@ Usuario "1" -- "0..*" ArchivoAdjunto : adjunta >
 Usuario "1" -- "0..*" TransaccionPago : realiza >
 Usuario "1" -- "0..*" SolicitudComunidad : solicita >
 
-' Profesor relaciones
-Profesor "0..*" -- "0..*" Comunidad : contratado por >
-Profesor "1" -- "0..*" TransaccionPago : recibe pagos >
-Profesor "1" -- "0..1" ClassroomAssociation : propietario >
+' Tutor relaciones
+Tutor "0..*" -- "0..*" Comunidad : contratado por >
+Tutor "1" -- "0..*" TransaccionPago : recibe pagos >
+Tutor "1" -- "0..1" ClassroomAssociation : propietario >
 
 ' Comunidad relaciones
 Comunidad "1" -- "0..*" MiembroComunidad : tiene miembros >
@@ -378,7 +386,7 @@ note right of TransaccionPago
   Stripe (RF-56)
   
   <b>Comisión (RF-62):</b>
-  % sobre pagos a profesores
+  % sobre pagos a tutores
 end note
 
 note bottom of ClassroomAssociation

@@ -22,7 +22,7 @@ enum EstadoInvitacion
 
 ' ============ CLASES MVP ============
 class Usuario
-class Profesor
+class Tutor
 class Comunidad
 class ClassroomAssociation
 class MiembroComunidad
@@ -39,7 +39,7 @@ class Institucion
 ' ============ RELACIONES ============
 
 ' Usuario relaciones
-Usuario "1" -- "0..1" Profesor : tiene perfil >
+Usuario "1" -- "0..1" Tutor : tiene perfil >
 Usuario "1" -- "0..*" MiembroComunidad : pertenece a >
 Usuario "1" -- "0..1" Suscripcion : tiene >
 Usuario "1" -- "0..*" Evento : crea >
@@ -48,10 +48,10 @@ Usuario "1" -- "0..*" ArchivoAdjunto : adjunta >
 Usuario "1" -- "0..*" TransaccionPago : realiza >
 Usuario "1" -- "0..*" SolicitudComunidad : solicita >
 
-' Profesor relaciones
-Profesor "0..*" -- "0..*" Comunidad : contratado por >
-Profesor "1" -- "0..*" TransaccionPago : recibe pagos >
-Profesor "1" -- "0..1" ClassroomAssociation : propietario >
+' Tutor relaciones
+Tutor "0..*" -- "0..*" Comunidad : contratado por >
+Tutor "1" -- "0..*" TransaccionPago : recibe pagos >
+Tutor "1" -- "0..1" ClassroomAssociation : propietario >
 
 ' Comunidad relaciones
 Comunidad "1" -- "0..*" MiembroComunidad : tiene miembros >

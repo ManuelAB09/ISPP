@@ -12,7 +12,6 @@ title Diagrama de Clases - MeerKatters (Completo)
 enum TipoPlan {
     FREE
     PREMIUM
-    CORPORATIVO
 }
 
 enum TipoGrupo {
@@ -34,12 +33,11 @@ enum EstadoSolicitud {
 enum EstadoAsistencia {
     CONFIRMADA
     CANCELADA
-    PENDIENTE
 }
 
 enum TipoTransaccion {
     PAGO_VERIFICACION
-    PAGO_PROFESOR
+    PAGO_TUTOR
     SUSCRIPCION
     COMISION
 }
@@ -48,14 +46,12 @@ enum EstadoTransaccion {
     PENDIENTE
     COMPLETADA
     FALLIDA
-    REEMBOLSADA
 }
 
 enum EstadoInvitacion {
-    ENVIADA
+    PENDIENTE
     ACEPTADA
-    EXPIRADA
-    CANCELADA
+    RECHAZADA
 }
 
 enum TipoNotificacion {
@@ -66,7 +62,7 @@ enum TipoNotificacion {
     RECORDATORIO
     SUSCRIPCION_EXPIRA
     COMUNIDAD_CONGELADA
-    PROFESOR_CONTRATADO
+    TUTOR_CONTRATADO
 }
 
 enum TipoPlanComunidad {
@@ -91,8 +87,9 @@ class Usuario <<MVP>> {
     - bio: String
     - intereses: List<String>
     - googleId: String
-    - twoFactorEnabled: Boolean
     - visibleEnListados: Boolean
+    - plan: TipoPlan
+    - esTutor: Boolean
     - createdAt: LocalDateTime
     --
     + registrar(): void
@@ -105,12 +102,12 @@ class Usuario <<MVP>> {
     + vincularGoogleClassroom(): void
 }
 
-class Profesor <<MVP>> {
+class Tutor <<MVP>> {
     - id: Long
     - especialidades: List<String>
     - tarifaHora: BigDecimal
     - verificado: Boolean
-    - classroomId: String
+    - classroomConectado: Boolean
     - bio: String
     - disponibilidad: String
     - createdAt: LocalDateTime
@@ -119,7 +116,8 @@ class Profesor <<MVP>> {
     + editarPerfil(): void
     + solicitarVerificacion(): void
     + conectarClassroom(): void
-    + mostrarEnListado(): List<Profesor>
+    + desconectarClassroom(): void
+    + mostrarEnListado(): List<Tutor>
 }
 
 class Comunidad <<MVP>> {
@@ -129,22 +127,24 @@ class Comunidad <<MVP>> {
     - tipoGrupo: TipoGrupo
     - imagen: String
     - maxMiembros: Integer
+    - miembrosActuales: Integer
     - tipoPlan: TipoPlanComunidad
     - estado: EstadoComunidad
+    - tieneClassroom: Boolean
     - createdAt: LocalDateTime
     ==
     <b>Reglas de Negocio:</b>
     - COMUNIDAD_PUBLICA: meetings siempre
-      visibles, no puede contratar profesor
+      visibles, no puede contratar tutor
     - GRUPO_PRIVADO: puede ocultar meetings,
-      puede contratar profesor
+      puede contratar tutor
     --
     + crear(): void
     + configurarPrivacidad(): void
     + verificarLimiteMiembros(): Boolean
     + eliminar(): void
     + agregarCategoria(): void
-    + contratarProfesor(): void
+    + contratarTutor(): void
     + congelar(): void
     + descongelar(): void
 }
@@ -193,13 +193,14 @@ class Evento <<MVP>> {
     - latitud: Double
     - longitud: Double
     - aforo: Integer
+    - asistentesConfirmados: Integer
     - queLlevar: String
     - visibleEnMapa: Boolean
     - esVirtual: Boolean
     - enlaceVirtual: String
     - cancelado: Boolean
+    - motivoCancelacion: String
     - createdAt: LocalDateTime
-    - updatedAt: LocalDateTime
     ==
     <b>Reglas de Negocio:</b>
     - En comunidades públicas siempre
@@ -384,7 +385,7 @@ class GrabacionReunion <<Extra>> {
 ' ============ RELACIONES ============
 
 ' Usuario relaciones
-Usuario "1" -- "0..1" Profesor : tiene perfil >
+Usuario "1" -- "0..1" Tutor : tiene perfil >
 Usuario "1" -- "0..*" MiembroComunidad : pertenece a >
 Usuario "1" -- "0..1" Suscripcion : tiene >
 Usuario "1" -- "0..*" Evento : crea >
@@ -396,10 +397,10 @@ Usuario "1" -- "0..*" SolicitudComunidad : solicita >
 Usuario "1" -- "0..*" Notificacion : recibe >
 Usuario "1" -- "0..1" PreferenciasNotificacion : configura >
 
-' Profesor relaciones
-Profesor "0..*" -- "0..*" Comunidad : contratado por >
-Profesor "1" -- "0..*" TransaccionPago : recibe pagos >
-Profesor "1" -- "0..1" ClassroomAssociation : propietario >
+' Tutor relaciones
+Tutor "0..*" -- "0..*" Comunidad : contratado por >
+Tutor "1" -- "0..*" TransaccionPago : recibe pagos >
+Tutor "1" -- "0..1" ClassroomAssociation : propietario >
 
 ' Comunidad relaciones
 Comunidad "1" -- "0..*" MiembroComunidad : tiene >
@@ -432,9 +433,9 @@ legend right
 endlegend
 
 ' ============ NOTAS ============
-note top of Profesor
+note top of Tutor
   <b>Verificación (RF-12):</b>
-  Los profesores pagan para
+  Los tutores pagan para
   aparecer verificados y destacados
   
   <b>Integración Classroom (RF-15):</b>
@@ -445,10 +446,10 @@ end note
 
 note right of Comunidad
   <b>Tipos de Grupo (RF-17):</b>
-  - COMUNIDAD_PUBLICA: sin profesor,
+  - COMUNIDAD_PUBLICA: sin tutor,
     meetings siempre en mapa
   - GRUPO_PRIVADO: puede contratar
-    profesor, meetings ocultables
+    tutor, meetings ocultables
     
   <b>Premium (RF-32):</b>
   Amplía aforo y funcionalidades
@@ -456,8 +457,8 @@ end note
 
 note bottom of TransaccionPago
   <b>Tipos de Transacción:</b>
-  - PAGO_VERIFICACION: profesor
-  - PAGO_PROFESOR: sueldo
+  - PAGO_VERIFICACION: tutor
+  - PAGO_TUTOR: sueldo
   - SUSCRIPCION: premium
   - COMISION: % sobre pagos
   
@@ -471,7 +472,7 @@ note right of ClassroomAssociation
   delegada a Classroom (RF-50)
   
   Permisos automáticos al
-  contratar profesor (RF-53)
+  contratar tutor (RF-53)
 end note
 
 @enduml
