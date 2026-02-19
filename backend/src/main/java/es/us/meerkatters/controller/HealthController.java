@@ -1,17 +1,17 @@
 package es.us.meerkatters.controller;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import java.time.LocalDateTime;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * Controlador de ejemplo para verificar que Swagger funciona.
@@ -27,16 +27,14 @@ public class HealthController {
         summary = "Verificar estado del servidor",
         description = "Devuelve el estado actual del servidor y timestamp"
     )
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "Servidor funcionando correctamente",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = HealthResponse.class)
-            )
+    @ApiResponse(
+        responseCode = "200",
+        description = "Servidor funcionando correctamente",
+        content = @Content(
+            mediaType = "application/json",
+            schema = @Schema(implementation = HealthResponse.class)
         )
-    })
+    )
     public ResponseEntity<HealthResponse> health() {
         return ResponseEntity.ok(new HealthResponse(
             "UP",
