@@ -28,7 +28,7 @@ jobs:
           BRANCH="${GITHUB_REF#refs/heads/}"
           echo "Rama: $BRANCH"
 
-          VALID_RE='^(feature|bugfix|hotfix|doc|test|release)/(#[0-9]+_)?[a-zA-Z0-9._-]+$'
+          VALID_RE='^(feature|bugfix|hotfix|doc|test|release)/(#[0-9]+_)?[a-zA-Z0-9áéíóúñÁÉÍÓÚÑ._-]+$'
 
           if ! [[ "$BRANCH" =~ $VALID_RE ]]; then
             echo ""
