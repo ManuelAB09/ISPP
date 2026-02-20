@@ -124,3 +124,4 @@ jobs:
           app_location: "/frontend"
           output_location: "build"
           skip_app_build: true
+          skip_deploy_on_missing_secrets: true
