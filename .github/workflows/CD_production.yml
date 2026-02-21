@@ -31,7 +31,6 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  BACKEND_IMAGE: ghcr.io/${{ github.repository }}/backend
 
 # ────────────────────────────────────────────────────────────
 jobs:
@@ -58,6 +57,9 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Convertir nombre de imagen a minúsculas
+        run: echo "BACKEND_IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}/backend" >> $GITHUB_ENV
 
       - name: Build y push imagen Docker (Backend)
         uses: docker/build-push-action@v6
@@ -122,3 +124,4 @@ jobs:
           app_location: "/frontend"
           output_location: "build"
           skip_app_build: true
+          skip_deploy_on_missing_secrets: true

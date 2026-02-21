@@ -1,11 +1,12 @@
-@startuml Diagrama_Clases_MVP
+@startuml Diagrama_Clases_Completo
 !theme plain
 skinparam classAttributeIconSize 0
 skinparam class {
-    BackgroundColor LightGreen
+    BackgroundColor<<MVP>> LightGreen
+    BackgroundColor<<Extra>> LightBlue
 }
 
-title Diagrama de Clases - MeerKatters (Solo MVP)
+title Diagrama de Clases - MeerKatters (Completo)
 
 ' ============ ENUMS ============
 enum TipoPlan {
@@ -16,17 +17,6 @@ enum TipoPlan {
 enum TipoGrupo {
     COMUNIDAD_PUBLICA
     GRUPO_PRIVADO
-}
-
-enum TipoPlanComunidad {
-    FREE
-    PREMIUM
-    CORPORATIVO
-}
-
-enum EstadoComunidad {
-    ACTIVA
-    CONGELADA
 }
 
 enum RolComunidad {
@@ -47,7 +37,7 @@ enum EstadoAsistencia {
 
 enum TipoTransaccion {
     PAGO_VERIFICACION
-    PAGO_PROFESOR
+    PAGO_TUTOR
     SUSCRIPCION
     COMISION
 }
@@ -64,9 +54,31 @@ enum EstadoInvitacion {
     RECHAZADA
 }
 
+enum TipoNotificacion {
+    EVENTO_NUEVO
+    SOLICITUD_ACEPTADA
+    MENSAJE_CHAT
+    ARCHIVO_NUEVO
+    RECORDATORIO
+    SUSCRIPCION_EXPIRA
+    COMUNIDAD_CONGELADA
+    TUTOR_CONTRATADO
+}
+
+enum TipoPlanComunidad {
+    FREE
+    PREMIUM
+    CORPORATIVO
+}
+
+enum EstadoComunidad {
+    ACTIVA
+    CONGELADA
+}
+
 ' ============ CLASES MVP ============
 
-class Usuario {
+class Usuario <<MVP>> {
     - id: Long
     - email: String
     - password: String
@@ -76,11 +88,9 @@ class Usuario {
     - intereses: List<String>
     - googleId: String
     - visibleEnListados: Boolean
+    - plan: TipoPlan
+    - esTutor: Boolean
     - createdAt: LocalDateTime
-    ==
-    <b>Reglas de Negocio:</b>
-    - Máximo 3 comunidades como admin (Free)
-    - OAuth con Google para Classroom
     --
     + registrar(): void
     + iniciarSesion(): String
@@ -88,74 +98,69 @@ class Usuario {
     + actualizarPerfil(): void
     + cambiarPassword(): void
     + eliminarCuenta(): void
+    + recuperarPassword(): void
     + vincularGoogleClassroom(): void
 }
 
-class Profesor {
+class Tutor <<MVP>> {
     - id: Long
     - especialidades: List<String>
     - tarifaHora: BigDecimal
     - verificado: Boolean
-    - classroomId: String
+    - classroomConectado: Boolean
     - bio: String
     - disponibilidad: String
     - createdAt: LocalDateTime
-    ==
-    <b>Reglas de Negocio:</b>
-    - Pago para verificación (RF-12)
-    - Solo verificados aparecen destacados
-    - Classroom se asocia al grupo
-      al ser contratado (RF-15)
     --
     + crearPerfil(): void
     + editarPerfil(): void
     + solicitarVerificacion(): void
     + conectarClassroom(): void
+    + desconectarClassroom(): void
+    + mostrarEnListado(): List<Tutor>
 }
 
-class Comunidad {
+class Comunidad <<MVP>> {
     - id: Long
     - nombre: String
     - descripcion: String
     - tipoGrupo: TipoGrupo
     - imagen: String
     - maxMiembros: Integer
+    - miembrosActuales: Integer
     - tipoPlan: TipoPlanComunidad
     - estado: EstadoComunidad
+    - tieneClassroom: Boolean
     - createdAt: LocalDateTime
     ==
     <b>Reglas de Negocio:</b>
     - COMUNIDAD_PUBLICA: meetings siempre
-      visibles, NO puede contratar profesor
+      visibles, no puede contratar tutor
     - GRUPO_PRIVADO: puede ocultar meetings,
-      puede contratar profesor
-    - Premium amplía aforo (RF-32)
+      puede contratar tutor
     --
     + crear(): void
     + configurarPrivacidad(): void
     + verificarLimiteMiembros(): Boolean
     + eliminar(): void
     + agregarCategoria(): void
-    + contratarProfesor(): void
-    + buscarPorNombre(): List<Comunidad>
+    + contratarTutor(): void
+    + congelar(): void
+    + descongelar(): void
 }
 
-class ClassroomAssociation {
+class ClassroomAssociation <<MVP>> {
     - id: Long
     - classroomId: String
     - permisos: String
     - linkedAt: LocalDateTime
-    ==
-    <b>Nota:</b>
-    Vincula grupo con
-    Google Classroom del profesor
     --
     + asociar(): void
     + desvincular(): void
     + sincronizarPermisos(): void
 }
 
-class MiembroComunidad {
+class MiembroComunidad <<MVP>> {
     - id: Long
     - rol: RolComunidad
     - fechaIngreso: LocalDateTime
@@ -164,10 +169,10 @@ class MiembroComunidad {
     + abandonar(): void
     + expulsar(): void
     + transferirAdmin(): void
-    + esAdmin(): Boolean
+    + cambiarRol(): void
 }
 
-class SolicitudComunidad {
+class SolicitudComunidad <<MVP>> {
     - id: Long
     - estado: EstadoSolicitud
     - mensaje: String
@@ -178,7 +183,7 @@ class SolicitudComunidad {
     + rechazar(): void
 }
 
-class Evento {
+class Evento <<MVP>> {
     - id: Long
     - titulo: String
     - descripcion: String
@@ -188,17 +193,18 @@ class Evento {
     - latitud: Double
     - longitud: Double
     - aforo: Integer
+    - asistentesConfirmados: Integer
     - queLlevar: String
     - visibleEnMapa: Boolean
     - esVirtual: Boolean
     - enlaceVirtual: String
     - cancelado: Boolean
+    - motivoCancelacion: String
     - createdAt: LocalDateTime
     ==
     <b>Reglas de Negocio:</b>
-    - Respetar aforo máximo (RF-46)
     - En comunidades públicas siempre
-      visible en mapa (RF-47)
+      visibleEnMapa = true
     - En grupos privados el organizador
       decide la visibilidad
     --
@@ -206,11 +212,11 @@ class Evento {
     + editar(): void
     + cancelar(): void
     + verificarAforo(): Boolean
-    + obtenerAsistentes(): List<Usuario>
     + contarAsistentes(): Integer
+    + generarEnlaceVirtual(): String
 }
 
-class AsistenciaEvento {
+class AsistenciaEvento <<MVP>> {
     - id: Long
     - estado: EstadoAsistencia
     - createdAt: LocalDateTime
@@ -219,7 +225,7 @@ class AsistenciaEvento {
     + cancelar(): void
 }
 
-class InvitacionEvento {
+class InvitacionEvento <<MVP>> {
     - id: Long
     - estado: EstadoInvitacion
     - createdAt: LocalDateTime
@@ -229,7 +235,7 @@ class InvitacionEvento {
     + rechazar(): void
 }
 
-class ArchivoAdjunto {
+class ArchivoAdjunto <<MVP>> {
     - id: Long
     - nombre: String
     - url: String
@@ -238,10 +244,9 @@ class ArchivoAdjunto {
     - classroomLink: String
     - createdAt: LocalDateTime
     ==
-    <b>Reglas de Negocio:</b>
-    - Gestión principal de material
-      delegada a Google Classroom (RF-50)
-    - Solo adjuntos menores en plataforma
+    <b>Nota:</b>
+    Gestión principal de material
+    delegada a Google Classroom
     --
     + adjuntar(): void
     + eliminar(): void
@@ -249,7 +254,7 @@ class ArchivoAdjunto {
     + enlazarRecursoExterno(): void
 }
 
-class TransaccionPago {
+class TransaccionPago <<MVP>> {
     - id: Long
     - tipo: TipoTransaccion
     - monto: BigDecimal
@@ -258,19 +263,14 @@ class TransaccionPago {
     - estado: EstadoTransaccion
     - iniciadoAt: LocalDateTime
     - completadoAt: LocalDateTime
-    ==
-    <b>Tipos:</b>
-    - PAGO_VERIFICACION: profesor (RF-61)
-    - PAGO_PROFESOR: sueldo (RF-62)
-    - SUSCRIPCION: premium (RF-55)
-    - COMISION: % sobre pagos (RF-62)
     --
     + procesar(): void
     + aplicarComision(): void
+    + reembolsar(): void
     + verificarEstado(): EstadoTransaccion
 }
 
-class Categoria {
+class Categoria <<MVP>> {
     - id: Long
     - nombre: String
     - descripcion: String
@@ -283,17 +283,13 @@ class Categoria {
     + reordenar(): void
 }
 
-class Suscripcion {
+class Suscripcion <<MVP>> {
     - id: Long
     - plan: TipoPlan
     - fechaInicio: LocalDate
     - fechaFin: LocalDate
     - activa: Boolean
     - autoRenovar: Boolean
-    ==
-    <b>Planes (RF-54, RF-55):</b>
-    - FREE: funcionalidades básicas
-    - PREMIUM: aforo ampliado
     --
     + suscribir(): void
     + cancelar(): void
@@ -301,7 +297,19 @@ class Suscripcion {
     + estaActiva(): Boolean
 }
 
-class Institucion {
+' ============ CLASES MVP (Chat es Extra) ============
+class Mensaje <<Extra>> {
+    - id: Long
+    - contenido: String
+    - editado: Boolean
+    - createdAt: LocalDateTime
+    --
+    + enviar(): void
+    + editar(): void
+    + eliminar(): void
+}
+
+class Institucion <<MVP>> {
     - id: Long
     - nombre: String
     - email: String
@@ -311,37 +319,96 @@ class Institucion {
     - maxUsuarios: Integer
     - createdAt: LocalDateTime
     ==
-    <b>Academias (RF-58, RF-63):</b>
-    Plan especial con funcionalidades
-    premium a precio reducido
+    <b>Nota:</b>
+    Academias con plan especial
+    y funcionalidades premium
     --
     + registrar(): void
     + contratarPlan(): void
+    + invitarUsuario(): void
+}
+
+class InvitacionCorporativa <<Extra>> {
+    - id: Long
+    - email: String
+    - token: String
+    - estado: EstadoInvitacion
+    - fechaEnvio: LocalDateTime
+    - fechaExpiracion: LocalDateTime
+    --
+    + enviar(): void
+    + aceptar(): void
+    + cancelar(): void
+}
+
+class Notificacion <<Extra>> {
+    - id: Long
+    - tipo: TipoNotificacion
+    - titulo: String
+    - mensaje: String
+    - leida: Boolean
+    - enviadaPorEmail: Boolean
+    - createdAt: LocalDateTime
+    --
+    + crear(): void
+    + marcarLeida(): void
+    + enviarEmail(): void
+}
+
+class PreferenciasNotificacion <<Extra>> {
+    - id: Long
+    - emailEventos: Boolean
+    - emailMensajes: Boolean
+    - emailArchivos: Boolean
+    - emailSolicitudes: Boolean
+    --
+    + actualizar(): void
+}
+
+class GrabacionReunion <<Extra>> {
+    - id: Long
+    - url: String
+    - duracion: Integer
+    - tamaño: Long
+    - classroomUploadUrl: String
+    - createdAt: LocalDateTime
+    ==
+    <b>Nota:</b>
+    Las grabaciones se suben
+    a Google Classroom
+    --
+    + guardar(): void
+    + eliminar(): void
+    + subirAClassroom(): void
 }
 
 ' ============ RELACIONES ============
 
 ' Usuario relaciones
-Usuario "1" -- "0..1" Profesor : tiene perfil >
+Usuario "1" -- "0..1" Tutor : tiene perfil >
 Usuario "1" -- "0..*" MiembroComunidad : pertenece a >
 Usuario "1" -- "0..1" Suscripcion : tiene >
 Usuario "1" -- "0..*" Evento : crea >
 Usuario "1" -- "0..*" AsistenciaEvento : asiste a >
 Usuario "1" -- "0..*" ArchivoAdjunto : adjunta >
 Usuario "1" -- "0..*" TransaccionPago : realiza >
+Usuario "1" -- "0..*" Mensaje : envía >
 Usuario "1" -- "0..*" SolicitudComunidad : solicita >
+Usuario "1" -- "0..*" Notificacion : recibe >
+Usuario "1" -- "0..1" PreferenciasNotificacion : configura >
 
-' Profesor relaciones
-Profesor "0..*" -- "0..*" Comunidad : contratado por >
-Profesor "1" -- "0..*" TransaccionPago : recibe pagos >
-Profesor "1" -- "0..1" ClassroomAssociation : propietario >
+' Tutor relaciones
+Tutor "0..*" -- "0..*" Comunidad : contratado por >
+Tutor "1" -- "0..*" TransaccionPago : recibe pagos >
+Tutor "1" -- "0..1" ClassroomAssociation : propietario >
 
 ' Comunidad relaciones
-Comunidad "1" -- "0..*" MiembroComunidad : tiene miembros >
+Comunidad "1" -- "0..*" MiembroComunidad : tiene >
 Comunidad "1" -- "1" Usuario : creada por >
 Comunidad "1" -- "0..*" Evento : contiene >
 Comunidad "1" -- "0..*" ArchivoAdjunto : almacena >
 Comunidad "1" -- "0..*" Categoria : organiza >
+Comunidad "1" -- "0..*" Mensaje : contiene >
 Comunidad "1" -- "0..*" SolicitudComunidad : recibe >
 Comunidad "0..1" -- "0..1" ClassroomAssociation : tiene >
 Comunidad "0..*" -- "0..1" Institucion : pertenece a >
@@ -350,41 +417,62 @@ Comunidad "0..*" -- "0..1" Institucion : pertenece a >
 Evento "1" -- "0..*" AsistenciaEvento : tiene >
 Evento "1" -- "0..*" InvitacionEvento : invita a >
 Evento "0..1" -- "0..*" ArchivoAdjunto : asocia >
+Evento "1" -- "0..1" GrabacionReunion : tiene >
 InvitacionEvento "0..*" -- "1" Usuario : invita a >
 
 ' Otras relaciones
 ArchivoAdjunto "0..*" -- "0..1" Categoria : pertenece a >
-SolicitudComunidad "0..1" -- "0..1" Usuario : respondida por >
+Institucion "1" -- "0..*" InvitacionCorporativa : genera >
+SolicitudComunidad "0..1" -- "1" Usuario : respondida por >
+
+' ============ LEYENDA ============
+legend right
+  |= Color |= Tipo |
+  | <#LightGreen> | MVP |
+  | <#LightBlue> | Extra |
+endlegend
 
 ' ============ NOTAS ============
-note top of Usuario
-  <b>Requisitos Aplicables:</b>
-  - RNF-02: Contraseñas hasheadas
-  - RNF-03: Autenticación con JWT
-  - RF-07: OAuth Google Classroom
-end note
-
-note top of Comunidad
-  <b>Límites Plan Free:</b>
-  - RF-18: Máx 3 comunidades
-  - RF-19: Miembros limitados
+note top of Tutor
+  <b>Verificación (RF-12):</b>
+  Los tutores pagan para
+  aparecer verificados y destacados
   
-  <b>Tipos (RF-17):</b>
-  - Pública vs Privada
+  <b>Integración Classroom (RF-15):</b>
+  Conectan su Classroom para
+  asociarlo automáticamente
+  al ser contratados
 end note
 
-note right of TransaccionPago
+note right of Comunidad
+  <b>Tipos de Grupo (RF-17):</b>
+  - COMUNIDAD_PUBLICA: sin tutor,
+    meetings siempre en mapa
+  - GRUPO_PRIVADO: puede contratar
+    tutor, meetings ocultables
+    
+  <b>Premium (RF-32):</b>
+  Amplía aforo y funcionalidades
+end note
+
+note bottom of TransaccionPago
+  <b>Tipos de Transacción:</b>
+  - PAGO_VERIFICACION: tutor
+  - PAGO_TUTOR: sueldo
+  - SUSCRIPCION: premium
+  - COMISION: % sobre pagos
+  
   <b>Integración:</b>
   Stripe (RF-56)
-  
-  <b>Comisión (RF-62):</b>
-  % sobre pagos a profesores
 end note
 
-note bottom of ClassroomAssociation
-  <b>Google Classroom:</b>
-  Material y tareas (RF-50)
-  Permisos automáticos (RF-53)
+note right of ClassroomAssociation
+  <b>Integración Google Classroom:</b>
+  Gestión de material y tareas
+  delegada a Classroom (RF-50)
+  
+  Permisos automáticos al
+  contratar tutor (RF-53)
 end note
 
 @enduml

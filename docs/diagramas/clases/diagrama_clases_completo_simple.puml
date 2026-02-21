@@ -24,7 +24,7 @@ enum TipoNotificacion <<Extra>>
 
 ' ============ CLASES MVP ============
 class Usuario <<MVP>>
-class Profesor <<MVP>>
+class Tutor <<MVP>>
 class Comunidad <<MVP>>
 class ClassroomAssociation <<MVP>>
 class MiembroComunidad <<MVP>>
@@ -48,7 +48,7 @@ class GrabacionReunion <<Extra>>
 ' ============ RELACIONES ============
 
 ' Usuario relaciones
-Usuario "1" -- "0..1" Profesor : tiene perfil >
+Usuario "1" -- "0..1" Tutor : tiene perfil >
 Usuario "1" -- "0..*" MiembroComunidad : pertenece a >
 Usuario "1" -- "0..1" Suscripcion : tiene >
 Usuario "1" -- "0..*" Evento : crea >
@@ -60,10 +60,10 @@ Usuario "1" -- "0..*" SolicitudComunidad : solicita >
 Usuario "1" -- "0..*" Notificacion : recibe >
 Usuario "1" -- "0..1" PreferenciasNotificacion : configura >
 
-' Profesor relaciones
-Profesor "0..*" -- "0..*" Comunidad : contratado por >
-Profesor "1" -- "0..*" TransaccionPago : recibe pagos >
-Profesor "1" -- "0..1" ClassroomAssociation : propietario >
+' Tutor relaciones
+Tutor "0..*" -- "0..*" Comunidad : contratado por >
+Tutor "1" -- "0..*" TransaccionPago : recibe pagos >
+Tutor "1" -- "0..1" ClassroomAssociation : propietario >
 
 ' Comunidad relaciones
 Comunidad "1" -- "0..*" MiembroComunidad : tiene >

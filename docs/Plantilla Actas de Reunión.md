@@ -2,9 +2,9 @@
 
 ## [Tipo de reunión: Retrospectiva / Daily / Específica]
 
-### Grupo D – Turno de tarde
+### Grupo 9 – Turno de tarde
 
-![Logo App](../images/logoapp.jpeg)
+![Logo App](../../images/logoapp.jpeg)
 
 ---
 
