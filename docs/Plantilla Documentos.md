@@ -2,7 +2,7 @@
 
 ## Subtítulo (si aplica)
 
-### Grupo D – Turno de tarde
+### Grupo 9 – Turno de tarde
 
 ![Logo App](../../images/logoapp.jpeg)
 
