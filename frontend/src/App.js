@@ -1,23 +1,34 @@
-import logo from './logo.svg';
+import { useEffect } from 'react';
+import { Route, Routes } from 'react-router-dom';
 import './App.css';
+import Home from './screens/home/Home';
 
 function App() {
+  let ownerRoutes = <></>
+
+  const init = async () => {
+    // TODO: Fetch user data and set it in state
+  }
+
+  useEffect(() => {
+    init()
+    // eslint-disable-next-line
+  }, [])
+
+  if (true) { // TODO: Check if user is logging
+    ownerRoutes = (
+      <>
+        
+      </>
+    )
+  }
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        {ownerRoutes}
+      </Routes>
     </div>
   );
 }
