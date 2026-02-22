@@ -8,12 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  */
 @SpringBootApplication
 public final class BackendApplication {
-    /**
-     * Private constructor to prevent instantiation.
-     */
-    private BackendApplication() {
-        throw new UnsupportedOperationException("Utility class");
-    }
+    // ...existing code...
 
     /**
      * Main entry point for the Spring Boot application.
