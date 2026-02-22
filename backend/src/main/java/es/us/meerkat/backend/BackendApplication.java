@@ -7,7 +7,14 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * Main Spring Boot application for Meerkat Backend.
  */
 @SpringBootApplication
-public class BackendApplication {
+public final class BackendApplication {
+    /**
+     * Private constructor to prevent instantiation.
+     */
+    private BackendApplication() {
+        throw new UnsupportedOperationException("Utility class");
+    }
+
     /**
      * Main entry point for the Spring Boot application.
      * @param args the command line arguments
