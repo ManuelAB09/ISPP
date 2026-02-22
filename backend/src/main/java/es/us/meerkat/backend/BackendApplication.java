@@ -8,6 +8,14 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  */
 @SpringBootApplication
 public final class BackendApplication {
+    /**
+     * Private constructor for Checkstyle compliance.
+     * Do not use.
+     */
+    private BackendApplication() {
+        // NO-OP: Required by Checkstyle.
+        // Spring Boot needs a default constructor.
+    }
     // ...existing code...
 
     /**
