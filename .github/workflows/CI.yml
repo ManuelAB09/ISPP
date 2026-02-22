@@ -191,7 +191,7 @@ jobs:
           SPRING_DATASOURCE_USERNAME: meerkatters_user
           SPRING_DATASOURCE_PASSWORD: meerkatters_password
           SPRING_PROFILES_ACTIVE: test
-        run: mvn verify -B
+        run: mvn verify -B -e -X
 
       - name: Verificar cobertura mínima (70%)
         working-directory: backend
