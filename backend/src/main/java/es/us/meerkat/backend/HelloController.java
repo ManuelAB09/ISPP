@@ -4,7 +4,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class HelloController {
+public final class HelloController {
+    /**
+     * Endpoint de prueba usado en la documentación Swagger.
+     *
+     * @return cadena fija "Hello world"
+     */
     @GetMapping("/api/hello")
     public String hello() {
         return "Hello world";

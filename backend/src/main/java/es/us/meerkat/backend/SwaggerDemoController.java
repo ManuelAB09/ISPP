@@ -7,10 +7,18 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @Tag(name = "Demo", description = "Demo endpoints para Swagger UI")
-public class SwaggerDemoController {
+public final class SwaggerDemoController {
 
+    /**
+     * Punto de entrada de demostración que aparece en la UI de Swagger.
+     *
+     * @return texto de confirmación
+     */
     @GetMapping("/api/demo")
-    @Operation(summary = "Demo endpoint", description = "Devuelve un mensaje de prueba para Swagger UI.")
+    @Operation(
+            summary = "Demo endpoint",
+            description = "Devuelve un mensaje de prueba para Swagger UI."
+    )
     public String demo() {
         return "Swagger UI está funcionando correctamente.";
     }
