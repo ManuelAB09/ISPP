@@ -50,12 +50,12 @@ public class TutorService {
             throw new RuntimeException("El usuario no tiene rol de profesor");
         }
 
-        if (tutorRepository.findByUsuario(usuario).isPresent()) {
+        if (tutorRepository.findByUs(usuario).isPresent()) {
             throw new RuntimeException("El perfil ya existe");
         }
 
         final Tutor tutor = new Tutor();
-        tutor.setUsuario(usuario);
+        tutor.setUs(usuario);
         tutor.setEspecialidades(requestParam.getEspecialidades());
         tutor.setTarifaHora(requestParam.getTarifaHora());
         tutor.setDisponibilidad(requestParam.getDisponibilidad());
@@ -87,7 +87,7 @@ public class TutorService {
         final Usuario usuario = usuarioRepository.findById(usuarioIdParam)
                 .orElseThrow(() -> new RuntimeException("User no encontrado"));
 
-        final Tutor tutor = tutorRepository.findByUsuario(usuario)
+        final Tutor tutor = tutorRepository.findByUs(usuario)
                 .orElseThrow(() -> new RuntimeException("Perfil no hallado"));
 
         tutor.setEspecialidades(requestParam.getEspecialidades());
@@ -127,7 +127,7 @@ public class TutorService {
     private TutorProfileResponse mapToResponse(final Tutor tutorParam) {
         return TutorProfileResponse.builder()
                 .id(tutorParam.getId())
-                .nombre(tutorParam.getUsuario().getNombre())
+                .nombre(tutorParam.getUs().getNombre())
                 .especialidades(tutorParam.getEspecialidades())
                 .tarifaHora(tutorParam.getTarifaHora())
                 .disponibilidad(tutorParam.getDisponibilidad())

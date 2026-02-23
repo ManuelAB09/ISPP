@@ -40,7 +40,7 @@ public class Tutor {
     /** Usuario asociado al tutor. */
     @ManyToOne
     @JoinColumn(name = "usuario_id", nullable = false)
-    private Usuario usuario;
+    private Usuario us;
 
     /** Lista de especialidades del tutor. */
     @ElementCollection

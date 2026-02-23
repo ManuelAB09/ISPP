@@ -18,10 +18,10 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
     /**
      * Busca un tutor asociado a un usuario específico.
      *
-     * @param usuario Usuario asociado al tutor.
+     * @param us Usuario asociado al tutor.
      * @return Optional que contiene el tutor si existe.
      */
-    Optional<Tutor> findByUsuario(Usuario usuario);
+    Optional<Tutor> findByUs(Usuario us);
 
     /**
      * Devuelve todos los tutores que estén verificados.
