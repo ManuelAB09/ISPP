@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: backend
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/meerkatters_test
+    driver-class-name: org.postgresql.Driver
+    username: meerkatters_user
+    password: meerkatters_password
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    database-platform: org.hibernate.dialect.PostgreSQL10Dialect
