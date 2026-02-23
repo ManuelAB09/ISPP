@@ -1,18 +1,19 @@
 package es.us.meerkat.backend.service;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
+import lombok.RequiredArgsConstructor;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import es.us.meerkat.backend.dto.TutorProfileRequest;
 import es.us.meerkat.backend.dto.TutorProfileResponse;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.TutorRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.List;
-
 /**
  * Servicio para gestionar la lógica de negocio relacionada con los tutores.
  *
