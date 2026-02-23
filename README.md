@@ -1,6 +1,6 @@
 <div align="center">
-  <h1>ISPP - Comunidades de Estudio</h1>
-  <p><strong>Grupo D - Turno de tarde</strong></p>
+  <h1>ISPP - MerrKatters</h1>
+  <p><strong>Grupo 9 - Turno de tarde</strong></p>
 </div>
 
 ---

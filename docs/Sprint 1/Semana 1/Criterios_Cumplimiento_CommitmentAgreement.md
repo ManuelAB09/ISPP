@@ -14,7 +14,7 @@
 **Semana:** Semana 1  
 **Estado:** Aprobado  
 **Fecha:** 22/02/2026  
-**Autor(es):** Grupo 9
+**Autor(es):** Manuel Artero Bellido
 
 ---
 
