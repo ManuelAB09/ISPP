@@ -30,7 +30,7 @@ El proyecto tiene **Swagger UI desplegado** en:
 http://localhost:8080/swagger-ui.html
 ```
 
-> **IMPORTANTE**: Swagger UI muestra la documentación completa de la API (todos los endpoints, parámetros y respuestas esperadas), pero **"Try it out" NO funciona** porque los endpoints del backend aún no están implementados. Es solo para **visualización y consulta**.
+> **IMPORTANTE**: Swagger UI carga la especificación directamente del propio backend. Al implementar controladores, los nuevos endpoints aparecen automáticamente y el botón **"Try it out"** ejecuta las llamadas reales contra tu servidor local. Además puedes elegir entre la versión dinámica y una copia estática (`/spec/openapi.yaml`) usando el selector "Select a definition" en la esquina superior derecha.
 >
 > Para desarrollar tu código frontend, usa **Prism** (mock server) como se explica más abajo.
 

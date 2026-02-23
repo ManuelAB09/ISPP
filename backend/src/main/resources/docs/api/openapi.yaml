@@ -1,0 +1,4225 @@
+openapi: 3.0.3
+info:
+  title: MeerKatters API
+  description: |
+    API REST para la plataforma MeerKatters - Comunidad de estudiantes para 
+    organización de actividades de estudio colaborativo.
+    
+    ## Modelo de Autorización
+    
+    **IMPORTANTE**: Un mismo usuario puede ser tanto estudiante como tutor de distintos cursos/comunidades.
+    Los permisos se evalúan por contexto específico del recurso (usuarioId + comunidadId/eventoId),
+    NO dependen exclusivamente de un rol global estático.
+    
+    ### Roles por Contexto:
+    - **Admin de Comunidad**: Usuario que creó la comunidad o recibió transferencia de admin
+    - **Miembro**: Usuario que pertenece a una comunidad
+    - **Tutor contratado**: Tutor asociado a un grupo específico
+    - **Creador de Evento**: Usuario que creó un evento específico
+    
+    ## Autenticación
+    
+    La API utiliza **JWT (JSON Web Tokens)** para autenticación.
+    Incluir el token en el header `Authorization: Bearer <token>`
+    
+  version: 1.0.0
+  contact:
+    name: Equipo MeerKatters
+    email: meerkatters@example.com
+  license:
+    name: MIT
+
+servers:
+  - url: https://api.meerkatters.com/v1
+    description: Servidor de producción
+  - url: https://staging-api.meerkatters.com/v1
+    description: Servidor de staging
+  - url: http://localhost:8080/api/v1
+    description: Servidor de desarrollo local
+
+tags:
+  - name: Auth
+    description: Autenticación y registro de usuarios
+  - name: Usuarios
+    description: Gestión de perfiles de usuario
+  - name: Tutores
+    description: Gestión de perfiles de tutor y verificación
+  - name: Comunidades
+    description: Creación y gestión de comunidades de estudio
+  - name: Miembros
+    description: Gestión de miembros de comunidades
+  - name: Solicitudes
+    description: Solicitudes de acceso a comunidades privadas
+  - name: Eventos
+    description: Gestión de eventos y quedadas de estudio
+  - name: Asistencia
+    description: Gestión de asistencia a eventos
+  - name: Invitaciones
+    description: Invitaciones a eventos privados
+  - name: Archivos
+    description: Gestión de archivos adjuntos
+  - name: Categorías
+    description: Organización de contenido por categorías
+  - name: Suscripciones
+    description: Planes y suscripciones Premium
+  - name: Pagos
+    description: Transacciones y pagos
+  - name: Instituciones
+    description: Gestión de instituciones y planes corporativos
+  - name: Classroom
+    description: Integración con Google Classroom
+
+paths:
+  # =====================================================
+  # AUTENTICACIÓN
+  # =====================================================
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Registrar nuevo usuario
+      description: Crea una nueva cuenta de usuario en la plataforma
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Usuario registrado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: El email ya está registrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Iniciar sesión
+      description: Autentica al usuario y devuelve un token JWT
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login exitoso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Cerrar sesión
+      description: Invalida el token JWT del usuario actual
+      operationId: logoutUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Sesión cerrada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Refrescar token
+      description: Obtiene un nuevo token JWT usando el refresh token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Token refrescado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/password/forgot:
+    post:
+      tags:
+        - Auth
+      summary: Solicitar recuperación de contraseña
+      description: Envía un email con instrucciones para recuperar la contraseña
+      operationId: forgotPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '200':
+          description: Email enviado si el usuario existe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/password/reset:
+    post:
+      tags:
+        - Auth
+      summary: Restablecer contraseña
+      description: Establece una nueva contraseña usando el token de recuperación
+      operationId: resetPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Contraseña actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Token inválido o expirado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/google:
+    post:
+      tags:
+        - Auth
+      summary: Login con Google OAuth
+      description: |
+        Autentica usando Google OAuth 2.0. Si el usuario no existe, se crea automáticamente.
+        Opcionalmente solicita permisos para Google Classroom.
+      operationId: googleAuth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoogleAuthRequest'
+      responses:
+        '200':
+          description: Autenticación exitosa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  # =====================================================
+  # USUARIOS
+  # =====================================================
+  /users/me:
+    get:
+      tags:
+        - Usuarios
+      summary: Obtener perfil propio
+      description: Devuelve el perfil del usuario autenticado
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Perfil del usuario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetailResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    put:
+      tags:
+        - Usuarios
+      summary: Actualizar perfil propio
+      description: Actualiza los datos del perfil del usuario autenticado
+      operationId: updateCurrentUser
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: Perfil actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetailResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    delete:
+      tags:
+        - Usuarios
+      summary: Eliminar cuenta propia
+      description: Elimina la cuenta del usuario autenticado. Esta acción es irreversible.
+      operationId: deleteCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Cuenta eliminada exitosamente
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/me/password:
+    put:
+      tags:
+        - Usuarios
+      summary: Cambiar contraseña
+      description: Cambia la contraseña del usuario autenticado
+      operationId: changePassword
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: Contraseña actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/me/visibility:
+    put:
+      tags:
+        - Usuarios
+      summary: Configurar visibilidad en listados
+      description: Configura si el perfil aparece en listados públicos
+      operationId: updateVisibility
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VisibilityRequest'
+      responses:
+        '200':
+          description: Visibilidad actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetailResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/{userId}:
+    get:
+      tags:
+        - Usuarios
+      summary: Obtener perfil de usuario
+      description: Devuelve el perfil público de un usuario específico
+      operationId: getUserById
+      parameters:
+        - $ref: '#/components/parameters/userId'
+      responses:
+        '200':
+          description: Perfil del usuario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPublicResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/{userId}/communities:
+    get:
+      tags:
+        - Usuarios
+      summary: Listar comunidades de un usuario
+      description: |
+        Devuelve las comunidades públicas a las que pertenece el usuario.
+        Solo muestra comunidades públicas o aquellas donde el solicitante también es miembro.
+      operationId: getUserCommunities
+      parameters:
+        - $ref: '#/components/parameters/userId'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+      responses:
+        '200':
+          description: Lista de comunidades
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommunityListResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # =====================================================
+  # Tutores
+  # =====================================================
+  /tutors:
+    get:
+      tags:
+        - Tutores
+      summary: Listar tutores
+      description: |
+        Devuelve la lista de tutores. Por defecto solo muestra verificados en posiciones destacadas.
+        Permite filtrar por especialidad, tarifa y disponibilidad.
+      operationId: listTutors
+      parameters:
+        - name: especialidad
+          in: query
+          description: Filtrar por especialidad
+          schema:
+            type: string
+        - name: verificado
+          in: query
+          description: Filtrar solo verificados
+          schema:
+            type: boolean
+        - name: tarifaMin
+          in: query
+          description: Tarifa mínima por hora
+          schema:
+            type: number
+            format: double
+        - name: tarifaMax
+          in: query
+          description: Tarifa máxima por hora
+          schema:
+            type: number
+            format: double
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+      responses:
+        '200':
+          description: Lista de tutores
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TutorListResponse'
+
+    post:
+      tags:
+        - Tutores
+      summary: Crear perfil de tutor
+      description: |
+        El usuario autenticado crea su perfil de tutor.
+        Un usuario puede ser tutor y estudiante simultáneamente.
+      operationId: createTutorProfile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTutorRequest'
+      responses:
+        '201':
+          description: Perfil de tutor creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TutorResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: El usuario ya tiene perfil de tutor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /tutors/me:
+    get:
+      tags:
+        - Tutores
+      summary: Obtener mi perfil de tutor
+      description: Devuelve el perfil de tutor del usuario autenticado
+      operationId: getMyTutorProfile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Perfil de tutor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TutorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: El usuario no tiene perfil de tutor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Tutores
+      summary: Actualizar mi perfil de tutor
+      description: Actualiza el perfil de tutor del usuario autenticado
+      operationId: updateMyTutorProfile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTutorRequest'
+      responses:
+        '200':
+          description: Perfil actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TutorResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /tutors/{tutorId}:
+    get:
+      tags:
+        - Tutores
+      summary: Obtener perfil de tutor
+      description: Devuelve el perfil público de un tutor específico
+      operationId: getTutorById
+      parameters:
+        - $ref: '#/components/parameters/tutorId'
+      responses:
+        '200':
+          description: Perfil del tutor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TutorResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /tutors/me/verification:
+    post:
+      tags:
+        - Tutores
+      summary: Solicitar verificación de tutor
+      description: |
+        Inicia el proceso de verificación del tutor mediante pago.
+        Los tutores verificados aparecen destacados en los listados.
+      operationId: requestTutorVerification
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: URL de pago para verificación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentUrlResponse'
+        '400':
+          description: El tutor ya está verificado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: El usuario no tiene perfil de tutor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /tutors/me/classroom:
+    post:
+      tags:
+        - Tutores
+      summary: Conectar Google Classroom
+      description: |
+        Conecta la cuenta de Google Classroom del tutor.
+        Al ser contratado por un grupo, su Classroom se asociará automáticamente.
+      operationId: connectClassroom
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectClassroomRequest'
+      responses:
+        '200':
+          description: Classroom conectado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TutorResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    delete:
+      tags:
+        - Tutores
+      summary: Desconectar Google Classroom
+      description: Desvincula la cuenta de Google Classroom del tutor
+      operationId: disconnectClassroom
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Classroom desconectado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # =====================================================
+  # COMUNIDADES
+  # =====================================================
+  /communities:
+    get:
+      tags:
+        - Comunidades
+      summary: Explorar comunidades
+      description: |
+        Lista comunidades públicas. Permite búsqueda por nombre, temática y ubicación.
+        Las comunidades privadas no aparecen en este listado.
+      operationId: listCommunities
+      parameters:
+        - name: search
+          in: query
+          description: Buscar por nombre o descripción
+          schema:
+            type: string
+        - name: categoria
+          in: query
+          description: Filtrar por categoría/temática
+          schema:
+            type: string
+        - name: ubicacion
+          in: query
+          description: Filtrar por ubicación
+          schema:
+            type: string
+        - name: tipoGrupo
+          in: query
+          description: Filtrar por tipo
+          schema:
+            $ref: '#/components/schemas/TipoGrupo'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+        - $ref: '#/components/parameters/sort'
+      responses:
+        '200':
+          description: Lista de comunidades
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommunityListResponse'
+
+    post:
+      tags:
+        - Comunidades
+      summary: Crear comunidad
+      description: |
+        Crea una nueva comunidad. El creador se convierte automáticamente en administrador.
+        
+        **Restricciones Plan Free:**
+        - Máximo 3 comunidades como admin
+        - Límite de miembros según tipo (público/privado)
+      operationId: createCommunity
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommunityRequest'
+      responses:
+        '201':
+          description: Comunidad creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommunityDetailResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Límite de comunidades alcanzado (plan Free)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /communities/{communityId}:
+    get:
+      tags:
+        - Comunidades
+      summary: Obtener detalle de comunidad
+      description: |
+        Devuelve los detalles de una comunidad.
+        Si es privada, solo miembros pueden ver todos los detalles.
+      operationId: getCommunityById
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Detalle de la comunidad
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommunityDetailResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Comunidades
+      summary: Actualizar comunidad
+      description: |
+        Actualiza los datos de la comunidad.
+        **Requiere rol ADMIN en la comunidad.**
+      operationId: updateCommunity
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCommunityRequest'
+      responses:
+        '200':
+          description: Comunidad actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommunityDetailResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Comunidades
+      summary: Eliminar comunidad
+      description: |
+        Elimina la comunidad y todo su contenido.
+        **Requiere rol ADMIN en la comunidad.**
+      operationId: deleteCommunity
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Comunidad eliminada
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /communities/{communityId}/privacy:
+    put:
+      tags:
+        - Comunidades
+      summary: Configurar privacidad
+      description: |
+        Configura si la comunidad es pública o privada.
+        **Requiere rol ADMIN en la comunidad.**
+      operationId: updateCommunityPrivacy
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrivacyRequest'
+      responses:
+        '200':
+          description: Privacidad actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommunityDetailResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /communities/{communityId}/upgrade:
+    post:
+      tags:
+        - Comunidades
+      summary: Mejorar comunidad a Premium
+      description: |
+        Inicia el proceso de pago para convertir la comunidad a Premium.
+        Premium amplía el aforo máximo y desbloquea funcionalidades adicionales.
+      operationId: upgradeCommunity
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpgradeCommunityRequest'
+      responses:
+        '200':
+          description: URL de pago para upgrade
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentUrlResponse'
+        '400':
+          description: La comunidad ya es Premium
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /communities/{communityId}/tutor:
+    post:
+      tags:
+        - Comunidades
+      summary: Contratar tutor para la comunidad
+      description: |
+        Contrata un tutor para la comunidad/grupo.
+        **Solo disponible para grupos privados.**
+        Al contratar, el Classroom del tutor se asocia al grupo automáticamente.
+        **Requiere rol ADMIN en la comunidad.****
+      operationId: hireTutor
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HireTutorRequest'
+      responses:
+        '200':
+          description: URL de pago para contratación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentUrlResponse'
+        '400':
+          description: No se puede contratar tutor en comunidad pública
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Comunidades
+      summary: Desvincular tutor de la comunidad
+      description: |
+        Termina la contratación del tutor actual.
+        **Requiere rol ADMIN en la comunidad.**
+      operationId: removeTutor
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Tutor desvinculado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # =====================================================
+  # MIEMBROS DE COMUNIDAD
+  # =====================================================
+  /communities/{communityId}/members:
+    get:
+      tags:
+        - Miembros
+      summary: Listar miembros de la comunidad
+      description: |
+        Devuelve la lista de miembros de la comunidad.
+        **Requiere ser miembro de la comunidad para comunidades privadas.**
+      operationId: listCommunityMembers
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+        - name: rol
+          in: query
+          description: Filtrar por rol
+          schema:
+            $ref: '#/components/schemas/RolComunidad'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de miembros
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags:
+        - Miembros
+      summary: Unirse a comunidad pública
+      description: |
+        El usuario autenticado se une a una comunidad pública.
+        Para comunidades privadas, usar el endpoint de solicitudes.
+      operationId: joinCommunity
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Unido a la comunidad
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberResponse'
+        '400':
+          description: La comunidad es privada o está llena
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Ya es miembro de la comunidad
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /communities/{communityId}/members/me:
+    get:
+      tags:
+        - Miembros
+      summary: Obtener mi membresía
+      description: |
+        Devuelve la información de membresía del usuario autenticado en la comunidad.
+        **Incluye el rol contextual del usuario en esta comunidad específica.**
+      operationId: getMyMembership
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Información de membresía
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: No es miembro de la comunidad
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Miembros
+      summary: Abandonar comunidad
+      description: |
+        El usuario autenticado abandona la comunidad.
+        Si es el único admin, debe transferir la administración primero.
+      operationId: leaveCommunity
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Ha abandonado la comunidad
+        '400':
+          description: Debe transferir administración antes de abandonar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /communities/{communityId}/members/{userId}:
+    delete:
+      tags:
+        - Miembros
+      summary: Expulsar miembro
+      description: |
+        Expulsa a un miembro de la comunidad.
+        **Requiere rol ADMIN en la comunidad.**
+      operationId: expelMember
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+        - $ref: '#/components/parameters/userId'
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Miembro expulsado
+        '400':
+          description: No se puede expulsar al único admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /communities/{communityId}/admin/transfer:
+    post:
+      tags:
+        - Miembros
+      summary: Transferir administración
+      description: |
+        Transfiere el rol de administrador a otro miembro.
+        **Requiere rol ADMIN en la comunidad.**
+      operationId: transferAdmin
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferAdminRequest'
+      responses:
+        '200':
+          description: Administración transferida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # =====================================================
+  # SOLICITUDES DE COMUNIDAD
+  # =====================================================
+  /communities/{communityId}/requests:
+    get:
+      tags:
+        - Solicitudes
+      summary: Listar solicitudes de acceso
+      description: |
+        Lista las solicitudes de acceso pendientes a la comunidad.
+        **Requiere rol ADMIN en la comunidad.**
+      operationId: listCommunityRequests
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+        - name: estado
+          in: query
+          description: Filtrar por estado
+          schema:
+            $ref: '#/components/schemas/EstadoSolicitud'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de solicitudes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags:
+        - Solicitudes
+      summary: Solicitar acceso a comunidad privada
+      description: |
+        Envía una solicitud de acceso a una comunidad privada.
+        El admin deberá aprobarla para que el usuario se una.
+      operationId: requestAccess
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccessRequestBody'
+      responses:
+        '201':
+          description: Solicitud enviada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestResponse'
+        '400':
+          description: La comunidad no es privada o ya es miembro
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Ya existe una solicitud pendiente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /communities/{communityId}/requests/{requestId}:
+    put:
+      tags:
+        - Solicitudes
+      summary: Responder solicitud de acceso
+      description: |
+        Acepta o rechaza una solicitud de acceso.
+        **Requiere rol ADMIN en la comunidad.**
+      operationId: respondToRequest
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+        - $ref: '#/components/parameters/requestId'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RespondRequestBody'
+      responses:
+        '200':
+          description: Solicitud respondida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestResponse'
+        '400':
+          description: La solicitud ya fue respondida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # =====================================================
+  # CATEGORÍAS
+  # =====================================================
+  /communities/{communityId}/categories:
+    get:
+      tags:
+        - Categorías
+      summary: Listar categorías de la comunidad
+      description: Lista las categorías para organizar contenido en la comunidad
+      operationId: listCategories
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de categorías
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags:
+        - Categorías
+      summary: Crear categoría
+      description: |
+        Crea una nueva categoría en la comunidad.
+        **Requiere rol ADMIN en la comunidad.**
+      operationId: createCategory
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCategoryRequest'
+      responses:
+        '201':
+          description: Categoría creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /communities/{communityId}/categories/{categoryId}:
+    put:
+      tags:
+        - Categorías
+      summary: Actualizar categoría
+      description: |
+        Actualiza una categoría existente.
+        **Requiere rol ADMIN en la comunidad.**
+      operationId: updateCategory
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+        - $ref: '#/components/parameters/categoryId'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCategoryRequest'
+      responses:
+        '200':
+          description: Categoría actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Categorías
+      summary: Eliminar categoría
+      description: |
+        Elimina una categoría de la comunidad.
+        **Requiere rol ADMIN en la comunidad.**
+      operationId: deleteCategory
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+        - $ref: '#/components/parameters/categoryId'
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Categoría eliminada
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /communities/{communityId}/categories/reorder:
+    put:
+      tags:
+        - Categorías
+      summary: Reordenar categorías
+      description: |
+        Cambia el orden de las categorías.
+        **Requiere rol ADMIN en la comunidad.**
+      operationId: reorderCategories
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReorderCategoriesRequest'
+      responses:
+        '200':
+          description: Categorías reordenadas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # =====================================================
+  # EVENTOS
+  # =====================================================
+  /communities/{communityId}/events:
+    get:
+      tags:
+        - Eventos
+      summary: Listar eventos de la comunidad
+      description: |
+        Lista los eventos de una comunidad.
+        Los eventos privados solo son visibles para miembros.
+      operationId: listCommunityEvents
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+        - name: desde
+          in: query
+          description: Fecha desde (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: hasta
+          in: query
+          description: Fecha hasta (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: cancelados
+          in: query
+          description: Incluir eventos cancelados
+          schema:
+            type: boolean
+            default: false
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de eventos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags:
+        - Eventos
+      summary: Crear evento
+      description: |
+        Crea un nuevo evento en la comunidad.
+        **Requiere ser miembro de la comunidad.**
+      operationId: createEvent
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventRequest'
+      responses:
+        '201':
+          description: Evento creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDetailResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /events:
+    get:
+      tags:
+        - Eventos
+      summary: Explorar eventos públicos
+      description: |
+        Lista eventos públicos de comunidades públicas.
+        Permite filtrar por ubicación, fecha y buscar en el mapa.
+      operationId: listPublicEvents
+      parameters:
+        - name: search
+          in: query
+          description: Buscar por título o descripción
+          schema:
+            type: string
+        - name: lat
+          in: query
+          description: Latitud para búsqueda por ubicación
+          schema:
+            type: number
+            format: double
+        - name: lng
+          in: query
+          description: Longitud para búsqueda por ubicación
+          schema:
+            type: number
+            format: double
+        - name: radio
+          in: query
+          description: Radio de búsqueda en km
+          schema:
+            type: number
+            format: double
+            default: 10
+        - name: desde
+          in: query
+          description: Fecha desde (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: hasta
+          in: query
+          description: Fecha hasta (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+      responses:
+        '200':
+          description: Lista de eventos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventListResponse'
+
+  /events/map:
+    get:
+      tags:
+        - Eventos
+      summary: Obtener eventos para mapa
+      description: |
+        Devuelve eventos visibles en mapa dentro de un área geográfica.
+        Solo incluye eventos marcados como visibleEnMapa=true.
+        En comunidades públicas, los eventos son siempre visibles.
+      operationId: getMapEvents
+      parameters:
+        - name: swLat
+          in: query
+          required: true
+          description: Latitud suroeste del área
+          schema:
+            type: number
+            format: double
+        - name: swLng
+          in: query
+          required: true
+          description: Longitud suroeste del área
+          schema:
+            type: number
+            format: double
+        - name: neLat
+          in: query
+          required: true
+          description: Latitud noreste del área
+          schema:
+            type: number
+            format: double
+        - name: neLng
+          in: query
+          required: true
+          description: Longitud noreste del área
+          schema:
+            type: number
+            format: double
+      responses:
+        '200':
+          description: Lista de eventos para mapa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MapEventListResponse'
+
+  /events/recommended-locations:
+    get:
+      tags:
+        - Eventos
+      summary: Obtener ubicaciones recomendadas
+      description: |
+        Devuelve lugares públicos recomendados para eventos
+        (bibliotecas, espacios de coworking, etc.)
+      operationId: getRecommendedLocations
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          description: Latitud del centro de búsqueda
+          schema:
+            type: number
+            format: double
+        - name: lng
+          in: query
+          required: true
+          description: Longitud del centro de búsqueda
+          schema:
+            type: number
+            format: double
+        - name: radio
+          in: query
+          description: Radio de búsqueda en km
+          schema:
+            type: number
+            format: double
+            default: 5
+      responses:
+        '200':
+          description: Lista de ubicaciones recomendadas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationListResponse'
+
+  /events/{eventId}:
+    get:
+      tags:
+        - Eventos
+      summary: Obtener detalle de evento
+      description: |
+        Devuelve los detalles de un evento específico.
+        Si el evento es privado, requiere ser miembro de la comunidad o estar invitado.
+      operationId: getEventById
+      parameters:
+        - $ref: '#/components/parameters/eventId'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Detalle del evento
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDetailResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Eventos
+      summary: Actualizar evento
+      description: |
+        Actualiza los datos del evento.
+        **Requiere ser el creador del evento o ADMIN de la comunidad.**
+      operationId: updateEvent
+      parameters:
+        - $ref: '#/components/parameters/eventId'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEventRequest'
+      responses:
+        '200':
+          description: Evento actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDetailResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /events/{eventId}/cancel:
+    post:
+      tags:
+        - Eventos
+      summary: Cancelar evento
+      description: |
+        Cancela el evento. Los asistentes serán notificados.
+        **Requiere ser el creador del evento o ADMIN de la comunidad.**
+      operationId: cancelEvent
+      parameters:
+        - $ref: '#/components/parameters/eventId'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelEventRequest'
+      responses:
+        '200':
+          description: Evento cancelado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDetailResponse'
+        '400':
+          description: El evento ya está cancelado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # =====================================================
+  # ASISTENCIA A EVENTOS
+  # =====================================================
+  /events/{eventId}/attendance:
+    get:
+      tags:
+        - Asistencia
+      summary: Listar asistentes del evento
+      description: Lista los usuarios que han confirmado asistencia al evento
+      operationId: listEventAttendees
+      parameters:
+        - $ref: '#/components/parameters/eventId'
+        - name: estado
+          in: query
+          description: Filtrar por estado de asistencia
+          schema:
+            $ref: '#/components/schemas/EstadoAsistencia'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de asistentes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags:
+        - Asistencia
+      summary: Confirmar asistencia
+      description: |
+        El usuario autenticado confirma su asistencia al evento.
+        Respeta el aforo máximo establecido.
+      operationId: confirmAttendance
+      parameters:
+        - $ref: '#/components/parameters/eventId'
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Asistencia confirmada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceResponse'
+        '400':
+          description: El evento está cancelado o el aforo está completo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Ya está registrado para este evento
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /events/{eventId}/attendance/me:
+    get:
+      tags:
+        - Asistencia
+      summary: Obtener mi asistencia
+      description: Obtiene el estado de asistencia del usuario autenticado al evento
+      operationId: getMyAttendance
+      parameters:
+        - $ref: '#/components/parameters/eventId'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Estado de asistencia
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: No está registrado para este evento
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Asistencia
+      summary: Cancelar asistencia
+      description: El usuario autenticado cancela su asistencia al evento
+      operationId: cancelAttendance
+      parameters:
+        - $ref: '#/components/parameters/eventId'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Asistencia cancelada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: No está registrado para este evento
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # =====================================================
+  # INVITACIONES A EVENTOS
+  # =====================================================
+  /events/{eventId}/invitations:
+    get:
+      tags:
+        - Invitaciones
+      summary: Listar invitaciones del evento
+      description: |
+        Lista las invitaciones enviadas para el evento.
+        **Requiere ser el creador del evento o ADMIN de la comunidad.**
+      operationId: listEventInvitations
+      parameters:
+        - $ref: '#/components/parameters/eventId'
+        - name: estado
+          in: query
+          description: Filtrar por estado
+          schema:
+            $ref: '#/components/schemas/EstadoInvitacion'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de invitaciones
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags:
+        - Invitaciones
+      summary: Enviar invitación
+      description: |
+        Envía una invitación a un usuario para un evento privado.
+        **Requiere ser el creador del evento o ADMIN de la comunidad.**
+      operationId: sendInvitation
+      parameters:
+        - $ref: '#/components/parameters/eventId'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendInvitationRequest'
+      responses:
+        '201':
+          description: Invitación enviada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: El usuario ya tiene una invitación pendiente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /events/{eventId}/invitations/{invitationId}:
+    put:
+      tags:
+        - Invitaciones
+      summary: Responder a invitación
+      description: El usuario invitado acepta o rechaza la invitación
+      operationId: respondToInvitation
+      parameters:
+        - $ref: '#/components/parameters/eventId'
+        - $ref: '#/components/parameters/invitationId'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RespondInvitationRequest'
+      responses:
+        '200':
+          description: Invitación respondida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationResponse'
+        '400':
+          description: La invitación ya fue respondida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Esta invitación no es para este usuario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/me/invitations:
+    get:
+      tags:
+        - Invitaciones
+      summary: Listar mis invitaciones
+      description: Lista las invitaciones recibidas por el usuario autenticado
+      operationId: getMyInvitations
+      parameters:
+        - name: estado
+          in: query
+          description: Filtrar por estado
+          schema:
+            $ref: '#/components/schemas/EstadoInvitacion'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de invitaciones
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # =====================================================
+  # ARCHIVOS ADJUNTOS
+  # =====================================================
+  /communities/{communityId}/files:
+    get:
+      tags:
+        - Archivos
+      summary: Listar archivos de la comunidad
+      description: Lista los archivos adjuntos de la comunidad
+      operationId: listCommunityFiles
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+        - name: categoria
+          in: query
+          description: Filtrar por categoría
+          schema:
+            type: integer
+            format: int64
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de archivos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags:
+        - Archivos
+      summary: Subir archivo
+      description: |
+        Sube un archivo a la comunidad.
+        **Requiere ser miembro de la comunidad.**
+        Los archivos están limitados en tamaño según el plan.
+      operationId: uploadFile
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadFileRequest'
+      responses:
+        '201':
+          description: Archivo subido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileResponse'
+        '400':
+          description: Archivo demasiado grande o tipo no permitido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /events/{eventId}/files:
+    get:
+      tags:
+        - Archivos
+      summary: Listar archivos del evento
+      description: Lista los archivos adjuntos vinculados a un evento
+      operationId: listEventFiles
+      parameters:
+        - $ref: '#/components/parameters/eventId'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de archivos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags:
+        - Archivos
+      summary: Subir archivo al evento
+      description: |
+        Sube un archivo vinculado a un evento.
+        **Requiere ser el creador del evento o ADMIN de la comunidad.**
+      operationId: uploadEventFile
+      parameters:
+        - $ref: '#/components/parameters/eventId'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadFileRequest'
+      responses:
+        '201':
+          description: Archivo subido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /files/{fileId}:
+    get:
+      tags:
+        - Archivos
+      summary: Obtener información del archivo
+      description: Devuelve los metadatos del archivo
+      operationId: getFileById
+      parameters:
+        - $ref: '#/components/parameters/fileId'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Información del archivo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Archivos
+      summary: Eliminar archivo
+      description: |
+        Elimina un archivo.
+        **Requiere ser el propietario del archivo o ADMIN de la comunidad.**
+      operationId: deleteFile
+      parameters:
+        - $ref: '#/components/parameters/fileId'
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Archivo eliminado
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /files/{fileId}/download:
+    get:
+      tags:
+        - Archivos
+      summary: Descargar archivo
+      description: |
+        Descarga el archivo.
+        **Usuarios Free:** Se muestran anuncios antes de la descarga.
+        **Usuarios Premium:** Descarga directa sin anuncios.
+      operationId: downloadFile
+      parameters:
+        - $ref: '#/components/parameters/fileId'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: URL de descarga (puede incluir redirect a anuncios para usuarios Free)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DownloadResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # =====================================================
+  # SUSCRIPCIONES
+  # =====================================================
+  /subscriptions/plans:
+    get:
+      tags:
+        - Suscripciones
+      summary: Listar planes disponibles
+      description: Devuelve la lista de planes de suscripción disponibles
+      operationId: listPlans
+      responses:
+        '200':
+          description: Lista de planes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanListResponse'
+
+  /subscriptions/me:
+    get:
+      tags:
+        - Suscripciones
+      summary: Obtener mi suscripción
+      description: Devuelve la suscripción actual del usuario autenticado
+      operationId: getMySubscription
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Suscripción actual
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags:
+        - Suscripciones
+      summary: Suscribirse a plan Premium
+      description: Inicia el proceso de suscripción a un plan Premium
+      operationId: subscribe
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscribeRequest'
+      responses:
+        '200':
+          description: URL de pago
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentUrlResponse'
+        '400':
+          description: Ya tiene una suscripción activa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    delete:
+      tags:
+        - Suscripciones
+      summary: Cancelar suscripción
+      description: |
+        Cancela la suscripción del usuario.
+        El acceso Premium se mantiene hasta la fecha de fin del período actual.
+      operationId: cancelSubscription
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Suscripción cancelada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+        '400':
+          description: No tiene suscripción activa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # =====================================================
+  # PAGOS Y TRANSACCIONES
+  # =====================================================
+  /payments/webhook:
+    post:
+      tags:
+        - Pagos
+      summary: Webhook de pasarela de pago
+      description: |
+        Endpoint para recibir notificaciones de la pasarela de pago (Stripe).
+        Este endpoint es llamado automáticamente por Stripe.
+      operationId: paymentWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Webhook procesado
+        '400':
+          description: Payload inválido
+
+  /payments/history:
+    get:
+      tags:
+        - Pagos
+      summary: Historial de pagos
+      description: Devuelve el historial de pagos del usuario autenticado
+      operationId: getPaymentHistory
+      parameters:
+        - name: tipo
+          in: query
+          description: Filtrar por tipo de transacción
+          schema:
+            $ref: '#/components/schemas/TipoTransaccion'
+        - name: desde
+          in: query
+          description: Fecha desde
+          schema:
+            type: string
+            format: date
+        - name: hasta
+          in: query
+          description: Fecha hasta
+          schema:
+            type: string
+            format: date
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Historial de pagos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /payments/{transactionId}:
+    get:
+      tags:
+        - Pagos
+      summary: Obtener detalle de transacción
+      description: Devuelve el detalle de una transacción específica
+      operationId: getTransactionById
+      parameters:
+        - $ref: '#/components/parameters/transactionId'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Detalle de transacción
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # =====================================================
+  # INSTITUCIONES
+  # =====================================================
+  /institutions:
+    post:
+      tags:
+        - Instituciones
+      summary: Registrar institución
+      description: |
+        Registra una nueva institución/academia.
+        Permite contratar planes corporativos.
+      operationId: registerInstitution
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInstitutionRequest'
+      responses:
+        '201':
+          description: Institución registrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstitutionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /institutions/{institutionId}:
+    get:
+      tags:
+        - Instituciones
+      summary: Obtener detalle de institución
+      description: Devuelve los detalles de una institución
+      operationId: getInstitutionById
+      parameters:
+        - $ref: '#/components/parameters/institutionId'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Detalle de institución
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstitutionResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Instituciones
+      summary: Actualizar institución
+      description: Actualiza los datos de la institución
+      operationId: updateInstitution
+      parameters:
+        - $ref: '#/components/parameters/institutionId'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateInstitutionRequest'
+      responses:
+        '200':
+          description: Institución actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstitutionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /institutions/{institutionId}/plan:
+    post:
+      tags:
+        - Instituciones
+      summary: Contratar plan corporativo
+      description: Inicia el proceso de contratación de plan corporativo
+      operationId: hireCorporatePlan
+      parameters:
+        - $ref: '#/components/parameters/institutionId'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CorporatePlanRequest'
+      responses:
+        '200':
+          description: URL de pago
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentUrlResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /institutions/{institutionId}/invitations:
+    get:
+      tags:
+        - Instituciones
+      summary: Listar invitaciones corporativas
+      description: Lista las invitaciones enviadas a usuarios para unirse a la institución
+      operationId: listInstitutionInvitations
+      parameters:
+        - $ref: '#/components/parameters/institutionId'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de invitaciones
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CorporateInvitationListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags:
+        - Instituciones
+      summary: Invitar usuario a institución
+      description: Envía una invitación por email para unirse a la institución
+      operationId: inviteToInstitution
+      parameters:
+        - $ref: '#/components/parameters/institutionId'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CorporateInvitationRequest'
+      responses:
+        '201':
+          description: Invitación enviada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CorporateInvitationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # =====================================================
+  # GOOGLE CLASSROOM
+  # =====================================================
+  /communities/{communityId}/classroom:
+    get:
+      tags:
+        - Classroom
+      summary: Obtener información de Classroom asociado
+      description: |
+        Devuelve la información del Google Classroom asociado a la comunidad.
+        Solo disponible si un tutor ha sido contratado y tiene Classroom vinculado.
+      operationId: getCommunityClassroom
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Información de Classroom
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassroomAssociationResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: No hay Classroom asociado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Classroom
+      summary: Desvincular Classroom
+      description: |
+        Desvincula el Google Classroom de la comunidad.
+        **Requiere rol ADMIN en la comunidad o ser el tutor propietario.**
+      operationId: unlinkClassroom
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Classroom desvinculado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /communities/{communityId}/classroom/sync:
+    post:
+      tags:
+        - Classroom
+      summary: Sincronizar permisos de Classroom
+      description: |
+        Sincroniza los permisos de los miembros de la comunidad con Google Classroom.
+        Agrega miembros de la comunidad al Classroom automáticamente.
+      operationId: syncClassroomPermissions
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Sincronización completada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassroomSyncResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+# =====================================================
+# COMPONENTES
+# =====================================================
+components:
+  # securitySchemes removed to hide Swagger UI authorize button
+  parameters:
+    userId:
+      name: userId
+      in: path
+      required: true
+      description: ID del usuario
+      schema:
+        type: integer
+        format: int64
+
+    tutorId:
+      name: tutorId
+      in: path
+      required: true
+      description: ID del tutor
+      schema:
+        type: integer
+        format: int64
+
+    communityId:
+      name: communityId
+      in: path
+      required: true
+      description: ID de la comunidad
+      schema:
+        type: integer
+        format: int64
+
+    eventId:
+      name: eventId
+      in: path
+      required: true
+      description: ID del evento
+      schema:
+        type: integer
+        format: int64
+
+    requestId:
+      name: requestId
+      in: path
+      required: true
+      description: ID de la solicitud
+      schema:
+        type: integer
+        format: int64
+
+    categoryId:
+      name: categoryId
+      in: path
+      required: true
+      description: ID de la categoría
+      schema:
+        type: integer
+        format: int64
+
+    fileId:
+      name: fileId
+      in: path
+      required: true
+      description: ID del archivo
+      schema:
+        type: integer
+        format: int64
+
+    invitationId:
+      name: invitationId
+      in: path
+      required: true
+      description: ID de la invitación
+      schema:
+        type: integer
+        format: int64
+
+    transactionId:
+      name: transactionId
+      in: path
+      required: true
+      description: ID de la transacción
+      schema:
+        type: integer
+        format: int64
+
+    institutionId:
+      name: institutionId
+      in: path
+      required: true
+      description: ID de la institución
+      schema:
+        type: integer
+        format: int64
+
+    page:
+      name: page
+      in: query
+      description: Número de página (0-indexed)
+      schema:
+        type: integer
+        default: 0
+        minimum: 0
+
+    size:
+      name: size
+      in: query
+      description: Tamaño de página
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+
+    sort:
+      name: sort
+      in: query
+      description: 'Ordenamiento (formato: campo,direccion)'
+      schema:
+        type: string
+        example: 'createdAt,desc'
+
+  responses:
+    BadRequest:
+      description: Solicitud inválida
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: No autenticado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Forbidden:
+      description: Sin permisos para realizar esta acción
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    # =====================================================
+    # ENUMS
+    # =====================================================
+    TipoPlan:
+      type: string
+      enum:
+        - FREE
+        - PREMIUM
+      description: Tipo de plan de usuario
+
+    TipoGrupo:
+      type: string
+      enum:
+        - COMUNIDAD_PUBLICA
+        - GRUPO_PRIVADO
+      description: Tipo de grupo/comunidad
+
+    TipoPlanComunidad:
+      type: string
+      enum:
+        - FREE
+        - PREMIUM
+        - CORPORATIVO
+      description: Plan de la comunidad
+
+    EstadoComunidad:
+      type: string
+      enum:
+        - ACTIVA
+        - CONGELADA
+      description: Estado de la comunidad
+
+    RolComunidad:
+      type: string
+      enum:
+        - ADMIN
+        - MIEMBRO
+      description: Rol del usuario en una comunidad
+
+    EstadoSolicitud:
+      type: string
+      enum:
+        - PENDIENTE
+        - ACEPTADA
+        - RECHAZADA
+      description: Estado de una solicitud
+
+    EstadoAsistencia:
+      type: string
+      enum:
+        - CONFIRMADA
+        - CANCELADA
+      description: Estado de asistencia a evento
+
+    EstadoInvitacion:
+      type: string
+      enum:
+        - PENDIENTE
+        - ACEPTADA
+        - RECHAZADA
+      description: Estado de una invitación
+
+    TipoTransaccion:
+      type: string
+      enum:
+        - PAGO_VERIFICACION
+        - PAGO_Tutor
+        - SUSCRIPCION
+        - COMISION
+      description: Tipo de transacción
+
+    EstadoTransaccion:
+      type: string
+      enum:
+        - PENDIENTE
+        - COMPLETADA
+        - FALLIDA
+      description: Estado de una transacción
+
+    # =====================================================
+    # AUTH DTOs
+    # =====================================================
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - nombre
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email del usuario
+          example: usuario@example.com
+        password:
+          type: string
+          format: password
+          minLength: 8
+          description: Contraseña (mínimo 8 caracteres)
+          example: MiPassword123!
+        nombre:
+          type: string
+          minLength: 2
+          maxLength: 100
+          description: Nombre completo
+          example: Juan García
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: usuario@example.com
+        password:
+          type: string
+          format: password
+          example: MiPassword123!
+
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: Token JWT de acceso
+        refreshToken:
+          type: string
+          description: Token para refrescar el acceso
+        tokenType:
+          type: string
+          default: Bearer
+        expiresIn:
+          type: integer
+          description: Tiempo de expiración en segundos
+          example: 3600
+        user:
+          $ref: '#/components/schemas/UserDetailResponse'
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+
+    ForgotPasswordRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+
+    ResetPasswordRequest:
+      type: object
+      required:
+        - token
+        - newPassword
+      properties:
+        token:
+          type: string
+          description: Token recibido por email
+        newPassword:
+          type: string
+          format: password
+          minLength: 8
+
+    GoogleAuthRequest:
+      type: object
+      required:
+        - idToken
+      properties:
+        idToken:
+          type: string
+          description: Token ID de Google OAuth
+        requestClassroomAccess:
+          type: boolean
+          default: false
+          description: Solicitar permisos de Google Classroom
+
+    # =====================================================
+    # USER DTOs
+    # =====================================================
+    UserDetailResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        email:
+          type: string
+          format: email
+        nombre:
+          type: string
+        foto:
+          type: string
+          format: uri
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        intereses:
+          type: array
+          items:
+            type: string
+        googleId:
+          type: string
+          nullable: true
+        visibleEnListados:
+          type: boolean
+        plan:
+          $ref: '#/components/schemas/TipoPlan'
+        esTutor:
+          type: boolean
+          description: Indica si el usuario tiene perfil de Tutor
+        createdAt:
+          type: string
+          format: date-time
+
+    UserPublicResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        foto:
+          type: string
+          format: uri
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        intereses:
+          type: array
+          items:
+            type: string
+        esTutor:
+          type: boolean
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+          minLength: 2
+          maxLength: 100
+        foto:
+          type: string
+          format: uri
+        bio:
+          type: string
+          maxLength: 500
+        intereses:
+          type: array
+          items:
+            type: string
+          maxItems: 10
+
+    ChangePasswordRequest:
+      type: object
+      required:
+        - currentPassword
+        - newPassword
+      properties:
+        currentPassword:
+          type: string
+          format: password
+        newPassword:
+          type: string
+          format: password
+          minLength: 8
+
+    VisibilityRequest:
+      type: object
+      required:
+        - visibleEnListados
+      properties:
+        visibleEnListados:
+          type: boolean
+
+    # =====================================================
+    # Tutor DTOs
+    # =====================================================
+    TutorResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        usuario:
+          $ref: '#/components/schemas/UserPublicResponse'
+        especialidades:
+          type: array
+          items:
+            type: string
+        tarifaHora:
+          type: number
+          format: double
+        verificado:
+          type: boolean
+        classroomConectado:
+          type: boolean
+        bio:
+          type: string
+        disponibilidad:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateTutorRequest:
+      type: object
+      required:
+        - especialidades
+        - tarifaHora
+      properties:
+        especialidades:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          maxItems: 10
+          description: Áreas de especialidad
+          example: ["Matemáticas", "Física"]
+        tarifaHora:
+          type: number
+          format: double
+          minimum: 0
+          description: Tarifa por hora en euros
+          example: 25.0
+        bio:
+          type: string
+          maxLength: 1000
+          description: Descripción profesional
+        disponibilidad:
+          type: string
+          maxLength: 500
+          description: Horarios de disponibilidad
+
+    UpdateTutorRequest:
+      type: object
+      properties:
+        especialidades:
+          type: array
+          items:
+            type: string
+          maxItems: 10
+        tarifaHora:
+          type: number
+          format: double
+          minimum: 0
+        bio:
+          type: string
+          maxLength: 1000
+        disponibilidad:
+          type: string
+          maxLength: 500
+
+    ConnectClassroomRequest:
+      type: object
+      required:
+        - authCode
+      properties:
+        authCode:
+          type: string
+          description: Código de autorización de Google OAuth
+
+    TutorListResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/TutorResponse'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+
+    # =====================================================
+    # COMMUNITY DTOs
+    # =====================================================
+    CommunityDetailResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        descripcion:
+          type: string
+        tipoGrupo:
+          $ref: '#/components/schemas/TipoGrupo'
+        imagen:
+          type: string
+          format: uri
+          nullable: true
+        maxMiembros:
+          type: integer
+        miembrosActuales:
+          type: integer
+        tipoPlan:
+          $ref: '#/components/schemas/TipoPlanComunidad'
+        estado:
+          $ref: '#/components/schemas/EstadoComunidad'
+        creador:
+          $ref: '#/components/schemas/UserPublicResponse'
+        TutorContratado:
+          allOf:
+            - $ref: '#/components/schemas/TutorResponse'
+          nullable: true
+        tieneClassroom:
+          type: boolean
+        miRol:
+          allOf:
+            - $ref: '#/components/schemas/RolComunidad'
+          nullable: true
+          description: Rol del usuario autenticado en esta comunidad (null si no es miembro)
+        esMiembro:
+          type: boolean
+          description: Indica si el usuario autenticado es miembro
+        createdAt:
+          type: string
+          format: date-time
+
+    CommunityListResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommunitySummaryResponse'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+
+    CommunitySummaryResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        descripcion:
+          type: string
+        tipoGrupo:
+          $ref: '#/components/schemas/TipoGrupo'
+        imagen:
+          type: string
+          format: uri
+          nullable: true
+        miembrosActuales:
+          type: integer
+        maxMiembros:
+          type: integer
+        tipoPlan:
+          $ref: '#/components/schemas/TipoPlanComunidad'
+
+    CreateCommunityRequest:
+      type: object
+      required:
+        - nombre
+        - tipoGrupo
+      properties:
+        nombre:
+          type: string
+          minLength: 3
+          maxLength: 100
+          example: Grupo de Estudio Matemáticas
+        descripcion:
+          type: string
+          maxLength: 1000
+        tipoGrupo:
+          $ref: '#/components/schemas/TipoGrupo'
+        imagen:
+          type: string
+          format: uri
+
+    UpdateCommunityRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+          minLength: 3
+          maxLength: 100
+        descripcion:
+          type: string
+          maxLength: 1000
+        imagen:
+          type: string
+          format: uri
+
+    PrivacyRequest:
+      type: object
+      required:
+        - tipoGrupo
+      properties:
+        tipoGrupo:
+          $ref: '#/components/schemas/TipoGrupo'
+
+    UpgradeCommunityRequest:
+      type: object
+      required:
+        - plan
+      properties:
+        plan:
+          allOf:
+            - $ref: '#/components/schemas/TipoPlanComunidad'
+          description: Plan al que se quiere mejorar
+
+    HireTutorRequest:
+      type: object
+      required:
+        - tutorId
+      properties:
+        tutorId:
+          type: integer
+          format: int64
+        duracionMeses:
+          type: integer
+          minimum: 1
+          default: 1
+          description: Duración del contrato en meses
+
+    # =====================================================
+    # MEMBER DTOs
+    # =====================================================
+    MemberResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        usuario:
+          $ref: '#/components/schemas/UserPublicResponse'
+        rol:
+          $ref: '#/components/schemas/RolComunidad'
+        fechaIngreso:
+          type: string
+          format: date-time
+
+    MemberListResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemberResponse'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+
+    TransferAdminRequest:
+      type: object
+      required:
+        - nuevoAdminId
+      properties:
+        nuevoAdminId:
+          type: integer
+          format: int64
+          description: ID del usuario que recibirá el rol de admin
+
+    # =====================================================
+    # REQUEST DTOs
+    # =====================================================
+    RequestResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        usuario:
+          $ref: '#/components/schemas/UserPublicResponse'
+        estado:
+          $ref: '#/components/schemas/EstadoSolicitud'
+        mensaje:
+          type: string
+        respondidoPor:
+          allOf:
+            - $ref: '#/components/schemas/UserPublicResponse'
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    RequestListResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/RequestResponse'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+
+    AccessRequestBody:
+      type: object
+      properties:
+        mensaje:
+          type: string
+          maxLength: 500
+          description: Mensaje opcional para el admin
+
+    RespondRequestBody:
+      type: object
+      required:
+        - accion
+      properties:
+        accion:
+          type: string
+          enum:
+            - ACEPTAR
+            - RECHAZAR
+
+    # =====================================================
+    # CATEGORY DTOs
+    # =====================================================
+    CategoryResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        descripcion:
+          type: string
+        orden:
+          type: integer
+        icono:
+          type: string
+
+    CategoryListResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryResponse'
+
+    CreateCategoryRequest:
+      type: object
+      required:
+        - nombre
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+          maxLength: 50
+        descripcion:
+          type: string
+          maxLength: 200
+        icono:
+          type: string
+          maxLength: 50
+
+    UpdateCategoryRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+          maxLength: 50
+        descripcion:
+          type: string
+          maxLength: 200
+        icono:
+          type: string
+          maxLength: 50
+
+    ReorderCategoriesRequest:
+      type: object
+      required:
+        - orden
+      properties:
+        orden:
+          type: array
+          items:
+            type: integer
+            format: int64
+          description: Array de IDs de categorías en el nuevo orden
+
+    # =====================================================
+    # EVENT DTOs
+    # =====================================================
+    EventDetailResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        titulo:
+          type: string
+        descripcion:
+          type: string
+        fechaHora:
+          type: string
+          format: date-time
+        fechaFin:
+          type: string
+          format: date-time
+        ubicacion:
+          type: string
+        latitud:
+          type: number
+          format: double
+        longitud:
+          type: number
+          format: double
+        aforo:
+          type: integer
+        asistentesConfirmados:
+          type: integer
+        queLlevar:
+          type: string
+        visibleEnMapa:
+          type: boolean
+        esVirtual:
+          type: boolean
+        enlaceVirtual:
+          type: string
+          nullable: true
+        cancelado:
+          type: boolean
+        motivoCancelacion:
+          type: string
+          nullable: true
+        comunidad:
+          $ref: '#/components/schemas/CommunitySummaryResponse'
+        creador:
+          $ref: '#/components/schemas/UserPublicResponse'
+        miAsistencia:
+          allOf:
+            - $ref: '#/components/schemas/EstadoAsistencia'
+          nullable: true
+          description: Estado de asistencia del usuario autenticado (null si no está registrado)
+        createdAt:
+          type: string
+          format: date-time
+
+    EventListResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventSummaryResponse'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+
+    EventSummaryResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        titulo:
+          type: string
+        descripcion:
+          type: string
+        fechaHora:
+          type: string
+          format: date-time
+        ubicacion:
+          type: string
+        aforo:
+          type: integer
+        asistentesConfirmados:
+          type: integer
+        esVirtual:
+          type: boolean
+        cancelado:
+          type: boolean
+        comunidadId:
+          type: integer
+          format: int64
+        comunidadNombre:
+          type: string
+
+    MapEventListResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/MapEventResponse'
+
+    MapEventResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        titulo:
+          type: string
+        fechaHora:
+          type: string
+          format: date-time
+        latitud:
+          type: number
+          format: double
+        longitud:
+          type: number
+          format: double
+        comunidadNombre:
+          type: string
+
+    CreateEventRequest:
+      type: object
+      required:
+        - titulo
+        - fechaHora
+        - aforo
+      properties:
+        titulo:
+          type: string
+          minLength: 3
+          maxLength: 200
+          example: Sesión de estudio Cálculo II
+        descripcion:
+          type: string
+          maxLength: 2000
+        fechaHora:
+          type: string
+          format: date-time
+        fechaFin:
+          type: string
+          format: date-time
+        ubicacion:
+          type: string
+          maxLength: 500
+        latitud:
+          type: number
+          format: double
+        longitud:
+          type: number
+          format: double
+        aforo:
+          type: integer
+          minimum: 1
+          maximum: 500
+          example: 20
+        queLlevar:
+          type: string
+          maxLength: 1000
+        visibleEnMapa:
+          type: boolean
+          default: true
+          description: Si la comunidad es pública, siempre será true
+        esVirtual:
+          type: boolean
+          default: false
+        enlaceVirtual:
+          type: string
+          format: uri
+
+    UpdateEventRequest:
+      type: object
+      properties:
+        titulo:
+          type: string
+          minLength: 3
+          maxLength: 200
+        descripcion:
+          type: string
+          maxLength: 2000
+        fechaHora:
+          type: string
+          format: date-time
+        fechaFin:
+          type: string
+          format: date-time
+        ubicacion:
+          type: string
+          maxLength: 500
+        latitud:
+          type: number
+          format: double
+        longitud:
+          type: number
+          format: double
+        aforo:
+          type: integer
+          minimum: 1
+          maximum: 500
+        queLlevar:
+          type: string
+          maxLength: 1000
+        visibleEnMapa:
+          type: boolean
+        esVirtual:
+          type: boolean
+        enlaceVirtual:
+          type: string
+          format: uri
+
+    CancelEventRequest:
+      type: object
+      properties:
+        motivo:
+          type: string
+          maxLength: 500
+          description: Motivo de la cancelación
+
+    LocationListResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocationResponse'
+
+    LocationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        nombre:
+          type: string
+        direccion:
+          type: string
+        tipo:
+          type: string
+          description: Tipo de lugar (biblioteca, cafetería, etc.)
+        latitud:
+          type: number
+          format: double
+        longitud:
+          type: number
+          format: double
+        rating:
+          type: number
+          format: float
+        horario:
+          type: string
+
+    # =====================================================
+    # ATTENDANCE DTOs
+    # =====================================================
+    AttendanceResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        usuario:
+          $ref: '#/components/schemas/UserPublicResponse'
+        estado:
+          $ref: '#/components/schemas/EstadoAsistencia'
+        createdAt:
+          type: string
+          format: date-time
+
+    AttendanceListResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttendanceResponse'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+
+    # =====================================================
+    # INVITATION DTOs
+    # =====================================================
+    InvitationResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        evento:
+          $ref: '#/components/schemas/EventSummaryResponse'
+        usuarioInvitado:
+          $ref: '#/components/schemas/UserPublicResponse'
+        estado:
+          $ref: '#/components/schemas/EstadoInvitacion'
+        createdAt:
+          type: string
+          format: date-time
+
+    InvitationListResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvitationResponse'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+
+    SendInvitationRequest:
+      type: object
+      required:
+        - userId
+      properties:
+        userId:
+          type: integer
+          format: int64
+          description: ID del usuario a invitar
+
+    RespondInvitationRequest:
+      type: object
+      required:
+        - accion
+      properties:
+        accion:
+          type: string
+          enum:
+            - ACEPTAR
+            - RECHAZAR
+
+    # =====================================================
+    # FILE DTOs
+    # =====================================================
+    FileResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        url:
+          type: string
+          format: uri
+        tipo:
+          type: string
+        tamaño:
+          type: integer
+          format: int64
+          description: Tamaño en bytes
+        classroomLink:
+          type: string
+          format: uri
+          nullable: true
+        categoria:
+          allOf:
+            - $ref: '#/components/schemas/CategoryResponse'
+          nullable: true
+        subidoPor:
+          $ref: '#/components/schemas/UserPublicResponse'
+        createdAt:
+          type: string
+          format: date-time
+
+    FileListResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileResponse'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+
+    UploadFileRequest:
+      type: object
+      required:
+        - file
+      properties:
+        file:
+          type: string
+          format: binary
+          description: Archivo a subir
+        categoriaId:
+          type: integer
+          format: int64
+          description: ID de la categoría (opcional)
+        classroomLink:
+          type: string
+          format: uri
+          description: Enlace a recurso externo de Classroom
+
+    DownloadResponse:
+      type: object
+      properties:
+        downloadUrl:
+          type: string
+          format: uri
+          description: URL de descarga directa
+        showAds:
+          type: boolean
+          description: Si el usuario debe ver anuncios antes de descargar
+        adUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: URL de la página de anuncios (solo si showAds es true)
+
+    # =====================================================
+    # SUBSCRIPTION DTOs
+    # =====================================================
+    SubscriptionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        plan:
+          $ref: '#/components/schemas/TipoPlan'
+        fechaInicio:
+          type: string
+          format: date
+        fechaFin:
+          type: string
+          format: date
+        activa:
+          type: boolean
+        autoRenovar:
+          type: boolean
+        enPeriodoGracia:
+          type: boolean
+          description: Indica si está en período de gracia tras cancelación
+
+    PlanListResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanResponse'
+
+    PlanResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        nombre:
+          type: string
+        tipo:
+          $ref: '#/components/schemas/TipoPlan'
+        precioMensual:
+          type: number
+          format: double
+        precioAnual:
+          type: number
+          format: double
+        caracteristicas:
+          type: array
+          items:
+            type: string
+        maxComunidadesAdmin:
+          type: integer
+        maxMiembrosComunidad:
+          type: integer
+
+    SubscribeRequest:
+      type: object
+      required:
+        - planId
+        - periodicidad
+      properties:
+        planId:
+          type: string
+        periodicidad:
+          type: string
+          enum:
+            - MENSUAL
+            - ANUAL
+
+    # =====================================================
+    # PAYMENT DTOs
+    # =====================================================
+    TransactionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        tipo:
+          $ref: '#/components/schemas/TipoTransaccion'
+        monto:
+          type: number
+          format: double
+        moneda:
+          type: string
+          example: EUR
+        comision:
+          type: number
+          format: double
+          nullable: true
+        estado:
+          $ref: '#/components/schemas/EstadoTransaccion'
+        descripcion:
+          type: string
+        iniciadoAt:
+          type: string
+          format: date-time
+        completadoAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    TransactionListResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionResponse'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+
+    PaymentUrlResponse:
+      type: object
+      properties:
+        paymentUrl:
+          type: string
+          format: uri
+          description: URL de la pasarela de pago (Stripe Checkout)
+        sessionId:
+          type: string
+          description: ID de la sesión de pago
+
+    # =====================================================
+    # INSTITUTION DTOs
+    # =====================================================
+    InstitutionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        email:
+          type: string
+          format: email
+        logo:
+          type: string
+          format: uri
+          nullable: true
+        dominio:
+          type: string
+        planContratado:
+          $ref: '#/components/schemas/TipoPlan'
+        maxUsuarios:
+          type: integer
+        usuariosActuales:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateInstitutionRequest:
+      type: object
+      required:
+        - nombre
+        - email
+        - dominio
+      properties:
+        nombre:
+          type: string
+          minLength: 2
+          maxLength: 200
+        email:
+          type: string
+          format: email
+        logo:
+          type: string
+          format: uri
+        dominio:
+          type: string
+          description: Dominio institucional (ej. universidad.edu)
+
+    UpdateInstitutionRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+          minLength: 2
+          maxLength: 200
+        email:
+          type: string
+          format: email
+        logo:
+          type: string
+          format: uri
+
+    CorporatePlanRequest:
+      type: object
+      required:
+        - maxUsuarios
+      properties:
+        maxUsuarios:
+          type: integer
+          minimum: 10
+          description: Número máximo de usuarios a incluir
+
+    CorporateInvitationResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        email:
+          type: string
+          format: email
+        estado:
+          $ref: '#/components/schemas/EstadoInvitacion'
+        createdAt:
+          type: string
+          format: date-time
+
+    CorporateInvitationListResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/CorporateInvitationResponse'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+
+    CorporateInvitationRequest:
+      type: object
+      required:
+        - emails
+      properties:
+        emails:
+          type: array
+          items:
+            type: string
+            format: email
+          minItems: 1
+          maxItems: 100
+          description: Lista de emails a invitar
+
+    # =====================================================
+    # CLASSROOM DTOs
+    # =====================================================
+    ClassroomAssociationResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        classroomId:
+          type: string
+        classroomUrl:
+          type: string
+          format: uri
+        Tutor:
+          $ref: '#/components/schemas/TutorResponse'
+        permisos:
+          type: string
+        linkedAt:
+          type: string
+          format: date-time
+
+    ClassroomSyncResponse:
+      type: object
+      properties:
+        usuariosAgregados:
+          type: integer
+          description: Número de usuarios agregados al Classroom
+        usuariosYaExistentes:
+          type: integer
+          description: Número de usuarios que ya estaban en el Classroom
+        errores:
+          type: array
+          items:
+            type: string
+          description: Lista de errores durante la sincronización
+
+    # =====================================================
+    # COMMON DTOs
+    # =====================================================
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Código de error
+        message:
+          type: string
+          description: Mensaje descriptivo del error
+        details:
+          type: array
+          items:
+            type: string
+          description: Detalles adicionales del error
+        timestamp:
+          type: string
+          format: date-time
+        path:
+          type: string
+          description: Ruta del endpoint que generó el error
+
+    PageInfo:
+      type: object
+      properties:
+        number:
+          type: integer
+          description: Número de página actual (0-indexed)
+        size:
+          type: integer
+          description: Tamaño de página
+        totalElements:
+          type: integer
+          format: int64
+          description: Total de elementos
+        totalPages:
+          type: integer
+          description: Total de páginas
+        first:
+          type: boolean
+          description: Es la primera página
+        last:
+          type: boolean
+          description: Es la última página

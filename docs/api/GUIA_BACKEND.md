@@ -18,7 +18,7 @@
 
 ---
 
-Esta guía explica cómo usar el archivo `openapi.yaml` para implementar los endpoints en Spring Boot.
+Esta guía explica cómo funciona la API y Swagger UI. La documentación se genera automáticamente a partir de los controladores (OpenAPI dinámico), aunque también mantenemos una copia estática si la necesitas.
 
 ---
 
@@ -30,7 +30,9 @@ El proyecto tiene **Swagger UI desplegado** en:
 http://localhost:8080/swagger-ui.html
 ```
 
-> **IMPORTANTE**: Swagger UI muestra la documentación completa de la API (todos los endpoints, parámetros y respuestas esperadas), pero **"Try it out" NO funciona** porque los endpoints aún no están implementados. Es solo para **visualización y referencia** mientras desarrollas.
+> **IMPORTANTE**: Swagger UI mostrará todos los endpoints que tenga tu aplicación en cada arranque. Si un controlador existe con la misma URL que aparece en la especificación, podrás pulsar **"Try it out"** y la llamada se ejecutará contra tu backend local. La opción de "Try it out" dejará de funcionar únicamente cuando la aplicación no esté levantada o el endpoint no exista.
+>
+> Además tienes disponible una segunda definición estática (en `http://localhost:8080/spec/openapi.yaml`) para consultar o descargar una versión fija del contrato si lo necesitas.
 
 ### Selector de Servers (Dropdown)
 
