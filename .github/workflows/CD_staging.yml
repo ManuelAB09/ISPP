@@ -5,16 +5,16 @@ name: CD - Despliegue Staging (trunk → Azure)
 # 
 # Se ejecuta cuando el workflow de CI completa con éxito
 # en la rama trunk. Despliega:
-#   - Backend: Web App staging (1 plan B1 compartido con prod)
-#   - Frontend: Azure Static Web Apps (GRATIS)
+#   - Full-stack: React + Spring Boot en una sola Web App
+#
+# El Dockerfile multi-stage compila React y lo embebe como
+# recursos estáticos dentro del JAR de Spring Boot.
+# → Una sola URL, sin CORS, sin Static Web Apps.
 #
 # B1 NO soporta deployment slots — usamos 2 Web Apps en el
 # MISMO App Service Plan B1 (~€11/mes):
-#   - Producción: Web App con Always On
-#   - Staging:    Web App con Always On
-#
-# Ambas comparten 1 vCPU + 1.75 GB RAM. Si resulta
-# insuficiente, escalar a B2 (~€22/mes, 2 vCPU, 3.5 GB).
+#   - Producción: meerkatters           (Web App con Always On)
+#   - Staging:    meerkatters-stg       (Web App con Always On)
 #
 # Coste mensual estimado: ~€23.50 (1 plan B1 + PostgreSQL B1ms)
 # ════════════════════════════════════════════════════════════
@@ -36,12 +36,12 @@ env:
 jobs:
 
   # ──────────────────────────────────────────
-  # Desplegar Backend (Web App Staging - B1)
+  # Desplegar Full-stack (Web App Staging - B1)
   # ──────────────────────────────────────────
-  deploy-backend:
-    name: Desplegar Backend (Staging)
+  deploy:
+    name: Desplegar Full-stack (Staging)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     environment: staging
 
@@ -59,17 +59,17 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Convertir nombre de imagen a minúsculas
-        run: echo "BACKEND_IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}/backend" >> $GITHUB_ENV
+        run: echo "APP_IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}/app" >> $GITHUB_ENV
 
-      - name: Build y push imagen Docker (Backend)
+      - name: Build y push imagen Docker (Full-stack)
         uses: docker/build-push-action@v6
         with:
-          context: ./backend
+          context: .
           file: ./backend/Dockerfile
           push: true
           tags: |
-            ${{ env.BACKEND_IMAGE }}:staging
-            ${{ env.BACKEND_IMAGE }}:${{ github.event.workflow_run.head_sha }}
+            ${{ env.APP_IMAGE }}:staging
+            ${{ env.APP_IMAGE }}:${{ github.event.workflow_run.head_sha }}
 
       - name: Login en Azure
         uses: azure/login@v2
@@ -79,49 +79,5 @@ jobs:
       - name: Desplegar en Azure App Service (Staging)
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ vars.AZURE_BACKEND_APP_STAGING }}
-          images: ${{ env.BACKEND_IMAGE }}:${{ github.event.workflow_run.head_sha }}
-
-  # ──────────────────────────────────────────
-  # Desplegar Frontend (Static Web Apps - GRATIS)
-  # ──────────────────────────────────────────
-  deploy-frontend:
-    name: Desplegar Frontend (Static Web Apps)
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    environment: staging
-
-    steps:
-      - name: Checkout (commit que disparó el CI)
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
-
-      - name: Configurar Node.js 24
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Instalar dependencias
-        working-directory: frontend
-        run: npm ci
-
-      - name: Build del frontend
-        working-directory: frontend
-        env:
-          REACT_APP_API_URL: ${{ vars.STAGING_API_URL }}
-        run: npm run build
-
-      - name: Desplegar en Azure Static Web Apps
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_TOKEN_STAGING }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          action: "upload"
-          app_location: "/frontend"
-          output_location: "build"
-          skip_app_build: true
-          skip_deploy_on_missing_secrets: true
+          app-name: ${{ vars.AZURE_WEBAPP_STG }}
+          images: ${{ env.APP_IMAGE }}:${{ github.event.workflow_run.head_sha }}

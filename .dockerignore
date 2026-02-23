@@ -1,0 +1,12 @@
+# Ignorar todo lo innecesario para el build
+# NOTA: el build context es la raíz del repo, no ./backend
+.git/
+.github/
+docs/
+config/
+*.md
+.idea/
+*.iml
+.vscode/
+frontend/node_modules/
+backend/target/

@@ -7,6 +7,8 @@ spring:
   application:
     name: backend
 
+  # ── Perfil por defecto: H2 en memoria (desarrollo local) ──
+  # En Azure se activa "staging" o "production" via SPRING_PROFILES_ACTIVE
   datasource:
     url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
@@ -28,3 +30,10 @@ spring:
         enabled: false
     api-docs:
       enabled: true
+
+  h2:
+    console:
+      enabled: true
+
+server:
+  port: 8080
