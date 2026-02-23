@@ -1,6 +1,7 @@
 package es.us.meerkat.backend.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+
 import es.us.meerkat.backend.entity.Usuario;
 
 /**

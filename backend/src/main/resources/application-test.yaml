@@ -1,0 +1,27 @@
+# ═══════════════════════════════════════════════════
+#  Perfil TEST — PostgreSQL en contenedor Docker (CI)
+#
+#  Activar con: SPRING_PROFILES_ACTIVE=test
+#  Usado por el job test-backend del CI (CI.yml):
+#    - SPRING_DATASOURCE_URL   → postgres en localhost:5432
+#    - SPRING_DATASOURCE_USERNAME → meerkatters_user
+#    - SPRING_DATASOURCE_PASSWORD → meerkatters_password
+# ═══════════════════════════════════════════════════
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/meerkatters_test}
+    username: ${SPRING_DATASOURCE_USERNAME:meerkatters_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:meerkatters_password}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+server:
+  port: 8080

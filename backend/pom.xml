@@ -173,7 +173,7 @@
 					<configLocation>../config/checkstyle/checkstyle.xml</configLocation>
 					<consoleOutput>true</consoleOutput>
 					<failsOnError>true</failsOnError>
-					<includeTestSourceRoots>false</includeTestSourceRoots>
+					<excludes>**/package-info.java</excludes>
 				</configuration>
 			</plugin>
 

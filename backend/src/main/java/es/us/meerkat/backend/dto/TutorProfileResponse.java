@@ -1,10 +1,10 @@
 package es.us.meerkat.backend.dto;
 
-import lombok.Builder;
-import lombok.Data;
-
 import java.math.BigDecimal;
 import java.util.List;
+
+import lombok.Builder;
+import lombok.Data;
 
 /**
  * DTO que representa la información pública o completa de un tutor.
