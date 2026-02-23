@@ -16,10 +16,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class SpaController {
 
+    private static final String EXCLUDE =
+            "^(?!api|actuator|static|index\\.html|favicon\\.ico|manifest\\.json|robots\\.txt).*";
+
     @GetMapping(value = {
         "/",
-        "/{path:^(?!api|actuator|static|favicon\\.ico|manifest\\.json|robots\\.txt).*}",
-        "/{path:^(?!api|actuator|static|favicon\\.ico|manifest\\.json|robots\\.txt).*}/**"
+        "/{path:" + EXCLUDE + "}",
+        "/{path:" + EXCLUDE + "}/**"
     })
     public String forward() {
         return "forward:/index.html";
