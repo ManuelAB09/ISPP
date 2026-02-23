@@ -1,4 +1,9 @@
 spring:
+  
+  security:
+    user:
+      name: admin
+      password: admin123
   application:
     name: backend
 
