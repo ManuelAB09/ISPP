@@ -18,8 +18,8 @@ public class SpaController {
 
     @GetMapping(value = {
         "/",
-        "/{path:^(?!api|actuator|static|favicon\\.ico|manifest\\.json|robots\\.txt).*}",
-        "/{path:^(?!api|actuator|static|favicon\\.ico|manifest\\.json|robots\\.txt).*}/**"
+        "/{path:^(?!api|actuator|static|index\\.html|favicon\\.ico|manifest\\.json|robots\\.txt).*}",
+        "/{path:^(?!api|actuator|static|index\\.html|favicon\\.ico|manifest\\.json|robots\\.txt).*}/**"
     })
     public String forward() {
         return "forward:/index.html";
