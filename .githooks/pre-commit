@@ -43,7 +43,16 @@ if [[ -n "$BACKEND_FILES" ]]; then
   echo "  Comprobando Checkstyle (backend)..."
   if [ -f "backend/pom.xml" ]; then
     cd backend
-    if ! mvn checkstyle:check -q 2>/dev/null; then
+    # use Maven wrapper if mvn is not on PATH
+    MVNCMD=mvn
+    if [ ! -x "$(command -v mvn)" ]; then
+      if [ -x "./mvnw" ]; then
+        MVNCMD="./mvnw"
+      elif [ -x "./mvnw.cmd" ]; then
+        MVNCMD="./mvnw.cmd"
+      fi
+    fi
+    if ! $MVNCMD checkstyle:check -q 2>/dev/null; then
       echo "  [FALLO] Checkstyle ha encontrado errores."
       ERRORS=1
     fi

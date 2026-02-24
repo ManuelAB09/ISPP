@@ -1,9 +1,9 @@
 package es.us.meerkat.backend.dto;
 
-import lombok.Data;
-
 import java.math.BigDecimal;
 import java.util.List;
+
+import lombok.Data;
 
 /**
  * DTO para la creación o edición del perfil de un tutor.

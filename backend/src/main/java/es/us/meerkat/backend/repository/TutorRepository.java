@@ -1,11 +1,12 @@
 package es.us.meerkat.backend.repository;
 
-import es.us.meerkat.backend.entity.Tutor;
-import es.us.meerkat.backend.entity.Usuario;
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import es.us.meerkat.backend.entity.Tutor;
+import es.us.meerkat.backend.entity.Usuario;
 
 /**
  * Repositorio JPA para la entidad {@link Tutor}.
