@@ -17,30 +17,25 @@ import es.us.meerkat.backend.service.TutorService;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import lombok.RequiredArgsConstructor;
 
-/**
- * Controlador para manejar las operaciones relacionadas con los tutores.
- */
+/** Controlador para manejar las operaciones relacionadas con los tutores. */
 @RestController
 @RequestMapping("/api/tutors")
 @RequiredArgsConstructor
 public final class TutorController {
 
-    /**
-     * Servicio para operaciones de tutor.
-     */
+    /** Servicio para operaciones de tutor. */
     private final TutorService tutorService;
 
     /**
      * Crea un perfil de tutor para un usuario dado.
      *
      * @param usuarioId Identificador del usuario.
-     * @param request   Datos para crear el perfil de tutor.
+     * @param request Datos para crear el perfil de tutor.
      * @return Perfil de tutor creado.
      */
     @PostMapping("/{usuarioId}/perfil")
     public ResponseEntity<TutorProfileResponse> crearPerfil(
-            @PathVariable final Long usuarioId,
-            @RequestBody final TutorProfileRequest request) {
+            @PathVariable final Long usuarioId, @RequestBody final TutorProfileRequest request) {
 
         return ResponseEntity.ok(tutorService.crearPerfil(usuarioId, request));
     }
@@ -49,13 +44,12 @@ public final class TutorController {
      * Edita el perfil de un tutor existente.
      *
      * @param usuarioId Identificador del usuario.
-     * @param request   Datos actualizados del perfil.
+     * @param request Datos actualizados del perfil.
      * @return Perfil de tutor actualizado.
      */
     @PutMapping("/{usuarioId}/perfil")
     public ResponseEntity<TutorProfileResponse> editarPerfil(
-            @PathVariable final Long usuarioId,
-            @RequestBody final TutorProfileRequest request) {
+            @PathVariable final Long usuarioId, @RequestBody final TutorProfileRequest request) {
 
         return ResponseEntity.ok(tutorService.editarPerfil(usuarioId, request));
     }
@@ -67,8 +61,7 @@ public final class TutorController {
      * @return Perfil público del tutor.
      */
     @GetMapping("/{tutorId}")
-    public ResponseEntity<TutorProfileResponse> verPerfilPublico(
-            @PathVariable final Long tutorId) {
+    public ResponseEntity<TutorProfileResponse> verPerfilPublico(@PathVariable final Long tutorId) {
 
         return ResponseEntity.ok(tutorService.obtenerPerfilPublico(tutorId));
     }
@@ -104,5 +97,4 @@ public final class TutorController {
     public String estadoVerificacion(@PathVariable final Long tutorId) {
         return tutorService.consultarEstadoVerificacion(tutorId);
     }
-
 }

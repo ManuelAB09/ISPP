@@ -18,8 +18,7 @@ public final class SwaggerDemoController {
     @GetMapping("/api/demo")
     @Operation(
             summary = "Demo endpoint",
-            description = "Devuelve un mensaje de prueba para Swagger UI."
-    )
+            description = "Devuelve un mensaje de prueba para Swagger UI.")
     public String demo() {
         return "Swagger UI está funcionando correctamente.";
     }

@@ -1,8 +1,6 @@
 package es.us.meerkat.backend.entity;
 
-/**
- * Enum que representa los posibles estados de una transacción.
- */
+/** Enum que representa los posibles estados de una transacción. */
 public enum EstadoTransaccion {
 
     /** La transacción está pendiente y aún no se ha completado el pago. */
@@ -13,5 +11,4 @@ public enum EstadoTransaccion {
 
     /** La transacción falló o el pago fue rechazado. */
     FALLIDA;
-
 }
