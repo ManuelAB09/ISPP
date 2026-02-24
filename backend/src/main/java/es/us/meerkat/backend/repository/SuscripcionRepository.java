@@ -3,12 +3,10 @@ package es.us.meerkat.backend.repository;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import es.us.meerkat.backend.entity.Suscripcion;
 
 /** Repositorio para gestionar la persistencia de entidades Suscripcion. */
-@Repository
 public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> {
 
     /**
