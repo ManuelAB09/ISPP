@@ -1,0 +1,48 @@
+package es.us.meerkat.backend.dto;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import lombok.Builder;
+import lombok.Data;
+
+/**
+ * DTO con los datos completos del usuario autenticado.
+ *
+ * Corresponde al schema UserDetailResponse del OpenAPI.
+ * Se usa en respuestas de /users/me y dentro de AuthResponse.
+ */
+@Data
+@Builder
+public class UserDetailResponse {
+
+    /** Identificador único del usuario. */
+    private Long id;
+
+    /** Email del usuario. */
+    private String email;
+
+    /** Nombre completo del usuario. */
+    private String nombre;
+
+    /** URL de la foto de perfil. */
+    private String foto;
+
+    /** Breve biografía del usuario. */
+    private String bio;
+
+    /** Lista de intereses del usuario. */
+    private List<String> intereses;
+
+    /**
+     * Indica si el perfil es visible en listados públicos
+     * y resultados de búsqueda.
+     */
+    private Boolean visibleEnListados;
+
+    /** Indica si el usuario tiene perfil de tutor. */
+    private Boolean esTutor;
+
+    /** Fecha de creación de la cuenta. */
+    private LocalDateTime createdAt;
+}

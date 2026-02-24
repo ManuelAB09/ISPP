@@ -1,14 +1,9 @@
 spring:
-  
-  security:
-    user:
-      name: admin
-      password: admin123
   application:
     name: backend
 
-  # ── Perfil por defecto: H2 en memoria (desarrollo local) ──
-  # En Azure se activa "staging" o "production" via SPRING_PROFILES_ACTIVE
+# ── Perfil por defecto: H2 en memoria (desarrollo local) ──
+# En Azure se activa "staging" o "production" via SPRING_PROFILES_ACTIVE
   datasource:
     url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
@@ -19,17 +14,6 @@ spring:
       ddl-auto: update
     show-sql: true
     database-platform: org.hibernate.dialect.H2Dialect
-  springdoc:
-    swagger-ui:
-      urls:
-        - name: Dynamic
-          url: /v3/api-docs
-        - name: Static
-          url: /spec/openapi.yaml
-      oauth:
-        enabled: false
-    api-docs:
-      enabled: true
 
   h2:
     console:
@@ -37,3 +21,23 @@ spring:
 
 server:
   port: 8080
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+
+jwt:
+  secret: dGhpcyBpcyBhIHNlY3JldCBrZXkgZm9yIG1lZXJrYXQgYmFja2VuZCBqd3Q=
+  expiration: 86400000
+
+springdoc:
+  swagger-ui:
+    urls:
+      - name: Dynamic
+        url: /v3/api-docs
+      - name: Static
+        url: /spec/openapi.yaml
+    oauth:
+      enabled: false
+  api-docs:
+    enabled: true

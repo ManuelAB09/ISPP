@@ -1,14 +1,11 @@
 package es.us.meerkat.backend.service;
 
-import java.util.List;
 
-import es.us.meerkat.backend.dto.AuthResponse;
-import es.us.meerkat.backend.dto.CambiarPasswordRequest;
-import es.us.meerkat.backend.dto.LoginRequest;
-import es.us.meerkat.backend.dto.PrivacidadRequest;
-import es.us.meerkat.backend.dto.RegisterRequest;
-import es.us.meerkat.backend.dto.UpdatePerfilRequest;
-import es.us.meerkat.backend.dto.UsuarioPerfilResponse;
+import es.us.meerkat.backend.dto.ChangePasswordRequest;
+import es.us.meerkat.backend.dto.UpdateUserRequest;
+import es.us.meerkat.backend.dto.UserDetailResponse;
+import es.us.meerkat.backend.dto.UserPublicResponse;
+import es.us.meerkat.backend.dto.VisibilityRequest;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,10 +14,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Servicio para gestionar la lógica de negocio relacionada con los usuarios.
+ * Servicio para gestionar la lógica de negocio de usuarios.
  *
- * Cubre registro, autenticación, edición de perfil, cambio de contraseña,
- * eliminación de cuenta y configuración de privacidad.
+ * Cubre los endpoints de /api/v1/users del OpenAPI:
+ * obtener perfil propio, actualizar, cambiar contraseña,
+ * eliminar cuenta, visibilidad y ver perfiles públicos.
  */
 @Service
 @RequiredArgsConstructor
@@ -36,109 +34,44 @@ public class UsuarioService {
     private final BCryptPasswordEncoder passwordEncoder;
 
     // ===============================
-    // REGISTRO
+    // GET /api/v1/users/me
     // ===============================
 
     /**
-     * Registra un nuevo usuario con email y contraseña.
+     * Devuelve el perfil completo del usuario autenticado.
      *
-     * Verifica que el email no esté ya en uso y que la contraseña
-     * tenga al menos 8 caracteres antes de guardar.
-     *
-     * @param requestParam Datos del nuevo usuario.
-     * @return Mensaje de confirmación de registro.
-     * @throws RuntimeException si el email ya está en uso
-     *         o los datos no son válidos.
+     * @param usuario Usuario autenticado extraído del contexto.
+     * @return Perfil completo del usuario.
      */
     @Transactional
-    public String registrar(final RegisterRequest requestParam) {
-
-        if (requestParam.getEmail() == null
-                || requestParam.getEmail().isBlank()) {
-            throw new RuntimeException("El email no puede estar vacío");
+    public UserDetailResponse obtenerPerfilPropio(
+            final Usuario usuario) {
+        Usuario usuarioActualizado = usuarioRepository
+            .findByEmail(usuario.getEmail())
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        if (usuarioActualizado.getTutores() != null) {
+            usuarioActualizado.getTutores().size();
         }
-
-        if (requestParam.getPassword() == null
-                || requestParam.getPassword().length()
-                < MIN_PASSWORD_LENGTH) {
-            throw new RuntimeException(
-                "La contraseña debe tener al menos 8 caracteres");
-        }
-
-        if (usuarioRepository.existsByEmail(requestParam.getEmail())) {
-            throw new RuntimeException("El email ya está en uso");
-        }
-
-        final Usuario usuario = new Usuario();
-        usuario.setEmail(requestParam.getEmail());
-        usuario.setPassword(
-            passwordEncoder.encode(requestParam.getPassword()));
-        usuario.setNombre(requestParam.getNombre());
-        usuario.setEsTutor(false);
-        usuario.setVisibleEnListados(true);
-
-        usuarioRepository.save(usuario);
-
-        return "Cuenta creada correctamente";
+        return mapToDetailResponse(usuarioActualizado);
     }
 
     // ===============================
-    // INICIO DE SESIÓN
-    // ===============================
-
-    /**
-     * Autentica a un usuario con sus credenciales.
-     *
-     * Comprueba que el email exista y que la contraseña coincida
-     * con la almacenada cifrada en base de datos.
-     *
-     * @param requestParam Credenciales del usuario.
-     * @return DTO con los datos básicos del usuario autenticado.
-     * @throws RuntimeException si las credenciales son incorrectas.
-     */
-    public AuthResponse iniciarSesion(final LoginRequest requestParam) {
-
-        final Usuario usuario = usuarioRepository
-                .findByEmail(requestParam.getEmail())
-                .orElseThrow(
-                    () -> new RuntimeException("Credenciales incorrectas"));
-
-        if (!passwordEncoder.matches(
-                requestParam.getPassword(), usuario.getPassword())) {
-            throw new RuntimeException("Credenciales incorrectas");
-        }
-
-        return AuthResponse.builder()
-                .id(usuario.getId())
-                .email(usuario.getEmail())
-                .nombre(usuario.getNombre())
-                .esTutor(usuario.getEsTutor())
-                .token("jwt-generado-por-spring-security")
-                .build();
-    }
-
-    // ===============================
-    // ACTUALIZAR PERFIL
+    // PUT /api/v1/users/me
     // ===============================
 
     /**
      * Actualiza la información personal del usuario autenticado.
      *
-     * Solo se modifican los campos que no sean nulos en el request.
-     * Los cambios se reflejan inmediatamente en el perfil público.
+     * Solo modifica los campos que no sean nulos en el request.
      *
-     * @param usuarioIdParam Identificador del usuario a actualizar.
-     * @param requestParam   Datos nuevos del perfil.
-     * @return Perfil público actualizado del usuario.
+     * @param usuario      Usuario autenticado.
+     * @param requestParam Datos a actualizar.
+     * @return Perfil actualizado.
      */
     @Transactional
-    public UsuarioPerfilResponse actualizarPerfil(
-            final Long usuarioIdParam,
-            final UpdatePerfilRequest requestParam) {
-
-        final Usuario usuario = usuarioRepository.findById(usuarioIdParam)
-                .orElseThrow(
-                    () -> new RuntimeException("Usuario no encontrado"));
+    public UserDetailResponse actualizarPerfil(
+            final Usuario usuario,
+            final UpdateUserRequest requestParam) {
 
         if (requestParam.getNombre() != null) {
             usuario.setNombre(requestParam.getNombre());
@@ -154,153 +87,113 @@ public class UsuarioService {
         }
 
         usuarioRepository.save(usuario);
-
-        return mapToPerfilResponse(usuario);
+        return mapToDetailResponse(usuario);
     }
 
     // ===============================
-    // CAMBIAR CONTRASEÑA
-    // ===============================
-
-    /**
-     * Permite al usuario autenticado modificar su contraseña.
-     *
-     * Verifica la contraseña actual, comprueba que la nueva y su
-     * confirmación coincidan, y la almacena cifrada.
-     *
-     * @param usuarioIdParam Identificador del usuario.
-     * @param requestParam   Datos del cambio de contraseña.
-     * @return Mensaje de éxito.
-     * @throws RuntimeException si la contraseña actual es incorrecta,
-     *         la nueva no cumple requisitos o las confirmaciones
-     *         no coinciden.
-     */
-    @Transactional
-    public String cambiarPassword(
-            final Long usuarioIdParam,
-            final CambiarPasswordRequest requestParam) {
-
-        final Usuario usuario = usuarioRepository.findById(usuarioIdParam)
-                .orElseThrow(
-                    () -> new RuntimeException("Usuario no encontrado"));
-
-        if (!passwordEncoder.matches(
-                requestParam.getPasswordActual(), usuario.getPassword())) {
-            throw new RuntimeException(
-                "La contraseña actual es incorrecta");
-        }
-
-        if (requestParam.getPasswordNueva() == null
-                || requestParam.getPasswordNueva().length()
-                < MIN_PASSWORD_LENGTH) {
-            throw new RuntimeException(
-                "La nueva contraseña debe tener al menos 8 caracteres");
-        }
-
-        if (!requestParam.getPasswordNueva()
-                .equals(requestParam.getPasswordConfirmacion())) {
-            throw new RuntimeException(
-                "La nueva contraseña y su confirmación no coinciden");
-        }
-
-        usuario.setPassword(
-            passwordEncoder.encode(requestParam.getPasswordNueva()));
-        usuarioRepository.save(usuario);
-
-        return "Contraseña actualizada correctamente";
-    }
-
-    // ===============================
-    // ELIMINAR CUENTA
+    // DELETE /api/v1/users/me
     // ===============================
 
     /**
      * Elimina permanentemente la cuenta del usuario autenticado.
      *
-     * Esta acción es irreversible. El frontend debe mostrar un flujo
-     * de confirmación antes de llamar a este endpoint.
+     * Esta acción es irreversible. El frontend debe mostrar
+     * confirmación antes de llamar a este endpoint.
      *
-     * @param usuarioIdParam Identificador del usuario a eliminar.
-     * @return Mensaje de confirmación de eliminación.
+     * @param usuario Usuario autenticado a eliminar.
      */
     @Transactional
-    public String eliminarCuenta(final Long usuarioIdParam) {
-
-        final Usuario usuario = usuarioRepository.findById(usuarioIdParam)
-                .orElseThrow(
-                    () -> new RuntimeException("Usuario no encontrado"));
-
+    public void eliminarCuenta(final Usuario usuario) {
         usuarioRepository.delete(usuario);
-
-        return "Cuenta eliminada permanentemente";
     }
 
     // ===============================
-    // VER PERFIL PÚBLICO
+    // PUT /api/v1/users/me/password
     // ===============================
 
     /**
-     * Obtiene el perfil público de un usuario por su identificador.
+     * Cambia la contraseña del usuario autenticado.
      *
-     * @param usuarioIdParam Identificador del usuario cuyo perfil
-     *                       se quiere ver.
-     * @return Perfil público del usuario.
-     */
-    public UsuarioPerfilResponse verPerfil(final Long usuarioIdParam) {
-
-        final Usuario usuario = usuarioRepository.findById(usuarioIdParam)
-                .orElseThrow(
-                    () -> new RuntimeException("Usuario no encontrado"));
-
-        return mapToPerfilResponse(usuario);
-    }
-
-    /**
-     * Devuelve la lista de perfiles públicos visibles en listados.
+     * Verifica la contraseña actual antes de aplicar el cambio.
      *
-     * Solo incluye usuarios que hayan activado la visibilidad.
-     *
-     * @return Lista de perfiles públicos visibles.
-     */
-    public List<UsuarioPerfilResponse> listarPerfilesPublicos() {
-
-        return usuarioRepository.findByVisibleEnListadosTrue()
-                .stream()
-                .map(this::mapToPerfilResponse)
-                .toList();
-    }
-
-    // ===============================
-    // PRIVACIDAD
-    // ===============================
-
-    /**
-     * Actualiza la configuración de privacidad del usuario.
-     *
-     * Permite al usuario decidir si su perfil aparece en listados
-     * públicos y resultados de búsqueda dentro de la plataforma.
-     *
-     * @param usuarioIdParam Identificador del usuario.
-     * @param requestParam   Configuración de privacidad deseada.
-     * @return Mensaje de confirmación.
+     * @param usuario      Usuario autenticado.
+     * @param requestParam Contraseña actual y nueva.
+     * @throws RuntimeException si la contraseña actual es incorrecta
+     *         o la nueva no cumple los requisitos.
      */
     @Transactional
-    public String actualizarPrivacidad(
-            final Long usuarioIdParam,
-            final PrivacidadRequest requestParam) {
+    public void cambiarPassword(
+            final Usuario usuario,
+            final ChangePasswordRequest requestParam) {
 
-        final Usuario usuario = usuarioRepository.findById(usuarioIdParam)
-                .orElseThrow(
-                    () -> new RuntimeException("Usuario no encontrado"));
+        if (!passwordEncoder.matches(
+                requestParam.getCurrentPassword(),
+                usuario.getPassword())) {
+            throw new RuntimeException(
+                "La contraseña actual es incorrecta");
+        }
+
+        if (requestParam.getNewPassword() == null
+                || requestParam.getNewPassword().length()
+                < MIN_PASSWORD_LENGTH) {
+            throw new RuntimeException(
+                "La nueva contraseña debe tener "
+                + "al menos 8 caracteres");
+        }
+
+        usuario.setPassword(
+            passwordEncoder.encode(
+                requestParam.getNewPassword()));
+        usuarioRepository.save(usuario);
+    }
+
+    // ===============================
+    // PUT /api/v1/users/me/visibility
+    // ===============================
+
+    /**
+     * Actualiza la visibilidad del perfil en listados públicos.
+     *
+     * @param usuario      Usuario autenticado.
+     * @param requestParam Nueva configuración de visibilidad.
+     * @return Perfil actualizado.
+     */
+    @Transactional
+    public UserDetailResponse actualizarVisibilidad(
+            final Usuario usuario,
+            final VisibilityRequest requestParam) {
 
         if (requestParam.getVisibleEnListados() != null) {
             usuario.setVisibleEnListados(
                 requestParam.getVisibleEnListados());
+            usuarioRepository.save(usuario);
         }
 
-        usuarioRepository.save(usuario);
+        return mapToDetailResponse(usuario);
+    }
 
-        return "Configuración de privacidad actualizada";
+    // ===============================
+    // GET /api/v1/users/{userId}
+    // ===============================
+
+    /**
+     * Devuelve el perfil público de un usuario por su ID.
+     *
+     * Solo expone datos que el usuario ha hecho públicos.
+     *
+     * @param usuarioId Identificador del usuario.
+     * @return Perfil público del usuario.
+     * @throws RuntimeException si el usuario no existe.
+     */
+    public UserPublicResponse obtenerPerfilPublico(
+            final Long usuarioId) {
+
+        final Usuario usuario = usuarioRepository
+                .findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException(
+                    "Usuario no encontrado"));
+
+        return mapToPublicResponse(usuario);
     }
 
     // ===============================
@@ -308,20 +201,42 @@ public class UsuarioService {
     // ===============================
 
     /**
-     * Mapea un objeto {@link Usuario} a {@link UsuarioPerfilResponse}.
+     * Mapea {@link Usuario} a {@link UserDetailResponse}.
      *
-     * @param usuarioParam Usuario a mapear.
-     * @return DTO con la información pública del usuario.
+     * @param usuario Usuario a mapear.
+     * @return DTO con datos completos del usuario.
      */
-    private UsuarioPerfilResponse mapToPerfilResponse(
-            final Usuario usuarioParam) {
-        return UsuarioPerfilResponse.builder()
-                .id(usuarioParam.getId())
-                .nombre(usuarioParam.getNombre())
-                .foto(usuarioParam.getFoto())
-                .bio(usuarioParam.getBio())
-                .intereses(usuarioParam.getIntereses())
-                .esTutor(usuarioParam.getEsTutor())
+    private UserDetailResponse mapToDetailResponse(
+            final Usuario usuario) {
+        return UserDetailResponse.builder()
+                .id(usuario.getId())
+                .email(usuario.getEmail())
+                .nombre(usuario.getNombre())
+                .foto(usuario.getFoto())
+                .bio(usuario.getBio())
+                .intereses(usuario.getIntereses())
+                .visibleEnListados(
+                    usuario.getVisibleEnListados())
+                .esTutor(usuario.getEsTutor())
+                .createdAt(usuario.getCreatedAt())
+                .build();
+    }
+
+    /**
+     * Mapea {@link Usuario} a {@link UserPublicResponse}.
+     *
+     * @param usuario Usuario a mapear.
+     * @return DTO con datos públicos del usuario.
+     */
+    private UserPublicResponse mapToPublicResponse(
+            final Usuario usuario) {
+        return UserPublicResponse.builder()
+                .id(usuario.getId())
+                .nombre(usuario.getNombre())
+                .foto(usuario.getFoto())
+                .bio(usuario.getBio())
+                .intereses(usuario.getIntereses())
+                .esTutor(usuario.getEsTutor())
                 .build();
     }
 }

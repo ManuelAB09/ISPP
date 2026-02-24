@@ -9,6 +9,7 @@ import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -18,6 +19,7 @@ import jakarta.persistence.JoinColumn;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 /**
  * Entidad que representa un usuario en la plataforma.
@@ -26,6 +28,7 @@ import lombok.NoArgsConstructor;
  */
 @Entity
 @Data
+@ToString(exclude = {"tutores", "intereses"})
 @NoArgsConstructor
 @AllArgsConstructor
 public class Usuario {
@@ -53,7 +56,7 @@ public class Usuario {
     private String bio;
 
     /** Lista de intereses del usuario. */
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "usuario_intereses",
         joinColumns = @JoinColumn(name = "usuario_id"))
     @Column(name = "interes")

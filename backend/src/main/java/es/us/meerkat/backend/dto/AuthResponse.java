@@ -4,26 +4,28 @@ import lombok.Builder;
 import lombok.Data;
 
 /**
- * DTO de respuesta tras autenticación exitosa (registro o inicio de sesión).
+ * DTO de respuesta tras autenticación exitosa.
  *
- * Devuelve un token JWT junto con los datos básicos del usuario autenticado.
+ * Corresponde al schema AuthResponse del OpenAPI.
+ * Devuelve accessToken, refreshToken y datos del usuario.
  */
 @Data
 @Builder
 public class AuthResponse {
 
-    /** Token JWT para autenticar futuras peticiones. */
-    private String token;
+    /** Token JWT de acceso. Válido 24 horas. */
+    private String accessToken;
 
-    /** Identificador único del usuario autenticado. */
-    private Long id;
+    /**
+     * Tipo de token. Siempre "Bearer".
+     */
+    @Builder.Default
+    private String tokenType = "Bearer";
 
-    /** Email del usuario autenticado. */
-    private String email;
+    /** Tiempo de expiración en segundos. */
+    @Builder.Default
+    private long expiresIn = 86400L;
 
-    /** Nombre del usuario autenticado. */
-    private String nombre;
-
-    /** Indica si el usuario tiene rol de tutor. */
-    private Boolean esTutor;
+    /** Datos del usuario autenticado. */
+    private UserDetailResponse user;
 }

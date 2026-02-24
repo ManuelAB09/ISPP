@@ -1,12 +1,3 @@
-spring:
-  application:
-    name: backend
-
-  datasource:
-    url: jdbc:postgresql://localhost:5432/meerkatters_test
-    driver-class-name: org.postgresql.Driver
-    username: meerkatters_user
-    password: meerkatters_password
 # ═══════════════════════════════════════════════════
 #  Perfil TEST — PostgreSQL en contenedor Docker (CI)
 #
