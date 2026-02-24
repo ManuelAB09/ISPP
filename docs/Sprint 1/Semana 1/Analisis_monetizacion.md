@@ -35,22 +35,22 @@ El modelo de negocio de MeerKatters se centra en democratizar el acceso a la edu
 El presente documento tiene como objetivo principal definir cómo MeerKatters logrará financiarse, alcanzar la sostenibilidad y generar un margen de beneficio real. Para ello, estudiaremos en detalle qué hitos, métricas y volumen de usuarios harán falta para que el proyecto supere sus costes de desarrollo y mantenimiento, convirtiéndose en un producto rentable.
 
 ## 2. Líneas de Ingresos
-*Defubur exactamente por dónde entra dinero teniendo en cuenta los dos perfiles de tu lista de usuarios pilotos:*
-    *- Monetización orientada a Alumnos: pagos por clases, accesos a comunidades premium...*
-    *- Monetización orientada a Profesores/Creadores: comisión que se les retiene, suscripción para destacar su perfil*
-
 El público objetivo de MeerKatters cuenta con dos tipos de perfiles principales: profesores y alumnos. Cada uno tendrá características y necesidades diferentes y, por tanto, cada uno tendrá también una disposición a pagar distinta. Por ello, analizaremos cada perfil por separado, aplicando un tipo distinto de monetización o funciones premium a cada uno.
 
 Además, se considerará un canal de monetización adicional mediante la venta del software premium con tarifas reducidas o planes especiales a pequeñas academias, lo que permitirá ampliar la adopción y generar ingresos de tipo B2B.
+
+---
 
 ### 2.1 Monetización orientada a Alumnos (B2C)
 El enfoque para los estudiantes se basa en la mejora de su experiencia de estudio y el acceso a contenido de alto valor. Las líneas de ingresos por parte de los alumnos son:
     - Suscripción Premium (Mensual/Anual): Los alumnos podrán utilizar la aplicación de forma gratuita, sin embargo, ofrecemos un "Pase Premium" que desbloqueará:
         - Acceso a "Comunidades Premium" exclusivas
-        - Capacidad de añadir a un profesor a una comunidad 
         - Capacidad de ampliar el tamaño de la comunidad privada
+        - Aumento del número de comunidades creadas
         *- Otras funcionalidades futuras que no formen parte del MVP*
     - Pagos transaccionales por clases: Cuando un alumno decide contratar una clase con un profesor a través de nuestro servicio el pago se proceso de forma segura a través de nuestra aplicación, generando un flujo de dinero dentro de la plataforma
+
+---
 
 ### 2.2 Monetización orientada a Profesores (B2B/B2C)
 Los profesores y academias utilizarán MeerKatters como una herramienta de captación de clientes y gestión de sus alumnos. Para ellos, el valor reside más en la visibilidad y las herramientas de adminsitración, monetizandose en:
@@ -64,9 +64,66 @@ Los profesores y academias utilizarán MeerKatters como una herramienta de capta
 
 
 ## 3. Estrategia de Precios
-*Ponerle cifras a las líneas de ingresos basándote en la disposición a pagar.*
-    *- Estructura de precios o Tiers (Gratis vs. Premium).*
-    *- Justificación de los precios frente a la competencia (referenciando brevemente tu "Análisis de Competencias", por ejemplo, cómo mejoras el "Pase Alumn@" de Superprof).*
+Nuestra estrategia de precios se basa en la sensibilidad económica de nuestro público objetivo (principalmente estudiantes) y en la necesidad de eliminar las fricciones de pago presentes en plataformas competidoras.  
+
+El objetivo es ofrecer una estructura accesible, transparente y fácil de entender, favoreciendo la conversión y la retención.
+
+---
+
+### A. Para Alumnos
+Teniendo en cuenta que los estudiantes cuentan con recursos limitados, el precio debe ser lo suficientemente bajo como para percibirse como una compra asumible y justificada por el rendimiento académico.
+
+Tras un análisis del público objetivo mediante encuestas y una comparación con la competencia (especialmente Wuolah, cuyo público y propuesta son similares), se establece el siguiente modelo:
+
+#### Plan Alumno Básico (0 €/mes)
+Acceso gratuito a las funcionalidades esenciales de la plataforma.
+
+**Limitaciones:**
+- Acceso únicamente a comunidades básicas.
+- Tamaño limitado de las comunidades.
+- Máximo de 3 comunidades gratuitas activas.
+
+---
+
+#### Plan Alumno Premium (2,99 €/mes o 25,99 €/año)
+Incluye funcionalidades ampliadas orientadas a una experiencia más completa:
+
+- Creación de comunidades premium exclusivas.
+- Ampliación del tamaño de las comunidades.
+- Incremento del número máximo de comunidades creadas (más de 3).
+
+El precio se ha fijado en un rango accesible para facilitar la decisión de compra y minimizar la fricción económica.
+
+---
+
+### B. Para Profesores
+El modelo para profesores busca facilitar la entrada en la plataforma sin riesgos iniciales, permitiendo validar su demanda antes de asumir costes fijos.
+
+#### Plan Profesor Básico (0 €/mes + 15% de comisión por clase)
+
+Acceso a las funcionalidades esenciales para impartir clases y gestionar comunidades.
+
+**Incluye:**
+- Uso de herramientas core para profesores.
+
+**Limitaciones:**
+- Límite en el número de miembros por comunidad.
+- Máximo de 3 comunidades administradas.
+- Visibilidad estándar en búsquedas.
+
+---
+
+#### Plan Profesor Premium (5,99 €/mes + comisión reducida al 10%)
+Orientado a profesores que deseen mayor alcance y profesionalización dentro de la plataforma.
+
+**Incluye:**
+- Ampliación del número de comunidades administradas y de su capacidad.
+- Verificación del perfil, aumentando la confianza para los alumnos.
+- Posicionamiento destacado en resultados de búsqueda.
+
+---
+
+> **Nota:** La comisión correspondiente al método de pago utilizado (por ejemplo, Stripe u otro proveedor) se aplicará de forma independiente a la comisión de gestión de la plataforma.
 
 ## 4. Presupuesto del Proyecto y Estado Actual
 *Aquí es donde respondes a la pregunta de cuánto va a costar hacer la app y cuánto lleváis gastado.*
