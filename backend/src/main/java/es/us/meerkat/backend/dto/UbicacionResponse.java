@@ -6,7 +6,7 @@ import lombok.Data;
 /**
  * DTO que representa la información pública de una ubicación.
  *
- * Contiene identificador y coordenadas geográficas.
+ * <p>Contiene identificador y coordenadas geográficas.
  */
 @Data
 @Builder
@@ -23,5 +23,4 @@ public class UbicacionResponse {
 
     /** Longitud geográfica. */
     private Double longitud;
-
 }
