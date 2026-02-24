@@ -8,8 +8,7 @@ import lombok.Data;
 /**
  * DTO con los datos públicos del perfil de un usuario.
  *
- * Corresponde al schema UserPublicResponse del OpenAPI.
- * No expone email ni datos sensibles.
+ * <p>Corresponde al schema UserPublicResponse del OpenAPI. No expone email ni datos sensibles.
  */
 @Data
 @Builder

@@ -8,7 +8,7 @@ import lombok.Data;
 /**
  * DTO de respuesta para operaciones que devuelven un mensaje.
  *
- * Corresponde al schema MessageResponse del OpenAPI.
+ * <p>Corresponde al schema MessageResponse del OpenAPI.
  */
 @Data
 @Builder
@@ -18,6 +18,5 @@ public class MessageResponse {
     private String message;
 
     /** Marca de tiempo de la respuesta. */
-    @Builder.Default
-    private LocalDateTime timestamp = LocalDateTime.now();
+    @Builder.Default private LocalDateTime timestamp = LocalDateTime.now();
 }

@@ -13,9 +13,9 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
-import jakarta.persistence.JoinColumn;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,7 +24,7 @@ import lombok.ToString;
 /**
  * Entidad que representa un usuario en la plataforma.
  *
- * Contiene información de login, rol de tutor y relación con tutores.
+ * <p>Contiene información de login, rol de tutor y relación con tutores.
  */
 @Entity
 @Data
@@ -57,8 +57,7 @@ public class Usuario {
 
     /** Lista de intereses del usuario. */
     @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "usuario_intereses",
-        joinColumns = @JoinColumn(name = "usuario_id"))
+    @CollectionTable(name = "usuario_intereses", joinColumns = @JoinColumn(name = "usuario_id"))
     @Column(name = "interes")
     private List<String> intereses = new ArrayList<>();
 
@@ -66,8 +65,8 @@ public class Usuario {
     private String googleId;
 
     /**
-     * Indica si el perfil del usuario es visible en listados públicos
-     * y resultados de búsqueda. Por defecto es visible.
+     * Indica si el perfil del usuario es visible en listados públicos y resultados de búsqueda. Por
+     * defecto es visible.
      */
     @Column(nullable = false)
     private Boolean visibleEnListados = true;
@@ -76,7 +75,7 @@ public class Usuario {
     @Column(nullable = false)
     private Boolean esTutor = false;
 
-    //AÑADIR tipo plan cuando se cree la clase
+    // AÑADIR tipo plan cuando se cree la clase
 
     /** Fecha y hora de creación de la cuenta. */
     @Column(nullable = false, updatable = false)

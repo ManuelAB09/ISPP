@@ -1,7 +1,6 @@
 package es.us.meerkat.backend.config;
 
-
-import es.us.meerkat.backend.security.JwtAuthenticationFilter;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -11,11 +10,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import es.us.meerkat.backend.security.JwtAuthenticationFilter;
+
 /**
  * Configuración de seguridad de la aplicación.
  *
- * Define política JWT sin estado, rutas públicas y el bean
- * de cifrado de contraseñas.
+ * <p>Define política JWT sin estado, rutas públicas y el bean de cifrado de contraseñas.
  */
 @Configuration
 public class SecurityConfig {
@@ -23,66 +23,57 @@ public class SecurityConfig {
     /**
      * Configura la cadena de filtros de seguridad HTTP.
      *
-     * El filtro JWT se inyecta como parámetro del método
-     * para evitar dependencias circulares en el contexto.
+     * <p>El filtro JWT se inyecta como parámetro del método para evitar dependencias circulares en
+     * el contexto.
      *
-     * @param http           Objeto de configuración HTTP.
-     * @param jwtAuthFilter  Filtro JWT a registrar.
+     * @param http Objeto de configuración HTTP.
+     * @param jwtAuthFilter Filtro JWT a registrar.
      * @return Cadena de filtros configurada.
      * @throws Exception si ocurre un error en la configuración.
      */
     @Bean
     public SecurityFilterChain filterChain(
-            final HttpSecurity http,
-            final JwtAuthenticationFilter jwtAuthFilter)
-            throws Exception {
-        http
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(
-                    SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    "/api/v1/auth/**",
-                    "/swagger-ui/**",
-                    "/swagger-ui.html",
-                    "/swagger-ui/index.html",
-                    "/v3/api-docs/**",
-                    "/v3/api-docs",
-                    "/spec/**",
-                    "/index.html",
-                    "/error",
-                    "/webjars/**",
-                    "/h2-console/**"
-                ).permitAll()
-                .requestMatchers(
-                    HttpMethod.GET,
-                    "/api/v1/users/{userId}"
-                ).permitAll()
-                .anyRequest().authenticated()
-            )
-            .headers(headers -> headers
-                .frameOptions(frame -> frame.sameOrigin()))
-            .addFilterBefore(
-                jwtAuthFilter,
-                UsernamePasswordAuthenticationFilter.class);
+            final HttpSecurity http, final JwtAuthenticationFilter jwtAuthFilter) throws Exception {
+        http.csrf(csrf -> csrf.disable())
+                .sessionManagement(
+                        session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(
+                        auth ->
+                                auth.requestMatchers(
+                                                "/api/v1/auth/**",
+                                                "/swagger-ui/**",
+                                                "/swagger-ui**",
+                                                "/swagger-ui.html",
+                                                "/swagger-ui/index.html",
+                                                "/v3/api-docs/**",
+                                                "/v3/api-docs",
+                                                "/spec/**",
+                                                "/index.html",
+                                                "/error",
+                                                "/webjars/**",
+                                                "/h2-console/**")
+                                        .permitAll()
+                                        .requestMatchers(HttpMethod.GET, "/api/v1/users/{userId}")
+                                        .permitAll()
+                                        .anyRequest()
+                                        .authenticated())
+                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
     /**
-     * Evita que Spring Boot registre el filtro JWT dos veces
-     * (una como servlet filter y otra dentro de Spring Security).
+     * Evita que Spring Boot registre el filtro JWT dos veces (una como servlet filter y otra dentro
+     * de Spring Security).
      *
      * @param filter Filtro JWT gestionado por Spring Security.
      * @return Bean de registro con el filtro desactivado.
      */
     @Bean
-    public FilterRegistrationBean<JwtAuthenticationFilter>
-            jwtFilterRegistration(
-                final JwtAuthenticationFilter filter) {
-        final FilterRegistrationBean<JwtAuthenticationFilter>
-                registration =
+    public FilterRegistrationBean<JwtAuthenticationFilter> jwtFilterRegistration(
+            final JwtAuthenticationFilter filter) {
+        final FilterRegistrationBean<JwtAuthenticationFilter> registration =
                 new FilterRegistrationBean<>(filter);
         registration.setEnabled(false);
         return registration;

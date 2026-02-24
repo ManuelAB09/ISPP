@@ -5,7 +5,7 @@ import lombok.Data;
 /**
  * DTO para la solicitud de inicio de sesión.
  *
- * Corresponde al schema LoginRequest del OpenAPI.
+ * <p>Corresponde al schema LoginRequest del OpenAPI.
  */
 @Data
 public class LoginRequest {

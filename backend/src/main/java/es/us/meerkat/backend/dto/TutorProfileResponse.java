@@ -9,8 +9,8 @@ import lombok.Data;
 /**
  * DTO que representa la información pública o completa de un tutor.
  *
- * Contiene datos como identificador, nombre, especialidades, tarifa,
- * disponibilidad, biografía y estado de verificación.
+ * <p>Contiene datos como identificador, nombre, especialidades, tarifa, disponibilidad, biografía y
+ * estado de verificación.
  */
 @Data
 @Builder
@@ -36,5 +36,4 @@ public class TutorProfileResponse {
 
     /** Estado de verificación del tutor (true si verificado). */
     private Boolean verificado;
-
 }

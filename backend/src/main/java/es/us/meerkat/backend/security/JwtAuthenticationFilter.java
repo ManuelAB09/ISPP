@@ -3,13 +3,6 @@ package es.us.meerkat.backend.security;
 import java.io.IOException;
 import java.util.List;
 
-import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.UsuarioRepository;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -18,13 +11,20 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.UsuarioRepository;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+
 /**
- * Filtro JWT que intercepta cada petición HTTP, valida el token
- * e inyecta la autenticación en el contexto de seguridad de Spring.
+ * Filtro JWT que intercepta cada petición HTTP, valida el token e inyecta la autenticación en el
+ * contexto de seguridad de Spring.
  *
- * Si no hay token o es inválido, deja pasar la petición sin
- * autenticación para que Spring Security decida según las reglas
- * de autorización configuradas.
+ * <p>Si no hay token o es inválido, deja pasar la petición sin autenticación para que Spring
+ * Security decida según las reglas de autorización configuradas.
  */
 @Component
 @RequiredArgsConstructor
@@ -52,14 +52,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             final String authHeader = request.getHeader(AUTH_HEADER);
 
-            if (authHeader == null
-                    || !authHeader.startsWith(BEARER_PREFIX)) {
+            if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
                 filterChain.doFilter(request, response);
                 return;
             }
 
-            final String token = authHeader.substring(
-                BEARER_PREFIX.length());
+            final String token = authHeader.substring(BEARER_PREFIX.length());
             final String email;
 
             try {
@@ -70,30 +68,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
-            if (email != null
-                    && SecurityContextHolder.getContext()
-                        .getAuthentication() == null) {
+            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                final Usuario usuario = usuarioRepository
-                        .findByEmail(email)
-                        .orElse(null);
+                final Usuario usuario = usuarioRepository.findByEmail(email).orElse(null);
 
-                if (usuario != null
-                        && jwtService.isTokenValid(token, email)) {
+                if (usuario != null && jwtService.isTokenValid(token, email)) {
 
                     final UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(
                                     usuario,
                                     null,
-                                    List.of(new SimpleGrantedAuthority(
-                                        "ROLE_USER")));
+                                    List.of(new SimpleGrantedAuthority("ROLE_USER")));
 
                     authToken.setDetails(
-                        new WebAuthenticationDetailsSource()
-                            .buildDetails(request));
+                            new WebAuthenticationDetailsSource().buildDetails(request));
 
-                    SecurityContextHolder.getContext()
-                            .setAuthentication(authToken);
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
         } catch (Exception e) {

@@ -16,8 +16,8 @@ import io.jsonwebtoken.security.Keys;
 /**
  * Servicio para generación y validación de tokens JWT.
  *
- * Utiliza la librería JJWT. La clave secreta y el tiempo
- * de expiración se configuran en application.yaml.
+ * <p>Utiliza la librería JJWT. La clave secreta y el tiempo de expiración se configuran en
+ * application.yaml.
  */
 @Service
 public class JwtService {
@@ -50,8 +50,7 @@ public class JwtService {
         return Jwts.builder()
                 .setSubject(email)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(
-                    new Date(System.currentTimeMillis() + jwtExpiration))
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -63,23 +62,19 @@ public class JwtService {
      * @param email Email esperado.
      * @return true si el token es válido.
      */
-    public boolean isTokenValid(
-            final String token, final String email) {
-        return extractEmail(token).equals(email)
-                && !isTokenExpired(token);
+    public boolean isTokenValid(final String token, final String email) {
+        return extractEmail(token).equals(email) && !isTokenExpired(token);
     }
 
     /**
      * Extrae un claim específico del token.
      *
-     * @param token          Token JWT.
+     * @param token Token JWT.
      * @param claimsResolver Función extractora del claim.
-     * @param <T>            Tipo del claim.
+     * @param <T> Tipo del claim.
      * @return Valor del claim.
      */
-    public <T> T extractClaim(
-            final String token,
-            final Function<Claims, T> claimsResolver) {
+    public <T> T extractClaim(final String token, final Function<Claims, T> claimsResolver) {
         return claimsResolver.apply(extractAllClaims(token));
     }
 
@@ -90,8 +85,7 @@ public class JwtService {
      * @return true si está expirado.
      */
     private boolean isTokenExpired(final String token) {
-        return extractClaim(token, Claims::getExpiration)
-                .before(new Date());
+        return extractClaim(token, Claims::getExpiration).before(new Date());
     }
 
     /**

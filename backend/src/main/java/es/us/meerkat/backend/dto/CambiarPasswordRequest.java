@@ -5,8 +5,8 @@ import lombok.Data;
 /**
  * DTO para la solicitud de cambio de contraseña.
  *
- * Requiere la contraseña actual para verificar identidad,
- * y la nueva contraseña con su confirmación.
+ * <p>Requiere la contraseña actual para verificar identidad, y la nueva contraseña con su
+ * confirmación.
  */
 @Data
 public class CambiarPasswordRequest {
@@ -17,7 +17,6 @@ public class CambiarPasswordRequest {
     /** Nueva contraseña deseada. Debe tener al menos 8 caracteres. */
     private String passwordNueva;
 
-    /** Confirmación de la nueva contraseña.
-     * Debe coincidir con passwordNueva. */
+    /** Confirmación de la nueva contraseña. Debe coincidir con passwordNueva. */
     private String passwordConfirmacion;
 }

@@ -211,6 +211,30 @@
 					</execution>
 				</executions>
 			</plugin>
+
+			<!-- Spotless — auto-formato Java con google-java-format AOSP (4 espacios) -->
+			<!-- Uso manual:  mvn spotless:apply                                        -->
+			<!--              mvn spotless:check (verifica sin modificar)               -->
+			<plugin>
+				<groupId>com.diffplug.spotless</groupId>
+				<artifactId>spotless-maven-plugin</artifactId>
+				<version>2.44.0</version>
+				<configuration>
+					<java>
+						<!-- google-java-format AOSP: 4 espacios (normativa §10) -->
+						<googleJavaFormat>
+							<version>1.22.0</version>
+							<style>AOSP</style>
+							<reflowLongStrings>true</reflowLongStrings>
+						</googleJavaFormat>
+						<!-- Elimina imports no usados y los ordena: java → javax → org → com -->
+						<removeUnusedImports/>
+						<importOrder>
+							<order>java,javax,org,com,</order>
+						</importOrder>
+					</java>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 

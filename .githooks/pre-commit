@@ -5,9 +5,11 @@ set -euo pipefail
 # pre-commit hook — Linting automático antes de cada commit
 # Proyecto: MeerKatters
 #
-# Comprueba ESLint (frontend) y Checkstyle (backend) sobre
-# los archivos staged. Solo ejecuta cada linter si hay
-# archivos relevantes modificados.
+# Flujo frontend: ESLint sobre archivos staged.
+# Flujo backend:  1) Spotless auto-formatea el código Java.
+#                 2) Si hay cambios de formato, pide re-staging.
+#                 3) Si el código ya estaba formateado, ejecuta Checkstyle.
+# Solo lanza cada herramienta si hay archivos relevantes staged.
 #
 # Instalar ejecutando:
 #   git config core.hooksPath .githooks
@@ -36,14 +38,14 @@ if [[ -n "$FRONTEND_FILES" ]]; then
   fi
 fi
 
-# ── Backend: Checkstyle (via Maven) ─────────────────────────
+# ── Backend: Spotless (auto-format) + Checkstyle ────────────
 BACKEND_FILES=$(git diff --cached --name-only --diff-filter=ACM -- 'backend/src/**/*.java' 2>/dev/null || true)
 
 if [[ -n "$BACKEND_FILES" ]]; then
-  echo "  Comprobando Checkstyle (backend)..."
   if [ -f "backend/pom.xml" ]; then
     cd backend
-    # use Maven wrapper if mvn is not on PATH
+
+    # Detectar comando Maven
     MVNCMD=mvn
     if [ ! -x "$(command -v mvn)" ]; then
       if [ -x "./mvnw" ]; then
@@ -52,11 +54,32 @@ if [[ -n "$BACKEND_FILES" ]]; then
         MVNCMD="./mvnw.cmd"
       fi
     fi
-    if ! $MVNCMD checkstyle:check -q 2>/dev/null; then
-      echo "  [FALLO] Checkstyle ha encontrado errores."
-      ERRORS=1
-    fi
+
+    # 1) Auto-formatear con Spotless
+    echo "  Formateando código Java con Spotless..."
+    $MVNCMD spotless:apply -q 2>/dev/null || echo "  [AVISO] Spotless no pudo aplicarse. Continuando sin formateo automático."
+
     cd ..
+
+    # 2) Si Spotless modificó algún archivo staged, avisar y pedir re-staging
+    REFORMATTED=$(git diff --name-only -- 'backend/src/**/*.java' 2>/dev/null || true)
+    if [[ -n "$REFORMATTED" ]]; then
+      echo ""
+      echo "  [AVISO] Spotless ha reformateado los siguientes archivos:"
+      echo "$REFORMATTED" | sed 's/^/    /'
+      echo ""
+      echo "  Revisa los cambios con 'git diff' y ejecuta 'git add' sobre ellos antes de volver a hacer commit."
+      ERRORS=1
+    else
+      # 3) Checkstyle — solo reglas que Spotless no puede auto-corregir
+      echo "  Comprobando Checkstyle (backend)..."
+      cd backend
+      if ! $MVNCMD checkstyle:check -q 2>/dev/null; then
+        echo "  [FALLO] Checkstyle ha encontrado errores."
+        ERRORS=1
+      fi
+      cd ..
+    fi
   else
     echo "  [AVISO] No se encontró backend/pom.xml."
   fi

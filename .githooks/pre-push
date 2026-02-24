@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ============================================================
+# pre-push hook — Validación de nombre de rama (Gestión Equipo §8)
+# Proyecto: MeerKatters
+#
+# Valida que la rama desde la que se hace push siga la
+# convención definida en §8 antes de enviar cambios al remoto.
+#
+# Instalar ejecutando:
+#   git config core.hooksPath .githooks
+# ============================================================
+
+branch=$(git symbolic-ref --short HEAD 2>/dev/null || true)
+
+# Estado detached HEAD u otro caso sin rama simbólica
+if [[ -z "$branch" ]]; then
+  echo "[AVISO] No se pudo determinar la rama actual. Saltando validación de nombre de rama."
+  exit 0
+fi
+
+# ── Patrones permitidos (§8 política de ramas) ──────────────
+#
+# Ramas principales: nombre exacto
+#   main | trunk | hotfix
+#
+# Ramas de tarea:
+#   (feature|doc|test)/#<ID>_<NombreEnUpperCamelCase>
+#   El nombre descriptivo debe empezar por mayúscula y no
+#   contener espacios. No se valida estrictamente cada palabra
+#   en UpperCamelCase porque los IDEs lo garantizan.
+#
+# Ramas de bugfix:
+#   bugfix/#<ID>_<NombreEnUpperCamelCase>
+
+main_re='^(main|trunk|hotfix)$'
+task_re='^(feature|doc|test)/#[0-9]+_[A-Z][^ ]*$'
+bugfix_re='^bugfix/#[0-9]+_[A-Z][^ ]*$'
+
+# ── Excepciones temporales ───────────────────────────────────
+# TODO: eliminar cuando la rama se migre a la convención
+temp_allowed=('frontend/start')
+
+for tmp in "${temp_allowed[@]}"; do
+  if [[ $branch == "$tmp" ]]; then
+    echo "[AVISO] La rama '$branch' es una excepción temporal. Migrala a la convención de ramas cuando sea posible."
+    exit 0
+  fi
+done
+
+if [[ $branch =~ $main_re ]] || \
+   [[ $branch =~ $task_re ]] || \
+   [[ $branch =~ $bugfix_re ]]; then
+  exit 0
+fi
+
+# ── Rama no válida: mensaje de error detallado ───────────────
+echo ""
+echo "[FALLO] El nombre de la rama '$branch' no sigue la política de ramas (§8)."
+echo ""
+echo "  Ramas principales (nombre exacto):"
+echo "    main"
+echo "    trunk"
+echo "    hotfix"
+echo ""
+echo "  Ramas auxiliares:"
+echo "    feature/#<ID>_<NombreEnUpperCamelCase>   → nueva funcionalidad"
+echo "    doc/#<ID>_<NombreEnUpperCamelCase>        → documentación"
+echo "    test/#<ID>_<NombreEnUpperCamelCase>       → tests"
+echo "    bugfix/#<ID>_<NombreEnUpperCamelCase>     → corrección de bug"
+echo ""
+echo "  Ejemplos válidos:"
+echo "    feature/#123_AñadirLocalizaciónDeEvento"
+echo "    bugfix/#210_ArreglarLoginTimeout"
+echo "    doc/#45_ActualizarGuiaDespliegue"
+echo "    test/#88_VerificarLoginConGoogleOAuth"
+echo ""
+echo "  Recuerda: el ID debe referenciar un issue existente en GitHub."
+echo ""
+exit 1

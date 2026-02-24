@@ -1,5 +1,8 @@
 package es.us.meerkat.backend.service;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.dto.ChangePasswordRequest;
 import es.us.meerkat.backend.dto.UpdateUserRequest;
@@ -9,16 +12,12 @@ import es.us.meerkat.backend.dto.VisibilityRequest;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Servicio para gestionar la lógica de negocio de usuarios.
  *
- * Cubre los endpoints de /api/v1/users del OpenAPI:
- * obtener perfil propio, actualizar, cambiar contraseña,
- * eliminar cuenta, visibilidad y ver perfiles públicos.
+ * <p>Cubre los endpoints de /api/v1/users del OpenAPI: obtener perfil propio, actualizar, cambiar
+ * contraseña, eliminar cuenta, visibilidad y ver perfiles públicos.
  */
 @Service
 @RequiredArgsConstructor
@@ -44,11 +43,11 @@ public class UsuarioService {
      * @return Perfil completo del usuario.
      */
     @Transactional
-    public UserDetailResponse obtenerPerfilPropio(
-            final Usuario usuario) {
-        Usuario usuarioActualizado = usuarioRepository
-            .findByEmail(usuario.getEmail())
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    public UserDetailResponse obtenerPerfilPropio(final Usuario usuario) {
+        Usuario usuarioActualizado =
+                usuarioRepository
+                        .findByEmail(usuario.getEmail())
+                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         if (usuarioActualizado.getTutores() != null) {
             usuarioActualizado.getTutores().size();
         }
@@ -62,16 +61,15 @@ public class UsuarioService {
     /**
      * Actualiza la información personal del usuario autenticado.
      *
-     * Solo modifica los campos que no sean nulos en el request.
+     * <p>Solo modifica los campos que no sean nulos en el request.
      *
-     * @param usuario      Usuario autenticado.
+     * @param usuario Usuario autenticado.
      * @param requestParam Datos a actualizar.
      * @return Perfil actualizado.
      */
     @Transactional
     public UserDetailResponse actualizarPerfil(
-            final Usuario usuario,
-            final UpdateUserRequest requestParam) {
+            final Usuario usuario, final UpdateUserRequest requestParam) {
 
         if (requestParam.getNombre() != null) {
             usuario.setNombre(requestParam.getNombre());
@@ -97,8 +95,8 @@ public class UsuarioService {
     /**
      * Elimina permanentemente la cuenta del usuario autenticado.
      *
-     * Esta acción es irreversible. El frontend debe mostrar
-     * confirmación antes de llamar a este endpoint.
+     * <p>Esta acción es irreversible. El frontend debe mostrar confirmación antes de llamar a este
+     * endpoint.
      *
      * @param usuario Usuario autenticado a eliminar.
      */
@@ -114,36 +112,26 @@ public class UsuarioService {
     /**
      * Cambia la contraseña del usuario autenticado.
      *
-     * Verifica la contraseña actual antes de aplicar el cambio.
+     * <p>Verifica la contraseña actual antes de aplicar el cambio.
      *
-     * @param usuario      Usuario autenticado.
+     * @param usuario Usuario autenticado.
      * @param requestParam Contraseña actual y nueva.
-     * @throws RuntimeException si la contraseña actual es incorrecta
-     *         o la nueva no cumple los requisitos.
+     * @throws RuntimeException si la contraseña actual es incorrecta o la nueva no cumple los
+     *     requisitos.
      */
     @Transactional
-    public void cambiarPassword(
-            final Usuario usuario,
-            final ChangePasswordRequest requestParam) {
+    public void cambiarPassword(final Usuario usuario, final ChangePasswordRequest requestParam) {
 
-        if (!passwordEncoder.matches(
-                requestParam.getCurrentPassword(),
-                usuario.getPassword())) {
-            throw new RuntimeException(
-                "La contraseña actual es incorrecta");
+        if (!passwordEncoder.matches(requestParam.getCurrentPassword(), usuario.getPassword())) {
+            throw new RuntimeException("La contraseña actual es incorrecta");
         }
 
         if (requestParam.getNewPassword() == null
-                || requestParam.getNewPassword().length()
-                < MIN_PASSWORD_LENGTH) {
-            throw new RuntimeException(
-                "La nueva contraseña debe tener "
-                + "al menos 8 caracteres");
+                || requestParam.getNewPassword().length() < MIN_PASSWORD_LENGTH) {
+            throw new RuntimeException("La nueva contraseña debe tener " + "al menos 8 caracteres");
         }
 
-        usuario.setPassword(
-            passwordEncoder.encode(
-                requestParam.getNewPassword()));
+        usuario.setPassword(passwordEncoder.encode(requestParam.getNewPassword()));
         usuarioRepository.save(usuario);
     }
 
@@ -154,18 +142,16 @@ public class UsuarioService {
     /**
      * Actualiza la visibilidad del perfil en listados públicos.
      *
-     * @param usuario      Usuario autenticado.
+     * @param usuario Usuario autenticado.
      * @param requestParam Nueva configuración de visibilidad.
      * @return Perfil actualizado.
      */
     @Transactional
     public UserDetailResponse actualizarVisibilidad(
-            final Usuario usuario,
-            final VisibilityRequest requestParam) {
+            final Usuario usuario, final VisibilityRequest requestParam) {
 
         if (requestParam.getVisibleEnListados() != null) {
-            usuario.setVisibleEnListados(
-                requestParam.getVisibleEnListados());
+            usuario.setVisibleEnListados(requestParam.getVisibleEnListados());
             usuarioRepository.save(usuario);
         }
 
@@ -179,19 +165,18 @@ public class UsuarioService {
     /**
      * Devuelve el perfil público de un usuario por su ID.
      *
-     * Solo expone datos que el usuario ha hecho públicos.
+     * <p>Solo expone datos que el usuario ha hecho públicos.
      *
      * @param usuarioId Identificador del usuario.
      * @return Perfil público del usuario.
      * @throws RuntimeException si el usuario no existe.
      */
-    public UserPublicResponse obtenerPerfilPublico(
-            final Long usuarioId) {
+    public UserPublicResponse obtenerPerfilPublico(final Long usuarioId) {
 
-        final Usuario usuario = usuarioRepository
-                .findById(usuarioId)
-                .orElseThrow(() -> new RuntimeException(
-                    "Usuario no encontrado"));
+        final Usuario usuario =
+                usuarioRepository
+                        .findById(usuarioId)
+                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         return mapToPublicResponse(usuario);
     }
@@ -206,8 +191,7 @@ public class UsuarioService {
      * @param usuario Usuario a mapear.
      * @return DTO con datos completos del usuario.
      */
-    private UserDetailResponse mapToDetailResponse(
-            final Usuario usuario) {
+    private UserDetailResponse mapToDetailResponse(final Usuario usuario) {
         return UserDetailResponse.builder()
                 .id(usuario.getId())
                 .email(usuario.getEmail())
@@ -215,8 +199,7 @@ public class UsuarioService {
                 .foto(usuario.getFoto())
                 .bio(usuario.getBio())
                 .intereses(usuario.getIntereses())
-                .visibleEnListados(
-                    usuario.getVisibleEnListados())
+                .visibleEnListados(usuario.getVisibleEnListados())
                 .esTutor(usuario.getEsTutor())
                 .createdAt(usuario.getCreatedAt())
                 .build();
@@ -228,8 +211,7 @@ public class UsuarioService {
      * @param usuario Usuario a mapear.
      * @return DTO con datos públicos del usuario.
      */
-    private UserPublicResponse mapToPublicResponse(
-            final Usuario usuario) {
+    private UserPublicResponse mapToPublicResponse(final Usuario usuario) {
         return UserPublicResponse.builder()
                 .id(usuario.getId())
                 .nombre(usuario.getNombre())

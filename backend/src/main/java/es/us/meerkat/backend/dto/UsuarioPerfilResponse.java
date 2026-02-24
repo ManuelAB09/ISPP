@@ -1,15 +1,15 @@
 package es.us.meerkat.backend.dto;
 
+import java.util.List;
+
 import lombok.Builder;
 import lombok.Data;
-
-import java.util.List;
 
 /**
  * DTO que representa el perfil público de un usuario.
  *
- * Solo expone los campos que el usuario ha decidido hacer públicos.
- * No incluye email, contraseña ni datos sensibles.
+ * <p>Solo expone los campos que el usuario ha decidido hacer públicos. No incluye email, contraseña
+ * ni datos sensibles.
  */
 @Data
 @Builder

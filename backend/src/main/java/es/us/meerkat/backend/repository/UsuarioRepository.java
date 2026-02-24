@@ -10,12 +10,11 @@ import es.us.meerkat.backend.entity.Usuario;
 /**
  * Repositorio JPA para la entidad {@link Usuario}.
  *
- * Permite realizar operaciones CRUD sobre los usuarios en la base de datos.
+ * <p>Permite realizar operaciones CRUD sobre los usuarios en la base de datos.
  */
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
-
-        /**
+    /**
      * Busca un usuario por su dirección de email.
      *
      * @param email Email del usuario.
@@ -37,5 +36,4 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
      * @return Lista de usuarios con visibleEnListados a true.
      */
     List<Usuario> findByVisibleEnListadosTrue();
-
 }

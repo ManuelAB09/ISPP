@@ -1,14 +1,14 @@
 package es.us.meerkat.backend.dto;
 
-import lombok.Data;
-
 import java.util.List;
+
+import lombok.Data;
 
 /**
  * DTO para la edición del perfil de un usuario.
  *
- * Solo se actualizan los campos que el usuario desea modificar.
- * Los campos nulos se ignoran en el servicio.
+ * <p>Solo se actualizan los campos que el usuario desea modificar. Los campos nulos se ignoran en
+ * el servicio.
  */
 @Data
 public class UpdatePerfilRequest {
