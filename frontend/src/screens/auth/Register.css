@@ -38,21 +38,10 @@
   z-index: 1;
 }
 
-.logo-icon {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #f5a623 0%, #f7b84b 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.logo-circle {
-  width: 16px;
-  height: 16px;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
+.register-logo-img {
+  width: 120px;
+  height: auto;
+  object-fit: contain;
 }
 
 .logo-text {
@@ -450,6 +439,10 @@
   .register-hero h1 {
     font-size: 36px;
   }
+
+  .register-logo-img {
+    width: 100px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -480,6 +473,10 @@
     display: none;
   }
 
+  .register-logo-img {
+    width: 90px;
+  }
+
   .register-right-panel {
     padding: 30px 20px;
   }
@@ -492,6 +489,10 @@
 @media (max-width: 480px) {
   .register-left-panel {
     padding: 20px;
+  }
+
+  .register-logo-img {
+    width: 80px;
   }
 
   .register-hero h1 {

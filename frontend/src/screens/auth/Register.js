@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './Register.css';
+import studyShareLogo from '../../static/images/studyShare_logo.png';
 
 const ACADEMIC_INTERESTS = [
   'Ingeniería Software',
@@ -62,10 +63,8 @@ const Register = () => {
       {/* Left Panel - Branding */}
       <div className="register-left-panel">
         <div className="register-logo">
-          <div className="logo-icon">
-            <div className="logo-circle"></div>
-          </div>
-          <span className="logo-text">MeerKatters</span>
+          <img src={studyShareLogo} alt="MeerKatters Logo" className="register-logo-img" />
+          <span className="logo-text">Meerkatters</span>
         </div>
 
         <div className="register-hero">
