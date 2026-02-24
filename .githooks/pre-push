@@ -38,6 +38,17 @@ main_re='^(main|trunk|hotfix)$'
 task_re='^(feature|doc|test)/#[0-9]+_[A-Z][^ ]*$'
 bugfix_re='^bugfix/#[0-9]+_[A-Z][^ ]*$'
 
+# ── Excepciones temporales ───────────────────────────────────
+# TODO: eliminar cuando la rama se migre a la convención
+temp_allowed=('frontend/start')
+
+for tmp in "${temp_allowed[@]}"; do
+  if [[ $branch == "$tmp" ]]; then
+    echo "[AVISO] La rama '$branch' es una excepción temporal. Migrala a la convención de ramas cuando sea posible."
+    exit 0
+  fi
+done
+
 if [[ $branch =~ $main_re ]] || \
    [[ $branch =~ $task_re ]] || \
    [[ $branch =~ $bugfix_re ]]; then
