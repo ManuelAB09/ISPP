@@ -11,8 +11,7 @@ import es.us.meerkat.backend.entity.Usuario;
 /**
  * Repositorio JPA para la entidad {@link Tutor}.
  *
- * Permite realizar operaciones CRUD y consultas específicas
- * sobre tutores en la base de datos.
+ * <p>Permite realizar operaciones CRUD y consultas específicas sobre tutores en la base de datos.
  */
 public interface TutorRepository extends JpaRepository<Tutor, Long> {
 
@@ -30,5 +29,4 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
      * @return Lista de tutores verificados.
      */
     List<Tutor> findByVerificadoTrue();
-
 }

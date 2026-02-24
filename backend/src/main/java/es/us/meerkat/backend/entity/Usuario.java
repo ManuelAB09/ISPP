@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 /**
  * Entidad que representa un usuario en la plataforma.
  *
- * Contiene información de login, rol de tutor y relación con tutores.
+ * <p>Contiene información de login, rol de tutor y relación con tutores.
  */
 @Entity
 @Data

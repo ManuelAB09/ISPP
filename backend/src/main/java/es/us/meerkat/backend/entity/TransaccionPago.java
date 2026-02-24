@@ -20,8 +20,8 @@ import lombok.NoArgsConstructor;
 /**
  * Entidad que representa una transacción de pago dentro de la plataforma.
  *
- * Contiene información sobre el tipo de transacción, monto, moneda, estado,
- * comisiones, fechas y relaciones con usuario y tutor.
+ * <p>Contiene información sobre el tipo de transacción, monto, moneda, estado, comisiones, fechas y
+ * relaciones con usuario y tutor.
  */
 @Entity
 @Data
@@ -72,5 +72,4 @@ public class TransaccionPago {
     @ManyToOne
     @JoinColumn(name = "tutor_id")
     private Tutor tutor;
-
 }
