@@ -134,3 +134,24 @@ A continuación, se detallan las estrategias para afrontar los riesgos:
 El seguimiento de los riesgos es continuo y se evalúa en dos momentos clave:
 * **Lunes (Daily de líderes):** Revisión de riesgos técnicos (R4, R5) y de equipo (R1, R2, R3).
 * **Viernes (Retrospectiva):** Evaluación del feedback de los usuarios piloto tras la Review (R6, R8, R9) y análisis de métricas de negocio o tracción (R10 a R15) para aplicar medidas correctoras al siguiente *Sprint Backlog*.
+
+---
+
+### Registro y Seguimiento de Riesgos
+
+Se mantiene un Registro de Riesgos actualizado en cada sprint.  
+Cada riesgo incluye:
+
+- Identificador
+- Probabilidad e impacto
+- Estrategia de mitigación y contingencia
+- Responsable asignado
+- Estado (Identificado, En Observación, Activo, Mitigado)
+- Fecha de última revisión
+
+Actualmente, el riesgo **R5 (Delegación inadecuada de tareas y sobrecarga desigual entre squads)** se encuentra en estado **“En Observación”**, debido a incidencias detectadas en los primeros sprints.
+
+- **Responsable:** Project Manager
+- **Fecha de última revisión:** 24/02/2026  
+
+Este riesgo será revisado específicamente en cada Retrospectiva para evaluar la efectividad de las medidas adoptadas y prevenir sobrecargas estructurales entre equipos.
