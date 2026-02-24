@@ -24,7 +24,7 @@ public class AttendanceResponse {
     private Long id;
 
     /** Usuario que asiste al evento. */
-    // private UserPublicResponse usuario;
+    private UserPublicResponse usuario;
 
     /** Estado de la asistencia (CONFIRMADA o CANCELADA). */
     private EstadoAsistencia estado;

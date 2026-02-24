@@ -72,7 +72,7 @@ public class EventDetailResponse {
     // private CommunitySummaryResponse comunidad;
 
     /** Usuario creador del evento. */
-    // private UserPublicResponse creador;
+    private UserPublicResponse creador;
 
     /** Estado de asistencia del usuario autenticado (null si no está registrado). */
     private EstadoAsistencia miAsistencia;
