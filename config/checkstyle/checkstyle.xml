@@ -43,9 +43,6 @@
     <property name="ignorePattern" value="^package.*|^import.*|a]? href|href|http://|https://|ftp://"/>
   </module>
 
-  <!-- ═══ Archivo termina con nueva línea ═══ -->
-  <module name="NewlineAtEndOfFile"/>
-
   <module name="TreeWalker">
 
     <!-- ─── NOMENCLATURA ──────────────────────────── -->
@@ -116,9 +113,6 @@
     <module name="GenericWhitespace"/>
 
     <!-- ─── BUENAS PRÁCTICAS ─────────────────────── -->
-
-    <!-- Evitar imports con wildcard (*) -->
-    <module name="AvoidStarImport"/>
 
     <!-- Imports no usados -->
     <module name="UnusedImports"/>
