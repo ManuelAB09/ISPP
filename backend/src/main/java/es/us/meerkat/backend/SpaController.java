@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class SpaController {
 
     private static final String EXCLUDE =
-            "^(?!api|actuator|static|index\\.html|favicon\\.ico|manifest\\.json|robots\\.txt).*";
+            "^(?!api|actuator|static|swagger-ui|v3|index\\.html|favicon\\.ico|manifest\\.json|robots\\.txt).*";
 
     @GetMapping(value = {
         "/",
