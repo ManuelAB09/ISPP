@@ -39,6 +39,30 @@ El presente documento tiene como objetivo principal definir cómo MeerKatters lo
     *- Monetización orientada a Alumnos: pagos por clases, accesos a comunidades premium...*
     *- Monetización orientada a Profesores/Creadores: comisión que se les retiene, suscripción para destacar su perfil*
 
+El público objetivo de MeerKatters cuenta con dos tipos de perfiles principales: profesores y alumnos. Cada uno tendrá características y necesidades diferentes y, por tanto, cada uno tendrá también una disposición a pagar distinta. Por ello, analizaremos cada perfil por separado, aplicando un tipo distinto de monetización o funciones premium a cada uno.
+
+Además, se considerará un canal de monetización adicional mediante la venta del software premium con tarifas reducidas o planes especiales a pequeñas academias, lo que permitirá ampliar la adopción y generar ingresos de tipo B2B.
+
+### 2.1 Monetización orientada a Alumnos (B2C)
+El enfoque para los estudiantes se basa en la mejora de su experiencia de estudio y el acceso a contenido de alto valor. Las líneas de ingresos por parte de los alumnos son:
+    - Suscripción Premium (Mensual/Anual): Los alumnos podrán utilizar la aplicación de forma gratuita, sin embargo, ofrecemos un "Pase Premium" que desbloqueará:
+        - Acceso a "Comunidades Premium" exclusivas
+        - Capacidad de añadir a un profesor a una comunidad 
+        - Capacidad de ampliar el tamaño de la comunidad privada
+        *- Otras funcionalidades futuras que no formen parte del MVP*
+    - Pagos transaccionales por clases: Cuando un alumno decide contratar una clase con un profesor a través de nuestro servicio el pago se proceso de forma segura a través de nuestra aplicación, generando un flujo de dinero dentro de la plataforma
+
+### 2.2 Monetización orientada a Profesores (B2B/B2C)
+Los profesores y academias utilizarán MeerKatters como una herramienta de captación de clientes y gestión de sus alumnos. Para ellos, el valor reside más en la visibilidad y las herramientas de adminsitración, monetizandose en:
+    - Comisión por transacción: Por cada clase que un profesor gestione a través de MeerKatters, se retendrá un pequeño porcentaje del cobro en concepto de gestión y uso de la infraestructura de pagos seguros. Esto nos asegura un ingreso variable eque escala con el volumen de uso.
+    - Suscripción "Profesor Premium" (Mensual/Anual): Plan de suscripción diseño para educadores que necesiten ir más allá del uso básico. Incluye:
+        - Posicionamiento destacado en las búsquedas
+        - Verificación de perfil que aportará seguridad a los estudiantes
+        - Ampliación del límite de miembros en las comunidades que administran
+        - Capacidad de crear múltiples grupos de estudio simultáneos sin restricciones
+        *- Otras funcionalidades futuras que no formen parte del MVP*
+
+
 ## 3. Estrategia de Precios
 *Ponerle cifras a las líneas de ingresos basándote en la disposición a pagar.*
     *- Estructura de precios o Tiers (Gratis vs. Premium).*
