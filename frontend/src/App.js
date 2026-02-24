@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import './App.css';
+
 import Home from './screens/home/Home';
+import CreateEvent from './screens/event/CreateEvent';
 
 function App() {
   let ownerRoutes = <></>
@@ -18,7 +20,8 @@ function App() {
   if (true) { // TODO: Check if user is logging
     ownerRoutes = (
       <>
-        
+        <Route path="/create-event/new" element={<CreateEvent />} />
+        <Route path="/create-event/:id" element={<CreateEvent />} />
       </>
     )
   }
