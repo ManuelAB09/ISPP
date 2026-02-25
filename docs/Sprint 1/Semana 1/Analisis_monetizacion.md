@@ -113,7 +113,7 @@ Acceso a las funcionalidades esenciales para impartir clases y gestionar comunid
 
 ---
 
-#### Plan Profesor Premium (5,99 €/mes + comisión reducida al 10%)
+#### Plan Profesor Premium (5,99 €/mes o 59,99 €/año + comisión reducida al 10%)
 Orientado a profesores que deseen mayor alcance y profesionalización dentro de la plataforma.
 
 **Incluye:**
@@ -126,13 +126,47 @@ Orientado a profesores que deseen mayor alcance y profesionalización dentro de 
 > **Nota:** La comisión correspondiente al método de pago utilizado (por ejemplo, Stripe u otro proveedor) se aplicará de forma independiente a la comisión de gestión de la plataforma.
 
 ## 4. Presupuesto del Proyecto y Estado Actual
-*Aquí es donde respondes a la pregunta de cuánto va a costar hacer la app y cuánto lleváis gastado.*
+### 4.1 Presupuesto del proyecto
+Para determinar la viabilidad y el punto de equilibrio de MeerKatters, es imprescindible cuantificar el coste total del desarrollo de la plataforma a lo largo de los cuatro Sprints planificados, así como el gasto acumulado hasta la fecha.
 
-*Presupuesto Total Estimado (4 Sprints): * Debes resumir cuánto cuesta desarrollar MeerKatters. Esto incluye el coste de las horas de trabajo del equipo (aunque seáis estudiantes, poned un precio por hora teórico a vuestro trabajo, ej: 5 desarrolladores x 10h/semana x 4 Sprints x 15€/h), licencias, marketing inicial y la infraestructura de Azure.*
+El cálculo del presupuesto se ha realizado en el documento [Estudio del Mercado](../../Sprint%20DP/Semana%203/Estudio%20de%20Mercado.md), donde se concluye que el coste base del desarrollo asciende a 72.060 €, a los que deben añadirse los costes derivados de licencias.
 
-*Gasto Acumulado hasta la fecha (Burn Rate): * Cuánto de ese presupuesto ya os habéis "fundido" hasta el Sprint actual (Sprint 0 / Sprint DP).*
+En cuanto a las licencias, será necesaria la contratación de servicios en Microsoft Azure. Según el análisis de créditos realizado en el estudio, y considerando una arquitectura optimizada, el coste estimado es de 23,50 € mensuales durante aproximadamente 3,5 meses, lo que supone un total de 82,25 € en concepto de licencias.
 
-*Nota: Aquí puedes mencionar que de momento los servidores en Azure os están saliendo gratis gracias a los 100$ de crédito de estudiantes, lo que reduce el gasto real inicial.*
+Por tanto, el presupuesto total estimado del proyecto asciende a 72.142,25 €, incluyendo tanto los costes de desarrollo como los costes de infraestructura.
+
+### 4.2 Estado Actual
+El presupuesto total del proyecto, distribuido entre los cuatro Sprints planificados, asciende aproximadamente a 18.035 € por Sprint.
+
+Actualmente, el equipo se encuentra al inicio del primer Sprint, tras haber completado el Sprint DP. Dado que aún no se han contabilizado todas las horas correspondientes a la primera semana del Sprint 1, el cálculo del *Burn Rate* se realizará tomando como referencia el Sprint DP. Para ello, se consideran exclusivamente las horas reales incurridas por el equipo durante dicho periodo, desglosandolas de la siguiente manera:
+- Coste de personal: Durante este Sprint, el equipo ha registrado un total de 397 horas reales de trabajo, además de 311 horas correspondientes a asistencia a clase y estudio. Estas horas se han distribuido de la siguiente manera
+
+| Equipo     | Horas     | Precio/hora | Total € |
+|------------|-----------|-------------|---------|
+| Líder Frontend | 14    | 30          | 420     |
+| Frontend   | 83        | 18          | 1.494   |
+| Líder Backend | 27     | 32          | 864     |
+| Backend    | 78        | 20          | 1.560   |
+| Líder Arquitectura | 38| 40          | 1.520   |
+| Arquitectura | 27      | 35          | 945     |
+| Líder RRSS | 18        | 25          | 450     |
+| RRSS       | 16        | 18          | 288     |
+| Líder Marketing | 20   | 30          | 600     |
+| Marketing  | 19        | 22          | 418     |
+| Total      | 340       |             | 8.559   |
+
+| Miembro directivo  | Horas | Pecio/hora | Total  |
+|--------------------|-------|------------|--------| 
+| Project Manager    | 34    | 25         | 850    |
+| Scrum Master       | 23    | 23         | 529    |
+| Total              | 57    |            | 1.379  |
+
+- Amortización de equipos: correspondiente a un mes del uso de hardware por parte del equipo, lo que equivale a 390€
+- Costes de infraestructura: quedan en 0€ debido a que aun no se ha tenido que usar creditos de ninguna licencia
+
+En total llevamos un gasto de 10.328 de los 18.035€ presupuestados para el primer Sprint, Lo que nos mantiene muy por debajo del presupuesto.
+
+
 
 ## 5. Rentabilidad
 *"cuánto dinero necesitamos ganar para superar el presupuesto y ser rentables".*
