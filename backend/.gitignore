@@ -31,3 +31,4 @@ build/
 
 # Ignorar configuración de VS Code
 .vscode/
+data.sql

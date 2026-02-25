@@ -48,10 +48,27 @@ public class SecurityConfig {
                                                 "/v3/api-docs/**",
                                                 "/v3/api-docs",
                                                 "/spec/**",
+                                                "/",
                                                 "/index.html",
+                                                "/favicon.ico",
+                                                "/manifest.json",
+                                                "/robots.txt",
+                                                "/asset-manifest.json",
+                                                "/logo192.png",
+                                                "/logo512.png",
+                                                "/static/**",
                                                 "/error",
                                                 "/webjars/**",
-                                                "/h2-console/**")
+                                                "/h2-console/**",
+                                                "/actuator/**")
+                                        .permitAll()
+                                        // Permitir todas las rutas SPA (React Router)
+                                        // que no empiecen por /api
+                                        .requestMatchers(
+                                                request ->
+                                                        "GET".equals(request.getMethod())
+                                                                && !request.getRequestURI()
+                                                                        .startsWith("/api"))
                                         .permitAll()
                                         .requestMatchers(HttpMethod.GET, "/api/v1/users/{userId}")
                                         .permitAll()
