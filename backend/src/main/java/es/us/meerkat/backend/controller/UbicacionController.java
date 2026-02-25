@@ -4,11 +4,11 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,9 +19,7 @@ import es.us.meerkat.backend.entity.Ubicacion;
 import es.us.meerkat.backend.service.UbicacionService;
 import lombok.RequiredArgsConstructor;
 
-/**
- * Controlador para manejar las operaciones relacionadas con las ubicaciones.
- */
+/** Controlador para manejar las operaciones relacionadas con las ubicaciones. */
 @RestController
 @RequestMapping("/api/ubicaciones")
 @RequiredArgsConstructor
@@ -45,7 +43,7 @@ public final class UbicacionController {
             @RequestBody final UbicacionRequest request) {
 
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(ubicacionService.crearUbicacion(request));
+                .body(ubicacionService.crearUbicacion(request));
     }
 
     // ===============================
@@ -56,13 +54,12 @@ public final class UbicacionController {
      * Edita una ubicación existente.
      *
      * @param ubicacionId Identificador de la ubicación.
-     * @param request     Nuevos datos de la ubicación.
+     * @param request Nuevos datos de la ubicación.
      * @return DTO actualizado.
      */
     @PutMapping("/{ubicacionId}")
     public ResponseEntity<UbicacionResponse> editarUbicacion(
-            @PathVariable final Long ubicacionId,
-            @RequestBody final UbicacionRequest request) {
+            @PathVariable final Long ubicacionId, @RequestBody final UbicacionRequest request) {
 
         return ResponseEntity.ok(ubicacionService.editarUbicacion(ubicacionId, request));
     }
@@ -109,5 +106,4 @@ public final class UbicacionController {
         ubicacionService.eliminarUbicacion(ubicacionId);
         return ResponseEntity.noContent().build();
     }
-
 }

@@ -10,9 +10,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Entidad que representa una ubicación geográfica
- */
+/** Entidad que representa una ubicación geográfica */
 @Entity
 @Data
 @NoArgsConstructor
@@ -36,5 +34,4 @@ public class Ubicacion {
     /** Longitud geográfica. */
     @Column(nullable = false)
     private Double longitud;
-
 }
