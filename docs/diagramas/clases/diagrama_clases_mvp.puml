@@ -189,9 +189,6 @@ class Evento {
     - descripcion: String
     - fechaHora: LocalDateTime
     - fechaFin: LocalDateTime
-    - ubicacion: String
-    - latitud: Double
-    - longitud: Double
     - aforo: Integer
     - asistentesConfirmados: Integer
     - queLlevar: String
@@ -215,6 +212,13 @@ class Evento {
     + verificarAforo(): Boolean
     + obtenerAsistentes(): List<Usuario>
     + contarAsistentes(): Integer
+}
+
+class Ubicacion {
+    - id: Long
+    - nombre: String
+    - latitud: Double
+    - longitud: Double
 }
 
 class AsistenciaEvento {
@@ -358,6 +362,7 @@ Comunidad "0..*" -- "0..1" Institucion : pertenece a >
 Evento "1" -- "0..*" AsistenciaEvento : tiene >
 Evento "1" -- "0..*" InvitacionEvento : invita a >
 Evento "0..1" -- "0..*" ArchivoAdjunto : asocia >
+Ubicacion "0..1" -- "0..*" Evento : localiza >
 InvitacionEvento "0..*" -- "1" Usuario : invita a >
 
 ' Otras relaciones
