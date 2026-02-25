@@ -304,8 +304,6 @@ const TeacherProfile = () => {
             </div>
           </section>
           <div className="tp-actividad-col__extra">
-            <button className="tp-btn tp-btn--list">Aparecer en la lista de profesores</button>
-            <button className="tp-btn tp-btn--inbox">Bandeja de entrada</button>
           </div>
         </div>
       </div>

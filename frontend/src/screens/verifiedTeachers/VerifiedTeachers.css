@@ -52,7 +52,7 @@
   padding: 1rem clamp(1.5rem, 4vw, 3rem);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 1rem;
   flex-wrap: wrap;
   max-width: 100%;
@@ -61,11 +61,12 @@
 .vt-filtros {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.6rem;
   flex-wrap: wrap;
   flex: 1;
   max-width: 860px;
-  margin: 0 auto 0 0;
+  margin: 0 auto;
 }
 
 .vt-filtros__input {
