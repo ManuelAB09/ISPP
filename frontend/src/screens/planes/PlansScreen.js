@@ -93,7 +93,7 @@ export default function PlansScreen() {
   setSuccessMessage("");
 
     try {
-      const isYearly = period === "yearly";
+      const isYearly = period === "anual";
       const days = isYearly ? 365 : 30;
 
       // Mock: simular suscripción exitosa

@@ -55,8 +55,8 @@
 
 .checkoutPlanButton {
   background: #fff7ed;
-  color: #f59e0b;
-  border: 2px solid #f59e0b;
+  color: #F2C18E;
+  border: 2px solid #F2C18E;
   border-radius: 10px;
   padding: 8px 14px;
   font-size: 13px;
@@ -66,7 +66,7 @@
 }
 
 .checkoutPlanButtonActive {
-  background: #f59e0b;
+  background: #F2C18E;
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -100,7 +100,7 @@
 }
 
 .checkoutBtnPrimary {
-  background: #f59e0b;
+  background: #F2C18E;
   color: #fff;
   border: none;
   border-radius: 10px;
