@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { communitiesApi } from '../../api/communities.api';
 import ComunidadCard from '../../components/Comunidad/ComunidadCard';
+import Header from '../../components/Header/Header';
 import CreateIcon from '../../components/icons/Create';
 import FilterIcon from '../../components/icons/Filter';
 import InputSearch from '../../components/InputSearch/InputSearch';
@@ -32,6 +33,7 @@ export default function Comunidades() {
 
     return (
         <>
+            <Header page={'comunidades'}/>
             <div className="header">
                 <div className="headerTitle">
                     <p>Explora las comunidades que mejor se adaptan a tus necesidades y ganas de aprender </p>
