@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { LuCalendar, LuSquareCheck, LuMapPin, LuLink, LuArrowLeft } from 'react-icons/lu';
 import './CreateEvent.css';
 import Navbar from '../../components/Navbar';
+import { createEvent, getEventById, updateEvent } from '../../api/eventEndpoints';
 
 
 const CreateEvent = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const communityId = searchParams.get('communityId');
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -21,35 +25,97 @@ const CreateEvent = () => {
     direccion: ''
   });
 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   const isEdit = id && id !== 'new';
 
-  // Simulación de fetch de datos si es edición
+  // Cargar datos del evento si es edición
   useEffect(() => {
     if (isEdit) {
-      // Aquí deberías hacer una petición para obtener los datos del evento por id
-      // Por ejemplo:
-      // fetch(`/api/eventos/${id}`)
-      //   .then(res => res.json())
-      //   .then(data => setFormData(data));
-      // Simulación:
-      setFormData({
-        nombre: 'Evento de ejemplo',
-        descripcion: 'Descripción de ejemplo',
-        comentario: 'Comentario de ejemplo',
-        dia: '01',
-        mes: '01',
-        anio: '2026',
-        hora: '12',
-        minuto: '00',
-        tipoLocalizacion: 'Presencial',
-        direccion: 'Lugar de ejemplo'
-      });
+      const fetchEvent = async () => {
+        try {
+          setLoading(true);
+          const data = await getEventById(id);
+          const fecha = new Date(data.fechaHora);
+          setFormData({
+            nombre: data.titulo || '',
+            descripcion: data.descripcion || '',
+            comentario: data.queLlevar || '',
+            dia: String(fecha.getDate()).padStart(2, '0'),
+            mes: String(fecha.getMonth() + 1).padStart(2, '0'),
+            anio: String(fecha.getFullYear()),
+            hora: String(fecha.getHours()).padStart(2, '0'),
+            minuto: String(fecha.getMinutes()).padStart(2, '0'),
+            tipoLocalizacion: data.esVirtual ? 'Online' : 'Presencial',
+            direccion: data.esVirtual ? (data.enlaceVirtual || '') : (data.ubicacion || '')
+          });
+        } catch (err) {
+          console.error('Error al cargar el evento:', err);
+          setError('No se pudo cargar el evento.');
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchEvent();
     }
   }, [id, isEdit]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+  };
+
+  const buildEventPayload = () => {
+    const fechaHora = `${formData.anio}-${formData.mes}-${formData.dia}T${formData.hora}:${formData.minuto}:00`;
+    const esVirtual = formData.tipoLocalizacion === 'Online';
+
+    return {
+      titulo: formData.nombre,
+      descripcion: formData.descripcion,
+      fechaHora,
+      aforo: 50,
+      queLlevar: formData.comentario || undefined,
+      esVirtual,
+      ubicacion: !esVirtual ? formData.direccion : undefined,
+      enlaceVirtual: esVirtual ? formData.direccion : undefined,
+      visibleEnMapa: true
+    };
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const payload = buildEventPayload();
+
+      if (isEdit) {
+        await updateEvent(id, payload);
+      } else {
+        if (!communityId) {
+          setError('No se ha especificado la comunidad para crear el evento.');
+          return;
+        }
+        await createEvent(communityId, payload);
+      }
+
+      if (communityId) {
+        navigate(`/community/${communityId}`);
+      } else {
+        navigate('/');
+      }
+    } catch (err) {
+      console.error('Error al guardar el evento:', err);
+      setError(err.response?.data?.message || 'Error al guardar el evento. Inténtalo de nuevo.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveDraft = () => {
+    // Guardar borrador en localStorage
+    localStorage.setItem('eventDraft', JSON.stringify(formData));
+    alert('Borrador guardado correctamente.');
   };
 
 
@@ -67,6 +133,12 @@ const CreateEvent = () => {
             {isEdit ? 'Editar' : 'Crear'}<br />Evento
           </h1>
         </div>
+
+        {error && (
+          <div className="error-message" style={{ color: 'red', padding: '10px', margin: '10px 0', background: '#ffe0e0', borderRadius: '8px' }}>
+            {error}
+          </div>
+        )}
 
         <div className="dotted-divider"></div>
 
@@ -148,15 +220,15 @@ const CreateEvent = () => {
 
         <div className="actions-container">
           <div className="buttons-row">
-            <button className="btn btn-outline">
+            <button className="btn btn-outline" onClick={handleSaveDraft} disabled={loading}>
               Guardar Borrador
             </button>
-            <button className="btn btn-primary">
-              {isEdit ? 'Actualizar Evento' : 'Crear Evento'}
+            <button className="btn btn-primary" onClick={handleSubmit} disabled={loading}>
+              {loading ? 'Guardando...' : (isEdit ? 'Actualizar Evento' : 'Crear Evento')}
             </button>
           </div>
 
-          <button className="back-link">
+          <button className="back-link" onClick={() => navigate(-1)}>
             <LuArrowLeft /> Volver al Dashboard
           </button>
         </div>
