@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import './App.css';
+import Comunidades from './screens/comunidades/Comunidades';
 import Home from './screens/home/Home';
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
     <div>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/comunidades/*" element={<Comunidades />} />
         {ownerRoutes}
       </Routes>
     </div>
