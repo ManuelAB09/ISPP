@@ -21,7 +21,7 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
      *
      * @return Lista de eventos activos.
      */
-    List<Evento> findByFalse();
+    List<Evento> findByCanceladoFalse();
 
     /**
      * Obtiene todos los eventos visibles en el mapa.
