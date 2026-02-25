@@ -1,0 +1,80 @@
+.comunidad-card {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 40px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    gap: 40px;
+
+    & img {
+        width: 325px;
+        height: 168px;
+        background-color: var(--silver);
+        border-radius: 10px;
+    }
+
+    & h2 {
+        font-family: 'spacegrotesk', sans-serif;
+        font-size: 22px;
+        font-weight: bold;
+        color: var(--spaceIndigo);
+    }
+
+    & p {
+        font-family: 'inter', sans-serif;
+        font-size: 16px;
+        color: #222222bc;
+    }
+
+    .comunidad-info {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        width: calc(100% - 325px - 40px);
+    }
+    
+    .top-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .bottom-info {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .members-info {
+        display: flex;
+        flex-direction: row;
+        align-items: end;
+        gap: 5px;
+
+        & p {
+            font-family: 'inter', sans-serif;
+            font-weight: bold;
+            font-size: 16px;
+            color: var(--spaceIndigo);
+            & span {
+                color: var(--spaceIndigo);
+                font-weight: normal;
+                font-size: 14px;
+            }
+        }
+    }
+
+    .join-button {
+        background-color: var(--glaucous);
+        color: var(--whiteSmoke);
+        border: none;
+        border-radius: 20px;
+        padding: 6px 40px;
+        cursor: pointer;
+        font-family: 'inter', sans-serif;
+        font-weight: bold;
+        font-size: 14px;
+    }
+}
