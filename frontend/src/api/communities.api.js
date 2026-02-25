@@ -14,7 +14,7 @@ export const communitiesApi = {
     if (params.size !== undefined) query.set('size', String(params.size));
     
     const queryString = query.toString();
-    return apiClient.get(`/api/v1/communities${queryString ? '?' + queryString : ''}`);
+    return apiClient.get(`/communities${queryString ? '?' + queryString : ''}`);
   },
 
   /**
