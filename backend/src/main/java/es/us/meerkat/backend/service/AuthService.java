@@ -2,12 +2,16 @@ package es.us.meerkat.backend.service;
 
 import java.util.ArrayList;
 
+import org.apache.commons.lang3.RandomStringUtils;
+import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.dto.AuthResponse;
+import es.us.meerkat.backend.dto.ForgotPasswordRequest;
 import es.us.meerkat.backend.dto.LoginRequest;
+import es.us.meerkat.backend.dto.MessageResponse;
 import es.us.meerkat.backend.dto.RegisterRequest;
 import es.us.meerkat.backend.dto.UserDetailResponse;
 import es.us.meerkat.backend.entity.Usuario;
@@ -37,6 +41,9 @@ public class AuthService {
 
     /** Servicio para generación y validación de tokens JWT. */
     private final JwtService jwtService;
+
+    /** Servicio de correo electrónico * */
+    private final EmailService emailService;
 
     // ===============================
     // REGISTRO
@@ -111,6 +118,55 @@ public class AuthService {
         final String token = jwtService.generateToken(usuario.getEmail());
 
         return buildAuthResponse(usuario, token);
+    }
+
+    /**
+     * Solicita la recuperación de contraseña para un usuario.
+     *
+     * @param request DTO con el email del usuario
+     * @return MessageResponse con confirmación
+     * @throws NotFoundException
+     */
+    public MessageResponse recuperarContrasena(final ForgotPasswordRequest request) {
+        final String email = request.getEmail();
+
+        try {
+            Usuario usuario =
+                    usuarioRepository
+                            .findByEmail(email)
+                            .orElseThrow(
+                                    () -> {
+                                        // log.warn("Email no existe: {}", email);
+                                        return new NotFoundException();
+                                    });
+
+            // Generar contraseña temporal segura
+            final String temporaryPassword = generarContrasenaSegura(12);
+
+            // Guardar contraseña temporal codificada
+            usuario.setPassword(passwordEncoder.encode(temporaryPassword));
+            usuarioRepository.save(usuario);
+
+            // Enviar email
+            emailService.sendPasswordResetEmail(
+                    usuario.getEmail(), usuario.getNombre(), temporaryPassword);
+
+            return MessageResponse.builder()
+                    .message(
+                            "Si el email existe en el sistema, recibirás instrucciones "
+                                    + "de recuperación de contraseña en tu bandeja de entrada")
+                    .build();
+
+        } catch (Exception e) {
+            // log.error("Error al enviar email de recuperación: {}", e.getMessage());
+            throw new RuntimeException("No se pudo enviar el email de recuperación", e);
+        }
+    }
+
+    /** Genera una contraseña segura aleatoría. */
+    private String generarContrasenaSegura(final int length) {
+        return RandomStringUtils.randomAlphanumeric(length).toUpperCase()
+                + RandomStringUtils.randomNumeric(2);
     }
 
     // ===============================
