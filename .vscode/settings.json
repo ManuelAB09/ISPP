@@ -1,0 +1,5 @@
+{
+    "java.checkstyle.configuration": "${workspaceFolder}\\backend\\target\\checkstyle-checker.xml",
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "java.debug.settings.onBuildFailureProceed": true
+}
