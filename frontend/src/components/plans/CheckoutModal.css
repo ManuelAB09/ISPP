@@ -1,0 +1,127 @@
+.checkoutOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 9999;
+  backdrop-filter: blur(2px);
+}
+
+.checkoutModal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px;
+  width: min(480px, 100%);
+  border: 1px solid #eef2f7;
+  box-shadow: 0 20px 40px rgba(17, 24, 39, 0.1);
+}
+
+.checkoutTitle {
+  margin: 0 0 24px;
+  font-size: 24px;
+  font-weight: 800;
+  color: #1f2a4a;
+  font-family: 'spacegrotesk', sans-serif;
+  letter-spacing: -0.01em;
+}
+
+.checkoutContent {
+  margin-bottom: 24px;
+}
+
+.checkoutPlanSection {
+  margin-bottom: 16px;
+}
+
+.checkoutLabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+  font-family: 'inter', sans-serif;
+}
+
+.checkoutPlanButtons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.checkoutPlanButton {
+  background: #fff7ed;
+  color: #f59e0b;
+  border: 2px solid #f59e0b;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: 'inter', sans-serif;
+}
+
+.checkoutPlanButtonActive {
+  background: #f59e0b;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: 'inter', sans-serif;
+  box-shadow: 0 6px 12px rgba(245, 158, 11, 0.25);
+}
+
+.checkoutInfoBox {
+  background: #f5f6fa;
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.checkoutInfoText {
+  margin: 0;
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.5;
+  font-family: 'inter', sans-serif;
+}
+
+.checkoutActions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.checkoutBtnPrimary {
+  background: #f59e0b;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: 'inter', sans-serif;
+  transition: all 0.2s ease;
+  opacity: 1;
+}
+
+.checkoutBtnSecondary {
+  background: #eef2f7;
+  color: #6b7280;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: 'inter', sans-serif;
+  transition: all 0.2s ease;
+}

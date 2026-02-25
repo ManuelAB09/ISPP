@@ -1,0 +1,318 @@
+import { useEffect, useState } from "react";
+import { subscriptionsApi } from "../../api/subscriptions.api";
+import Header from "../../components/Header/Header";
+import CheckoutModal from "../../components/plans/CheckoutModal";
+import "./PlansScreen.css";
+
+const DEFAULT_PLANS = [
+  {
+    id: 1,
+    nombre: "Gratuito",
+    descripcion: "Acceso básico",
+    caracteristicas: ["Comunidades y eventos", "Funcionalidades esenciales", "Límites estándar"]
+  },
+  {
+    id: 2,
+    nombre: "PREMIUM",
+    descripcion: "Funciones avanzadas desbloqueadas",
+    caracteristicas: ["Más límites y herramientas", "Mejor experiencia de uso", "Acceso a funcionalidades avanzadas"]
+  }
+];
+
+export default function PlansScreen() {
+  const [plans, setPlans] = useState(DEFAULT_PLANS);
+  const [myPlan, setMyPlan] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const isPremium = myPlan?.activa && myPlan?.plan === "PREMIUM";
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        
+        // Intentar cargar planes del backend
+        try {
+          const plansResponse = await subscriptionsApi.listPlans();
+          const plansData = Array.isArray(plansResponse) ? plansResponse : (plansResponse?.data || DEFAULT_PLANS);
+          setPlans(plansData);
+        } catch (err) {
+          console.log("Usando planes por defecto");
+          setPlans(DEFAULT_PLANS);
+        }
+
+        // Intentar cargar suscripción actual
+        try {
+          const myPlanResponse = await subscriptionsApi.getMySubscription();
+          setMyPlan(myPlanResponse || null);
+        } catch (err) {
+          if (err?.status === 404) {
+            console.log("Sin suscripción activa");
+          } else {
+            console.log("No se pudo cargar suscripción");
+          }
+          setMyPlan(null);
+        }
+
+        setLoading(false);
+      } catch (err) {
+        console.error("Error crítico:", err);
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+  /*
+  const handleSubscribe = async () => {
+    setSubmitting(true);
+    setError("");
+
+    try {
+      const res = await subscriptionsApi.subscribe();
+      setMyPlan(res || null);
+      setShowCheckout(false);
+      alert("¡Suscripción Premium activada!");
+    } catch (e) {
+      setError(e?.message || "No se pudo iniciar la suscripción");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+  */
+
+  //MOCK: simular suscripción exitosa 
+
+  const handleSubscribe = async (period) => {
+  setSubmitting(true);
+  setError("");
+  setSuccessMessage("");
+
+    try {
+      const isYearly = period === "yearly";
+      const days = isYearly ? 365 : 30;
+
+      // Mock: simular suscripción exitosa
+      const mockPlan = {
+        plan: "PREMIUM",
+        activa: true,
+        periodo: isYearly ? "ANUAL" : "MENSUAL",
+        fechaFin: new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      };
+      
+      // Simular delay de red
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setMyPlan(mockPlan);
+      setShowCheckout(false);
+      setSuccessMessage(
+        isYearly
+          ? "¡Suscripción Premium anual activada exitosamente!"
+          : "¡Suscripción Premium mensual activada exitosamente!"
+      );
+      
+      // Desaparecer mensaje después de 3 segundos
+      setTimeout(() => setSuccessMessage(""), 5000);
+    } catch (e) {
+      setError(e?.message || "No se pudo iniciar la suscripción");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+/*
+   const handleCancel = async () => {
+    setSubmitting(true);
+    setError("");
+    setSuccessMessage("");
+
+    try {
+      const res = await subscriptionsApi.cancelSubscription();
+      setMyPlan(res || null);
+      setShowCheckout(false);
+      setSuccessMessage("Suscripción cancelada exitosamente");
+      
+      setTimeout(() => setSuccessMessage(""), 5000);
+    } catch (e) {
+      setError(e?.message || "No se pudo cancelar la suscripción");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+*/
+  //MOCK: simular cancelación exitosa
+  const handleCancel = async () => {
+    setSubmitting(true);
+    setError("");
+    setSuccessMessage("");
+
+    try {
+      // Mock: simular cancelación exitosa
+      // Simular delay de red
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setMyPlan(null);
+      setSuccessMessage("Suscripción cancelada exitosamente");
+      
+      // Desaparecer mensaje después de 5 segundos
+      setTimeout(() => setSuccessMessage(""), 5000);
+    } catch (e) {
+      setError(e?.message || "No se pudo cancelar la suscripción");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <>
+        <Header page={'planes'} />
+        <div className="plansPage">
+          <p style={{ textAlign: 'center', padding: '40px' }}>Cargando...</p>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Header page={'planes'} />
+      <div className="plansPage">
+        <div className="header">
+          <div className="headerTitle">
+            <span className="line"></span>
+            <h1>Planes de Suscripción</h1>
+          </div>
+          <p className="headerDescription">
+            Elige el plan perfecto para desbloquear todas las funcionalidades y sacar el máximo provecho de MeerKatters
+          </p>
+        </div>
+
+        <main className="plansContent">
+          <section className="plansSection">
+            <div className="sectionHead">
+              <h2>Pásate a Premium</h2>
+              <p>Desbloquea funcionalidades avanzadas y mejora tu experiencia en MeerKatters.</p>
+            </div>
+
+            {error && <div className="plansError">⚠️ {error}</div>}
+
+            {successMessage && <div className="plansSuccess">✓ {successMessage}</div>}
+
+            <div className="cardsGrid">
+              {plans && plans.length > 0 ? (
+                plans.map((plan) => {
+                  const isPremiumPlan = plan.nombre === "PREMIUM" || plan.tipo === "PREMIUM";
+                  const isCurrentPlan = myPlan?.plan === plan.nombre;
+
+                  return (
+                    <article
+                      key={plan.id || plan.nombre}
+                      className={`planCard ${isPremiumPlan ? "planCard--premium" : "planCard--free"}`}
+                    >
+                      {isPremiumPlan && <div className="badgeRecommended">RECOMENDADO</div>}
+
+                      <div className="planCardTop">
+                        <div>
+                          <div className="planName">{plan.nombre}</div>
+                          <div className="planSub">{plan.descripcion || "Acceso básico"}</div>
+                        </div>
+                        <div className={isPremiumPlan ? "planPricePremium" : "planPrice"}>
+                          {plan.precio === 0 ? (
+                            "GRATIS"
+                          ) : plan.precio ? (
+                            `$${plan.precio}`
+                          ) : isPremiumPlan ? (
+                            <span className="planPriceStack">
+                              <span className="planPriceMain">2.99€/mes</span>
+                              <span className="planPriceSub">25.99€/año</span>
+                            </span>
+                          ) : (
+                            "GRATIS"
+                          )}
+                        </div>
+                      </div>
+
+                      <ul className={`planFeatures ${isPremiumPlan ? "planFeatures--checks" : ""}`}>
+                        {Array.isArray(plan.caracteristicas) ? (
+                          plan.caracteristicas.map((item, idx) => <li key={idx}>{item}</li>)
+                        ) : typeof plan.caracteristicas === "string" ? (
+                          plan.caracteristicas.split(",").map((item, idx) => <li key={idx}>{item.trim()}</li>)
+                        ) : (
+                          <li>Características disponibles</li>
+                        )}
+                      </ul>
+
+                      {isCurrentPlan ? (
+                        <button className="btn btn--muted" disabled>
+                          Plan actual
+                        </button>
+                      ) : isPremiumPlan ? (
+                        <button
+                          className="btn btn--primary"
+                          disabled={isPremium || submitting}
+                          onClick={() => setShowCheckout(true)}
+                        >
+                          {isPremium ? "Ya eres Premium" : "Mejorar a Premium"}
+                        </button>
+                      ) : (
+                        <button className="btn btn--muted" disabled>
+                          {isPremium ? "Incluido" : "Plan actual"}
+                        </button>
+                      )}
+                    </article>
+                  );
+                })
+              ) : (
+                <div>No hay planes disponibles</div>
+              )}
+            </div>
+          </section>
+
+          {!loading && (
+            <section className="plansStatus">
+              <h3>Tu suscripción</h3>
+
+              {isPremium ? (
+                <div className="statusBox">
+                  <div>
+                    <b>Plan:</b> {myPlan?.plan} {myPlan?.periodo === "ANUAL" ? "(anual)" : "(mensual)"}
+                  </div>
+                  <div>
+                    <b>Activa:</b> {String(myPlan?.activa)? "Sí" : "No"}
+                  </div>
+                  {myPlan?.fechaFin && (
+                    <div>
+                      <b>Fecha de fin de la suscripción:</b> {myPlan.fechaFin}
+                    </div>
+                  )}
+
+                  <button
+                    className="btn btn--secondary"
+                    disabled={submitting}
+                    onClick={handleCancel}
+                  >
+                    Cancelar suscripción
+                  </button>
+                </div>
+              ) : (
+                <div className="statusBox">No tienes suscripción activa.</div>
+              )}
+            </section>
+          )}
+        </main>
+
+        <CheckoutModal
+          open={showCheckout}
+          plan="PREMIUM"
+          onClose={() => !submitting && setShowCheckout(false)}
+          onConfirm={handleSubscribe}
+          loading={submitting}
+        />
+      </div>
+    </>
+  );
+}

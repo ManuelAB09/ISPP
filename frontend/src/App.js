@@ -6,6 +6,7 @@ import Home from './screens/home/Home';
 import CreateEvent from './screens/event/CreateEvent';
 import Register from './screens/auth/Register';
 import Login from './screens/auth/Login';
+import PlansScreen from './screens/planes/PlansScreen';
 
 function App() {
   let ownerRoutes = <></>
@@ -24,6 +25,7 @@ function App() {
       <>
         <Route path="/create-event/new" element={<CreateEvent />} />
         <Route path="/create-event/:id" element={<CreateEvent />} />
+        <Route path="/planes" element={<PlansScreen />} />
       </>
     )
   }
