@@ -37,74 +37,95 @@ Este documento establece el marco integral para identificar, evaluar, mitigar y 
 
 Los riesgos se han clasificado en diversas categorías para abarcar todas las dimensiones del proyecto:
 
-* **Riesgos de Equipo y Organización:**
-    * **R1:** Incumplimiento de la dedicación horaria (10h/semana) por parte de algún miembro.
-    * **R2:** Abandono de la asignatura o del grupo por parte de uno o más integrantes.
-    * **R3:** Mala comunicación interna o falta de asistencia a las *Daily* (lunes) o *Retrospectivas* (viernes).
-* **Riesgos Técnicos y de Requisitos:**
-    * **R4:** Curva de aprendizaje lenta con las tecnologías del proyecto.
-    * **R5:** Pérdida de código o conflictos graves en el control de versiones (Git).
-    * **R6:** Cambios drásticos en los requisitos tras el feedback de la *Sprint Review* de los jueves.
-    * **R7:** Sobrecarga del *Sprint Backlog* por mala estimación en la planificación.
-* **Riesgos de Usuarios Piloto:**
-    * **R8:** Los usuarios piloto no proporcionan feedback útil o no participan.
-    * **R9:** La propuesta de valor de la aplicación no termina de convencer a los usuarios piloto.
-* **Riesgos Organizacionales y de Uso (Externos):**
-    * **R10:** Creación masiva de grupos de estudio pero con escasa o nula actividad real.
-    * **R11:** Fuga de transacciones (ej. contactar con un profesor por la app pero pagar por Bizum).
-* **Riesgos de Mercado y Económicos:**
-    * **R12:** Sustitución por herramientas generalistas (estudiantes prefieren WhatsApp o Discord).
-    * **R13:** Alto poder del usuario y baja conversión hacia el modelo premium.
-* **Riesgos Tecnológicos Operativos:**
-    * **R14:** Dependencia de APIs externas (aumento de costes imprevisto o cambios de condiciones).
-    * **R15:** Falta de masa crítica (número insuficiente de usuarios en una misma zona para ser útil).
+* **Riesgos de Equipo y Organización**
+   * **R1:** Incumplimiento de la dedicación horaria (10h/semana) por parte de algún miembro.
+   * **R2:** Abandono de la asignatura o del grupo por parte de uno o más integrantes.
+   * **R3:** Mala comunicación interna o falta de asistencia a las *Daily* (lunes) o *Retrospectivas* (viernes).
+   * **R4:** Desalineación entre squads (Backend, Frontend, Arquitectura, Marketing), generando bloqueos.
+   * **R5:** Delegación inadecuada de tareas y sobrecarga desigual entre squads.
+* **Riesgos Técnicos y de Requisitos**
+   * **R6:** Curva de aprendizaje lenta con las tecnologías del proyecto.
+   * **R7:** Pérdida de código o conflictos graves en el control de versiones (Git).
+   * **R8:** Cambios drásticos en los requisitos tras el feedback de la *Sprint Review* de los jueves.
+   * **R9:** Sobrecarga del *Sprint Backlog* por mala estimación en la planificación.
+   * **R10:** Fallos en la integración o sincronización con Google Classroom (errores de permisos, tokens, cambios en API).
+   * **R11:** Pérdida, corrupción o fallo en la base de datos.
+* **Riesgos de Usuarios Piloto**
+   * **R12:** Los usuarios piloto no proporcionan feedback útil o no participan.
+   * **R13:** La propuesta de valor de la aplicación no termina de convencer a los usuarios piloto.
+* **Riesgos Organizacionales y de Uso (Externos)**
+   * **R14:** Creación masiva de grupos de estudio pero con escasa o nula actividad real.
+   * **R15:** Fuga de transacciones (ej. contactar con un profesor por la app pero pagar por Bizum).
+   * **R16:** Falta de confianza inicial en la plataforma por ser una marca nueva.
+* **Riesgos de Mercado y Económicos**
+   * **R17:** Sustitución por herramientas generalistas (estudiantes prefieren WhatsApp o Discord).
+   * **R18:** Alto poder del usuario y baja conversión hacia el modelo premium.
+   * **R19:** No captación suficiente de profesores para generar un marketplace funcional.
+* **Riesgos Tecnológicos Operativos**
+   * **R20:** Dependencia de APIs externas (aumento de costes imprevisto o cambios de condiciones).
+   * **R21:** Falta de masa crítica (número insuficiente de usuarios en una misma zona para ser útil).
 
 ---
 
 ## 3. Evaluación de Riesgos (Probabilidad e Impacto)
 
-| ID | Riesgo | Probabilidad | Impacto | Nivel de Riesgo |
+### Escala utilizada
+
+**Probabilidad:**
+- Baja (≤30%)
+- Media (30–60%)
+- Alta (>60%)
+
+**Impacto:**
+- Bajo: Retraso menor dentro del sprint.
+- Medio: Afecta a una funcionalidad relevante.
+- Alto: Afecta al core del producto o al cumplimiento del sprint.
+- Muy Alto: Compromete la viabilidad del proyecto.
+
+| ID  | Riesgo | Probabilidad | Impacto | Nivel |
 |:---|:---|:---:|:---:|:---:|
-| **R1** | Incumplimiento de horas/tareas | Media | Alto | **Alto** |
-| **R2** | Abandono de un miembro | Baja | Muy Alto | **Alto** |
-| **R3** | Fallos de comunicación | Media | Medio | **Medio** |
-| **R4** | Curva de aprendizaje tecnológica | Alta | Medio | **Alto** |
-| **R5** | Conflictos en Git/Pérdida código | Baja | Alto | **Medio** |
-| **R6** | Cambios drásticos de requisitos | Alta | Medio | **Alto** |
-| **R7** | Mala estimación de tareas | Media | Medio | **Medio** |
-| **R8** | Falta de feedback de pilotos | Media | Medio | **Medio** |
-| **R9** | La app no convence a pilotos | Media | Muy Alto | **Alto** |
-| **R10**| Muchos grupos, poca actividad | Alta | Medio | **Alto** |
-| **R11**| Pagos por fuera (Bizum, etc.) | Alta | Alto | **Alto** |
-| **R12**| Uso de herramientas generalistas | Alta | Alto | **Alto** |
-| **R13**| Baja conversión a premium | Alta | Medio | **Medio** |
-| **R14**| Problemas con APIs externas | Baja | Alto | **Medio** |
-| **R15**| Falta de masa crítica en zonas | Alta | Muy Alto | **Crítico** |
+| **R1**  | Incumplimiento de horas | Media | Alto | **Alto** |
+| **R2**  | Abandono de miembro | Baja | Muy Alto | **Alto** |
+| **R3**  | Fallos de comunicación | Media | Medio | **Medio** |
+| **R4**  | Desalineación entre squads | Media | Alto | **Alto** |
+| **R5**  | Delegación inadecuada de tareas | Media | Alto | **Alto** |
+| **R6**  | Curva de aprendizaje tecnológica | Alta | Medio | **Alto** |
+| **R7**  | Conflictos en Git / pérdida código | Baja | Alto | **Medio** |
+| **R8**  | Cambios drásticos de requisitos | Alta | Medio | **Alto** |
+| **R9**  | Mala estimación del Sprint Backlog | Media | Medio | **Medio** |
+| **R10** | Fallos en integración con Classroom | Media | Muy Alto | **Alto** |
+| **R11** | Pérdida o corrupción de base de datos | Baja | Muy Alto | **Alto** |
+| **R12** | Falta de feedback de usuarios piloto | Media | Medio | **Medio** |
+| **R13** | La app no convence a pilotos | Media | Muy Alto | **Alto** |
+| **R14** | Muchos grupos sin actividad real | Alta | Medio | **Alto** |
+| **R15** | Pagos fuera de la plataforma | Alta | Alto | **Alto** |
+| **R16** | Falta de confianza inicial | Alta | Alto | **Alto** |
+| **R17** | Sustitución por herramientas generalistas | Alta | Alto | **Alto** |
+| **R18** | Baja conversión a premium | Alta | Medio | **Medio** |
+| **R19** | No captación suficiente de profesores | Media | Muy Alto | **Crítico** |
+| **R20** | Problemas con APIs externas | Baja | Alto | **Medio** |
+| **R21** | Falta de masa crítica en zonas | Alta | Muy Alto | **Crítico** |
 
 ---
 
 ## 4. Planes de Mitigación y Contingencia
 
 A continuación, se detallan las estrategias para afrontar los riesgos:
-
-* **Equipo y Organización (R1, R2, R3):**
-    * *Mitigación:* Revisión semanal en Clockify. Fomentar comunicación temprana.
-    * *Contingencia:* Aplicar evaluación asimétrica (*Commitment Agreement*) y redistribuir tareas críticas.
-* **Técnicos y Requisitos (R4, R5, R6, R7):**
-    * *Mitigación:* Estándar de ramas en Git, *Pull Requests* con revisión, y mantener el *Product Backlog* flexible.
-    * *Contingencia:* *Pair programming* para desbloqueos técnicos. Reducir el alcance (*scope*) del sprint si hay cambios drásticos de requisitos tras la Review.
-* **Usuarios Piloto (R8, R9):**
-    * *Mitigación:* Seleccionar perfiles específicos (early adopters) e incentivar el feedback. 
-    * *Contingencia:* Iterar rápidamente la interfaz o pivotar la funcionalidad central si se detecta rechazo en las primeras Sprint Reviews.
-* **Uso y Transacciones (R10, R11):**
-    * *Mitigación (Grupos):* Mostrar sugerencias de eventos ya creados para fomentar la unión frente a la creación desde cero.
-    * *Mitigación (Pagos):* Premiar a los usuarios (alumnos y profesores) que reciban y realicen pagos a través de la plataforma (mejor posicionamiento, insignias).
-* **Mercado y Negocio (R12, R13):**
-    * *Mitigación (Generalistas):* Comunicar un valor añadido claro: eventos presenciales + geolocalización + comunidad 100% académica.
-    * *Mitigación (Premium):* Mostrar beneficios claros e incentivar con pequeñas demos gratuitas del modelo premium.
-* **Tecnológicos Operativos (R14, R15):**
-    * *Mitigación (APIs):* Arquitectura modular para poder cambiar de proveedor fácilmente y monitorización de costes.
-    * *Mitigación (Masa crítica):* Lanzamiento hiperlocalizado por campus universitarios y captación dirigida para asegurar densidad desde el primer día.
+* **Equipo y Organización (R1, R2, R3, R4, R5):**
+    * *Mitigación:* Revisión semanal de horas en Clockify. Fomentar comunicación temprana de bloqueos. Realizar demos integradas semanales entre squads. Definir claramente las responsabilidades por rol. Establecer un tiempo mínimo de investigación individual antes de escalar un problema técnico. Documentar soluciones recurrentes en un repositorio compartido.
+    * *Contingencia:* Redistribuir tareas críticas si se detecta sobrecarga. Aplicar evaluación asimétrica según el *Commitment Agreement*. En caso de delegación sistemática injustificada, aplicar las penalizaciones acordadas y revisar formalmente el reparto de responsabilidades en retrospectiva.
+* **Técnicos y Requisitos (R6, R7, R8, R9, R10, R11):**
+    * *Mitigación:* Establecer estándar de ramas en Git y uso obligatorio de Pull Requests con revisión. Realizar code reviews cruzadas y fomentar el *pair programming* en tareas complejas. Gestionar correctamente los tokens OAuth para la integración con Google Classroom. Configurar backups automáticos diarios de la base de datos. Utilizar entornos de pruebas antes de despliegue y realizar una planificación realista del Sprint Backlog.
+    * *Contingencia:* Reducir el alcance del sprint si se producen cambios drásticos en requisitos. Restaurar el sistema desde backups en caso de fallo crítico. Desactivar temporalmente funcionalidades no críticas hasta estabilizar el sistema.
+* **Usuarios Piloto (R12, R13):**
+    * *Mitigación:* Seleccionar perfiles *early adopters* comprometidos. Realizar encuestas periódicas estructuradas. Ofrecer incentivos por participación activa y recoger métricas de uso reales para iterar rápidamente.
+    * *Contingencia:* Ajustar la propuesta de valor si se detecta bajo interés. Simplificar o modificar funcionalidades que no generen adopción o engagement.
+* **Uso y Mercado (R14, R15, R16, R17, R18, R19):**
+    * *Mitigación:* Fomentar la unión a comunidades existentes en lugar de la creación masiva. Incentivar pagos dentro de la plataforma mediante beneficios visibles (mejor posicionamiento, insignias). Comunicar claramente el valor diferencial frente a herramientas generalistas. Lanzar campañas específicas para captación de profesores y destacar beneficios del modelo premium.
+    * *Contingencia:* Aplicar promociones iniciales para generar tracción. Reducir temporalmente la comisión en fases tempranas. Realizar campañas hiperlocalizadas por campus para asegurar masa crítica inicial.
+* **Tecnológicos Operativos (R20, R21):**
+    * *Mitigación:* Diseñar una arquitectura modular que permita cambiar proveedores externos fácilmente. Monitorizar costes de APIs externas y establecer alertas tempranas. Realizar lanzamientos localizados para asegurar densidad de usuarios.
+    * *Contingencia:* Cambiar de proveedor si aumentan costes o cambian condiciones de uso. Ajustar la estrategia de expansión geográfica si no se alcanza masa crítica suficiente.
 
 ---
 
@@ -113,3 +134,24 @@ A continuación, se detallan las estrategias para afrontar los riesgos:
 El seguimiento de los riesgos es continuo y se evalúa en dos momentos clave:
 * **Lunes (Daily de líderes):** Revisión de riesgos técnicos (R4, R5) y de equipo (R1, R2, R3).
 * **Viernes (Retrospectiva):** Evaluación del feedback de los usuarios piloto tras la Review (R6, R8, R9) y análisis de métricas de negocio o tracción (R10 a R15) para aplicar medidas correctoras al siguiente *Sprint Backlog*.
+
+---
+
+### Registro y Seguimiento de Riesgos
+
+Se mantiene un Registro de Riesgos actualizado en cada sprint.  
+Cada riesgo incluye:
+
+- Identificador
+- Probabilidad e impacto
+- Estrategia de mitigación y contingencia
+- Responsable asignado
+- Estado (Identificado, En Observación, Activo, Mitigado)
+- Fecha de última revisión
+
+Actualmente, el riesgo **R5 (Delegación inadecuada de tareas y sobrecarga desigual entre squads)** se encuentra en estado **“En Observación”**, debido a incidencias detectadas en los primeros sprints.
+
+- **Responsable:** Project Manager
+- **Fecha de última revisión:** 24/02/2026  
+
+Este riesgo será revisado específicamente en cada Retrospectiva para evaluar la efectividad de las medidas adoptadas y prevenir sobrecargas estructurales entre equipos.
