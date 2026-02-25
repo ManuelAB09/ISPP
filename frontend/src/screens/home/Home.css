@@ -1,0 +1,22 @@
+.headerTitle {
+    .title {
+        font-family: 'spacegrotesk', sans-serif;
+        font-size: 100px;
+        font-weight: 700;
+        color: var(--spaceIndigo);
+        width: 600px;
+        padding-left: 20px;
+    }
+
+    & h2 {
+        text-align: right;
+        font-family: 'inter', sans-serif;
+        font-size: 18px;
+        padding-right: 20px;
+        margin-left: 60px;
+    }
+
+    &.home {
+        border-bottom: 3px solid var(--spaceIndigo);
+    }
+}
