@@ -10,6 +10,7 @@ import Login from './screens/auth/Login';
 import PlansScreen from './screens/planes/PlansScreen';
 import TeacherProfile from './screens/teacherProfile/TeacherProfile';
 import VerifiedTeachers from './screens/verifiedTeachers/VerifiedTeachers';
+import CrearUbicacionScreen from './screens/ubicaciones/CrearUbicacionScreen';
 
 function App() {
   let ownerRoutes = <></>
@@ -31,6 +32,7 @@ function App() {
         <Route path="/create-event/new" element={<CreateEvent />} />
         <Route path="/create-event/:id" element={<CreateEvent />} />
         <Route path="/planes" element={<PlansScreen />} />
+        <Route path="/crear-ubicacion" element={<CrearUbicacionScreen />} />
       </>
     )
   }
@@ -40,8 +42,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/comunidades/*" element={<Comunidades />} />
-
         <Route path="/crear-comunidad" element={<CrearComunidad />} />
+        <Route path="/crear-ubicacion" element={<CrearUbicacionScreen />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         {ownerRoutes}
