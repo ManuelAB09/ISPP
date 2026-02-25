@@ -43,24 +43,24 @@ Además, se considerará un canal de monetización adicional mediante la venta d
 
 ### 2.1 Monetización orientada a Alumnos (B2C)
 El enfoque para los estudiantes se basa en la mejora de su experiencia de estudio y el acceso a contenido de alto valor. Las líneas de ingresos por parte de los alumnos son:
-    - Suscripción Premium (Mensual/Anual): Los alumnos podrán utilizar la aplicación de forma gratuita, sin embargo, ofrecemos un "Pase Premium" que desbloqueará:
-        - Acceso a "Comunidades Premium" exclusivas
-        - Capacidad de ampliar el tamaño de la comunidad privada
-        - Aumento del número de comunidades creadas
-        *- Otras funcionalidades futuras que no formen parte del MVP*
-    - Pagos transaccionales por clases: Cuando un alumno decide contratar una clase con un profesor a través de nuestro servicio el pago se proceso de forma segura a través de nuestra aplicación, generando un flujo de dinero dentro de la plataforma
+- Suscripción Premium (Mensual/Anual): Los alumnos podrán utilizar la aplicación de forma gratuita, sin embargo, ofrecemos un "Pase Premium" que desbloqueará:
+    - Acceso a "Comunidades Premium" exclusivas
+    - Capacidad de ampliar el tamaño de la comunidad privada
+    - Aumento del número de comunidades creadas
+    - *Otras funcionalidades futuras que no formen parte del MVP*
+- Pagos transaccionales por clases: Cuando un alumno decide contratar una clase con un profesor a través de nuestro servicio el pago se proceso de forma segura a través de nuestra aplicación, generando un flujo de dinero dentro de la plataforma
 
 ---
 
 ### 2.2 Monetización orientada a Profesores (B2B/B2C)
 Los profesores y academias utilizarán MeerKatters como una herramienta de captación de clientes y gestión de sus alumnos. Para ellos, el valor reside más en la visibilidad y las herramientas de adminsitración, monetizandose en:
-    - Comisión por transacción: Por cada clase que un profesor gestione a través de MeerKatters, se retendrá un pequeño porcentaje del cobro en concepto de gestión y uso de la infraestructura de pagos seguros. Esto nos asegura un ingreso variable eque escala con el volumen de uso.
-    - Suscripción "Profesor Premium" (Mensual/Anual): Plan de suscripción diseño para educadores que necesiten ir más allá del uso básico. Incluye:
-        - Posicionamiento destacado en las búsquedas
-        - Verificación de perfil que aportará seguridad a los estudiantes
-        - Ampliación del límite de miembros en las comunidades que administran
-        - Capacidad de crear múltiples grupos de estudio simultáneos sin restricciones
-        *- Otras funcionalidades futuras que no formen parte del MVP*
+- Comisión por transacción: Por cada clase que un profesor gestione a través de MeerKatters, se retendrá un pequeño porcentaje del cobro en concepto de gestión y uso de la infraestructura de pagos seguros. Esto nos asegura un ingreso variable eque escala con el volumen de uso.
+- Suscripción "Profesor Premium" (Mensual/Anual): Plan de suscripción diseño para educadores que necesiten ir más allá del uso básico. Incluye:
+    - Posicionamiento destacado en las búsquedas
+    - Verificación de perfil que aportará seguridad a los estudiantes
+    - Ampliación del límite de miembros en las comunidades que administran
+    - Capacidad de crear múltiples grupos de estudio simultáneos sin restricciones
+    - *Otras funcionalidades futuras que no formen parte del MVP*
 
 
 ## 3. Estrategia de Precios
@@ -133,7 +133,9 @@ El cálculo del presupuesto se ha realizado en el documento [Estudio del Mercado
 
 En cuanto a las licencias, será necesaria la contratación de servicios en Microsoft Azure. Según el análisis de créditos realizado en el estudio, y considerando una arquitectura optimizada, el coste estimado es de 23,50 € mensuales durante aproximadamente 3,5 meses, lo que supone un total de 82,25 € en concepto de licencias.
 
-Por tanto, el presupuesto total estimado del proyecto asciende a 72.142,25 €, incluyendo tanto los costes de desarrollo como los costes de infraestructura.
+Por tanto, el presupuesto total estimado del proyecto asciende a **72.142,25 €**, incluyendo tanto los costes de desarrollo como los costes de infraestructura.
+
+---
 
 ### 4.2 Estado Actual
 El presupuesto total del proyecto, distribuido entre los cuatro Sprints planificados, asciende aproximadamente a 18.035 € por Sprint.
@@ -161,13 +163,15 @@ Actualmente, el equipo se encuentra al inicio del primer Sprint, tras haber comp
 | Scrum Master       | 23    | 23         | 529    |
 | Total              | 57    |            | 1.379  |
 
-- Amortización de equipos: correspondiente a un mes del uso de hardware por parte del equipo, lo que equivale a 390€
-- Costes de infraestructura: quedan en 0€ debido a que aun no se ha tenido que usar creditos de ninguna licencia
+- Amortización de equipos: correspondiente a un mes del uso de hardware por parte del equipo, lo que equivale a **390 €**
+- Costes de infraestructura: quedan en **0 €** debido a que aun no se ha tenido que usar creditos de ninguna licencia
 
-En total llevamos un gasto de 10.328 de los 18.035€ presupuestados para el primer Sprint, Lo que nos mantiene muy por debajo del presupuesto.
+En total llevamos un gasto de **10.328 €** de los 18.035€ presupuestados para el primer Sprint, Lo que nos mantiene muy por debajo del presupuesto.
 
 ## 5. Rentabilidad
 Para asegurar la viabilidad financiera de MeerKatters, es necesario calcular cuántos usuarios de pago se necesitan tanto para mantener la operatividad diaria de la plataforma como para amortizar la inversión inicial de desarrollo.
+
+--- 
 
 ### 5.1. Punto de Equilibrio Operativo (Mensual)
 El punto de equilibrio operativo indica el nivel de ingresos mínimos necesarios para mantener la aplicación "viva" mes a mes, sin contar el pago de la deuda de desarrollo.
@@ -177,6 +181,8 @@ Nuestro principal coste fijo recurrente es la infraestructura cloud en Microsoft
 - Escenario A (Solo Profesores): Convertir a 4 profesores al Plan Premium (4 usuarios × 5,99 € = 23,96 €).
 - Escenario B (Solo Alumnos): Convertir a 8 alumnos al Plan Premium (8 usuarios × 2,99 € = 23,92 €).
 - Escenario C (Basado en usuarios piloto): Actualmente contamos con una base validada de 54 usuarios piloto (29 alumnos y 25 profesores). Si logramos una tasa de conversión inicial muy conservadora del 10% sobre esta lista (apenas 3 alumnos y 2 profesores pagando la suscripción), generaríamos 20,95 € mensuales, cubriendo de manera casi inmediata los costes de mantenimiento base.
+
+---
 
 ### 5.2. Cálculo de Recuperación de la Inversión (ROI) basado en la Fase Piloto
 Más allá del mantenimiento mensual, el proyecto tiene un presupuesto total estimado de 72.142,25 €, que incluye todo el valor devengado por el desarrollo, licencias y amortización de equipos. Para proyectar la recuperación de esta inversión, vamos a basarnos estrictamente en nuestra tracción actual: los 54 usuarios piloto confirmados (29 alumnos y 25 profesores).
