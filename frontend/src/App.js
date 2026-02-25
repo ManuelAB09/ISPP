@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import './App.css';
-
+import Comunidades from './screens/comunidades/Comunidades';
 import Home from './screens/home/Home';
 import CreateEvent from './screens/event/CreateEvent';
 import Register from './screens/auth/Register';
@@ -32,6 +32,7 @@ function App() {
     <div>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/comunidades/*" element={<Comunidades />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         {ownerRoutes}

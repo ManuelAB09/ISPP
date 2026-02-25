@@ -11,6 +11,8 @@ import es.us.meerkat.backend.entity.Usuario;
  * Repositorio JPA para la entidad {@link Usuario}.
  *
  * <p>Permite realizar operaciones CRUD sobre los usuarios en la base de datos.
+ *
+ * <p>Permite realizar operaciones CRUD sobre los usuarios en la base de datos.
  */
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 

@@ -1,0 +1,24 @@
+package es.us.meerkat.backend.repository;
+
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import es.us.meerkat.backend.entity.EstadoTransaccion;
+import es.us.meerkat.backend.entity.TipoTransaccion;
+import es.us.meerkat.backend.entity.TransaccionPago;
+
+@Repository
+public interface TransaccionPagoRepository extends JpaRepository<TransaccionPago, Long> {
+
+    /** Verifica si existe una transacción pendiente para un tutor de un tipo específico. */
+    boolean existsByTutorIdAndTipoAndEstado(
+            Long tutorId, TipoTransaccion tipo, EstadoTransaccion estado);
+
+    /**
+     * Obtiene la última transacción de un tutor por tipo, ordenada por fecha de inicio descendente.
+     */
+    Optional<TransaccionPago> findTopByTutorIdAndTipoOrderByIniciadoAtDesc(
+            Long tutorId, TipoTransaccion tipo);
+}

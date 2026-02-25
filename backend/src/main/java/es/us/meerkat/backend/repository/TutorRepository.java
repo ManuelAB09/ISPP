@@ -1,8 +1,11 @@
 package es.us.meerkat.backend.repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import es.us.meerkat.backend.entity.Tutor;
@@ -29,4 +32,33 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
      * @return Lista de tutores verificados.
      */
     List<Tutor> findByVerificadoTrue();
+
+    /**
+     * Busca un tutor asociado a un usuario específico.
+     *
+     * @param tutorId id del tutor en el que esta.
+     * @param usuarioId id del user logueado.
+     * @return Optional que contiene el tutor si existe.
+     */
+    Optional<Tutor> findByIdAndUsId(Long tutorId, Long usuarioId);
+
+    /**
+     * Busca un todos los tutores asociado a un usuario específico.
+     *
+     * @param usuarioId id del user logueado.
+     * @return Optional que contiene el tutor si existe.
+     */
+    List<Tutor> findAllByUsId(Long usuarioId);
+
+    /**
+     * Busca tutores verificados aplicando filtros por especialidad y rango de tarifa.
+     *
+     * @param especialidad Especialidad buscada (contiene, case-insensitive)
+     * @param tarifaMin Tarifa mínima
+     * @param tarifaMax Tarifa máxima
+     * @param pageable Información de paginación
+     * @return Página de tutores filtrados
+     */
+    Page<Tutor> findByVerificadoTrueAndEspecialidadesContainingIgnoreCaseAndTarifaHoraBetween(
+            String especialidad, BigDecimal tarifaMin, BigDecimal tarifaMax, Pageable pageable);
 }

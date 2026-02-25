@@ -1,0 +1,27 @@
+.inputSearch {
+    width: 530px;
+    height: 30px;
+    background-color: var(--alabasterGray);
+    padding-left: 20px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+
+    & input {
+        font-size: 14px;
+        background-color: transparent;
+        border: none;
+        width: 100%;
+        outline: none;
+    }
+}
+
+.searchbutton {
+    width: 32px;
+    height: 30px;
+    border-radius: 6px;
+    background-color: var(--glaucous);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
