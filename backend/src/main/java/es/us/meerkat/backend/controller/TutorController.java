@@ -1,7 +1,10 @@
 package es.us.meerkat.backend.controller;
 
+import java.math.BigDecimal;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import es.us.meerkat.backend.dto.TutorProfileRequest;
@@ -28,14 +32,22 @@ public final class TutorController {
     /** Servicio para operaciones de tutor. */
     private final TutorService tutorService;
 
-    /**
-     * Lista todos los tutores verificados.
-     *
-     * @return Lista de tutores verificados.
-     */
     @GetMapping()
-    public List<Tutor> listarTutoresVerificados() {
-        return tutorService.obtenerTutoresVerificados();
+    public ResponseEntity<?> listarTutoresVerificados(
+            @RequestParam(required = false) String especialidad,
+            @RequestParam(required = false) BigDecimal tarifaMin,
+            @RequestParam(required = false) BigDecimal tarifaMax,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        try {
+            Page<Tutor> tutores =
+                    tutorService.obtenerTutoresVerificados(
+                            especialidad, tarifaMin, tarifaMax, page, size);
+            return ResponseEntity.ok(tutores);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al listar tutores verificados: " + e.getMessage());
+        }
     }
 
     /**
@@ -46,11 +58,16 @@ public final class TutorController {
      * @return Perfil de tutor creado.
      */
     @PostMapping()
-    public ResponseEntity<TutorProfileResponse> crearPerfil(
+    public ResponseEntity<?> crearPerfil(
             @AuthenticationPrincipal final Usuario usuario,
             @RequestBody final TutorProfileRequest request) {
-
-        return ResponseEntity.ok(tutorService.crearPerfil(usuario.getId(), request));
+        try {
+            TutorProfileResponse perfil = tutorService.crearPerfil(usuario.getId(), request);
+            return ResponseEntity.ok(perfil);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al crear perfil de tutor: " + e.getMessage());
+        }
     }
 
     /**
@@ -62,12 +79,18 @@ public final class TutorController {
      * @return Perfil de tutor actualizado.
      */
     @PutMapping("/{tutorId}")
-    public ResponseEntity<TutorProfileResponse> editarPerfil(
+    public ResponseEntity<?> editarPerfil(
             @AuthenticationPrincipal final Usuario usuario,
             @PathVariable final Long tutorId,
             @RequestBody final TutorProfileRequest request) {
-
-        return ResponseEntity.ok(tutorService.editarPerfil(usuario.getId(), tutorId, request));
+        try {
+            TutorProfileResponse perfilActualizado =
+                    tutorService.editarPerfil(usuario.getId(), tutorId, request);
+            return ResponseEntity.ok(perfilActualizado);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al editar perfil de tutor: " + e.getMessage());
+        }
     }
 
     /**
@@ -77,9 +100,14 @@ public final class TutorController {
      * @return Perfil público del tutor.
      */
     @GetMapping("/{tutorId}")
-    public ResponseEntity<TutorProfileResponse> verPerfilPublico(@PathVariable final Long tutorId) {
-
-        return ResponseEntity.ok(tutorService.obtenerPerfilPublico(tutorId));
+    public ResponseEntity<?> verPerfilPublico(@PathVariable final Long tutorId) {
+        try {
+            TutorProfileResponse perfil = tutorService.obtenerPerfilPublico(tutorId);
+            return ResponseEntity.ok(perfil);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al obtener perfil público: " + e.getMessage());
+        }
     }
 
     /**
@@ -89,10 +117,15 @@ public final class TutorController {
      * @return Lista de perfiles de tutor.
      */
     @GetMapping("/me")
-    public ResponseEntity<List<TutorProfileResponse>> obtenerMisPerfiles(
-            @AuthenticationPrincipal final Usuario usuario) {
-
-        return ResponseEntity.ok(tutorService.obtenerPerfilesPorUsuario(usuario.getId()));
+    public ResponseEntity<?> obtenerMisPerfiles(@AuthenticationPrincipal final Usuario usuario) {
+        try {
+            List<TutorProfileResponse> perfiles =
+                    tutorService.obtenerPerfilesPorUsuario(usuario.getId());
+            return ResponseEntity.ok(perfiles);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al obtener mis perfiles: " + e.getMessage());
+        }
     }
 
     /**
@@ -103,10 +136,16 @@ public final class TutorController {
      * @return Perfil de tutor.
      */
     @GetMapping("/me/{tutorId}")
-    public ResponseEntity<TutorProfileResponse> obtenerMiPerfil(
+    public ResponseEntity<?> obtenerMiPerfil(
             @AuthenticationPrincipal final Usuario usuario, @PathVariable final Long tutorId) {
-
-        return ResponseEntity.ok(tutorService.obtenerPerfilDelUsuario(usuario.getId(), tutorId));
+        try {
+            TutorProfileResponse perfil =
+                    tutorService.obtenerPerfilDelUsuario(usuario.getId(), tutorId);
+            return ResponseEntity.ok(perfil);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al obtener mi perfil: " + e.getMessage());
+        }
     }
 
     /**
@@ -116,11 +155,15 @@ public final class TutorController {
      * @return Tutor que solicitó la verificación.
      */
     @PostMapping("/me/{tutorId}/verification")
-    public ResponseEntity<Void> solicitarVerificacion(
+    public ResponseEntity<?> solicitarVerificacion(
             @AuthenticationPrincipal final Usuario usuario, @PathVariable final Long tutorId) {
-
-        tutorService.solicitarVerificacion(usuario.getId(), tutorId);
-        return ResponseEntity.ok().build();
+        try {
+            tutorService.solicitarVerificacion(usuario.getId(), tutorId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al solicitar verificación: " + e.getMessage());
+        }
     }
 
     /**
@@ -130,9 +173,14 @@ public final class TutorController {
      * @return Estado de verificación del tutor.
      */
     @GetMapping("/me/{tutorId}/verification-status")
-    public ResponseEntity<String> obtenerEstadoVerificacion(
+    public ResponseEntity<?> obtenerEstadoVerificacion(
             @AuthenticationPrincipal final Usuario usuario, @PathVariable final Long tutorId) {
-
-        return ResponseEntity.ok(tutorService.obtenerEstadoVerificacion(usuario.getId(), tutorId));
+        try {
+            String estado = tutorService.obtenerEstadoVerificacion(usuario.getId(), tutorId);
+            return ResponseEntity.ok(estado);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al obtener estado de verificación: " + e.getMessage());
+        }
     }
 }

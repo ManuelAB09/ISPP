@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -177,25 +179,51 @@ public class TutorService {
      * @param tutorParam Tutor a mapear.
      * @return DTO con la información del tutor.
      */
-    private TutorProfileResponse mapToResponse(final Tutor tutorParam) {
+    private TutorProfileResponse mapToResponse(final Tutor tutor) {
         return TutorProfileResponse.builder()
-                .id(tutorParam.getId())
-                .nombre(tutorParam.getUs().getNombre())
-                .especialidades(tutorParam.getEspecialidades())
-                .tarifaHora(tutorParam.getTarifaHora())
-                .disponibilidad(tutorParam.getDisponibilidad())
-                .bio(tutorParam.getBio())
-                .verificado(tutorParam.getVerificado())
+                .id(tutor.getId())
+                .userId(tutor.getUs().getId())
+                .usuario(
+                        TutorProfileResponse.UsuarioDto.builder()
+                                .id(tutor.getUs().getId())
+                                .nombre(tutor.getUs().getNombre())
+                                // .foto(tutor.getUs().)
+                                // .bio(tutor.getUs().getBio())
+                                // .intereses(tutor.getUs().getIntereses())
+                                .esTutor(tutor.getUs().getEsTutor())
+                                .build())
+                .especialidades(tutor.getEspecialidades())
+                .tarifaHora(tutor.getTarifaHora())
+                .disponibilidad(tutor.getDisponibilidad())
+                .bio(tutor.getBio())
+                .verificado(tutor.getVerificado())
+                .classroomConectado(tutor.getClassroomConectado())
+                .createdAt(tutor.getCreatedAt().toString())
                 .build();
     }
 
     /**
-     * Obtiene todos los tutores verificados.
+     * Obtiene todos los tutores verificados aplicando filtros opcionales y paginación.
      *
-     * @return Lista de tutores verificados.
+     * @param especialidad Filtro por especialidad (opcional)
+     * @param tarifaMin Tarifa mínima por hora (opcional, default 0)
+     * @param tarifaMax Tarifa máxima por hora (opcional, default Double.MAX_VALUE)
+     * @param page Número de página (0-indexed)
+     * @param size Tamaño de página
+     * @return Página de tutores filtrados
      */
-    public List<Tutor> obtenerTutoresVerificados() {
-        return tutorRepository.findByVerificadoTrue();
+    public Page<Tutor> obtenerTutoresVerificados(
+            String especialidad, BigDecimal tarifaMin, BigDecimal tarifaMax, int page, int size) {
+        // Valores por defecto
+        String espec = (especialidad != null) ? especialidad : "";
+        BigDecimal min = (tarifaMin != null) ? tarifaMin : BigDecimal.ZERO;
+        BigDecimal max = (tarifaMax != null) ? tarifaMax : new BigDecimal(Double.MAX_VALUE);
+
+        PageRequest pageable = PageRequest.of(page, size);
+
+        return tutorRepository
+                .findByVerificadoTrueAndEspecialidadesContainingIgnoreCaseAndTarifaHoraBetween(
+                        espec, min, max, pageable);
     }
 
     // ===============================
