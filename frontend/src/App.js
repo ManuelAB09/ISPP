@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import './App.css';
 import Comunidades from './screens/comunidades/Comunidades';
+import CrearComunidad from './screens/comunidades/CrearComunidad';
 import Home from './screens/home/Home';
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/comunidades/*" element={<Comunidades />} />
+        <Route path="/crear-comunidad" element={<CrearComunidad />} />
         {ownerRoutes}
       </Routes>
     </div>
