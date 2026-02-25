@@ -1,8 +1,6 @@
 package es.us.meerkat.backend.entity;
 
-/**
- * Enum que representa los tipos de transacciones posibles en la plataforma.
- */
+/** Enum que representa los tipos de transacciones posibles en la plataforma. */
 public enum TipoTransaccion {
 
     /** Pago realizado por un tutor para solicitar verificación de su perfil. */
@@ -16,5 +14,4 @@ public enum TipoTransaccion {
 
     /** Comisiones aplicadas sobre pagos realizados en la plataforma. */
     COMISION;
-
 }

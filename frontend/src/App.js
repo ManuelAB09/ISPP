@@ -4,6 +4,8 @@ import './App.css';
 
 import Home from './screens/home/Home';
 import CreateEvent from './screens/event/CreateEvent';
+import Register from './screens/auth/Register';
+import Login from './screens/auth/Login';
 
 function App() {
   let ownerRoutes = <></>
@@ -30,6 +32,8 @@ function App() {
     <div>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         {ownerRoutes}
       </Routes>
     </div>

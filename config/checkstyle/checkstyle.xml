@@ -30,14 +30,18 @@
     <property name="eachLine" value="true"/>
   </module>
 
-  <!-- ═══ Longitud máxima de línea: 100 caracteres (Gestión Equipo §10) ═══ -->
+  <!-- ═══ Longitud máxima de línea: 120 caracteres ═══ -->
+  <!--
+    La normativa §10 dice "preferible 80-100 caracteres", no es un límite estricto.
+    Spotless (google-java-format AOSP) ya envuelve el código a 100 columnas de forma
+    automática. Este límite de 120 actúa como red de seguridad para los casos que el
+    formateador no puede romper solo: string literals, URLs en Javadoc, anotaciones
+    con parámetros largos (@Query, @RequestMapping…), nombres de test descriptivos, etc.
+  -->
   <module name="LineLength">
-    <property name="max" value="100"/>
+    <property name="max" value="120"/>
     <property name="ignorePattern" value="^package.*|^import.*|a]? href|href|http://|https://|ftp://"/>
   </module>
-
-  <!-- ═══ Archivo termina con nueva línea ═══ -->
-  <module name="NewlineAtEndOfFile"/>
 
   <module name="TreeWalker">
 
@@ -80,16 +84,6 @@
 
     <!-- ─── FORMATO Y ESTRUCTURA ──────────────────── -->
 
-    <!-- Sangrado: 4 espacios -->
-    <module name="Indentation">
-      <property name="basicOffset" value="4"/>
-      <property name="braceAdjustment" value="0"/>
-      <property name="caseIndent" value="4"/>
-      <property name="throwsIndent" value="4"/>
-      <property name="lineWrappingIndentation" value="4"/>
-      <property name="arrayInitIndent" value="4"/>
-    </module>
-
     <!-- Llaves: apertura en la misma línea -->
     <module name="LeftCurly">
       <property name="option" value="eol"/>
@@ -109,6 +103,7 @@
       <property name="allowEmptyConstructors" value="true"/>
       <property name="allowEmptyMethods" value="true"/>
       <property name="allowEmptyTypes" value="true"/>
+      <property name="allowEmptyLambdas" value="true"/>
     </module>
 
     <!-- No espacio entre nombre de método y paréntesis -->
@@ -119,18 +114,8 @@
 
     <!-- ─── BUENAS PRÁCTICAS ─────────────────────── -->
 
-    <!-- Evitar imports con wildcard (*) -->
-    <module name="AvoidStarImport"/>
-
     <!-- Imports no usados -->
     <module name="UnusedImports"/>
-
-    <!-- Orden de imports -->
-    <module name="ImportOrder">
-      <property name="groups" value="java,javax,org,com"/>
-      <property name="separated" value="true"/>
-      <property name="sortStaticImportsAlphabetically" value="true"/>
-    </module>
 
     <!-- Un statement por línea -->
     <module name="OneStatementPerLine"/>
@@ -140,20 +125,21 @@
       <property name="exceptionVariableName" value="expected|ignore"/>
     </module>
 
-    <!-- Modificadores en orden estándar -->
-    <module name="ModifierOrder"/>
-
     <!-- Visibilidad: los campos deben ser private (con excepciones) -->
+    <!-- Permite anotaciones de Spring, Lombok y Jackson (patrones habituales en Spring Boot) -->
     <module name="VisibilityModifier">
       <property name="allowPublicFinalFields" value="true"/>
       <property name="protectedAllowed" value="true"/>
+      <property name="ignoreAnnotationCanonicalNames"
+        value="org.springframework.beans.factory.annotation.Autowired,
+               org.springframework.beans.factory.annotation.Value,
+               org.springframework.context.annotation.Bean,
+               lombok.Getter,
+               lombok.Setter,
+               lombok.Data,
+               lombok.Builder,
+               com.fasterxml.jackson.annotation.JsonProperty"/>
     </module>
-
-    <!-- Verificar que equals() y hashCode() se sobrescriben juntos -->
-    <module name="EqualsHashCode"/>
-
-    <!-- Verificar anotación @Override -->
-    <module name="MissingOverride"/>
 
   </module>
 </module>

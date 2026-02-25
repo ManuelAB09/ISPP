@@ -45,6 +45,23 @@
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-api</artifactId>
+			<version>0.11.5</version>
+		</dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-impl</artifactId>
+			<version>0.11.5</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-jackson</artifactId>
+			<version>0.11.5</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
@@ -193,6 +210,30 @@
 						<goals><goal>report</goal></goals>
 					</execution>
 				</executions>
+			</plugin>
+
+			<!-- Spotless — auto-formato Java con google-java-format AOSP (4 espacios) -->
+			<!-- Uso manual:  mvn spotless:apply                                        -->
+			<!--              mvn spotless:check (verifica sin modificar)               -->
+			<plugin>
+				<groupId>com.diffplug.spotless</groupId>
+				<artifactId>spotless-maven-plugin</artifactId>
+				<version>2.44.0</version>
+				<configuration>
+					<java>
+						<!-- google-java-format AOSP: 4 espacios (normativa §10) -->
+						<googleJavaFormat>
+							<version>1.22.0</version>
+							<style>AOSP</style>
+							<reflowLongStrings>true</reflowLongStrings>
+						</googleJavaFormat>
+						<!-- Elimina imports no usados y los ordena: java → javax → org → com -->
+						<removeUnusedImports/>
+						<importOrder>
+							<order>java,javax,org,com,</order>
+						</importOrder>
+					</java>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

@@ -23,8 +23,8 @@ import lombok.NoArgsConstructor;
 /**
  * Entidad que representa a un tutor dentro de la plataforma.
  *
- * Contiene información de perfil, estado de verificación, conexión
- * a classroom, historial de transacciones y especialidades.
+ * <p>Contiene información de perfil, estado de verificación, conexión a classroom, historial de
+ * transacciones y especialidades.
  */
 @Entity
 @Data
@@ -51,9 +51,7 @@ public class Tutor {
     /** Tarifa por hora del tutor. */
     private BigDecimal tarifaHora;
 
-    /**
-     * Disponibilidad del tutor en formato texto.
-     */
+    /** Disponibilidad del tutor en formato texto. */
     private String disponibilidad;
 
     /** Breve biografía del tutor. */
@@ -91,12 +89,13 @@ public class Tutor {
     /**
      * Crea o establece el perfil del tutor.
      *
-     * @param tarifaHoraParam     Tarifa por hora.
+     * @param tarifaHoraParam Tarifa por hora.
      * @param disponibilidadParam Disponibilidad en texto.
-     * @param bioParam            Biografía del tutor.
+     * @param bioParam Biografía del tutor.
      * @param especialidadesParam Lista de especialidades.
      */
-    public void crearPerfil(final BigDecimal tarifaHoraParam,
+    public void crearPerfil(
+            final BigDecimal tarifaHoraParam,
             final String disponibilidadParam,
             final String bioParam,
             final List<String> especialidadesParam) {
@@ -109,12 +108,13 @@ public class Tutor {
     /**
      * Edita el perfil existente del tutor.
      *
-     * @param tarifaHoraParam     Tarifa por hora.
+     * @param tarifaHoraParam Tarifa por hora.
      * @param disponibilidadParam Disponibilidad en texto.
-     * @param bioParam            Biografía del tutor.
+     * @param bioParam Biografía del tutor.
      * @param especialidadesParam Lista de especialidades.
      */
-    public void editarPerfil(final BigDecimal tarifaHoraParam,
+    public void editarPerfil(
+            final BigDecimal tarifaHoraParam,
             final String disponibilidadParam,
             final String bioParam,
             final List<String> especialidadesParam) {
@@ -166,5 +166,4 @@ public class Tutor {
         }
         return verificados;
     }
-
 }

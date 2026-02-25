@@ -8,8 +8,8 @@ import lombok.Data;
 /**
  * DTO para la creación o edición del perfil de un tutor.
  *
- * Contiene la información básica que un tutor puede enviar para
- * actualizar su perfil: especialidades, tarifa, disponibilidad y bio.
+ * <p>Contiene la información básica que un tutor puede enviar para actualizar su perfil:
+ * especialidades, tarifa, disponibilidad y bio.
  */
 @Data
 public class TutorProfileRequest {
@@ -25,5 +25,4 @@ public class TutorProfileRequest {
 
     /** Breve biografía del tutor. */
     private String bio;
-
 }

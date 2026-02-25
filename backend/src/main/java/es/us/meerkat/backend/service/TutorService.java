@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 /**
  * Servicio para gestionar la lógica de negocio relacionada con los tutores.
  *
- * Incluye creación, edición, verificación y obtención de perfiles de tutor.
+ * <p>Incluye creación, edición, verificación y obtención de perfiles de tutor.
  */
 @Service
 @RequiredArgsConstructor
@@ -37,15 +37,17 @@ public class TutorService {
      * Crea un perfil de tutor para un usuario dado.
      *
      * @param usuarioIdParam Identificador del usuario.
-     * @param requestParam   Datos del perfil del tutor.
+     * @param requestParam Datos del perfil del tutor.
      * @return DTO con los datos del perfil creado.
      */
     @Transactional
-    public TutorProfileResponse crearPerfil(final Long usuarioIdParam,
-            final TutorProfileRequest requestParam) {
+    public TutorProfileResponse crearPerfil(
+            final Long usuarioIdParam, final TutorProfileRequest requestParam) {
 
-        final Usuario usuario = usuarioRepository.findById(usuarioIdParam)
-                .orElseThrow(() -> new RuntimeException("User no encontrado"));
+        final Usuario usuario =
+                usuarioRepository
+                        .findById(usuarioIdParam)
+                        .orElseThrow(() -> new RuntimeException("User no encontrado"));
 
         if (!usuario.getEsTutor()) {
             throw new RuntimeException("El usuario no tiene rol de profesor");
@@ -78,18 +80,22 @@ public class TutorService {
      * Edita el perfil de un tutor existente.
      *
      * @param usuarioIdParam Identificador del usuario.
-     * @param requestParam   Datos del perfil a actualizar.
+     * @param requestParam Datos del perfil a actualizar.
      * @return DTO con los datos actualizados del tutor.
      */
     @Transactional
-    public TutorProfileResponse editarPerfil(final Long usuarioIdParam,
-            final TutorProfileRequest requestParam) {
+    public TutorProfileResponse editarPerfil(
+            final Long usuarioIdParam, final TutorProfileRequest requestParam) {
 
-        final Usuario usuario = usuarioRepository.findById(usuarioIdParam)
-                .orElseThrow(() -> new RuntimeException("User no encontrado"));
+        final Usuario usuario =
+                usuarioRepository
+                        .findById(usuarioIdParam)
+                        .orElseThrow(() -> new RuntimeException("User no encontrado"));
 
-        final Tutor tutor = tutorRepository.findByUs(usuario)
-                .orElseThrow(() -> new RuntimeException("Perfil no hallado"));
+        final Tutor tutor =
+                tutorRepository
+                        .findByUs(usuario)
+                        .orElseThrow(() -> new RuntimeException("Perfil no hallado"));
 
         tutor.setEspecialidades(requestParam.getEspecialidades());
         tutor.setTarifaHora(requestParam.getTarifaHora());
@@ -113,8 +119,10 @@ public class TutorService {
      */
     public TutorProfileResponse obtenerPerfilPublico(final Long tutorIdParam) {
 
-        final Tutor tutor = tutorRepository.findById(tutorIdParam)
-                .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
+        final Tutor tutor =
+                tutorRepository
+                        .findById(tutorIdParam)
+                        .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
 
         return mapToResponse(tutor);
     }
@@ -151,16 +159,18 @@ public class TutorService {
     // ===============================
 
     /**
-     * Permite al tutor iniciar la solicitud de verificación.
-     * No procesa el pago, solo prepara la solicitud.
+     * Permite al tutor iniciar la solicitud de verificación. No procesa el pago, solo prepara la
+     * solicitud.
      *
      * @param tutorIdParam Identificador del tutor.
      * @return Tutor actualizado con estado de verificación pendiente.
      */
     @Transactional
     public Tutor solicitarVerificacion(final Long tutorIdParam) {
-        final Tutor tutor = tutorRepository.findById(tutorIdParam)
-                .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
+        final Tutor tutor =
+                tutorRepository
+                        .findById(tutorIdParam)
+                        .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
 
         tutor.solicitarVerificacion();
         return tutorRepository.save(tutor);
@@ -174,8 +184,10 @@ public class TutorService {
      */
     @Transactional(readOnly = true)
     public String consultarEstadoVerificacion(final Long tutorIdParam) {
-        final Tutor tutor = tutorRepository.findById(tutorIdParam)
-                .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
+        final Tutor tutor =
+                tutorRepository
+                        .findById(tutorIdParam)
+                        .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
 
         if (Boolean.TRUE.equals(tutor.getVerificado())) {
             return "VERIFICADO";
@@ -183,5 +195,4 @@ public class TutorService {
 
         return "PENDIENTE_REVISION";
     }
-
 }
