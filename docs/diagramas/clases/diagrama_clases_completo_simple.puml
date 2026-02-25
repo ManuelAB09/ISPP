@@ -30,6 +30,7 @@ class ClassroomAssociation <<MVP>>
 class MiembroComunidad <<MVP>>
 class SolicitudComunidad <<MVP>>
 class Evento <<MVP>>
+class Ubicacion <<MVP>>
 class AsistenciaEvento <<MVP>>
 class InvitacionEvento <<MVP>>
 class ArchivoAdjunto <<MVP>>
@@ -81,6 +82,7 @@ Evento "1" -- "0..*" AsistenciaEvento : tiene >
 Evento "1" -- "0..*" InvitacionEvento : invita a >
 Evento "0..1" -- "0..*" ArchivoAdjunto : asocia >
 Evento "1" -- "0..1" GrabacionReunion : tiene >
+Ubicacion "0..1" -- "0..*" Evento : localiza >
 InvitacionEvento "0..*" -- "1" Usuario : invita a >
 
 ' Otras relaciones

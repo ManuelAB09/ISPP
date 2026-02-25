@@ -189,9 +189,6 @@ class Evento <<MVP>> {
     - descripcion: String
     - fechaHora: LocalDateTime
     - fechaFin: LocalDateTime
-    - ubicacion: String
-    - latitud: Double
-    - longitud: Double
     - aforo: Integer
     - asistentesConfirmados: Integer
     - queLlevar: String
@@ -214,6 +211,13 @@ class Evento <<MVP>> {
     + verificarAforo(): Boolean
     + contarAsistentes(): Integer
     + generarEnlaceVirtual(): String
+}
+
+class Ubicacion <<MVP>> {
+    - id: Long
+    - nombre: String
+    - latitud: Double
+    - longitud: Double
 }
 
 class AsistenciaEvento <<MVP>> {
@@ -418,6 +422,7 @@ Evento "1" -- "0..*" AsistenciaEvento : tiene >
 Evento "1" -- "0..*" InvitacionEvento : invita a >
 Evento "0..1" -- "0..*" ArchivoAdjunto : asocia >
 Evento "1" -- "0..1" GrabacionReunion : tiene >
+Ubicacion "0..1" -- "0..*" Evento : localiza >
 InvitacionEvento "0..*" -- "1" Usuario : invita a >
 
 ' Otras relaciones
