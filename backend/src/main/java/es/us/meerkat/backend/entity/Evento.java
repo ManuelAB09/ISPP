@@ -4,10 +4,14 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import es.us.meerkat.backend.dto.EventDetailResponse;
+import es.us.meerkat.backend.dto.UbicacionResponse;
+import es.us.meerkat.backend.dto.UserPublicResponse;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -45,15 +49,6 @@ public class Evento {
     /** Fecha y hora de la creación del evento. */
     private LocalDateTime createdAt;
 
-    /** Ubicación física del evento. */
-    private String ubicacion;
-
-    /** Latitud de la ubicación del evento. */
-    private Double latitud;
-
-    /** Longitud de la ubicación del evento. */
-    private Double longitud;
-
     /** Aforo máximo del evento. */
     private Integer aforo;
 
@@ -80,6 +75,16 @@ public class Evento {
 
     /** Indica si el evento es privado. */
     private Boolean privado;
+
+    /** Creador del evento. */
+    @ManyToOne
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario creador;
+
+    /** Ubicación del evento. */
+    @ManyToOne
+    @JoinColumn(name = "ubicacion_id")
+    private Ubicacion ubicacion;
 
     /** Inicializa valores antes de persistir la entidad. */
     @PrePersist
@@ -120,9 +125,6 @@ public class Evento {
             final String descripcionParam,
             final LocalDateTime fechaHoraParam,
             final LocalDateTime fechaFinParam,
-            final String ubicacionParam,
-            final Double latitudParam,
-            final Double longitudParam,
             final Integer aforoParam,
             final String queLlevarParam,
             final Boolean esVirtualParam,
@@ -131,9 +133,6 @@ public class Evento {
         this.descripcion = descripcionParam;
         this.fechaHora = fechaHoraParam;
         this.fechaFin = fechaFinParam;
-        this.ubicacion = ubicacionParam;
-        this.latitud = latitudParam;
-        this.longitud = longitudParam;
         this.aforo = aforoParam;
         this.queLlevar = queLlevarParam;
         this.esVirtual = esVirtualParam;
@@ -162,9 +161,6 @@ public class Evento {
             final String descripcionParam,
             final LocalDateTime fechaHoraParam,
             final LocalDateTime fechaFinParam,
-            final String ubicacionParam,
-            final Double latitudParam,
-            final Double longitudParam,
             final Integer aforoParam,
             final String queLlevarParam,
             final Boolean esVirtualParam,
@@ -173,9 +169,6 @@ public class Evento {
         this.descripcion = descripcionParam;
         this.fechaHora = fechaHoraParam;
         this.fechaFin = fechaFinParam;
-        this.ubicacion = ubicacionParam;
-        this.latitud = latitudParam;
-        this.longitud = longitudParam;
         this.aforo = aforoParam;
         this.queLlevar = queLlevarParam;
         this.esVirtual = esVirtualParam;
@@ -244,9 +237,6 @@ public class Evento {
                 .descripcion(this.descripcion)
                 .fechaHora(this.fechaHora)
                 .fechaFin(this.fechaFin)
-                .ubicacion(this.ubicacion)
-                .latitud(this.latitud)
-                .longitud(this.longitud)
                 .aforo(this.aforo)
                 .asistentesConfirmados(this.asistentesConfirmados)
                 .queLlevar(this.queLlevar)
@@ -256,9 +246,24 @@ public class Evento {
                 .cancelado(this.cancelado)
                 .motivoCancelacion(this.motivoCancelacion)
                 // .comunidad(this.comunidad)
-                // .creador(this.creador)
+                .creador(
+                        UserPublicResponse.builder()
+                                .id(this.creador.getId())
+                                .nombre(this.creador.getNombre())
+                                .foto(this.creador.getFoto())
+                                .bio(this.creador.getBio())
+                                .intereses(this.creador.getIntereses())
+                                .esTutor(this.creador.getEsTutor())
+                                .build())
                 // .miAsistencia()
                 .createdAt(this.createdAt)
+                .ubicacion(
+                        UbicacionResponse.builder()
+                                .id(this.ubicacion.getId())
+                                .nombre(this.ubicacion.getNombre())
+                                .latitud(this.ubicacion.getLatitud())
+                                .longitud(this.ubicacion.getLongitud())
+                                .build())
                 .build();
     }
 }
