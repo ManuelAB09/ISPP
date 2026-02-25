@@ -3,6 +3,7 @@ package es.us.meerkat.backend.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,13 +14,14 @@ import org.springframework.web.bind.annotation.RestController;
 import es.us.meerkat.backend.dto.TutorProfileRequest;
 import es.us.meerkat.backend.dto.TutorProfileResponse;
 import es.us.meerkat.backend.entity.Tutor;
+import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.TutorService;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import lombok.RequiredArgsConstructor;
 
 /** Controlador para manejar las operaciones relacionadas con los tutores. */
 @RestController
-@RequestMapping("/api/tutors")
+@RequestMapping("/api/v1/tutors")
 @RequiredArgsConstructor
 public final class TutorController {
 
@@ -27,31 +29,45 @@ public final class TutorController {
     private final TutorService tutorService;
 
     /**
+     * Lista todos los tutores verificados.
+     *
+     * @return Lista de tutores verificados.
+     */
+    @GetMapping()
+    public List<Tutor> listarTutoresVerificados() {
+        return tutorService.obtenerTutoresVerificados();
+    }
+
+    /**
      * Crea un perfil de tutor para un usuario dado.
      *
-     * @param usuarioId Identificador del usuario.
+     * @param usuario Usuario autenticado.
      * @param request Datos para crear el perfil de tutor.
      * @return Perfil de tutor creado.
      */
-    @PostMapping("/{usuarioId}/perfil")
+    @PostMapping()
     public ResponseEntity<TutorProfileResponse> crearPerfil(
-            @PathVariable final Long usuarioId, @RequestBody final TutorProfileRequest request) {
+            @AuthenticationPrincipal final Usuario usuario,
+            @RequestBody final TutorProfileRequest request) {
 
-        return ResponseEntity.ok(tutorService.crearPerfil(usuarioId, request));
+        return ResponseEntity.ok(tutorService.crearPerfil(usuario.getId(), request));
     }
 
     /**
      * Edita el perfil de un tutor existente.
      *
-     * @param usuarioId Identificador del usuario.
+     * @param usuario Usuario autenticado.
+     * @param tutorId tutor al que editar.
      * @param request Datos actualizados del perfil.
      * @return Perfil de tutor actualizado.
      */
-    @PutMapping("/{usuarioId}/perfil")
+    @PutMapping("/{tutorId}")
     public ResponseEntity<TutorProfileResponse> editarPerfil(
-            @PathVariable final Long usuarioId, @RequestBody final TutorProfileRequest request) {
+            @AuthenticationPrincipal final Usuario usuario,
+            @PathVariable final Long tutorId,
+            @RequestBody final TutorProfileRequest request) {
 
-        return ResponseEntity.ok(tutorService.editarPerfil(usuarioId, request));
+        return ResponseEntity.ok(tutorService.editarPerfil(usuario.getId(), tutorId, request));
     }
 
     /**
@@ -67,13 +83,30 @@ public final class TutorController {
     }
 
     /**
-     * Lista todos los tutores verificados.
+     * Obtiene los perfiles de tutor del usuario autenticado.
      *
-     * @return Lista de tutores verificados.
+     * @param usuario Usuario autenticado.
+     * @return Lista de perfiles de tutor.
      */
-    @GetMapping("/verificados")
-    public List<Tutor> listarTutoresVerificados() {
-        return tutorService.obtenerTutoresVerificados();
+    @GetMapping("/me")
+    public ResponseEntity<List<TutorProfileResponse>> obtenerMisPerfiles(
+            @AuthenticationPrincipal final Usuario usuario) {
+
+        return ResponseEntity.ok(tutorService.obtenerPerfilesPorUsuario(usuario.getId()));
+    }
+
+    /**
+     * Obtiene un perfil de tutor específico del usuario autenticado.
+     *
+     * @param usuario Usuario autenticado.
+     * @param tutorId ID del tutor.
+     * @return Perfil de tutor.
+     */
+    @GetMapping("/me/{tutorId}")
+    public ResponseEntity<TutorProfileResponse> obtenerMiPerfil(
+            @AuthenticationPrincipal final Usuario usuario, @PathVariable final Long tutorId) {
+
+        return ResponseEntity.ok(tutorService.obtenerPerfilDelUsuario(usuario.getId(), tutorId));
     }
 
     /**
@@ -82,9 +115,12 @@ public final class TutorController {
      * @param tutorId Identificador del tutor.
      * @return Tutor que solicitó la verificación.
      */
-    @PostMapping("/{tutorId}/solicitar-verificacion")
-    public Tutor solicitarVerificacion(@PathVariable final Long tutorId) {
-        return tutorService.solicitarVerificacion(tutorId);
+    @PostMapping("/me/{tutorId}/verification")
+    public ResponseEntity<Void> solicitarVerificacion(
+            @AuthenticationPrincipal final Usuario usuario, @PathVariable final Long tutorId) {
+
+        tutorService.solicitarVerificacion(usuario.getId(), tutorId);
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -93,8 +129,10 @@ public final class TutorController {
      * @param tutorId Identificador del tutor.
      * @return Estado de verificación del tutor.
      */
-    @GetMapping("/{tutorId}/estado-verificacion")
-    public String estadoVerificacion(@PathVariable final Long tutorId) {
-        return tutorService.consultarEstadoVerificacion(tutorId);
+    @GetMapping("/me/{tutorId}/verification-status")
+    public ResponseEntity<String> obtenerEstadoVerificacion(
+            @AuthenticationPrincipal final Usuario usuario, @PathVariable final Long tutorId) {
+
+        return ResponseEntity.ok(tutorService.obtenerEstadoVerificacion(usuario.getId(), tutorId));
     }
 }

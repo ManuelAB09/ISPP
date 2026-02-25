@@ -29,4 +29,21 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
      * @return Lista de tutores verificados.
      */
     List<Tutor> findByVerificadoTrue();
+
+    /**
+     * Busca un tutor asociado a un usuario específico.
+     *
+     * @param tutorId id del tutor en el que esta.
+     * @param usuarioId id del user logueado.
+     * @return Optional que contiene el tutor si existe.
+     */
+    Optional<Tutor> findByIdAndUsId(Long tutorId, Long usuarioId);
+
+    /**
+     * Busca un todos los tutores asociado a un usuario específico.
+     *
+     * @param usuarioId id del user logueado.
+     * @return Optional que contiene el tutor si existe.
+     */
+    List<Tutor> findAllByUsId(Long usuarioId);
 }

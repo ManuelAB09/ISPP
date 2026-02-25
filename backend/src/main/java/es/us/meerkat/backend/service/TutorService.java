@@ -1,5 +1,6 @@
 package es.us.meerkat.backend.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -8,8 +9,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.dto.TutorProfileRequest;
 import es.us.meerkat.backend.dto.TutorProfileResponse;
+import es.us.meerkat.backend.entity.EstadoTransaccion;
+import es.us.meerkat.backend.entity.TipoTransaccion;
+import es.us.meerkat.backend.entity.TransaccionPago;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.TransaccionPagoRepository;
 import es.us.meerkat.backend.repository.TutorRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +33,8 @@ public class TutorService {
 
     /** Repositorio para acceder a la información de usuarios. */
     private final UsuarioRepository usuarioRepository;
+
+    private final TransaccionPagoRepository transaccionPagoRepository;
 
     // ===============================
     // CREAR PERFIL PROFESOR
@@ -85,7 +92,9 @@ public class TutorService {
      */
     @Transactional
     public TutorProfileResponse editarPerfil(
-            final Long usuarioIdParam, final TutorProfileRequest requestParam) {
+            final Long usuarioIdParam,
+            final Long tutorIdParam,
+            final TutorProfileRequest requestParam) {
 
         final Usuario usuario =
                 usuarioRepository
@@ -94,8 +103,13 @@ public class TutorService {
 
         final Tutor tutor =
                 tutorRepository
-                        .findByUs(usuario)
-                        .orElseThrow(() -> new RuntimeException("Perfil no hallado"));
+                        .findByIdAndUsId(tutorIdParam, usuarioIdParam)
+                        .orElseThrow(
+                                () -> new RuntimeException("Tutor no encontrado o sin permisos"));
+        // 🔐 Verificación de seguridad MUY IMPORTANTE
+        if (!tutor.getUs().getId().equals(usuario.getId())) {
+            throw new RuntimeException("No tienes permiso para editar este tutor");
+        }
 
         tutor.setEspecialidades(requestParam.getEspecialidades());
         tutor.setTarifaHora(requestParam.getTarifaHora());
@@ -123,6 +137,36 @@ public class TutorService {
                 tutorRepository
                         .findById(tutorIdParam)
                         .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
+
+        return mapToResponse(tutor);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TutorProfileResponse> obtenerPerfilesPorUsuario(final Long usuarioIdParam) {
+
+        final Usuario usuario =
+                usuarioRepository
+                        .findById(usuarioIdParam)
+                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        final List<Tutor> tutores = tutorRepository.findAllByUsId(usuario.getId());
+
+        if (tutores.isEmpty()) {
+            throw new RuntimeException("No tienes perfiles de tutor creados");
+        }
+
+        return tutores.stream().map(this::mapToResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public TutorProfileResponse obtenerPerfilDelUsuario(
+            final Long usuarioIdParam, final Long tutorIdParam) {
+
+        final Tutor tutor =
+                tutorRepository
+                        .findByIdAndUsId(tutorIdParam, usuarioIdParam)
+                        .orElseThrow(
+                                () -> new RuntimeException("Tutor no encontrado o sin permisos"));
 
         return mapToResponse(tutor);
     }
@@ -166,14 +210,39 @@ public class TutorService {
      * @return Tutor actualizado con estado de verificación pendiente.
      */
     @Transactional
-    public Tutor solicitarVerificacion(final Long tutorIdParam) {
+    public void solicitarVerificacion(final Long usuarioIdParam, final Long tutorIdParam) {
+
         final Tutor tutor =
                 tutorRepository
-                        .findById(tutorIdParam)
-                        .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
+                        .findByIdAndUsId(tutorIdParam, usuarioIdParam)
+                        .orElseThrow(
+                                () -> new RuntimeException("Tutor no encontrado o sin permisos"));
 
-        tutor.solicitarVerificacion();
-        return tutorRepository.save(tutor);
+        if (Boolean.TRUE.equals(tutor.getVerificado())) {
+            throw new RuntimeException("El tutor ya está verificado");
+        }
+
+        boolean existePendiente =
+                transaccionPagoRepository.existsByTutorIdAndTipoAndEstado(
+                        tutorIdParam,
+                        TipoTransaccion.PAGO_VERIFICACION,
+                        EstadoTransaccion.PENDIENTE);
+
+        if (existePendiente) {
+            throw new RuntimeException("Ya existe una solicitud pendiente");
+        }
+
+        TransaccionPago transaccion =
+                TransaccionPago.builder()
+                        .tipo(TipoTransaccion.PAGO_VERIFICACION)
+                        .monto(new BigDecimal("19.99"))
+                        .moneda("EUR")
+                        .estado(EstadoTransaccion.PENDIENTE)
+                        .usuario(tutor.getUs())
+                        .tutor(tutor)
+                        .build();
+
+        transaccionPagoRepository.save(transaccion);
     }
 
     /**
@@ -183,16 +252,22 @@ public class TutorService {
      * @return Estado de verificación: "VERIFICADO" o "PENDIENTE_REVISION".
      */
     @Transactional(readOnly = true)
-    public String consultarEstadoVerificacion(final Long tutorIdParam) {
+    public String obtenerEstadoVerificacion(final Long usuarioIdParam, final Long tutorIdParam) {
+
         final Tutor tutor =
                 tutorRepository
-                        .findById(tutorIdParam)
-                        .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
+                        .findByIdAndUsId(tutorIdParam, usuarioIdParam)
+                        .orElseThrow(
+                                () -> new RuntimeException("Tutor no encontrado o sin permisos"));
 
         if (Boolean.TRUE.equals(tutor.getVerificado())) {
             return "VERIFICADO";
         }
 
-        return "PENDIENTE_REVISION";
+        return transaccionPagoRepository
+                .findTopByTutorIdAndTipoOrderByIniciadoAtDesc(
+                        tutorIdParam, TipoTransaccion.PAGO_VERIFICACION)
+                .map(tx -> tx.getEstado().name())
+                .orElse("SIN_SOLICITUD");
     }
 }

@@ -5,8 +5,8 @@ import lombok.Data;
 /**
  * DTO para la creación o edición de una ubicación.
  *
- * Contiene la información básica necesaria para registrar
- * un punto geográfico asociado a un evento.
+ * <p>Contiene la información básica necesaria para registrar un punto geográfico asociado a un
+ * evento.
  */
 @Data
 public class UbicacionRequest {
@@ -19,5 +19,4 @@ public class UbicacionRequest {
 
     /** Longitud geográfica. */
     private Double longitud;
-
 }
