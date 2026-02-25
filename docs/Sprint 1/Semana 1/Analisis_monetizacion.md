@@ -166,29 +166,57 @@ Actualmente, el equipo se encuentra al inicio del primer Sprint, tras haber comp
 
 En total llevamos un gasto de 10.328 de los 18.035€ presupuestados para el primer Sprint, Lo que nos mantiene muy por debajo del presupuesto.
 
-
-
 ## 5. Rentabilidad
-*"cuánto dinero necesitamos ganar para superar el presupuesto y ser rentables".*
+Para asegurar la viabilidad financiera de MeerKatters, es necesario calcular cuántos usuarios de pago se necesitan tanto para mantener la operatividad diaria de la plataforma como para amortizar la inversión inicial de desarrollo.
 
-*Cálculo del Punto de Equilibrio Operativo (Mensual): * Cuánto necesitáis facturar al mes solo para mantener la app viva (cubrir los ~23.50€/mes de Azure + pasarelas de pago + mantenimiento).*
+### 5.1. Punto de Equilibrio Operativo (Mensual)
+El punto de equilibrio operativo indica el nivel de ingresos mínimos necesarios para mantener la aplicación "viva" mes a mes, sin contar el pago de la deuda de desarrollo.
 
-*Ejemplo práctico que le gustará al profesor: "Si cobramos una suscripción de 5€ al mes a los profesores, necesitamos 5 profesores activos al mes para pagar los servidores".*
+Nuestro principal coste fijo recurrente es la infraestructura cloud en Microsoft Azure, estimada en 23,50 € mensuales. Teniendo en cuenta nuestra estrategia de precios, alcanzar este punto es altamente factible incluso en la fase más temprana de lanzamiento. Para cubrir exclusivamente estos gastos de servidor, necesitaríamos lograr uno de los siguientes escenarios básicos:
 
-*Cálculo de Recuperación de la Inversión (ROI): * Teniendo en cuenta el Presupuesto Total (4 Sprints) del apartado anterior, ¿cuántos meses tardaréis en recuperar todo el dinero invertido en desarrollarlo?*
+- Escenario A (Solo Profesores): Convertir a 4 profesores al Plan Premium (4 usuarios × 5,99 € = 23,96 €).
+- Escenario B (Solo Alumnos): Convertir a 8 alumnos al Plan Premium (8 usuarios × 2,99 € = 23,92 €).
+- Escenario C (Basado en usuarios piloto): Actualmente contamos con una base validada de 54 usuarios piloto (29 alumnos y 25 profesores). Si logramos una tasa de conversión inicial muy conservadora del 10% sobre esta lista (apenas 3 alumnos y 2 profesores pagando la suscripción), generaríamos 20,95 € mensuales, cubriendo de manera casi inmediata los costes de mantenimiento base.
 
-*Ejemplo: "Si el proyecto entero cuesta 3.000€ desarrollarlo, y nuestro beneficio mensual estimado es de 500€, tardaremos 6 meses en ser rentables desde el lanzamiento".*
+### 5.2. Cálculo de Recuperación de la Inversión (ROI) basado en la Fase Piloto
+Más allá del mantenimiento mensual, el proyecto tiene un presupuesto total estimado de 72.142,25 €, que incluye todo el valor devengado por el desarrollo, licencias y amortización de equipos. Para proyectar la recuperación de esta inversión, vamos a basarnos estrictamente en nuestra tracción actual: los 54 usuarios piloto confirmados (29 alumnos y 25 profesores).
 
-## 6. Escenarios financieros
-*Escenario Realista basado en Pilotos: * Usando tu documento "Lista de Usuarios Pilotos.md", donde tienes a profesores (ej. Paloma, Emma, Carlos) y alumnos.*
+Estimamos una tasa de conversión conservadora del 30% hacia nuestros planes Premium. El 70% restante se mantendrá en los planes básicos gratuitos. Además, para calcular los ingresos variables, establecemos el supuesto de que un profesor activo factura una media de 50 € mensuales en clases a través de nuestra pasarela.
 
-*"Si de nuestra lista de pilotos conseguimos que el 30% pague la cuota mensual desde el primer mes, ingresaríamos X€. Esto significa que cubriríamos los costes de Azure y amortizaríamos un Y% del presupuesto de desarrollo".*
+Bajo este escenario, el cálculo de ingresos mensuales sería el siguiente:
 
-## 7. Plan de Implementación de Pagos
+---
 
-*Como es un proyecto de desarrollo, el análisis de monetización debe aterrizarse a nivel técnico y legal.*
-    *-  Pasarela de pago elegida (Stripe, PayPal, etc.) y sus comisiones.*
-    *- Gestión de pagos a terceros (cómo se le pagará a los profesores).*
-    *- Fases de despliegue de la monetización (ej. Sprint X: Pagos por clase; Sprint Y: Suscripciones).*
+#### Ingresos por Suscripciones (Fijos):
+Alumnos Premium: 30% de 29 = ~9 alumnos × 2,99 € = 26,91 €
+
+Profesores Premium: 30% de 25 = ~7 profesores × 5,99 € = 41,93 €
+
+Subtotal Suscripciones: **68,84 €/mes**
+
+---
+
+#### Ingresos por Comisiones (Variables):
+Profesores Premium (10% comisión): 7 profesores × 50 € de facturación media × 10% = 35,00 €
+
+Profesores Básicos (15% comisión): El 70% restante (18 profesores) × 50 € de facturación media × 15% = 135,00 €
+
+Subtotal Comisiones: **170,00 €/mes**
+
+---
+
+#### Análisis del Tiempo de Recuperación:
+Sumando ambas líneas de negocio, nuestros usuarios piloto generarían unos ingresos totales de 238,84 € al mes. Si a esto le restamos nuestro coste fijo de infraestructura en Azure (23,50 € mensuales), obtenemos un beneficio neto de 215,34 € al mes.
+
+Si dividimos el presupuesto total de desarrollo (72.142,25 €) entre este beneficio neto (215,34 €), el tiempo de recuperación de la inversión con solamente los usuarios piloto actuales sería de aproximadamente **335 meses**.
+
+---
+
+#### Conclusión Estratégica:
+Este análisis permite extraer dos ideas clave sobre el modelo de negocio de MeerKatters.
+
+En primer lugar, el peso real de los ingresos no recae en las suscripciones, sino en las comisiones generadas por el volumen de transacciones de los profesores. Esto confirma que la decisión de ofrecer un acceso básico sin coste es coherente con la estrategia económica del proyecto, ya que el verdadero potencial de ingresos se encuentra en la actividad dentro de la plataforma y no en la barrera de entrada.
+
+En segundo lugar, se evidencia la necesidad de escalar. Aunque la base actual de usuarios piloto permite cubrir con holgura los costes operativos, el volumen todavía es insuficiente para amortizar en un plazo razonable la inversión en desarrollo. Para situar el retorno de la inversión en un estándar habitual dentro de la industria del software (por ejemplo, en torno a los 24 meses), sería necesario aumentar mucho la base inicial de usuarios.
 
  
