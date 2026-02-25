@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 import './App.css';
 import Comunidades from './screens/comunidades/Comunidades';
 import Home from './screens/home/Home';
+import CreateEvent from './screens/event/CreateEvent';
 import Register from './screens/auth/Register';
 import Login from './screens/auth/Login';
 
@@ -21,7 +22,8 @@ function App() {
   if (true) { // TODO: Check if user is logging
     ownerRoutes = (
       <>
-        
+        <Route path="/create-event/new" element={<CreateEvent />} />
+        <Route path="/create-event/:id" element={<CreateEvent />} />
       </>
     )
   }
