@@ -1,0 +1,312 @@
+/* ═══════════════════════════════════════════════════════════════
+   MOCK PASARELA DE PAGO (VerificacionModal)
+   ═══════════════════════════════════════════════════════════════ */
+.tm-pago-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  padding: 0.5rem 0.2rem 0.2rem 0.2rem;
+}
+.tm-pago-form__titulo {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #2D3250;
+  margin-bottom: 0.5rem;
+}
+.tm-pago-form__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.tm-pago-form__row--split {
+  flex-direction: row;
+  gap: 1.2rem;
+}
+.tm-pago-form__row--split > div {
+  flex: 1;
+}
+.tm-pago-form label {
+  font-size: 0.97rem;
+  color: #676F9D;
+  font-weight: 500;
+}
+.tm-pago-form input {
+  padding: 0.55em 0.9em;
+  border: 1.5px solid #ebe9f4;
+  border-radius: 8px;
+  font-size: 1.01rem;
+  color: #2D3250;
+  background: #fafaff;
+  outline: none;
+  transition: border 0.15s;
+}
+.tm-pago-form input:focus {
+  border-color: #a18aff;
+}
+.tm-pago-form__error {
+  color: #e74c3c;
+  font-size: 0.98rem;
+  margin-top: -0.5rem;
+  margin-bottom: 0.2rem;
+}
+/* ===================================================================
+   TutorModals.css — Estilos compartidos para EditProfileModal
+   y VerificacionModal. Usa las mismas variables de color que
+   TeacherProfile.css.
+   =================================================================== */
+
+/* ── Variables (copiar las de TeacherProfile si no tienen scope) ── */
+.tm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(45, 50, 80, 0.45);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.tm-modal {
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 8px 40px rgba(45, 50, 80, 0.18);
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Cabecera del modal ─────────────────────────────────────── */
+.tm-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 1.75rem 1rem;
+  border-bottom: 1px solid #ebe9f4;
+}
+
+.tm-modal__title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #2D3250;
+  margin: 0;
+}
+
+.tm-modal__close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  color: #9CA3AF;
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
+  transition: background 0.15s, color 0.15s;
+}
+.tm-modal__close:hover {
+  background: #f3f2fa;
+  color: #2D3250;
+}
+
+/* ── Cuerpo del modal ────────────────────────────────────────── */
+.tm-modal__body {
+  padding: 1.5rem 1.75rem;
+  flex: 1;
+}
+
+/* ── Footer del modal ────────────────────────────────────────── */
+.tm-modal__footer {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding: 1rem 1.75rem 1.5rem;
+  border-top: 1px solid #ebe9f4;
+}
+.tm-modal__footer--right {
+  justify-content: flex-end;
+}
+
+/* ── Formulario ──────────────────────────────────────────────── */
+.tm-form {
+  padding: 1.25rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.tm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.tm-field__label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #676F9D;
+}
+
+.tm-field__hint {
+  font-weight: 400;
+  text-transform: none;
+  color: #9CA3AF;
+  letter-spacing: 0;
+}
+
+.tm-field__input,
+.tm-field__textarea {
+  border: 1.5px solid #C0C0C0;
+  border-radius: 10px;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.95rem;
+  color: #2D3250;
+  background: #fafafa;
+  transition: border-color 0.15s;
+  font-family: inherit;
+  resize: vertical;
+}
+.tm-field__input:focus,
+.tm-field__textarea:focus {
+  outline: none;
+  border-color: #676F9D;
+  background: #fff;
+}
+
+.tm-field__input--sm { max-width: 160px; }
+
+/* ── Botones ─────────────────────────────────────────────────── */
+.tm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: none;
+  border-radius: 10px;
+  padding: 0.65rem 1.4rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s, transform 0.1s;
+  font-family: inherit;
+}
+.tm-btn:active { transform: scale(0.97); }
+.tm-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.tm-btn--primary {
+  background: #676F9D;
+  color: #fff;
+}
+.tm-btn--primary:hover:not(:disabled) { background: #555c85; }
+
+.tm-btn--secondary {
+  background: #f0eff8;
+  color: #676F9D;
+}
+.tm-btn--secondary:hover:not(:disabled) { background: #e3e1f2; }
+
+.tm-btn--full { width: 100%; margin-top: 0.5rem; }
+
+/* ── Mensajes de error ───────────────────────────────────────── */
+.tm-error {
+  font-size: 0.85rem;
+  color: #e53e3e;
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  margin: 0;
+}
+
+/* ── Status loading ─────────────────────────────────────────── */
+.tm-status--loading {
+  text-align: center;
+  color: #9CA3AF;
+  padding: 2rem 0;
+  font-size: 0.95rem;
+}
+
+/* ── Panel de verificación ───────────────────────────────────── */
+.tm-verificacion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.tm-verificacion__icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+}
+.tm-verificacion__icon--ok   { background: #eafaf1; }
+.tm-verificacion__icon--pending { background: #fffbeb; }
+.tm-verificacion__icon--info { background: #e8e6f2; }
+
+.tm-verificacion__heading {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #2D3250;
+  margin: 0;
+}
+
+.tm-verificacion__text {
+  font-size: 0.95rem;
+  color: #555;
+  max-width: 380px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.tm-verificacion__beneficios {
+  text-align: left;
+  list-style: none;
+  padding: 0;
+  margin: 0.25rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-self: stretch;
+  background: #f8f7fd;
+  border-radius: 10px;
+  padding: 0.9rem 1.1rem;
+  font-size: 0.92rem;
+  color: #2D3250;
+  line-height: 1.5;
+}
+
+.tm-verificacion__precio {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0.25rem 0;
+}
+
+.tm-verificacion__precio-num {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #676F9D;
+}
+
+.tm-verificacion__precio-desc {
+  font-size: 0.82rem;
+  color: #9CA3AF;
+}
+
+.tm-verificacion__nota {
+  font-size: 0.78rem;
+  color: #9CA3AF;
+  max-width: 380px;
+  line-height: 1.4;
+  margin: 0;
+}
