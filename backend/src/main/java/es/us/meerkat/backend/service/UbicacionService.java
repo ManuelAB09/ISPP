@@ -14,7 +14,9 @@ import lombok.RequiredArgsConstructor;
 /**
  * Servicio para gestionar la lógica de negocio relacionada con las ubicaciones.
  *
- * <p>Permite crear, editar y consultar ubicaciones geográficas asociadas a eventos.
+ * <p>
+ * Permite crear, editar y consultar ubicaciones geográficas asociadas a
+ * eventos.
  */
 @Service
 @RequiredArgsConstructor
@@ -36,12 +38,12 @@ public class UbicacionService {
     @Transactional
     public UbicacionResponse crearUbicacion(final UbicacionRequest requestParam) {
 
-        final Ubicacion ubicacion =
-                Ubicacion.builder()
-                        .nombre(requestParam.getNombre())
-                        .latitud(requestParam.getLatitud())
-                        .longitud(requestParam.getLongitud())
-                        .build();
+        final Ubicacion ubicacion = Ubicacion.builder()
+                .nombre(requestParam.getNombre())
+                .direccion(requestParam.getDireccion())
+                .latitud(requestParam.getLatitud())
+                .longitud(requestParam.getLongitud())
+                .build();
 
         ubicacionRepository.save(ubicacion);
 
@@ -56,19 +58,19 @@ public class UbicacionService {
      * Edita una ubicación existente.
      *
      * @param ubicacionIdParam Identificador de la ubicación.
-     * @param requestParam Nuevos datos.
+     * @param requestParam     Nuevos datos.
      * @return DTO actualizado.
      */
     @Transactional
     public UbicacionResponse editarUbicacion(
             final Long ubicacionIdParam, final UbicacionRequest requestParam) {
 
-        final Ubicacion ubicacion =
-                ubicacionRepository
-                        .findById(ubicacionIdParam)
-                        .orElseThrow(() -> new RuntimeException("Ubicación no encontrada"));
+        final Ubicacion ubicacion = ubicacionRepository
+                .findById(ubicacionIdParam)
+                .orElseThrow(() -> new RuntimeException("Ubicación no encontrada"));
 
         ubicacion.setNombre(requestParam.getNombre());
+        ubicacion.setDireccion(requestParam.getDireccion());
         ubicacion.setLatitud(requestParam.getLatitud());
         ubicacion.setLongitud(requestParam.getLongitud());
 
@@ -90,10 +92,9 @@ public class UbicacionService {
     @Transactional(readOnly = true)
     public UbicacionResponse obtenerUbicacion(final Long ubicacionIdParam) {
 
-        final Ubicacion ubicacion =
-                ubicacionRepository
-                        .findById(ubicacionIdParam)
-                        .orElseThrow(() -> new RuntimeException("Ubicación no encontrada"));
+        final Ubicacion ubicacion = ubicacionRepository
+                .findById(ubicacionIdParam)
+                .orElseThrow(() -> new RuntimeException("Ubicación no encontrada"));
 
         return mapToResponse(ubicacion);
     }
@@ -135,6 +136,7 @@ public class UbicacionService {
         return UbicacionResponse.builder()
                 .id(ubicacionParam.getId())
                 .nombre(ubicacionParam.getNombre())
+                .direccion(ubicacionParam.getDireccion())
                 .latitud(ubicacionParam.getLatitud())
                 .longitud(ubicacionParam.getLongitud())
                 .build();
