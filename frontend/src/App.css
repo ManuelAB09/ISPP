@@ -1,38 +1,26 @@
-.App {
-  text-align: center;
+@font-face {
+  font-family: 'inter';
+  src: url('./fonts/Inter-VariableFont_opsz\,wght.ttf');
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+@font-face {
+  font-family: 'spacegrotesk';
+  src: url('./fonts/SpaceGrotesk-VariableFont_wght.ttf');
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+body {
+  background-color: #fff;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+*{
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
-
-.App-link {
-  color: #61dafb;
+a {
+    text-decoration: none;
+    color: white;
 }
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+li {
+    list-style: none;
 }
