@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
 import './App.css';
 import Comunidades from './screens/comunidades/Comunidades';
 import CrearComunidad from './screens/comunidades/CrearComunidad';
@@ -33,17 +34,19 @@ function App() {
   }
 
   return (
-    <div>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/comunidades/*" element={<Comunidades />} />
+    <AuthProvider>
+      <div>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/comunidades/*" element={<Comunidades />} />
 
-        <Route path="/crear-comunidad" element={<CrearComunidad />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        {ownerRoutes}
-      </Routes>
-    </div>
+          <Route path="/crear-comunidad" element={<CrearComunidad />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          {ownerRoutes}
+        </Routes>
+      </div>
+    </AuthProvider>
   );
 }
 

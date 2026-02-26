@@ -1,15 +1,22 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { authApi} from '../../api/auth.api';
+import { useAuth } from '../../contexts/AuthContext';
 import './Login.css';
 import studyShareLogo from '../../static/images/studyShare_logo.png';
 
 const Login = () => {
+  const navigate = useNavigate();
+  const { login, error: authError, clearError } = useAuth();
+  
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     rememberMe: false,
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -17,13 +24,34 @@ const Login = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
+    // Limpiar errores al escribir
+    if (error) setError('');
+    if (authError) clearError();
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Implement login logic with API
-    console.log('Login submitted:', formData);
-    // navigate('/dashboard');
+    setIsLoading(true);
+    setError('');
+
+    try{
+
+      const data = {
+        email: formData.email,
+        password: formData.password,
+      };
+
+      await authApi.login(data);
+      
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
+
+    } catch (err) {
+      setError(err.message || 'Error al iniciar sesión');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -136,8 +164,14 @@ const Login = () => {
               </label>
             </div>
 
-            <button type="submit" className="login-button">
-              Iniciar sesión
+            {error && (
+              <div className="login-error-message">
+                {error}
+              </div>
+            )}
+
+            <button type="submit" className="login-button" disabled={isLoading}>
+              {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
             </button>
           </form>
 

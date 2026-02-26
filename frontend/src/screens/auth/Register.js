@@ -1,6 +1,7 @@
 // filepath: c:\Users\juana\OneDrive\Escritorio\Juan Antonio\Universidad\cuarto año\ISPP\ISPP\frontend\src\screens\auth\Register.js
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import './Register.css';
 import studyShareLogo from '../../static/images/studyShare_logo.png';
 
@@ -14,6 +15,9 @@ const ACADEMIC_INTERESTS = [
 ];
 
 const Register = () => {
+  const navigate = useNavigate();
+  const { register, error: authError, clearError } = useAuth();
+  
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -23,6 +27,8 @@ const Register = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showMoreInterests, setShowMoreInterests] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -30,6 +36,9 @@ const Register = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
+    // Limpiar errores al escribir
+    if (error) setError('');
+    if (authError) clearError();
   };
 
   const toggleInterest = (interest) => {
@@ -43,9 +52,25 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Implement registration logic with API
-    console.log('Form submitted:', formData);
-    // navigate('/login');
+    
+    // Validación de contraseña
+    if (formData.password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    const result = await register(formData.email, formData.password, formData.fullName);
+    
+    if (result.success) {
+      navigate('/login');
+    } else {
+      setError(result.error || 'Error al registrarse');
+    }
+    
+    setIsLoading(false);
   };
 
   const handleGoogleRegister = () => {
@@ -201,12 +226,20 @@ const Register = () => {
               </label>
             </div>
 
-            <button type="submit" className="register-button">
-              Registrar cuenta
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12"/>
-                <polyline points="12 5 19 12 12 19"/>
-              </svg>
+            {error && (
+              <div className="register-error-message">
+                {error}
+              </div>
+            )}
+
+            <button type="submit" className="register-button" disabled={isLoading}>
+              {isLoading ? 'Registrando...' : 'Registrar cuenta'}
+              {!isLoading && (
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                  <polyline points="12 5 19 12 12 19"/>
+                </svg>
+              )}
             </button>
           </form>
 
