@@ -39,7 +39,7 @@ function App() {
   }
 
   return (
-    <div>
+    <AuthProvider>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/comunidades/*" element={<Comunidades />} />
@@ -49,7 +49,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         {ownerRoutes}
       </Routes>
-    </div>
+    </AuthProvider>
   );
 }
 

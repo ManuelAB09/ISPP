@@ -34,24 +34,15 @@ const Login = () => {
     setIsLoading(true);
     setError('');
 
-    try{
-
-      const data = {
-        email: formData.email,
-        password: formData.password,
-      };
-
-      await authApi.login(data);
-      
-      setTimeout(() => {
-        navigate('/');
-      }, 2000);
-
-    } catch (err) {
-      setError(err.message || 'Error al iniciar sesión');
-    } finally {
-      setIsLoading(false);
+    const result = await login(formData.email, formData.password);
+    
+    if (result.success) {
+      navigate('/');
+    } else {
+      setError(result.error || 'Error al iniciar sesión');
     }
+    
+    setIsLoading(false);
   };
 
   return (
