@@ -39,6 +39,7 @@ public class UbicacionService {
         final Ubicacion ubicacion =
                 Ubicacion.builder()
                         .nombre(requestParam.getNombre())
+                        .direccion(requestParam.getDireccion())
                         .latitud(requestParam.getLatitud())
                         .longitud(requestParam.getLongitud())
                         .build();
@@ -69,6 +70,7 @@ public class UbicacionService {
                         .orElseThrow(() -> new RuntimeException("Ubicación no encontrada"));
 
         ubicacion.setNombre(requestParam.getNombre());
+        ubicacion.setDireccion(requestParam.getDireccion());
         ubicacion.setLatitud(requestParam.getLatitud());
         ubicacion.setLongitud(requestParam.getLongitud());
 
@@ -135,6 +137,7 @@ public class UbicacionService {
         return UbicacionResponse.builder()
                 .id(ubicacionParam.getId())
                 .nombre(ubicacionParam.getNombre())
+                .direccion(ubicacionParam.getDireccion())
                 .latitud(ubicacionParam.getLatitud())
                 .longitud(ubicacionParam.getLongitud())
                 .build();
