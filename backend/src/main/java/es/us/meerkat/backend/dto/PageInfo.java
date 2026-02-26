@@ -1,5 +1,6 @@
 package es.us.meerkat.backend.dto;
 
+import org.springframework.data.domain.Page;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -33,4 +34,18 @@ public class PageInfo {
 
     /** Si es la última página. */
     private Boolean last;
+
+    /**
+     * Constructor que crea PageInfo a partir de un Page de Spring Data.
+     */
+    public <T> PageInfo(Page<T> page) {
+        this(
+            page.getNumber(),
+            page.getSize(),
+            page.getTotalElements(),
+            page.getTotalPages(),
+            page.isFirst(),
+            page.isLast()
+        );
+    }
 }

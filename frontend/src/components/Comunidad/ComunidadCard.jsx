@@ -4,7 +4,7 @@ import './ComunidadCard.css';
 export default function ComunidadCard({ comunidad }) {
     return (
         <div key={comunidad.id} className="comunidad-card">
-            <img src={comunidad.imagen || 'https://via.placeholder.com/150'} alt={comunidad.nombre} className="comunidad-image" />
+            <img src={comunidad.imagenUrl || comunidad.imagen || 'https://via.placeholder.com/300x200?text=Sin+imagen'} alt={comunidad.nombre} className="comunidad-image" />
             <div className="comunidad-info">
                 <div className='top-info'>
                     <h2>{comunidad.nombre}</h2>

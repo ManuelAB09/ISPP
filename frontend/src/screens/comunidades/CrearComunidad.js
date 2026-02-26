@@ -1,16 +1,21 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { communitiesApi } from "../../api/communities.api";
 import Header from "../../components/Header/Header";
 import "./CrearComunidad.css";
 
 export default function CrearComunidad() {
+    const navigate = useNavigate();
     const [nombre, setNombre] = useState("");
     const [descripcion, setDescripcion] = useState("");
     const [imagenPortada, setImagenPortada] = useState(null);
     const [imagenPreview, setImagenPreview] = useState(null);
     const [categoriaInput, setCategoriaInput] = useState("");
     const [categorias, setCategorias] = useState([]);
-    const [tipoComunidad, setTipoComunidad] = useState("publica");
-    const [capacidadMaxima, setCapacidadMaxima] = useState(30);
+    const [tipoComunidad, setTipoComunidad] = useState("COMUNIDAD_PUBLICA"); // Debe ser enum del backend
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [success, setSuccess] = useState(null);
 
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
@@ -35,35 +40,64 @@ export default function CrearComunidad() {
         setCategorias(categorias.filter(cat => cat !== categoriaAEliminar));
     };
 
-    const handleCapacidadChange = (e) => {
-        const value = parseInt(e.target.value);
-        if (value >= 1 && value <= 30) {
-            setCapacidadMaxima(value);
-        }
-    };
-
     const handleGuardarBorrador = () => {
         console.log("Guardando borrador...", {
             nombre,
             descripcion,
             imagenPortada,
             categorias,
-            tipoComunidad,
-            capacidadMaxima
+            tipoComunidad
         });
-        // Aquí iría la lógica para guardar borrador
+        // Aquí iría la lógica para guardar borrador en localStorage
+        alert("Funcionalidad de borrador próximamente disponible.");
     };
 
-    const handleCrearComunidad = () => {
-        console.log("Creando comunidad...", {
-            nombre,
-            descripcion,
-            imagenPortada,
-            categorias,
-            tipoComunidad,
-            capacidadMaxima
-        });
-        // Aquí iría la lógica para crear la comunidad
+    const handleCrearComunidad = async () => {
+        // Validación básica
+        if (!nombre.trim()) {
+            setError("El nombre de la comunidad es requerido.");
+            return;
+        }
+
+        if (nombre.length < 3) {
+            setError("El nombre debe tener al menos 3 caracteres.");
+            return;
+        }
+
+        if (nombre.length > 100) {
+            setError("El nombre no puede exceder 100 caracteres.");
+            return;
+        }
+
+        setLoading(true);
+        setError(null);
+        setSuccess(null);
+
+        try {
+            // Preparar datos para el API (sin categorías, se crean después)
+            const data = {
+                nombre: nombre.trim(),
+                descripcion: descripcion.trim(),
+                tipoGrupo: tipoComunidad,
+                imagenUrl: imagenPreview // URL en base64 o null
+            };
+
+            // Llamar API para crear comunidad
+            const response = await communitiesApi.create(data);
+            console.log("✅ Comunidad creada:", response);
+
+            setSuccess("¡Comunidad creada con éxito!");
+
+            // Navegar a la comunidad creada después de 2 segundos
+            setTimeout(() => {
+                navigate(`/comunidades/${response.id}`);
+            }, 2000);
+        } catch (err) {
+            console.error("❌ Error al crear comunidad:", err);
+            setError(err.response?.data?.message || "No se pudo crear la comunidad. Intenta de nuevo.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -159,43 +193,51 @@ export default function CrearComunidad() {
                             <label className="radio-label">
                                 <input
                                     type="radio"
-                                    value="publica"
-                                    checked={tipoComunidad === "publica"}
+                                    value="COMUNIDAD_PUBLICA"
+                                    checked={tipoComunidad === "COMUNIDAD_PUBLICA"}
                                     onChange={(e) => setTipoComunidad(e.target.value)}
                                 />
-                                <span>Pública</span>
+                                <span>Pública (acceso libre)</span>
                             </label>
                             <label className="radio-label">
                                 <input
                                     type="radio"
-                                    value="privada"
-                                    checked={tipoComunidad === "privada"}
+                                    value="GRUPO_PRIVADO"
+                                    checked={tipoComunidad === "GRUPO_PRIVADO"}
                                     onChange={(e) => setTipoComunidad(e.target.value)}
                                 />
-                                <span>Privada</span>
+                                <span>Privada (requiere solicitud)</span>
                             </label>
                         </div>
-                    </div>
-                    <div className="config-group">
-                        <label htmlFor="capacidad">Capacidad Máxima de Miembros</label>
-                        <input
-                            id="capacidad"
-                            type="number"
-                            value={capacidadMaxima}
-                            onChange={handleCapacidadChange}
-                            min="1"
-                            max="30"
-                            className="capacidad-input"
-                        />
-                        <span className="capacidad-info">Máximo: 30 miembros</span>
+                        <p style={{ fontSize: '12px', color: '#666', marginTop: '10px' }}>
+                            La capacidad máxima dependerá de tu plan de suscripción.
+                        </p>
                     </div>
                </div>
                <div className="buttons-container">
-                    <button onClick={handleGuardarBorrador} className="btn btn-secondary">
+                    {error && (
+                        <div style={{ width: '100%', padding: '10px', backgroundColor: '#f8d7da', color: '#721c24', borderRadius: '4px', marginBottom: '15px' }}>
+                            ❌ {error}
+                        </div>
+                    )}
+                    {success && (
+                        <div style={{ width: '100%', padding: '10px', backgroundColor: '#d4edda', color: '#155724', borderRadius: '4px', marginBottom: '15px' }}>
+                            ✅ {success}
+                        </div>
+                    )}
+                    <button 
+                        onClick={handleGuardarBorrador} 
+                        className="btn btn-secondary"
+                        disabled={loading}
+                    >
                         Guardar Borrador
                     </button>
-                    <button onClick={handleCrearComunidad} className="btn btn-primary">
-                        Crear Comunidad
+                    <button 
+                        onClick={handleCrearComunidad} 
+                        className="btn btn-primary"
+                        disabled={loading || !nombre.trim()}
+                    >
+                        {loading ? "Creando..." : "Crear Comunidad"}
                     </button>
                </div>
             </div>
