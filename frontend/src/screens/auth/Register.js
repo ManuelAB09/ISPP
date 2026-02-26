@@ -16,7 +16,7 @@ const ACADEMIC_INTERESTS = [
 
 const Register = () => {
   const navigate = useNavigate();
-  const { register, error: authError, clearError } = useAuth();
+  const { register, error: authError, clearError, isAuthenticated, loading } = useAuth();
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -29,6 +29,25 @@ const Register = () => {
   const [showMoreInterests, setShowMoreInterests] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Si ya está autenticado, mostrar mensaje
+  if (!loading && isAuthenticated) {
+    return (
+      <div className="register-container">
+        <div className="register-already-logged">
+          <div className="register-already-logged__icon">✓</div>
+          <h1 className="register-already-logged__title">Ya has iniciado sesión</h1>
+          <p className="register-already-logged__text">
+            Ya tienes una sesión activa en la aplicación.
+          </p>
+          <div className="register-already-logged__buttons">
+            <Link to="/" className="btn-home">Ir al inicio</Link>
+            <Link to="/perfil" className="btn-profile">Ver mi perfil</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -87,10 +106,10 @@ const Register = () => {
     <div className="register-container">
       {/* Left Panel - Branding */}
       <div className="register-left-panel">
-        <div className="register-logo">
+        <Link to="/" className="register-logo">
           <img src={studyShareLogo} alt="MeerKatters Logo" className="register-logo-img" />
           <span className="logo-text">Meerkatters</span>
-        </div>
+        </Link>
 
         <div className="register-hero">
           <h1>Comienza tu viaje hacia la maestría</h1>

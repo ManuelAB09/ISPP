@@ -12,6 +12,7 @@ import PlansScreen from './screens/planes/PlansScreen';
 import TeacherProfile from './screens/teacherProfile/TeacherProfile';
 import VerifiedTeachers from './screens/verifiedTeachers/VerifiedTeachers';
 import CrearUbicacionScreen from './screens/ubicaciones/CrearUbicacionScreen';
+import MyProfile from './screens/myProfile/MyProfile';
 
 function App() {
   let ownerRoutes = <></>
@@ -47,6 +48,7 @@ function App() {
         <Route path="/crear-ubicacion" element={<CrearUbicacionScreen />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/perfil" element={<MyProfile />} />
         {ownerRoutes}
       </Routes>
     </AuthProvider>

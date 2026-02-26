@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { authApi} from '../../api/auth.api';
 import { useAuth } from '../../contexts/AuthContext';
 import './Login.css';
 import studyShareLogo from '../../static/images/studyShare_logo.png';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, error: authError, clearError } = useAuth();
+  const { login, error: authError, clearError, isAuthenticated, loading } = useAuth();
   
   const [formData, setFormData] = useState({
     email: '',
@@ -17,6 +16,25 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Si ya está autenticado, mostrar mensaje
+  if (!loading && isAuthenticated) {
+    return (
+      <div className="login-container">
+        <div className="login-already-logged">
+          <div className="login-already-logged__icon">✓</div>
+          <h1 className="login-already-logged__title">Ya has iniciado sesión</h1>
+          <p className="login-already-logged__text">
+            Ya tienes una sesión activa en la aplicación.
+          </p>
+          <div className="login-already-logged__buttons">
+            <Link to="/" className="btn-home">Ir al inicio</Link>
+            <Link to="/perfil" className="btn-profile">Ver mi perfil</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -50,9 +68,9 @@ const Login = () => {
       {/* Left Panel - Branding */}
       <div className="login-left-panel">
         <div className="login-brand-content">
-          <div className="login-logo-wrapper">
+          <Link to="/" className="login-logo-wrapper">
             <img src={studyShareLogo} alt="MeerKatters Logo" className="login-logo-img" />
-          </div>
+          </Link>
 
           <h1 className="login-brand-title">MeerKatters</h1>
           <p className="login-brand-description">
