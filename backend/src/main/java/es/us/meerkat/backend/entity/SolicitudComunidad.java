@@ -1,15 +1,16 @@
 package es.us.meerkat.backend.entity;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.EnumType;
 import jakarta.validation.constraints.Size;
-import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,11 +28,9 @@ public class SolicitudComunidad {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    private Usuario solicitante;
+    @ManyToOne private Usuario solicitante;
 
-    @ManyToOne
-    private Comunidad comunidad;
+    @ManyToOne private Comunidad comunidad;
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
@@ -40,11 +39,9 @@ public class SolicitudComunidad {
     @Size(max = 500, message = "El mensaje no puede exceder 500 caracteres")
     private String mensaje;
 
-    @ManyToOne
-    private Usuario respondidaPor;
+    @ManyToOne private Usuario respondidaPor;
 
-    @Builder.Default
-    private LocalDateTime fechaSolicitud = LocalDateTime.now();
+    @Builder.Default private LocalDateTime fechaSolicitud = LocalDateTime.now();
 
     private LocalDateTime fechaRespuesta;
 }

@@ -1,19 +1,20 @@
 package es.us.meerkat.backend.entity;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.EnumType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import java.time.LocalDateTime;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -51,17 +52,13 @@ public class Comunidad {
 
     private String imagenUrl;
 
-    @Builder.Default
-    private Integer maxMiembros = 50;
+    @Builder.Default private Integer maxMiembros = 50;
 
-    @ManyToOne
-    private Usuario creador;
+    @ManyToOne private Usuario creador;
 
-    @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Builder.Default private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Builder.Default
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    @Builder.Default private LocalDateTime updatedAt = LocalDateTime.now();
 
     @OneToMany(mappedBy = "comunidad", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MiembroComunidad> miembros;

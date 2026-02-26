@@ -1,5 +1,16 @@
 package es.us.meerkat.backend.controller;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
 import es.us.meerkat.backend.dto.*;
 import es.us.meerkat.backend.entity.Categoria;
 import es.us.meerkat.backend.entity.Comunidad;
@@ -20,21 +31,10 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
- * Controlador REST para la gestión de comunidades de estudio.
- * Implementa todos los endpoints relacionados con comunidades definidos en el OpenAPI.
- * Base URL: /api/v1/communities
+ * Controlador REST para la gestión de comunidades de estudio. Implementa todos los endpoints
+ * relacionados con comunidades definidos en el OpenAPI. Base URL: /api/v1/communities
  */
 @RestController
 @RequestMapping("/api/v1/communities")
@@ -52,69 +52,70 @@ public class CommunityController {
     // COMUNIDADES - LISTADO Y CRUD BÁSICO
     // =====================================================
 
-    /**
-     * Lista las comunidades públicas con filtros opcionales.
-     * GET /api/v1/communities
-     */
+    /** Lista las comunidades públicas con filtros opcionales. GET /api/v1/communities */
     @GetMapping
-    @Operation(summary = "Explorar comunidades", 
-               description = "Lista comunidades públicas con opciones de búsqueda y filtrado")
+    @Operation(
+            summary = "Explorar comunidades",
+            description = "Lista comunidades públicas con opciones de búsqueda y filtrado")
     @ApiResponse(responseCode = "200", description = "Lista de comunidades obtenida correctamente")
     public ResponseEntity<CommunityListResponse> listCommunities(
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        
+
         Pageable pageable = PageRequest.of(page, size);
         Page<Comunidad> comunidades = communityService.listPublicCommunities(search, pageable);
-        Page<CommunityDetailResponse> response = comunidades.map(c -> entityToDetailResponse(c, null));
+        Page<CommunityDetailResponse> response =
+                comunidades.map(c -> entityToDetailResponse(c, null));
         return ResponseEntity.ok(new CommunityListResponse(response));
     }
 
-    /**
-     * Crea una nueva comunidad.
-     * POST /api/v1/communities
-     */
+    /** Crea una nueva comunidad. POST /api/v1/communities */
     @PostMapping
-    @Operation(summary = "Crear comunidad",
-               description = "Crea una nueva comunidad. El creador se convierte automáticamente en administrador.",
-               security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "Crear comunidad",
+            description =
+                    "Crea una nueva comunidad. El creador se convierte automáticamente en"
+                            + " administrador.",
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Comunidad creada correctamente"),
-        @ApiResponse(responseCode = "400", description = "Datos inválidos o límite de comunidades gratuitas alcanzado"),
+        @ApiResponse(
+                responseCode = "400",
+                description = "Datos inválidos o límite de comunidades gratuitas alcanzado"),
         @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
     })
     public ResponseEntity<CommunityDetailResponse> createCommunity(
             @Valid @RequestBody CreateCommunityRequest request,
             @AuthenticationPrincipal Usuario usuario) {
-        
+
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
+
         try {
-            Comunidad comunidad = communityService.createCommunity(
-                    usuario.getId(),
-                    request.nombre(),
-                    request.descripcion(),
-                    request.tipoGrupo() != null ? 
-                        es.us.meerkat.backend.entity.TipoGrupo.valueOf(request.tipoGrupo()) : 
-                        es.us.meerkat.backend.entity.TipoGrupo.COMUNIDAD_PUBLICA,
-                    request.imagenUrl()
-            );
-            return ResponseEntity.status(HttpStatus.CREATED).body(entityToDetailResponse(comunidad, usuario.getId()));
+            Comunidad comunidad =
+                    communityService.createCommunity(
+                            usuario.getId(),
+                            request.nombre(),
+                            request.descripcion(),
+                            request.tipoGrupo() != null
+                                    ? es.us.meerkat.backend.entity.TipoGrupo.valueOf(
+                                            request.tipoGrupo())
+                                    : es.us.meerkat.backend.entity.TipoGrupo.COMUNIDAD_PUBLICA,
+                            request.imagenUrl());
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(entityToDetailResponse(comunidad, usuario.getId()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
     }
 
-    /**
-     * Obtiene los detalles de una comunidad.
-     * GET /api/v1/communities/{communityId}
-     */
+    /** Obtiene los detalles de una comunidad. GET /api/v1/communities/{communityId} */
     @GetMapping("/{communityId}")
-    @Operation(summary = "Obtener detalle de comunidad",
-               description = "Devuelve los detalles completos de una comunidad")
+    @Operation(
+            summary = "Obtener detalle de comunidad",
+            description = "Devuelve los detalles completos de una comunidad")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Comunidad encontrada"),
         @ApiResponse(responseCode = "404", description = "Comunidad no encontrada")
@@ -122,80 +123,82 @@ public class CommunityController {
     public ResponseEntity<CommunityDetailResponse> getCommunityById(
             @Parameter(description = "ID de la comunidad") @PathVariable Long communityId,
             @AuthenticationPrincipal Usuario usuario) {
-        
+
         Long userId = usuario != null ? usuario.getId() : null;
         Comunidad comunidad = communityService.getCommunityById(communityId, userId);
         return ResponseEntity.ok(entityToDetailResponse(comunidad, userId));
     }
 
-    /**
-     * Actualiza una comunidad.
-     * PUT /api/v1/communities/{communityId}
-     */
+    /** Actualiza una comunidad. PUT /api/v1/communities/{communityId} */
     @PutMapping("/{communityId}")
-    @Operation(summary = "Actualizar comunidad",
-               description = "Actualiza los datos de la comunidad (solo admin)",
-               security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "Actualizar comunidad",
+            description = "Actualiza los datos de la comunidad (solo admin)",
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Comunidad actualizada correctamente"),
-        @ApiResponse(responseCode = "403", description = "No tienes permisos para actualizar esta comunidad"),
+        @ApiResponse(
+                responseCode = "403",
+                description = "No tienes permisos para actualizar esta comunidad"),
         @ApiResponse(responseCode = "404", description = "Comunidad no encontrada")
     })
     public ResponseEntity<CommunityDetailResponse> updateCommunity(
             @PathVariable Long communityId,
             @Valid @RequestBody UpdateCommunityRequest request,
             @AuthenticationPrincipal Usuario usuario) {
-        
+
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
+
         if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        
-        Comunidad comunidad = communityService.updateCommunity(usuario.getId(), communityId, 
-                request.nombre(), request.descripcion(), request.imagenUrl());
+
+        Comunidad comunidad =
+                communityService.updateCommunity(
+                        usuario.getId(),
+                        communityId,
+                        request.nombre(),
+                        request.descripcion(),
+                        request.imagenUrl());
         return ResponseEntity.ok(entityToDetailResponse(comunidad, usuario.getId()));
     }
 
-    /**
-     * Elimina una comunidad.
-     * DELETE /api/v1/communities/{communityId}
-     */
+    /** Elimina una comunidad. DELETE /api/v1/communities/{communityId} */
     @DeleteMapping("/{communityId}")
-    @Operation(summary = "Eliminar comunidad",
-               description = "Elimina la comunidad y todo su contenido (solo admin)",
-               security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "Eliminar comunidad",
+            description = "Elimina la comunidad y todo su contenido (solo admin)",
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Comunidad eliminada correctamente"),
-        @ApiResponse(responseCode = "403", description = "No tienes permisos para eliminar esta comunidad"),
+        @ApiResponse(
+                responseCode = "403",
+                description = "No tienes permisos para eliminar esta comunidad"),
         @ApiResponse(responseCode = "404", description = "Comunidad no encontrada")
     })
     public ResponseEntity<Void> deleteCommunity(
-            @PathVariable Long communityId,
-            @AuthenticationPrincipal Usuario usuario) {
-        
+            @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
+
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
+
         if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        
+
         communityService.deleteCommunity(usuario.getId(), communityId);
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Actualiza la privacidad de una comunidad.
-     * PUT /api/v1/communities/{communityId}/privacy
-     */
+    /** Actualiza la privacidad de una comunidad. PUT /api/v1/communities/{communityId}/privacy */
     @PutMapping("/{communityId}/privacy")
-    @Operation(summary = "Configurar privacidad",
-               description = "Cambia si la comunidad es pública o privada (solo admin)",
-               security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "Configurar privacidad",
+            description = "Cambia si la comunidad es pública o privada (solo admin)",
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Privacidad actualizada correctamente"),
         @ApiResponse(responseCode = "403", description = "No tienes permisos"),
@@ -205,28 +208,29 @@ public class CommunityController {
             @PathVariable Long communityId,
             @Valid @RequestBody PrivacyRequest request,
             @AuthenticationPrincipal Usuario usuario) {
-        
+
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
+
         if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        
-        Comunidad comunidad = communityService.updatePrivacy(usuario.getId(), communityId,
-                es.us.meerkat.backend.entity.TipoGrupo.valueOf(request.tipoGrupo()));
+
+        Comunidad comunidad =
+                communityService.updatePrivacy(
+                        usuario.getId(),
+                        communityId,
+                        es.us.meerkat.backend.entity.TipoGrupo.valueOf(request.tipoGrupo()));
         return ResponseEntity.ok(entityToDetailResponse(comunidad, usuario.getId()));
     }
 
-    /**
-     * Mejora una comunidad a Premium.
-     * POST /api/v1/communities/{communityId}/upgrade
-     */
+    /** Mejora una comunidad a Premium. POST /api/v1/communities/{communityId}/upgrade */
     @PostMapping("/{communityId}/upgrade")
-    @Operation(summary = "Mejorar comunidad a Premium",
-               description = "Inicia el proceso de pago para convertir la comunidad a Premium",
-               security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "Mejorar comunidad a Premium",
+            description = "Inicia el proceso de pago para convertir la comunidad a Premium",
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Comunidad mejorada a Premium"),
         @ApiResponse(responseCode = "400", description = "La comunidad ya es Premium"),
@@ -236,15 +240,15 @@ public class CommunityController {
             @PathVariable Long communityId,
             @Valid @RequestBody UpgradeCommunityRequest request,
             @AuthenticationPrincipal Usuario usuario) {
-        
+
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
+
         if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        
+
         try {
             Comunidad comunidad = communityService.upgradeToPremium(usuario.getId(), communityId);
             return ResponseEntity.ok(entityToDetailResponse(comunidad, usuario.getId()));
@@ -253,106 +257,105 @@ public class CommunityController {
         }
     }
 
-    /**
-     * Contrata un tutor para la comunidad.
-     * POST /api/v1/communities/{communityId}/tutor
-     */
+    /** Contrata un tutor para la comunidad. POST /api/v1/communities/{communityId}/tutor */
     @PostMapping("/{communityId}/tutor")
-    @Operation(summary = "Contratar tutor",
-               description = "Inicia el proceso de pago para contratar un tutor (solo para comunidades privadas)",
-               security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "Contratar tutor",
+            description =
+                    "Inicia el proceso de pago para contratar un tutor (solo para comunidades"
+                            + " privadas)",
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Tutor contratado exitosamente"),
-        @ApiResponse(responseCode = "400", description = "No se puede contratar en comunidad pública"),
+        @ApiResponse(
+                responseCode = "400",
+                description = "No se puede contratar en comunidad pública"),
         @ApiResponse(responseCode = "403", description = "No tienes permisos")
     })
     public ResponseEntity<MessageResponse> hireTutor(
             @PathVariable Long communityId,
             @Valid @RequestBody HireTutorRequest request,
             @AuthenticationPrincipal Usuario usuario) {
-        
+
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
-        return ResponseEntity.ok(MessageResponse.builder()
-                .message("Funcionalidad de contratación de tutores en implementación")
-                .build());
+
+        return ResponseEntity.ok(
+                MessageResponse.builder()
+                        .message("Funcionalidad de contratación de tutores en implementación")
+                        .build());
     }
 
-    /**
-     * Desvincula un tutor de la comunidad.
-     * DELETE /api/v1/communities/{communityId}/tutor
-     */
+    /** Desvincula un tutor de la comunidad. DELETE /api/v1/communities/{communityId}/tutor */
     @DeleteMapping("/{communityId}/tutor")
-    @Operation(summary = "Desvincular tutor",
-               description = "Termina la contratación del tutor actual (solo admin)",
-               security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "Desvincular tutor",
+            description = "Termina la contratación del tutor actual (solo admin)",
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Tutor desvinculado"),
         @ApiResponse(responseCode = "403", description = "No tienes permisos"),
         @ApiResponse(responseCode = "404", description = "Tutor no encontrado")
     })
     public ResponseEntity<MessageResponse> removeTutor(
-            @PathVariable Long communityId,
-            @AuthenticationPrincipal Usuario usuario) {
-        
+            @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
+
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
-        return ResponseEntity.ok(MessageResponse.builder()
-                .message("Tutor desvinculado correctamente")
-                .build());
+
+        return ResponseEntity.ok(
+                MessageResponse.builder().message("Tutor desvinculado correctamente").build());
     }
 
     // =====================================================
     // MIEMBROS
     // =====================================================
 
-    /**
-     * Lista los miembros de una comunidad.
-     * GET /api/v1/communities/{communityId}/members
-     */
+    /** Lista los miembros de una comunidad. GET /api/v1/communities/{communityId}/members */
     @GetMapping("/{communityId}/members")
-    @Operation(summary = "Listar miembros",
-               description = "Devuelve la lista de miembros de la comunidad")
+    @Operation(
+            summary = "Listar miembros",
+            description = "Devuelve la lista de miembros de la comunidad")
     @ApiResponse(responseCode = "200", description = "Lista de miembros obtenida")
     public ResponseEntity<MemberListResponse> listCommunityMembers(
             @PathVariable Long communityId,
             @RequestParam(required = false) String rol,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        
+
         Pageable pageable = PageRequest.of(page, size);
         Page<MiembroComunidad> miembros = memberService.listMembers(communityId, pageable);
         Page<MemberResponse> response = miembros.map(this::entityToMemberResponse);
         return ResponseEntity.ok(new MemberListResponse(response));
     }
 
-    /**
-     * Se une a una comunidad pública.
-     * POST /api/v1/communities/{communityId}/members
-     */
+    /** Se une a una comunidad pública. POST /api/v1/communities/{communityId}/members */
     @PostMapping("/{communityId}/members")
-    @Operation(summary = "Unirse a comunidad pública",
-               description = "Se une a una comunidad pública sin necesidad de aprobación",
-               security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "Unirse a comunidad pública",
+            description = "Se une a una comunidad pública sin necesidad de aprobación",
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
-        @ApiResponse(responseCode = "201", description = "Te has unido a la comunidad correctamente"),
-        @ApiResponse(responseCode = "400", description = "No puedes unirte (privada, llena, ya eres miembro)"),
+        @ApiResponse(
+                responseCode = "201",
+                description = "Te has unido a la comunidad correctamente"),
+        @ApiResponse(
+                responseCode = "400",
+                description = "No puedes unirte (privada, llena, ya eres miembro)"),
         @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
     })
     public ResponseEntity<MemberResponse> joinPublicCommunity(
-            @PathVariable Long communityId,
-            @AuthenticationPrincipal Usuario usuario) {
-        
+            @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
+
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
+
         try {
-            MiembroComunidad miembro = memberService.joinPublicCommunity(usuario.getId(), communityId);
+            MiembroComunidad miembro =
+                    memberService.joinPublicCommunity(usuario.getId(), communityId);
             return ResponseEntity.status(HttpStatus.CREATED).body(entityToMemberResponse(miembro));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
@@ -360,26 +363,26 @@ public class CommunityController {
     }
 
     /**
-     * Obtiene la membresía del usuario autenticado en una comunidad.
-     * GET /api/v1/communities/{communityId}/members/me
+     * Obtiene la membresía del usuario autenticado en una comunidad. GET
+     * /api/v1/communities/{communityId}/members/me
      */
     @GetMapping("/{communityId}/members/me")
-    @Operation(summary = "Obtener mi rol en la comunidad",
-               description = "Devuelve el rol y membresía del usuario autenticado en esta comunidad",
-               security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "Obtener mi rol en la comunidad",
+            description = "Devuelve el rol y membresía del usuario autenticado en esta comunidad",
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Membresía obtenida"),
         @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
         @ApiResponse(responseCode = "404", description = "No eres miembro de esta comunidad")
     })
     public ResponseEntity<MemberResponse> getMyMembership(
-            @PathVariable Long communityId,
-            @AuthenticationPrincipal Usuario usuario) {
-        
+            @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
+
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
+
         try {
             MiembroComunidad miembro = memberService.getMyMembership(usuario.getId(), communityId);
             return ResponseEntity.ok(entityToMemberResponse(miembro));
@@ -388,14 +391,12 @@ public class CommunityController {
         }
     }
 
-    /**
-     * Abandona una comunidad.
-     * DELETE /api/v1/communities/{communityId}/members/me
-     */
+    /** Abandona una comunidad. DELETE /api/v1/communities/{communityId}/members/me */
     @DeleteMapping("/{communityId}/members/me")
-    @Operation(summary = "Abandonar comunidad",
-               description = "Abandona la comunidad (si eres admin único, debe designar sucesor)",
-               security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "Abandonar comunidad",
+            description = "Abandona la comunidad (si eres admin único, debe designar sucesor)",
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Has abandonado la comunidad"),
         @ApiResponse(responseCode = "400", description = "No puedes abandonar siendo único admin"),
@@ -403,13 +404,12 @@ public class CommunityController {
         @ApiResponse(responseCode = "404", description = "No eres miembro de esta comunidad")
     })
     public ResponseEntity<Void> leaveCommunity(
-            @PathVariable Long communityId,
-            @AuthenticationPrincipal Usuario usuario) {
-        
+            @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
+
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
+
         try {
             memberService.leaveCommunity(usuario.getId(), communityId);
             return ResponseEntity.noContent().build();
@@ -419,13 +419,14 @@ public class CommunityController {
     }
 
     /**
-     * Expulsa a un miembro de la comunidad.
-     * DELETE /api/v1/communities/{communityId}/members/{userId}
+     * Expulsa a un miembro de la comunidad. DELETE
+     * /api/v1/communities/{communityId}/members/{userId}
      */
     @DeleteMapping("/{communityId}/members/{userId}")
-    @Operation(summary = "Expulsar miembro",
-               description = "Expulsa a un miembro de la comunidad (solo admin)",
-               security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "Expulsar miembro",
+            description = "Expulsa a un miembro de la comunidad (solo admin)",
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Miembro expulsado correctamente"),
         @ApiResponse(responseCode = "403", description = "No tienes permisos"),
@@ -435,15 +436,15 @@ public class CommunityController {
             @PathVariable Long communityId,
             @PathVariable Long userId,
             @AuthenticationPrincipal Usuario usuario) {
-        
+
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
+
         if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        
+
         try {
             memberService.expelMember(usuario.getId(), communityId, userId);
             return ResponseEntity.noContent().build();
@@ -453,13 +454,14 @@ public class CommunityController {
     }
 
     /**
-     * Transfiere la administración de la comunidad.
-     * POST /api/v1/communities/{communityId}/admin/transfer
+     * Transfiere la administración de la comunidad. POST
+     * /api/v1/communities/{communityId}/admin/transfer
      */
     @PostMapping("/{communityId}/admin/transfer")
-    @Operation(summary = "Transferir administración",
-               description = "Transfiere el rol de admin a otro miembro (solo admin actual)",
-               security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "Transferir administración",
+            description = "Transfiere el rol de admin a otro miembro (solo admin actual)",
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Administración transferida"),
         @ApiResponse(responseCode = "403", description = "No tienes permisos"),
@@ -469,17 +471,19 @@ public class CommunityController {
             @PathVariable Long communityId,
             @Valid @RequestBody TransferAdminRequest request,
             @AuthenticationPrincipal Usuario usuario) {
-        
+
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
+
         if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        
+
         try {
-            MiembroComunidad newAdmin = memberService.transferAdmin(usuario.getId(), communityId, request.nuevoAdminId());
+            MiembroComunidad newAdmin =
+                    memberService.transferAdmin(
+                            usuario.getId(), communityId, request.nuevoAdminId());
             return ResponseEntity.ok(entityToMemberResponse(newAdmin));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -491,13 +495,14 @@ public class CommunityController {
     // =====================================================
 
     /**
-     * Lista las solicitudes de acceso a una comunidad.
-     * GET /api/v1/communities/{communityId}/requests
+     * Lista las solicitudes de acceso a una comunidad. GET
+     * /api/v1/communities/{communityId}/requests
      */
     @GetMapping("/{communityId}/requests")
-    @Operation(summary = "Listar solicitudes de acceso",
-               description = "Lista las solicitudes pendientes de acceso a la comunidad (solo admin)",
-               security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "Listar solicitudes de acceso",
+            description = "Lista las solicitudes pendientes de acceso a la comunidad (solo admin)",
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Lista de solicitudes obtenida"),
         @ApiResponse(responseCode = "403", description = "No tienes permisos")
@@ -508,61 +513,66 @@ public class CommunityController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @AuthenticationPrincipal Usuario usuario) {
-        
+
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
+
         if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        
+
         EstadoSolicitud estadoFilter = estado != null ? EstadoSolicitud.valueOf(estado) : null;
         Pageable pageable = PageRequest.of(page, size);
-        Page<SolicitudComunidad> solicitudes = requestService.listRequests(usuario.getId(), communityId, estadoFilter, pageable);
-        
+        Page<SolicitudComunidad> solicitudes =
+                requestService.listRequests(usuario.getId(), communityId, estadoFilter, pageable);
+
         Page<RequestResponse> response = solicitudes.map(this::entityToRequestResponse);
         return ResponseEntity.ok(new RequestListResponse(response));
     }
 
-    /**
-     * Solicita acceso a una comunidad privada.
-     * POST /api/v1/communities/{communityId}/requests
-     */
+    /** Solicita acceso a una comunidad privada. POST /api/v1/communities/{communityId}/requests */
     @PostMapping("/{communityId}/requests")
-    @Operation(summary = "Solicitar acceso",
-               description = "Solicita acceso a una comunidad privada",
-               security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "Solicitar acceso",
+            description = "Solicita acceso a una comunidad privada",
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Solicitud creada correctamente"),
-        @ApiResponse(responseCode = "400", description = "No puedes solicitar (es pública, ya eres miembro, solicitud pendiente)"),
+        @ApiResponse(
+                responseCode = "400",
+                description =
+                        "No puedes solicitar (es pública, ya eres miembro, solicitud pendiente)"),
         @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
     })
     public ResponseEntity<RequestResponse> requestAccess(
             @PathVariable Long communityId,
             @Valid @RequestBody AccessRequestBody request,
             @AuthenticationPrincipal Usuario usuario) {
-        
+
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
+
         try {
-            SolicitudComunidad solicitud = requestService.requestAccess(usuario.getId(), communityId, request.mensaje());
-            return ResponseEntity.status(HttpStatus.CREATED).body(entityToRequestResponse(solicitud));
+            SolicitudComunidad solicitud =
+                    requestService.requestAccess(usuario.getId(), communityId, request.mensaje());
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(entityToRequestResponse(solicitud));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
     }
 
     /**
-     * Responde a una solicitud de acceso.
-     * PUT /api/v1/communities/{communityId}/requests/{requestId}
+     * Responde a una solicitud de acceso. PUT
+     * /api/v1/communities/{communityId}/requests/{requestId}
      */
     @PutMapping("/{communityId}/requests/{requestId}")
-    @Operation(summary = "Responder solicitud",
-               description = "Acepta o rechaza una solicitud de acceso (solo admin)",
-               security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "Responder solicitud",
+            description = "Acepta o rechaza una solicitud de acceso (solo admin)",
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Solicitud respondida"),
         @ApiResponse(responseCode = "403", description = "No tienes permisos"),
@@ -573,17 +583,19 @@ public class CommunityController {
             @PathVariable Long requestId,
             @Valid @RequestBody RespondRequestBody request,
             @AuthenticationPrincipal Usuario usuario) {
-        
+
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
+
         if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        
+
         try {
-            SolicitudComunidad solicitud = requestService.respondToRequest(usuario.getId(), communityId, requestId, request.aceptado());
+            SolicitudComunidad solicitud =
+                    requestService.respondToRequest(
+                            usuario.getId(), communityId, requestId, request.aceptado());
             return ResponseEntity.ok(entityToRequestResponse(solicitud));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -594,33 +606,29 @@ public class CommunityController {
     // CATEGORÍAS
     // =====================================================
 
-    /**
-     * Lista las categorías de una comunidad.
-     * GET /api/v1/communities/{communityId}/categories
-     */
+    /** Lista las categorías de una comunidad. GET /api/v1/communities/{communityId}/categories */
     @GetMapping("/{communityId}/categories")
-    @Operation(summary = "Listar categorías",
-               description = "Devuelve las categorías temáticas de la comunidad")
+    @Operation(
+            summary = "Listar categorías",
+            description = "Devuelve las categorías temáticas de la comunidad")
     @ApiResponse(responseCode = "200", description = "Lista de categorías obtenida")
-    public ResponseEntity<CategoryListResponse> listCategories(
-            @PathVariable Long communityId) {
-        
+    public ResponseEntity<CategoryListResponse> listCategories(@PathVariable Long communityId) {
+
         List<Categoria> categorias = categoryService.listCategories(communityId);
-        List<CategoryResponse> response = categorias.stream()
-                .map(this::entityToCategoryResponse)
-                .collect(Collectors.toList());
-        
+        List<CategoryResponse> response =
+                categorias.stream()
+                        .map(this::entityToCategoryResponse)
+                        .collect(Collectors.toList());
+
         return ResponseEntity.ok(new CategoryListResponse(response));
     }
 
-    /**
-     * Crea una nueva categoría.
-     * POST /api/v1/communities/{communityId}/categories
-     */
+    /** Crea una nueva categoría. POST /api/v1/communities/{communityId}/categories */
     @PostMapping("/{communityId}/categories")
-    @Operation(summary = "Crear categoría",
-               description = "Crea una nueva categoría temática (solo admin)",
-               security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "Crear categoría",
+            description = "Crea una nueva categoría temática (solo admin)",
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Categoría creada correctamente"),
         @ApiResponse(responseCode = "403", description = "No tienes permisos")
@@ -629,28 +637,27 @@ public class CommunityController {
             @PathVariable Long communityId,
             @Valid @RequestBody CreateCategoryRequest request,
             @AuthenticationPrincipal Usuario usuario) {
-        
+
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
+
         if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        
-        Categoria categoria = categoryService.createCategory(usuario.getId(), communityId, 
-                request.nombre(), request.descripcion());
+
+        Categoria categoria =
+                categoryService.createCategory(
+                        usuario.getId(), communityId, request.nombre(), request.descripcion());
         return ResponseEntity.status(HttpStatus.CREATED).body(entityToCategoryResponse(categoria));
     }
 
-    /**
-     * Actualiza una categoría.
-     * PUT /api/v1/communities/{communityId}/categories/{categoryId}
-     */
+    /** Actualiza una categoría. PUT /api/v1/communities/{communityId}/categories/{categoryId} */
     @PutMapping("/{communityId}/categories/{categoryId}")
-    @Operation(summary = "Actualizar categoría",
-               description = "Actualiza los datos de una categoría (solo admin)",
-               security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "Actualizar categoría",
+            description = "Actualiza los datos de una categoría (solo admin)",
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Categoría actualizada"),
         @ApiResponse(responseCode = "403", description = "No tienes permisos"),
@@ -661,32 +668,35 @@ public class CommunityController {
             @PathVariable Long categoryId,
             @Valid @RequestBody UpdateCategoryRequest request,
             @AuthenticationPrincipal Usuario usuario) {
-        
+
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
+
         if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        
+
         try {
-            Categoria categoria = categoryService.updateCategory(usuario.getId(), communityId, categoryId,
-                    request.nombre(), request.descripcion());
+            Categoria categoria =
+                    categoryService.updateCategory(
+                            usuario.getId(),
+                            communityId,
+                            categoryId,
+                            request.nombre(),
+                            request.descripcion());
             return ResponseEntity.ok(entityToCategoryResponse(categoria));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
 
-    /**
-     * Elimina una categoría.
-     * DELETE /api/v1/communities/{communityId}/categories/{categoryId}
-     */
+    /** Elimina una categoría. DELETE /api/v1/communities/{communityId}/categories/{categoryId} */
     @DeleteMapping("/{communityId}/categories/{categoryId}")
-    @Operation(summary = "Eliminar categoría",
-               description = "Elimina una categoría (solo admin)",
-               security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "Eliminar categoría",
+            description = "Elimina una categoría (solo admin)",
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Categoría eliminada"),
         @ApiResponse(responseCode = "403", description = "No tienes permisos"),
@@ -696,15 +706,15 @@ public class CommunityController {
             @PathVariable Long communityId,
             @PathVariable Long categoryId,
             @AuthenticationPrincipal Usuario usuario) {
-        
+
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
+
         if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        
+
         try {
             categoryService.deleteCategory(usuario.getId(), communityId, categoryId);
             return ResponseEntity.noContent().build();
@@ -714,13 +724,14 @@ public class CommunityController {
     }
 
     /**
-     * Reordena las categorías de una comunidad.
-     * PUT /api/v1/communities/{communityId}/categories/reorder
+     * Reordena las categorías de una comunidad. PUT
+     * /api/v1/communities/{communityId}/categories/reorder
      */
     @PutMapping("/{communityId}/categories/reorder")
-    @Operation(summary = "Reordenar categorías",
-               description = "Cambia el orden de las categorías (solo admin)",
-               security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "Reordenar categorías",
+            description = "Cambia el orden de las categorías (solo admin)",
+            security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Categorías reordenadas"),
         @ApiResponse(responseCode = "403", description = "No tienes permisos")
@@ -729,21 +740,22 @@ public class CommunityController {
             @PathVariable Long communityId,
             @Valid @RequestBody ReorderCategoriesRequest request,
             @AuthenticationPrincipal Usuario usuario) {
-        
+
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
+
         if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        
+
         categoryService.reorderCategories(usuario.getId(), communityId, request.categoryIds());
         List<Categoria> categorias = categoryService.listCategories(communityId);
-        List<CategoryResponse> response = categorias.stream()
-                .map(this::entityToCategoryResponse)
-                .collect(Collectors.toList());
-        
+        List<CategoryResponse> response =
+                categorias.stream()
+                        .map(this::entityToCategoryResponse)
+                        .collect(Collectors.toList());
+
         return ResponseEntity.ok(new CategoryListResponse(response));
     }
 
@@ -755,12 +767,12 @@ public class CommunityController {
         Long miembrosActuales = communityService.countMembers(comunidad.getId());
         String miRol = null;
         Boolean esMiembro = false;
-        
+
         if (userId != null) {
             miRol = authorizationService.getUserRoleInCommunityAsString(userId, comunidad.getId());
             esMiembro = miRol != null;
         }
-        
+
         return new CommunityDetailResponse(
                 comunidad.getId(),
                 comunidad.getNombre(),
@@ -775,8 +787,7 @@ public class CommunityController {
                 miRol,
                 comunidad.getCreatedAt(),
                 comunidad.getUpdatedAt(),
-                comunidad.getImagenUrl()
-        );
+                comunidad.getImagenUrl());
     }
 
     private MemberResponse entityToMemberResponse(MiembroComunidad miembro) {
@@ -784,8 +795,7 @@ public class CommunityController {
                 miembro.getId(),
                 convertUserToSimple(miembro.getUsuario()),
                 miembro.getRol().name(),
-                miembro.getFechaIngreso()
-        );
+                miembro.getFechaIngreso());
     }
 
     private RequestResponse entityToRequestResponse(SolicitudComunidad solicitud) {
@@ -795,9 +805,10 @@ public class CommunityController {
                 solicitud.getEstado().name(),
                 solicitud.getMensaje(),
                 solicitud.getFechaSolicitud(),
-                solicitud.getRespondidaPor() != null ? convertUserToSimple(solicitud.getRespondidaPor()) : null,
-                solicitud.getFechaRespuesta()
-        );
+                solicitud.getRespondidaPor() != null
+                        ? convertUserToSimple(solicitud.getRespondidaPor())
+                        : null,
+                solicitud.getFechaRespuesta());
     }
 
     private CategoryResponse entityToCategoryResponse(Categoria categoria) {
@@ -805,16 +816,11 @@ public class CommunityController {
                 categoria.getId(),
                 categoria.getNombre(),
                 categoria.getDescripcion(),
-                categoria.getOrden()
-        );
+                categoria.getOrden());
     }
 
     private UserSimpleResponse convertUserToSimple(Usuario usuario) {
         return new UserSimpleResponse(
-                usuario.getId(),
-                usuario.getNombre(),
-                usuario.getEmail(),
-                usuario.getFoto()
-        );
+                usuario.getId(), usuario.getNombre(), usuario.getEmail(), usuario.getFoto());
     }
 }
