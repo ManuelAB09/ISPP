@@ -1,11 +1,12 @@
 
 
+
 import React, { useState, useRef } from 'react';
 import { ubicacionesApi } from '../../api/ubicaciones.api';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-
+import FiltroUbicacionesScreen from './FiltroUbicacionesScreen';
 import './CrearUbicacionScreen.css';
 
 
@@ -17,7 +18,6 @@ function LocationMarker({ latitud, longitud, setLatitud, setLongitud, setDirecci
         click: async (e) => {
             setLatitud(e.latlng.lat);
             setLongitud(e.latlng.lng);
-            // Reverse geocoding para actualizar dirección
             try {
                 const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`);
                 const data = await response.json();
@@ -42,8 +42,9 @@ const CrearUbicacionScreen = () => {
     const [success, setSuccess] = useState(false);
     const [search, setSearch] = useState('');
     const mapRef = useRef();
+    const [mostrarFiltro, setMostrarFiltro] = useState(false);
+    const [ubicacionSeleccionada, setUbicacionSeleccionada] = useState(null);
 
-    // Buscar dirección y actualizar lat/lng usando Nominatim
     const handleSearch = async (e) => {
         e.preventDefault();
         if (!search) return;
@@ -63,7 +64,6 @@ const CrearUbicacionScreen = () => {
         }
     };
 
-    // Cuando lat/lng cambian manualmente, actualizar dirección
     const handleLatLngChange = async (lat, lng) => {
         setLatitud(lat);
         setLongitud(lng);
@@ -82,12 +82,16 @@ const CrearUbicacionScreen = () => {
         setError(null);
         setSuccess(false);
         try {
-            await ubicacionesApi.create({
+            const payload = {
                 nombre,
                 direccion,
                 latitud,
                 longitud,
-            });
+                tipo: ubicacionSeleccionada?.tipo || '',
+                coste: ubicacionSeleccionada?.coste || 'desconocido',
+            };
+            console.log('Payload enviado a crearUbicacion:', payload);
+            await ubicacionesApi.create(payload);
             setSuccess(true);
             setNombre('');
             setDireccion('');
@@ -109,7 +113,41 @@ const CrearUbicacionScreen = () => {
                 </div>
                 {error && <div style={{ color: 'red', marginBottom: 16 }}>{error}</div>}
                 {success && <div style={{ color: 'green', marginBottom: 16 }}>Ubicación creada correctamente.</div>}
-                <form onSubmit={handleSubmit} style={{ maxWidth: 500, margin: '0 auto' }}>
+                <button type="button" className="btn btn-outline" style={{ marginBottom: 16 }} onClick={() => setMostrarFiltro(m => !m)}>
+                    {mostrarFiltro ? 'Cerrar filtro de ubicaciones' : 'Buscar ubicaciones en el mapa'}
+                </button>
+                {mostrarFiltro && (
+                    <FiltroUbicacionesScreen
+                        onSeleccionar={async u => {
+                            setNombre(u.nombre || '');
+                            setLatitud(u.latitud);
+                            setLongitud(u.longitud);
+                            // Calcular dirección si es necesario
+                            let dir = u.direccion;
+                            if (!dir || dir === 'Dirección no disponible') {
+                                try {
+                                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${u.latitud}&lon=${u.longitud}`);
+                                    const data = await response.json();
+                                    dir = data && data.display_name ? data.display_name : '';
+                                } catch { }
+                            }
+                            setDireccion(dir);
+                            setUbicacionSeleccionada({ ...u, direccion: dir });
+                            setMostrarFiltro(false);
+                        }}
+                        onClose={() => setMostrarFiltro(false)}
+                    />
+                )}
+                {ubicacionSeleccionada && (
+                    <div style={{ background: '#e6f7ff', border: '1px solid #91d5ff', borderRadius: 6, padding: 16, marginBottom: 16 }}>
+                        <b>Ubicación seleccionada:</b><br />
+                        <span><b>{ubicacionSeleccionada.nombre}</b></span><br />
+                        <span>{ubicacionSeleccionada.direccion}</span><br />
+                        <span>Tipo: {ubicacionSeleccionada.tipo}</span><br />
+                        <span>Coste: {ubicacionSeleccionada.coste}</span><br />
+                    </div>
+                )}
+                <form onSubmit={handleSubmit} style={{ maxWidth: 500, margin: '0 auto', background: '#fff', borderRadius: 8, padding: 24, boxShadow: '0 2px 8px #0001' }}>
                     <div className="input-group">
                         <label>Nombre</label>
                         <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} required className="input-box input-large" />
@@ -127,7 +165,7 @@ const CrearUbicacionScreen = () => {
                     </div>
                     <div className="input-group">
                         <label>Selecciona la ubicación en el mapa</label>
-                        <div style={{ height: 300, width: '100%', marginBottom: 16 }}>
+                        <div style={{ height: 300, width: '100%', marginBottom: 16, borderRadius: 8, overflow: 'hidden', border: '1px solid #eee' }}>
                             <MapContainer
                                 center={[latitud, longitud]}
                                 zoom={16}
