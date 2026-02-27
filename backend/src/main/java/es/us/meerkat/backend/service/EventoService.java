@@ -188,6 +188,8 @@ public class EventoService {
                         .findById(eventoIdParam)
                         .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
 
-        return evento.generarEnlaceVirtual();
+        final String enlace = evento.generarEnlaceVirtual();
+        eventoRepository.save(evento);
+        return enlace;
     }
 }
