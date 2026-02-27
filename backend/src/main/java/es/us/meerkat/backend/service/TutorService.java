@@ -214,16 +214,20 @@ public class TutorService {
      */
     public Page<Tutor> obtenerTutoresVerificados(
             String especialidad, BigDecimal tarifaMin, BigDecimal tarifaMax, int page, int size) {
-        // Valores por defecto
-        String espec = (especialidad != null) ? especialidad : "";
-        BigDecimal min = (tarifaMin != null) ? tarifaMin : BigDecimal.ZERO;
-        BigDecimal max = (tarifaMax != null) ? tarifaMax : new BigDecimal(Double.MAX_VALUE);
 
         PageRequest pageable = PageRequest.of(page, size);
 
-        return tutorRepository
-                .findByVerificadoTrueAndEspecialidadesContainingIgnoreCaseAndTarifaHoraBetween(
-                        espec, min, max, pageable);
+        // Sin filtros: devolver todos los verificados paginados
+        if (especialidad == null && tarifaMin == null && tarifaMax == null) {
+            return tutorRepository.findByVerificadoTrue(pageable);
+        }
+
+        // Con filtros: usar JPQL con JOIN sobre especialidades
+        BigDecimal min = (tarifaMin != null) ? tarifaMin : BigDecimal.ZERO;
+        BigDecimal max = (tarifaMax != null) ? tarifaMax : new BigDecimal("999999");
+        String espec = (especialidad != null) ? especialidad : "";
+
+        return tutorRepository.findVerificadosByEspecialidadAndTarifa(espec, min, max, pageable);
     }
 
     // ===============================

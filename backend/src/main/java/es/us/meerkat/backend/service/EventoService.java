@@ -34,17 +34,13 @@ public class EventoService {
      * @param descripcionParam Descripción del evento.
      * @param fechaInicioParam Fecha y hora de inicio.
      * @param fechaFinParam Fecha y hora de fin.
-     * @param ubicacionParam Ubicación física.
-     * @param latitudParam Latitud.
-     * @param longitudParam Longitud.
      * @param aforoParam Aforo máximo.
      * @param queLlevarParam Qué llevar al evento.
      * @param esVirtualParam Si es evento virtual.
      * @param privadoParam Si es un evento privado.
      * @return El evento creado. @Transactional public Evento crearEvento(final Long
      *     organizadorIdParam, final String tituloParam, final String descripcionParam, final
-     *     LocalDateTime fechaInicioParam, final LocalDateTime fechaFinParam, final String
-     *     ubicacionParam, final Double latitudParam, final Double longitudParam, final Integer
+     *     LocalDateTime fechaInicioParam, final LocalDateTime fechaFinParam, final Integer
      *     aforoParam, final String queLlevarParam, final Boolean esVirtualParam, final Boolean
      *     privadoParam) {
      *     <p>final Evento evento = new Evento(); evento.crear(tituloParam, descripcionParam,
@@ -64,9 +60,6 @@ public class EventoService {
      * @param descripcionParam Descripción del evento.
      * @param fechaInicioParam Fecha y hora de inicio.
      * @param fechaFinParam Fecha y hora de fin.
-     * @param ubicacionParam Ubicación física.
-     * @param latitudParam Latitud.
-     * @param longitudParam Longitud.
      * @param aforoParam Aforo máximo.
      * @param queLlevarParam Qué llevar al evento.
      * @param esVirtualParam Si es evento virtual.
@@ -80,9 +73,6 @@ public class EventoService {
             final String descripcionParam,
             final LocalDateTime fechaInicioParam,
             final LocalDateTime fechaFinParam,
-            final String ubicacionParam,
-            final Double latitudParam,
-            final Double longitudParam,
             final Integer aforoParam,
             final String queLlevarParam,
             final Boolean esVirtualParam,
@@ -98,9 +88,6 @@ public class EventoService {
                 descripcionParam,
                 fechaInicioParam,
                 fechaFinParam,
-                ubicacionParam,
-                latitudParam,
-                longitudParam,
                 aforoParam,
                 queLlevarParam,
                 esVirtualParam,
@@ -189,5 +176,24 @@ public class EventoService {
                         .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
 
         return evento.generarEnlaceVirtual();
+    }
+
+    // ===============================
+    // EVENTOS POR COMUNIDAD
+    // ===============================
+
+    /**
+     * Obtiene los eventos de una comunidad.
+     *
+     * @param comunidadId Identificador de la comunidad.
+     * @param incluirCancelados Si se deben incluir los eventos cancelados.
+     * @return Lista de eventos de la comunidad.
+     */
+    public List<Evento> obtenerEventosPorComunidad(
+            final Long comunidadId, final boolean incluirCancelados) {
+        if (incluirCancelados) {
+            return eventoRepository.findByComunidadId(comunidadId);
+        }
+        return eventoRepository.findByComunidadIdAndCanceladoFalse(comunidadId);
     }
 }

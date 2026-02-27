@@ -1,10 +1,10 @@
 // src/api/client.js
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:4010';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 class ApiClient {
   constructor(baseUrl) {
     this.baseUrl = baseUrl;
-    this.token = null;
+    this.token = localStorage.getItem('accessToken') || null;
   }
 
   setToken(token) {

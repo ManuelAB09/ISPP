@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import es.us.meerkat.backend.dto.AuthResponse;
+import es.us.meerkat.backend.dto.ForgotPasswordRequest;
 import es.us.meerkat.backend.dto.LoginRequest;
 import es.us.meerkat.backend.dto.MessageResponse;
 import es.us.meerkat.backend.dto.RegisterRequest;
@@ -68,5 +69,20 @@ public final class AuthController {
     public ResponseEntity<MessageResponse> logout() {
         return ResponseEntity.ok(
                 MessageResponse.builder().message("Sesión cerrada correctamente").build());
+    }
+
+    /**
+     * Solicita la recuperación de contraseña.
+     *
+     * <p>POST /api/v1/auth/password/forgot Envía un email con instrucciones para recuperar la
+     * contraseña. Por seguridad, siempre devuelve 200 OK aunque el email no exista.
+     *
+     * @param request DTO con el email del usuario.
+     * @return MessageResponse con confirmación.
+     */
+    @PostMapping("/password/forgot")
+    public ResponseEntity<MessageResponse> forgotPassword(
+            @RequestBody final ForgotPasswordRequest request) {
+        return ResponseEntity.ok(authService.recuperarContrasena(request));
     }
 }
