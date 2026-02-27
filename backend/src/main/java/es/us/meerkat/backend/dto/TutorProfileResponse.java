@@ -7,10 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 
 /**
- * DTO que representa la información pública o completa de un tutor.
- *
- * <p>Contiene datos como identificador, nombre, especialidades, tarifa, disponibilidad, biografía y
- * estado de verificación.
+ * DTO que representa la información completa de un tutor, incluyendo datos del usuario asociado.
  */
 @Data
 @Builder
@@ -19,8 +16,11 @@ public class TutorProfileResponse {
     /** Identificador único del tutor. */
     private Long id;
 
-    /** Nombre completo del tutor. */
-    private String nombre;
+    /** Id del usuario asociado al tutor. */
+    private Long userId;
+
+    /** Información del usuario. */
+    private UsuarioDto usuario;
 
     /** Lista de especialidades del tutor. */
     private List<String> especialidades;
@@ -34,6 +34,24 @@ public class TutorProfileResponse {
     /** Breve biografía del tutor. */
     private String bio;
 
-    /** Estado de verificación del tutor (true si verificado). */
+    /** Estado de verificación del tutor. */
     private Boolean verificado;
+
+    /** Indica si está conectado a Classroom. */
+    private Boolean classroomConectado;
+
+    /** Fecha de creación del tutor. */
+    private String createdAt;
+
+    /** DTO interno para representar al usuario. */
+    @Data
+    @Builder
+    public static class UsuarioDto {
+        private Long id;
+        private String nombre;
+        private String foto;
+        private String bio;
+        private List<String> intereses;
+        private Boolean esTutor;
+    }
 }

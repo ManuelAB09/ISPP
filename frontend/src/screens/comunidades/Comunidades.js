@@ -20,13 +20,14 @@ export default function Comunidades() {
         setError(null);
         communitiesApi.list({ page: page, size: 10, search: search })
             .then(response => {
-                console.log("🚀 ~ Comunidades ~ response:", response)
                 setComunidades(response.content || []);
-                setTotalPages(20 || response.page.totalPages || 0);
+                setTotalPages(response.page?.totalPages || 0);
             })
             .catch(err => {
                 console.error("Error fetching communities:", err);
-                setError("No se pudieron cargar las comunidades. Intenta de nuevo más tarde.");
+                setError('No se pudieron cargar las comunidades. Inténtalo de nuevo más tarde.');
+                setComunidades([]);
+                setTotalPages(0);
             })
             .finally(() => setLoading(false));
     }, [page, search])

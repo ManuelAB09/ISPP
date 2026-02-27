@@ -1,14 +1,9 @@
 spring:
-  
-  security:
-    user:
-      name: admin
-      password: admin123
   application:
     name: backend
 
-  # ── Perfil por defecto: H2 en memoria (desarrollo local) ──
-  # En Azure se activa "staging" o "production" via SPRING_PROFILES_ACTIVE
+# ── Perfil por defecto: H2 en memoria (desarrollo local) ──
+# En Azure se activa "staging" o "production" via SPRING_PROFILES_ACTIVE
   datasource:
     url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
@@ -24,8 +19,41 @@ spring:
     console:
       enabled: true
 
+  # ── CONFIGURACIÓN EMAIL ──
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${EMAIL}
+    password: ${PASSWORD_EMAIL}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
 server:
   port: 8080
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.mail: DEBUG
+
+jwt:
+  secret: dGhpcyBpcyBhIHNlY3JldCBrZXkgZm9yIG1lZXJrYXQgYmFja2VuZCBqd3Q=
+  expiration: 86400000
+
+# ── PROPIEDADES PERSONALIZADAS ──
+mail:
+  from: ${EMAIL}
+
+app:
+  name: Meerkat
 
 springdoc:
   swagger-ui:
@@ -34,6 +62,7 @@ springdoc:
         url: /v3/api-docs
       - name: Static
         url: /spec/openapi.yaml
-    urls-primary-name: Dynamic
+    oauth:
+      enabled: false
   api-docs:
     enabled: true

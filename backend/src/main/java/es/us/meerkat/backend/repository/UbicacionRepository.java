@@ -10,8 +10,8 @@ import es.us.meerkat.backend.entity.Ubicacion;
 /**
  * Repositorio JPA para la entidad {@link Ubicacion}.
  *
- * Permite realizar operaciones CRUD y consultas específicas
- * sobre ubicaciones en la base de datos.
+ * <p>Permite realizar operaciones CRUD y consultas específicas sobre ubicaciones en la base de
+ * datos.
  */
 public interface UbicacionRepository extends JpaRepository<Ubicacion, Long> {
 
@@ -26,11 +26,19 @@ public interface UbicacionRepository extends JpaRepository<Ubicacion, Long> {
     /**
      * Devuelve todas las ubicaciones cuyo nombre contenga la cadena dada.
      *
-     * Útil para buscar lugares recomendados o filtrar en el mapa.
+     * <p>Útil para buscar lugares recomendados o filtrar en el mapa.
      *
      * @param nombreFragment Fragmento de nombre a buscar.
      * @return Lista de ubicaciones coincidentes.
      */
     List<Ubicacion> findByNombreContainingIgnoreCase(String nombreFragment);
 
+
+    /**
+     * Busca una ubicación por sus coordenadas geográficas (latitud y longitud).
+     * @param latitud
+     * @param longitud
+     * @return
+     */
+    Optional<Ubicacion> findByLatitudAndLongitud(Double latitud, Double longitud);
 }
