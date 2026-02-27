@@ -5,9 +5,12 @@ import java.util.UUID;
 
 import es.us.meerkat.backend.dto.EventDetailResponse;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -45,15 +48,6 @@ public class Evento {
     /** Fecha y hora de la creación del evento. */
     private LocalDateTime createdAt;
 
-    /** Ubicación física del evento. */
-    private String ubicacion;
-
-    /** Latitud de la ubicación del evento. */
-    private Double latitud;
-
-    /** Longitud de la ubicación del evento. */
-    private Double longitud;
-
     /** Aforo máximo del evento. */
     private Integer aforo;
 
@@ -81,6 +75,11 @@ public class Evento {
     /** Indica si el evento es privado. */
     private Boolean privado;
 
+    /** Ubicación asociada al evento (opcional). */
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "ubicacion_id", nullable = true)
+    private Ubicacion ubicacion;
+
     /** Inicializa valores antes de persistir la entidad. */
     @PrePersist
     public void prePersist() {
@@ -107,9 +106,6 @@ public class Evento {
      * @param descripcionParam Descripción del evento.
      * @param fechaInicioParam Fecha y hora de inicio.
      * @param fechaFinParam Fecha y hora de fin.
-     * @param ubicacionParam Ubicación física.
-     * @param latitudParam Latitud.
-     * @param longitudParam Longitud.
      * @param aforoParam Aforo máximo.
      * @param queLlevarParam Qué llevar al evento.
      * @param esVirtualParam Si es evento virtual.
@@ -120,9 +116,6 @@ public class Evento {
             final String descripcionParam,
             final LocalDateTime fechaHoraParam,
             final LocalDateTime fechaFinParam,
-            final String ubicacionParam,
-            final Double latitudParam,
-            final Double longitudParam,
             final Integer aforoParam,
             final String queLlevarParam,
             final Boolean esVirtualParam,
@@ -131,9 +124,6 @@ public class Evento {
         this.descripcion = descripcionParam;
         this.fechaHora = fechaHoraParam;
         this.fechaFin = fechaFinParam;
-        this.ubicacion = ubicacionParam;
-        this.latitud = latitudParam;
-        this.longitud = longitudParam;
         this.aforo = aforoParam;
         this.queLlevar = queLlevarParam;
         this.esVirtual = esVirtualParam;
@@ -149,9 +139,6 @@ public class Evento {
      * @param descripcionParam Descripción del evento.
      * @param fechaInicioParam Fecha y hora de inicio.
      * @param fechaFinParam Fecha y hora de fin.
-     * @param ubicacionParam Ubicación física.
-     * @param latitudParam Latitud.
-     * @param longitudParam Longitud.
      * @param aforoParam Aforo máximo.
      * @param queLlevarParam Qué llevar al evento.
      * @param esVirtualParam Si es evento virtual.
@@ -162,9 +149,6 @@ public class Evento {
             final String descripcionParam,
             final LocalDateTime fechaHoraParam,
             final LocalDateTime fechaFinParam,
-            final String ubicacionParam,
-            final Double latitudParam,
-            final Double longitudParam,
             final Integer aforoParam,
             final String queLlevarParam,
             final Boolean esVirtualParam,
@@ -173,9 +157,6 @@ public class Evento {
         this.descripcion = descripcionParam;
         this.fechaHora = fechaHoraParam;
         this.fechaFin = fechaFinParam;
-        this.ubicacion = ubicacionParam;
-        this.latitud = latitudParam;
-        this.longitud = longitudParam;
         this.aforo = aforoParam;
         this.queLlevar = queLlevarParam;
         this.esVirtual = esVirtualParam;
@@ -244,9 +225,6 @@ public class Evento {
                 .descripcion(this.descripcion)
                 .fechaHora(this.fechaHora)
                 .fechaFin(this.fechaFin)
-                .ubicacion(this.ubicacion)
-                .latitud(this.latitud)
-                .longitud(this.longitud)
                 .aforo(this.aforo)
                 .asistentesConfirmados(this.asistentesConfirmados)
                 .queLlevar(this.queLlevar)

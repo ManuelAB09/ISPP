@@ -3,6 +3,7 @@ package es.us.meerkat.backend.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,10 +59,26 @@ public class UbicacionService {
                 .tipo(requestParam.getTipo())
                 .coste(requestParam.getCoste())
                 .build();
+        // Primero, buscamos si ya existe una ubicación con la misma latitud y longitud
+        Optional<Ubicacion> existente = ubicacionRepository
+                .findByLatitudAndLongitud(requestParam.getLatitud(), requestParam.getLongitud());
 
-        ubicacionRepository.save(ubicacion);
+        if (existente.isPresent()) {
+            // Si existe, devolvemos la que ya está en la base de datos
+            return mapToResponse(existente.get());
+        }
 
-        return mapToResponse(ubicacion);
+        // Si no existe, creamos una nueva
+        final Ubicacion nuevaUbicacion = Ubicacion.builder()
+                .nombre(requestParam.getNombre())
+                .direccion(requestParam.getDireccion())
+                .latitud(requestParam.getLatitud())
+                .longitud(requestParam.getLongitud())
+                .build();
+
+        ubicacionRepository.save(nuevaUbicacion);
+
+        return mapToResponse(nuevaUbicacion);
     }
 
     // ===============================
