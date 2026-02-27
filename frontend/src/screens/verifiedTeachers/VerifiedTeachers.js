@@ -1,42 +1,36 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
-import { getVerifiedTutors } from "../../api/tutorEndpoints";
+import { Link, useNavigate } from "react-router-dom";
+import { getVerifiedTutors, getMyTutorProfiles } from "../../api/tutorEndpoints";
+import { useAuth } from "../../contexts/AuthContext";
+import CreateProfileModal from "../teacherProfile/CreateProfileModal";
+import Header from "../../components/Header/Header";
 import "./VerifiedTeachers.css";
 
 /**
  * Pantalla de listado de profesores verificados.
  * Usa GET /api/v1/tutors → Page<Tutor> (entidad del backend).
- * La entidad devuelve campos: id, us.nombre, especialidades, tarifaHora,
- * disponibilidad, bio, verificado, classroomConectado, createdAt.
  */
-// ---------------------------------------------------------------------------
-// Mock data — Profesores verificados para pruebas.
-// ---------------------------------------------------------------------------
-const MOCK_VERIFICADOS = [
-  {
-    id: 1,
-    us: { nombre: "Alberto Gómez" },
-    especialidades: ["Programación", "Java", "C++"],
-    tarifaHora: 22.5,
-    disponibilidad: "Mañanas y tardes",
-    verificado: true,
-  },
-  {
-    id: 2,
-    us: { nombre: "Manuel Nuño" },
-    especialidades: ["Matemáticas", "Física"],
-    tarifaHora: 18.0,
-    disponibilidad: "Fines de semana",
-    verificado: true,
-  }
-];
 
 const VerifiedTeachers = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [yaTienePerfilTutor, setYaTienePerfilTutor] = useState(false);
   const [profesores, setProfesores] = useState([]);
   const [total, setTotal] = useState(0);
   const [pagina, setPagina] = useState(0);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
+
+  // Comprobar si el usuario autenticado ya tiene perfil de tutor
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    getMyTutorProfiles()
+      .then((perfiles) => {
+        if (perfiles && perfiles.length > 0) setYaTienePerfilTutor(true);
+      })
+      .catch(() => {});
+  }, [isAuthenticated]);
 
   // Filtros
   const [filtros, setFiltros] = useState({
@@ -54,32 +48,28 @@ const VerifiedTeachers = () => {
     async (nuevaPagina = 0, filtrosParam = filtrosActivos) => {
       setCargando(true);
       setError(null);
-      
-      // Simulación de carga (Mock)
-      setTimeout(() => {
-        let filtrados = [...MOCK_VERIFICADOS];
-
-        // Filtrar por especialidad
-        if (filtrosParam.especialidad) {
-          const search = filtrosParam.especialidad.toLowerCase();
-          filtrados = filtrados.filter(p => 
-            p.especialidades.some(e => e.toLowerCase().includes(search))
-          );
-        }
-
-        // Filtrar por tarifa
-        if (filtrosParam.tarifaMin) {
-          filtrados = filtrados.filter(p => p.tarifaHora >= Number(filtrosParam.tarifaMin));
-        }
-        if (filtrosParam.tarifaMax) {
-          filtrados = filtrados.filter(p => p.tarifaHora <= Number(filtrosParam.tarifaMax));
-        }
-
-        setProfesores(filtrados);
-        setTotal(filtrados.length);
+      try {
+        const resp = await getVerifiedTutors({
+          especialidad: filtrosParam.especialidad || undefined,
+          tarifaMin: filtrosParam.tarifaMin || undefined,
+          tarifaMax: filtrosParam.tarifaMax || undefined,
+          page: nuevaPagina,
+          size: 20,
+        });
+        // La respuesta es Page<Tutor>: { content, totalElements, number, ... }
+        const contenido = resp?.content ?? (Array.isArray(resp) ? resp : []);
+        const totalElem = resp?.totalElements ?? contenido.length;
+        setProfesores((prev) =>
+          nuevaPagina === 0 ? contenido : [...prev, ...contenido]
+        );
+        setTotal(totalElem);
         setPagina(nuevaPagina);
+      } catch (err) {
+        console.error("Error al cargar profesores:", err);
+        setError("No se pudieron cargar los profesores.");
+      } finally {
         setCargando(false);
-      }, 600);
+      }
     },
     [filtrosActivos]
   );
@@ -124,7 +114,14 @@ const VerifiedTeachers = () => {
 
   return (
     <div className="vt-page">
-      {/* ── Header ────────────────────────────────────── */}
+      <Header page={'profesores'} />
+      {showCreateModal && (
+        <CreateProfileModal
+          onClose={() => setShowCreateModal(false)}
+          onCreado={(newTutor) => navigate(`/profesores/${newTutor.id}`)}
+        />
+      )}
+      {/* ── Header ──────────────────────────────────────────── */}
       <div className="vt-header">
         <div className="vt-header__inner">
           <h1 className="vt-header__title">
@@ -133,6 +130,15 @@ const VerifiedTeachers = () => {
           <p className="vt-header__subtitle">
             Profesionales con identidad confirmada, calidad contrastada y acceso directo al contacto.
           </p>
+          {isAuthenticated && user?.esTutor && !yaTienePerfilTutor && (
+            <button
+              className="vt-btn vt-btn--primary"
+              style={{ marginTop: '12px' }}
+              onClick={() => setShowCreateModal(true)}
+            >
+              + Crear Perfil de Profesor
+            </button>
+          )}
         </div>
       </div>
 

@@ -1,16 +1,37 @@
-import { useState } from "react"
-import { Link } from "react-router-dom"
+import { useState, useEffect } from "react"
+import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../../contexts/AuthContext"
+import { getMyTutorProfiles } from "../../api/tutorEndpoints"
 import Header from "../../components/Header/Header"
 import Settings from "./Settings"
 import "./MyProfile.css"
 
 const MyProfile = () => {
     const { isAuthenticated, loading } = useAuth()
+    const navigate = useNavigate()
     const [showSettings, setShowSettings] = useState(false)
+    const [checkingTutor, setCheckingTutor] = useState(true)
 
-    // Si está cargando, mostrar loading
-    if (loading) {
+    // Si el usuario tiene perfil de tutor, redirigir a su perfil de profesor
+    useEffect(() => {
+        if (!isAuthenticated || loading) {
+            setCheckingTutor(false);
+            return;
+        }
+        getMyTutorProfiles()
+            .then((perfiles) => {
+                if (perfiles && perfiles.length > 0) {
+                    navigate(`/profesores/${perfiles[0].id}`, { replace: true });
+                } else {
+                    setCheckingTutor(false);
+                }
+            })
+            .catch(() => {
+                setCheckingTutor(false);
+            });
+    }, [isAuthenticated, loading, navigate]);
+
+    if (loading || checkingTutor) {
         return (
             <>
                 <Header page={'inicio'} />
