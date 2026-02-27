@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { LuPlus, LuArrowLeft, LuCalendar, LuUsers } from 'react-icons/lu';
+import { LuPlus, LuArrowLeft, LuCalendar, LuUsers, LuLogIn, LuLogOut } from 'react-icons/lu';
 import Header from '../../components/Header/Header';
 import EventCard from '../../components/EventCard';
 import { communitiesApi } from '../../api/communities.api';
-import { listCommunityEvents, attendEvent, cancelAttendance } from '../../api/eventEndpoints';
+import { listCommunityEvents, attendEvent, cancelAttendance, getMyAttendance } from '../../api/eventEndpoints';
 import './CommunityDetail.css';
 
 export default function CommunityDetail() {
@@ -18,6 +18,9 @@ export default function CommunityDetail() {
   const [error, setError] = useState(null);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [filterCancelled, setFilterCancelled] = useState(false);
+  const [isMember, setIsMember] = useState(false);
+  const [joinLoading, setJoinLoading] = useState(false);
+  const [membershipError, setMembershipError] = useState(null);
 
   const currentUserId = localStorage.getItem('userId');
 
@@ -26,29 +29,56 @@ export default function CommunityDetail() {
       setLoading(true);
       const data = await communitiesApi.getById(communityId);
       setCommunity(data);
+      // Use esMiembro from backend response if available
+      if (data.esMiembro !== undefined) {
+        setIsMember(data.esMiembro);
+      } else if (currentUserId) {
+        // Fallback: check membership via API
+        try {
+          await communitiesApi.getMyMembership(communityId);
+          setIsMember(true);
+        } catch {
+          setIsMember(false);
+        }
+      }
     } catch (err) {
       console.error('Error al cargar la comunidad:', err);
       setError('No se pudo cargar la comunidad.');
     } finally {
       setLoading(false);
     }
-  }, [communityId]);
+  }, [communityId, currentUserId]);
 
   const fetchEvents = useCallback(async () => {
     try {
       setEventsLoading(true);
       const data = await listCommunityEvents(communityId, { cancelados: filterCancelled });
       // Soportar tanto array como objeto paginado
-      const eventList = Array.isArray(data) ? data : (data?.content || []);
+      let eventList = Array.isArray(data) ? data : (data?.content || []);
+
+      // Enriquecer cada evento con el estado de asistencia del usuario actual
+      if (currentUserId && eventList.length > 0) {
+        const enriched = await Promise.all(
+          eventList.map(async (event) => {
+            try {
+              const att = await getMyAttendance(event.id);
+              return { ...event, miAsistencia: att?.estado || null };
+            } catch {
+              return { ...event, miAsistencia: null };
+            }
+          })
+        );
+        eventList = enriched;
+      }
+
       setEvents(eventList);
     } catch (err) {
       console.error('Error al cargar eventos:', err);
-      // Si falla el endpoint de comunidad, intentar no mostrar error fatal
       setEvents([]);
     } finally {
       setEventsLoading(false);
     }
-  }, [communityId, filterCancelled]);
+  }, [communityId, filterCancelled, currentUserId]);
 
   useEffect(() => {
     fetchCommunity();
@@ -63,6 +93,13 @@ export default function CommunityDetail() {
     try {
       setAttendanceLoading(true);
       await attendEvent(eventId);
+      // Actualizar optimistamente el estado local
+      setEvents(prev => prev.map(ev =>
+        ev.id === eventId
+          ? { ...ev, miAsistencia: 'CONFIRMADA', asistentesConfirmados: (ev.asistentesConfirmados || 0) + 1 }
+          : ev
+      ));
+      // Refrescar desde el servidor
       await fetchEvents();
     } catch (err) {
       console.error('Error al confirmar asistencia:', err);
@@ -75,11 +112,58 @@ export default function CommunityDetail() {
     try {
       setAttendanceLoading(true);
       await cancelAttendance(eventId);
+      // Actualizar optimistamente el estado local
+      setEvents(prev => prev.map(ev =>
+        ev.id === eventId
+          ? { ...ev, miAsistencia: null, asistentesConfirmados: Math.max((ev.asistentesConfirmados || 1) - 1, 0) }
+          : ev
+      ));
+      // Refrescar desde el servidor
       await fetchEvents();
     } catch (err) {
       console.error('Error al cancelar asistencia:', err);
     } finally {
       setAttendanceLoading(false);
+    }
+  };
+
+  const handleJoinCommunity = async () => {
+    if (!currentUserId) {
+      navigate('/login');
+      return;
+    }
+    try {
+      setJoinLoading(true);
+      setMembershipError(null);
+      await communitiesApi.join(communityId);
+      setIsMember(true);
+      await fetchCommunity(); // Refresh member count
+    } catch (err) {
+      console.error('Error al unirse a la comunidad:', err);
+      if (err.status === 401 || err.message?.includes('401')) {
+        navigate('/login');
+      } else if (err.status === 409 || err.message?.includes('409')) {
+        setIsMember(true); // Already a member
+      } else {
+        setMembershipError(err.message || 'Error al unirse a la comunidad');
+      }
+    } finally {
+      setJoinLoading(false);
+    }
+  };
+
+  const handleLeaveCommunity = async () => {
+    try {
+      setJoinLoading(true);
+      setMembershipError(null);
+      await communitiesApi.leave(communityId);
+      setIsMember(false);
+      await fetchCommunity(); // Refresh member count
+    } catch (err) {
+      console.error('Error al abandonar la comunidad:', err);
+      setMembershipError(err.message || 'Error al abandonar la comunidad');
+    } finally {
+      setJoinLoading(false);
     }
   };
 
@@ -137,6 +221,38 @@ export default function CommunityDetail() {
                 <span className="cd-members">
                   <LuUsers /> {community.miembrosActuales || 0} miembros
                 </span>
+              </div>
+              {/* Join / Leave community */}
+              <div className="cd-membership-actions">
+                {membershipError && (
+                  <span className="cd-membership-error">{membershipError}</span>
+                )}
+                {currentUserId ? (
+                  isMember ? (
+                    <button
+                      className="cd-btn cd-btn-leave"
+                      onClick={handleLeaveCommunity}
+                      disabled={joinLoading}
+                    >
+                      <LuLogOut /> {joinLoading ? 'Saliendo...' : 'Abandonar comunidad'}
+                    </button>
+                  ) : (
+                    <button
+                      className="cd-btn cd-btn-join"
+                      onClick={handleJoinCommunity}
+                      disabled={joinLoading}
+                    >
+                      <LuLogIn /> {joinLoading ? 'Uniéndose...' : 'Unirse a la comunidad'}
+                    </button>
+                  )
+                ) : (
+                  <button
+                    className="cd-btn cd-btn-join"
+                    onClick={() => navigate('/login')}
+                  >
+                    <LuLogIn /> Inicia sesión para unirte
+                  </button>
+                )}
               </div>
             </div>
           </div>

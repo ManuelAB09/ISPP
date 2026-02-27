@@ -16,8 +16,10 @@ class ApiClient {
       'Content-Type': 'application/json',
     };
 
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
+    // Always read the freshest token available
+    const currentToken = this.token || localStorage.getItem('accessToken');
+    if (currentToken) {
+      headers['Authorization'] = `Bearer ${currentToken}`;
     }
 
     const options = {

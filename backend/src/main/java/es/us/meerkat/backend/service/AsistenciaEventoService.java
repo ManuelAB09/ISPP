@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.entity.AsistenciaEvento;
+import es.us.meerkat.backend.entity.EstadoAsistencia;
 import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
@@ -66,7 +67,12 @@ public class AsistenciaEventoService {
                 asistenciaRepository.findByEventoAndUsuario(eventoIdParam, usuarioIdParam);
         if (existente.isPresent()) {
             final AsistenciaEvento asistencia = existente.get();
+            final boolean yaConfirmada = EstadoAsistencia.CONFIRMADA.equals(asistencia.getEstado());
             asistencia.confirmarAsistencia();
+            if (!yaConfirmada) {
+                evento.setAsistentesConfirmados(evento.contarAsistentes() + 1);
+                eventoRepository.save(evento);
+            }
             return asistenciaRepository.save(asistencia);
         }
 
@@ -76,6 +82,10 @@ public class AsistenciaEventoService {
         asistencia.setUsuario(usuario);
         asistencia.confirmarAsistencia();
         asistencia.setCreatedAt(LocalDateTime.now());
+
+        // Actualizar contador de asistentes en el evento
+        evento.setAsistentesConfirmados(evento.contarAsistentes() + 1);
+        eventoRepository.save(evento);
 
         return asistenciaRepository.save(asistencia);
     }
@@ -97,8 +107,19 @@ public class AsistenciaEventoService {
                         .findByEventoAndUsuario(eventoIdParam, usuarioIdParam)
                         .orElseThrow(() -> new RuntimeException("Asistencia no encontrada"));
 
+        final boolean estabaConfirmada = EstadoAsistencia.CONFIRMADA.equals(asistencia.getEstado());
         asistencia.cancelarAsistencia();
         asistenciaRepository.save(asistencia);
+
+        // Actualizar contador de asistentes en el evento
+        if (estabaConfirmada) {
+            final Evento evento =
+                    eventoRepository
+                            .findById(eventoIdParam)
+                            .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
+            evento.setAsistentesConfirmados(Math.max(evento.contarAsistentes() - 1, 0));
+            eventoRepository.save(evento);
+        }
     }
 
     // ===============================
