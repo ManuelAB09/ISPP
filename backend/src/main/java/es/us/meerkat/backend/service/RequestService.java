@@ -31,7 +31,6 @@ public class RequestService {
     private final UsuarioRepository usuarioRepository;
     private final AuthorizationService authorizationService;
     private final CommunityService communityService;
-    private final MemberService memberService;
 
     /** Solicita acceso a una comunidad privada. */
     public SolicitudComunidad requestAccess(Long userId, Long communityId, String mensaje) {

@@ -21,4 +21,6 @@ public class UbicacionRequest {
 
     /** Longitud geográfica. */
     private Double longitud;
+
+    private String tipo;
 }
