@@ -37,4 +37,12 @@ public class Ubicacion {
     /** Longitud geográfica. */
     @Column(nullable = false)
     private Double longitud;
+
+    /** Tipo de ubicación (ej. biblioteca, universidad, etc.). */
+    @Column(nullable = false)
+    private String tipo;
+
+    /** Coste asociado al lugar (e.g., "gratis", "de pago", "desconocido"). */
+    @Column(nullable = false)
+    private String coste;
 }
