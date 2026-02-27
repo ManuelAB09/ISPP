@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import './Login.css';
 import studyShareLogo from '../../static/images/MeerKatters_logo.png';
 import { authApi } from '../../api/auth.api';
@@ -7,14 +8,34 @@ import { apiClient } from '../../api/client';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login, error: authError, clearError, isAuthenticated, loading } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     rememberMe: false,
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // Si ya está autenticado, mostrar mensaje
+  if (!loading && isAuthenticated) {
+    return (
+      <div className="login-container">
+        <div className="login-already-logged">
+          <div className="login-already-logged__icon">✓</div>
+          <h1 className="login-already-logged__title">Ya has iniciado sesión</h1>
+          <p className="login-already-logged__text">
+            Ya tienes una sesión activa en la aplicación.
+          </p>
+          <div className="login-already-logged__buttons">
+            <Link to="/" className="btn-home">Ir al inicio</Link>
+            <Link to="/perfil" className="btn-profile">Ver mi perfil</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -22,33 +43,26 @@ const Login = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
+    // Limpiar errores al escribir
+    if (error) setError('');
+    if (authError) clearError();
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
-    setLoading(true);
-    try {
-      const response = await authApi.login({
-        email: formData.email,
-        password: formData.password,
-      });
-      // Guardar token y datos del usuario
-      localStorage.setItem('accessToken', response.accessToken);
-      if (response.user) {
-        localStorage.setItem('userId', response.user.id);
-        localStorage.setItem('userName', response.user.nombre || '');
-        localStorage.setItem('userEmail', response.user.email || '');
-      }
-      // Configurar el token en el apiClient para futuras peticiones
-      apiClient.setToken(response.accessToken);
+
+    setIsLoading(true);
+    setError('');
+
+    const result = await login(formData.email, formData.password);
+    
+    if (result.success) {
       navigate('/');
-    } catch (err) {
-      console.error('Error al iniciar sesión:', err);
-      setError(err.message || 'Credenciales incorrectas. Inténtalo de nuevo.');
-    } finally {
-      setLoading(false);
+    } else {
+      setError(result.error || 'Error al iniciar sesión');
     }
+    
+    setIsLoading(false);
   };
 
   return (
@@ -56,9 +70,9 @@ const Login = () => {
       {/* Left Panel - Branding */}
       <div className="login-left-panel">
         <div className="login-brand-content">
-          <div className="login-logo-wrapper">
+          <Link to="/" className="login-logo-wrapper">
             <img src={studyShareLogo} alt="MeerKatters Logo" className="login-logo-img" />
-          </div>
+          </Link>
 
           <h1 className="login-brand-title">MeerKatters</h1>
           <p className="login-brand-description">
@@ -173,9 +187,14 @@ const Login = () => {
                 <span className="checkbox-text">Recordarme por 30 días</span>
               </label>
             </div>
+            {error && (
+              <div className="login-error-message">
+                {error}
+              </div>
+            )}
 
-            <button type="submit" className="login-button" disabled={loading}>
-              {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
+            <button type="submit" className="login-button" disabled={isLoading}>
+              {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
             </button>
           </form>
 

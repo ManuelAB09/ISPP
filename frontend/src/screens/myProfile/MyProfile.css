@@ -1,0 +1,613 @@
+/* ═══════════════════════════════════════════════════════════════
+   MyProfile - Estilos de la pantalla de perfil
+   ═══════════════════════════════════════════════════════════════ */
+
+.my-profile {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 60px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Sección Header del Perfil
+   ═══════════════════════════════════════════════════════════════ */
+.profile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 40px;
+    margin-bottom: 50px;
+}
+
+.profile-header__left {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background-color: var(--silver);
+    flex-shrink: 0;
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 450px;
+}
+
+.profile-info__name {
+    font-family: 'spacegrotesk', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--spaceIndigo);
+    margin: 0;
+}
+
+.profile-info__description {
+    font-family: 'inter', sans-serif;
+    font-size: 14px;
+    color: var(--graphite);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.profile-info__role {
+    display: inline-block;
+    background-color: var(--spaceIndigo);
+    color: white;
+    font-family: 'inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 16px;
+    border-radius: 20px;
+    width: fit-content;
+}
+
+.profile-header__right {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.btn-edit-profile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background-color: var(--spaceIndigo);
+    color: white;
+    font-family: 'inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-edit-profile:hover {
+    background-color: #1e2240;
+}
+
+.btn-icon {
+    font-size: 14px;
+}
+
+.btn-settings {
+    background-color: transparent;
+    color: var(--spaceIndigo);
+    font-family: 'inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 12px 24px;
+    border: 2px solid var(--spaceIndigo);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-settings:hover {
+    background-color: var(--spaceIndigo);
+    color: white;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Sección Mis Datos + Tu Actividad
+   ═══════════════════════════════════════════════════════════════ */
+.profile-data-section {
+    display: flex;
+    justify-content: space-between;
+    gap: 40px;
+    margin-bottom: 50px;
+}
+
+.profile-data {
+    flex: 1;
+}
+
+.section-title {
+    font-family: 'spacegrotesk', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--spaceIndigo);
+    margin: 0 0 20px 0;
+}
+
+.profile-data__content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.data-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.data-field__label {
+    font-family: 'inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--silver);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.data-field__value {
+    font-family: 'inter', sans-serif;
+    font-size: 16px;
+    color: var(--spaceIndigo);
+}
+
+/* Card Tu Actividad */
+.activity-card {
+    background: linear-gradient(135deg, #4a5490 0%, #2D3250 100%);
+    border-radius: 16px;
+    padding: 24px 30px;
+    width: 320px;
+    flex-shrink: 0;
+}
+
+.activity-card__title {
+    font-family: 'spacegrotesk', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: white;
+    margin: 0 0 20px 0;
+    text-align: center;
+}
+
+.activity-card__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.activity-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.activity-stat__value {
+    font-family: 'spacegrotesk', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: white;
+}
+
+.activity-stat__label {
+    font-family: 'inter', sans-serif;
+    font-size: 10px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    text-align: center;
+    letter-spacing: 0.3px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Sección Mis Comunidades
+   ═══════════════════════════════════════════════════════════════ */
+.my-communities-section {
+    margin-bottom: 50px;
+}
+
+.communities-grid {
+    display: flex;
+    gap: 20px;
+    align-items: stretch;
+    flex-wrap: wrap;
+}
+
+.community-card {
+    width: 220px;
+    border: 2px solid var(--alabasterGray);
+    border-radius: 12px;
+    overflow: hidden;
+    background-color: white;
+}
+
+.community-card__image {
+    width: 100%;
+    height: 100px;
+    background-color: var(--silver);
+}
+
+.community-card__content {
+    padding: 12px;
+}
+
+.community-card__name {
+    font-family: 'spacegrotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--spaceIndigo);
+    margin: 0 0 6px 0;
+    line-height: 1.3;
+}
+
+.community-card__description {
+    font-family: 'inter', sans-serif;
+    font-size: 11px;
+    color: var(--graphite);
+    line-height: 1.4;
+    margin: 0;
+}
+
+/* Card Explorar */
+.community-card--explore {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    border-style: dashed;
+    border-color: var(--silver);
+    text-align: center;
+}
+
+.explore-icon {
+    font-size: 40px;
+    color: var(--silver);
+    margin-bottom: 10px;
+}
+
+.explore-title {
+    font-family: 'spacegrotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--spaceIndigo);
+    margin: 0 0 8px 0;
+}
+
+.explore-text {
+    font-family: 'inter', sans-serif;
+    font-size: 11px;
+    color: var(--silver);
+    line-height: 1.4;
+    margin: 0;
+}
+
+.communities-view-all {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+}
+
+.view-all-link {
+    font-family: 'inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--glaucous);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.view-all-link:hover {
+    color: var(--spaceIndigo);
+    text-decoration: underline;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Sección Comunidades Creadas
+   ═══════════════════════════════════════════════════════════════ */
+.created-communities-section {
+    margin-bottom: 50px;
+}
+
+.created-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.section-subtitle {
+    font-family: 'inter', sans-serif;
+    font-size: 14px;
+    color: var(--silver);
+    margin: 6px 0 0 0;
+}
+
+.btn-create-new {
+    background-color: var(--spaceIndigo);
+    color: white;
+    font-family: 'inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-create-new:hover {
+    background-color: #1e2240;
+}
+
+.created-communities-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.created-community-card {
+    display: flex;
+    gap: 24px;
+    border: 2px solid var(--alabasterGray);
+    border-radius: 12px;
+    overflow: hidden;
+    background-color: white;
+}
+
+.created-community-card__image {
+    width: 200px;
+    min-height: 140px;
+    background-color: var(--silver);
+    flex-shrink: 0;
+}
+
+.created-community-card__content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 16px 20px 16px 0;
+    gap: 8px;
+    flex: 1;
+}
+
+.created-community-card__header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.created-community-card__name {
+    font-family: 'spacegrotesk', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--spaceIndigo);
+    margin: 0;
+}
+
+.created-community-card__tags {
+    display: flex;
+    gap: 8px;
+}
+
+.tag {
+    background-color: var(--glaucous);
+    color: white;
+    font-family: 'inter', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 20px;
+}
+
+.created-community-card__description {
+    font-family: 'inter', sans-serif;
+    font-size: 13px;
+    color: var(--graphite);
+    line-height: 1.4;
+    margin: 0;
+}
+
+.created-community-card__members {
+    font-family: 'inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--spaceIndigo);
+    margin: 0;
+}
+
+.created-community-card__actions {
+    display: flex;
+    gap: 20px;
+    margin-top: 4px;
+}
+
+.action-link {
+    font-family: 'inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--glaucous);
+    text-decoration: underline;
+    transition: color 0.2s;
+}
+
+.action-link:hover {
+    color: var(--spaceIndigo);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Responsive
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+    .my-profile {
+        padding: 30px 40px;
+    }
+
+    .profile-header {
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .profile-header__right {
+        flex-direction: row;
+        width: 100%;
+    }
+
+    .profile-data-section {
+        flex-direction: column;
+    }
+
+    .activity-card {
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .my-profile {
+        padding: 20px;
+    }
+
+    .profile-header__left {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .profile-info {
+        align-items: center;
+    }
+
+    .profile-header__right {
+        flex-direction: column;
+    }
+
+    .btn-edit-profile,
+    .btn-view-public {
+        width: 100%;
+    }
+
+    .communities-grid {
+        justify-content: center;
+    }
+
+    .created-community-card {
+        flex-direction: column;
+    }
+
+    .created-community-card__image {
+        width: 100%;
+        height: 150px;
+    }
+
+    .created-community-card__content {
+        padding: 16px;
+    }
+
+    .created-header {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .btn-create-new {
+        width: 100%;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Estado: No autenticado
+   ═══════════════════════════════════════════════════════════════ */
+.profile-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+    font-family: 'inter', sans-serif;
+    font-size: 18px;
+    color: var(--silver);
+}
+
+.profile-not-logged {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 400px;
+    padding: 40px;
+}
+
+.profile-not-logged__icon {
+    font-size: 64px;
+    margin-bottom: 24px;
+}
+
+.profile-not-logged__title {
+    font-family: 'spacegrotesk', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--spaceIndigo);
+    margin: 0 0 12px 0;
+}
+
+.profile-not-logged__text {
+    font-family: 'inter', sans-serif;
+    font-size: 16px;
+    color: var(--graphite);
+    margin: 0 0 32px 0;
+    max-width: 400px;
+}
+
+.profile-not-logged__buttons {
+    display: flex;
+    gap: 16px;
+}
+
+.profile-not-logged__buttons .btn-login {
+    background-color: var(--spaceIndigo);
+    color: white;
+    font-family: 'inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 12px 32px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.profile-not-logged__buttons .btn-login:hover {
+    background-color: #1e2240;
+}
+
+.profile-not-logged__buttons .btn-register {
+    background-color: transparent;
+    color: var(--spaceIndigo);
+    font-family: 'inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 12px 32px;
+    border: 2px solid var(--spaceIndigo);
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.profile-not-logged__buttons .btn-register:hover {
+    background-color: var(--spaceIndigo);
+    color: white;
+}
