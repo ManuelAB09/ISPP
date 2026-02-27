@@ -259,58 +259,6 @@ public class CommunityController {
         }
     }
 
-    /** Contrata un tutor para la comunidad. POST /api/v1/communities/{communityId}/tutor */
-    @PostMapping("/{communityId}/tutor")
-    @Operation(
-            summary = "Contratar tutor",
-            description =
-                    "Inicia el proceso de pago para contratar un tutor (solo para comunidades"
-                            + " privadas)",
-            security = @SecurityRequirement(name = "bearerAuth"))
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Tutor contratado exitosamente"),
-        @ApiResponse(
-                responseCode = "400",
-                description = "No se puede contratar en comunidad pública"),
-        @ApiResponse(responseCode = "403", description = "No tienes permisos")
-    })
-    public ResponseEntity<MessageResponse> hireTutor(
-            @PathVariable Long communityId,
-            @Valid @RequestBody HireTutorRequest request,
-            @AuthenticationPrincipal Usuario usuario) {
-
-        if (usuario == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        return ResponseEntity.ok(
-                MessageResponse.builder()
-                        .message("Funcionalidad de contratación de tutores en implementación")
-                        .build());
-    }
-
-    /** Desvincula un tutor de la comunidad. DELETE /api/v1/communities/{communityId}/tutor */
-    @DeleteMapping("/{communityId}/tutor")
-    @Operation(
-            summary = "Desvincular tutor",
-            description = "Termina la contratación del tutor actual (solo admin)",
-            security = @SecurityRequirement(name = "bearerAuth"))
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Tutor desvinculado"),
-        @ApiResponse(responseCode = "403", description = "No tienes permisos"),
-        @ApiResponse(responseCode = "404", description = "Tutor no encontrado")
-    })
-    public ResponseEntity<MessageResponse> removeTutor(
-            @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
-
-        if (usuario == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        return ResponseEntity.ok(
-                MessageResponse.builder().message("Tutor desvinculado correctamente").build());
-    }
-
     // =====================================================
     // MIEMBROS
     // =====================================================
