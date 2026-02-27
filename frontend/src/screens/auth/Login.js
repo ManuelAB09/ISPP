@@ -1,15 +1,20 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './Login.css';
-import studyShareLogo from '../../static/images/studyShare_logo.png';
+import studyShareLogo from '../../static/images/MeerKatters_logo.png';
+import { authApi } from '../../api/auth.api';
+import { apiClient } from '../../api/client';
 
 const Login = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     rememberMe: false,
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -21,9 +26,29 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Implement login logic with API
-    console.log('Login submitted:', formData);
-    // navigate('/dashboard');
+    setError(null);
+    setLoading(true);
+    try {
+      const response = await authApi.login({
+        email: formData.email,
+        password: formData.password,
+      });
+      // Guardar token y datos del usuario
+      localStorage.setItem('accessToken', response.accessToken);
+      if (response.user) {
+        localStorage.setItem('userId', response.user.id);
+        localStorage.setItem('userName', response.user.nombre || '');
+        localStorage.setItem('userEmail', response.user.email || '');
+      }
+      // Configurar el token en el apiClient para futuras peticiones
+      apiClient.setToken(response.accessToken);
+      navigate('/');
+    } catch (err) {
+      console.error('Error al iniciar sesión:', err);
+      setError(err.message || 'Credenciales incorrectas. Inténtalo de nuevo.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -62,6 +87,19 @@ const Login = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="login-form">
+            {error && (
+              <div className="login-error" style={{
+                background: '#fef2f2',
+                color: '#dc2626',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                marginBottom: '16px',
+                fontSize: '14px',
+                border: '1px solid #fecaca'
+              }}>
+                {error}
+              </div>
+            )}
             <div className="form-group">
               <label htmlFor="email">Correo electrónico</label>
               <div className="input-with-icon">
@@ -136,8 +174,8 @@ const Login = () => {
               </label>
             </div>
 
-            <button type="submit" className="login-button">
-              Iniciar sesión
+            <button type="submit" className="login-button" disabled={loading}>
+              {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
             </button>
           </form>
 

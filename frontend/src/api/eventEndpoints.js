@@ -8,7 +8,7 @@ const getUserId = () => localStorage.getItem('userId');
  * POST /communities/{communityId}/events
  */
 export const createEvent = async (communityId, eventData) => {
-  const response = await axiosInstance.post(`/communities/${communityId}/events`, eventData);
+  const response = await axiosInstance.post(`/api/v1/communities/${communityId}/events`, eventData);
   return response.data;
 };
 
@@ -17,7 +17,7 @@ export const createEvent = async (communityId, eventData) => {
  * GET /events/{eventId}
  */
 export const getEventById = async (eventId) => {
-  const response = await axiosInstance.get(`/events/${eventId}`);
+  const response = await axiosInstance.get(`/api/v1/events/${eventId}`);
   return response.data;
 };
 
@@ -27,7 +27,7 @@ export const getEventById = async (eventId) => {
  * Backend espera @RequestParam, se envían como query params
  */
 export const updateEvent = async (eventId, eventData) => {
-  const response = await axiosInstance.put(`/events/${eventId}`, null, { params: eventData });
+  const response = await axiosInstance.put(`/api/v1/events/${eventId}`, null, { params: eventData });
   return response.data;
 };
 
@@ -36,7 +36,7 @@ export const updateEvent = async (eventId, eventData) => {
  * GET /communities/{communityId}/events
  */
 export const listCommunityEvents = async (communityId, params = {}) => {
-  const response = await axiosInstance.get(`/communities/${communityId}/events`, { params });
+  const response = await axiosInstance.get(`/api/v1/communities/${communityId}/events`, { params });
   return response.data;
 };
 
@@ -45,7 +45,7 @@ export const listCommunityEvents = async (communityId, params = {}) => {
  * GET /events
  */
 export const listPublicEvents = async (params = {}) => {
-  const response = await axiosInstance.get('/events', { params });
+  const response = await axiosInstance.get('/api/v1/events', { params });
   return response.data;
 };
 
@@ -54,7 +54,7 @@ export const listPublicEvents = async (params = {}) => {
  * POST /events/{eventId}/cancel
  */
 export const cancelEvent = async (eventId, motivo = '') => {
-  const response = await axiosInstance.post(`/events/${eventId}/cancel`, null, { params: { motivo } });
+  const response = await axiosInstance.post(`/api/v1/events/${eventId}/cancel`, null, { params: { motivo } });
   return response.data;
 };
 
@@ -64,7 +64,7 @@ export const cancelEvent = async (eventId, motivo = '') => {
  */
 export const attendEvent = async (eventId) => {
   const usuarioId = getUserId();
-  const response = await axiosInstance.post(`/events/${eventId}/attendance`, null, { params: { usuarioId } });
+  const response = await axiosInstance.post(`/api/v1/events/${eventId}/attendance`, null, { params: { usuarioId } });
   return response.data;
 };
 
@@ -74,7 +74,7 @@ export const attendEvent = async (eventId) => {
  */
 export const getMyAttendance = async (eventId) => {
   const usuarioId = getUserId();
-  const response = await axiosInstance.get(`/events/${eventId}/attendance/me`, { params: { usuarioId } });
+  const response = await axiosInstance.get(`/api/v1/events/${eventId}/attendance/me`, { params: { usuarioId } });
   return response.data;
 };
 
@@ -84,7 +84,7 @@ export const getMyAttendance = async (eventId) => {
  */
 export const cancelAttendance = async (eventId) => {
   const usuarioId = getUserId();
-  const response = await axiosInstance.delete(`/events/${eventId}/attendance/me`, { params: { usuarioId } });
+  const response = await axiosInstance.delete(`/api/v1/events/${eventId}/attendance/me`, { params: { usuarioId } });
   return response.data;
 };
 
@@ -93,7 +93,7 @@ export const cancelAttendance = async (eventId) => {
  * GET /events/{eventId}/attendance
  */
 export const listAttendees = async (eventId) => {
-  const response = await axiosInstance.get(`/events/${eventId}/attendance`);
+  const response = await axiosInstance.get(`/api/v1/events/${eventId}/attendance`);
   return response.data;
 };
 
@@ -102,7 +102,7 @@ export const listAttendees = async (eventId) => {
  * GET /events/{eventId}/attendance/confirmed
  */
 export const getConfirmedAttendees = async (eventId) => {
-  const response = await axiosInstance.get(`/events/${eventId}/attendance/confirmed`);
+  const response = await axiosInstance.get(`/api/v1/events/${eventId}/attendance/confirmed`);
   return response.data;
 };
 
@@ -111,6 +111,6 @@ export const getConfirmedAttendees = async (eventId) => {
  * GET /events/{eventId}/attendance/count
  */
 export const getAttendanceCount = async (eventId) => {
-  const response = await axiosInstance.get(`/events/${eventId}/attendance/count`);
+  const response = await axiosInstance.get(`/api/v1/events/${eventId}/attendance/count`);
   return response.data;
 };

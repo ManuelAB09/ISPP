@@ -177,4 +177,23 @@ public class EventoService {
 
         return evento.generarEnlaceVirtual();
     }
+
+    // ===============================
+    // EVENTOS POR COMUNIDAD
+    // ===============================
+
+    /**
+     * Obtiene los eventos de una comunidad.
+     *
+     * @param comunidadId Identificador de la comunidad.
+     * @param incluirCancelados Si se deben incluir los eventos cancelados.
+     * @return Lista de eventos de la comunidad.
+     */
+    public List<Evento> obtenerEventosPorComunidad(
+            final Long comunidadId, final boolean incluirCancelados) {
+        if (incluirCancelados) {
+            return eventoRepository.findByComunidadId(comunidadId);
+        }
+        return eventoRepository.findByComunidadIdAndCanceladoFalse(comunidadId);
+    }
 }

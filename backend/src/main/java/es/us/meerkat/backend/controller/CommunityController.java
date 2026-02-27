@@ -15,12 +15,14 @@ import es.us.meerkat.backend.dto.*;
 import es.us.meerkat.backend.entity.Categoria;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.EstadoSolicitud;
+import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.MiembroComunidad;
 import es.us.meerkat.backend.entity.SolicitudComunidad;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.AuthorizationService;
 import es.us.meerkat.backend.service.CategoryService;
 import es.us.meerkat.backend.service.CommunityService;
+import es.us.meerkat.backend.service.EventoService;
 import es.us.meerkat.backend.service.MemberService;
 import es.us.meerkat.backend.service.RequestService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -47,6 +49,7 @@ public class CommunityController {
     private final RequestService requestService;
     private final CategoryService categoryService;
     private final AuthorizationService authorizationService;
+    private final EventoService eventoService;
 
     // =====================================================
     // COMUNIDADES - LISTADO Y CRUD BÁSICO
@@ -757,6 +760,39 @@ public class CommunityController {
                         .collect(Collectors.toList());
 
         return ResponseEntity.ok(new CategoryListResponse(response));
+    }
+
+    // =====================================================
+    // EVENTOS DE COMUNIDAD
+    // =====================================================
+
+    /**
+     * Lista los eventos de una comunidad. GET /api/v1/communities/{communityId}/events
+     */
+    @GetMapping("/{communityId}/events")
+    @Operation(
+            summary = "Listar eventos de comunidad",
+            description = "Devuelve los eventos asociados a una comunidad")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Lista de eventos obtenida"),
+        @ApiResponse(responseCode = "404", description = "Comunidad no encontrada")
+    })
+    public ResponseEntity<List<EventSummaryResponse>> listCommunityEvents(
+            @PathVariable Long communityId,
+            @RequestParam(name = "cancelados", defaultValue = "false") boolean cancelados) {
+
+        try {
+            communityService.getCommunityById(communityId, null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        List<Evento> eventos = eventoService.obtenerEventosPorComunidad(communityId, cancelados);
+        List<EventSummaryResponse> response = eventos.stream()
+                .map(Evento::toSummaryDTO)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(response);
     }
 
     // =====================================================

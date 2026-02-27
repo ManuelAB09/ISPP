@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './Register.css';
-import studyShareLogo from '../../static/images/studyShare_logo.png';
+import studyShareLogo from '../../static/images/MeerKatters_logo.png';
 
 const ACADEMIC_INTERESTS = [
   'Ingeniería Software',
