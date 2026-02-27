@@ -14,6 +14,8 @@ public class UbicacionRequest {
     /** Nombre del lugar (ej. Biblioteca Central). */
     private String nombre;
 
+    private String direccion;
+
     /** Latitud geográfica. */
     private Double latitud;
 

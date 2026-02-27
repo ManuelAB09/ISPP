@@ -27,6 +27,9 @@ public class Ubicacion {
     @Column(nullable = false)
     private String nombre;
 
+    @Column(nullable = false)
+    private String direccion;
+
     /** Latitud geográfica. */
     @Column(nullable = false)
     private Double latitud;

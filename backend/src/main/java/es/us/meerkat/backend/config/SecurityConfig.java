@@ -41,6 +41,9 @@ public class SecurityConfig {
                         auth ->
                                 auth.requestMatchers(
                                                 "/api/v1/auth/**",
+                                                "/api/ubicaciones",
+                                                "/api/ubicaciones/**",
+                                                "/api/nominatim/**",
                                                 "/swagger-ui/**",
                                                 "/swagger-ui**",
                                                 "/swagger-ui.html",
@@ -61,6 +64,9 @@ public class SecurityConfig {
                                                 "/webjars/**",
                                                 "/h2-console/**",
                                                 "/actuator/**")
+                                        .permitAll()
+                                        // Permitir preflight CORS (OPTIONS) en todas las rutas
+                                        .requestMatchers(HttpMethod.OPTIONS, "/**")
                                         .permitAll()
                                         // Permitir todas las rutas SPA (React Router)
                                         // que no empiecen por /api

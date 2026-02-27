@@ -14,13 +14,13 @@ export const communitiesApi = {
     if (params.size !== undefined) query.set('size', String(params.size));
     
     const queryString = query.toString();
-    return apiClient.get(`/communities${queryString ? '?' + queryString : ''}`);
+    return apiClient.get(`/api/v1/communities${queryString ? '?' + queryString : ''}`);
   },
 
   /**
    * POST /api/v1/communities
    * Crear nueva comunidad
-   * @param {Object} data - { nombre, descripcion?, tipoGrupo, imagen? }
+   * @param {Object} data - { nombre, descripcion?, tipoGrupo, imagenUrl? }
    */
   create(data) {
     return apiClient.post('/api/v1/communities', data);

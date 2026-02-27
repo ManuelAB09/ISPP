@@ -18,6 +18,8 @@ public class UbicacionResponse {
     /** Nombre del lugar. */
     private String nombre;
 
+    private String direccion;
+
     /** Latitud geográfica. */
     private Double latitud;
 
