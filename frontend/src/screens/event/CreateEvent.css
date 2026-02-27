@@ -109,8 +109,8 @@
 .input-row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
+  gap: 0.5rem;
+  width: fit-content;
 }
 
 .input-box {
@@ -135,14 +135,15 @@
   box-shadow: 0 0 0 2px rgba(108, 116, 161, 0.2);
 }
 
-.input-small { width: auto; flex: 1; min-width: 3.5rem; text-align: center; border: 1px solid #e5e7eb; }
-.input-medium { width: auto; flex: 1.5; min-width: 4.5rem; text-align: center; border: 1px solid #e5e7eb; }
+.input-small { width: auto; flex: 0 0 4rem; min-width: 3.5rem; text-align: center; border: 1px solid #e5e7eb; }
+.input-medium { width: auto; flex: 0 0 5rem; min-width: 4.5rem; text-align: center; border: 1px solid #e5e7eb; }
 
-.input-icon {
+.input-row .input-icon {
+  position: static;
   color: #848BA8;
   width: 1.75rem;
   height: 1.75rem;
-  margin-left: 0.5rem;
+  margin-left: 0.25rem;
   flex-shrink: 0;
 }
 

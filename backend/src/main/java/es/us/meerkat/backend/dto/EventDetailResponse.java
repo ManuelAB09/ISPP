@@ -62,8 +62,11 @@ public class EventDetailResponse {
     /** Si el evento es privado. */
     private Boolean privado;
 
-    /** Comunidad a la que pertenece el evento. */
-    // private CommunitySummaryResponse comunidad;
+    /** ID de la comunidad a la que pertenece el evento. */
+    private Long comunidadId;
+
+    /** Nombre de la comunidad a la que pertenece el evento. */
+    private String comunidadNombre;
 
     /** Usuario creador del evento. */
     private UserPublicResponse creador;
