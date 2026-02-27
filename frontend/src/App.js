@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
 import './App.css';
 import Comunidades from './screens/comunidades/Comunidades';
 import CommunityDetail from './screens/comunidades/CommunityDetail';
@@ -13,6 +14,7 @@ import PlansScreen from './screens/planes/PlansScreen';
 import TeacherProfile from './screens/teacherProfile/TeacherProfile';
 import VerifiedTeachers from './screens/verifiedTeachers/VerifiedTeachers';
 import CrearUbicacionScreen from './screens/ubicaciones/CrearUbicacionScreen';
+import MyProfile from './screens/myProfile/MyProfile';
 
 function App() {
   let ownerRoutes = <></>
@@ -41,7 +43,7 @@ function App() {
   }
 
   return (
-    <div>
+    <AuthProvider>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/comunidades" element={<Comunidades />} />
@@ -51,9 +53,10 @@ function App() {
         <Route path="/crear-ubicacion" element={<CrearUbicacionScreen />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/perfil" element={<MyProfile />} />
         {ownerRoutes}
       </Routes>
-    </div>
+    </AuthProvider>
   );
 }
 

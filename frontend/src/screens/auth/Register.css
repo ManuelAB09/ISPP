@@ -348,6 +348,23 @@
   transform: translateY(0);
 }
 
+.register-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Error Message */
+.register-error-message {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #dc2626;
+  font-size: 14px;
+  text-align: center;
+}
+
 /* Login Link */
 .login-link {
   text-align: center;
@@ -511,4 +528,87 @@
     padding: 8px 14px;
     font-size: 13px;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Estado: Ya autenticado
+   ═══════════════════════════════════════════════════════════════ */
+.register-already-logged {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 100vh;
+  padding: 40px;
+  width: 100%;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.register-already-logged__icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #16a34a;
+  color: white;
+  font-size: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.register-already-logged__title {
+  font-family: 'spacegrotesk', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #2D3250;
+  margin: 0 0 12px 0;
+}
+
+.register-already-logged__text {
+  font-family: 'inter', sans-serif;
+  font-size: 16px;
+  color: #6c757d;
+  margin: 0 0 32px 0;
+  max-width: 400px;
+}
+
+.register-already-logged__buttons {
+  display: flex;
+  gap: 16px;
+}
+
+.register-already-logged__buttons .btn-home {
+  background-color: #2D3250;
+  color: white;
+  font-family: 'inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 12px 32px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.register-already-logged__buttons .btn-home:hover {
+  background-color: #1e2240;
+}
+
+.register-already-logged__buttons .btn-profile {
+  background-color: transparent;
+  color: #2D3250;
+  font-family: 'inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 12px 32px;
+  border: 2px solid #2D3250;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.register-already-logged__buttons .btn-profile:hover {
+  background-color: #2D3250;
+  color: white;
 }
