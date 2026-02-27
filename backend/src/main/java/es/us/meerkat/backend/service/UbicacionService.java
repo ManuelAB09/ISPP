@@ -51,6 +51,14 @@ public class UbicacionService {
     @Transactional
     public UbicacionResponse crearUbicacion(final UbicacionRequest requestParam) {
 
+        final Ubicacion ubicacion = Ubicacion.builder()
+                .nombre(requestParam.getNombre())
+                .direccion(requestParam.getDireccion())
+                .latitud(requestParam.getLatitud())
+                .longitud(requestParam.getLongitud())
+                .tipo(requestParam.getTipo())
+                .coste(requestParam.getCoste())
+                .build();
         // Primero, buscamos si ya existe una ubicación con la misma latitud y longitud
         Optional<Ubicacion> existente = ubicacionRepository
                 .findByLatitudAndLongitud(requestParam.getLatitud(), requestParam.getLongitud());
