@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { LuPlus, LuArrowLeft, LuCalendar, LuUsers, LuLogIn, LuLogOut } from 'react-icons/lu';
 import Header from '../../components/Header/Header';
-import EventCard from '../../components/EventCard';
+import EventCard from '../../components/Event/EventCard';
 import { communitiesApi } from '../../api/communities.api';
 import { listCommunityEvents, attendEvent, cancelAttendance, getMyAttendance } from '../../api/eventEndpoints';
 import './CommunityDetail.css';
@@ -161,7 +161,12 @@ export default function CommunityDetail() {
       await fetchCommunity(); // Refresh member count
     } catch (err) {
       console.error('Error al abandonar la comunidad:', err);
-      setMembershipError(err.message || 'Error al abandonar la comunidad');
+      const status = err.status || err.response?.status;
+      if (status === 400) {
+        setMembershipError('No puedes abandonar siendo el único admin. Transfiere la administración primero.');
+      } else {
+        setMembershipError(err.message || 'Error al abandonar la comunidad');
+      }
     } finally {
       setJoinLoading(false);
     }
@@ -273,12 +278,14 @@ export default function CommunityDetail() {
                 />
                 Mostrar cancelados
               </label>
-              <button
-                className="cd-btn cd-btn-create"
-                onClick={() => navigate(`/create-event/new?communityId=${communityId}`)}
-              >
-                <LuPlus /> Crear evento
-              </button>
+              {isMember && (
+                <button
+                  className="cd-btn cd-btn-create"
+                  onClick={() => navigate(`/create-event/new?communityId=${communityId}`)}
+                >
+                  <LuPlus /> Crear evento
+                </button>
+              )}
             </div>
           </div>
 
@@ -290,7 +297,7 @@ export default function CommunityDetail() {
                 <EventCard
                   key={event.id}
                   event={event}
-                  onAttend={currentUserId ? handleAttend : null}
+                  onAttend={currentUserId && isMember ? handleAttend : null}
                   onCancelAttendance={currentUserId ? handleCancelAttendance : null}
                   attendanceLoading={attendanceLoading}
                 />
@@ -301,12 +308,14 @@ export default function CommunityDetail() {
               <LuCalendar className="cd-empty-icon" />
               <h3>No hay eventos</h3>
               <p>Sé el primero en crear un evento para esta comunidad.</p>
-              <button
-                className="cd-btn cd-btn-create"
-                onClick={() => navigate(`/create-event/new?communityId=${communityId}`)}
-              >
-                <LuPlus /> Crear evento
-              </button>
+              {isMember && (
+                <button
+                  className="cd-btn cd-btn-create"
+                  onClick={() => navigate(`/create-event/new?communityId=${communityId}`)}
+                >
+                  <LuPlus /> Crear evento
+                </button>
+              )}
             </div>
           )}
         </div>

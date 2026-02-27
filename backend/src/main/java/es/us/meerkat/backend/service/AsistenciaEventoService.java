@@ -12,6 +12,7 @@ import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
 import es.us.meerkat.backend.repository.EventoRepository;
+import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -32,6 +33,9 @@ public class AsistenciaEventoService {
 
     /** Repositorio para acceder a la información de usuarios. */
     private final UsuarioRepository usuarioRepository;
+
+    /** Repositorio para acceder a la información de miembros de comunidad. */
+    private final MiembroComunidadRepository miembroRepository;
 
     // ===============================
     // CONFIRMAR ASISTENCIA
@@ -56,6 +60,14 @@ public class AsistenciaEventoService {
                 usuarioRepository
                         .findById(usuarioIdParam)
                         .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        // Verificar si el usuario es miembro de la comunidad del evento
+        if (evento.getComunidad() != null) {
+            miembroRepository.findByUsuarioIdAndComunidadId(
+                    usuarioIdParam, evento.getComunidad().getId())
+                    .orElseThrow(() -> new RuntimeException(
+                            "Debes ser miembro de la comunidad para apuntarte a este evento"));
+        }
 
         // Verificar si el evento está lleno
         if (evento.verificarAforo()) {
