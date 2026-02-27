@@ -3,6 +3,7 @@ package es.us.meerkat.backend.entity;
 import java.time.LocalDateTime;
 
 import es.us.meerkat.backend.dto.AttendanceResponse;
+import es.us.meerkat.backend.dto.UserPublicResponse;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -60,9 +61,20 @@ public class AsistenciaEvento {
     }
 
     public AttendanceResponse toDTO() {
+        UserPublicResponse userDto = null;
+        if (this.usuario != null) {
+            userDto = es.us.meerkat.backend.dto.UserPublicResponse.builder()
+                    .id(this.usuario.getId())
+                    .nombre(this.usuario.getNombre())
+                    .foto(this.usuario.getFoto())
+                    .bio(this.usuario.getBio())
+                    .intereses(this.usuario.getIntereses())
+                    .esTutor(this.usuario.getEsTutor())
+                    .build();
+        }
         return AttendanceResponse.builder()
                 .id(this.id)
-                // .usuario(this.usuario)
+                .usuario(userDto)
                 .estado(this.estado)
                 .createdAt(this.createdAt)
                 .build();

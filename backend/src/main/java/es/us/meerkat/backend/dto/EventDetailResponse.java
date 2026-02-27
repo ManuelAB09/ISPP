@@ -45,7 +45,7 @@ public class EventDetailResponse {
     private String queLlevar;
 
     /** Si es visible en el mapa. */
-    private Boolean visibleEnMapa;
+    private Boolean visibleMapa;
 
     /** Si tiene modalidad virtual. */
     private Boolean esVirtual;
@@ -59,6 +59,9 @@ public class EventDetailResponse {
     /** Motivo de la cancelación. */
     private String motivoCancelacion;
 
+    /** Si el evento es privado. */
+    private Boolean privado;
+
     /** Comunidad a la que pertenece el evento. */
     // private CommunitySummaryResponse comunidad;
 
@@ -70,4 +73,7 @@ public class EventDetailResponse {
 
     /** Fecha de creación del evento. */
     private LocalDateTime createdAt;
+
+    /** Ubicación del evento. */
+    private UbicacionResponse ubicacion;
 }
