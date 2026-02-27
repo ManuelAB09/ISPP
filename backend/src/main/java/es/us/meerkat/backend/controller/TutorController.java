@@ -20,8 +20,8 @@ import es.us.meerkat.backend.dto.TutorProfileResponse;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.TutorService;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.RequestBody;
 
 /** Controlador para manejar las operaciones relacionadas con los tutores. */
 @RestController

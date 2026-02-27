@@ -247,7 +247,9 @@ public class Evento {
                 .cancelado(this.cancelado)
                 .motivoCancelacion(this.motivoCancelacion)
                 .privado(this.privado)
-                .createdAt(this.createdAt);
+                .createdAt(this.createdAt)
+                .comunidadId(this.comunidad != null ? this.comunidad.getId() : null)
+                .comunidadNombre(this.comunidad != null ? this.comunidad.getNombre() : null);
 
         if (this.creador != null) {
             builder.creador(

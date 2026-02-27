@@ -1,65 +1,62 @@
 import React, { useState } from "react";
-import { updateTutorProfile } from "../../api/tutorEndpoints";
+import { createTutorProfile } from "../../api/tutorEndpoints";
 import "./TutorModals.css";
 
 /**
- * Modal para editar el perfil de tutor.
- * Permite modificar especialidades, tarifa por hora, disponibilidad y bio.
- * Llama a PUT /api/v1/tutors/{tutorId}
+ * Modal para crear un perfil de tutor nuevo.
+ * Llama a POST /api/v1/tutors
  *
  * Props:
-  *   - tutor: objeto TutorProfileResponse actual
-  *   - onClose: callback para cerrar el modal
-  *   - onGuardar: callback(updatedTutor) cuando se guarda correctamente
-  */
- const EditProfileModal = ({ tutor, onClose, onGuardar }) => {
-   const [form, setForm] = useState({
-     especialidades: (tutor.especialidades || []).join(", "),
-     tarifaHora: tutor.tarifaHora ?? "",
-     disponibilidad: tutor.disponibilidad ?? "",
-     bio: tutor.bio ?? "",
-   });
-   const [guardando, setGuardando] = useState(false);
-   const [error, setError] = useState(null);
- 
-   const handleChange = (e) => {
-     const { name, value } = e.target;
-     setForm((prev) => ({ ...prev, [name]: value }));
-   };
- 
-   const handleSubmit = async (e) => {
-     e.preventDefault();
-     setGuardando(true);
-     setError(null);
- 
-     // Convertir especialidades de string CSV a array
-     const payload = {
-       especialidades: form.especialidades
-         .split(",")
-         .map((s) => s.trim())
-         .filter(Boolean),
-       tarifaHora: parseFloat(form.tarifaHora) || 0,
-       disponibilidad: form.disponibilidad.trim(),
-       bio: form.bio.trim(),
-     };
- 
-     try {
-       const updated = await updateTutorProfile(tutor.id, payload);
-       onGuardar(updated);
-       onClose();
-     } catch (err) {
-       console.error("Error al guardar perfil:", err);
-       setError("No se pudieron guardar los cambios. Inténtalo de nuevo.");
-     } finally {
-       setGuardando(false);
-     }
-   };
+ *   - onClose: callback para cerrar el modal
+ *   - onCreado: callback(newTutor) cuando se crea correctamente
+ */
+const CreateProfileModal = ({ onClose, onCreado }) => {
+  const [form, setForm] = useState({
+    especialidades: "",
+    tarifaHora: "",
+    disponibilidad: "",
+    bio: "",
+  });
+  const [creando, setCreando] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setCreando(true);
+    setError(null);
+
+    const payload = {
+      especialidades: form.especialidades
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+      tarifaHora: parseFloat(form.tarifaHora) || 0,
+      disponibilidad: form.disponibilidad.trim(),
+      bio: form.bio.trim(),
+    };
+
+    try {
+      const newTutor = await createTutorProfile(payload);
+      onCreado(newTutor);
+      onClose();
+    } catch (err) {
+      console.error("Error al crear perfil de tutor:", err);
+      setError("No se pudo crear el perfil. Inténtalo de nuevo.");
+    } finally {
+      setCreando(false);
+    }
+  };
 
   return (
     <div className="tm-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="tm-modal" role="dialog" aria-modal="true" aria-label="Editar perfil">
+      <div className="tm-modal" role="dialog" aria-modal="true" aria-label="Crear perfil de profesor">
         <div className="tm-modal__header">
-          <h2 className="tm-modal__title">✏ Editar Perfil</h2>
+          <h2 className="tm-modal__title">🎓 Crear Perfil de Profesor</h2>
           <button className="tm-modal__close" onClick={onClose} aria-label="Cerrar">✕</button>
         </div>
 
@@ -78,6 +75,7 @@ import "./TutorModals.css";
               value={form.especialidades}
               onChange={handleChange}
               placeholder="Ej: Programación, Matemáticas, Bachillerato"
+              required
             />
           </div>
 
@@ -96,13 +94,14 @@ import "./TutorModals.css";
               value={form.tarifaHora}
               onChange={handleChange}
               placeholder="Ej: 25"
+              required
             />
           </div>
 
           {/* Disponibilidad */}
           <div className="tm-field">
             <label className="tm-field__label" htmlFor="disponibilidad">
-              Disponibilidad
+              Disponibilidad horaria
             </label>
             <input
               id="disponibilidad"
@@ -137,8 +136,8 @@ import "./TutorModals.css";
             <button type="button" className="tm-btn tm-btn--secondary" onClick={onClose}>
               Cancelar
             </button>
-            <button type="submit" className="tm-btn tm-btn--primary" disabled={guardando}>
-              {guardando ? "Guardando…" : "Guardar cambios"}
+            <button type="submit" className="tm-btn tm-btn--primary" disabled={creando}>
+              {creando ? "Creando…" : "Crear perfil"}
             </button>
           </div>
         </form>
@@ -147,4 +146,4 @@ import "./TutorModals.css";
   );
 };
 
-export default EditProfileModal;
+export default CreateProfileModal;

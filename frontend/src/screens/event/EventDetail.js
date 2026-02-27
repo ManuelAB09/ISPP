@@ -6,11 +6,12 @@ import {
   LuEye, LuEyeOff, LuMap, LuClock, LuCheck
 } from 'react-icons/lu';
 import './EventDetail.css';
-import Navbar from '../../components/Navbar';
+import Header from '../../components/Header/Header';
 import {
   getEventById, cancelEvent, attendEvent, cancelAttendance,
   getConfirmedAttendees, getMyAttendance
 } from '../../api/eventEndpoints';
+import { communitiesApi } from '../../api/communities.api';
 
 const EventDetail = () => {
   const { eventId } = useParams();
@@ -25,6 +26,7 @@ const EventDetail = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [isMember, setIsMember] = useState(false);
 
   const currentUserId = localStorage.getItem('userId');
 
@@ -37,6 +39,16 @@ const EventDetail = () => {
       ]);
       setEvent(eventData);
       setAttendees(Array.isArray(attendeesData) ? attendeesData : (attendeesData?.content || []));
+
+      // Verificar si soy miembro de la comunidad del evento
+      if (currentUserId && eventData.comunidadId) {
+        try {
+          await communitiesApi.getMyMembership(eventData.comunidadId);
+          setIsMember(true);
+        } catch {
+          setIsMember(false);
+        }
+      }
 
       // Verificar mi asistencia
       if (currentUserId) {
@@ -128,7 +140,7 @@ const EventDetail = () => {
   if (loading) {
     return (
       <div className="ed-page">
-        <Navbar />
+        <Header page={'eventos'} />
         <div className="ed-container">
           <p className="ed-loading">Cargando evento...</p>
         </div>
@@ -139,7 +151,7 @@ const EventDetail = () => {
   if (error && !event) {
     return (
       <div className="ed-page">
-        <Navbar />
+        <Header page={'eventos'} />
         <div className="ed-container">
           <div className="ed-error">{error}</div>
           <button className="ed-back-btn" onClick={() => navigate(-1)}>
@@ -154,7 +166,7 @@ const EventDetail = () => {
 
   return (
     <div className="ed-page">
-      <Navbar />
+      <Header page={'eventos'} />
 
       <div className="ed-container">
         {/* Botón volver */}
@@ -328,6 +340,12 @@ const EventDetail = () => {
                   </div>
                 )}
 
+                {!isMember && currentUserId && !isConfirmed && (
+                  <div className="ed-full-message">
+                    Debes ser miembro de la comunidad para apuntarte
+                  </div>
+                )}
+
                 {isConfirmed ? (
                   <div className="ed-attendance-actions">
                     <div className="ed-confirmed-badge">
@@ -345,8 +363,8 @@ const EventDetail = () => {
                   <button
                     className="ed-btn ed-btn-attend"
                     onClick={handleAttend}
-                    disabled={attendanceLoading || isFull || !currentUserId}
-                    title={!currentUserId ? 'Inicia sesión para confirmar asistencia' : ''}
+                    disabled={attendanceLoading || isFull || !currentUserId || !isMember}
+                    title={!currentUserId ? 'Inicia sesión para confirmar asistencia' : !isMember ? 'Debes ser miembro de la comunidad' : ''}
                   >
                     {attendanceLoading ? 'Confirmando...' : 'Confirmar asistencia'}
                   </button>
