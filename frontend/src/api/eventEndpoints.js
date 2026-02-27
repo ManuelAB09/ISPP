@@ -1,23 +1,11 @@
 import axiosInstance from './axiosConfig';
 
+// Helper para obtener el userId del usuario autenticado
+const getUserId = () => localStorage.getItem('userId');
+
 /**
  * Crea un nuevo evento en una comunidad
  * POST /communities/{communityId}/events
- * @param {number} communityId - ID de la comunidad
- * @param {Object} eventData - Datos del evento
- * @param {string} eventData.titulo - Título del evento
- * @param {string} [eventData.descripcion] - Descripción
- * @param {string} eventData.fechaHora - Fecha y hora ISO 8601
- * @param {string} [eventData.fechaFin] - Fecha fin ISO 8601
- * @param {string} [eventData.ubicacion] - Dirección o lugar
- * @param {number} [eventData.latitud] - Latitud
- * @param {number} [eventData.longitud] - Longitud
- * @param {number} eventData.aforo - Aforo máximo
- * @param {string} [eventData.queLlevar] - Qué llevar al evento
- * @param {boolean} [eventData.visibleEnMapa] - Visible en mapa
- * @param {boolean} [eventData.esVirtual] - Si es virtual/online
- * @param {string} [eventData.enlaceVirtual] - Enlace virtual
- * @returns {Promise} - EventDetailResponse
  */
 export const createEvent = async (communityId, eventData) => {
   const response = await axiosInstance.post(`/communities/${communityId}/events`, eventData);
@@ -27,8 +15,6 @@ export const createEvent = async (communityId, eventData) => {
 /**
  * Obtiene el detalle de un evento
  * GET /events/{eventId}
- * @param {number} eventId - ID del evento
- * @returns {Promise} - EventDetailResponse
  */
 export const getEventById = async (eventId) => {
   const response = await axiosInstance.get(`/events/${eventId}`);
@@ -38,26 +24,16 @@ export const getEventById = async (eventId) => {
 /**
  * Actualiza un evento existente
  * PUT /events/{eventId}
- * @param {number} eventId - ID del evento
- * @param {Object} eventData - Datos a actualizar
- * @returns {Promise} - EventDetailResponse
+ * Backend espera @RequestParam, se envían como query params
  */
 export const updateEvent = async (eventId, eventData) => {
-  const response = await axiosInstance.put(`/events/${eventId}`, eventData);
+  const response = await axiosInstance.put(`/events/${eventId}`, null, { params: eventData });
   return response.data;
 };
 
 /**
  * Lista eventos de una comunidad
  * GET /communities/{communityId}/events
- * @param {number} communityId - ID de la comunidad
- * @param {Object} [params] - Parámetros de filtrado
- * @param {string} [params.desde] - Fecha desde (ISO 8601)
- * @param {string} [params.hasta] - Fecha hasta (ISO 8601)
- * @param {boolean} [params.cancelados] - Incluir cancelados
- * @param {number} [params.page] - Página
- * @param {number} [params.size] - Tamaño de página
- * @returns {Promise} - EventListResponse
  */
 export const listCommunityEvents = async (communityId, params = {}) => {
   const response = await axiosInstance.get(`/communities/${communityId}/events`, { params });
@@ -67,16 +43,6 @@ export const listCommunityEvents = async (communityId, params = {}) => {
 /**
  * Explora eventos públicos
  * GET /events
- * @param {Object} [params] - Parámetros de búsqueda
- * @param {string} [params.search] - Buscar por título o descripción
- * @param {number} [params.lat] - Latitud
- * @param {number} [params.lng] - Longitud
- * @param {number} [params.radio] - Radio en km
- * @param {string} [params.desde] - Fecha desde
- * @param {string} [params.hasta] - Fecha hasta
- * @param {number} [params.page] - Página
- * @param {number} [params.size] - Tamaño de página
- * @returns {Promise} - EventListResponse
  */
 export const listPublicEvents = async (params = {}) => {
   const response = await axiosInstance.get('/events', { params });
@@ -86,34 +52,65 @@ export const listPublicEvents = async (params = {}) => {
 /**
  * Cancela un evento
  * POST /events/{eventId}/cancel
- * @param {number} eventId - ID del evento
- * @param {Object} [body] - Motivo de cancelación
- * @param {string} [body.motivo] - Motivo
- * @returns {Promise} - EventDetailResponse
  */
-export const cancelEvent = async (eventId, body = {}) => {
-  const response = await axiosInstance.post(`/events/${eventId}/cancel`, body);
+export const cancelEvent = async (eventId, motivo = '') => {
+  const response = await axiosInstance.post(`/events/${eventId}/cancel`, null, { params: { motivo } });
   return response.data;
 };
 
 /**
- * Registra asistencia a un evento (apuntarse)
+ * Confirma asistencia a un evento (apuntarse)
  * POST /events/{eventId}/attendance
- * @param {number} eventId - ID del evento
- * @returns {Promise}
  */
 export const attendEvent = async (eventId) => {
-  const response = await axiosInstance.post(`/events/${eventId}/attendance`);
+  const usuarioId = getUserId();
+  const response = await axiosInstance.post(`/events/${eventId}/attendance`, null, { params: { usuarioId } });
   return response.data;
 };
 
 /**
- * Cancela asistencia a un evento (desapuntarse)
- * DELETE /events/{eventId}/attendance
- * @param {number} eventId - ID del evento
- * @returns {Promise}
+ * Obtiene mi asistencia a un evento
+ * GET /events/{eventId}/attendance/me
+ */
+export const getMyAttendance = async (eventId) => {
+  const usuarioId = getUserId();
+  const response = await axiosInstance.get(`/events/${eventId}/attendance/me`, { params: { usuarioId } });
+  return response.data;
+};
+
+/**
+ * Cancela mi asistencia a un evento (desapuntarse)
+ * DELETE /events/{eventId}/attendance/me
  */
 export const cancelAttendance = async (eventId) => {
-  const response = await axiosInstance.delete(`/events/${eventId}/attendance`);
+  const usuarioId = getUserId();
+  const response = await axiosInstance.delete(`/events/${eventId}/attendance/me`, { params: { usuarioId } });
+  return response.data;
+};
+
+/**
+ * Lista todos los asistentes de un evento
+ * GET /events/{eventId}/attendance
+ */
+export const listAttendees = async (eventId) => {
+  const response = await axiosInstance.get(`/events/${eventId}/attendance`);
+  return response.data;
+};
+
+/**
+ * Lista solo los asistentes confirmados
+ * GET /events/{eventId}/attendance/confirmed
+ */
+export const getConfirmedAttendees = async (eventId) => {
+  const response = await axiosInstance.get(`/events/${eventId}/attendance/confirmed`);
+  return response.data;
+};
+
+/**
+ * Obtiene el conteo de asistentes confirmados
+ * GET /events/{eventId}/attendance/count
+ */
+export const getAttendanceCount = async (eventId) => {
+  const response = await axiosInstance.get(`/events/${eventId}/attendance/count`);
   return response.data;
 };

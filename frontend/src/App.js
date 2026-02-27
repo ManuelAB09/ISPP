@@ -2,9 +2,11 @@ import { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import './App.css';
 import Comunidades from './screens/comunidades/Comunidades';
+import CommunityDetail from './screens/comunidades/CommunityDetail';
 import CrearComunidad from './screens/comunidades/CrearComunidad';
 import Home from './screens/home/Home';
 import CreateEvent from './screens/event/CreateEvent';
+import EventDetail from './screens/event/EventDetail';
 import Register from './screens/auth/Register';
 import Login from './screens/auth/Login';
 import TeacherProfile from './screens/teacherProfile/TeacherProfile';
@@ -28,6 +30,7 @@ function App() {
         <Route path="/profesores/:id" element={<TeacherProfile />} />
         <Route path="/create-event/new" element={<CreateEvent />} />
         <Route path="/create-event/:id" element={<CreateEvent />} />
+        <Route path="/eventos/:eventId" element={<EventDetail />} />
       </>
     )
   }
@@ -36,7 +39,8 @@ function App() {
     <div>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/comunidades/*" element={<Comunidades />} />
+        <Route path="/comunidades" element={<Comunidades />} />
+        <Route path="/comunidades/:communityId" element={<CommunityDetail />} />
 
         <Route path="/crear-comunidad" element={<CrearComunidad />} />
         <Route path="/login" element={<Login />} />

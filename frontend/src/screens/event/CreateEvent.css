@@ -202,6 +202,42 @@ textarea.input-box {
   color: #5B6392;
 }
 
+.toggle-icon {
+  margin-right: 0.4rem;
+  font-size: 1rem;
+}
+
+.field-error {
+  display: block;
+  color: #dc3545;
+  font-size: 0.75rem;
+  margin-top: 0.35rem;
+}
+
+.field-hint {
+  display: block;
+  color: #848BA8;
+  font-size: 0.75rem;
+  margin-top: 0.35rem;
+}
+
+.input-error {
+  border-color: #dc3545 !important;
+}
+
+.input-error:focus {
+  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2) !important;
+}
+
+.error-message {
+  color: #dc3545;
+  padding: 10px;
+  margin: 10px 0;
+  background: #ffe0e0;
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+
 .actions-container {
   max-width: 450px;
   margin: 4rem auto 0;
