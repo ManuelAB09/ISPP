@@ -13,6 +13,7 @@ export default function Header({ user, page }) {
                 <Link to="/profesores" className={page === 'profesores' ? 'active' : ''}>Profesores</Link>
                 <Link to="/chats" className={page === 'chats' ? 'active' : ''}>Chats</Link>
                 <Link to="/planes" className={page === 'planes' ? 'active' : ''}>Planes</Link>
+                <Link to="/pagos" className={page === 'pagos' ? 'active' : ''}>Mis pagos</Link>
             </div>
         </div>
     );

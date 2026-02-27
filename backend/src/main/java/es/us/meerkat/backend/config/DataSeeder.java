@@ -15,17 +15,22 @@ import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.EstadoAsistencia;
 import es.us.meerkat.backend.entity.EstadoComunidad;
 import es.us.meerkat.backend.entity.Evento;
+import es.us.meerkat.backend.entity.Institution;
 import es.us.meerkat.backend.entity.MiembroComunidad;
 import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.TipoGrupo;
 import es.us.meerkat.backend.entity.TipoPlanComunidad;
+import es.us.meerkat.backend.entity.TipoPlanCorporativo;
+import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Ubicacion;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
 import es.us.meerkat.backend.repository.CategoriaRepository;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.EventoRepository;
+import es.us.meerkat.backend.repository.InstitutionRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.TutorRepository;
 import es.us.meerkat.backend.repository.UbicacionRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 
@@ -48,6 +53,8 @@ public class DataSeeder {
             final CategoriaRepository categoriaRepo,
             final EventoRepository eventoRepo,
             final AsistenciaEventoRepository asistenciaRepo,
+            final TutorRepository tutorRepo,
+            final InstitutionRepository institutionRepo,
             final BCryptPasswordEncoder passwordEncoder) {
 
         return args -> {
@@ -97,7 +104,7 @@ public class DataSeeder {
             u4.setBio("Apasionada de la inteligencia artificial y el aprendizaje automático.");
             u4.setIntereses(List.of("IA", "Machine Learning", "Python"));
             u4.setVisibleEnListados(true);
-            u4.setEsTutor(false);
+            u4.setEsTutor(true);
 
             Usuario u5 = new Usuario();
             u5.setEmail("pedro.sanchez@alum.us.es");
@@ -107,7 +114,7 @@ public class DataSeeder {
             u5.setBio("Estudiante de último año, interesado en ciberseguridad.");
             u5.setIntereses(List.of("Ciberseguridad", "Redes", "Linux"));
             u5.setVisibleEnListados(true);
-            u5.setEsTutor(false);
+            u5.setEsTutor(true);
 
             Usuario u6 = new Usuario();
             u6.setEmail("ana.lopez@alum.us.es");
@@ -563,6 +570,69 @@ public class DataSeeder {
             asistenciaRepo.saveAll(List.of(
                     a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14));
 
+            // ============================
+            // 8. PERFILES DE TUTOR
+            // ============================
+            Tutor t1 = new Tutor();
+            t1.setUs(u3);
+            t1.setEspecialidades(List.of("Java", "Spring Boot", "Microservicios"));
+            t1.setTarifaHora(new java.math.BigDecimal("20.00"));
+            t1.setDisponibilidad("Tardes de lunes a viernes");
+            t1.setBio("Estudiante de 3º de ISPP con experiencia en desarrollo backend con Java y Spring Boot.");
+            t1.setVerificado(true);
+            t1.setClassroomConectado(false);
+
+            Tutor t2 = new Tutor();
+            t2.setUs(u6);
+            t2.setEspecialidades(List.of("Estadística", "R", "Python", "Machine Learning"));
+            t2.setTarifaHora(new java.math.BigDecimal("18.50"));
+            t2.setDisponibilidad("Fines de semana y lunes por la tarde");
+            t2.setBio("Estudiante de Matemáticas y Ciencia de Datos. Especializada en estadística aplicada y visualización.");
+            t2.setVerificado(true);
+            t2.setClassroomConectado(false);
+
+            Tutor t3 = new Tutor();
+            t3.setUs(u4);
+            t3.setEspecialidades(List.of("Inteligencia Artificial", "Machine Learning", "Deep Learning", "Python"));
+            t3.setTarifaHora(new java.math.BigDecimal("22.00"));
+            t3.setDisponibilidad("Mañanas de martes y jueves, tardes de viernes");
+            t3.setBio("Apasionada de la IA y el aprendizaje automático. Experiencia con TensorFlow, PyTorch y scikit-learn.");
+            t3.setVerificado(true);
+            t3.setClassroomConectado(false);
+
+            Tutor t4 = new Tutor();
+            t4.setUs(u5);
+            t4.setEspecialidades(List.of("Ciberseguridad", "Hacking Ético", "Redes", "Linux"));
+            t4.setTarifaHora(new java.math.BigDecimal("25.00"));
+            t4.setDisponibilidad("Noches de entre semana y fines de semana");
+            t4.setBio("Estudiante de último año especializado en ciberseguridad ofensiva y defensiva. CTF player activo.");
+            t4.setVerificado(true);
+            t4.setClassroomConectado(false);
+
+            tutorRepo.saveAll(List.of(t1, t2, t3, t4));
+
+            // ============================
+            // INSTITUCIONES
+            // ============================
+            Institution i1 = new Institution();
+            i1.setNombre("Universidad de Sevilla");
+            i1.setDescripcion("Principal universidad pública de Andalucía, referente en ciencia e ingeniería.");
+            i1.setEmailContacto("contacto@us.es");
+            i1.setTelefonoContacto("+34 954 551 000");
+            i1.setDominioEmail("us.es");
+            i1.setUbicacion("Sevilla, España");
+            i1.setSitioweb("https://www.us.es");
+            i1.setLogoUrl("https://upload.wikimedia.org/wikipedia/commons/e/e1/Universidad_de_Sevilla_Logo.svg");
+            i1.setVerificada(true);
+            i1.setPlanCorporativo(TipoPlanCorporativo.ESTANDAR);
+            i1.setPlanActivo(true);
+            i1.setFechaInicioPlan(LocalDateTime.now().minusMonths(2));
+            i1.setFechaFinPlan(LocalDateTime.now().plusMonths(10));
+            i1.setNumUsuariosPermitidos(500);
+            i1.setUsuarioAdmin(u1);
+
+            institutionRepo.save(i1);
+
             System.out.println("========================================");
             System.out.println("  SEEDER: Datos de prueba cargados");
             System.out.println("  - " + usuarios.size() + " usuarios");
@@ -571,6 +641,8 @@ public class DataSeeder {
             System.out.println("  - 15 miembros de comunidad");
             System.out.println("  - " + eventos.size() + " eventos");
             System.out.println("  - 14 asistencias a eventos");
+            System.out.println("  - 4 perfiles de tutor verificados");
+            System.out.println("  - 1 institución (Universidad de Sevilla)");
             System.out.println("========================================");
         };
     }

@@ -36,5 +36,13 @@ export const subscriptionsApi = {
    */
   cancelSubscription() {
     return apiClient.delete('/api/v1/subscriptions/me');
-  }
+  },
+
+  /**
+   * POST /api/v1/subscriptions/me/confirm-payment
+   * (Solo desarrollo) Confirma pago sin Stripe
+   */
+  confirmPayment() {
+    return apiClient.post('/api/v1/subscriptions/me/confirm-payment');
+  },
 };

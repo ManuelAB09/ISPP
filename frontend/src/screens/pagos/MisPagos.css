@@ -1,0 +1,252 @@
+/* MisPagos.css */
+
+.mp-page {
+  min-height: 100vh;
+  background: #f9fafb;
+  padding: 2rem 1rem 4rem;
+}
+
+.mp-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ── Page header ─────────────────────────────── */
+.mp-page-header {
+  padding-bottom: 0.5rem;
+}
+
+.mp-page-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 0;
+}
+
+.mp-page-subtitle {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0.25rem 0 0;
+}
+
+/* ── Summary cards ───────────────────────────── */
+.mp-summary {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.mp-summary-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 160px;
+  flex: 1;
+}
+
+.mp-summary-card--muted {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+.mp-summary-card__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+}
+
+.mp-summary-card__value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+/* ── State messages ─────────────────────────── */
+.mp-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem 1rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+.mp-state--error {
+  color: #dc2626;
+}
+
+.mp-state--empty {
+  color: #9ca3af;
+}
+
+.mp-empty-icon {
+  font-size: 3rem;
+}
+
+.mp-state h3 {
+  font-size: 1.1rem;
+  color: #374151;
+  margin: 0;
+}
+
+.mp-state p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.mp-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: mp-spin 0.8s linear infinite;
+}
+
+@keyframes mp-spin {
+  to { transform: rotate(360deg); }
+}
+
+.mp-retry {
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+/* ── Table ──────────────────────────────────── */
+.mp-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.mp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.mp-table thead tr {
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.mp-table th {
+  padding: 0.8rem 1rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.mp-table tbody .mp-row:not(:last-child) {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.mp-table td {
+  padding: 0.875rem 1rem;
+  vertical-align: middle;
+  color: #374151;
+}
+
+.mp-tipo {
+  font-weight: 600;
+  color: #111827;
+}
+
+.mp-amount {
+  font-weight: 600;
+  color: #111827;
+  white-space: nowrap;
+}
+
+.mp-amount--muted {
+  color: #ef4444;
+  font-weight: 500;
+}
+
+.mp-amount--net {
+  color: #059669;
+}
+
+.mp-desc {
+  color: #6b7280;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mp-date {
+  white-space: nowrap;
+  color: #9ca3af;
+}
+
+/* ── Badges ─────────────────────────────────── */
+.mp-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mp-badge--success { background: #d1fae5; color: #065f46; }
+.mp-badge--warning { background: #fef3c7; color: #92400e; }
+.mp-badge--error   { background: #fee2e2; color: #991b1b; }
+.mp-badge--info    { background: #dbeafe; color: #1e40af; }
+
+/* ── Pagination ─────────────────────────────── */
+.mp-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.5rem 0;
+}
+
+.mp-page-btn {
+  background: #fff;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.45rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.mp-page-btn:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.mp-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.mp-page-indicator {
+  font-size: 0.875rem;
+  color: #6b7280;
+}

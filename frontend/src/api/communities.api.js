@@ -58,4 +58,43 @@ export const communitiesApi = {
     const queryString = query.toString();
     return apiClient.get(`/api/v1/communities/${communityId}/members${queryString ? '?' + queryString : ''}`);
   },
+
+  /**
+   * POST /api/v1/communities/{communityId}/upgrade
+   * Mejorar comunidad a Premium
+   * @param {number} communityId
+   */
+  upgradeCommunity(communityId) {
+    return apiClient.post(`/api/v1/communities/${communityId}/upgrade`, {});
+  },
+
+  /**
+   * POST /api/v1/communities/{communityId}/tutor/{tutorId}
+   * Contratar un tutor para la comunidad (HireTutorRequest)
+   * @param {number} communityId
+   * @param {number} tutorId
+   * @param {{ modalidad, duracion, tarifaAcordada, aceptarTerminos }} data
+   */
+  hireTutor(communityId, tutorId, data) {
+    return apiClient.post(`/api/v1/communities/${communityId}/tutor/${tutorId}`, data);
+  },
+
+  /**
+   * GET /api/v1/communities/{communityId}/tutor
+   * Obtener tutor actualmente contratado por la comunidad
+   * @param {number} communityId
+   */
+  getHiredTutor(communityId) {
+    return apiClient.get(`/api/v1/communities/${communityId}/tutor`);
+  },
+
+  /**
+   * DELETE /api/v1/communities/{communityId}/tutor
+   * Cancelar contratación activa del tutor
+   * @param {number} communityId
+   * @param {string} motivo
+   */
+  cancelTutor(communityId, motivo) {
+    return apiClient.delete(`/api/v1/communities/${communityId}/tutor?motivo=${encodeURIComponent(motivo)}`);
+  },
 };

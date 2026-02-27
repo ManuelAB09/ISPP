@@ -15,6 +15,7 @@ import TeacherProfile from './screens/teacherProfile/TeacherProfile';
 import VerifiedTeachers from './screens/verifiedTeachers/VerifiedTeachers';
 import CrearUbicacionScreen from './screens/ubicaciones/CrearUbicacionScreen';
 import MyProfile from './screens/myProfile/MyProfile';
+import MisPagos from './screens/pagos/MisPagos';
 
 function App() {
   let ownerRoutes = <></>
@@ -37,6 +38,7 @@ function App() {
         <Route path="/create-event/new" element={<CreateEvent />} />
         <Route path="/create-event/:id" element={<CreateEvent />} />
         <Route path="/planes" element={<PlansScreen />} />
+        <Route path="/pagos" element={<MisPagos />} />
         <Route path="/crear-ubicacion" element={<CrearUbicacionScreen />} />
         <Route path="/eventos/:eventId" element={<EventDetail />} />
       </>
