@@ -24,15 +24,6 @@ public class UpdateEventRequest {
     /** Fecha y hora de fin del evento. */
     private LocalDateTime fechaFin;
 
-    /** Ubicación física del evento (máximo 500 caracteres). */
-    private String ubicacion;
-
-    /** Latitud de la ubicación. */
-    private Double latitud;
-
-    /** Longitud de la ubicación. */
-    private Double longitud;
-
     /** Aforo máximo del evento (1-500). */
     private Integer aforo;
 

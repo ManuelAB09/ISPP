@@ -41,9 +41,6 @@ public class EventoController {
      * @param descripcion Descripción del evento.
      * @param fechaInicio Fecha y hora de inicio.
      * @param fechaFin Fecha y hora de fin.
-     * @param ubicacion Ubicación física.
-     * @param latitud Latitud.
-     * @param longitud Longitud.
      * @param aforo Aforo máximo.
      * @param queLlevar Qué llevar al evento.
      * @param esVirtual Si es evento virtual.
@@ -55,15 +52,12 @@ public class EventoController {
      *     titulo, @Parameter(description = "Descripción") @RequestParam final String
      *     descripcion, @Parameter(description = "Fecha/hora inicio") @RequestParam final
      *     LocalDateTime fechaInicio, @Parameter(description = "Fecha/hora fin") @RequestParam final
-     *     LocalDateTime fechaFin, @Parameter(description = "Ubicación") @RequestParam final String
-     *     ubicacion, @Parameter(description = "Latitud") @RequestParam final Double
-     *     latitud, @Parameter(description = "Longitud") @RequestParam final Double
-     *     longitud, @Parameter(description = "Aforo máximo") @RequestParam final Integer
+     *     LocalDateTime fechaFin, @Parameter(description = "Aforo máximo") @RequestParam final Integer
      *     aforo, @Parameter(description = "Qué llevar") @RequestParam final String
      *     queLlevar, @Parameter(description = "Es virtual") @RequestParam final Boolean
      *     esVirtual, @Parameter(description = "Es privado") @RequestParam final Boolean privado) {
      *     <p>final Evento evento = eventoService.crearEvento(organizadorId, titulo, descripcion,
-     *     fechaInicio, fechaFin, ubicacion, latitud, longitud, aforo, queLlevar, esVirtual,
+     *     fechaInicio, fechaFin, aforo, queLlevar, esVirtual,
      *     privado);
      *     <p>return ResponseEntity.status(HttpStatus.CREATED).body(evento); }
      */
@@ -137,9 +131,6 @@ public class EventoController {
      * @param descripcion Descripción del evento.
      * @param fechaInicio Fecha y hora de inicio.
      * @param fechaFin Fecha y hora de fin.
-     * @param ubicacion Ubicación física.
-     * @param latitud Latitud.
-     * @param longitud Longitud.
      * @param aforo Aforo máximo.
      * @param queLlevar Qué llevar al evento.
      * @param esVirtual Si es evento virtual.
@@ -157,9 +148,6 @@ public class EventoController {
             @Parameter(description = "Fecha/hora inicio") @RequestParam
                     final LocalDateTime fechaInicio,
             @Parameter(description = "Fecha/hora fin") @RequestParam final LocalDateTime fechaFin,
-            @Parameter(description = "Ubicación") @RequestParam final String ubicacion,
-            @Parameter(description = "Latitud") @RequestParam final Double latitud,
-            @Parameter(description = "Longitud") @RequestParam final Double longitud,
             @Parameter(description = "Aforo máximo") @RequestParam final Integer aforo,
             @Parameter(description = "Qué llevar") @RequestParam final String queLlevar,
             @Parameter(description = "Es virtual") @RequestParam final Boolean esVirtual,
@@ -172,9 +160,6 @@ public class EventoController {
                         descripcion,
                         fechaInicio,
                         fechaFin,
-                        ubicacion,
-                        latitud,
-                        longitud,
                         aforo,
                         queLlevar,
                         esVirtual,
