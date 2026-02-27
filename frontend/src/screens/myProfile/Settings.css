@@ -60,6 +60,22 @@
     margin: 0 0 30px 0;
 }
 
+/* Mensaje de acceso no autorizado */
+.settings-unauthorized-message {
+    background-color: #fef3c7;
+    border: 1px solid #f59e0b;
+    color: #92400e;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-family: 'inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    Secciones
    ═══════════════════════════════════════════════════════════════ */
