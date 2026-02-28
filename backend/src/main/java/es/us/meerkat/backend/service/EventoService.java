@@ -72,23 +72,35 @@ public class EventoService {
             final String enlaceVirtualParam,
             final Boolean visibleMapaParam) {
 
-        final Usuario creador = usuarioRepository.findById(creadorId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        final Comunidad comunidad = comunidadRepository.findById(comunidadId)
-                .orElseThrow(() -> new RuntimeException("Comunidad no encontrada"));
+        final Usuario creador =
+                usuarioRepository
+                        .findById(creadorId)
+                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        final Comunidad comunidad =
+                comunidadRepository
+                        .findById(comunidadId)
+                        .orElseThrow(() -> new RuntimeException("Comunidad no encontrada"));
 
         // Verificar que el usuario es miembro de la comunidad
-        boolean esMiembro = miembroComunidadRepository
-                .findByUsuarioIdAndComunidadId(creadorId, comunidadId)
-                .isPresent();
+        boolean esMiembro =
+                miembroComunidadRepository
+                        .findByUsuarioIdAndComunidadId(creadorId, comunidadId)
+                        .isPresent();
         if (!esMiembro) {
             throw new RuntimeException(
                     "No puedes crear eventos en una comunidad a la que no perteneces");
         }
 
         final Evento evento = new Evento();
-        evento.crear(tituloParam, descripcionParam, fechaHoraParam, fechaFinParam,
-                aforoParam, queLlevarParam, esVirtualParam, privadoParam);
+        evento.crear(
+                tituloParam,
+                descripcionParam,
+                fechaHoraParam,
+                fechaFinParam,
+                aforoParam,
+                queLlevarParam,
+                esVirtualParam,
+                privadoParam);
         evento.setCreador(creador);
         evento.setComunidad(comunidad);
         evento.setEnlaceVirtual(enlaceVirtualParam);
@@ -96,6 +108,7 @@ public class EventoService {
 
         return eventoRepository.save(evento);
     }
+
     // ===============================
     // EDITAR EVENTO
     // ===============================

@@ -67,26 +67,29 @@ export default function PlansScreen() {
 
     loadData();
   }, []);
-  /*
-  const handleSubscribe = async () => {
+
+  const handleSubscribe = async (period) => {
     setSubmitting(true);
     setError("");
 
     try {
-      const res = await subscriptionsApi.subscribe();
+      const res = await subscriptionsApi.subscribe(period);
       setMyPlan(res || null);
       setShowCheckout(false);
       alert("¡Suscripción Premium activada!");
     } catch (e) {
+      if (e?.status === 403) {
+        setError("Por favor, inicia sesión para continuar");
+      }else { 
       setError(e?.message || "No se pudo iniciar la suscripción");
+      }
     } finally {
       setSubmitting(false);
     }
   };
-  */
 
   //MOCK: simular suscripción exitosa 
-
+/*
   const handleSubscribe = async (period) => {
   setSubmitting(true);
   setError("");
@@ -123,7 +126,8 @@ export default function PlansScreen() {
       setSubmitting(false);
     }
   };
-/*
+*/  
+
    const handleCancel = async () => {
     setSubmitting(true);
     setError("");
@@ -142,8 +146,9 @@ export default function PlansScreen() {
       setSubmitting(false);
     }
   };
-*/
+
   //MOCK: simular cancelación exitosa
+/*  
   const handleCancel = async () => {
     setSubmitting(true);
     setError("");
@@ -176,7 +181,7 @@ export default function PlansScreen() {
       </>
     );
   }
-
+*/
   return (
     <>
       <Header page={'planes'} />
@@ -309,7 +314,7 @@ export default function PlansScreen() {
           open={showCheckout}
           plan="PREMIUM"
           onClose={() => !submitting && setShowCheckout(false)}
-          onConfirm={handleSubscribe}
+          onConfirm={(period) => handleSubscribe(period)}
           loading={submitting}
         />
       </div>

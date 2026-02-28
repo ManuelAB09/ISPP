@@ -63,10 +63,13 @@ public class AsistenciaEventoService {
 
         // Verificar si el usuario es miembro de la comunidad del evento
         if (evento.getComunidad() != null) {
-            miembroRepository.findByUsuarioIdAndComunidadId(
-                    usuarioIdParam, evento.getComunidad().getId())
-                    .orElseThrow(() -> new RuntimeException(
-                            "Debes ser miembro de la comunidad para apuntarte a este evento"));
+            miembroRepository
+                    .findByUsuarioIdAndComunidadId(usuarioIdParam, evento.getComunidad().getId())
+                    .orElseThrow(
+                            () ->
+                                    new RuntimeException(
+                                            "Debes ser miembro de la comunidad para apuntarte a"
+                                                    + " este evento"));
         }
 
         // Verificar si el evento está lleno

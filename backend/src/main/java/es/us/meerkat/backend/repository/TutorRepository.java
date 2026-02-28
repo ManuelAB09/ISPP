@@ -61,8 +61,8 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
     Page<Tutor> findByVerificadoTrue(Pageable pageable);
 
     /**
-     * Busca tutores verificados filtrando por especialidad (JOIN sobre ElementCollection)
-     * y rango de tarifa.
+     * Busca tutores verificados filtrando por especialidad (JOIN sobre ElementCollection) y rango
+     * de tarifa.
      *
      * @param especialidad Especialidad buscada (contiene, case-insensitive)
      * @param tarifaMin Tarifa mínima
@@ -70,10 +70,11 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
      * @param pageable Información de paginación
      * @return Página de tutores filtrados
      */
-    @Query("SELECT DISTINCT t FROM Tutor t JOIN t.especialidades e "
-            + "WHERE t.verificado = true "
-            + "AND LOWER(e) LIKE LOWER(CONCAT('%', :especialidad, '%')) "
-            + "AND t.tarifaHora BETWEEN :tarifaMin AND :tarifaMax")
+    @Query(
+            "SELECT DISTINCT t FROM Tutor t JOIN t.especialidades e "
+                    + "WHERE t.verificado = true "
+                    + "AND LOWER(e) LIKE LOWER(CONCAT('%', :especialidad, '%')) "
+                    + "AND t.tarifaHora BETWEEN :tarifaMin AND :tarifaMax")
     Page<Tutor> findVerificadosByEspecialidadAndTarifa(
             @Param("especialidad") String especialidad,
             @Param("tarifaMin") BigDecimal tarifaMin,
