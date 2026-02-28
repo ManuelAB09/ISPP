@@ -63,14 +63,15 @@ public class AsistenciaEvento {
     public AttendanceResponse toDTO() {
         UserPublicResponse userDto = null;
         if (this.usuario != null) {
-            userDto = es.us.meerkat.backend.dto.UserPublicResponse.builder()
-                    .id(this.usuario.getId())
-                    .nombre(this.usuario.getNombre())
-                    .foto(this.usuario.getFoto())
-                    .bio(this.usuario.getBio())
-                    .intereses(this.usuario.getIntereses())
-                    .esTutor(this.usuario.getEsTutor())
-                    .build();
+            userDto =
+                    es.us.meerkat.backend.dto.UserPublicResponse.builder()
+                            .id(this.usuario.getId())
+                            .nombre(this.usuario.getNombre())
+                            .foto(this.usuario.getFoto())
+                            .bio(this.usuario.getBio())
+                            .intereses(this.usuario.getIntereses())
+                            .esTutor(this.usuario.getEsTutor())
+                            .build();
         }
         return AttendanceResponse.builder()
                 .id(this.id)
