@@ -56,10 +56,10 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const register = useCallback(async (email, password, nombre, profileImage = null) => {
+  const register = useCallback(async (email, password, nombre) => {
     setError(null);
     try {
-      const response = await authApi.register({ email, password, nombre, profileImage });
+      const response = await authApi.register({ email, password, nombre });
       const { accessToken, user: userData } = response;
       
       localStorage.setItem('accessToken', accessToken);
