@@ -8,13 +8,12 @@ import EditProfile from "./EditProfile"
 import "./MyProfile.css"
 
 const MyProfile = () => {
-    const { isAuthenticated, loading } = useAuth()
+    const { isAuthenticated, loading, user } = useAuth()
     const navigate = useNavigate()
     const [showSettings, setShowSettings] = useState(false)
     const [showEditProfile, setShowEditProfile] = useState(false)
     const [checkingTutor, setCheckingTutor] = useState(true)
-    const userId = null // Temporal, as in the comments
-    const isOwner = true // Assuming MyProfile is literally 'my profile'
+    const isOwner = true // Siempre es el propietario en esta pantalla
 
     // Si el usuario tiene perfil de tutor, redirigir a su perfil de profesor
     useEffect(() => {
@@ -47,7 +46,7 @@ const MyProfile = () => {
     }
 
     // Si no está autenticado y es su propio perfil, mostrar mensaje
-    if (!isAuthenticated && !userId) {
+    if (!isAuthenticated) {
         return (
             <>
                 <Header page={'inicio'} />
@@ -68,18 +67,22 @@ const MyProfile = () => {
         )
     }
 
-    // TODO: Si hay userId, cargar datos del usuario desde la API
-    // Por ahora usamos datos de ejemplo
-
-    // Datos de ejemplo (en el futuro vendrán de una API)
+    // Datos del usuario desde el contexto
     const userData = {
-        nombre: "Álvaro García",
-        descripcion: "Estudiante de Ingeniería Informática apasionado por el desarrollo web y la inteligencia artificial. Siempre buscando aprender cosas nuevas.",
-        rol: "Estudiante",
-        email: "alvaro.garcia@univ.edu",
-        universidad: "Universidad de Sevilla",
-        grado: "Ingeniería Informática",
-        ubicacion: "Sevilla, España"
+        nombre: user?.nombre || "Sin nombre",
+        descripcion: user?.bio || "",
+        rol: user?.esTutor ? "Profesor" : "Estudiante",
+        email: user?.email || "Sin email",
+        universidad: user?.universidad || "",
+        grado: user?.grado || "",
+        ubicacion: user?.ubicacion || "",
+        foto: user?.foto || null,
+        intereses: user?.intereses || []
+    }
+
+    // Función para mostrar valor o texto de "sin información"
+    const displayValue = (value) => {
+        return value && value.trim() !== '' ? value : <span className="no-info">Sin información</span>
     }
 
     const stats = {
@@ -129,11 +132,24 @@ const MyProfile = () => {
                 {/* Sección de perfil principal */}
                 <section className="profile-header">
                     <div className="profile-header__left">
-                        <div className="profile-avatar"></div>
+                        <div className="profile-avatar">
+                            {userData.foto ? (
+                                <img src={userData.foto} alt={userData.nombre} className="profile-avatar-img" />
+                            ) : (
+                                <span className="profile-avatar-placeholder">👤</span>
+                            )}
+                        </div>
                         <div className="profile-info">
                             <h1 className="profile-info__name">{userData.nombre}</h1>
                             <p className="profile-info__description">{userData.descripcion}</p>
                             <span className="profile-info__role">{userData.rol}</span>
+                            {userData.intereses && userData.intereses.length > 0 && (
+                                <div className="profile-info__interests">
+                                    {userData.intereses.map((interes, index) => (
+                                        <span key={index} className="profile-interest-tag">{interes}</span>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                     <div className="profile-header__right">
@@ -159,23 +175,23 @@ const MyProfile = () => {
                         <div className="profile-data__content">
                             <div className="data-field">
                                 <span className="data-field__label">NOMBRE COMPLETO</span>
-                                <span className="data-field__value">{userData.nombre}</span>
+                                <span className="data-field__value">{displayValue(userData.nombre)}</span>
                             </div>
                             <div className="data-field">
                                 <span className="data-field__label">EMAIL</span>
-                                <span className="data-field__value">{userData.email}</span>
+                                <span className="data-field__value">{displayValue(userData.email)}</span>
                             </div>
                             <div className="data-field">
                                 <span className="data-field__label">UNIVERSIDAD</span>
-                                <span className="data-field__value">{userData.universidad}</span>
+                                <span className="data-field__value">{displayValue(userData.universidad)}</span>
                             </div>
                             <div className="data-field">
                                 <span className="data-field__label">GRADO</span>
-                                <span className="data-field__value">{userData.grado}</span>
+                                <span className="data-field__value">{displayValue(userData.grado)}</span>
                             </div>
                             <div className="data-field">
                                 <span className="data-field__label">UBICACIÓN</span>
-                                <span className="data-field__value">{userData.ubicacion}</span>
+                                <span className="data-field__value">{displayValue(userData.ubicacion)}</span>
                             </div>
                         </div>
                     </div>
@@ -271,11 +287,11 @@ const MyProfile = () => {
 
             {/* Modal de editar perfil */}
             {showEditProfile && (
-                <EditProfile
-                    onClose={() => setShowEditProfile(false)}
-                    onSave={(data) => {
-                        // TODO: Actualizar datos del perfil cuando esté la API
-                        console.log('Datos guardados:', data)
+                <EditProfile 
+                    onClose={() => setShowEditProfile(false)} 
+                    onSave={(updatedUser) => {
+                        // Los datos se actualizan automáticamente en el contexto
+                        setShowEditProfile(false)
                     }}
                 />
             )}

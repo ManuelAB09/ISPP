@@ -5,15 +5,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import './Register.css';
 import studyShareLogo from '../../static/images/MeerKatters_logo.png';
 
-const ACADEMIC_INTERESTS = [
-  'Ingeniería Software',
-  'Diseño',
-  'Física',
-  'Historia',
-  'Negocios',
-  'Medicina',
-];
-
 const Register = () => {
   const navigate = useNavigate();
   const { register, error: authError, clearError, isAuthenticated, loading } = useAuth();
@@ -22,13 +13,9 @@ const Register = () => {
     fullName: '',
     email: '',
     password: '',
-    interests: [],
     acceptTerms: false,
   });
-  const [profileImage, setProfileImage] = useState(null);
-  const [profileImagePreview, setProfileImagePreview] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showMoreInterests, setShowMoreInterests] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -62,42 +49,6 @@ const Register = () => {
     if (authError) clearError();
   };
 
-  const toggleInterest = (interest) => {
-    setFormData((prev) => ({
-      ...prev,
-      interests: prev.interests.includes(interest)
-        ? prev.interests.filter((i) => i !== interest)
-        : [...prev.interests, interest],
-    }));
-  };
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Validar tipo de archivo
-      if (!file.type.startsWith('image/')) {
-        setError('Por favor, selecciona un archivo de imagen válido');
-        return;
-      }
-      // Validar tamaño (máx 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('La imagen no debe superar los 5MB');
-        return;
-      }
-      setProfileImage(file);
-      setProfileImagePreview(URL.createObjectURL(file));
-      if (error) setError('');
-    }
-  };
-
-  const removeProfileImage = () => {
-    setProfileImage(null);
-    if (profileImagePreview) {
-      URL.revokeObjectURL(profileImagePreview);
-    }
-    setProfileImagePreview('');
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -110,7 +61,7 @@ const Register = () => {
     setIsLoading(true);
     setError('');
 
-    const result = await register(formData.email, formData.password, formData.fullName, profileImage);
+    const result = await register(formData.email, formData.password, formData.fullName);
     
     if (result.success) {
       navigate('/');
@@ -173,45 +124,6 @@ const Register = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="register-form">
-            <div className="form-group profile-image-group">
-              <label>Imagen de perfil <span className="optional-label">(opcional)</span></label>
-              <div className="profile-image-container">
-                {profileImagePreview ? (
-                  <div className="profile-image-preview">
-                    <img src={profileImagePreview} alt="Vista previa" />
-                    <button
-                      type="button"
-                      className="remove-image-btn"
-                      onClick={removeProfileImage}
-                      aria-label="Eliminar imagen"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"/>
-                        <line x1="6" y1="6" x2="18" y2="18"/>
-                      </svg>
-                    </button>
-                  </div>
-                ) : (
-                  <label htmlFor="profileImage" className="profile-image-upload">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                      <polyline points="17 8 12 3 7 8"/>
-                      <line x1="12" y1="3" x2="12" y2="15"/>
-                    </svg>
-                    <span>Subir imagen</span>
-                  </label>
-                )}
-                <input
-                  type="file"
-                  id="profileImage"
-                  name="profileImage"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="profile-image-input"
-                />
-              </div>
-            </div>
-
             <div className="form-group">
               <label htmlFor="fullName">Nombre completo</label>
               <input
@@ -267,31 +179,6 @@ const Register = () => {
                       <circle cx="12" cy="12" r="3"/>
                     </svg>
                   )}
-                </button>
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Intereses académicos</label>
-              <div className="interests-container">
-                {ACADEMIC_INTERESTS.map((interest) => (
-                  <button
-                    key={interest}
-                    type="button"
-                    className={`interest-chip ${
-                      formData.interests.includes(interest) ? 'selected' : ''
-                    }`}
-                    onClick={() => toggleInterest(interest)}
-                  >
-                    {interest}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  className="interest-chip more-chip"
-                  onClick={() => setShowMoreInterests(!showMoreInterests)}
-                >
-                  + Más
                 </button>
               </div>
             </div>
