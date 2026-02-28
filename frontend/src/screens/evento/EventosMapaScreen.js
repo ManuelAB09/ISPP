@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { listMapEvents } from '../../api/eventEndpoints';
 import { useNavigate } from 'react-router-dom';
+import Header from '../../components/Header/Header';
 
 const defaultPosition = [37.3891, -5.9845];
 
@@ -48,6 +49,8 @@ const EventosMapaScreen = () => {
     });
 
     return (
+        <>
+        <Header page={'eventos-mapa'}/>
         <div style={{ padding: 24, maxWidth: 900, margin: '0 auto' }}>
             <h2 style={{ color: '#1a237e', fontWeight: 700, fontSize: 26, marginBottom: 18 }}>Eventos en el mapa</h2>
             {loading && <div>Cargando eventos...</div>}
@@ -91,6 +94,7 @@ const EventosMapaScreen = () => {
                 <div style={{ color: '#888', marginTop: 18, textAlign: 'center' }}>No hay eventos con ubicación visible en el mapa.</div>
             )}
         </div>
+        </>
     );
 };
 
