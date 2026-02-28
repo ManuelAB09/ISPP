@@ -8,6 +8,7 @@ import CrearComunidad from './screens/comunidades/CrearComunidad';
 import Home from './screens/home/Home';
 import CreateEvent from './screens/event/CreateEvent';
 import EventDetail from './screens/event/EventDetail';
+import EventosMapaScreen from './screens/event/EventosMapaScreen';
 import Register from './screens/auth/Register';
 import Login from './screens/auth/Login';
 import PlansScreen from './screens/planes/PlansScreen';
@@ -39,6 +40,7 @@ function App() {
         <Route path="/planes" element={<PlansScreen />} />
         <Route path="/crear-ubicacion" element={<CrearUbicacionScreen />} />
         <Route path="/eventos/:eventId" element={<EventDetail />} />
+        <Route path="/eventos-mapa" element={<EventosMapaScreen />} />
       </>
     )
   }

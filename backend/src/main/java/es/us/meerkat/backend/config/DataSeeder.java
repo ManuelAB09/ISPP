@@ -471,7 +471,7 @@ public class DataSeeder {
             e2.setQueLlevar("Node.js instalado, editor de código");
             e2.setEsVirtual(true);
             e2.setEnlaceVirtual("https://meet.google.com/abc-defg-hij");
-            e2.setVisibleMapa(false);
+            e2.setVisibleMapa(true);
             e2.setCancelado(false);
             e2.setPrivado(false);
             e2.setCreador(u3);
