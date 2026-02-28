@@ -21,7 +21,9 @@ import lombok.NoArgsConstructor;
 /**
  * Entidad que representa un evento de estudio en la plataforma.
  *
- * <p>Contiene información sobre eventos incluyendo fecha, ubicación, participantes y configuración
+ * <p>
+ * Contiene información sobre eventos incluyendo fecha, ubicación, participantes
+ * y configuración
  * de visibilidad.
  */
 @Entity
@@ -114,14 +116,14 @@ public class Evento {
     /**
      * Crea un nuevo evento con la información proporcionada.
      *
-     * @param tituloParam Título del evento.
+     * @param tituloParam      Título del evento.
      * @param descripcionParam Descripción del evento.
      * @param fechaInicioParam Fecha y hora de inicio.
-     * @param fechaFinParam Fecha y hora de fin.
-     * @param aforoParam Aforo máximo.
-     * @param queLlevarParam Qué llevar al evento.
-     * @param esVirtualParam Si es evento virtual.
-     * @param privadoParam Si es un evento privado.
+     * @param fechaFinParam    Fecha y hora de fin.
+     * @param aforoParam       Aforo máximo.
+     * @param queLlevarParam   Qué llevar al evento.
+     * @param esVirtualParam   Si es evento virtual.
+     * @param privadoParam     Si es un evento privado.
      */
     public void crear(
             final String tituloParam,
@@ -147,14 +149,14 @@ public class Evento {
     /**
      * Edita la información del evento existente.
      *
-     * @param tituloParam Título del evento.
+     * @param tituloParam      Título del evento.
      * @param descripcionParam Descripción del evento.
      * @param fechaInicioParam Fecha y hora de inicio.
-     * @param fechaFinParam Fecha y hora de fin.
-     * @param aforoParam Aforo máximo.
-     * @param queLlevarParam Qué llevar al evento.
-     * @param esVirtualParam Si es evento virtual.
-     * @param privadoParam Si es un evento privado.
+     * @param fechaFinParam    Fecha y hora de fin.
+     * @param aforoParam       Aforo máximo.
+     * @param queLlevarParam   Qué llevar al evento.
+     * @param esVirtualParam   Si es evento virtual.
+     * @param privadoParam     Si es un evento privado.
      */
     public void editar(
             final String tituloParam,
@@ -231,26 +233,25 @@ public class Evento {
     }
 
     public EventDetailResponse toDTO() {
-        EventDetailResponse.EventDetailResponseBuilder builder =
-                EventDetailResponse.builder()
-                        .id(this.id)
-                        .titulo(this.titulo)
-                        .descripcion(this.descripcion)
-                        .fechaHora(this.fechaHora)
-                        .fechaFin(this.fechaFin)
-                        .aforo(this.aforo)
-                        .asistentesConfirmados(this.asistentesConfirmados)
-                        .queLlevar(this.queLlevar)
-                        .visibleMapa(this.visibleMapa)
-                        .esVirtual(this.esVirtual)
-                        .enlaceVirtual(this.enlaceVirtual)
-                        .cancelado(this.cancelado)
-                        .motivoCancelacion(this.motivoCancelacion)
-                        .privado(this.privado)
-                        .createdAt(this.createdAt)
-                        .comunidadId(this.comunidad != null ? this.comunidad.getId() : null)
-                        .comunidadNombre(
-                                this.comunidad != null ? this.comunidad.getNombre() : null);
+        EventDetailResponse.EventDetailResponseBuilder builder = EventDetailResponse.builder()
+                .id(this.id)
+                .titulo(this.titulo)
+                .descripcion(this.descripcion)
+                .fechaHora(this.fechaHora)
+                .fechaFin(this.fechaFin)
+                .aforo(this.aforo)
+                .asistentesConfirmados(this.asistentesConfirmados)
+                .queLlevar(this.queLlevar)
+                .visibleMapa(this.visibleMapa)
+                .esVirtual(this.esVirtual)
+                .enlaceVirtual(this.enlaceVirtual)
+                .cancelado(this.cancelado)
+                .motivoCancelacion(this.motivoCancelacion)
+                .privado(this.privado)
+                .createdAt(this.createdAt)
+                .comunidadId(this.comunidad != null ? this.comunidad.getId() : null)
+                .comunidadNombre(
+                        this.comunidad != null ? this.comunidad.getNombre() : null);
 
         if (this.creador != null) {
             builder.creador(
@@ -283,18 +284,32 @@ public class Evento {
      * @return EventSummaryResponse con la información básica del evento.
      */
     public EventSummaryResponse toSummaryDTO() {
-        return EventSummaryResponse.builder()
+        EventSummaryResponse.EventSummaryResponseBuilder builder = EventSummaryResponse.builder()
                 .id(this.id)
                 .titulo(this.titulo)
                 .descripcion(this.descripcion)
                 .fechaHora(this.fechaHora)
-                .ubicacion(this.ubicacion != null ? this.ubicacion.getNombre() : null)
                 .aforo(this.aforo)
                 .asistentesConfirmados(this.asistentesConfirmados)
                 .esVirtual(this.esVirtual)
                 .cancelado(this.cancelado)
                 .comunidadId(this.comunidad != null ? this.comunidad.getId() : null)
-                .comunidadNombre(this.comunidad != null ? this.comunidad.getNombre() : null)
-                .build();
+                .comunidadNombre(this.comunidad != null ? this.comunidad.getNombre() : null);
+
+        if (this.ubicacion != null) {
+            builder.ubicacion(
+                    UbicacionResponse.builder()
+                            .id(this.ubicacion.getId())
+                            .nombre(this.ubicacion.getNombre())
+                            .direccion(this.ubicacion.getDireccion())
+                            .latitud(this.ubicacion.getLatitud())
+                            .longitud(this.ubicacion.getLongitud())
+                            .tipo(this.ubicacion.getTipo())
+                            .coste(this.ubicacion.getCoste())
+                            .build());
+        } else {
+            builder.ubicacion(null);
+        }
+        return builder.build();
     }
 }

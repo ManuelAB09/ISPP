@@ -10,7 +10,8 @@ import lombok.NoArgsConstructor;
 /**
  * DTO con el resumen de un evento.
  *
- * <p>Contiene la información básica de un evento para mostrar en listados.
+ * <p>
+ * Contiene la información básica de un evento para mostrar en listados.
  */
 @Data
 @Builder
@@ -31,7 +32,7 @@ public class EventSummaryResponse {
     private LocalDateTime fechaHora;
 
     /** Ubicación del evento. */
-    private String ubicacion;
+    private UbicacionResponse ubicacion;
 
     /** Aforo máximo del evento. */
     private Integer aforo;
