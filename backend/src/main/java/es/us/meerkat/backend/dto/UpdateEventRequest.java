@@ -38,4 +38,7 @@ public class UpdateEventRequest {
 
     /** Enlace para participación virtual (si aplica). */
     private String enlaceVirtual;
+
+    /** ID de la ubicación asociada (para eventos presenciales). */
+    private Long ubicacionId;
 }

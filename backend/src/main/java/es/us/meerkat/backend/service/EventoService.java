@@ -8,10 +8,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.Evento;
+import es.us.meerkat.backend.entity.Ubicacion;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.EventoRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.UbicacionRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -36,6 +38,9 @@ public class EventoService {
     /** Repositorio para acceder a la información de miembros de comunidad. */
     private final MiembroComunidadRepository miembroComunidadRepository;
 
+    /** Repositorio para acceder a la información de ubicaciones. */
+    private final UbicacionRepository ubicacionRepository;
+
     // ===============================
     // CREAR EVENTO
     // ===============================
@@ -55,6 +60,7 @@ public class EventoService {
      * @param privadoParam Si es un evento privado.
      * @param enlaceVirtualParam Enlace virtual (si aplica).
      * @param visibleMapaParam Si es visible en el mapa.
+     * @param ubicacionId ID de la ubicación (para eventos presenciales).
      * @return El evento creado.
      */
     @Transactional
@@ -70,7 +76,8 @@ public class EventoService {
             final Boolean esVirtualParam,
             final Boolean privadoParam,
             final String enlaceVirtualParam,
-            final Boolean visibleMapaParam) {
+            final Boolean visibleMapaParam,
+            final Long ubicacionId) {
 
         final Usuario creador =
                 usuarioRepository
@@ -91,6 +98,12 @@ public class EventoService {
                     "No puedes crear eventos en una comunidad a la que no perteneces");
         }
 
+        // Validar que la fecha de inicio sea anterior a la fecha de fin
+        if (fechaFinParam != null && fechaHoraParam.isAfter(fechaFinParam)) {
+            throw new IllegalArgumentException(
+                    "La fecha de inicio no puede ser posterior a la fecha de fin");
+        }
+
         final Evento evento = new Evento();
         evento.crear(
                 tituloParam,
@@ -105,6 +118,13 @@ public class EventoService {
         evento.setComunidad(comunidad);
         evento.setEnlaceVirtual(enlaceVirtualParam);
         evento.setVisibleMapa(visibleMapaParam != null ? visibleMapaParam : true);
+
+        // Establecer ubicación si se proporcionó
+        if (ubicacionId != null) {
+            final Ubicacion ubicacion = ubicacionRepository.findById(ubicacionId)
+                    .orElseThrow(() -> new RuntimeException("Ubicación no encontrada"));
+            evento.setUbicacion(ubicacion);
+        }
 
         return eventoRepository.save(evento);
     }
@@ -125,6 +145,7 @@ public class EventoService {
      * @param queLlevarParam Qué llevar al evento.
      * @param esVirtualParam Si es evento virtual.
      * @param privadoParam Si es un evento privado.
+     * @param ubicacionId ID de la ubicación (para eventos presenciales).
      * @return El evento actualizado.
      */
     @Transactional
@@ -137,7 +158,14 @@ public class EventoService {
             final Integer aforoParam,
             final String queLlevarParam,
             final Boolean esVirtualParam,
-            final Boolean privadoParam) {
+            final Boolean privadoParam,
+            final Long ubicacionId) {
+
+        // Validar que la fecha de inicio sea anterior a la fecha de fin
+        if (fechaFinParam != null && fechaInicioParam.isAfter(fechaFinParam)) {
+            throw new IllegalArgumentException(
+                    "La fecha de inicio no puede ser posterior a la fecha de fin");
+        }
 
         final Evento evento =
                 eventoRepository
@@ -153,6 +181,15 @@ public class EventoService {
                 queLlevarParam,
                 esVirtualParam,
                 privadoParam);
+
+        // Actualizar ubicación
+        if (ubicacionId != null) {
+            final Ubicacion ubicacion = ubicacionRepository.findById(ubicacionId)
+                    .orElseThrow(() -> new RuntimeException("Ubicación no encontrada"));
+            evento.setUbicacion(ubicacion);
+        } else if (Boolean.TRUE.equals(esVirtualParam)) {
+            evento.setUbicacion(null);
+        }
 
         return eventoRepository.save(evento);
     }
