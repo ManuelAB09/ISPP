@@ -28,6 +28,7 @@ import es.us.meerkat.backend.entity.TransaccionPago;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.PaymentService;
 import es.us.meerkat.backend.service.SuscripcionService;
+import es.us.meerkat.backend.service.TutorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -43,6 +44,7 @@ public class PaymentController {
 
     private final PaymentService paymentService;
     private final SuscripcionService suscripcionService; // ← añadido para el webhook
+    private final TutorService tutorService;
 
     @Value("${stripe.webhook.secret}")
     private String webhookSecret;
@@ -166,7 +168,8 @@ public class PaymentController {
                         .ifPresent(
                                 obj -> {
                                     Invoice invoice = (Invoice) obj;
-                                    // Solo procesar facturas de suscripción (no la factura del alta
+                                    // Solo procesar facturas de suscripción (no la
+                                    // factura del alta
                                     // inicial,
                                     // que ya la maneja checkout.session.completed)
                                     if (invoice.getBillingReason() != null
@@ -194,7 +197,8 @@ public class PaymentController {
                                             "Cobro recurrente fallido. Customer: {}, Monto: {}€",
                                             invoice.getCustomer(),
                                             monto);
-                                    // Aquí podrías cancelar la suscripción o notificar al usuario
+                                    // Aquí podrías cancelar la suscripción o
+                                    // notificar al usuario
                                 });
             }
 
@@ -228,23 +232,48 @@ public class PaymentController {
                     BigDecimal.valueOf(session.getAmountTotal())
                             .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
 
-            if (TipoTransaccion.SUSCRIPCION.name().equals(tipoStr)) {
-                // Activa suscripción + crea transacción + actualiza plan usuario
-                suscripcionService.activarSuscripcionTrasStripe(usuarioId, monto);
-            } else {
-                // Pago único (verificación tutor, contratación, upgrade, etc.)
-                paymentService.procesarPagoExitoso(
-                        usuarioId,
-                        TipoTransaccion.valueOf(tipoStr),
-                        monto,
-                        "Pago completado vía Stripe",
-                        null);
+            TipoTransaccion tipo = TipoTransaccion.valueOf(tipoStr);
+
+            switch (tipo) {
+                case SUSCRIPCION -> {
+                    // Activa suscripción + crea transacción + actualiza plan usuario
+                    suscripcionService.activarSuscripcionTrasStripe(usuarioId, monto);
+                }
+
+                case PAGO_VERIFICACION -> {
+                    // Activa la insignia verificado en el perfil del tutor
+                    String tutorIdStr = session.getMetadata().get("tutorId");
+                    if (tutorIdStr == null) {
+                        log.warn(
+                                "Session {} de verificación sin tutorId en metadata",
+                                session.getId());
+                        return;
+                    }
+                    Long tutorId = Long.parseLong(tutorIdStr);
+                    tutorService.activarVerificacion(tutorId);
+
+                    // Registrar transacción completada
+                    paymentService.procesarPagoExitoso(
+                            usuarioId,
+                            TipoTransaccion.PAGO_VERIFICACION,
+                            monto,
+                            "Verificación de tutor completada vía Stripe",
+                            null);
+                }
+
+                case PAGO_TUTOR, COMISION -> {
+                    // Pago único genérico
+                    paymentService.procesarPagoExitoso(
+                            usuarioId, tipo, monto, "Pago completado vía Stripe", null);
+                }
+
+                default -> log.warn("Tipo de transacción no manejado en webhook: {}", tipo);
             }
 
             log.info(
                     "Session completada procesada. Usuario: {}, Tipo: {}, Monto: {}€",
                     usuarioId,
-                    tipoStr,
+                    tipo,
                     monto);
 
         } catch (Exception e) {

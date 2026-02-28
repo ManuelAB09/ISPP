@@ -177,23 +177,61 @@ public class TutorController {
     @PostMapping("/me/verification")
     @Operation(
             summary = "Solicitar verificación de tutor",
-            description = "Inicia el proceso de verificación del tutor mediante pago")
+            description =
+                    "Inicia el proceso de verificación del tutor mediante pago en Stripe. "
+                            + "Coste: 19.99€. Beneficio: insignia 'Verificado' en el perfil.")
     public ResponseEntity<?> requestTutorVerification(
             @AuthenticationPrincipal final Usuario usuario) {
+
+        // Verificar que tiene perfil de tutor
+        var tutorOpt = tutorService.obtenerTutorPorUsuarioId(usuario.getId());
+        if (tutorOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Tutor tutor = tutorOpt.get();
+
+        // Ya está verificado
+        if (Boolean.TRUE.equals(tutor.getVerificado())) {
+            return ResponseEntity.badRequest()
+                    .body(java.util.Map.of("error", "Tu perfil ya está verificado"));
+        }
+
+        // Ya tiene un pago pendiente
+        if (tutorService.tienePagoVerificacionPendiente(tutor.getId())) {
+            return ResponseEntity.badRequest()
+                    .body(
+                            java.util.Map.of(
+                                    "error", "Ya tienes una solicitud de verificación pendiente"));
+        }
+
         try {
-            var tutor = tutorService.obtenerTutorPorUsuarioId(usuario.getId());
-            if (tutor.isEmpty()) {
-                return ResponseEntity.notFound().build();
-            }
-            if (tutor.get().getVerificado()) {
-                return ResponseEntity.badRequest().build();
-            }
             PaymentUrlResponse paymentUrl =
-                    paymentService.generarPagoVerificacionTutor(
-                            tutor.get().getId(), usuario.getId());
-            return ResponseEntity.ok(paymentUrl);
+                    paymentService.generarPagoVerificacionTutor(tutor.getId(), usuario.getId());
+
+            // Devolver URL de pago + resumen del coste y beneficio
+            return ResponseEntity.ok(
+                    java.util.Map.of(
+                            "paymentUrl", paymentUrl.paymentUrl(),
+                            "sessionId", paymentUrl.sessionId(),
+                            "resumen",
+                                    java.util.Map.of(
+                                            "coste",
+                                            "19.99€",
+                                            "beneficio",
+                                            "Insignia 'Verificado' en tu perfil",
+                                            "descripcion",
+                                            "Tu perfil aparecerá destacado en los listados de"
+                                                    + " tutores")));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.internalServerError()
+                    .body(
+                            java.util.Map.of(
+                                    "error",
+                                    "Error al conectar con la pasarela de pago. Por favor,"
+                                            + " inténtalo de nuevo.",
+                                    "detalle",
+                                    e.getMessage()));
         }
     }
 

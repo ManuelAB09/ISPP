@@ -444,4 +444,47 @@ public class TutorService {
 
         tutorRepository.save(tutor);
     }
+
+    /**
+     * Comprueba si un tutor ya tiene un pago de verificación pendiente.
+     *
+     * @param tutorId ID del tutor
+     * @return true si ya existe una transacción pendiente
+     */
+    public boolean tienePagoVerificacionPendiente(Long tutorId) {
+        return transaccionPagoRepository.existsByTutorIdAndTipoAndEstado(
+                tutorId, TipoTransaccion.PAGO_VERIFICACION, EstadoTransaccion.PENDIENTE);
+    }
+
+    /**
+     * Activa la verificación del tutor tras confirmación de pago por Stripe. Marca el tutor como
+     * verificado y completa la transacción.
+     *
+     * @param tutorId ID del tutor
+     */
+    @Transactional
+    public void activarVerificacion(Long tutorId) {
+        Tutor tutor =
+                tutorRepository
+                        .findById(tutorId)
+                        .orElseThrow(
+                                () ->
+                                        new IllegalArgumentException(
+                                                "Tutor no encontrado: " + tutorId));
+
+        // Activar verificación en el perfil
+        tutor.setVerificado(true);
+        tutorRepository.save(tutor);
+
+        // Completar la transacción pendiente si existe
+        transaccionPagoRepository
+                .findTopByTutorIdAndTipoOrderByIniciadoAtDesc(
+                        tutorId, TipoTransaccion.PAGO_VERIFICACION)
+                .ifPresent(
+                        tx -> {
+                            tx.setEstado(EstadoTransaccion.COMPLETADA);
+                            tx.setCompletadoAt(java.time.LocalDateTime.now());
+                            transaccionPagoRepository.save(tx);
+                        });
+    }
 }
