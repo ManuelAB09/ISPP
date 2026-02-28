@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { LuCalendar, LuSquareCheck, LuMapPin, LuLink, LuArrowLeft, LuUsers, LuEye, LuEyeOff, LuMap, LuMapPinOff } from 'react-icons/lu';
 import './CreateEvent.css';
-import Navbar from '../../components/Navbar';
+import Header from '../../components/Header/Header';
 import { createEvent, getEventById, updateEvent } from '../../api/eventEndpoints';
+import { communitiesApi } from '../../api/communities.api';
 
 
 const CreateEvent = () => {
@@ -38,6 +39,7 @@ const CreateEvent = () => {
   const [validationErrors, setValidationErrors] = useState({});
 
   const isEdit = id && id !== 'new';
+  const currentUserId = localStorage.getItem('userId');
 
   // Cargar datos del evento si es edición
   useEffect(() => {
@@ -46,6 +48,14 @@ const CreateEvent = () => {
         try {
           setLoading(true);
           const data = await getEventById(id);
+
+          // Verificar que el usuario actual es el creador del evento
+          if (data.creador && data.creador.id?.toString() !== currentUserId) {
+            setError('No tienes permiso para editar este evento. Solo el creador puede editarlo.');
+            setLoading(false);
+            return;
+          }
+
           const fecha = new Date(data.fechaHora);
           const fechaFin = data.fechaFin ? new Date(data.fechaFin) : null;
           setFormData({
@@ -77,7 +87,21 @@ const CreateEvent = () => {
       };
       fetchEvent();
     }
-  }, [id, isEdit]);
+  }, [id, isEdit, currentUserId, navigate]);
+
+  // Verificar que el usuario es miembro de la comunidad al crear
+  useEffect(() => {
+    if (!isEdit && communityId && currentUserId) {
+      const checkMembership = async () => {
+        try {
+          await communitiesApi.getMyMembership(communityId);
+        } catch {
+          setError('No puedes crear eventos en una comunidad a la que no perteneces.');
+        }
+      };
+      checkMembership();
+    }
+  }, [isEdit, communityId, currentUserId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -106,8 +130,10 @@ const CreateEvent = () => {
     return Object.keys(errors).length === 0;
   };
 
+  const pad = (val) => String(val).padStart(2, '0');
+
   const buildEventPayload = () => {
-    const fechaHora = `${formData.anio}-${formData.mes}-${formData.dia}T${formData.hora}:${formData.minuto}:00`;
+    const fechaHora = `${formData.anio}-${pad(formData.mes)}-${pad(formData.dia)}T${pad(formData.hora)}:${pad(formData.minuto)}:00`;
     const esVirtual = formData.tipoLocalizacion === 'Online';
 
     const payload = {
@@ -124,7 +150,7 @@ const CreateEvent = () => {
 
     // Fecha fin si se proporcionó
     if (formData.diaFin && formData.mesFin && formData.anioFin && formData.horaFin && formData.minutoFin) {
-      payload.fechaFin = `${formData.anioFin}-${formData.mesFin}-${formData.diaFin}T${formData.horaFin}:${formData.minutoFin}:00`;
+      payload.fechaFin = `${formData.anioFin}-${pad(formData.mesFin)}-${pad(formData.diaFin)}T${pad(formData.horaFin)}:${pad(formData.minutoFin)}:00`;
     }
 
     if (!esVirtual) {
@@ -176,7 +202,7 @@ const CreateEvent = () => {
 
   return (
     <div className="page-container">
-      <Navbar avatarUrl="https://i.pravatar.cc/150?img=11" />
+      <Header page={'eventos'} />
 
       <div className="content-wrapper">
         <div className="header-section">
@@ -195,6 +221,15 @@ const CreateEvent = () => {
           </div>
         )}
 
+        {/* Si es error de permisos, no mostrar el formulario */}
+        {error && (error.includes('No tienes permiso') || error.includes('no perteneces')) ? (
+          <div className="actions-container" style={{ marginTop: '2rem' }}>
+            <button className="back-link" onClick={() => navigate(-1)}>
+              <LuArrowLeft /> Volver
+            </button>
+          </div>
+        ) : (
+        <>
         <div className="dotted-divider"></div>
 
         <div className="form-grid">
@@ -365,6 +400,8 @@ const CreateEvent = () => {
             <LuArrowLeft /> Volver al Dashboard
           </button>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

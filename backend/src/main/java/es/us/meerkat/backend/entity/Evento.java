@@ -82,9 +82,9 @@ public class Evento {
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario creador;
 
-    /** Ubicación del evento. */
+    /** Ubicación del evento.(opcional) */
     @ManyToOne
-    @JoinColumn(name = "ubicacion_id")
+    @JoinColumn(name = "ubicacion_id", nullable = true)
     private Ubicacion ubicacion;
 
     /** Comunidad a la que pertenece el evento. */
@@ -118,9 +118,6 @@ public class Evento {
      * @param descripcionParam Descripción del evento.
      * @param fechaInicioParam Fecha y hora de inicio.
      * @param fechaFinParam Fecha y hora de fin.
-     * @param ubicacionParam Ubicación física.
-     * @param latitudParam Latitud.
-     * @param longitudParam Longitud.
      * @param aforoParam Aforo máximo.
      * @param queLlevarParam Qué llevar al evento.
      * @param esVirtualParam Si es evento virtual.
@@ -154,9 +151,6 @@ public class Evento {
      * @param descripcionParam Descripción del evento.
      * @param fechaInicioParam Fecha y hora de inicio.
      * @param fechaFinParam Fecha y hora de fin.
-     * @param ubicacionParam Ubicación física.
-     * @param latitudParam Latitud.
-     * @param longitudParam Longitud.
      * @param aforoParam Aforo máximo.
      * @param queLlevarParam Qué llevar al evento.
      * @param esVirtualParam Si es evento virtual.
@@ -237,22 +231,26 @@ public class Evento {
     }
 
     public EventDetailResponse toDTO() {
-        EventDetailResponse.EventDetailResponseBuilder builder = EventDetailResponse.builder()
-                .id(this.id)
-                .titulo(this.titulo)
-                .descripcion(this.descripcion)
-                .fechaHora(this.fechaHora)
-                .fechaFin(this.fechaFin)
-                .aforo(this.aforo)
-                .asistentesConfirmados(this.asistentesConfirmados)
-                .queLlevar(this.queLlevar)
-                .visibleMapa(this.visibleMapa)
-                .esVirtual(this.esVirtual)
-                .enlaceVirtual(this.enlaceVirtual)
-                .cancelado(this.cancelado)
-                .motivoCancelacion(this.motivoCancelacion)
-                .privado(this.privado)
-                .createdAt(this.createdAt);
+        EventDetailResponse.EventDetailResponseBuilder builder =
+                EventDetailResponse.builder()
+                        .id(this.id)
+                        .titulo(this.titulo)
+                        .descripcion(this.descripcion)
+                        .fechaHora(this.fechaHora)
+                        .fechaFin(this.fechaFin)
+                        .aforo(this.aforo)
+                        .asistentesConfirmados(this.asistentesConfirmados)
+                        .queLlevar(this.queLlevar)
+                        .visibleMapa(this.visibleMapa)
+                        .esVirtual(this.esVirtual)
+                        .enlaceVirtual(this.enlaceVirtual)
+                        .cancelado(this.cancelado)
+                        .motivoCancelacion(this.motivoCancelacion)
+                        .privado(this.privado)
+                        .createdAt(this.createdAt)
+                        .comunidadId(this.comunidad != null ? this.comunidad.getId() : null)
+                        .comunidadNombre(
+                                this.comunidad != null ? this.comunidad.getNombre() : null);
 
         if (this.creador != null) {
             builder.creador(
@@ -285,18 +283,34 @@ public class Evento {
      * @return EventSummaryResponse con la información básica del evento.
      */
     public EventSummaryResponse toSummaryDTO() {
-        return EventSummaryResponse.builder()
-                .id(this.id)
-                .titulo(this.titulo)
-                .descripcion(this.descripcion)
-                .fechaHora(this.fechaHora)
-                .ubicacion(this.ubicacion != null ? this.ubicacion.getNombre() : null)
-                .aforo(this.aforo)
-                .asistentesConfirmados(this.asistentesConfirmados)
-                .esVirtual(this.esVirtual)
-                .cancelado(this.cancelado)
-                .comunidadId(this.comunidad != null ? this.comunidad.getId() : null)
-                .comunidadNombre(this.comunidad != null ? this.comunidad.getNombre() : null)
-                .build();
+        EventSummaryResponse.EventSummaryResponseBuilder builder =
+                EventSummaryResponse.builder()
+                        .id(this.id)
+                        .titulo(this.titulo)
+                        .descripcion(this.descripcion)
+                        .fechaHora(this.fechaHora)
+                        .aforo(this.aforo)
+                        .asistentesConfirmados(this.asistentesConfirmados)
+                        .esVirtual(this.esVirtual)
+                        .cancelado(this.cancelado)
+                        .comunidadId(this.comunidad != null ? this.comunidad.getId() : null)
+                        .comunidadNombre(
+                                this.comunidad != null ? this.comunidad.getNombre() : null);
+
+        if (this.ubicacion != null) {
+            builder.ubicacion(
+                    UbicacionResponse.builder()
+                            .id(this.ubicacion.getId())
+                            .nombre(this.ubicacion.getNombre())
+                            .direccion(this.ubicacion.getDireccion())
+                            .latitud(this.ubicacion.getLatitud())
+                            .longitud(this.ubicacion.getLongitud())
+                            .tipo(this.ubicacion.getTipo())
+                            .coste(this.ubicacion.getCoste())
+                            .build());
+        } else {
+            builder.ubicacion(null);
+        }
+        return builder.build();
     }
 }

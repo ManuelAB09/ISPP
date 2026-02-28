@@ -32,4 +32,13 @@ public interface UbicacionRepository extends JpaRepository<Ubicacion, Long> {
      * @return Lista de ubicaciones coincidentes.
      */
     List<Ubicacion> findByNombreContainingIgnoreCase(String nombreFragment);
+
+    /**
+     * Busca una ubicación por sus coordenadas geográficas (latitud y longitud).
+     *
+     * @param latitud
+     * @param longitud
+     * @return
+     */
+    Optional<Ubicacion> findByLatitudAndLongitud(Double latitud, Double longitud);
 }

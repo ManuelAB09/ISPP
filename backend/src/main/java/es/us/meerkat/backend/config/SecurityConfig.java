@@ -10,6 +10,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import es.us.meerkat.backend.security.JwtAuthenticationFilter;
 
 /**
@@ -116,5 +118,15 @@ public class SecurityConfig {
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    /**
+     * Bean para mapear JSON a objetos Java y viceversa.
+     *
+     * @return Instancia de {@link ObjectMapper}.
+     */
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
     }
 }

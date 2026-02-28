@@ -64,12 +64,14 @@ public class CommunityController {
     public ResponseEntity<CommunityListResponse> listCommunities(
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @AuthenticationPrincipal Usuario usuario) {
 
+        Long userId = usuario != null ? usuario.getId() : null;
         Pageable pageable = PageRequest.of(page, size);
         Page<Comunidad> comunidades = communityService.listPublicCommunities(search, pageable);
         Page<CommunityDetailResponse> response =
-                comunidades.map(c -> entityToDetailResponse(c, null));
+                comunidades.map(c -> entityToDetailResponse(c, userId));
         return ResponseEntity.ok(new CommunityListResponse(response));
     }
 
@@ -766,9 +768,58 @@ public class CommunityController {
     // EVENTOS DE COMUNIDAD
     // =====================================================
 
-    /**
-     * Lista los eventos de una comunidad. GET /api/v1/communities/{communityId}/events
-     */
+    /** Crea un nuevo evento en una comunidad. POST /api/v1/communities/{communityId}/events */
+    @PostMapping("/{communityId}/events")
+    @Operation(
+            summary = "Crear evento en comunidad",
+            description = "Crea un nuevo evento asociado a una comunidad",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Evento creado correctamente"),
+        @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
+        @ApiResponse(responseCode = "404", description = "Comunidad no encontrada")
+    })
+    public ResponseEntity<EventDetailResponse> createEvent(
+            @PathVariable Long communityId,
+            @Valid @RequestBody CreateEventRequest request,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            communityService.getCommunityById(communityId, null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        try {
+            Evento evento =
+                    eventoService.crearEvento(
+                            usuario.getId(),
+                            communityId,
+                            request.getTitulo(),
+                            request.getDescripcion(),
+                            request.getFechaHora(),
+                            request.getFechaFin(),
+                            request.getAforo(),
+                            request.getQueLlevar(),
+                            request.getEsVirtual(),
+                            false, // privado por defecto
+                            request.getEnlaceVirtual(),
+                            request.getVisibleEnMapa());
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(evento.toDTO());
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().contains("no perteneces")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+            throw e;
+        }
+    }
+
+    /** Lista los eventos de una comunidad. GET /api/v1/communities/{communityId}/events */
     @GetMapping("/{communityId}/events")
     @Operation(
             summary = "Listar eventos de comunidad",
@@ -788,9 +839,8 @@ public class CommunityController {
         }
 
         List<Evento> eventos = eventoService.obtenerEventosPorComunidad(communityId, cancelados);
-        List<EventSummaryResponse> response = eventos.stream()
-                .map(Evento::toSummaryDTO)
-                .collect(Collectors.toList());
+        List<EventSummaryResponse> response =
+                eventos.stream().map(Evento::toSummaryDTO).collect(Collectors.toList());
 
         return ResponseEntity.ok(response);
     }

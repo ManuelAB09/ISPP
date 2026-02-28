@@ -32,8 +32,8 @@ import es.us.meerkat.backend.repository.UsuarioRepository;
 /**
  * Seeder de datos iniciales para desarrollo.
  *
- * <p>Se ejecuta únicamente con el perfil por defecto (H2 en memoria).
- * No se activa en los perfiles "staging" ni "production".
+ * <p>Se ejecuta únicamente con el perfil por defecto (H2 en memoria). No se activa en los perfiles
+ * "staging" ni "production".
  */
 @Configuration
 public class DataSeeder {
@@ -139,138 +139,192 @@ public class DataSeeder {
             u8.setVisibleEnListados(false);
             u8.setEsTutor(false);
 
-            List<Usuario> usuarios = usuarioRepo.saveAll(
-                    List.of(u1, u2, u3, u4, u5, u6, u7, u8));
+            List<Usuario> usuarios = usuarioRepo.saveAll(List.of(u1, u2, u3, u4, u5, u6, u7, u8));
 
             // ============================
             // 2. UBICACIONES
             // ============================
-            Ubicacion ub1 = Ubicacion.builder()
-                    .nombre("Biblioteca ETSII")
-                    .direccion("Av. Reina Mercedes s/n, Sevilla")
-                    .latitud(37.3588)
-                    .longitud(-5.9868)
-                    .build();
+            Ubicacion ub1 =
+                    Ubicacion.builder()
+                            .nombre("Biblioteca ETSII")
+                            .direccion("Av. Reina Mercedes s/n, Sevilla")
+                            .latitud(37.3588)
+                            .longitud(-5.9868)
+                            .tipo("biblioteca")
+                            .coste("gratis")
+                            .build();
 
-            Ubicacion ub2 = Ubicacion.builder()
-                    .nombre("Aula A0.10 - ETSII")
-                    .direccion("Av. Reina Mercedes s/n, Sevilla")
-                    .latitud(37.3582)
-                    .longitud(-5.9872)
-                    .build();
+            Ubicacion ub2 =
+                    Ubicacion.builder()
+                            .nombre("Aula A0.10 - ETSII")
+                            .direccion("Av. Reina Mercedes s/n, Sevilla")
+                            .latitud(37.3582)
+                            .longitud(-5.9872)
+                            .tipo("aula")
+                            .coste("gratis")
+                            .build();
 
-            Ubicacion ub3 = Ubicacion.builder()
-                    .nombre("Salón de Actos - ETSII")
-                    .direccion("Av. Reina Mercedes s/n, Sevilla")
-                    .latitud(37.3585)
-                    .longitud(-5.9865)
-                    .build();
+            Ubicacion ub3 =
+                    Ubicacion.builder()
+                            .nombre("Salón de Actos - ETSII")
+                            .direccion("Av. Reina Mercedes s/n, Sevilla")
+                            .latitud(37.3585)
+                            .longitud(-5.9865)
+                            .tipo("auditorio")
+                            .coste("gratis")
+                            .build();
 
-            Ubicacion ub4 = Ubicacion.builder()
-                    .nombre("Cafetería ETSII")
-                    .direccion("Av. Reina Mercedes s/n, Sevilla")
-                    .latitud(37.3580)
-                    .longitud(-5.9875)
-                    .build();
+            Ubicacion ub4 =
+                    Ubicacion.builder()
+                            .nombre("Cafetería ETSII")
+                            .direccion("Av. Reina Mercedes s/n, Sevilla")
+                            .latitud(37.3580)
+                            .longitud(-5.9875)
+                            .tipo("cafeteria")
+                            .coste("de pago")
+                            .build();
 
-            Ubicacion ub5 = Ubicacion.builder()
-                    .nombre("Biblioteca General US")
-                    .direccion("C/ San Fernando 4, Sevilla")
-                    .latitud(37.3770)
-                    .longitud(-5.9870)
-                    .build();
+            Ubicacion ub5 =
+                    Ubicacion.builder()
+                            .nombre("Biblioteca General US")
+                            .direccion("C/ San Fernando 4, Sevilla")
+                            .latitud(37.3770)
+                            .longitud(-5.9870)
+                            .tipo("biblioteca")
+                            .coste("gratis")
+                            .build();
 
-            List<Ubicacion> ubicaciones = ubicacionRepo.saveAll(
-                    List.of(ub1, ub2, ub3, ub4, ub5));
+            List<Ubicacion> ubicaciones = ubicacionRepo.saveAll(List.of(ub1, ub2, ub3, ub4, ub5));
 
             // ============================
             // 3. COMUNIDADES
             // ============================
-            Comunidad c1 = Comunidad.builder()
-                    .nombre("ISPP - Grupo MeerKat")
-                    .descripcion("Comunidad oficial del grupo MeerKat para la asignatura "
-                            + "Ingeniería del Software y Práctica Profesional.")
-                    .tipoGrupo(TipoGrupo.GRUPO_PRIVADO)
-                    .estado(EstadoComunidad.ACTIVA)
-                    .tipoPlan(TipoPlanComunidad.PREMIUM)
-                    .maxMiembros(20)
-                    .creador(u2)
-                    .build();
+            Comunidad c1 =
+                    Comunidad.builder()
+                            .nombre("ISPP - Grupo MeerKat")
+                            .descripcion(
+                                    "Comunidad oficial del grupo MeerKat para la asignatura "
+                                            + "Ingeniería del Software y Práctica Profesional.")
+                            .tipoGrupo(TipoGrupo.GRUPO_PRIVADO)
+                            .estado(EstadoComunidad.ACTIVA)
+                            .tipoPlan(TipoPlanComunidad.PREMIUM)
+                            .maxMiembros(20)
+                            .creador(u2)
+                            .build();
 
-            Comunidad c2 = Comunidad.builder()
-                    .nombre("Desarrollo Web Full Stack")
-                    .descripcion("Grupo de estudio de tecnologías web: HTML, CSS, "
-                            + "JavaScript, React, Node.js y Spring Boot.")
-                    .tipoGrupo(TipoGrupo.COMUNIDAD_PUBLICA)
-                    .estado(EstadoComunidad.ACTIVA)
-                    .tipoPlan(TipoPlanComunidad.FREE)
-                    .maxMiembros(50)
-                    .creador(u3)
-                    .build();
+            Comunidad c2 =
+                    Comunidad.builder()
+                            .nombre("Desarrollo Web Full Stack")
+                            .descripcion(
+                                    "Grupo de estudio de tecnologías web: HTML, CSS, "
+                                            + "JavaScript, React, Node.js y Spring Boot.")
+                            .tipoGrupo(TipoGrupo.COMUNIDAD_PUBLICA)
+                            .estado(EstadoComunidad.ACTIVA)
+                            .tipoPlan(TipoPlanComunidad.FREE)
+                            .maxMiembros(50)
+                            .creador(u3)
+                            .build();
 
-            Comunidad c3 = Comunidad.builder()
-                    .nombre("Inteligencia Artificial US")
-                    .descripcion("Comunidad para estudiantes interesados en IA, "
-                            + "Machine Learning y Deep Learning.")
-                    .tipoGrupo(TipoGrupo.COMUNIDAD_PUBLICA)
-                    .estado(EstadoComunidad.ACTIVA)
-                    .tipoPlan(TipoPlanComunidad.FREE)
-                    .maxMiembros(100)
-                    .creador(u4)
-                    .build();
+            Comunidad c3 =
+                    Comunidad.builder()
+                            .nombre("Inteligencia Artificial US")
+                            .descripcion(
+                                    "Comunidad para estudiantes interesados en IA, "
+                                            + "Machine Learning y Deep Learning.")
+                            .tipoGrupo(TipoGrupo.COMUNIDAD_PUBLICA)
+                            .estado(EstadoComunidad.ACTIVA)
+                            .tipoPlan(TipoPlanComunidad.FREE)
+                            .maxMiembros(100)
+                            .creador(u4)
+                            .build();
 
-            Comunidad c4 = Comunidad.builder()
-                    .nombre("Ciberseguridad & Hacking Ético")
-                    .descripcion("Grupo privado para practicar CTFs y "
-                            + "compartir recursos de ciberseguridad.")
-                    .tipoGrupo(TipoGrupo.GRUPO_PRIVADO)
-                    .estado(EstadoComunidad.ACTIVA)
-                    .tipoPlan(TipoPlanComunidad.PREMIUM)
-                    .maxMiembros(30)
-                    .creador(u5)
-                    .build();
+            Comunidad c4 =
+                    Comunidad.builder()
+                            .nombre("Ciberseguridad & Hacking Ético")
+                            .descripcion(
+                                    "Grupo privado para practicar CTFs y "
+                                            + "compartir recursos de ciberseguridad.")
+                            .tipoGrupo(TipoGrupo.GRUPO_PRIVADO)
+                            .estado(EstadoComunidad.ACTIVA)
+                            .tipoPlan(TipoPlanComunidad.PREMIUM)
+                            .maxMiembros(30)
+                            .creador(u5)
+                            .build();
 
-            Comunidad c5 = Comunidad.builder()
-                    .nombre("Matemáticas y Estadística")
-                    .descripcion("Comunidad para resolver dudas y preparar exámenes "
-                            + "de asignaturas de matemáticas.")
-                    .tipoGrupo(TipoGrupo.COMUNIDAD_PUBLICA)
-                    .estado(EstadoComunidad.ACTIVA)
-                    .tipoPlan(TipoPlanComunidad.FREE)
-                    .maxMiembros(80)
-                    .creador(u6)
-                    .build();
+            Comunidad c5 =
+                    Comunidad.builder()
+                            .nombre("Matemáticas y Estadística")
+                            .descripcion(
+                                    "Comunidad para resolver dudas y preparar exámenes "
+                                            + "de asignaturas de matemáticas.")
+                            .tipoGrupo(TipoGrupo.COMUNIDAD_PUBLICA)
+                            .estado(EstadoComunidad.ACTIVA)
+                            .tipoPlan(TipoPlanComunidad.FREE)
+                            .maxMiembros(80)
+                            .creador(u6)
+                            .build();
 
-            List<Comunidad> comunidades = comunidadRepo.saveAll(
-                    List.of(c1, c2, c3, c4, c5));
+            List<Comunidad> comunidades = comunidadRepo.saveAll(List.of(c1, c2, c3, c4, c5));
 
             // ============================
             // 4. CATEGORÍAS DE COMUNIDADES
             // ============================
-            Categoria cat1 = Categoria.builder()
-                    .nombre("Sprint 1").descripcion("Tareas del Sprint 1")
-                    .orden(1).comunidad(c1).build();
-            Categoria cat2 = Categoria.builder()
-                    .nombre("Sprint 2").descripcion("Tareas del Sprint 2")
-                    .orden(2).comunidad(c1).build();
-            Categoria cat3 = Categoria.builder()
-                    .nombre("Frontend").descripcion("Recursos de frontend")
-                    .orden(1).comunidad(c2).build();
-            Categoria cat4 = Categoria.builder()
-                    .nombre("Backend").descripcion("Recursos de backend")
-                    .orden(2).comunidad(c2).build();
-            Categoria cat5 = Categoria.builder()
-                    .nombre("Proyectos ML").descripcion("Proyectos de Machine Learning")
-                    .orden(1).comunidad(c3).build();
-            Categoria cat6 = Categoria.builder()
-                    .nombre("CTFs").descripcion("Retos Capture The Flag")
-                    .orden(1).comunidad(c4).build();
-            Categoria cat7 = Categoria.builder()
-                    .nombre("Álgebra").descripcion("Álgebra lineal y abstracta")
-                    .orden(1).comunidad(c5).build();
-            Categoria cat8 = Categoria.builder()
-                    .nombre("Cálculo").descripcion("Cálculo diferencial e integral")
-                    .orden(2).comunidad(c5).build();
+            Categoria cat1 =
+                    Categoria.builder()
+                            .nombre("Sprint 1")
+                            .descripcion("Tareas del Sprint 1")
+                            .orden(1)
+                            .comunidad(c1)
+                            .build();
+            Categoria cat2 =
+                    Categoria.builder()
+                            .nombre("Sprint 2")
+                            .descripcion("Tareas del Sprint 2")
+                            .orden(2)
+                            .comunidad(c1)
+                            .build();
+            Categoria cat3 =
+                    Categoria.builder()
+                            .nombre("Frontend")
+                            .descripcion("Recursos de frontend")
+                            .orden(1)
+                            .comunidad(c2)
+                            .build();
+            Categoria cat4 =
+                    Categoria.builder()
+                            .nombre("Backend")
+                            .descripcion("Recursos de backend")
+                            .orden(2)
+                            .comunidad(c2)
+                            .build();
+            Categoria cat5 =
+                    Categoria.builder()
+                            .nombre("Proyectos ML")
+                            .descripcion("Proyectos de Machine Learning")
+                            .orden(1)
+                            .comunidad(c3)
+                            .build();
+            Categoria cat6 =
+                    Categoria.builder()
+                            .nombre("CTFs")
+                            .descripcion("Retos Capture The Flag")
+                            .orden(1)
+                            .comunidad(c4)
+                            .build();
+            Categoria cat7 =
+                    Categoria.builder()
+                            .nombre("Álgebra")
+                            .descripcion("Álgebra lineal y abstracta")
+                            .orden(1)
+                            .comunidad(c5)
+                            .build();
+            Categoria cat8 =
+                    Categoria.builder()
+                            .nombre("Cálculo")
+                            .descripcion("Cálculo diferencial e integral")
+                            .orden(2)
+                            .comunidad(c5)
+                            .build();
 
             categoriaRepo.saveAll(List.of(cat1, cat2, cat3, cat4, cat5, cat6, cat7, cat8));
 
@@ -278,47 +332,107 @@ public class DataSeeder {
             // 5. MIEMBROS DE COMUNIDADES
             // ============================
             // c1 - ISPP (creador: u2=María)
-            MiembroComunidad m1 = MiembroComunidad.builder()
-                    .usuario(u2).comunidad(c1).rol(RolComunidad.ADMIN).build();
-            MiembroComunidad m2 = MiembroComunidad.builder()
-                    .usuario(u3).comunidad(c1).rol(RolComunidad.MIEMBRO).build();
-            MiembroComunidad m3 = MiembroComunidad.builder()
-                    .usuario(u7).comunidad(c1).rol(RolComunidad.MIEMBRO).build();
-            MiembroComunidad m4 = MiembroComunidad.builder()
-                    .usuario(u8).comunidad(c1).rol(RolComunidad.MIEMBRO).build();
+            MiembroComunidad m1 =
+                    MiembroComunidad.builder()
+                            .usuario(u2)
+                            .comunidad(c1)
+                            .rol(RolComunidad.ADMIN)
+                            .build();
+            MiembroComunidad m2 =
+                    MiembroComunidad.builder()
+                            .usuario(u3)
+                            .comunidad(c1)
+                            .rol(RolComunidad.MIEMBRO)
+                            .build();
+            MiembroComunidad m3 =
+                    MiembroComunidad.builder()
+                            .usuario(u7)
+                            .comunidad(c1)
+                            .rol(RolComunidad.MIEMBRO)
+                            .build();
+            MiembroComunidad m4 =
+                    MiembroComunidad.builder()
+                            .usuario(u8)
+                            .comunidad(c1)
+                            .rol(RolComunidad.MIEMBRO)
+                            .build();
 
             // c2 - Full Stack (creador: u3=Carlos)
-            MiembroComunidad m5 = MiembroComunidad.builder()
-                    .usuario(u3).comunidad(c2).rol(RolComunidad.ADMIN).build();
-            MiembroComunidad m6 = MiembroComunidad.builder()
-                    .usuario(u2).comunidad(c2).rol(RolComunidad.MIEMBRO).build();
-            MiembroComunidad m7 = MiembroComunidad.builder()
-                    .usuario(u7).comunidad(c2).rol(RolComunidad.MIEMBRO).build();
+            MiembroComunidad m5 =
+                    MiembroComunidad.builder()
+                            .usuario(u3)
+                            .comunidad(c2)
+                            .rol(RolComunidad.ADMIN)
+                            .build();
+            MiembroComunidad m6 =
+                    MiembroComunidad.builder()
+                            .usuario(u2)
+                            .comunidad(c2)
+                            .rol(RolComunidad.MIEMBRO)
+                            .build();
+            MiembroComunidad m7 =
+                    MiembroComunidad.builder()
+                            .usuario(u7)
+                            .comunidad(c2)
+                            .rol(RolComunidad.MIEMBRO)
+                            .build();
 
             // c3 - IA (creador: u4=Laura)
-            MiembroComunidad m8 = MiembroComunidad.builder()
-                    .usuario(u4).comunidad(c3).rol(RolComunidad.ADMIN).build();
-            MiembroComunidad m9 = MiembroComunidad.builder()
-                    .usuario(u6).comunidad(c3).rol(RolComunidad.MIEMBRO).build();
-            MiembroComunidad m10 = MiembroComunidad.builder()
-                    .usuario(u3).comunidad(c3).rol(RolComunidad.MIEMBRO).build();
+            MiembroComunidad m8 =
+                    MiembroComunidad.builder()
+                            .usuario(u4)
+                            .comunidad(c3)
+                            .rol(RolComunidad.ADMIN)
+                            .build();
+            MiembroComunidad m9 =
+                    MiembroComunidad.builder()
+                            .usuario(u6)
+                            .comunidad(c3)
+                            .rol(RolComunidad.MIEMBRO)
+                            .build();
+            MiembroComunidad m10 =
+                    MiembroComunidad.builder()
+                            .usuario(u3)
+                            .comunidad(c3)
+                            .rol(RolComunidad.MIEMBRO)
+                            .build();
 
             // c4 - Ciberseguridad (creador: u5=Pedro)
-            MiembroComunidad m11 = MiembroComunidad.builder()
-                    .usuario(u5).comunidad(c4).rol(RolComunidad.ADMIN).build();
-            MiembroComunidad m12 = MiembroComunidad.builder()
-                    .usuario(u3).comunidad(c4).rol(RolComunidad.MIEMBRO).build();
+            MiembroComunidad m11 =
+                    MiembroComunidad.builder()
+                            .usuario(u5)
+                            .comunidad(c4)
+                            .rol(RolComunidad.ADMIN)
+                            .build();
+            MiembroComunidad m12 =
+                    MiembroComunidad.builder()
+                            .usuario(u3)
+                            .comunidad(c4)
+                            .rol(RolComunidad.MIEMBRO)
+                            .build();
 
             // c5 - Matemáticas (creador: u6=Ana)
-            MiembroComunidad m13 = MiembroComunidad.builder()
-                    .usuario(u6).comunidad(c5).rol(RolComunidad.ADMIN).build();
-            MiembroComunidad m14 = MiembroComunidad.builder()
-                    .usuario(u4).comunidad(c5).rol(RolComunidad.MIEMBRO).build();
-            MiembroComunidad m15 = MiembroComunidad.builder()
-                    .usuario(u8).comunidad(c5).rol(RolComunidad.MIEMBRO).build();
+            MiembroComunidad m13 =
+                    MiembroComunidad.builder()
+                            .usuario(u6)
+                            .comunidad(c5)
+                            .rol(RolComunidad.ADMIN)
+                            .build();
+            MiembroComunidad m14 =
+                    MiembroComunidad.builder()
+                            .usuario(u4)
+                            .comunidad(c5)
+                            .rol(RolComunidad.MIEMBRO)
+                            .build();
+            MiembroComunidad m15 =
+                    MiembroComunidad.builder()
+                            .usuario(u8)
+                            .comunidad(c5)
+                            .rol(RolComunidad.MIEMBRO)
+                            .build();
 
-            miembroRepo.saveAll(List.of(
-                    m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15));
+            miembroRepo.saveAll(
+                    List.of(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15));
 
             // ============================
             // 6. EVENTOS
@@ -328,8 +442,9 @@ public class DataSeeder {
             // Evento 1 - Presencial público
             Evento e1 = new Evento();
             e1.setTitulo("Sesión de estudio ISPP - Sprint Review");
-            e1.setDescripcion("Revisaremos las tareas completadas del Sprint 1 "
-                    + "y planificaremos el Sprint 2.");
+            e1.setDescripcion(
+                    "Revisaremos las tareas completadas del Sprint 1 "
+                            + "y planificaremos el Sprint 2.");
             e1.setFechaHora(now.plusDays(2).withHour(10).withMinute(0));
             e1.setFechaFin(now.plusDays(2).withHour(13).withMinute(0));
             e1.setAforo(20);
@@ -346,8 +461,9 @@ public class DataSeeder {
             // Evento 2 - Virtual público
             Evento e2 = new Evento();
             e2.setTitulo("Workshop: React + TypeScript");
-            e2.setDescripcion("Taller práctico de introducción a React con TypeScript. "
-                    + "Crearemos una app desde cero.");
+            e2.setDescripcion(
+                    "Taller práctico de introducción a React con TypeScript. "
+                            + "Crearemos una app desde cero.");
             e2.setFechaHora(now.plusDays(5).withHour(16).withMinute(0));
             e2.setFechaFin(now.plusDays(5).withHour(19).withMinute(0));
             e2.setAforo(50);
@@ -355,7 +471,7 @@ public class DataSeeder {
             e2.setQueLlevar("Node.js instalado, editor de código");
             e2.setEsVirtual(true);
             e2.setEnlaceVirtual("https://meet.google.com/abc-defg-hij");
-            e2.setVisibleMapa(false);
+            e2.setVisibleMapa(true);
             e2.setCancelado(false);
             e2.setPrivado(false);
             e2.setCreador(u3);
@@ -365,8 +481,7 @@ public class DataSeeder {
             // Evento 3 - Presencial privado
             Evento e3 = new Evento();
             e3.setTitulo("CTF Night - Hack The Box");
-            e3.setDescripcion("Noche de retos CTF en grupo. "
-                    + "Nivel intermedio-avanzado.");
+            e3.setDescripcion("Noche de retos CTF en grupo. " + "Nivel intermedio-avanzado.");
             e3.setFechaHora(now.plusDays(7).withHour(20).withMinute(0));
             e3.setFechaFin(now.plusDays(8).withHour(2).withMinute(0));
             e3.setAforo(15);
@@ -383,8 +498,9 @@ public class DataSeeder {
             // Evento 4 - Presencial público
             Evento e4 = new Evento();
             e4.setTitulo("Repaso de Álgebra Lineal");
-            e4.setDescripcion("Sesión de repaso de temas 1 al 4 de Álgebra. "
-                    + "Resolveremos ejercicios de exámenes anteriores.");
+            e4.setDescripcion(
+                    "Sesión de repaso de temas 1 al 4 de Álgebra. "
+                            + "Resolveremos ejercicios de exámenes anteriores.");
             e4.setFechaHora(now.plusDays(3).withHour(9).withMinute(30));
             e4.setFechaFin(now.plusDays(3).withHour(12).withMinute(0));
             e4.setAforo(40);
@@ -401,8 +517,9 @@ public class DataSeeder {
             // Evento 5 - Virtual público
             Evento e5 = new Evento();
             e5.setTitulo("Intro a Machine Learning con Python");
-            e5.setDescripcion("Charla introductoria sobre ML usando scikit-learn y pandas. "
-                    + "No se requiere experiencia previa.");
+            e5.setDescripcion(
+                    "Charla introductoria sobre ML usando scikit-learn y pandas. "
+                            + "No se requiere experiencia previa.");
             e5.setFechaHora(now.plusDays(10).withHour(17).withMinute(0));
             e5.setFechaFin(now.plusDays(10).withHour(19).withMinute(30));
             e5.setAforo(100);
@@ -420,8 +537,9 @@ public class DataSeeder {
             // Evento 6 - Presencial público (próximo)
             Evento e6 = new Evento();
             e6.setTitulo("Coding Dojo: Spring Boot & JPA");
-            e6.setDescripcion("Sesión práctica de desarrollo con Spring Boot. "
-                    + "Construiremos una API REST completa.");
+            e6.setDescripcion(
+                    "Sesión práctica de desarrollo con Spring Boot. "
+                            + "Construiremos una API REST completa.");
             e6.setFechaHora(now.plusDays(1).withHour(15).withMinute(0));
             e6.setFechaFin(now.plusDays(1).withHour(18).withMinute(0));
             e6.setAforo(25);
@@ -470,8 +588,7 @@ public class DataSeeder {
             e8.setUbicacion(ub3);
             e8.setComunidad(c1);
 
-            List<Evento> eventos = eventoRepo.saveAll(
-                    List.of(e1, e2, e3, e4, e5, e6, e7, e8));
+            List<Evento> eventos = eventoRepo.saveAll(List.of(e1, e2, e3, e4, e5, e6, e7, e8));
 
             // ============================
             // 7. ASISTENCIAS A EVENTOS
@@ -560,8 +677,8 @@ public class DataSeeder {
             a14.setEstado(EstadoAsistencia.CANCELADA);
             a14.setCreatedAt(now.minusDays(8));
 
-            asistenciaRepo.saveAll(List.of(
-                    a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14));
+            asistenciaRepo.saveAll(
+                    List.of(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14));
 
             System.out.println("========================================");
             System.out.println("  SEEDER: Datos de prueba cargados");

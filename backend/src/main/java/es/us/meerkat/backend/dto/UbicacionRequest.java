@@ -21,4 +21,9 @@ public class UbicacionRequest {
 
     /** Longitud geográfica. */
     private Double longitud;
+
+    private String tipo;
+
+    /** Coste asociado al lugar (e.g., "gratis", "de pago", "desconocido"). */
+    private String coste;
 }

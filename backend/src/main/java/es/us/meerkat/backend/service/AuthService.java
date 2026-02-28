@@ -15,6 +15,8 @@ import es.us.meerkat.backend.dto.MessageResponse;
 import es.us.meerkat.backend.dto.RegisterRequest;
 import es.us.meerkat.backend.dto.UserDetailResponse;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.exception.ConflictException;
+import es.us.meerkat.backend.exception.ValidationException;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import es.us.meerkat.backend.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -42,7 +44,7 @@ public class AuthService {
     /** Servicio para generación y validación de tokens JWT. */
     private final JwtService jwtService;
 
-    /** Servicio de correo electrónico * */
+    /** Servicio de correo electrónico */
     private final EmailService emailService;
 
     // ===============================
@@ -57,22 +59,15 @@ public class AuthService {
      *
      * @param requestParam Datos del nuevo usuario.
      * @return AuthResponse con token JWT y datos del usuario.
-     * @throws RuntimeException si el email ya está en uso o los datos no son válidos.
+     * @throws ValidationException si los datos no son válidos (400).
+     * @throws ConflictException si el email ya está registrado (409).
      */
     @Transactional
     public AuthResponse registrar(final RegisterRequest requestParam) {
-
-        if (requestParam.getEmail() == null || requestParam.getEmail().isBlank()) {
-            throw new RuntimeException("El email no puede estar vacío");
-        }
-
-        if (requestParam.getPassword() == null
-                || requestParam.getPassword().length() < MIN_PASSWORD_LENGTH) {
-            throw new RuntimeException("La contraseña debe tener al menos 8 caracteres");
-        }
+        validateRegistrationData(requestParam);
 
         if (usuarioRepository.existsByEmail(requestParam.getEmail())) {
-            throw new RuntimeException("El email ya está registrado");
+            throw new ConflictException("El email ya está registrado");
         }
 
         final Usuario usuario = new Usuario();
@@ -90,6 +85,22 @@ public class AuthService {
         return buildAuthResponse(usuario, token);
     }
 
+    /**
+     * Valida los datos de registro.
+     *
+     * @param request Datos a validar.
+     * @throws ValidationException si algún dato es inválido (400).
+     */
+    private void validateRegistrationData(final RegisterRequest request) {
+        if (request.getEmail() == null || request.getEmail().isBlank()) {
+            throw new ValidationException("El email no puede estar vacío");
+        }
+
+        if (request.getPassword() == null || request.getPassword().length() < MIN_PASSWORD_LENGTH) {
+            throw new ValidationException("La contraseña debe tener al menos 8 caracteres");
+        }
+    }
+
     // ===============================
     // INICIO DE SESIÓN
     // ===============================
@@ -102,17 +113,17 @@ public class AuthService {
      *
      * @param requestParam Credenciales del usuario.
      * @return AuthResponse con token JWT y datos del usuario.
-     * @throws RuntimeException si las credenciales son incorrectas.
+     * @throws ValidationException si las credenciales son incorrectas (400).
      */
     public AuthResponse iniciarSesion(final LoginRequest requestParam) {
 
         final Usuario usuario =
                 usuarioRepository
                         .findByEmail(requestParam.getEmail())
-                        .orElseThrow(() -> new RuntimeException("Credenciales incorrectas"));
+                        .orElseThrow(() -> new ValidationException("Credenciales incorrectas"));
 
         if (!passwordEncoder.matches(requestParam.getPassword(), usuario.getPassword())) {
-            throw new RuntimeException("Credenciales incorrectas");
+            throw new ValidationException("Credenciales incorrectas");
         }
 
         final String token = jwtService.generateToken(usuario.getEmail());
@@ -125,7 +136,7 @@ public class AuthService {
      *
      * @param request DTO con el email del usuario
      * @return MessageResponse con confirmación
-     * @throws NotFoundException
+     * @throws ValidationException si hay error al procesar la solicitud (400).
      */
     public MessageResponse recuperarContrasena(final ForgotPasswordRequest request) {
         final String email = request.getEmail();
@@ -159,7 +170,7 @@ public class AuthService {
 
         } catch (Exception e) {
             // log.error("Error al enviar email de recuperación: {}", e.getMessage());
-            throw new RuntimeException("No se pudo enviar el email de recuperación", e);
+            throw new ValidationException("No se pudo enviar el email de recuperación", e);
         }
     }
 
@@ -176,9 +187,11 @@ public class AuthService {
     /**
      * Construye un {@link AuthResponse} a partir del usuario y token.
      *
+     * <p>Mantiene la estructura del DTO existente con UserDetailResponse anidado.
+     *
      * @param usuario Usuario autenticado.
      * @param token Token JWT generado.
-     * @return AuthResponse completo.
+     * @return AuthResponse completo con todos los datos del usuario.
      */
     private AuthResponse buildAuthResponse(final Usuario usuario, final String token) {
 

@@ -8,6 +8,7 @@ import CrearComunidad from './screens/comunidades/CrearComunidad';
 import Home from './screens/home/Home';
 import CreateEvent from './screens/event/CreateEvent';
 import EventDetail from './screens/event/EventDetail';
+import EventosMapaScreen from './screens/event/EventosMapaScreen';
 import Register from './screens/auth/Register';
 import Login from './screens/auth/Login';
 import PlansScreen from './screens/planes/PlansScreen';
@@ -32,12 +33,14 @@ function App() {
     ownerRoutes = (
       <>
         <Route path="/profesores" element={<VerifiedTeachers />} />
+        <Route path="/profesores/nuevo" element={<TeacherProfile />} />
         <Route path="/profesores/:id" element={<TeacherProfile />} />
         <Route path="/create-event/new" element={<CreateEvent />} />
         <Route path="/create-event/:id" element={<CreateEvent />} />
         <Route path="/planes" element={<PlansScreen />} />
         <Route path="/crear-ubicacion" element={<CrearUbicacionScreen />} />
         <Route path="/eventos/:eventId" element={<EventDetail />} />
+        <Route path="/eventos-mapa" element={<EventosMapaScreen />} />
       </>
     )
   }
