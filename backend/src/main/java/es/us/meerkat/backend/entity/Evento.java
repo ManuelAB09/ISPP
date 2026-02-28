@@ -82,9 +82,9 @@ public class Evento {
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario creador;
 
-    /** Ubicación del evento. */
+    /** Ubicación del evento.(opcional) */
     @ManyToOne
-    @JoinColumn(name = "ubicacion_id")
+    @JoinColumn(name = "ubicacion_id", nullable = true)
     private Ubicacion ubicacion;
 
     /** Comunidad a la que pertenece el evento. */
@@ -118,9 +118,6 @@ public class Evento {
      * @param descripcionParam Descripción del evento.
      * @param fechaInicioParam Fecha y hora de inicio.
      * @param fechaFinParam Fecha y hora de fin.
-     * @param ubicacionParam Ubicación física.
-     * @param latitudParam Latitud.
-     * @param longitudParam Longitud.
      * @param aforoParam Aforo máximo.
      * @param queLlevarParam Qué llevar al evento.
      * @param esVirtualParam Si es evento virtual.
@@ -154,9 +151,6 @@ public class Evento {
      * @param descripcionParam Descripción del evento.
      * @param fechaInicioParam Fecha y hora de inicio.
      * @param fechaFinParam Fecha y hora de fin.
-     * @param ubicacionParam Ubicación física.
-     * @param latitudParam Latitud.
-     * @param longitudParam Longitud.
      * @param aforoParam Aforo máximo.
      * @param queLlevarParam Qué llevar al evento.
      * @param esVirtualParam Si es evento virtual.
@@ -253,7 +247,10 @@ public class Evento {
                         .cancelado(this.cancelado)
                         .motivoCancelacion(this.motivoCancelacion)
                         .privado(this.privado)
-                        .createdAt(this.createdAt);
+                        .createdAt(this.createdAt)
+                        .comunidadId(this.comunidad != null ? this.comunidad.getId() : null)
+                        .comunidadNombre(
+                                this.comunidad != null ? this.comunidad.getNombre() : null);
 
         if (this.creador != null) {
             builder.creador(

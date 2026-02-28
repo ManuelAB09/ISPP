@@ -26,9 +26,11 @@ export const AuthProvider = ({ children }) => {
         try {
           const userData = await authApi.getMe();
           setUser(userData);
+          localStorage.setItem('userId', String(userData.id));
         } catch (err) {
           // Token inválido o expirado
           localStorage.removeItem('accessToken');
+          localStorage.removeItem('userId');
           apiClient.setToken(null);
         }
       }
@@ -45,6 +47,7 @@ export const AuthProvider = ({ children }) => {
       const { accessToken, user: userData } = response;
       
       localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('userId', String(userData.id));
       apiClient.setToken(accessToken);
       setUser(userData);
       
@@ -63,6 +66,7 @@ export const AuthProvider = ({ children }) => {
       const { accessToken, user: userData } = response;
       
       localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('userId', String(userData.id));
       apiClient.setToken(accessToken);
       setUser(userData);
       
@@ -76,6 +80,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(() => {
     localStorage.removeItem('accessToken');
+    localStorage.removeItem('userId');
     apiClient.setToken(null);
     setUser(null);
   }, []);

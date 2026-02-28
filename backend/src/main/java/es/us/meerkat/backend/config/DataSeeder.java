@@ -150,6 +150,8 @@ public class DataSeeder {
                             .direccion("Av. Reina Mercedes s/n, Sevilla")
                             .latitud(37.3588)
                             .longitud(-5.9868)
+                            .tipo("biblioteca")
+                            .coste("gratis")
                             .build();
 
             Ubicacion ub2 =
@@ -158,6 +160,8 @@ public class DataSeeder {
                             .direccion("Av. Reina Mercedes s/n, Sevilla")
                             .latitud(37.3582)
                             .longitud(-5.9872)
+                            .tipo("aula")
+                            .coste("gratis")
                             .build();
 
             Ubicacion ub3 =
@@ -166,6 +170,8 @@ public class DataSeeder {
                             .direccion("Av. Reina Mercedes s/n, Sevilla")
                             .latitud(37.3585)
                             .longitud(-5.9865)
+                            .tipo("auditorio")
+                            .coste("gratis")
                             .build();
 
             Ubicacion ub4 =
@@ -174,6 +180,8 @@ public class DataSeeder {
                             .direccion("Av. Reina Mercedes s/n, Sevilla")
                             .latitud(37.3580)
                             .longitud(-5.9875)
+                            .tipo("cafeteria")
+                            .coste("de pago")
                             .build();
 
             Ubicacion ub5 =
@@ -182,6 +190,8 @@ public class DataSeeder {
                             .direccion("C/ San Fernando 4, Sevilla")
                             .latitud(37.3770)
                             .longitud(-5.9870)
+                            .tipo("biblioteca")
+                            .coste("gratis")
                             .build();
 
             List<Ubicacion> ubicaciones = ubicacionRepo.saveAll(List.of(ub1, ub2, ub3, ub4, ub5));

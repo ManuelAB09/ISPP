@@ -32,6 +32,7 @@ function App() {
     ownerRoutes = (
       <>
         <Route path="/profesores" element={<VerifiedTeachers />} />
+        <Route path="/profesores/nuevo" element={<TeacherProfile />} />
         <Route path="/profesores/:id" element={<TeacherProfile />} />
         <Route path="/create-event/new" element={<CreateEvent />} />
         <Route path="/create-event/:id" element={<CreateEvent />} />

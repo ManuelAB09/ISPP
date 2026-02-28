@@ -1,81 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 import { getTutorById } from "../../api/tutorEndpoints";
+import Header from "../../components/Header/Header";
 import EditProfileModal from "./EditProfileModal";
+import CreateProfileModal from "./CreateProfileModal";
 import VerificacionModal from "./VerificacionModal";
+import Settings from "../myProfile/Settings";
 import "./TeacherProfile.css";
 
-// ---------------------------------------------------------------------------
-// Mock data — refleja la estructura exacta de TutorProfileResponse del backend.
-// Campos de `usuario` coinciden con UsuarioDto:
-//   { id, nombre, foto, bio, intereses, esTutor }
-// Nota: foto/bio/intereses están comentados en mapToResponse, se devuelven null.
-// Los campos email, universidad, grado y ubicacion NO existen en el backend.
-// TODO: Eliminar este bloque cuando el endpoint GET /api/tutors/:id esté integrado.
-// ---------------------------------------------------------------------------
-const MOCK_TUTORES = {
-  "1": {
-    id: 1,
-    userId: 1,
-    usuario: {
-      id: 1,
-      nombre: "Alberto Gómez",
-      foto: "https://randomuser.me/api/portraits/men/32.jpg",
-      bio: "Apasionado de la tecnología",
-      esTutor: true,
-    },
-    especialidades: ["Programación", "Bachillerato"],
-    tarifaHora: 22.5,
-    disponibilidad: "Mañanas y tardes",
-    bio: "Profesor senior con más de 10 años de experiencia.",
-    verificado: true,
-    classroomConectado: false,
-    actividad: { comunidades: 12, apuntes: 45, valoracion: 4.8, descargas: 1200 },
-    trayectoria: [{ titulo: "Profesor", empresa: "UCM", fecha: "2015", descripcion: "..." }],
-    opiniones: [{ usuario: "Laura M.", valoracion: 5, texto: "Excelente" }],
-    comunidades: [
-      { id: 1, nombre: "ISSI 2 - US", descripcion: "Resolución de exámenes y dudas.", imagen: null },
-      { id: 2, nombre: "Fundamentos de Programación", descripcion: "Comunidad para principiantes en C++.", imagen: null }
-    ],
-    comunidadesCreadas: [
-      { id: 1, nombre: "Java desde Cero", etiquetas: ["Programación", "Java"], descripcion: "Curso completo de Java para todos los niveles.", inscritos: 45, total: 100, imagen: null },
-      { id: 2, nombre: "Algoritmos y Estructuras", etiquetas: ["Ingeniería", "CS"], descripcion: "Preparación para entrevistas técnicas y exámenes.", inscritos: 30, total: 50, imagen: null }
-    ]
-  },
-  "2": {
-    id: 2,
-    userId: 2,
-    usuario: {
-      id: 2,
-      nombre: "Manuel Nuño",
-      foto: "https://randomuser.me/api/portraits/men/44.jpg",
-      bio: "Experto en Matemáticas",
-      esTutor: true,
-    },
-    especialidades: ["Matemáticas", "Física"],
-    tarifaHora: 18.0,
-    disponibilidad: "Fines de semana",
-    bio: "Graduado en Matemáticas con pasión por la enseñanza.",
-    verificado: false,
-    classroomConectado: false,
-    actividad: { comunidades: 5, apuntes: 10, valoracion: 4.5, descargas: 300 },
-    trayectoria: [{ titulo: "Tutor", empresa: "Academia Plus", fecha: "2020", descripcion: "Clases de refuerzo" }],
-    opiniones: [{ usuario: "Carlos R.", valoracion: 4, texto: "Muy buena explicando" }],
-    comunidades: [
-      { id: 3, nombre: "Álgebra Lineal US", descripcion: "Espacios vectoriales y matrices.", imagen: null },
-      { id: 4, nombre: "Cálculo II", descripcion: "Integrales múltiples y series.", imagen: null }
-    ],
-    comunidadesCreadas: [
-      { id: 3, nombre: "Matemáticas 2º Bachillerato", etiquetas: ["Selectividad", "Mates"], descripcion: "Preparación intensiva para la PEvAU.", inscritos: 25, total: 30, imagen: null },
-      { id: 4, nombre: "Física Cuántica Básica", etiquetas: ["Física", "Universidad"], descripcion: "Introducción a los conceptos fundamentales.", inscritos: 12, total: 20, imagen: null }
-    ]
-  }
-};
-
-const MOCK_TUTOR = MOCK_TUTORES["1"];
-
-/* Colores para avatares de opiniones */
-const AVATAR_COLORS = ["#F2C18E", "#676F9D", "#2D3250", "#9CA3AF"];
 
 /* Estrellas (0-5) */
 const Estrellas = ({ valor }) => (
@@ -93,13 +26,19 @@ const Estrellas = ({ valor }) => (
 
 const TeacherProfile = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const esNuevo = id === "nuevo";
+
   const [tutor, setTutor] = useState(null);
-  const [cargando, setCargando] = useState(true);
+  const [cargando, setCargando] = useState(!esNuevo);
   const [error, setError] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showVerificacion, setShowVerificacion] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
-  // Callback: recibe el TutorProfileResponse actualizado tras editar
+  // Callback: actualiza estado local tras editar
   const handlePerfilGuardado = (updatedTutor) => {
     setTutor((prev) => ({
       ...prev,
@@ -112,48 +51,90 @@ const TeacherProfile = () => {
     }));
   };
 
+  // Callback: redirige al nuevo perfil tras crearlo
+  const handlePerfilCreado = (newTutor) => {
+    navigate(`/profesores/${newTutor.id}`, { replace: true });
+  };
+
   useEffect(() => {
+    if (esNuevo) return;
     const cargarTutor = async () => {
       try {
         const data = await getTutorById(id);
-
-        // Combinar respuesta real con mock para los campos sin endpoint propio todavía.
-        // La API devuelve: id, userId, usuario{id,nombre,foto,bio,intereses,esTutor},
-        //   especialidades, tarifaHora, disponibilidad, bio, verificado,
-        //   classroomConectado, createdAt.
-        // Los demás campos (actividad, trayectoria, opiniones, comunidades, etc.)
-        // están pendientes de endpoints propios (ver TODOs en MOCK_TUTOR).
-        const mappedTutor = {
-          ...MOCK_TUTOR,             // fallback para campos sin endpoint aún
-          ...data,                   // sobreescribe con datos reales del backend
-          usuario: {
-            ...MOCK_TUTOR.usuario,   // foto de fallback si el backend devuelve null
-            ...(data.usuario || {}), // datos reales del usuario
-            // foto viene null del backend (mapToResponse lo tiene comentado)
-            foto: data.usuario?.foto || MOCK_TUTOR.usuario.foto,
-          },
-        };
-
-        setTutor(mappedTutor);
+        setTutor(data);
       } catch (err) {
         console.error("Error al cargar el tutor:", err);
-        // Fallback: Si falla la API, usamos los datos Mock según el ID
-        const mockSeleccionado = MOCK_TUTORES[id] || MOCK_TUTORES["1"];
-        setTutor({ ...mockSeleccionado });
-        // No establecemos el estado de error para que la página se renderice
+        setError("No se pudo cargar el perfil del tutor.");
       } finally {
         setCargando(false);
       }
     };
     cargarTutor();
-  }, [id]);
+  }, [id, esNuevo]);
 
   if (cargando) return <div className="tp-loading">Cargando perfil…</div>;
   if (error) return <div className="tp-error">{error}</div>;
-  if (!tutor) return null;
+
+  // Vista de creación: el usuario aún no tiene perfil de tutor
+  if (esNuevo || !tutor) {
+    return (
+      <>
+        <Header page={'profesores'} />
+        {showCreateModal && (
+          <CreateProfileModal
+            onClose={() => setShowCreateModal(false)}
+            onCreado={handlePerfilCreado}
+          />
+        )}
+        <div className="tp-page">
+          <div className="tp-banner">
+            <header className="tp-header">
+              <div className="tp-header__left">
+                <div className="tp-header__info">
+                  <h1 className="tp-header__name">Perfil de Profesor</h1>
+                  <p className="tp-header__role">Aún no has creado tu perfil profesional</p>
+                </div>
+              </div>
+              {user?.esTutor && (
+              <div className="tp-header__actions">
+                <button
+                  className="tp-btn tp-btn--edit"
+                  onClick={() => setShowCreateModal(true)}
+                >
+                  + Crear Perfil de Profesor
+                </button>
+              </div>
+              )}
+            </header>
+          </div>
+          <div className="tp-content">
+            <div style={{ textAlign: 'center', padding: '60px 20px', color: '#9CA3AF' }}>
+              <p style={{ fontSize: '48px', marginBottom: '16px' }}>🎓</p>
+              <p style={{ fontSize: '18px', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
+                Crea tu perfil de profesor
+              </p>
+              <p style={{ maxWidth: '400px', margin: '0 auto 24px' }}>
+                Añade tus especialidades, establece tu tarifa y configura tu disponibilidad
+                para que los alumnos puedan encontrarte.
+              </p>
+              {user?.esTutor && (
+              <button
+                className="tp-btn tp-btn--edit"
+                onClick={() => setShowCreateModal(true)}
+              >
+                + Crear Perfil de Profesor
+              </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
+      <Header page={'profesores'} />
       {showVerificacion && (
         <VerificacionModal
           tutorId={tutor.id}
@@ -171,6 +152,15 @@ const TeacherProfile = () => {
           onClose={() => setShowEditModal(false)}
           onGuardar={handlePerfilGuardado}
         />
+      )}
+      {showCreateModal && (
+        <CreateProfileModal
+          onClose={() => setShowCreateModal(false)}
+          onCreado={handlePerfilCreado}
+        />
+      )}
+      {showSettings && (
+        <Settings onClose={() => setShowSettings(false)} />
       )}
       <div className="tp-page">
 
@@ -207,20 +197,23 @@ const TeacherProfile = () => {
                   ? `Profesor de ${tutor.especialidades.join(", ")}`
                   : "Profesor"}
               </p>
-              <div className="tp-header__rating">
-                <Estrellas valor={tutor.actividad.valoracion} />
-                <span className="tp-header__rating-num">
-                  {tutor.actividad.valoracion}
-                </span>
-                <span className="tp-header__rating-count">
-                  ({tutor.opiniones.length} reseñas)
-                </span>
-              </div>
+              {tutor.actividad && (
+                <div className="tp-header__rating">
+                  <Estrellas valor={tutor.actividad.valoracion} />
+                  <span className="tp-header__rating-num">
+                    {tutor.actividad.valoracion}
+                  </span>
+                  <span className="tp-header__rating-count">
+                    ({(tutor.opiniones || []).length} reseñas)
+                  </span>
+                </div>
+              )}
               <span className="tp-badge tp-badge--profesor">Profesor</span>
             </div>
           </div>
 
-          {/* Acciones del perfil propio */}
+          {/* Acciones del perfil: sólo visibles para el propietario */}
+          {user?.id === tutor.usuario?.id && (
           <div className="tp-header__actions">
             <button
               className="tp-btn tp-btn--edit"
@@ -234,8 +227,14 @@ const TeacherProfile = () => {
             >
               {tutor.verificado ? "🏅 Verificado" : "Promocionarse"}
             </button>
-            <button className="tp-btn tp-btn--public">Ver perfil público</button>
+            <button
+              className="tp-btn tp-btn--public"
+              onClick={() => setShowSettings(true)}
+            >
+              ⚙️ Configuración
+            </button>
           </div>
+          )}
         </header>
       </div>
 
@@ -278,31 +277,35 @@ const TeacherProfile = () => {
 
         {/* — Tu Actividad — */}
         <div className="tp-actividad-col">
-          <section className="tp-actividad">
-            <h2 className="tp-actividad__title">Tu Actividad</h2>
-            <div className="tp-actividad__grid">
-              <div className="tp-actividad__stat">
-                <span className="tp-actividad__num">{tutor.actividad.comunidades}</span>
-                <span className="tp-actividad__label">COMUNIDADES</span>
+          {tutor.actividad ? (
+            <section className="tp-actividad">
+              <h2 className="tp-actividad__title">Tu Actividad</h2>
+              <div className="tp-actividad__grid">
+                <div className="tp-actividad__stat">
+                  <span className="tp-actividad__num">{tutor.actividad.comunidades ?? "—"}</span>
+                  <span className="tp-actividad__label">COMUNIDADES</span>
+                </div>
+                <div className="tp-actividad__stat">
+                  <span className="tp-actividad__num">{tutor.actividad.apuntes ?? "—"}</span>
+                  <span className="tp-actividad__label">APUNTES SUBIDOS</span>
+                </div>
+                <div className="tp-actividad__stat">
+                  <span className="tp-actividad__num">{tutor.actividad.valoracion ?? "—"}</span>
+                  <span className="tp-actividad__label">VALORACIÓN MEDIA</span>
+                </div>
+                <div className="tp-actividad__stat">
+                  <span className="tp-actividad__num">
+                    {tutor.actividad.descargas != null
+                      ? tutor.actividad.descargas >= 1000
+                        ? `${(tutor.actividad.descargas / 1000).toFixed(1)}k`
+                        : tutor.actividad.descargas
+                      : "—"}
+                  </span>
+                  <span className="tp-actividad__label">DESCARGAS</span>
+                </div>
               </div>
-              <div className="tp-actividad__stat">
-                <span className="tp-actividad__num">{tutor.actividad.apuntes}</span>
-                <span className="tp-actividad__label">APUNTES SUBIDOS</span>
-              </div>
-              <div className="tp-actividad__stat">
-                <span className="tp-actividad__num">{tutor.actividad.valoracion}</span>
-                <span className="tp-actividad__label">VALORACIÓN MEDIA</span>
-              </div>
-              <div className="tp-actividad__stat">
-                <span className="tp-actividad__num">
-                  {tutor.actividad.descargas >= 1000
-                    ? `${(tutor.actividad.descargas / 1000).toFixed(1)}k`
-                    : tutor.actividad.descargas}
-                </span>
-                <span className="tp-actividad__label">DESCARGAS</span>
-              </div>
-            </div>
-          </section>
+            </section>
+          ) : null}
           <div className="tp-actividad-col__extra">
           </div>
         </div>
@@ -315,7 +318,7 @@ const TeacherProfile = () => {
           <div className="tp-section-title-row__line" />
         </div>
         <div className="tp-comunidades__grid tp-comunidades__grid--xl">
-          {tutor.comunidades.map((c, i) => (
+          {(tutor.comunidades || []).map((c, i) => (
             <div key={i} className="tp-comunidades__card tp-comunidades__card--xl">
               <div className="tp-comunidades__img tp-comunidades__img--xl" />
               <div className="tp-comunidades__info tp-comunidades__info--xl">
@@ -346,10 +349,12 @@ const TeacherProfile = () => {
           <p className="tp-creadas__subtitle tp-creadas__subtitle--xl">
             Crea comunidades, une a estudiantes y enseña sobre lo que sabes.
           </p>
-          <button className="tp-btn tp-btn--crear tp-btn--crear-xl">+ Crear Nueva</button>
+          {user?.id === tutor.usuario?.id && (
+            <button className="tp-btn tp-btn--crear tp-btn--crear-xl">+ Crear Nueva</button>
+          )}
         </div>
         <div className="tp-creadas__list tp-creadas__list--xl">
-          {tutor.comunidadesCreadas.map((c, i) => (
+          {(tutor.comunidadesCreadas || []).map((c, i) => (
             <div key={i} className="tp-creadas__item tp-creadas__item--xl">
               <div className="tp-creadas__img tp-creadas__img--xl" />
               <div className="tp-creadas__info tp-creadas__info--xl">
@@ -363,10 +368,12 @@ const TeacherProfile = () => {
                 <p className="tp-creadas__inscritos tp-creadas__inscritos--xl">
                   <b>Personas inscritas: {c.inscritos}/{c.total}</b>
                 </p>
+                {user?.id === tutor.usuario?.id && (
                 <div className="tp-creadas__actions tp-creadas__actions--xl">
                   <span className="tp-creadas__action tp-creadas__action--xl">Editar</span>
                   <span className="tp-creadas__action tp-creadas__action--xl">Subir apuntes</span>
                 </div>
+                )}
               </div>
             </div>
           ))}
