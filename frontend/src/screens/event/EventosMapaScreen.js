@@ -77,7 +77,7 @@ const EventosMapaScreen = () => {
                                         <div style={{ fontWeight: 700, color: '#b71c1c', fontSize: 17 }}>{ev.titulo}</div>
                                         <div style={{ fontSize: 14, color: '#333', marginBottom: 4 }}>{ev.ubicacion.nombre}</div>
                                         <div style={{ fontSize: 13, color: '#555', marginBottom: 6 }}>{ev.descripcion}</div>
-                                        <button className="btn btn-primary" onClick={() => navigate(`/events/${ev.id}`)}>
+                                        <button className="btn btn-primary" onClick={() => navigate(`/eventos/${ev.id}`)}>
                                             Ver evento
                                         </button>
                                     </div>
