@@ -12,17 +12,11 @@ Este documento explica cómo instalar las herramientas necesarias para conectars
 
 1. Descarga el instalador para tu plataforma desde https://www.postgresql.org/download/.
 2. Elige la versión recomendada (por ejemplo PostgreSQL 18) y descarga el instalador gráfico para Windows.
-3. Ejecuta el instalador y sigue los pasos del asistente. En cada pantalla **elige la opción predeterminada** a menos que tengas un motivo específico para cambiarla:
-   - **Welcome**: clic en *Next*.
-   - **Installation directory**: deja la ruta sugerida (`C:\Program Files\PostgreSQL\18` en Windows) y pulsa *Next*.
-   - **Select components**: asegúrate de que estén marcados **PostgreSQL Server**, **pgAdmin 4** y **Command Line Tools** (incluye `psql`). Pulsa *Next*.
-   - **Data directory**: acepta la carpeta predefinida y da a *Next*.
-   - **Password**: introduce y confirma la contraseña para el usuario `postgres` (guárdala en un sitio seguro).
-   - **Port**: el valor por defecto `5432` es el correcto; no lo cambies.
-   - **Advanced options**: selecciona **UTF-8** como codificación del servidor y deja marcadas las otras opciones.
-   - **Pre-install summary**: revisa los elementos que se van a instalar y pulsa *Next/Install*.
-   - Finalmente, deja la casilla para añadir el binario (`psql`) al PATH seleccionada si el instalador lo ofrece.
-   - Finaliza el asistente y deja la opción de iniciar el servidor marcada.
+3. Ejecuta el instalador y sigue los pasos del asistente:
+   - Selecciona la carpeta de destino (deja la predeterminada).
+   - Define la contraseña del superusuario `postgres`; recuerda este valor.
+   - Deja el puerto por defecto (`5432`) y la codificación UTF‑8.
+   - Marca la casilla para añadir `psql` al PATH si te lo ofrece.
 4. Espera a que terminen todos los componentes (servidor, pgAdmin opcional, StackBuilder).
 5. Comprueba que el servidor está corriendo abriendo `Services` (buscar "PostgreSQL"), o ejecuta:
    ```powershell
