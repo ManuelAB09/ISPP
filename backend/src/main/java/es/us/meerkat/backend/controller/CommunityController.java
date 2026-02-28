@@ -768,9 +768,7 @@ public class CommunityController {
     // EVENTOS DE COMUNIDAD
     // =====================================================
 
-    /**
-     * Crea un nuevo evento en una comunidad. POST /api/v1/communities/{communityId}/events
-     */
+    /** Crea un nuevo evento en una comunidad. POST /api/v1/communities/{communityId}/events */
     @PostMapping("/{communityId}/events")
     @Operation(
             summary = "Crear evento en comunidad",
@@ -797,19 +795,20 @@ public class CommunityController {
         }
 
         try {
-            Evento evento = eventoService.crearEvento(
-                    usuario.getId(),
-                    communityId,
-                    request.getTitulo(),
-                    request.getDescripcion(),
-                    request.getFechaHora(),
-                    request.getFechaFin(),
-                    request.getAforo(),
-                    request.getQueLlevar(),
-                    request.getEsVirtual(),
-                    false, // privado por defecto
-                    request.getEnlaceVirtual(),
-                    request.getVisibleEnMapa());
+            Evento evento =
+                    eventoService.crearEvento(
+                            usuario.getId(),
+                            communityId,
+                            request.getTitulo(),
+                            request.getDescripcion(),
+                            request.getFechaHora(),
+                            request.getFechaFin(),
+                            request.getAforo(),
+                            request.getQueLlevar(),
+                            request.getEsVirtual(),
+                            false, // privado por defecto
+                            request.getEnlaceVirtual(),
+                            request.getVisibleEnMapa());
 
             return ResponseEntity.status(HttpStatus.CREATED).body(evento.toDTO());
         } catch (RuntimeException e) {
@@ -820,9 +819,7 @@ public class CommunityController {
         }
     }
 
-    /**
-     * Lista los eventos de una comunidad. GET /api/v1/communities/{communityId}/events
-     */
+    /** Lista los eventos de una comunidad. GET /api/v1/communities/{communityId}/events */
     @GetMapping("/{communityId}/events")
     @Operation(
             summary = "Listar eventos de comunidad",
@@ -842,9 +839,8 @@ public class CommunityController {
         }
 
         List<Evento> eventos = eventoService.obtenerEventosPorComunidad(communityId, cancelados);
-        List<EventSummaryResponse> response = eventos.stream()
-                .map(Evento::toSummaryDTO)
-                .collect(Collectors.toList());
+        List<EventSummaryResponse> response =
+                eventos.stream().map(Evento::toSummaryDTO).collect(Collectors.toList());
 
         return ResponseEntity.ok(response);
     }

@@ -15,11 +15,26 @@ export const authApi = {
   /**
    * POST /api/v1/auth/register
    * Registrar nuevo usuario
-   * @param {Object} data - { email, password, nombre }
+   * @param {Object} data - { email, password, nombre, profileImage? }
    * @returns {Promise<Object>} - { accessToken, refreshToken, expiresIn, user }
    */
   register(data) {
-    return apiClient.post('/api/v1/auth/register', data);
+    const { profileImage, ...userData } = data;
+    
+    // Si hay imagen, usar FormData
+    if (profileImage) {
+      const formData = new FormData();
+      formData.append('email', userData.email);
+      formData.append('password', userData.password);
+      formData.append('nombre', userData.nombre);
+      formData.append('profileImage', profileImage);
+      return apiClient.post('/api/v1/auth/register', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    
+    // Sin imagen, enviar JSON normal
+    return apiClient.post('/api/v1/auth/register', userData);
   },
 
   /**

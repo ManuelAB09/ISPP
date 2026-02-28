@@ -8,7 +8,6 @@ import es.us.meerkat.backend.dto.EventSummaryResponse;
 import es.us.meerkat.backend.dto.UbicacionResponse;
 import es.us.meerkat.backend.dto.UserPublicResponse;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -232,24 +231,26 @@ public class Evento {
     }
 
     public EventDetailResponse toDTO() {
-        EventDetailResponse.EventDetailResponseBuilder builder = EventDetailResponse.builder()
-                .id(this.id)
-                .titulo(this.titulo)
-                .descripcion(this.descripcion)
-                .fechaHora(this.fechaHora)
-                .fechaFin(this.fechaFin)
-                .aforo(this.aforo)
-                .asistentesConfirmados(this.asistentesConfirmados)
-                .queLlevar(this.queLlevar)
-                .visibleMapa(this.visibleMapa)
-                .esVirtual(this.esVirtual)
-                .enlaceVirtual(this.enlaceVirtual)
-                .cancelado(this.cancelado)
-                .motivoCancelacion(this.motivoCancelacion)
-                .privado(this.privado)
-                .createdAt(this.createdAt)
-                .comunidadId(this.comunidad != null ? this.comunidad.getId() : null)
-                .comunidadNombre(this.comunidad != null ? this.comunidad.getNombre() : null);
+        EventDetailResponse.EventDetailResponseBuilder builder =
+                EventDetailResponse.builder()
+                        .id(this.id)
+                        .titulo(this.titulo)
+                        .descripcion(this.descripcion)
+                        .fechaHora(this.fechaHora)
+                        .fechaFin(this.fechaFin)
+                        .aforo(this.aforo)
+                        .asistentesConfirmados(this.asistentesConfirmados)
+                        .queLlevar(this.queLlevar)
+                        .visibleMapa(this.visibleMapa)
+                        .esVirtual(this.esVirtual)
+                        .enlaceVirtual(this.enlaceVirtual)
+                        .cancelado(this.cancelado)
+                        .motivoCancelacion(this.motivoCancelacion)
+                        .privado(this.privado)
+                        .createdAt(this.createdAt)
+                        .comunidadId(this.comunidad != null ? this.comunidad.getId() : null)
+                        .comunidadNombre(
+                                this.comunidad != null ? this.comunidad.getNombre() : null);
 
         if (this.creador != null) {
             builder.creador(
@@ -282,18 +283,34 @@ public class Evento {
      * @return EventSummaryResponse con la información básica del evento.
      */
     public EventSummaryResponse toSummaryDTO() {
-        return EventSummaryResponse.builder()
-                .id(this.id)
-                .titulo(this.titulo)
-                .descripcion(this.descripcion)
-                .fechaHora(this.fechaHora)
-                .ubicacion(this.ubicacion != null ? this.ubicacion.getNombre() : null)
-                .aforo(this.aforo)
-                .asistentesConfirmados(this.asistentesConfirmados)
-                .esVirtual(this.esVirtual)
-                .cancelado(this.cancelado)
-                .comunidadId(this.comunidad != null ? this.comunidad.getId() : null)
-                .comunidadNombre(this.comunidad != null ? this.comunidad.getNombre() : null)
-                .build();
+        EventSummaryResponse.EventSummaryResponseBuilder builder =
+                EventSummaryResponse.builder()
+                        .id(this.id)
+                        .titulo(this.titulo)
+                        .descripcion(this.descripcion)
+                        .fechaHora(this.fechaHora)
+                        .aforo(this.aforo)
+                        .asistentesConfirmados(this.asistentesConfirmados)
+                        .esVirtual(this.esVirtual)
+                        .cancelado(this.cancelado)
+                        .comunidadId(this.comunidad != null ? this.comunidad.getId() : null)
+                        .comunidadNombre(
+                                this.comunidad != null ? this.comunidad.getNombre() : null);
+
+        if (this.ubicacion != null) {
+            builder.ubicacion(
+                    UbicacionResponse.builder()
+                            .id(this.ubicacion.getId())
+                            .nombre(this.ubicacion.getNombre())
+                            .direccion(this.ubicacion.getDireccion())
+                            .latitud(this.ubicacion.getLatitud())
+                            .longitud(this.ubicacion.getLongitud())
+                            .tipo(this.ubicacion.getTipo())
+                            .coste(this.ubicacion.getCoste())
+                            .build());
+        } else {
+            builder.ubicacion(null);
+        }
+        return builder.build();
     }
 }

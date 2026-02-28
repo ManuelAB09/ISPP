@@ -59,13 +59,12 @@ public class EventoController {
      *     titulo, @Parameter(description = "Descripción") @RequestParam final String
      *     descripcion, @Parameter(description = "Fecha/hora inicio") @RequestParam final
      *     LocalDateTime fechaInicio, @Parameter(description = "Fecha/hora fin") @RequestParam final
-     *     LocalDateTime fechaFin, @Parameter(description = "Aforo máximo") @RequestParam final Integer
-     *     aforo, @Parameter(description = "Qué llevar") @RequestParam final String
+     *     LocalDateTime fechaFin, @Parameter(description = "Aforo máximo") @RequestParam final
+     *     Integer aforo, @Parameter(description = "Qué llevar") @RequestParam final String
      *     queLlevar, @Parameter(description = "Es virtual") @RequestParam final Boolean
      *     esVirtual, @Parameter(description = "Es privado") @RequestParam final Boolean privado) {
      *     <p>final Evento evento = eventoService.crearEvento(organizadorId, titulo, descripcion,
-     *     fechaInicio, fechaFin, aforo, queLlevar, esVirtual,
-     *     privado);
+     *     fechaInicio, fechaFin, aforo, queLlevar, esVirtual, privado);
      *     <p>return ResponseEntity.status(HttpStatus.CREATED).body(evento); }
      */
     // ===============================
@@ -97,9 +96,10 @@ public class EventoController {
             summary = "Listar eventos",
             description = "Obtiene lista de eventos públicos disponibles")
     public ResponseEntity<List<EventSummaryResponse>> listarEventos() {
-        List<EventSummaryResponse> response = eventoService.obtenerEventosPublicos().stream()
-                .map(Evento::toSummaryDTO)
-                .collect(Collectors.toList());
+        List<EventSummaryResponse> response =
+                eventoService.obtenerEventosPublicos().stream()
+                        .map(Evento::toSummaryDTO)
+                        .collect(Collectors.toList());
         return ResponseEntity.ok(response);
     }
 
@@ -113,9 +113,10 @@ public class EventoController {
             summary = "Obtener eventos en mapa",
             description = "Devuelve eventos marcados como visibles en el mapa")
     public ResponseEntity<List<EventSummaryResponse>> obtenerEventosEnMapa() {
-        List<EventSummaryResponse> response = eventoService.obtenerEventosEnMapa().stream()
-                .map(Evento::toSummaryDTO)
-                .collect(Collectors.toList());
+        List<EventSummaryResponse> response =
+                eventoService.obtenerEventosEnMapa().stream()
+                        .map(Evento::toSummaryDTO)
+                        .collect(Collectors.toList());
         return ResponseEntity.ok(response);
     }
 

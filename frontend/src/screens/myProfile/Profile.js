@@ -4,13 +4,17 @@ import { useAuth } from "../../contexts/AuthContext"
 import { getMyTutorProfiles } from "../../api/tutorEndpoints"
 import Header from "../../components/Header/Header"
 import Settings from "./Settings"
+import EditProfile from "./EditProfile"
 import "./MyProfile.css"
 
 const MyProfile = () => {
     const { isAuthenticated, loading } = useAuth()
     const navigate = useNavigate()
     const [showSettings, setShowSettings] = useState(false)
+    const [showEditProfile, setShowEditProfile] = useState(false)
     const [checkingTutor, setCheckingTutor] = useState(true)
+    const userId = null // Temporal, as in the comments
+    const isOwner = true // Assuming MyProfile is literally 'my profile'
 
     // Si el usuario tiene perfil de tutor, redirigir a su perfil de profesor
     useEffect(() => {
@@ -42,8 +46,8 @@ const MyProfile = () => {
         )
     }
 
-    // Si no está autenticado, mostrar mensaje
-    if (!isAuthenticated) {
+    // Si no está autenticado y es su propio perfil, mostrar mensaje
+    if (!isAuthenticated && !userId) {
         return (
             <>
                 <Header page={'inicio'} />
@@ -63,6 +67,9 @@ const MyProfile = () => {
             </>
         )
     }
+
+    // TODO: Si hay userId, cargar datos del usuario desde la API
+    // Por ahora usamos datos de ejemplo
 
     // Datos de ejemplo (en el futuro vendrán de una API)
     const userData = {
@@ -117,7 +124,7 @@ const MyProfile = () => {
     return (
         <>
             <Header page={'inicio'} />
-            
+
             <main className="my-profile">
                 {/* Sección de perfil principal */}
                 <section className="profile-header">
@@ -130,21 +137,25 @@ const MyProfile = () => {
                         </div>
                     </div>
                     <div className="profile-header__right">
-                        <button className="btn-edit-profile">
-                            <span className="btn-icon">✏️</span>
-                            Editar Perfil
-                        </button>
-                        <button className="btn-settings" onClick={() => setShowSettings(true)}>
-                            <span className="btn-icon">⚙️</span>
-                            Configuración
-                        </button>
+                        {isOwner && (
+                            <>
+                                <button className="btn-edit-profile" onClick={() => setShowEditProfile(true)}>
+                                    <span className="btn-icon">✏️</span>
+                                    Editar Perfil
+                                </button>
+                                <button className="btn-settings" onClick={() => setShowSettings(true)}>
+                                    <span className="btn-icon">⚙️</span>
+                                    Configuración
+                                </button>
+                            </>
+                        )}
                     </div>
                 </section>
 
                 {/* Sección Mis datos y Tu Actividad */}
                 <section className="profile-data-section">
                     <div className="profile-data">
-                        <h2 className="section-title">Mis datos</h2>
+                        <h2 className="section-title">{isOwner ? 'Mis datos' : 'Datos del perfil'}</h2>
                         <div className="profile-data__content">
                             <div className="data-field">
                                 <span className="data-field__label">NOMBRE COMPLETO</span>
@@ -240,10 +251,12 @@ const MyProfile = () => {
                                     </div>
                                     <p className="created-community-card__description">{comunidad.descripcion}</p>
                                     <p className="created-community-card__members">Personas inscritas: {comunidad.inscritos}/{comunidad.maxInscritos}</p>
-                                    <div className="created-community-card__actions">
-                                        <a href="#editar" className="action-link">Editar</a>
-                                        <a href="#subir" className="action-link">Subir apuntes</a>
-                                    </div>
+                                    {isOwner && (
+                                        <div className="created-community-card__actions">
+                                            <a href="#editar" className="action-link">Editar</a>
+                                            <a href="#subir" className="action-link">Subir apuntes</a>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}
@@ -253,7 +266,18 @@ const MyProfile = () => {
 
             {/* Modal de configuración */}
             {showSettings && (
-                <Settings onClose={() => setShowSettings(false)} />
+                <Settings onClose={() => setShowSettings(false)} isOwner={isOwner} />
+            )}
+
+            {/* Modal de editar perfil */}
+            {showEditProfile && (
+                <EditProfile
+                    onClose={() => setShowEditProfile(false)}
+                    onSave={(data) => {
+                        // TODO: Actualizar datos del perfil cuando esté la API
+                        console.log('Datos guardados:', data)
+                    }}
+                />
             )}
         </>
     )

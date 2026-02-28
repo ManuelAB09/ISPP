@@ -4,7 +4,7 @@ import { apiClient } from "../../api/client"
 import { useAuth } from "../../contexts/AuthContext"
 import "./Settings.css"
 
-const Settings = ({ onClose }) => {
+const Settings = ({ onClose, isOwner = true }) => {
     const navigate = useNavigate()
     const { logout } = useAuth()
     
@@ -28,7 +28,17 @@ const Settings = ({ onClose }) => {
     const [passwordSuccess, setPasswordSuccess] = useState("")
     const [isChangingPassword, setIsChangingPassword] = useState(false)
 
+    // Estado para mensajes de acceso no autorizado
+    const [unauthorizedMessage, setUnauthorizedMessage] = useState("")
+
     const handleLogout = async () => {
+        // Validar que sea el propietario
+        if (!isOwner) {
+            setUnauthorizedMessage("No puedes cerrar sesión de una cuenta que no es tuya.")
+            setTimeout(() => setUnauthorizedMessage(""), 3000)
+            return
+        }
+
         try {
             await apiClient.post('/api/v1/auth/logout')
         } catch (error) {
@@ -46,6 +56,12 @@ const Settings = ({ onClose }) => {
         e.preventDefault()
         setPasswordError("")
         setPasswordSuccess("")
+
+        // Validar que sea el propietario
+        if (!isOwner) {
+            setPasswordError("No puedes cambiar la contraseña de una cuenta que no es tuya.")
+            return
+        }
 
         // Validar que las contraseñas nuevas coincidan
         if (newPassword !== confirmPassword) {
@@ -79,6 +95,12 @@ const Settings = ({ onClose }) => {
     }
 
     const handleDeleteAccount = async () => {
+        // Validar que sea el propietario
+        if (!isOwner) {
+            setDeleteError("No puedes eliminar una cuenta que no es tuya.")
+            return
+        }
+
         setIsDeletingAccount(true)
         setDeleteError("")
         
@@ -146,6 +168,13 @@ const Settings = ({ onClose }) => {
                 </button>
 
                 <h1 className="settings-title">Configuración</h1>
+
+                {/* Mensaje de acceso no autorizado */}
+                {unauthorizedMessage && (
+                    <div className="settings-unauthorized-message">
+                        ⚠️ {unauthorizedMessage}
+                    </div>
+                )}
 
                 {/* Sección: Visibilidad del perfil */}
                 <section className="settings-section">

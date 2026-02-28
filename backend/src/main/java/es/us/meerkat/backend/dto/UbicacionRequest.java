@@ -5,9 +5,7 @@ import lombok.Data;
 /**
  * DTO para la creación o edición de una ubicación.
  *
- * <p>
- * Contiene la información básica necesaria para registrar un punto geográfico
- * asociado a un
+ * <p>Contiene la información básica necesaria para registrar un punto geográfico asociado a un
  * evento.
  */
 @Data
