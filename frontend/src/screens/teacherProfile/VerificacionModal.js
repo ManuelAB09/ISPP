@@ -1,8 +1,4 @@
 import React, { useEffect, useState } from "react";
-import {
-  getTutorVerificationStatus,
-  requestTutorVerification,
-} from "../../api/tutorEndpoints";
 import "./TutorModals.css";
 
 /**
@@ -53,17 +49,10 @@ const VerificacionModal = ({ tutorId, verificado, onClose, onVerificado }) => {
     }
   }, [tutorId, verificado]);
 
-  // Efecto para procesar la solicitud tras el pago exitoso
-  useEffect(() => {
-    if (pagoRealizado && !solicitando && estado !== "PENDIENTE" && estado !== "VERIFICADO") {
-      handleSolicitar();
-    }
-  }, [pagoRealizado]);
-
-  const handleSolicitar = async () => {
+  const handleSolicitar = React.useCallback(async () => {
     setSolicitando(true);
     setErrorMsg(null);
-    
+
     // Simulación inmediata sin llamadas a red
     setTimeout(() => {
       setEstado("PENDIENTE");
@@ -71,7 +60,14 @@ const VerificacionModal = ({ tutorId, verificado, onClose, onVerificado }) => {
       onVerificado && onVerificado();
       setSolicitando(false);
     }, 800);
-  };
+  }, [onVerificado]);
+
+  // Efecto para procesar la solicitud tras el pago exitoso
+  useEffect(() => {
+    if (pagoRealizado && !solicitando && estado !== "PENDIENTE" && estado !== "VERIFICADO") {
+      handleSolicitar();
+    }
+  }, [pagoRealizado, solicitando, estado, handleSolicitar]);
 
   // Mock de pago: acepta cualquier valor para facilitar las pruebas
   const handlePagoSubmit = (e) => {
@@ -136,7 +132,7 @@ const VerificacionModal = ({ tutorId, verificado, onClose, onVerificado }) => {
           <button className="tm-btn tm-btn--primary tm-btn--full" type="submit">
             Pagar y solicitar verificación
           </button>
-          <button type="button" className="tm-btn tm-btn--secondary tm-btn--full" style={{marginTop:8}} onClick={() => setMostrarPago(false)}>
+          <button type="button" className="tm-btn tm-btn--secondary tm-btn--full" style={{ marginTop: 8 }} onClick={() => setMostrarPago(false)}>
             Cancelar
           </button>
         </form>

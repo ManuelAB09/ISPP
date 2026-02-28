@@ -11,7 +11,10 @@ const MyProfile = () => {
     const { isAuthenticated, loading } = useAuth()
     const navigate = useNavigate()
     const [showSettings, setShowSettings] = useState(false)
+    const [showEditProfile, setShowEditProfile] = useState(false)
     const [checkingTutor, setCheckingTutor] = useState(true)
+    const userId = null // Temporal, as in the comments
+    const isOwner = true // Assuming MyProfile is literally 'my profile'
 
     // Si el usuario tiene perfil de tutor, redirigir a su perfil de profesor
     useEffect(() => {
@@ -121,7 +124,7 @@ const MyProfile = () => {
     return (
         <>
             <Header page={'inicio'} />
-            
+
             <main className="my-profile">
                 {/* Sección de perfil principal */}
                 <section className="profile-header">
@@ -268,8 +271,8 @@ const MyProfile = () => {
 
             {/* Modal de editar perfil */}
             {showEditProfile && (
-                <EditProfile 
-                    onClose={() => setShowEditProfile(false)} 
+                <EditProfile
+                    onClose={() => setShowEditProfile(false)}
                     onSave={(data) => {
                         // TODO: Actualizar datos del perfil cuando esté la API
                         console.log('Datos guardados:', data)
@@ -280,4 +283,4 @@ const MyProfile = () => {
     )
 }
 
-export default Profile
+export default MyProfile
