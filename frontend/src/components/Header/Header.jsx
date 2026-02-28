@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import './Header.css';
+import GoogleClassroomButton from '../GoogleClassroomButton/GoogleClassroomButton';
 
 export default function Header({ user, page }) {
     return (
@@ -14,6 +15,9 @@ export default function Header({ user, page }) {
                 <Link to="/profesores" className={page === 'profesores' ? 'active' : ''}>Profesores</Link>
                 <Link to="/chats" className={page === 'chats' ? 'active' : ''}>Chats</Link>
                 <Link to="/planes" className={page === 'planes' ? 'active' : ''}>Planes</Link>
+            </div>
+            <div className="header-actions">
+                <GoogleClassroomButton />
             </div>
         </div>
     );
