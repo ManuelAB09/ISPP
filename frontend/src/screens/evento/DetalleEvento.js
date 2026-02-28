@@ -5,7 +5,7 @@ import {
   LuPencil, LuX, LuArrowLeft, LuPackage,
   LuEye, LuEyeOff, LuMap, LuClock, LuCheck
 } from 'react-icons/lu';
-import './EventDetail.css';
+import './DetalleEvento.css';
 import Header from '../../components/Header/Header';
 import {
   getEventById, cancelEvent, attendEvent, cancelAttendance,
@@ -13,7 +13,7 @@ import {
 } from '../../api/eventEndpoints';
 import { communitiesApi } from '../../api/communities.api';
 
-const EventDetail = () => {
+const DetalleEvento = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
 
@@ -204,7 +204,7 @@ const EventDetail = () => {
             <div className="ed-organizer-actions">
               <button
                 className="ed-btn ed-btn-edit"
-                onClick={() => navigate(`/create-event/${eventId}`)}
+                onClick={() => navigate(`/crear-evento/${eventId}`)}
               >
                 <LuPencil /> Editar evento
               </button>
@@ -485,4 +485,4 @@ const EventDetail = () => {
   );
 };
 
-export default EventDetail;
+export default DetalleEvento;

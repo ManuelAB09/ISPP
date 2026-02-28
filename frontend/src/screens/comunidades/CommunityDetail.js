@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { LuPlus, LuArrowLeft, LuCalendar, LuUsers, LuLogIn, LuLogOut } from 'react-icons/lu';
 import Header from '../../components/Header/Header';
-import EventCard from '../../components/Event/EventCard';
+import TarjetaEvento from '../../components/Evento/TarjetaEvento';
 import { communitiesApi } from '../../api/communities.api';
 import { listCommunityEvents, attendEvent, cancelAttendance, getMyAttendance } from '../../api/eventEndpoints';
 import './CommunityDetail.css';
@@ -281,7 +281,7 @@ export default function CommunityDetail() {
               {isMember && (
                 <button
                   className="cd-btn cd-btn-create"
-                  onClick={() => navigate(`/create-event/new?communityId=${communityId}`)}
+                  onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
                 >
                   <LuPlus /> Crear evento
                 </button>
@@ -294,7 +294,7 @@ export default function CommunityDetail() {
           ) : events.length > 0 ? (
             <div className="cd-events-list">
               {events.map(event => (
-                <EventCard
+                <TarjetaEvento
                   key={event.id}
                   event={event}
                   onAttend={currentUserId && isMember ? handleAttend : null}
@@ -311,7 +311,7 @@ export default function CommunityDetail() {
               {isMember && (
                 <button
                   className="cd-btn cd-btn-create"
-                  onClick={() => navigate(`/create-event/new?communityId=${communityId}`)}
+                  onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
                 >
                   <LuPlus /> Crear evento
                 </button>

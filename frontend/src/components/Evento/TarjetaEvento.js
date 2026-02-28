@@ -1,9 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LuUser, LuClock, LuMonitor, LuWifi, LuMapPin, LuCalendar } from 'react-icons/lu';
-import './EventCard.css';
+import './TarjetaEvento.css';
 
-const EventCard = ({ event, onAttend, onCancelAttendance, attendanceLoading }) => {
+const TarjetaEvento = ({ event, onAttend, onCancelAttendance, attendanceLoading }) => {
   const navigate = useNavigate();
 
   // Soportar ambos formatos de datos: API real y datos mock
@@ -126,4 +126,4 @@ const EventCard = ({ event, onAttend, onCancelAttendance, attendanceLoading }) =
   );
 };
 
-export default EventCard;
+export default TarjetaEvento;

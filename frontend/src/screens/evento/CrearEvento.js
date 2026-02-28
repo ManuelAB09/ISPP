@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { LuCalendar, LuSquareCheck, LuMapPin, LuLink, LuArrowLeft, LuUsers, LuEye, LuEyeOff, LuMap, LuMapPinOff, LuPlus } from 'react-icons/lu';
-import './CreateEvent.css';
+import './CrearEvento.css';
 import Header from '../../components/Header/Header';
 import { createEvent, getEventById, updateEvent } from '../../api/eventEndpoints';
 import { communitiesApi } from '../../api/communities.api';
 
 
-const CreateEvent = () => {
+const CrearEvento = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -489,7 +489,7 @@ const CreateEvent = () => {
                         className="btn btn-outline"
                         style={{ fontSize: '0.85rem', padding: '6px 14px', whiteSpace: 'nowrap' }}
                         onClick={() => {
-                          const returnPath = isEdit ? `/create-event/${id}` : `/create-event/new`;
+                          const returnPath = isEdit ? `/crear-evento/${id}` : `/crear-evento/new`;
                           const returnQuery = communityId ? `?communityId=${communityId}` : '';
                           navigate('/crear-ubicacion?returnTo=' + encodeURIComponent(returnPath + returnQuery), {
                             state: { eventFormDraft: formData }
@@ -507,7 +507,7 @@ const CreateEvent = () => {
                       className="btn btn-outline"
                       style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                       onClick={() => {
-                        const returnPath = isEdit ? `/create-event/${id}` : `/create-event/new`;
+                        const returnPath = isEdit ? `/crear-evento/${id}` : `/crear-evento/new`;
                         const returnQuery = communityId ? `?communityId=${communityId}` : '';
                         navigate('/crear-ubicacion?returnTo=' + encodeURIComponent(returnPath + returnQuery), {
                           state: { eventFormDraft: formData }
@@ -548,4 +548,4 @@ const CreateEvent = () => {
   );
 };
 
-export default CreateEvent;
+export default CrearEvento;
