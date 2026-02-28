@@ -808,7 +808,8 @@ public class CommunityController {
                             request.getEsVirtual(),
                             false, // privado por defecto
                             request.getEnlaceVirtual(),
-                            request.getVisibleEnMapa());
+                            request.getVisibleEnMapa(),
+                            request.getUbicacionId());
 
             return ResponseEntity.status(HttpStatus.CREATED).body(evento.toDTO());
         } catch (RuntimeException e) {
