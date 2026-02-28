@@ -11,26 +11,27 @@ Este documento explica cómo instalar las herramientas necesarias para conectars
 ## 1.1 Instalación de PostgreSQL
 
 1. Descarga el instalador para tu plataforma desde https://www.postgresql.org/download/.
-2. Elige la versión recomendada (por ejemplo PostgreSQL 18) y descarga el instalador gráfico para Windows.
-3. Ejecuta el instalador y sigue los pasos del asistente. En cada pantalla **elige la opción predeterminada** a menos que tengas un motivo específico para cambiarla:
-   - **Welcome**: clic en *Next*.
-   - **Installation directory**: deja la ruta sugerida (`C:\Program Files\PostgreSQL\18` en Windows) y pulsa *Next*.
-   - **Select components**: asegúrate de que estén marcados **PostgreSQL Server**, **pgAdmin 4** y **Command Line Tools** (incluye `psql`). Pulsa *Next*.
-   - **Data directory**: acepta la carpeta predefinida y da a *Next*.
-   - **Password**: introduce y confirma la contraseña para el usuario `postgres` (guárdala en un sitio seguro).
-   - **Port**: el valor por defecto `5432` es el correcto; no lo cambies.
-   - **Advanced options**: selecciona **UTF-8** como codificación del servidor y deja marcadas las otras opciones.
-   - **Pre-install summary**: revisa los elementos que se van a instalar y pulsa *Next/Install*.
-   - Finalmente, deja la casilla para añadir el binario (`psql`) al PATH seleccionada si el instalador lo ofrece.
-   - Finaliza el asistente y deja la opción de iniciar el servidor marcada.
-4. Espera a que terminen todos los componentes (servidor, pgAdmin opcional, StackBuilder).
-5. Comprueba que el servidor está corriendo abriendo `Services` (buscar "PostgreSQL"), o ejecuta:
+2. Elige la versión recomendada (por ejemplo PostgreSQL 18) y ejecuta el programa descargado.
+3. Durante el asistente acepta las opciones por defecto en cada pantalla; lo único que
+   deberás proporcionar es la contraseña para el usuario `postgres` apuntala por si te hace falta después.
+4. Termina la instalación y, cuando se te pregunte, permite que el servidor se inicie.
+5. Abre una terminal nueva y comprueba que `psql` está en el PATH ejecutando:
    ```powershell
-   & 'C:\Program Files\PostgreSQL\18\bin\pg_ctl.exe' status -D 'C:\Program Files\PostgreSQL\18\data'
+   psql --version
    ```
-6. Si `psql` no está en el PATH, úsalo con la ruta completa como en la sección siguiente.
+   Deberías ver algo como `psql (PostgreSQL) 18.x`; si el comando no se encuentra,
+   añade manualmente la carpeta `bin` al PATH como se explica a continuación.
 
-Con la base instalada ya puedes seguir a la sección 2 para instalar pgAdmin o la herramienta que prefieras.
+Si `psql` sigue sin estar accesible, añade `C:\Program Files\PostgreSQL\18\bin`
+al PATH siguiendo estos pasos:
+
+1. Abre **Este equipo → Propiedades → Configuración avanzada del sistema → Variables de entorno**.
+2. En **Variables del sistema** edita `Path` y añade una entrada nueva con la ruta anterior.
+3. Acepta y cierra; reinicia la terminal.
+4. Vuelve a ejecutar psql --version
+
+Con la base instalada ya puedes seguir a la sección 2 para instalar pgAdmin o la
+herramienta que prefieras.
 
 ---
 
@@ -78,8 +79,13 @@ servicio en automático; no se requiere abrir `services.msc` cada vez.
 
 Si prefieres la consola textual, el cliente `psql` viene con PostgreSQL.
 
-1. Asegúrate de que `psql` está en el `PATH`. Si no, su ruta típica es:
-   `C:\Program Files\PostgreSQL\<versión>\bin\psql.exe`.
+1. Asegúrate de que `psql` está en el `PATH`. Si no aparece al ejecutar `psql --version`, añádelo manualmente:  
+   a. Navega con el Explorador a `C:\Program Files\PostgreSQL\18\bin` y copia la ruta.  
+   b. Ve a **Este equipo → Propiedades → Configuración avanzada del sistema → Variables de entorno**.  
+   c. En **Variables del sistema** edita `Path`, pulsa **Nuevo** y pega la ruta copiada.  
+   d. Acepta y cierra todas las ventanas; vuelve a abrir la terminal para aplicar el cambio.  
+   Ahora `psql` se ejecutará desde cualquier ubicación.  
+   *(si prefieres no modificar `PATH`, usa la ruta completa como se muestra a continuación).*  
 2. Ejecuta:
    ```powershell
    & 'C:\Program Files\PostgreSQL\18\bin\psql.exe' -U postgres -W
