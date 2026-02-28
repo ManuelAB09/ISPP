@@ -202,8 +202,12 @@ public class InstitutionController {
                                 ? institution.getPlanCorporativo().name()
                                 : null)
                 .planActivo(institution.getPlanActivo())
-                .totalUsuarios(0) // TODO: calcular desde membresías
-                .totalComunidades(0) // TODO: calcular desde comunidades
+                .totalUsuarios((int) institutionService.contarUsuarios(institution.getId()))
+                .totalComunidades(
+                        (int) institutionService.contarComunidades(institution.getId())) // TODO:
+                // calcular
+                // desde
+                // comunidades
                 .createdAt(institution.getCreatedAt())
                 .updatedAt(institution.getUpdatedAt())
                 .build();

@@ -305,4 +305,19 @@ public class InstitutionService {
                 ? institution.getNumUsuariosPermitidos()
                 : 0;
     }
+
+    @Transactional(readOnly = true)
+    public long contarUsuarios(Long institutionId) {
+        Institution institution =
+                institutionRepository
+                        .findById(institutionId)
+                        .orElseThrow(
+                                () -> new IllegalArgumentException("Institución no encontrada"));
+        return institutionRepository.countUsuariosByDominioEmail(institution.getDominioEmail());
+    }
+
+    @Transactional(readOnly = true)
+    public long contarComunidades(Long institutionId) {
+        return institutionRepository.countComunidadesByInstitutionId(institutionId);
+    }
 }
