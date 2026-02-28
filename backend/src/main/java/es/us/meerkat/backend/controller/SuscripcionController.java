@@ -39,7 +39,7 @@ public class SuscripcionController {
     @GetMapping("/plans")
     @Operation(
             summary = "Ver planes disponibles",
-            description = "Devuelve la lista de planes de suscripción disponibles")
+            description = " lista de planes de suscripción disponibles")
     public ResponseEntity<TipoPlan[]> obtenerPlanes() {
         TipoPlan[] planes = suscripcionService.obtenerPlanesDisponibles();
         return ResponseEntity.ok(planes);
@@ -51,9 +51,7 @@ public class SuscripcionController {
      * @return Suscripción del usuario o plan FREE por defecto
      */
     @GetMapping("/me")
-    @Operation(
-            summary = "Obtener mi suscripción",
-            description = "Devuelve la suscripción actual del usuario autenticado")
+    @Operation(summary = "Obtener mi suscripción", description = "Devuelve la suscripción actual")
     public ResponseEntity<SubscriptionResponse> obtenerMiSuscripcion(
             @AuthenticationPrincipal final Usuario usuario) {
         Optional<Suscripcion> suscripcion =
@@ -76,12 +74,11 @@ public class SuscripcionController {
     @PostMapping("/me")
     @Operation(
             summary = "Suscribirse a plan Premium",
-            description = "Inicia el proceso de suscripción a un plan Premium con pago via Stripe")
+            description = "Inicia el proceso de suscripción")
     public ResponseEntity<?> suscribirse(
             @AuthenticationPrincipal final Usuario usuario,
             @Valid @RequestBody SubscribeRequest request) {
         try {
-            // Verificar que no tiene suscripción activa
             Optional<Suscripcion> suscripcionActiva =
                     suscripcionService.obtenerMiSuscripcion(usuario.getId());
             if (suscripcionActiva.isPresent()) {
@@ -89,12 +86,16 @@ public class SuscripcionController {
                         .body(Map.of("error", "Ya tienes una suscripción activa"));
             }
 
-            // Generar URL de pago
             PaymentUrlResponse paymentUrl =
                     paymentService.generarPagoSuscripcion(usuario, TipoPlan.PREMIUM);
             return ResponseEntity.status(HttpStatus.CREATED).body(paymentUrl);
+
+        } catch (com.stripe.exception.StripeException e) {
+
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Error al conectar con la pasarela de pago"));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
@@ -107,8 +108,7 @@ public class SuscripcionController {
     @PostMapping("/me/confirm-payment")
     @Operation(
             summary = "Confirmar pago de suscripción",
-            description =
-                    "Como hack para desarrollo: confirma el pago de la suscripción sin usar Stripe")
+            description = "confirma el pago de la suscripción ")
     public ResponseEntity<SubscriptionResponse> confirmarPagoSuscripcion(
             @AuthenticationPrincipal final Usuario usuario) {
         try {

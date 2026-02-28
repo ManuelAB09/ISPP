@@ -3,26 +3,28 @@ package es.us.meerkat.backend.service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.stripe.exception.StripeException;
+import com.stripe.model.checkout.Session;
+import com.stripe.param.checkout.SessionCreateParams;
 
 import es.us.meerkat.backend.dto.PaymentUrlResponse;
 import es.us.meerkat.backend.entity.*;
 import es.us.meerkat.backend.repository.TransaccionPagoRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
-/**
- * Servicio para gestionar pagos y transacciones.
- *
- * <p>Mock de Stripe: En producción esto se integraría con la pasarela Stripe. Actualmente simula
- * los pagos para desarrollo.
- */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
@@ -30,97 +32,135 @@ public class PaymentService {
     private final TransaccionPagoRepository transaccionRepository;
     private final UsuarioRepository usuarioRepository;
 
-    // Comisión de la plataforma en porcentaje
+    @Value("${stripe.success.url}")
+    private String successUrl;
+
+    @Value("${stripe.cancel.url}")
+    private String cancelUrl;
+
+    @Value("${stripe.price.premium}")
+    private String pricePremium;
+
     private static final BigDecimal COMISION_PORCENTAJE = new BigDecimal("10");
 
-    /**
-     * Genera una URL de pago para verificación de tutor. Mock de Stripe - en producción devolvería
-     * la URL de Stripe Checkout.
-     *
-     * @param tutorId ID del tutor
-     * @param usuarioId ID del usuario autenticado
-     * @return URL de pago
-     */
+    // -------------------------------------------------------------------------
+    // Generación de sesiones de pago
+    // -------------------------------------------------------------------------
+
+    /** Verificación de tutor → TipoTransaccion.PAGO_VERIFICACION */
     @Transactional
-    public PaymentUrlResponse generarPagoVerificacionTutor(Long tutorId, Long usuarioId) {
-        String sessionId = UUID.randomUUID().toString();
-        String paymentUrl =
-                "http://localhost:8080/api/v1/payment/checkout/verification/" + sessionId;
-        return new PaymentUrlResponse(paymentUrl, sessionId);
+    public PaymentUrlResponse generarPagoVerificacionTutor(Long tutorId, Long usuarioId)
+            throws StripeException {
+
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("tipo", TipoTransaccion.PAGO_VERIFICACION.name());
+        metadata.put("usuarioId", usuarioId.toString());
+        metadata.put("tutorId", tutorId.toString());
+
+        Session session =
+                crearSesionPagoUnico("Verificación de tutor", new BigDecimal("9.99"), metadata);
+        log.info("Sesión Stripe verificación tutor creada: {}", session.getId());
+        return new PaymentUrlResponse(session.getUrl(), session.getId());
     }
 
-    /**
-     * Genera una URL de pago para contratación de tutor. Mock de Stripe.
-     *
-     * @param tutorId ID del tutor
-     * @param comunidadId ID de la comunidad
-     * @param monto monto a pagar
-     * @param usuarioId ID del usuario autenticado
-     * @return URL de pago
-     */
+    /** Contratación de tutor → TipoTransaccion.PAGO_TUTOR */
     @Transactional
     public PaymentUrlResponse generarPagoContratacionTutor(
-            Long tutorId, Long comunidadId, BigDecimal monto, Long usuarioId) {
-        String sessionId = UUID.randomUUID().toString();
-        String paymentUrl = "http://localhost:8080/api/v1/payment/checkout/tutor/" + sessionId;
-        return new PaymentUrlResponse(paymentUrl, sessionId);
+            Long tutorId, Long comunidadId, BigDecimal monto, Long usuarioId)
+            throws StripeException {
+
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("tipo", TipoTransaccion.PAGO_TUTOR.name());
+        metadata.put("usuarioId", usuarioId.toString());
+        metadata.put("tutorId", tutorId.toString());
+        metadata.put("comunidadId", comunidadId.toString());
+
+        Session session = crearSesionPagoUnico("Contratación de tutor", monto, metadata);
+        log.info("Sesión Stripe contratación tutor creada: {}", session.getId());
+        return new PaymentUrlResponse(session.getUrl(), session.getId());
+    }
+
+    /** Suscripción PREMIUM → TipoTransaccion.SUSCRIPCION, modo SUBSCRIPTION (recurrente) */
+    @Transactional
+    public PaymentUrlResponse generarPagoSuscripcion(Usuario usuario, TipoPlan plan)
+            throws StripeException {
+
+        if (plan == TipoPlan.FREE) {
+            throw new IllegalArgumentException("El plan FREE no requiere pago");
+        }
+
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("tipo", TipoTransaccion.SUSCRIPCION.name());
+        metadata.put("usuarioId", usuario.getId().toString());
+        metadata.put("plan", plan.name());
+
+        SessionCreateParams params =
+                SessionCreateParams.builder()
+                        .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
+                        .setSuccessUrl(successUrl + "?session_id={CHECKOUT_SESSION_ID}")
+                        .setCancelUrl(cancelUrl)
+                        .setCustomerEmail(usuario.getEmail())
+                        .addLineItem(
+                                SessionCreateParams.LineItem.builder()
+                                        .setQuantity(1L)
+                                        .setPrice(pricePremium)
+                                        .build())
+                        .putAllMetadata(metadata)
+                        .build();
+
+        Session session = Session.create(params);
+        log.info(
+                "Sesión Stripe suscripción PREMIUM creada para usuario {}: {}",
+                usuario.getId(),
+                session.getId());
+        return new PaymentUrlResponse(session.getUrl(), session.getId());
     }
 
     /**
-     * Genera una URL de pago para suscripción premium. Mock de Stripe.
-     *
-     * @param usuario usuario que se suscribe
-     * @param plan plan a contratar
-     * @return URL de pago
+     * Upgrade de comunidad → TipoTransaccion.COMISION (no hay un tipo específico, se registra como
+     * comisión de plataforma)
      */
     @Transactional
-    public PaymentUrlResponse generarPagoSuscripcion(Usuario usuario, TipoPlan plan) {
-        String sessionId = UUID.randomUUID().toString();
-        String paymentUrl =
-                "http://localhost:8080/api/v1/payment/checkout/subscription/" + sessionId;
-        return new PaymentUrlResponse(paymentUrl, sessionId);
+    public PaymentUrlResponse generarPagoUpgradeComunidad(Long comunidadId, BigDecimal monto)
+            throws StripeException {
+
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("tipo", TipoTransaccion.COMISION.name());
+        metadata.put("comunidadId", comunidadId.toString());
+
+        Session session = crearSesionPagoUnico("Upgrade comunidad a premium", monto, metadata);
+        log.info("Sesión Stripe upgrade comunidad creada: {}", session.getId());
+        return new PaymentUrlResponse(session.getUrl(), session.getId());
     }
 
     /**
-     * Genera una URL de pago para upgrade de comunidad a premium. Mock de Stripe.
-     *
-     * @param comunidadId ID de la comunidad
-     * @param monto monto a pagar
-     * @return URL de pago
+     * Plan corporativo → TipoTransaccion.COMISION (no hay un tipo específico, se registra como
+     * comisión de plataforma)
      */
     @Transactional
-    public PaymentUrlResponse generarPagoUpgradeComunidad(Long comunidadId, BigDecimal monto) {
-        String sessionId = UUID.randomUUID().toString();
-        String paymentUrl =
-                "http://localhost:8080/api/v1/payment/checkout/community-upgrade/" + sessionId;
-        return new PaymentUrlResponse(paymentUrl, sessionId);
+    public PaymentUrlResponse generarPagoPlanCorporativo(
+            Long institucionId, TipoPlanCorporativo tipoPlan, BigDecimal monto)
+            throws StripeException {
+
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("tipo", TipoTransaccion.COMISION.name());
+        metadata.put("institucionId", institucionId.toString());
+        metadata.put("tipoPlanCorporativo", tipoPlan.name());
+
+        Session session =
+                crearSesionPagoUnico("Plan corporativo - " + tipoPlan.name(), monto, metadata);
+        log.info(
+                "Sesión Stripe plan corporativo {} creada para institución {}: {}",
+                tipoPlan,
+                institucionId,
+                session.getId());
+        return new PaymentUrlResponse(session.getUrl(), session.getId());
     }
 
-    /**
-     * Genera una URL de pago para plan corporativo. Mock de Stripe.
-     *
-     * @param institucionId ID de la institución
-     * @param monto monto a pagar
-     * @return URL de pago
-     */
-    @Transactional
-    public PaymentUrlResponse generarPagoPlanCorporativo(Long institucionId, BigDecimal monto) {
-        String sessionId = UUID.randomUUID().toString();
-        String paymentUrl =
-                "http://localhost:8080/api/v1/payment/checkout/corporate-plan/" + sessionId;
-        return new PaymentUrlResponse(paymentUrl, sessionId);
-    }
+    // -------------------------------------------------------------------------
+    // Métodos de procesado (sin cambios)
+    // -------------------------------------------------------------------------
 
-    /**
-     * Procesa (simula) un pago exitoso.
-     *
-     * @param usuarioId ID del usuario
-     * @param tipo tipo de transacción
-     * @param monto monto del pago
-     * @param descripcion descripción de la transacción
-     * @param tutor tutor involucrado (si aplica)
-     * @return transacción creada
-     */
     @Transactional
     public TransaccionPago procesarPagoExitoso(
             Long usuarioId,
@@ -134,11 +174,8 @@ public class PaymentService {
                         .findById(usuarioId)
                         .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
-        // Calcular comisión
         BigDecimal comision = calcularComision(monto);
-        BigDecimal montoNeto = monto.subtract(comision);
 
-        // Crear transacción
         TransaccionPago transaccion =
                 TransaccionPago.builder()
                         .tipo(tipo)
@@ -155,18 +192,10 @@ public class PaymentService {
         return transaccionRepository.save(transaccion);
     }
 
-    /**
-     * Procesa un pago fallido.
-     *
-     * @param usuarioId ID del usuario
-     * @param tipo tipo de transacción
-     * @param monto monto del pago
-     * @param razon razón del fallo
-     * @return transacción creada con estado fallido
-     */
     @Transactional
     public TransaccionPago procesarPagoFallido(
             Long usuarioId, TipoTransaccion tipo, BigDecimal monto, String razon) {
+
         Usuario usuario =
                 usuarioRepository
                         .findById(usuarioId)
@@ -187,46 +216,57 @@ public class PaymentService {
         return transaccionRepository.save(transaccion);
     }
 
-    /**
-     * Obtiene el historial de pagos de un usuario.
-     *
-     * @param usuarioId ID del usuario
-     * @param pageable información de paginación
-     * @return página con las transacciones
-     */
     public Page<TransaccionPago> obtenerHistorialPagos(Long usuarioId, Pageable pageable) {
         return transaccionRepository.findByUsuarioIdOrderByIniciadoAtDesc(usuarioId, pageable);
     }
 
-    /**
-     * Obtiene una transacción específica.
-     *
-     * @param transactionId ID de la transacción
-     * @param usuarioId ID del usuario (para verificar permisos)
-     * @return transacción
-     */
     public Optional<TransaccionPago> obtenerTransaccion(Long transactionId, Long usuarioId) {
         return transaccionRepository.findByIdAndUsuarioId(transactionId, usuarioId);
     }
 
-    /**
-     * Calcula la comisión de la plataforma sobre un monto.
-     *
-     * @param monto monto original
-     * @return comisión calculada
-     */
     public BigDecimal calcularComision(BigDecimal monto) {
         return monto.multiply(COMISION_PORCENTAJE)
                 .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
     }
 
-    /**
-     * Calcula el monto neto después de comisión.
-     *
-     * @param monto monto original
-     * @return monto neto
-     */
     public BigDecimal calcularMontoNeto(BigDecimal monto) {
         return monto.subtract(calcularComision(monto));
+    }
+
+    // -------------------------------------------------------------------------
+    // Helper privado
+    // -------------------------------------------------------------------------
+
+    private Session crearSesionPagoUnico(
+            String nombreProducto, BigDecimal monto, Map<String, String> metadata)
+            throws StripeException {
+
+        long montoEnCentavos =
+                monto.multiply(new BigDecimal("100")).setScale(0, RoundingMode.HALF_UP).longValue();
+
+        SessionCreateParams params =
+                SessionCreateParams.builder()
+                        .setMode(SessionCreateParams.Mode.PAYMENT)
+                        .setSuccessUrl(successUrl + "?session_id={CHECKOUT_SESSION_ID}")
+                        .setCancelUrl(cancelUrl)
+                        .addLineItem(
+                                SessionCreateParams.LineItem.builder()
+                                        .setQuantity(1L)
+                                        .setPriceData(
+                                                SessionCreateParams.LineItem.PriceData.builder()
+                                                        .setCurrency("eur")
+                                                        .setUnitAmount(montoEnCentavos)
+                                                        .setProductData(
+                                                                SessionCreateParams.LineItem
+                                                                        .PriceData.ProductData
+                                                                        .builder()
+                                                                        .setName(nombreProducto)
+                                                                        .build())
+                                                        .build())
+                                        .build())
+                        .putAllMetadata(metadata)
+                        .build();
+
+        return Session.create(params);
     }
 }

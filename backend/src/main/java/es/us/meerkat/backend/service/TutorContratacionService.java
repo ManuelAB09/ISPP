@@ -49,36 +49,30 @@ public class TutorContratacionService {
     public PaymentUrlResponse crearContratacion(
             Long comunidadId, Long tutorId, HireTutorRequest request, Long usuarioId) {
 
-        // Validar que la comunidad existe
         Comunidad comunidad =
                 comunidadRepository
                         .findById(comunidadId)
                         .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
 
-        // Validar que el usuario es admin de la comunidad
         if (!comunidad.getCreador().getId().equals(usuarioId)) {
             throw new IllegalArgumentException(
                     "No tienes permisos para contratar tutores en esta comunidad");
         }
 
-        // Validar que el tutor existe
         Tutor tutor =
                 tutorRepository
                         .findById(tutorId)
                         .orElseThrow(() -> new IllegalArgumentException("Tutor no encontrado"));
 
-        // Validar que no hay contratación activa con este tutor
         if (tutorContratacionRepository.findActivaByComunidadId(comunidadId).isPresent()) {
             throw new IllegalArgumentException("La comunidad ya tiene un tutor activo");
         }
 
-        // Validar que el tutor está verificado
         if (!tutor.getVerificado()) {
             throw new IllegalArgumentException(
                     "El tutor debe estar verificado para ser contratado");
         }
 
-        // Crear contratación
         TutorContratacion contratacion = new TutorContratacion();
         contratacion.setTutor(tutor);
         contratacion.setComunidad(comunidad);
@@ -87,17 +81,21 @@ public class TutorContratacionService {
         contratacion.setTarifaAcordada(request.getTarifaAcordada());
         contratacion.setEstado(EstadoContratacion.PENDIENTE_PAGO);
         contratacion.setFechaInicio(LocalDate.now());
-        contratacion.setFechaFin(LocalDate.now().plusMonths(3)); // Default 3 meses
+        contratacion.setFechaFin(LocalDate.now().plusMonths(3));
         contratacion.setCreatedAt(LocalDateTime.now());
 
-        TutorContratacion saved = tutorContratacionRepository.save(contratacion);
+        tutorContratacionRepository.save(contratacion);
 
-        // Generar pago
-        PaymentUrlResponse paymentUrl =
-                paymentService.generarPagoContratacionTutor(
-                        tutorId, comunidadId, request.getTarifaAcordada(), usuarioId);
-
-        return paymentUrl;
+        try {
+            return paymentService.generarPagoContratacionTutor(
+                    tutorId, comunidadId, request.getTarifaAcordada(), usuarioId);
+        } catch (com.stripe.exception.StripeException e) {
+            // Si Stripe falla revertimos el estado de la contratación
+            contratacion.setEstado(EstadoContratacion.CANCELADA);
+            contratacion.setMotivoCancelacion("Error al generar pago: " + e.getMessage());
+            tutorContratacionRepository.save(contratacion);
+            throw new RuntimeException("Error al conectar con la pasarela de pago", e);
+        }
     }
 
     /**

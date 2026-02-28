@@ -716,9 +716,7 @@ public class CommunityController {
     // EVENTOS DE COMUNIDAD
     // =====================================================
 
-    /**
-     * Lista los eventos de una comunidad. GET /api/v1/communities/{communityId}/events
-     */
+    /** Lista los eventos de una comunidad. GET /api/v1/communities/{communityId}/events */
     @GetMapping("/{communityId}/events")
     @Operation(
             summary = "Listar eventos de comunidad",
@@ -738,9 +736,8 @@ public class CommunityController {
         }
 
         List<Evento> eventos = eventoService.obtenerEventosPorComunidad(communityId, cancelados);
-        List<EventSummaryResponse> response = eventos.stream()
-                .map(Evento::toSummaryDTO)
-                .collect(Collectors.toList());
+        List<EventSummaryResponse> response =
+                eventos.stream().map(Evento::toSummaryDTO).collect(Collectors.toList());
 
         return ResponseEntity.ok(response);
     }

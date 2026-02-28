@@ -1,8 +1,11 @@
 package es.us.meerkat.backend.controller;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -10,18 +13,28 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import com.stripe.exception.SignatureVerificationException;
+import com.stripe.model.Event;
+import com.stripe.model.EventDataObjectDeserializer;
+import com.stripe.model.Invoice;
+import com.stripe.model.checkout.Session;
+import com.stripe.net.Webhook;
+
 import es.us.meerkat.backend.dto.PageInfo;
 import es.us.meerkat.backend.dto.TransactionListResponse;
 import es.us.meerkat.backend.dto.TransactionResponse;
+import es.us.meerkat.backend.entity.TipoTransaccion;
 import es.us.meerkat.backend.entity.TransaccionPago;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.PaymentService;
+import es.us.meerkat.backend.service.SuscripcionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
-/** Controlador REST para gestionar pagos y transacciones. */
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/payments")
 @RequiredArgsConstructor
@@ -29,32 +42,24 @@ import lombok.RequiredArgsConstructor;
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final SuscripcionService suscripcionService; // ← añadido para el webhook
 
-    /**
-     * Obtiene el historial de pagos del usuario autenticado.
-     *
-     * @param usuario Usuario autenticado
-     * @param tipo Tipo de transacción (opcional)
-     * @param desde Fecha desde (opcional)
-     * @param hasta Fecha hasta (opcional)
-     * @param page Número de página
-     * @param size Tamaño de página
-     * @return Lista paginada de transacciones
-     */
+    @Value("${stripe.webhook.secret}")
+    private String webhookSecret;
+
+    // -------------------------------------------------------------------------
+    // Endpoints existentes sin cambios
+    // -------------------------------------------------------------------------
+
     @GetMapping("/history")
-    @Operation(
-            summary = "Historial de pagos",
-            description = "Devuelve el historial de pagos del usuario autenticado")
+    @Operation(summary = "Historial de pagos", description = "Devuelve el historial")
     public ResponseEntity<TransactionListResponse> getPaymentHistory(
             @AuthenticationPrincipal final Usuario usuario,
-            @Parameter(description = "Filtrar por tipo de transacción")
-                    @RequestParam(required = false)
+            @Parameter(description = "Filtrar por tipo") @RequestParam(required = false)
                     String tipo,
             @Parameter(description = "Fecha desde") @RequestParam(required = false) LocalDate desde,
             @Parameter(description = "Fecha hasta") @RequestParam(required = false) LocalDate hasta,
-            @Parameter(description = "Número de página (0-indexed)")
-                    @RequestParam(defaultValue = "0")
-                    int page,
+            @Parameter(description = "Número de página") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Elementos por página") @RequestParam(defaultValue = "20")
                     int size) {
 
@@ -62,7 +67,6 @@ public class PaymentController {
         Page<TransaccionPago> payments =
                 paymentService.obtenerHistorialPagos(usuario.getId(), pageable);
 
-        // Convertir a DTOs
         var content =
                 payments.getContent().stream()
                         .map(this::toTransactionResponse)
@@ -82,54 +86,219 @@ public class PaymentController {
                 TransactionListResponse.builder().content(content).page(pageInfo).build());
     }
 
-    /**
-     * Obtiene el detalle de una transacción específica.
-     *
-     * @param transactionId ID de la transacción
-     * @param usuario Usuario autenticado
-     * @return Detalle de la transacción
-     */
     @GetMapping("/{transactionId}")
-    @Operation(
-            summary = "Obtener detalle de transacción",
-            description = "Devuelve el detalle de una transacción específica")
+    @Operation(summary = "Obtener detalle de transacción", description = "Devuelve el detalle")
     public ResponseEntity<TransactionResponse> getTransaction(
             @Parameter(description = "ID de la transacción") @PathVariable Long transactionId,
             @AuthenticationPrincipal final Usuario usuario) {
 
         return paymentService
                 .obtenerTransaccion(transactionId, usuario.getId())
-                .map(transaccion -> ResponseEntity.ok(toTransactionResponse(transaccion)))
+                .map(t -> ResponseEntity.ok(toTransactionResponse(t)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    // -------------------------------------------------------------------------
+    // Webhook real de Stripe
+    // -------------------------------------------------------------------------
+
     /**
-     * Webhook para recibir notificaciones de Stripe (simplificado para mock). En producción esto
-     * verificaría la firma de Stripe y procesaría el evento.
+     * Recibe y procesa eventos del webhook de Stripe.
      *
-     * @param payload Payload del webhook
-     * @return Confirmación de recepción
+     * <p>Eventos manejados: - checkout.session.completed → activa suscripción PREMIUM o registra
+     * pago único - checkout.session.expired → sesión expirada sin pagar - invoice.payment_succeeded
+     * → renueva suscripción PREMIUM (cobro recurrente exitoso) - invoice.payment_failed → registra
+     * fallo de cobro recurrente
+     *
+     * <p>IMPORTANTE: añadir en SecurityConfig: .csrf(csrf ->
+     * csrf.ignoringRequestMatchers("/api/v1/payments/webhook")) .authorizeHttpRequests(auth ->
+     * auth.requestMatchers("/api/v1/payments/webhook").permitAll())
      */
     @PostMapping("/webhook")
     @Operation(
-            summary = "Webhook de pasarela de pago",
-            description = "Endpoint para recibir notificaciones de la pasarela de pago (Stripe)")
-    public ResponseEntity<?> handleWebhook(@RequestBody String payload) {
-        // En producción:
-        // 1. Verificar la firma del webhook
-        // 2. Parsear el evento
-        // 3. Procesar según el tipo de evento
+            summary = "Webhook de Stripe",
+            description = "Recibe notificaciones de eventos de Stripe")
+    public ResponseEntity<String> handleWebhook(
+            @RequestBody String payload, @RequestHeader("Stripe-Signature") String sigHeader) {
 
-        // Para mock, simplemente aceptamos
-        return ResponseEntity.ok().build();
+        // 1. Verificar firma — si falla, Stripe reintentará
+        Event event;
+        try {
+            event = Webhook.constructEvent(payload, sigHeader, webhookSecret);
+        } catch (SignatureVerificationException e) {
+            log.warn("Webhook con firma inválida: {}", e.getMessage());
+            return ResponseEntity.badRequest().body("Firma inválida");
+        }
+
+        log.info("Webhook Stripe recibido: tipo={}, id={}", event.getType(), event.getId());
+
+        EventDataObjectDeserializer deserializer = event.getDataObjectDeserializer();
+
+        switch (event.getType()) {
+
+                // Pago completado: puede ser suscripción o pago único
+            case "checkout.session.completed" -> {
+                deserializer
+                        .getObject()
+                        .ifPresentOrElse(
+                                obj -> procesarSessionCompletada((Session) obj),
+                                () ->
+                                        log.warn(
+                                                "No se pudo deserializar Session. Evento: {}",
+                                                event.getId()));
+            }
+
+                // Sesión expirada sin que el usuario pagara
+            case "checkout.session.expired" -> {
+                deserializer
+                        .getObject()
+                        .ifPresent(
+                                obj -> {
+                                    Session session = (Session) obj;
+                                    log.info("Sesión expirada sin pago: {}", session.getId());
+                                });
+            }
+
+                // Cobro recurrente exitoso → renovar suscripción PREMIUM
+            case "invoice.payment_succeeded" -> {
+                deserializer
+                        .getObject()
+                        .ifPresent(
+                                obj -> {
+                                    Invoice invoice = (Invoice) obj;
+                                    // Solo procesar facturas de suscripción (no la factura del alta
+                                    // inicial,
+                                    // que ya la maneja checkout.session.completed)
+                                    if (invoice.getBillingReason() != null
+                                            && invoice.getBillingReason()
+                                                    .equals("subscription_cycle")) {
+                                        procesarRenovacionFactura(invoice);
+                                    }
+                                });
+            }
+
+                // Cobro recurrente fallido → registrar fallo
+            case "invoice.payment_failed" -> {
+                deserializer
+                        .getObject()
+                        .ifPresent(
+                                obj -> {
+                                    Invoice invoice = (Invoice) obj;
+                                    BigDecimal monto =
+                                            BigDecimal.valueOf(invoice.getAmountDue())
+                                                    .divide(
+                                                            new BigDecimal("100"),
+                                                            2,
+                                                            RoundingMode.HALF_UP);
+                                    log.warn(
+                                            "Cobro recurrente fallido. Customer: {}, Monto: {}€",
+                                            invoice.getCustomer(),
+                                            monto);
+                                    // Aquí podrías cancelar la suscripción o notificar al usuario
+                                });
+            }
+
+            default -> log.debug("Evento Stripe no manejado: {}", event.getType());
+        }
+
+        // Siempre 200 para que Stripe no reintente innecesariamente
+        return ResponseEntity.ok("Evento recibido");
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers privados del webhook
+    // -------------------------------------------------------------------------
+
+    /**
+     * Procesa un checkout.session.completed. Si es SUSCRIPCION activa la suscripción; si es otro
+     * tipo registra el pago.
+     */
+    private void procesarSessionCompletada(Session session) {
+        try {
+            String tipoStr = session.getMetadata().get("tipo");
+            String usuarioIdStr = session.getMetadata().get("usuarioId");
+
+            if (tipoStr == null || usuarioIdStr == null) {
+                log.warn("Session {} sin metadata suficiente", session.getId());
+                return;
+            }
+
+            Long usuarioId = Long.parseLong(usuarioIdStr);
+            BigDecimal monto =
+                    BigDecimal.valueOf(session.getAmountTotal())
+                            .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+
+            if (TipoTransaccion.SUSCRIPCION.name().equals(tipoStr)) {
+                // Activa suscripción + crea transacción + actualiza plan usuario
+                suscripcionService.activarSuscripcionTrasStripe(usuarioId, monto);
+            } else {
+                // Pago único (verificación tutor, contratación, upgrade, etc.)
+                paymentService.procesarPagoExitoso(
+                        usuarioId,
+                        TipoTransaccion.valueOf(tipoStr),
+                        monto,
+                        "Pago completado vía Stripe",
+                        null);
+            }
+
+            log.info(
+                    "Session completada procesada. Usuario: {}, Tipo: {}, Monto: {}€",
+                    usuarioId,
+                    tipoStr,
+                    monto);
+
+        } catch (Exception e) {
+            log.error(
+                    "Error procesando checkout.session.completed [{}]: {}",
+                    session.getId(),
+                    e.getMessage(),
+                    e);
+        }
     }
 
     /**
-     * Convierte una entidad TransaccionPago a su DTO.
-     *
-     * @param transaccion la transacción
-     * @return DTO de transacción
+     * Procesa un invoice.payment_succeeded de tipo subscription_cycle (renovación). Necesita que el
+     * invoice tenga metadata con usuarioId, o que lo resuelvas desde el customerId de Stripe
+     * mapeado en tu BD.
      */
+    private void procesarRenovacionFactura(Invoice invoice) {
+        try {
+            // Las invoices de suscripción recurrente no tienen metadata propia,
+            // pero la suscripción de Stripe sí. Aquí usamos la metadata de la invoice
+            // si la propagaste, o bien buscas el usuario por stripeCustomerId.
+            String usuarioIdStr =
+                    invoice.getMetadata() != null ? invoice.getMetadata().get("usuarioId") : null;
+
+            if (usuarioIdStr == null) {
+                log.warn(
+                        "Invoice {} sin usuarioId en metadata. Considera guardar "
+                                + "stripeCustomerId en Usuario para resolver este caso.",
+                        invoice.getId());
+                return;
+            }
+
+            Long usuarioId = Long.parseLong(usuarioIdStr);
+            BigDecimal monto =
+                    BigDecimal.valueOf(invoice.getAmountPaid())
+                            .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+
+            suscripcionService.renovarSuscripcionTrasStripe(usuarioId, monto);
+
+            log.info("Renovación PREMIUM procesada. Usuario: {}, Monto: {}€", usuarioId, monto);
+
+        } catch (Exception e) {
+            log.error(
+                    "Error procesando renovación de factura [{}]: {}",
+                    invoice.getId(),
+                    e.getMessage(),
+                    e);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Helper DTO
+    // -------------------------------------------------------------------------
+
     private TransactionResponse toTransactionResponse(TransaccionPago transaccion) {
         return TransactionResponse.builder()
                 .id(transaccion.getId())
@@ -143,7 +312,7 @@ public class PaymentController {
                                 .subtract(
                                         transaccion.getComision() != null
                                                 ? transaccion.getComision()
-                                                : java.math.BigDecimal.ZERO))
+                                                : BigDecimal.ZERO))
                 .estado(transaccion.getEstado())
                 .iniciadoAt(transaccion.getIniciadoAt())
                 .completadoAt(transaccion.getCompletadoAt())

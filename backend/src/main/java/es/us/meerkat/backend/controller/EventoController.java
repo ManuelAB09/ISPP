@@ -93,9 +93,10 @@ public class EventoController {
             summary = "Listar eventos",
             description = "Obtiene lista de eventos públicos disponibles")
     public ResponseEntity<List<EventSummaryResponse>> listarEventos() {
-        List<EventSummaryResponse> response = eventoService.obtenerEventosPublicos().stream()
-                .map(Evento::toSummaryDTO)
-                .collect(Collectors.toList());
+        List<EventSummaryResponse> response =
+                eventoService.obtenerEventosPublicos().stream()
+                        .map(Evento::toSummaryDTO)
+                        .collect(Collectors.toList());
         return ResponseEntity.ok(response);
     }
 
@@ -109,9 +110,10 @@ public class EventoController {
             summary = "Obtener eventos en mapa",
             description = "Devuelve eventos marcados como visibles en el mapa")
     public ResponseEntity<List<EventSummaryResponse>> obtenerEventosEnMapa() {
-        List<EventSummaryResponse> response = eventoService.obtenerEventosEnMapa().stream()
-                .map(Evento::toSummaryDTO)
-                .collect(Collectors.toList());
+        List<EventSummaryResponse> response =
+                eventoService.obtenerEventosEnMapa().stream()
+                        .map(Evento::toSummaryDTO)
+                        .collect(Collectors.toList());
         return ResponseEntity.ok(response);
     }
 

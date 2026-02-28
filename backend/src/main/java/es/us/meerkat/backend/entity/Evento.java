@@ -237,22 +237,23 @@ public class Evento {
     }
 
     public EventDetailResponse toDTO() {
-        EventDetailResponse.EventDetailResponseBuilder builder = EventDetailResponse.builder()
-                .id(this.id)
-                .titulo(this.titulo)
-                .descripcion(this.descripcion)
-                .fechaHora(this.fechaHora)
-                .fechaFin(this.fechaFin)
-                .aforo(this.aforo)
-                .asistentesConfirmados(this.asistentesConfirmados)
-                .queLlevar(this.queLlevar)
-                .visibleMapa(this.visibleMapa)
-                .esVirtual(this.esVirtual)
-                .enlaceVirtual(this.enlaceVirtual)
-                .cancelado(this.cancelado)
-                .motivoCancelacion(this.motivoCancelacion)
-                .privado(this.privado)
-                .createdAt(this.createdAt);
+        EventDetailResponse.EventDetailResponseBuilder builder =
+                EventDetailResponse.builder()
+                        .id(this.id)
+                        .titulo(this.titulo)
+                        .descripcion(this.descripcion)
+                        .fechaHora(this.fechaHora)
+                        .fechaFin(this.fechaFin)
+                        .aforo(this.aforo)
+                        .asistentesConfirmados(this.asistentesConfirmados)
+                        .queLlevar(this.queLlevar)
+                        .visibleMapa(this.visibleMapa)
+                        .esVirtual(this.esVirtual)
+                        .enlaceVirtual(this.enlaceVirtual)
+                        .cancelado(this.cancelado)
+                        .motivoCancelacion(this.motivoCancelacion)
+                        .privado(this.privado)
+                        .createdAt(this.createdAt);
 
         if (this.creador != null) {
             builder.creador(

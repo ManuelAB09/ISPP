@@ -161,35 +161,33 @@ public class InstitutionService {
             Long institutionId, Long usuarioId, CorporatePlanRequest request) {
         Institution institution = obtenerInstitucion(institutionId, usuarioId);
 
-        // Validar eligibilidad para planes reducidos
-        if (request.getTipoPlan() != null
-                && (request.getTipoPlan().equals("REDUCIDO_PUBLICA")
-                        || request.getTipoPlan().equals("REDUCIDO_PRIVADA"))) {
+        TipoPlanCorporativo tipoPlan = TipoPlanCorporativo.valueOf(request.getTipoPlan());
+
+        if (tipoPlan == TipoPlanCorporativo.REDUCIDO_PUBLICA
+                || tipoPlan == TipoPlanCorporativo.REDUCIDO_PRIVADA) {
             validarEligibilidadPlanReducido(institution.getDominioEmail());
         }
 
-        // Calcular monto del plan (simplificado: 15€ por usuario por mes)
-        BigDecimal montoUnitario = new BigDecimal("15");
         BigDecimal monto =
-                montoUnitario
+                new BigDecimal("15")
                         .multiply(new BigDecimal(request.getNumUsuarios()))
                         .multiply(new BigDecimal(request.getDuracionMeses()));
 
-        // Aplicar descuento para planes reducidos
-        if (request.getTipoPlan() != null
-                && (request.getTipoPlan().equals("REDUCIDO_PUBLICA")
-                        || request.getTipoPlan().equals("REDUCIDO_PRIVADA"))) {
-            // 40% descuento para planes reducidos
+        if (tipoPlan == TipoPlanCorporativo.REDUCIDO_PUBLICA
+                || tipoPlan == TipoPlanCorporativo.REDUCIDO_PRIVADA) {
             monto = monto.multiply(new BigDecimal("0.60"));
         }
 
-        // Generar pago
-        PaymentUrlResponse paymentUrl =
-                paymentService.generarPagoPlanCorporativo(institutionId, monto);
+        PaymentUrlResponse paymentUrl;
+        try {
+            paymentUrl = paymentService.generarPagoPlanCorporativo(institutionId, tipoPlan, monto);
+        } catch (com.stripe.exception.StripeException e) {
+            throw new RuntimeException("Error al conectar con la pasarela de pago", e);
+        }
 
-        // Actualizar institución con datos provisionales
+        // Solo actualizamos la institución si Stripe respondió correctamente
         institution.setNumUsuariosPermitidos(request.getNumUsuarios());
-        institution.setPlanCorporativo(TipoPlanCorporativo.valueOf(request.getTipoPlan()));
+        institution.setPlanCorporativo(tipoPlan);
         institutionRepository.save(institution);
 
         return paymentUrl;
