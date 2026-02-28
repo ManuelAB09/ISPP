@@ -1,4 +1,5 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useAuth } from "../../contexts/AuthContext"
 import "./EditProfile.css"
 
 const ACADEMIC_INTERESTS = [
@@ -15,15 +16,16 @@ const ACADEMIC_INTERESTS = [
 ]
 
 const EditProfile = ({ onClose, onSave }) => {
-    // Estados para los campos del formulario (hardcodeados por ahora)
+    const { user, updateProfile } = useAuth()
+    
+    // Estados para los campos del formulario
     const [formData, setFormData] = useState({
-        nombre: "Álvaro García",
-        descripcion: "Estudiante de Ingeniería Informática apasionado por el desarrollo web y la inteligencia artificial. Siempre buscando aprender cosas nuevas.",
-        universidad: "Universidad de Sevilla",
-        grado: "Ingeniería Informática",
-        ubicacion: "Sevilla, España",
-        esProfesor: false,
-        intereses: ['Ingeniería Software', 'Diseño'],
+        nombre: "",
+        descripcion: "",
+        universidad: "",
+        grado: "",
+        ubicacion: "",
+        intereses: [],
     })
     
     const [profileImage, setProfileImage] = useState(null)
@@ -31,6 +33,23 @@ const EditProfile = ({ onClose, onSave }) => {
     const [isSaving, setIsSaving] = useState(false)
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
+
+    // Cargar datos del usuario al montar el componente
+    useEffect(() => {
+        if (user) {
+            setFormData({
+                nombre: user.nombre || "",
+                descripcion: user.bio || "",
+                universidad: user.universidad || "",
+                grado: user.grado || "",
+                ubicacion: user.ubicacion || "",
+                intereses: user.intereses || [],
+            })
+            if (user.foto) {
+                setProfileImagePreview(user.foto)
+            }
+        }
+    }, [user])
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target
@@ -91,21 +110,34 @@ const EditProfile = ({ onClose, onSave }) => {
         }
 
         try {
-            // TODO: Llamar al endpoint de la API cuando esté disponible
-            // Por ahora simular guardado
-            await new Promise(resolve => setTimeout(resolve, 500))
-            
-            setSuccess('Perfil actualizado correctamente')
-            
-            // Llamar callback de guardado si existe
-            if (onSave) {
-                onSave({ ...formData, profileImage })
+            // Preparar datos para el endpoint
+            const profileData = {
+                nombre: formData.nombre.trim(),
+                bio: formData.descripcion.trim(),
+                universidad: formData.universidad.trim(),
+                grado: formData.grado.trim(),
+                ubicacion: formData.ubicacion.trim(),
+                intereses: formData.intereses,
+                foto: profileImage ? profileImagePreview : (user?.foto || ''),
             }
+
+            const result = await updateProfile(profileData)
             
-            // Cerrar después de un momento
-            setTimeout(() => {
-                onClose()
-            }, 1500)
+            if (result.success) {
+                setSuccess('Perfil actualizado correctamente')
+                
+                // Llamar callback de guardado si existe
+                if (onSave) {
+                    onSave(result.user)
+                }
+                
+                // Cerrar después de un momento
+                setTimeout(() => {
+                    onClose()
+                }, 1500)
+            } else {
+                setError(result.error || 'Error al guardar los cambios')
+            }
         } catch (err) {
             setError(err.message || 'Error al guardar los cambios')
         } finally {
@@ -197,24 +229,6 @@ const EditProfile = ({ onClose, onSave }) => {
                                 placeholder="Cuéntanos sobre ti..."
                                 rows={4}
                             />
-                        </div>
-
-                        <div className="edit-profile-form-group edit-profile-form-group--checkbox">
-                            <label className="edit-profile-checkbox-label">
-                                <input
-                                    type="checkbox"
-                                    name="esProfesor"
-                                    checked={formData.esProfesor}
-                                    onChange={handleInputChange}
-                                />
-                                <span className="edit-profile-checkbox-custom"></span>
-                                <span className="edit-profile-checkbox-text">
-                                    Soy profesor/a
-                                </span>
-                            </label>
-                            <p className="edit-profile-field-hint">
-                                Marca esta opción si eres docente para acceder a funcionalidades especiales.
-                            </p>
                         </div>
                     </section>
 
