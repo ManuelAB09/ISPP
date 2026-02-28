@@ -14,6 +14,7 @@ Este documento explica cómo instalar las herramientas necesarias para conectars
 2. Elige la versión recomendada (por ejemplo PostgreSQL 18) y ejecuta el programa descargado.
 3. Durante el asistente acepta las opciones por defecto en cada pantalla; lo único que
    deberás proporcionar es la contraseña para el usuario `postgres` apuntala por si te hace falta después.
+   Y de regional por Español (internacional)
 4. Termina la instalación y, cuando se te pregunte, permite que el servidor se inicie.
 5. Abre una terminal nueva y comprueba que `psql` está en el PATH ejecutando:
    ```powershell
