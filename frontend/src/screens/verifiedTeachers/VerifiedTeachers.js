@@ -8,7 +8,7 @@ import "./VerifiedTeachers.css";
 
 /**
  * Pantalla de listado de profesores verificados.
- * Usa GET /api/v1/tutors → Page<Tutor> (entidad del backend).
+ * Usa GET /api/v1/tutors → Page<TutorProfileResponse> (DTO, evita ciclos de serialización).
  */
 
 const VerifiedTeachers = () => {
@@ -56,7 +56,7 @@ const VerifiedTeachers = () => {
           page: nuevaPagina,
           size: 20,
         });
-        // La respuesta es Page<Tutor>: { content, totalElements, number, ... }
+        // La respuesta es Page<TutorProfileResponse>: { content, totalElements, number, ... }
         const contenido = resp?.content ?? (Array.isArray(resp) ? resp : []);
         const totalElem = resp?.totalElements ?? contenido.length;
         setProfesores((prev) =>

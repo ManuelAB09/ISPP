@@ -65,7 +65,15 @@ export const communitiesApi = {
    * @param {number} communityId
    */
   getMyMembership(communityId) {
-    return apiClient.get(`/api/v1/communities/${communityId}/members/me`);
+    return apiClient
+      .get(`/api/v1/communities/${communityId}/members/me`)
+      .catch((err) => {
+        if (err.status === 404) {
+          // no somos miembro, devolver null en vez de propagar el error
+          return null;
+        }
+        return Promise.reject(err);
+      });
   },
 
   /**
