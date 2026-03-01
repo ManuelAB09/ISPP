@@ -19,6 +19,7 @@ import es.us.meerkat.backend.entity.MiembroComunidad;
 import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.TipoGrupo;
 import es.us.meerkat.backend.entity.TipoPlanComunidad;
+import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Ubicacion;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
@@ -26,6 +27,7 @@ import es.us.meerkat.backend.repository.CategoriaRepository;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.EventoRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.TutorRepository;
 import es.us.meerkat.backend.repository.UbicacionRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 
@@ -42,6 +44,7 @@ public class DataSeeder {
     @Profile("!staging & !production")
     CommandLineRunner seedDatabase(
             final UsuarioRepository usuarioRepo,
+            final TutorRepository tutorRepo,
             final UbicacionRepository ubicacionRepo,
             final ComunidadRepository comunidadRepo,
             final MiembroComunidadRepository miembroRepo,
@@ -140,6 +143,30 @@ public class DataSeeder {
             u8.setEsTutor(false);
 
             List<Usuario> usuarios = usuarioRepo.saveAll(List.of(u1, u2, u3, u4, u5, u6, u7, u8));
+
+            // ============================
+            // 1.5 TUTORES (datos de ejemplo)
+            // ============================
+            // crear un tutor verificado y otro en espera para las pruebas
+            Tutor t1 = new Tutor();
+            t1.setUs(u3);
+            t1.setTarifaHora(new java.math.BigDecimal("20"));
+            t1.setDisponibilidad("tarde");
+            t1.setBio("Seed tutor");
+            t1.setCreatedAt(LocalDateTime.now());
+            t1.setVerificado(true);
+            t1.setClassroomConectado(false);
+
+            Tutor t2 = new Tutor();
+            t2.setUs(u6);
+            t2.setTarifaHora(new java.math.BigDecimal("15"));
+            t2.setDisponibilidad("mañana");
+            t2.setBio("Tutor de datos");
+            t2.setCreatedAt(LocalDateTime.now());
+            t2.setVerificado(false);
+            t2.setClassroomConectado(false);
+
+            tutorRepo.saveAll(List.of(t1, t2));
 
             // ============================
             // 2. UBICACIONES

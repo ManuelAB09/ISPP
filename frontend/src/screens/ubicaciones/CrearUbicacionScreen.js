@@ -1,7 +1,5 @@
-
-
-
 import React, { useState, useRef } from 'react';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { ubicacionesApi } from '../../api/ubicaciones.api';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -33,6 +31,12 @@ function LocationMarker({ latitud, longitud, setLatitud, setLongitud, setDirecci
 }
 
 const CrearUbicacionScreen = () => {
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const location = useLocation();
+    const returnTo = searchParams.get('returnTo');
+    const eventFormDraft = location.state?.eventFormDraft || null;
+
     const [nombre, setNombre] = useState('');
     const [direccion, setDireccion] = useState('');
     const [latitud, setLatitud] = useState(defaultPosition[0]);
@@ -91,7 +95,25 @@ const CrearUbicacionScreen = () => {
                 coste: ubicacionSeleccionada?.coste || 'desconocido',
             };
             console.log('Payload enviado a crearUbicacion:', payload);
-            await ubicacionesApi.create(payload);
+            const createdUbicacion = await ubicacionesApi.create(payload);
+
+            // Si venimos desde crear/editar evento, volver con la ubicación creada
+            if (returnTo) {
+                navigate(returnTo, {
+                    state: {
+                        ubicacion: {
+                            id: createdUbicacion?.id || createdUbicacion?.ubicacionId,
+                            nombre: nombre,
+                            direccion: direccion,
+                            latitud: latitud,
+                            longitud: longitud
+                        },
+                        eventFormDraft: eventFormDraft
+                    }
+                });
+                return;
+            }
+
             setSuccess(true);
             setNombre('');
             setDireccion('');
@@ -113,6 +135,14 @@ const CrearUbicacionScreen = () => {
                 </div>
                 {error && <div style={{ color: 'red', marginBottom: 16 }}>{error}</div>}
                 {success && <div style={{ color: 'green', marginBottom: 16 }}>Ubicación creada correctamente.</div>}
+                {returnTo && (
+                    <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 8, padding: '12px 16px', marginBottom: 16 }}>
+                        <strong>Selecciona o crea una ubicación</strong> para vincularla a tu evento presencial.
+                        <button type="button" className="btn btn-outline" style={{ marginLeft: 12, fontSize: '0.85rem', padding: '4px 12px' }} onClick={() => navigate(returnTo, { state: { eventFormDraft: eventFormDraft } })}>
+                            Volver sin seleccionar
+                        </button>
+                    </div>
+                )}
                 <button type="button" className="btn btn-outline" style={{ marginBottom: 16 }} onClick={() => setMostrarFiltro(m => !m)}>
                     {mostrarFiltro ? 'Cerrar filtro de ubicaciones' : 'Buscar ubicaciones en el mapa'}
                 </button>
@@ -134,6 +164,22 @@ const CrearUbicacionScreen = () => {
                             setDireccion(dir);
                             setUbicacionSeleccionada({ ...u, direccion: dir });
                             setMostrarFiltro(false);
+
+                            // Si venimos desde crear/editar evento y la ubicación ya tiene ID, volver directamente
+                            if (returnTo && u.id) {
+                                navigate(returnTo, {
+                                    state: {
+                                        ubicacion: {
+                                            id: u.id,
+                                            nombre: u.nombre || '',
+                                            direccion: dir,
+                                            latitud: u.latitud,
+                                            longitud: u.longitud
+                                        },
+                                        eventFormDraft: eventFormDraft
+                                    }
+                                });
+                            }
                         }}
                         onClose={() => setMostrarFiltro(false)}
                     />
@@ -185,7 +231,7 @@ const CrearUbicacionScreen = () => {
                         </div>
                     </div>
                     <button type="submit" className="btn btn-primary" disabled={loading} style={{ marginTop: 24 }}>
-                        {loading ? 'Creando...' : 'Crear Ubicación'}
+                        {loading ? 'Creando...' : (returnTo ? 'Crear y vincular al evento' : 'Crear Ubicación')}
                     </button>
                 </form>
             </div>

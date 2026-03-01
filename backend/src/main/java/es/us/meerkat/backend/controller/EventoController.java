@@ -166,6 +166,8 @@ public class EventoController {
             @Parameter(description = "Qué llevar") @RequestParam final String queLlevar,
             @Parameter(description = "Es virtual") @RequestParam final Boolean esVirtual,
             @Parameter(description = "Es privado") @RequestParam final Boolean privado,
+            @Parameter(description = "ID de ubicación") @RequestParam(required = false)
+                    final Long ubicacionId,
             @AuthenticationPrincipal Usuario usuario) {
 
         if (usuario == null) {
@@ -188,7 +190,8 @@ public class EventoController {
                         aforo,
                         queLlevar,
                         esVirtual,
-                        privado);
+                        privado,
+                        ubicacionId);
 
         return ResponseEntity.ok(eventoEditado.toDTO());
     }

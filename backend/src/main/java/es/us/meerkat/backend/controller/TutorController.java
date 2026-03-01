@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import es.us.meerkat.backend.dto.TutorProfileRequest;
 import es.us.meerkat.backend.dto.TutorProfileResponse;
-import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.TutorService;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +39,7 @@ public final class TutorController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         try {
-            Page<Tutor> tutores =
+            Page<TutorProfileResponse> tutores =
                     tutorService.obtenerTutoresVerificados(
                             especialidad, tarifaMin, tarifaMax, page, size);
             return ResponseEntity.ok(tutores);
