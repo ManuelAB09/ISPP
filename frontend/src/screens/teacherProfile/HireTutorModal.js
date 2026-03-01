@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { communitiesApi } from "../../api/communities.api";
 import { useAuth } from "../../contexts/AuthContext";
 import "./HireTutorModal.css";
@@ -7,7 +7,13 @@ const MODALIDADES = ["Online", "Presencial", "Híbrido"];
 
 /**
  * Modal para contratar un tutor desde una de las comunidades del usuario.
- * POST /api/v1/communities/{communityId}/tutor/{tutorId}
+ * 
+ * FLUJO DE CONTRATACIÓN:
+ * 1. Usuario selecciona comunidad y completa detalles
+ * 2. Se envía solicitud de contratación al profesor
+ * 3. Profesor recibe notificación y puede aceptar/rechazar
+ * 4. Si acepta: Usuario recibe notificación y puede proceder al pago
+ * 5. Después del pago: Contratación queda activa
  */
 const HireTutorModal = ({ tutor, onClose }) => {
   const { user } = useAuth();
@@ -68,15 +74,17 @@ const HireTutorModal = ({ tutor, onClose }) => {
 
     setSubmitting(true);
     try {
+      // Enviar solicitud de contratación al backend
+      // El profesor tendrá que aceptarla antes de que se proceda al pago
       await communitiesApi.hireTutor(comunidadSeleccionada.id, tutor.id, {
         modalidad,
         duracion: duracion.trim(),
         tarifaAcordada: parseFloat(tarifa) || 0,
         aceptarTerminos: true,
       });
-      setPaso(3);
+      setPaso(3); // Mostrar confirmación
     } catch (err) {
-      const msg = err?.response?.data?.message || err?.message || "No se pudo crear la contratación.";
+      const msg = err?.response?.data?.message || err?.message || "No se pudo enviar la solicitud de contratación.";
       setError(msg);
     } finally {
       setSubmitting(false);
@@ -101,16 +109,16 @@ const HireTutorModal = ({ tutor, onClose }) => {
         {/* Progress */}
         {paso < 3 && (
           <div className="htm-steps">
-            <div className={`htm-step ${paso >= 1 ? "htm-step--active" : ""}`}>
-              <span className="htm-step__num">1</span>
-              <span className="htm-step__label">Comunidad</span>
-            </div>
-            <div className="htm-step__line" />
-            <div className={`htm-step ${paso >= 2 ? "htm-step--active" : ""}`}>
-              <span className="htm-step__num">2</span>
-              <span className="htm-step__label">Contrato</span>
-            </div>
+          <div className={`htm-step ${paso >= 1 ? "htm-step--active" : ""}`}>
+            <span className="htm-step__num">1</span>
+            <span className="htm-step__label">Comunidad</span>
           </div>
+          <div className="htm-step__line" />
+          <div className={`htm-step ${paso >= 2 ? "htm-step--active" : ""}`}>
+            <span className="htm-step__num">2</span>
+            <span className="htm-step__label">Contrato</span>
+          </div>
+        </div>
         )}
 
         {/* ── Paso 1: Seleccionar comunidad ── */}
@@ -275,7 +283,7 @@ const HireTutorModal = ({ tutor, onClose }) => {
                 onClick={handleSubmit}
                 disabled={submitting || !aceptarTerminos}
               >
-                {submitting ? "Enviando…" : "Confirmar contratación"}
+                {submitting ? "Enviando solicitud..." : "Enviar solicitud"}
               </button>
             </div>
           </div>
@@ -285,13 +293,14 @@ const HireTutorModal = ({ tutor, onClose }) => {
         {paso === 3 && (
           <div className="htm-body htm-body--success">
             <div className="htm-success-icon">✓</div>
-            <h3 className="htm-success-title">Solicitud de contratación creada</h3>
+            <h3 className="htm-success-title">Solicitud de contratación enviada</h3>
             <p className="htm-success-text">
               La solicitud para contratar a <strong>{nombreTutor}</strong> en la comunidad{" "}
               <strong>{comunidadSeleccionada?.nombre}</strong> ha sido enviada correctamente.
             </p>
             <p className="htm-success-text htm-success-text--muted">
-              La contratación quedará activa una vez se complete el proceso de pago.
+              El profesor recibirá una notificación y podrá aceptar o rechazar tu solicitud.
+              Una vez que el profesor acepte, recibirás una notificación para proceder con el pago.
             </p>
             <button className="htm-btn htm-btn--primary" onClick={onClose}>
               Cerrar

@@ -16,6 +16,7 @@ import MisPagos from './screens/pagos/MisPagos';
 import InstitutionPlansScreen from './screens/planes/InstitutionPlansScreen';
 import PasarelaPago from './screens/planes/PasarelaPago';
 import PlansScreen from './screens/planes/PlansScreen';
+import PasarelaPagoTutor from './screens/teacherProfile/PasarelaPagoTutor';
 import TeacherProfile from './screens/teacherProfile/TeacherProfile';
 import CrearUbicacionScreen from './screens/ubicaciones/CrearUbicacionScreen';
 import VerifiedTeachers from './screens/verifiedTeachers/VerifiedTeachers';
@@ -39,6 +40,7 @@ function App() {
         <Route path="/profesores" element={<VerifiedTeachers />} />
         <Route path="/profesores/nuevo" element={<TeacherProfile />} />
         <Route path="/profesores/:id" element={<TeacherProfile />} />
+        <Route path="/profesores/contratar/pago" element={<PasarelaPagoTutor />} />
         <Route path="/crear-evento/new" element={<CrearEvento />} />
         <Route path="/crear-evento/:id" element={<CrearEvento />} />
         <Route path="/planes" element={<PlansScreen />} />
