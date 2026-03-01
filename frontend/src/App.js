@@ -12,6 +12,7 @@ import EventosMapaScreen from './screens/evento/EventosMapaScreen';
 import Register from './screens/auth/Register';
 import Login from './screens/auth/Login';
 import PlansScreen from './screens/planes/PlansScreen';
+import InstitutionPlansScreen from './screens/planes/InstitutionPlansScreen';
 import TeacherProfile from './screens/teacherProfile/TeacherProfile';
 import VerifiedTeachers from './screens/verifiedTeachers/VerifiedTeachers';
 import CrearUbicacionScreen from './screens/ubicaciones/CrearUbicacionScreen';
@@ -41,6 +42,7 @@ function App() {
         <Route path="/crear-evento/new" element={<CrearEvento />} />
         <Route path="/crear-evento/:id" element={<CrearEvento />} />
         <Route path="/planes" element={<PlansScreen />} />
+        <Route path="/planes/instituciones" element={<InstitutionPlansScreen />} />
         <Route path="/pagos" element={<MisPagos />} />
         <Route path="/crear-ubicacion" element={<CrearUbicacionScreen />} />
         <Route path="/eventos/:eventId" element={<DetalleEvento />} />

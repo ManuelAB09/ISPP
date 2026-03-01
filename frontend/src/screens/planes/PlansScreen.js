@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { subscriptionsApi } from "../../api/subscriptions.api";
 import Header from "../../components/Header/Header";
 import CheckoutModal from "../../components/plans/CheckoutModal";
@@ -20,6 +21,7 @@ const DEFAULT_PLANS = [
 ];
 
 export default function PlansScreen() {
+  const navigate = useNavigate();
   const [plans, setPlans] = useState(DEFAULT_PLANS);
   const [myPlan, setMyPlan] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -274,6 +276,36 @@ export default function PlansScreen() {
               ) : (
                 <div>No hay planes disponibles</div>
               )}
+            </div>
+          </section>
+
+          {/* ── Institutional plans banner ─────────────── */}
+          <section className="instBannerSection">
+            <div className="instBannerContent">
+              <div className="instBannerLeft">
+                <div className="instBannerIcon">🏛️</div>
+                <div>
+                  <h2 className="instBannerTitle">¿Eres una institución educativa?</h2>
+                  <p className="instBannerDesc">
+                    Ofrecemos planes especiales para academias, universidades y centros
+                    educativos, con gestión de grupos, múltiples administradores y
+                    estadísticas avanzadas. También disponemos de precios reducidos para
+                    centros públicos y concertados.
+                  </p>
+                  <div className="instBannerFeatures">
+                    <span>👥 Múltiples admins</span>
+                    <span>📊 Estadísticas avanzadas</span>
+                    <span>🏫 Gestión de grupos</span>
+                    <span>💜 Precios especiales</span>
+                  </div>
+                </div>
+              </div>
+              <button
+                className="instBannerBtn"
+                onClick={() => navigate("/planes/instituciones")}
+              >
+                Ver planes institucionales →
+              </button>
             </div>
           </section>
 
