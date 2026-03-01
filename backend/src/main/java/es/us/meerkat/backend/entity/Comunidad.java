@@ -52,13 +52,17 @@ public class Comunidad {
 
     private String imagenUrl;
 
-    @Builder.Default private Integer maxMiembros = 50;
+    @Builder.Default
+    private Integer maxMiembros = 50;
 
-    @ManyToOne private Usuario creador;
+    @ManyToOne
+    private Usuario creador;
 
-    @Builder.Default private LocalDateTime createdAt = LocalDateTime.now();
+    @Builder.Default
+    private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Builder.Default private LocalDateTime updatedAt = LocalDateTime.now();
+    @Builder.Default
+    private LocalDateTime updatedAt = LocalDateTime.now();
 
     @OneToMany(mappedBy = "comunidad", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MiembroComunidad> miembros;
@@ -68,4 +72,7 @@ public class Comunidad {
 
     @OneToMany(mappedBy = "comunidad", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Categoria> categorias;
+
+    @OneToMany(mappedBy = "comunidad", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MensajeComunidad> mensajes;
 }
