@@ -117,6 +117,44 @@
   margin-top: 1rem;
 }
 
+/* Membership actions */
+.cd-membership-actions {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.cd-membership-error {
+  color: #dc3545;
+  font-size: 0.8rem;
+}
+
+.cd-btn-join {
+  background-color: #6B73A1;
+  color: white;
+  box-shadow: 0 2px 6px rgba(107, 115, 161, 0.3);
+}
+
+.cd-btn-join:hover:not(:disabled) {
+  background-color: #525983;
+}
+
+.cd-btn-leave {
+  background: white;
+  color: #dc3545;
+  border: 1.5px solid #dc3545 !important;
+}
+
+.cd-btn-leave:hover:not(:disabled) {
+  background-color: #fff0f0;
+}
+
+.cd-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .cd-events-header {
   display: flex;
   justify-content: space-between;

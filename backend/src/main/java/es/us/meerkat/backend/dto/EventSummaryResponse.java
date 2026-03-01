@@ -31,7 +31,7 @@ public class EventSummaryResponse {
     private LocalDateTime fechaHora;
 
     /** Ubicación del evento. */
-    private String ubicacion;
+    private UbicacionResponse ubicacion;
 
     /** Aforo máximo del evento. */
     private Integer aforo;

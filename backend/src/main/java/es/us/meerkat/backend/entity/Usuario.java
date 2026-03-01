@@ -54,6 +54,15 @@ public class Usuario {
     /** URL de la foto de perfil del usuario. */
     private String foto;
 
+    /** Universidad del usuario. */
+    private String universidad;
+
+    /** Grado del usuario. */
+    private String grado;
+
+    /** Ubicación del usuario. */
+    private String ubicacion;
+
     /** Breve biografía del usuario. */
     private String bio;
 

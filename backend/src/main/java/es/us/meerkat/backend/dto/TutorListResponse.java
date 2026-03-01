@@ -13,7 +13,7 @@ import lombok.Data;
 public class TutorListResponse {
 
     @Schema(description = "Lista de tutores")
-    private List<TutorResponse> content;
+    private List<TutorProfileResponse> content;
 
     @Schema(description = "Información de paginación")
     private PageInfo page;

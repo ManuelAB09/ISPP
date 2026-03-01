@@ -4,11 +4,12 @@ import PersonIcon from '../icons/Person';
 import { communitiesApi } from '../../api/communities.api';
 import './ComunidadCard.css';
 
-export default function ComunidadCard({ comunidad }) {
+export default function ComunidadCard({ comunidad, onJoined }) {
     const navigate = useNavigate();
     const [joining, setJoining] = useState(false);
-    const [joined, setJoined] = useState(false);
+    const [joined, setJoined] = useState(comunidad.esMiembro || false);
     const [error, setError] = useState(null);
+    const currentUserId = localStorage.getItem('userId');
 
     const handleJoin = async (e) => {
         e.stopPropagation();
@@ -22,9 +23,13 @@ export default function ComunidadCard({ comunidad }) {
         try {
             await communitiesApi.join(comunidad.id);
             setJoined(true);
+            if (onJoined) onJoined(comunidad.id);
         } catch (err) {
             if (err.message?.includes('401') || err.status === 401) {
                 navigate('/login');
+            } else if (err.message?.includes('409') || err.status === 409) {
+                // Already a member
+                setJoined(true);
             } else {
                 setError('Error al unirse');
             }
@@ -55,13 +60,28 @@ export default function ComunidadCard({ comunidad }) {
                         <p>{comunidad.miembrosActuales || 0}/ <span>{comunidad.maxMiembros || 0}</span></p>
                     </div>
                     {error && <span style={{color:'red',fontSize:'0.8rem'}}>{error}</span>}
-                    <button
-                        className="join-button"
-                        onClick={handleJoin}
-                        disabled={joining || joined}
-                    >
-                        {joined ? 'Unido' : joining ? 'Uniéndose...' : 'Unirse'}
-                    </button>
+                    {currentUserId && !joined && (
+                        <button
+                            className="join-button"
+                            onClick={handleJoin}
+                            disabled={joining}
+                        >
+                            {joining ? 'Uniéndose...' : 'Unirse'}
+                        </button>
+                    )}
+                    {joined && (
+                        <button className="join-button joined" disabled>
+                            ✓ Unido
+                        </button>
+                    )}
+                    {!currentUserId && (
+                        <button
+                            className="join-button"
+                            onClick={(e) => { e.stopPropagation(); navigate('/login'); }}
+                        >
+                            Unirse
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

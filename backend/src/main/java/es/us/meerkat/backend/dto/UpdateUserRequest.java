@@ -22,6 +22,15 @@ public class UpdateUserRequest {
     /** Nueva biografía. */
     private String bio;
 
+    /** Universidad del usuario. */
+    private String universidad;
+
+    /** Grado del usuario. */
+    private String grado;
+
+    /** Ubicación del usuario. */
+    private String ubicacion;
+
     /** Nueva lista de intereses. */
     private List<String> intereses;
 }

@@ -6,8 +6,9 @@ import Comunidades from './screens/comunidades/Comunidades';
 import CommunityDetail from './screens/comunidades/CommunityDetail';
 import CrearComunidad from './screens/comunidades/CrearComunidad';
 import Home from './screens/home/Home';
-import CreateEvent from './screens/event/CreateEvent';
-import EventDetail from './screens/event/EventDetail';
+import CrearEvento from './screens/evento/CrearEvento';
+import DetalleEvento from './screens/evento/DetalleEvento';
+import EventosMapaScreen from './screens/evento/EventosMapaScreen';
 import Register from './screens/auth/Register';
 import Login from './screens/auth/Login';
 import PlansScreen from './screens/planes/PlansScreen';
@@ -16,6 +17,8 @@ import VerifiedTeachers from './screens/verifiedTeachers/VerifiedTeachers';
 import CrearUbicacionScreen from './screens/ubicaciones/CrearUbicacionScreen';
 import MyProfile from './screens/myProfile/MyProfile';
 import MisPagos from './screens/pagos/MisPagos';
+import Profile from './screens/myProfile/Profile';
+
 
 function App() {
   let ownerRoutes = <></>
@@ -35,12 +38,13 @@ function App() {
         <Route path="/profesores" element={<VerifiedTeachers />} />
         <Route path="/profesores/nuevo" element={<TeacherProfile />} />
         <Route path="/profesores/:id" element={<TeacherProfile />} />
-        <Route path="/create-event/new" element={<CreateEvent />} />
-        <Route path="/create-event/:id" element={<CreateEvent />} />
+        <Route path="/crear-evento/new" element={<CrearEvento />} />
+        <Route path="/crear-evento/:id" element={<CrearEvento />} />
         <Route path="/planes" element={<PlansScreen />} />
         <Route path="/pagos" element={<MisPagos />} />
         <Route path="/crear-ubicacion" element={<CrearUbicacionScreen />} />
-        <Route path="/eventos/:eventId" element={<EventDetail />} />
+        <Route path="/eventos/:eventId" element={<DetalleEvento />} />
+        <Route path="/eventos-mapa" element={<EventosMapaScreen />} />
       </>
     )
   }
@@ -56,7 +60,8 @@ function App() {
         <Route path="/crear-ubicacion" element={<CrearUbicacionScreen />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/perfil" element={<MyProfile />} />
+        <Route path="/perfil" element={<Profile />} />
+        <Route path="/perfil/:userId" element={<Profile />} />
         {ownerRoutes}
       </Routes>
     </AuthProvider>

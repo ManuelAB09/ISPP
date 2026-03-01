@@ -77,4 +77,15 @@
         font-weight: bold;
         font-size: 14px;
     }
+
+    .join-button.joined {
+        background-color: #4a9d6e;
+        cursor: default;
+        opacity: 0.9;
+    }
+
+    .join-button:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
 }

@@ -5,15 +5,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import './Register.css';
 import studyShareLogo from '../../static/images/MeerKatters_logo.png';
 
-const ACADEMIC_INTERESTS = [
-  'Ingeniería Software',
-  'Diseño',
-  'Física',
-  'Historia',
-  'Negocios',
-  'Medicina',
-];
-
 const Register = () => {
   const navigate = useNavigate();
   const { register, error: authError, clearError, isAuthenticated, loading } = useAuth();
@@ -22,11 +13,9 @@ const Register = () => {
     fullName: '',
     email: '',
     password: '',
-    interests: [],
     acceptTerms: false,
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [showMoreInterests, setShowMoreInterests] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -58,15 +47,6 @@ const Register = () => {
     // Limpiar errores al escribir
     if (error) setError('');
     if (authError) clearError();
-  };
-
-  const toggleInterest = (interest) => {
-    setFormData((prev) => ({
-      ...prev,
-      interests: prev.interests.includes(interest)
-        ? prev.interests.filter((i) => i !== interest)
-        : [...prev.interests, interest],
-    }));
   };
 
   const handleSubmit = async (e) => {
@@ -199,31 +179,6 @@ const Register = () => {
                       <circle cx="12" cy="12" r="3"/>
                     </svg>
                   )}
-                </button>
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Intereses académicos</label>
-              <div className="interests-container">
-                {ACADEMIC_INTERESTS.map((interest) => (
-                  <button
-                    key={interest}
-                    type="button"
-                    className={`interest-chip ${
-                      formData.interests.includes(interest) ? 'selected' : ''
-                    }`}
-                    onClick={() => toggleInterest(interest)}
-                  >
-                    {interest}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  className="interest-chip more-chip"
-                  onClick={() => setShowMoreInterests(!showMoreInterests)}
-                >
-                  + Más
                 </button>
               </div>
             </div>

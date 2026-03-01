@@ -1,5 +1,17 @@
 // src/api/client.js
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+// Compute base URL with a safe fallback. during development the
+// environment variable may accidentally be set to ":8080" or another
+// invalid value (see recent console errors).  In that case we ignore it
+// and default to localhost so the frontend keeps working without any
+// manual intervention.
+const rawUrl = process.env.REACT_APP_API_URL;
+const API_BASE_URL =
+  rawUrl && rawUrl.trim() && rawUrl.trim() !== ':8080'
+    ? rawUrl
+    : 'http://localhost:8080';
+
+// Helpful diagnostic when debugging networking issues:
+console.log('API_BASE_URL =', API_BASE_URL);
 
 class ApiClient {
   constructor(baseUrl) {
@@ -16,8 +28,10 @@ class ApiClient {
       'Content-Type': 'application/json',
     };
 
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
+    // Always read the freshest token available
+    const currentToken = this.token || localStorage.getItem('accessToken');
+    if (currentToken) {
+      headers['Authorization'] = `Bearer ${currentToken}`;
     }
 
     const options = {

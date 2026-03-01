@@ -1,4 +1,13 @@
 import axiosInstance from './axiosConfig';
+/**
+ * Lista eventos visibles en el mapa
+ * GET /events/map
+ */
+export const listMapEvents = async () => {
+  const response = await axiosInstance.get('/api/v1/events/map');
+  return response.data;
+};
+
 
 // Helper para obtener el userId del usuario autenticado
 const getUserId = () => localStorage.getItem('userId');

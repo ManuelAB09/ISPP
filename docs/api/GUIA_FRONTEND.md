@@ -627,12 +627,17 @@ REACT_APP_API_URL=http://127.0.0.1:4010
 
 ```env
 REACT_APP_API_URL=https://meerkatters.azurewebsites.net
+
+> ⚠️ Si la variable se deja en blanco o se establece en un valor inválido
+> (por ejemplo solo ":8080"), el cliente la ignorará y usará
+> `http://localhost:8080` por defecto gracias a una comprobación añadida
+> en `src/api/client.js`. Esto evita los errores `net::ERR_NAME_NOT_RESOLVED`.
 ```
 
 ### .env.local (backend local)
 
 ```env
-REACT_APP_API_URL=http://localhost:8080
+REACT_APP_API_URL=http://localhost:8080   # suele ser la opción más segura, evita asignar solo ":8080" por error
 ```
 
 > **Nota:** Usa `REACT_APP_` como prefijo (requerido por Create React App).

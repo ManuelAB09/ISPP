@@ -26,6 +26,15 @@ public class UserPublicResponse {
     /** Biografía del usuario. */
     private String bio;
 
+    /** Universidad del usuario. */
+    private String universidad;
+
+    /** Grado del usuario. */
+    private String grado;
+
+    /** Ubicación del usuario. */
+    private String ubicacion;
+
     /** Lista de intereses del usuario. */
     private List<String> intereses;
 

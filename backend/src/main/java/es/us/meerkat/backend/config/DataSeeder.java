@@ -47,6 +47,7 @@ public class DataSeeder {
     @Profile("!staging & !production")
     CommandLineRunner seedDatabase(
             final UsuarioRepository usuarioRepo,
+            final TutorRepository tutorRepo,
             final UbicacionRepository ubicacionRepo,
             final ComunidadRepository comunidadRepo,
             final MiembroComunidadRepository miembroRepo,
@@ -148,6 +149,7 @@ public class DataSeeder {
 
             List<Usuario> usuarios = usuarioRepo.saveAll(List.of(u1, u2, u3, u4, u5, u6, u7, u8));
 
+
             // ============================
             // 2. UBICACIONES
             // ============================
@@ -157,6 +159,9 @@ public class DataSeeder {
                             .direccion("Av. Reina Mercedes s/n, Sevilla")
                             .latitud(37.3588)
                             .longitud(-5.9868)
+                            .tipo("biblioteca")
+                            .coste("gratis")
+
                             .build();
 
             Ubicacion ub2 =
@@ -165,6 +170,9 @@ public class DataSeeder {
                             .direccion("Av. Reina Mercedes s/n, Sevilla")
                             .latitud(37.3582)
                             .longitud(-5.9872)
+                            .tipo("aula")
+                            .coste("gratis")
+
                             .build();
 
             Ubicacion ub3 =
@@ -173,6 +181,8 @@ public class DataSeeder {
                             .direccion("Av. Reina Mercedes s/n, Sevilla")
                             .latitud(37.3585)
                             .longitud(-5.9865)
+                            .tipo("auditorio")
+                            .coste("gratis")
                             .build();
 
             Ubicacion ub4 =
@@ -181,6 +191,8 @@ public class DataSeeder {
                             .direccion("Av. Reina Mercedes s/n, Sevilla")
                             .latitud(37.3580)
                             .longitud(-5.9875)
+                            .tipo("cafeteria")
+                            .coste("de pago")
                             .build();
 
             Ubicacion ub5 =
@@ -189,6 +201,9 @@ public class DataSeeder {
                             .direccion("C/ San Fernando 4, Sevilla")
                             .latitud(37.3770)
                             .longitud(-5.9870)
+                            .tipo("biblioteca")
+                            .coste("gratis")
+
                             .build();
 
             List<Ubicacion> ubicaciones = ubicacionRepo.saveAll(List.of(ub1, ub2, ub3, ub4, ub5));
@@ -468,7 +483,7 @@ public class DataSeeder {
             e2.setQueLlevar("Node.js instalado, editor de código");
             e2.setEsVirtual(true);
             e2.setEnlaceVirtual("https://meet.google.com/abc-defg-hij");
-            e2.setVisibleMapa(false);
+            e2.setVisibleMapa(true);
             e2.setCancelado(false);
             e2.setPrivado(false);
             e2.setCreador(u3);
