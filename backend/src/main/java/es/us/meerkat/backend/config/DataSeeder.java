@@ -54,7 +54,6 @@ public class DataSeeder {
             final CategoriaRepository categoriaRepo,
             final EventoRepository eventoRepo,
             final AsistenciaEventoRepository asistenciaRepo,
-            final TutorRepository tutorRepo,
             final InstitutionRepository institutionRepo,
             final BCryptPasswordEncoder passwordEncoder) {
 
