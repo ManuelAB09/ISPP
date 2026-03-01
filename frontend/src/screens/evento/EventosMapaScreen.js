@@ -46,7 +46,25 @@ const getCityFromAddress = (address = {}) => {
 
 const getCoordsKey = (lat, lon) => `${Number(lat).toFixed(6)},${Number(lon).toFixed(6)}`;
 
-// 👇 Componente que recentra el mapa según eventos visibles
+const getEventStartDate = (ev) => {
+  const raw = ev?.fechaHora || ev?.fechaInicio;
+  if (!raw) return null;
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
+
+const isWithinDateRange = (eventDate, fromStr, toStr) => {
+  if (!eventDate) return false;
+  if (!fromStr && !toStr) return true;
+
+  const from = fromStr ? new Date(`${fromStr}T00:00:00`) : null;
+  const to = toStr ? new Date(`${toStr}T23:59:59.999`) : null;
+
+  if (from && eventDate < from) return false;
+  if (to && eventDate > to) return false;
+  return true;
+};
+
 function AutoFitMapToEvents({ eventos, defaultCenter, defaultZoom = 13 }) {
   const map = useMap();
 
@@ -85,6 +103,9 @@ const EventosMapaScreen = () => {
 
   const [selectedCity, setSelectedCity] = useState('all');
   const [cityByCoords, setCityByCoords] = useState({});
+
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   const navigate = useNavigate();
 
@@ -181,18 +202,30 @@ const EventosMapaScreen = () => {
     return [...set].sort((a, b) => a.localeCompare(b, 'es'));
   }, [eventos, cityByCoords]);
 
+  const hasInvalidDateRange = useMemo(
+    () => dateFrom && dateTo && new Date(dateFrom) > new Date(dateTo),
+    [dateFrom, dateTo]
+  );
+
   const eventosFiltrados = useMemo(() => {
-    if (selectedCity === 'all') return eventos;
+    if (hasInvalidDateRange) return [];
 
     return eventos.filter((ev) => {
-      const lat = ev?.ubicacion?.latitud;
-      const lon = ev?.ubicacion?.longitud;
-      if (lat == null || lon == null) return false;
+      if (selectedCity !== 'all') {
+        const lat = ev?.ubicacion?.latitud;
+        const lon = ev?.ubicacion?.longitud;
+        if (lat == null || lon == null) return false;
 
-      const key = getCoordsKey(lat, lon);
-      return cityByCoords[key] === selectedCity;
+        const key = getCoordsKey(lat, lon);
+        if (cityByCoords[key] !== selectedCity) return false;
+      }
+
+      const eventStart = getEventStartDate(ev);
+      if (!isWithinDateRange(eventStart, dateFrom, dateTo)) return false;
+
+      return true;
     });
-  }, [eventos, cityByCoords, selectedCity]);
+  }, [eventos, cityByCoords, selectedCity, dateFrom, dateTo, hasInvalidDateRange]);
 
   const ubicacionEventos = {};
   eventosFiltrados.forEach((ev) => {
@@ -226,7 +259,7 @@ const EventosMapaScreen = () => {
               padding: '8px 10px',
               borderRadius: 8,
               border: '1px solid #d1d5db',
-              background: 'white'
+              background: 'white',
             }}
           >
             <option value="all">Todas las ciudades</option>
@@ -240,6 +273,64 @@ const EventosMapaScreen = () => {
           {cityLoading && <span style={{ fontSize: 13, color: '#666' }}>Resolviendo ciudades…</span>}
         </div>
 
+        <div style={{ marginBottom: 14, display: 'flex', alignItems: 'end', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <label htmlFor="dateFrom" style={{ fontWeight: 600, color: '#2E3559' }}>
+              Desde
+            </label>
+            <input
+              id="dateFrom"
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              style={{
+                minWidth: 170,
+                padding: '8px 10px',
+                borderRadius: 8,
+                border: '1px solid #d1d5db',
+                background: 'white',
+              }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <label htmlFor="dateTo" style={{ fontWeight: 600, color: '#2E3559' }}>
+              Hasta
+            </label>
+            <input
+              id="dateTo"
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              style={{
+                minWidth: 170,
+                padding: '8px 10px',
+                borderRadius: 8,
+                border: '1px solid #d1d5db',
+                background: 'white',
+              }}
+            />
+          </div>
+
+          <button
+            type="button"
+            className="btn btn-outline"
+            style={{ height: 38, padding: '0 14px' }}
+            onClick={() => {
+              setDateFrom('');
+              setDateTo('');
+            }}
+          >
+            Limpiar fechas
+          </button>
+        </div>
+
+        {hasInvalidDateRange && (
+          <div style={{ color: '#dc3545', marginBottom: 10 }}>
+            El rango de fechas no es válido: "Desde" no puede ser posterior a "Hasta".
+          </div>
+        )}
+
         {loading && <div>Cargando eventos...</div>}
         {error && <div style={{ color: 'red' }}>{error}</div>}
 
@@ -251,7 +342,7 @@ const EventosMapaScreen = () => {
             borderRadius: 10,
             overflow: 'hidden',
             border: '1px solid #e0e0e0',
-            boxShadow: '0 2px 8px #0001'
+            boxShadow: '0 2px 8px #0001',
           }}
         >
           <MapContainer center={defaultPosition} zoom={13} style={{ height: '100%', width: '100%' }}>
@@ -260,7 +351,6 @@ const EventosMapaScreen = () => {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
 
-            {/* 👇 Recentrado automático cuando cambias ciudad */}
             <AutoFitMapToEvents eventos={eventosFiltrados} defaultCenter={defaultPosition} defaultZoom={13} />
 
             {eventosFiltrados.map((ev) => {
@@ -286,15 +376,11 @@ const EventosMapaScreen = () => {
                 <Marker key={ev.id} position={[markerLat, markerLon]} icon={eventIconRed}>
                   <Popup>
                     <div style={{ minWidth: 180 }}>
-                      <div style={{ fontWeight: 700, color: '#b71c1c', fontSize: 17 }}>
-                        {ev.titulo}
-                      </div>
+                      <div style={{ fontWeight: 700, color: '#b71c1c', fontSize: 17 }}>{ev.titulo}</div>
                       <div style={{ fontSize: 14, color: '#333', marginBottom: 4 }}>
                         {ev.ubicacion?.nombre || 'Ubicación'}
                       </div>
-                      <div style={{ fontSize: 13, color: '#555', marginBottom: 6 }}>
-                        {ev.descripcion}
-                      </div>
+                      <div style={{ fontSize: 13, color: '#555', marginBottom: 6 }}>{ev.descripcion}</div>
                       <button className="btn btn-primary" onClick={() => navigate(`/eventos/${ev.id}`)}>
                         Ver evento
                       </button>
@@ -308,12 +394,12 @@ const EventosMapaScreen = () => {
 
         {eventosFiltrados.length === 0 && !loading && (
           <div style={{ color: '#888', marginTop: 18, textAlign: 'center' }}>
-            No hay eventos para la ciudad seleccionada.
+            No hay eventos para los filtros seleccionados.
           </div>
         )}
       </div>
     </>
-  );
+);
 };
 
 export default EventosMapaScreen;
