@@ -15,9 +15,7 @@ import es.us.meerkat.backend.repository.MensajeComunidadRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
-/**
- * Servicio para la gestión de mensajes en chats de comunidades.
- */
+/** Servicio para la gestión de mensajes en chats de comunidades. */
 @Service
 @RequiredArgsConstructor
 public class MensajeComunidadService {
@@ -30,26 +28,31 @@ public class MensajeComunidadService {
      * Envía un mensaje en el chat de una comunidad.
      *
      * @param usuarioId ID del usuario que envía el mensaje.
-     * @param request   datos del mensaje (comunidadId, contenido).
+     * @param request datos del mensaje (comunidadId, contenido).
      * @return respuesta con la información del mensaje guardado.
      * @throws RuntimeException si el usuario o comunidad no existen.
      */
     @Transactional
-    public MensajeComunidadResponse enviarMensaje(final Long usuarioId,
-            final EnviarMensajeComunidadRequest request) {
+    public MensajeComunidadResponse enviarMensaje(
+            final Long usuarioId, final EnviarMensajeComunidadRequest request) {
 
-        final Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        final Usuario usuario =
+                usuarioRepository
+                        .findById(usuarioId)
+                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        final Comunidad comunidad = comunidadRepository.findById(request.getComunidadId())
-                .orElseThrow(() -> new RuntimeException("Comunidad no encontrada"));
+        final Comunidad comunidad =
+                comunidadRepository
+                        .findById(request.getComunidadId())
+                        .orElseThrow(() -> new RuntimeException("Comunidad no encontrada"));
 
-        final MensajeComunidad mensaje = MensajeComunidad.builder()
-                .contenido(request.getContenido())
-                .usuario(usuario)
-                .comunidad(comunidad)
-                .editado(false)
-                .build();
+        final MensajeComunidad mensaje =
+                MensajeComunidad.builder()
+                        .contenido(request.getContenido())
+                        .usuario(usuario)
+                        .comunidad(comunidad)
+                        .editado(false)
+                        .build();
 
         final MensajeComunidad saved = mensajeComunidadRepository.save(mensaje);
         return mapToResponse(saved);
@@ -64,8 +67,8 @@ public class MensajeComunidadService {
     @Transactional(readOnly = true)
     public List<MensajeComunidadResponse> obtenerHistorial(final Long comunidadId) {
 
-        final List<MensajeComunidad> mensajes = mensajeComunidadRepository
-                .findByComunidadIdOrderByCreatedAtAsc(comunidadId);
+        final List<MensajeComunidad> mensajes =
+                mensajeComunidadRepository.findByComunidadIdOrderByCreatedAtAsc(comunidadId);
 
         return mensajes.stream().map(this::mapToResponse).toList();
     }
@@ -73,18 +76,20 @@ public class MensajeComunidadService {
     /**
      * Edita un mensaje de comunidad (solo el autor puede hacerlo).
      *
-     * @param usuarioId      ID del usuario que intenta editar.
-     * @param mensajeId      ID del mensaje a editar.
+     * @param usuarioId ID del usuario que intenta editar.
+     * @param mensajeId ID del mensaje a editar.
      * @param nuevoContenido nuevo contenido del mensaje.
      * @return respuesta con la información del mensaje actualizado.
      * @throws RuntimeException si el mensaje no existe o el usuario no es el autor.
      */
     @Transactional
-    public MensajeComunidadResponse editarMensaje(final Long usuarioId, final Long mensajeId,
-            final String nuevoContenido) {
+    public MensajeComunidadResponse editarMensaje(
+            final Long usuarioId, final Long mensajeId, final String nuevoContenido) {
 
-        final MensajeComunidad mensaje = mensajeComunidadRepository.findById(mensajeId)
-                .orElseThrow(() -> new RuntimeException("Mensaje no encontrado"));
+        final MensajeComunidad mensaje =
+                mensajeComunidadRepository
+                        .findById(mensajeId)
+                        .orElseThrow(() -> new RuntimeException("Mensaje no encontrado"));
 
         if (!mensaje.getUsuario().getId().equals(usuarioId)) {
             throw new RuntimeException("No tienes permiso para editar este mensaje");
@@ -105,8 +110,10 @@ public class MensajeComunidadService {
     @Transactional
     public void eliminarMensaje(final Long usuarioId, final Long mensajeId) {
 
-        final MensajeComunidad mensaje = mensajeComunidadRepository.findById(mensajeId)
-                .orElseThrow(() -> new RuntimeException("Mensaje no encontrado"));
+        final MensajeComunidad mensaje =
+                mensajeComunidadRepository
+                        .findById(mensajeId)
+                        .orElseThrow(() -> new RuntimeException("Mensaje no encontrado"));
 
         if (!mensaje.getUsuario().getId().equals(usuarioId)) {
             throw new RuntimeException("No tienes permiso para eliminar este mensaje");

@@ -1,8 +1,8 @@
 package es.us.meerkat.backend.config;
 
 import org.springframework.context.annotation.Configuration;
-import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.messaging.simp.config.ChannelRegistration;
+import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
@@ -14,9 +14,7 @@ import lombok.RequiredArgsConstructor;
 /**
  * Configuración del servidor WebSocket con STOMP.
  *
- * <p>
- * Expone el endpoint `/ws` para conexiones WebSocket y configura el broker en
- * memoria.
+ * <p>Expone el endpoint `/ws` para conexiones WebSocket y configura el broker en memoria.
  */
 @Configuration
 @EnableWebSocketMessageBroker
@@ -33,7 +31,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(final StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOrigins("http://localhost:3000", "http://localhost:3001", "http://localhost:8080")
+                .setAllowedOrigins(
+                        "http://localhost:3000", "http://localhost:3001", "http://localhost:8080")
                 .withSockJS()
                 .setInterceptors();
     }
@@ -64,8 +63,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     }
 
     /**
-     * Registra el interceptor de autenticación para validar JWT en el handshake
-     * STOMP.
+     * Registra el interceptor de autenticación para validar JWT en el handshake STOMP.
      *
      * @param registration registro de canales de entrada.
      */

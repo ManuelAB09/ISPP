@@ -2,9 +2,7 @@ package es.us.meerkat.backend.dto;
 
 import lombok.Data;
 
-/**
- * DTO para enviar un mensaje en el chat de una comunidad.
- */
+/** DTO para enviar un mensaje en el chat de una comunidad. */
 @Data
 public class EnviarMensajeComunidadRequest {
 

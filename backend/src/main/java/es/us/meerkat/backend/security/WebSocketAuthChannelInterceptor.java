@@ -16,9 +16,7 @@ import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
-/**
- * Interceptor que valida el token JWT en el handshake WebSocket STOMP.
- */
+/** Interceptor que valida el token JWT en el handshake WebSocket STOMP. */
 @Component
 @RequiredArgsConstructor
 public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
@@ -60,10 +58,11 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
                 final Usuario usuario = usuarioRepository.findByEmail(email).orElse(null);
 
                 if (usuario != null) {
-                    final UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            usuario,
-                            null,
-                            List.of(new SimpleGrantedAuthority("ROLE_USER")));
+                    final UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(
+                                    usuario,
+                                    null,
+                                    List.of(new SimpleGrantedAuthority("ROLE_USER")));
 
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                     accessor.setUser(authToken);

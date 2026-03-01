@@ -4,8 +4,8 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,9 +21,7 @@ import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.MensajeComunidadService;
 import lombok.RequiredArgsConstructor;
 
-/**
- * Controlador REST para gestionar mensajes de comunidades.
- */
+/** Controlador REST para gestionar mensajes de comunidades. */
 @RestController
 @RequestMapping("/api/v1/comunidades")
 @RequiredArgsConstructor
@@ -36,8 +34,8 @@ public class MensajeComunidadController {
      * Envía un mensaje en el chat de una comunidad.
      *
      * @param comunidadId ID de la comunidad.
-     * @param usuario     usuario autenticado.
-     * @param request     datos del mensaje.
+     * @param usuario usuario autenticado.
+     * @param request datos del mensaje.
      * @return respuesta con el mensaje guardado.
      */
     @PostMapping("/{comunidadId}/mensajes")
@@ -47,7 +45,8 @@ public class MensajeComunidadController {
             @RequestBody final EnviarMensajeComunidadRequest request) {
         try {
             request.setComunidadId(comunidadId);
-            final MensajeComunidadResponse response = mensajeComunidadService.enviarMensaje(usuario.getId(), request);
+            final MensajeComunidadResponse response =
+                    mensajeComunidadService.enviarMensaje(usuario.getId(), request);
             messagingTemplate.convertAndSend("/topic/community." + comunidadId, response);
             return ResponseEntity.ok(response);
         } catch (final Exception e) {
@@ -65,7 +64,8 @@ public class MensajeComunidadController {
     @GetMapping("/{comunidadId}/mensajes")
     public ResponseEntity<?> obtenerHistorial(@PathVariable final Long comunidadId) {
         try {
-            final List<MensajeComunidadResponse> mensajes = mensajeComunidadService.obtenerHistorial(comunidadId);
+            final List<MensajeComunidadResponse> mensajes =
+                    mensajeComunidadService.obtenerHistorial(comunidadId);
             return ResponseEntity.ok(mensajes);
         } catch (final Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -77,9 +77,9 @@ public class MensajeComunidadController {
      * Edita un mensaje de comunidad.
      *
      * @param comunidadId ID de la comunidad.
-     * @param mensajeId   ID del mensaje a editar.
-     * @param usuario     usuario autenticado.
-     * @param request     con el nuevo contenido.
+     * @param mensajeId ID del mensaje a editar.
+     * @param usuario usuario autenticado.
+     * @param request con el nuevo contenido.
      * @return respuesta con el mensaje actualizado.
      */
     @PutMapping("/{comunidadId}/mensajes/{mensajeId}")
@@ -89,8 +89,9 @@ public class MensajeComunidadController {
             @AuthenticationPrincipal final Usuario usuario,
             @RequestBody final EnviarMensajeComunidadRequest request) {
         try {
-            final MensajeComunidadResponse response = mensajeComunidadService.editarMensaje(
-                    usuario.getId(), mensajeId, request.getContenido());
+            final MensajeComunidadResponse response =
+                    mensajeComunidadService.editarMensaje(
+                            usuario.getId(), mensajeId, request.getContenido());
             return ResponseEntity.ok(response);
         } catch (final Exception e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -102,8 +103,8 @@ public class MensajeComunidadController {
      * Elimina un mensaje de comunidad.
      *
      * @param comunidadId ID de la comunidad.
-     * @param mensajeId   ID del mensaje a eliminar.
-     * @param usuario     usuario autenticado.
+     * @param mensajeId ID del mensaje a eliminar.
+     * @param usuario usuario autenticado.
      * @return respuesta de éxito o error.
      */
     @DeleteMapping("/{comunidadId}/mensajes/{mensajeId}")

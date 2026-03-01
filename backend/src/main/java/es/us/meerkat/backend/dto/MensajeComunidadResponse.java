@@ -5,9 +5,7 @@ import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Data;
 
-/**
- * DTO para responder con información de un mensaje de comunidad.
- */
+/** DTO para responder con información de un mensaje de comunidad. */
 @Data
 @Builder
 public class MensajeComunidadResponse {

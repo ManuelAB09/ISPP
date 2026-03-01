@@ -10,16 +10,16 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
-import es.us.meerkat.backend.dto.EnviarMensajeRequest;
 import es.us.meerkat.backend.dto.EnviarMensajeComunidadRequest;
-import es.us.meerkat.backend.dto.MensajeResponse;
+import es.us.meerkat.backend.dto.EnviarMensajeRequest;
 import es.us.meerkat.backend.dto.MensajeComunidadResponse;
+import es.us.meerkat.backend.dto.MensajeResponse;
 import es.us.meerkat.backend.entity.Mensaje;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.MensajeRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
-import es.us.meerkat.backend.service.MensajeService;
 import es.us.meerkat.backend.service.MensajeComunidadService;
+import es.us.meerkat.backend.service.MensajeService;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -61,16 +61,24 @@ public class SocketChatController {
                                                 final Usuario otherUser = msg.getEmisor().getId().equals(userId)
                                                                 ? msg.getReceptor()
                                                                 : msg.getEmisor();
-                                                conversationMap.put(otherId, new HashMap<>(Map.of(
-                                                                "userId", otherId,
-                                                                "userName", otherUser.getNombre(),
-                                                                "lastMessage", msg.getContenido(),
-                                                                "lastMessageTime", msg.getCreatedAt())));
+                                                conversationMap.put(
+                                                                otherId,
+                                                                new HashMap<>(
+                                                                                Map.of(
+                                                                                                "userId", otherId,
+                                                                                                "userName",
+                                                                                                otherUser.getNombre(),
+                                                                                                "lastMessage",
+                                                                                                msg.getContenido(),
+                                                                                                "lastMessageTime",
+                                                                                                msg.getCreatedAt())));
                                         }
                                 }
                         }
 
-                        broker.convertAndSendToUser(getUserDestinationKey(usuario), "/queue/conversations",
+                        broker.convertAndSendToUser(
+                                        getUserDestinationKey(usuario),
+                                        "/queue/conversations",
                                         conversationMap.values());
                 } catch (final Exception e) {
                         sendError(principal, "conversations_error", e.getMessage());
@@ -89,7 +97,8 @@ public class SocketChatController {
                         final Usuario usuario = getAuthenticatedUser(principal);
 
                         final MensajeResponse response = mensajeService.enviarMensaje(usuario.getId(), request);
-                        final Usuario receptor = usuarioRepository.findById(response.getReceptorId())
+                        final Usuario receptor = usuarioRepository
+                                        .findById(response.getReceptorId())
                                         .orElseThrow(() -> new RuntimeException("Receptor no encontrado"));
 
                         broker.convertAndSendToUser(getUserDestinationKey(receptor), "/queue/dm", response);
@@ -112,7 +121,9 @@ public class SocketChatController {
                         final Long otherUserId = payload.get("userId");
 
                         if (otherUserId == null) {
-                                broker.convertAndSendToUser(getUserDestinationKey(usuario), "/queue/error",
+                                broker.convertAndSendToUser(
+                                                getUserDestinationKey(usuario),
+                                                "/queue/error",
                                                 Map.of("code", "dm_history_missing", "message", "Missing userId"));
                                 return;
                         }
@@ -120,7 +131,8 @@ public class SocketChatController {
                         final List<MensajeResponse> history = mensajeService
                                         .obtenerConversacionConUsuario(usuario.getId(), otherUserId);
 
-                        broker.convertAndSendToUser(getUserDestinationKey(usuario), "/queue/dm_history", history);
+                        broker.convertAndSendToUser(
+                                        getUserDestinationKey(usuario), "/queue/dm_history", history);
                 } catch (final Exception e) {
                         sendError(principal, "dm_history_failed", e.getMessage());
                 }
@@ -139,16 +151,21 @@ public class SocketChatController {
                         final Long messageId = payload.get("messageId");
 
                         if (messageId == null) {
-                                broker.convertAndSendToUser(getUserDestinationKey(usuario), "/queue/error",
+                                broker.convertAndSendToUser(
+                                                getUserDestinationKey(usuario),
+                                                "/queue/error",
                                                 Map.of("code", "delete_missing", "message", "Missing messageId"));
                                 return;
                         }
 
-                        final Mensaje mensaje = mensajeRepository.findById(messageId)
+                        final Mensaje mensaje = mensajeRepository
+                                        .findById(messageId)
                                         .orElseThrow(() -> new RuntimeException("Mensaje no encontrado"));
 
                         if (!mensaje.getEmisor().getId().equals(usuario.getId())) {
-                                broker.convertAndSendToUser(getUserDestinationKey(usuario), "/queue/error",
+                                broker.convertAndSendToUser(
+                                                getUserDestinationKey(usuario),
+                                                "/queue/error",
                                                 Map.of("code", "unauthorized_delete", "message", "No tienes permiso"));
                                 return;
                         }
@@ -157,10 +174,10 @@ public class SocketChatController {
                         final Usuario receptor = mensaje.getReceptor();
 
                         // Notificar a ambos usuarios de la eliminación
-                        broker.convertAndSendToUser(getUserDestinationKey(usuario), "/queue/dm_delete_success",
-                                        messageId);
-                        broker.convertAndSendToUser(getUserDestinationKey(receptor), "/queue/dm_delete_success",
-                                        messageId);
+                        broker.convertAndSendToUser(
+                                        getUserDestinationKey(usuario), "/queue/dm_delete_success", messageId);
+                        broker.convertAndSendToUser(
+                                        getUserDestinationKey(receptor), "/queue/dm_delete_success", messageId);
                 } catch (final Exception e) {
                         sendError(principal, "delete_dm_failed", e.getMessage());
                 }
@@ -173,8 +190,8 @@ public class SocketChatController {
          * @param principal usuario autenticado.
          */
         @MessageMapping("/community.message.send")
-        public void sendCommunityMessage(@Payload final EnviarMensajeComunidadRequest request,
-                        final Principal principal) {
+        public void sendCommunityMessage(
+                        @Payload final EnviarMensajeComunidadRequest request, final Principal principal) {
                 try {
                         final Usuario usuario = getAuthenticatedUser(principal);
 
@@ -194,14 +211,16 @@ public class SocketChatController {
          * @param principal usuario autenticado.
          */
         @MessageMapping("/community.history")
-        public void getCommunityHistory(@Payload final Map<String, Long> payload,
-                        final Principal principal) {
+        public void getCommunityHistory(
+                        @Payload final Map<String, Long> payload, final Principal principal) {
                 try {
                         final Usuario usuario = getAuthenticatedUser(principal);
                         final Long comunidadId = payload.get("comunidadId");
 
                         if (comunidadId == null) {
-                                broker.convertAndSendToUser(getUserDestinationKey(usuario), "/queue/error",
+                                broker.convertAndSendToUser(
+                                                getUserDestinationKey(usuario),
+                                                "/queue/error",
                                                 Map.of("code", "community_missing", "message", "Missing comunidadId"));
                                 return;
                         }
@@ -209,8 +228,8 @@ public class SocketChatController {
                         final java.util.List<MensajeComunidadResponse> history = mensajeComunidadService
                                         .obtenerHistorial(comunidadId);
 
-                        broker.convertAndSendToUser(getUserDestinationKey(usuario), "/queue/community_history",
-                                        history);
+                        broker.convertAndSendToUser(
+                                        getUserDestinationKey(usuario), "/queue/community_history", history);
                 } catch (final Exception e) {
                         sendError(principal, "community_history_failed", e.getMessage());
                 }
@@ -223,8 +242,8 @@ public class SocketChatController {
          * @param principal usuario autenticado.
          */
         @MessageMapping("/community.message.edit")
-        public void editCommunityMessage(@Payload final Map<String, Object> payload,
-                        final Principal principal) {
+        public void editCommunityMessage(
+                        @Payload final Map<String, Object> payload, final Principal principal) {
                 try {
                         final Usuario usuario = getAuthenticatedUser(principal);
                         final Long messageId = Long.parseLong(payload.get("messageId").toString());
@@ -247,23 +266,29 @@ public class SocketChatController {
          * @param principal usuario autenticado.
          */
         @MessageMapping("/community.message.delete")
-        public void deleteCommunityMessage(@Payload final Map<String, Long> payload,
-                        final Principal principal) {
+        public void deleteCommunityMessage(
+                        @Payload final Map<String, Long> payload, final Principal principal) {
                 try {
                         final Usuario usuario = getAuthenticatedUser(principal);
                         final Long messageId = payload.get("messageId");
                         final Long comunidadId = payload.get("comunidadId");
 
                         if (messageId == null || comunidadId == null) {
-                                broker.convertAndSendToUser(getUserDestinationKey(usuario), "/queue/error",
-                                                Map.of("code", "community_delete_missing",
-                                                                "message", "Missing messageId or comunidadId"));
+                                broker.convertAndSendToUser(
+                                                getUserDestinationKey(usuario),
+                                                "/queue/error",
+                                                Map.of(
+                                                                "code",
+                                                                "community_delete_missing",
+                                                                "message",
+                                                                "Missing messageId or comunidadId"));
                                 return;
                         }
 
                         mensajeComunidadService.eliminarMensaje(usuario.getId(), messageId);
 
-                        broker.convertAndSend("/topic/community." + comunidadId,
+                        broker.convertAndSend(
+                                        "/topic/community." + comunidadId,
                                         (Object) Map.of("type", "message_deleted", "messageId", messageId));
                 } catch (final Exception e) {
                         sendError(principal, "community_delete_failed", e.getMessage());

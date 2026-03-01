@@ -55,20 +55,22 @@ public class SuscripcionController {
             description = "Devuelve la suscripción actual del usuario autenticado")
     public ResponseEntity<SubscriptionResponse> obtenerMiSuscripcion(
             @AuthenticationPrincipal final Usuario usuario) {
-        Optional<Suscripcion> suscripcion = suscripcionService.obtenerMiSuscripcion(usuario.getId());
+        Optional<Suscripcion> suscripcion =
+                suscripcionService.obtenerMiSuscripcion(usuario.getId());
 
         if (suscripcion.isPresent()) {
             return ResponseEntity.ok(suscripcion.get().toDTO());
         } else {
-            SubscriptionResponse freePlan = SubscriptionResponse.builder()
-                    .id(null)
-                    .plan(TipoPlan.FREE)
-                    .fechaInicio(LocalDate.now())
-                    .fechaFin(LocalDate.now())
-                    .activa(true)
-                    .autoRenovar(false)
-                    .enPeriodoGracia(false)
-                    .build();
+            SubscriptionResponse freePlan =
+                    SubscriptionResponse.builder()
+                            .id(null)
+                            .plan(TipoPlan.FREE)
+                            .fechaInicio(LocalDate.now())
+                            .fechaFin(LocalDate.now())
+                            .activa(true)
+                            .autoRenovar(false)
+                            .enPeriodoGracia(false)
+                            .build();
             return ResponseEntity.ok(freePlan);
         }
     }
@@ -79,7 +81,9 @@ public class SuscripcionController {
      * @return Suscripción creada o URL de pago
      */
     @PostMapping("/me")
-    @Operation(summary = "Suscribirse a Premium", description = "Inicia el proceso de suscripción a un plan Premium")
+    @Operation(
+            summary = "Suscribirse a Premium",
+            description = "Inicia el proceso de suscripción a un plan Premium")
     public ResponseEntity<SubscriptionResponse> suscribirse(
             @AuthenticationPrincipal final Usuario usuario) {
         try {
@@ -96,10 +100,13 @@ public class SuscripcionController {
      * @return Confirmación de cancelación
      */
     @DeleteMapping("/me")
-    @Operation(summary = "Cancelar suscripción", description = "Cancela la suscripción del usuario.\r\n"
-            + //
-            "        El acceso Premium se mantiene hasta la fecha de fin del"
-            + " período actual.")
+    @Operation(
+            summary = "Cancelar suscripción",
+            description =
+                    "Cancela la suscripción del usuario.\r\n"
+                            + //
+                            "        El acceso Premium se mantiene hasta la fecha de fin del"
+                            + " período actual.")
     public ResponseEntity<SubscriptionResponse> cancelarSuscripcion(
             @AuthenticationPrincipal final Usuario usuario) {
         try {

@@ -19,8 +19,7 @@ import lombok.NoArgsConstructor;
 /**
  * Entidad que representa un mensaje enviado en el chat de una comunidad.
  *
- * <p>
- * Almacena mensajes públicos de miembros de una comunidad.
+ * <p>Almacena mensajes públicos de miembros de una comunidad.
  */
 @Entity
 @Data
@@ -43,8 +42,7 @@ public class MensajeComunidad {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column
-    private LocalDateTime editedAt;
+    @Column private LocalDateTime editedAt;
 
     // Usuario que envía el mensaje
     @ManyToOne
