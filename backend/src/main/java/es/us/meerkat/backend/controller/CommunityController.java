@@ -62,7 +62,8 @@ public class CommunityController {
      * /api/v1/communities
      */
     @GetMapping
-    @Operation(summary = "Explorar comunidades", description = "Lista comunidades públicas con opciones de búsqueda y filtrado")
+    @Operation(summary = "Explorar comunidades", description = "Lista comunidades públicas con opciones de búsqueda y"
+            + " filtrado")
     @ApiResponse(responseCode = "200", description = "Lista de comunidades obtenida correctamente")
     public ResponseEntity<CommunityListResponse> listCommunities(
             @RequestParam(required = false) String search,
@@ -79,7 +80,8 @@ public class CommunityController {
 
     /** Lista las comunidades de las que el usuario autenticado es miembro. */
     @GetMapping("/members/me")
-    @Operation(summary = "Listar mis comunidades", description = "Lista las comunidades donde el usuario autenticado tiene membresía", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Listar mis comunidades", description = "Lista las comunidades donde el usuario autenticado tiene"
+            + " membresía", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista de comunidades obtenida"),
             @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
@@ -105,11 +107,12 @@ public class CommunityController {
 
     /** Crea una nueva comunidad. POST /api/v1/communities */
     @PostMapping
-    @Operation(summary = "Crear comunidad", description = "Crea una nueva comunidad. El creador se convierte automáticamente en"
-            + " administrador.", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Crear comunidad", description = "Crea una nueva comunidad. El creador se convierte"
+            + " automáticamente en administrador.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Comunidad creada correctamente"),
-            @ApiResponse(responseCode = "400", description = "Datos inválidos o límite de comunidades gratuitas alcanzado"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos o límite de comunidades gratuitas"
+                    + " alcanzado"),
             @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
     })
     public ResponseEntity<CommunityDetailResponse> createCommunity(
@@ -244,7 +247,8 @@ public class CommunityController {
      * /api/v1/communities/{communityId}/upgrade
      */
     @PostMapping("/{communityId}/upgrade")
-    @Operation(summary = "Mejorar comunidad a Premium", description = "Inicia el proceso de pago para convertir la comunidad a Premium", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Mejorar comunidad a Premium", description = "Inicia el proceso de pago para convertir la comunidad a"
+            + " Premium", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Comunidad mejorada a Premium"),
             @ApiResponse(responseCode = "400", description = "La comunidad ya es Premium"),
@@ -276,8 +280,8 @@ public class CommunityController {
      * /api/v1/communities/{communityId}/tutor
      */
     @PostMapping("/{communityId}/tutor")
-    @Operation(summary = "Contratar tutor", description = "Inicia el proceso de pago para contratar un tutor"
-            + " (solo para comunidades privadas)", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Contratar tutor", description = "Inicia el proceso de pago para contratar un tutor (solo"
+            + " para comunidades privadas)", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Tutor contratado exitosamente"),
             @ApiResponse(responseCode = "400", description = "No se puede contratar en comunidad pública"),
@@ -348,8 +352,7 @@ public class CommunityController {
      * /api/v1/communities/{communityId}/members
      */
     @PostMapping("/{communityId}/members")
-    @Operation(summary = "Unirse a comunidad pública", description = "Se une a una comunidad pública sin necesidad de"
-            + " aprobación", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Unirse a comunidad pública", description = "Se une a una comunidad pública sin necesidad de aprobación", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Te has unido a la comunidad correctamente"),
             @ApiResponse(responseCode = "400", description = "No puedes unirte (privada, llena, ya eres miembro)"),
@@ -375,8 +378,8 @@ public class CommunityController {
      * /api/v1/communities/{communityId}/members/me
      */
     @GetMapping("/{communityId}/members/me")
-    @Operation(summary = "Obtener mi rol en la comunidad", description = "Devuelve el rol y membresía del usuario autenticado"
-            + " en esta comunidad", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Obtener mi rol en la comunidad", description = "Devuelve el rol y membresía del usuario autenticado en esta"
+            + " comunidad", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Membresía obtenida"),
             @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
@@ -401,8 +404,8 @@ public class CommunityController {
      * Abandona una comunidad. DELETE /api/v1/communities/{communityId}/members/me
      */
     @DeleteMapping("/{communityId}/members/me")
-    @Operation(summary = "Abandonar comunidad", description = "Abandona la comunidad (si eres admin único,"
-            + " debe designar sucesor)", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Abandonar comunidad", description = "Abandona la comunidad (si eres admin único, debe designar"
+            + " sucesor)", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Has abandonado la comunidad"),
             @ApiResponse(responseCode = "400", description = "No puedes abandonar siendo único admin"),
@@ -499,8 +502,8 @@ public class CommunityController {
      * /api/v1/communities/{communityId}/requests
      */
     @GetMapping("/{communityId}/requests")
-    @Operation(summary = "Listar solicitudes de acceso", description = "Lista las solicitudes pendientes de acceso a la"
-            + " comunidad (solo admin)", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Listar solicitudes de acceso", description = "Lista las solicitudes pendientes de acceso a la comunidad"
+            + " (solo admin)", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista de solicitudes obtenida"),
             @ApiResponse(responseCode = "403", description = "No tienes permisos")
