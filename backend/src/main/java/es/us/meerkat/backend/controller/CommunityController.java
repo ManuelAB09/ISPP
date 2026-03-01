@@ -94,9 +94,11 @@ public class CommunityController {
         }
 
         Pageable pageable = PageRequest.of(page, size);
-        Page<MiembroComunidad> memberships = memberService.listUserMemberships(usuario.getId(), pageable);
+        Page<MiembroComunidad> memberships = memberService.listUserMemberships(
+                usuario.getId(), pageable);
         Page<CommunityDetailResponse> response = memberships
-                .map(membership -> entityToDetailResponse(membership.getComunidad(), usuario.getId()));
+                .map(membership -> entityToDetailResponse(membership.getComunidad(),
+                        usuario.getId()));
 
         return ResponseEntity.ok(new CommunityListResponse(response));
     }
@@ -124,8 +126,8 @@ public class CommunityController {
                     request.nombre(),
                     request.descripcion(),
                     request.tipoGrupo() != null
-                            ? es.us.meerkat.backend.entity.TipoGrupo.valueOf(
-                                    request.tipoGrupo())
+                            ? es.us.meerkat.backend.entity.TipoGrupo
+                                    .valueOf(request.tipoGrupo())
                             : es.us.meerkat.backend.entity.TipoGrupo.COMUNIDAD_PUBLICA,
                     request.imagenUrl());
             return ResponseEntity.status(HttpStatus.CREATED)
@@ -346,7 +348,8 @@ public class CommunityController {
      * /api/v1/communities/{communityId}/members
      */
     @PostMapping("/{communityId}/members")
-    @Operation(summary = "Unirse a comunidad pública", description = "Se une a una comunidad pública sin necesidad de aprobación", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Unirse a comunidad pública", description = "Se une a una comunidad pública sin necesidad de"
+            + " aprobación", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Te has unido a la comunidad correctamente"),
             @ApiResponse(responseCode = "400", description = "No puedes unirte (privada, llena, ya eres miembro)"),
@@ -458,7 +461,8 @@ public class CommunityController {
      * /api/v1/communities/{communityId}/admin/transfer
      */
     @PostMapping("/{communityId}/admin/transfer")
-    @Operation(summary = "Transferir administración", description = "Transfiere el rol de admin a otro miembro (solo admin actual)", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Transferir administración", description = "Transfiere el rol de admin a otro miembro (solo admin"
+            + " actual)", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Administración transferida"),
             @ApiResponse(responseCode = "403", description = "No tienes permisos"),
@@ -495,7 +499,8 @@ public class CommunityController {
      * /api/v1/communities/{communityId}/requests
      */
     @GetMapping("/{communityId}/requests")
-    @Operation(summary = "Listar solicitudes de acceso", description = "Lista las solicitudes pendientes de acceso a la comunidad (solo admin)", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Listar solicitudes de acceso", description = "Lista las solicitudes pendientes de acceso a la"
+            + " comunidad (solo admin)", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista de solicitudes obtenida"),
             @ApiResponse(responseCode = "403", description = "No tienes permisos")
@@ -515,10 +520,12 @@ public class CommunityController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        EstadoSolicitud estadoFilter = estado != null ? EstadoSolicitud.valueOf(estado) : null;
+        EstadoSolicitud estadoFilter = estado != null
+                ? EstadoSolicitud.valueOf(estado)
+                : null;
         Pageable pageable = PageRequest.of(page, size);
-        Page<SolicitudComunidad> solicitudes = requestService.listRequests(usuario.getId(), communityId, estadoFilter,
-                pageable);
+        Page<SolicitudComunidad> solicitudes = requestService.listRequests(
+                usuario.getId(), communityId, estadoFilter, pageable);
 
         Page<RequestResponse> response = solicitudes.map(this::entityToRequestResponse);
         return ResponseEntity.ok(new RequestListResponse(response));
@@ -546,8 +553,8 @@ public class CommunityController {
         }
 
         try {
-            SolicitudComunidad solicitud = requestService.requestAccess(usuario.getId(), communityId,
-                    request.mensaje());
+            SolicitudComunidad solicitud = requestService.requestAccess(
+                    usuario.getId(), communityId, request.mensaje());
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(entityToRequestResponse(solicitud));
         } catch (IllegalArgumentException e) {
