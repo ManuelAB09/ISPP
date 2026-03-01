@@ -45,7 +45,7 @@ export default function ComunidadCard({ comunidad, onJoined }) {
             onClick={() => navigate(`/comunidades/${comunidad.id}`)}
             style={{ cursor: 'pointer' }}
         >
-            <img src={comunidad.imagenUrl || comunidad.imagen || 'https://via.placeholder.com/300x200?text=Sin+imagen'} alt={comunidad.nombre} className="comunidad-image" />
+            <img src={comunidad.imagenUrl || comunidad.imagen || '/logo192.png'} alt={comunidad.nombre} className="comunidad-image" />
             <div className="comunidad-info">
                 <div className='top-info'>
                     <h2>{comunidad.nombre}</h2>
@@ -59,7 +59,7 @@ export default function ComunidadCard({ comunidad, onJoined }) {
                         <PersonIcon width={20} height={20} />
                         <p>{comunidad.miembrosActuales || 0}/ <span>{comunidad.maxMiembros || 0}</span></p>
                     </div>
-                    {error && <span style={{color:'red',fontSize:'0.8rem'}}>{error}</span>}
+                    {error && <span style={{ color: 'red', fontSize: '0.8rem' }}>{error}</span>}
                     {currentUserId && !joined && (
                         <button
                             className="join-button"

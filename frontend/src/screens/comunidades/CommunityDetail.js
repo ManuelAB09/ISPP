@@ -3,13 +3,16 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { LuPlus, LuArrowLeft, LuCalendar, LuUsers, LuLogIn, LuLogOut } from 'react-icons/lu';
 import Header from '../../components/Header/Header';
 import TarjetaEvento from '../../components/Evento/TarjetaEvento';
+import CommunityChat from '../../components/CommunityChat';
 import { communitiesApi } from '../../api/communities.api';
 import { listCommunityEvents, attendEvent, cancelAttendance, getMyAttendance } from '../../api/eventEndpoints';
+import { useAuth } from '../../contexts/AuthContext';
 import './CommunityDetail.css';
 
 export default function CommunityDetail() {
   const { communityId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [community, setCommunity] = useState(null);
   const [events, setEvents] = useState([]);
@@ -23,6 +26,10 @@ export default function CommunityDetail() {
   const [membershipError, setMembershipError] = useState(null);
 
   const currentUserId = localStorage.getItem('userId');
+  const currentUser = {
+    id: Number(currentUserId),
+    nombre: user?.nombre || 'Usuario',
+  };
 
   const fetchCommunity = useCallback(async () => {
     try {
@@ -319,6 +326,17 @@ export default function CommunityDetail() {
             </div>
           )}
         </div>
+
+        {currentUserId && isMember && (
+          <div className="cd-chat-section">
+            {user ? (
+              <CommunityChat
+                comunidadId={Number(communityId)}
+                usuarioActual={currentUser}
+              />
+            ) : null}
+          </div>
+        )}
       </div>
     </>
   );

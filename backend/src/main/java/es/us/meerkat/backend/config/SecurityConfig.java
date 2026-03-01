@@ -45,32 +45,35 @@ public class SecurityConfig {
                                                 session -> session
                                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authorizeHttpRequests(
-                                                auth -> auth.requestMatchers(
-                                                                "/api/v1/auth/**",
-                                                                "/api/ubicaciones",
-                                                                "/api/ubicaciones/**",
-                                                                "/api/nominatim/**",
-                                                                "/swagger-ui/**",
-                                                                "/swagger-ui**",
-                                                                "/swagger-ui.html",
-                                                                "/swagger-ui/index.html",
-                                                                "/v3/api-docs/**",
-                                                                "/v3/api-docs",
-                                                                "/spec/**",
-                                                                "/",
-                                                                "/index.html",
-                                                                "/favicon.ico",
-                                                                "/manifest.json",
-                                                                "/robots.txt",
-                                                                "/asset-manifest.json",
-                                                                "/logo192.png",
-                                                                "/logo512.png",
-                                                                "/static/**",
-                                                                "/ws/**",
-                                                                "/error",
-                                                                "/webjars/**",
-                                                                "/h2-console/**",
-                                                                "/actuator/**")
+                                                auth -> auth
+                                                                // Permitir todos los métodos en WebSocket endpoints
+                                                                .requestMatchers("/ws/**").permitAll()
+                                                                .requestMatchers(
+                                                                                "/api/v1/auth/**",
+                                                                                "/api/ubicaciones",
+                                                                                "/api/ubicaciones/**",
+                                                                                "/api/nominatim/**",
+                                                                                "/swagger-ui/**",
+                                                                                "/swagger-ui**",
+                                                                                "/swagger-ui.html",
+                                                                                "/swagger-ui/index.html",
+                                                                                "/v3/api-docs/**",
+                                                                                "/v3/api-docs",
+                                                                                "/spec/**",
+                                                                                "/",
+                                                                                "/index.html",
+                                                                                "/favicon.ico",
+                                                                                "/manifest.json",
+                                                                                "/robots.txt",
+                                                                                "/asset-manifest.json",
+                                                                                "/logo192.png",
+                                                                                "/logo512.png",
+                                                                                "/static/**",
+                                                                                "/ws/**",
+                                                                                "/error",
+                                                                                "/webjars/**",
+                                                                                "/h2-console/**",
+                                                                                "/actuator/**")
                                                                 .permitAll()
                                                                 // Permitir preflight CORS (OPTIONS) en todas las rutas
                                                                 .requestMatchers(HttpMethod.OPTIONS, "/**")

@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { useAuth } from './contexts/AuthContext';
+import { SocketProvider } from './contexts/SocketContext';
 import './App.css';
 import Comunidades from './screens/comunidades/Comunidades';
 import CommunityDetail from './screens/comunidades/CommunityDetail';
@@ -17,7 +19,10 @@ import VerifiedTeachers from './screens/verifiedTeachers/VerifiedTeachers';
 import CrearUbicacionScreen from './screens/ubicaciones/CrearUbicacionScreen';
 import Profile from './screens/myProfile/Profile';
 
-function App() {
+function AppRoutes() {
+  const { isAuthenticated } = useAuth();
+  const socketToken = isAuthenticated ? localStorage.getItem('accessToken') : null;
+
   let ownerRoutes = <></>
 
   const init = async () => {
@@ -46,7 +51,7 @@ function App() {
   }
 
   return (
-    <AuthProvider>
+    <SocketProvider token={socketToken}>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/comunidades" element={<Comunidades />} />
@@ -60,6 +65,14 @@ function App() {
         <Route path="/perfil/:userId" element={<Profile />} />
         {ownerRoutes}
       </Routes>
+    </SocketProvider>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppRoutes />
     </AuthProvider>
   );
 }

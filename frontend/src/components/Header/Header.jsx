@@ -5,7 +5,7 @@ export default function Header({ user, page }) {
     return (
         <div className="header-container">
             <Link to="/perfil">
-                <img src={user?.avatar || 'https://via.placeholder.com/150'} alt="" />
+                <img src={user?.avatar || '/logo192.png'} alt="" />
             </Link>
             <div className="header-links">
                 <Link to="/" className={page === 'inicio' ? 'active' : ''}>Inicio</Link>

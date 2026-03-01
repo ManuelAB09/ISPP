@@ -19,7 +19,7 @@ import es.us.meerkat.backend.service.MensajeService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/mensajes")
+@RequestMapping("/api/v1/mensajes")
 @RequiredArgsConstructor
 public class MensajeController {
 
@@ -42,8 +42,7 @@ public class MensajeController {
     public ResponseEntity<?> obtenerConversacion(
             @AuthenticationPrincipal Usuario usuario, @PathVariable Long tutorId) {
         try {
-            List<MensajeResponse> conversacion =
-                    mensajeService.obtenerConversacion(usuario.getId(), tutorId);
+            List<MensajeResponse> conversacion = mensajeService.obtenerConversacion(usuario.getId(), tutorId);
             return ResponseEntity.ok(conversacion);
         } catch (Exception e) {
             // Loggear el error
