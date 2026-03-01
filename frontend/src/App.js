@@ -1,24 +1,24 @@
 import { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
 import './App.css';
-import Comunidades from './screens/comunidades/Comunidades';
+import { AuthProvider } from './contexts/AuthContext';
+import Login from './screens/auth/Login';
+import Register from './screens/auth/Register';
 import CommunityDetail from './screens/comunidades/CommunityDetail';
+import Comunidades from './screens/comunidades/Comunidades';
 import CrearComunidad from './screens/comunidades/CrearComunidad';
-import Home from './screens/home/Home';
 import CrearEvento from './screens/evento/CrearEvento';
 import DetalleEvento from './screens/evento/DetalleEvento';
 import EventosMapaScreen from './screens/evento/EventosMapaScreen';
-import Register from './screens/auth/Register';
-import Login from './screens/auth/Login';
-import PlansScreen from './screens/planes/PlansScreen';
-import InstitutionPlansScreen from './screens/planes/InstitutionPlansScreen';
-import TeacherProfile from './screens/teacherProfile/TeacherProfile';
-import VerifiedTeachers from './screens/verifiedTeachers/VerifiedTeachers';
-import CrearUbicacionScreen from './screens/ubicaciones/CrearUbicacionScreen';
-import MyProfile from './screens/myProfile/MyProfile';
-import MisPagos from './screens/pagos/MisPagos';
+import Home from './screens/home/Home';
 import Profile from './screens/myProfile/Profile';
+import MisPagos from './screens/pagos/MisPagos';
+import InstitutionPlansScreen from './screens/planes/InstitutionPlansScreen';
+import PasarelaPago from './screens/planes/PasarelaPago';
+import PlansScreen from './screens/planes/PlansScreen';
+import TeacherProfile from './screens/teacherProfile/TeacherProfile';
+import CrearUbicacionScreen from './screens/ubicaciones/CrearUbicacionScreen';
+import VerifiedTeachers from './screens/verifiedTeachers/VerifiedTeachers';
 
 
 function App() {
@@ -42,6 +42,7 @@ function App() {
         <Route path="/crear-evento/new" element={<CrearEvento />} />
         <Route path="/crear-evento/:id" element={<CrearEvento />} />
         <Route path="/planes" element={<PlansScreen />} />
+        <Route path="/planes/pasarela" element={<PasarelaPago />} />
         <Route path="/planes/instituciones" element={<InstitutionPlansScreen />} />
         <Route path="/pagos" element={<MisPagos />} />
         <Route path="/crear-ubicacion" element={<CrearUbicacionScreen />} />

@@ -261,7 +261,7 @@ export default function PlansScreen() {
                         <button
                           className="btn btn--primary"
                           disabled={isPremium || submitting}
-                          onClick={() => setShowCheckout(true)}
+                          onClick={() => navigate("/planes/pasarela")}
                         >
                           {isPremium ? "Ya eres Premium" : "Mejorar a Premium"}
                         </button>
