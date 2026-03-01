@@ -28,15 +28,13 @@ public class MemberService {
 
     /** Se une a una comunidad pública (verifica aforo y tipo). */
     public MiembroComunidad joinPublicCommunity(Long userId, Long communityId) {
-        Usuario usuario =
-                usuarioRepository
-                        .findById(userId)
-                        .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        Usuario usuario = usuarioRepository
+                .findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
-        Comunidad comunidad =
-                comunidadRepository
-                        .findById(communityId)
-                        .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
+        Comunidad comunidad = comunidadRepository
+                .findById(communityId)
+                .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
 
         // Validar que sea pública
         if (comunidad.getTipoGrupo() == TipoGrupo.GRUPO_PRIVADO) {
@@ -57,31 +55,27 @@ public class MemberService {
         }
 
         // Crear membresía
-        MiembroComunidad miembro =
-                MiembroComunidad.builder()
-                        .usuario(usuario)
-                        .comunidad(comunidad)
-                        .rol(RolComunidad.MIEMBRO)
-                        .build();
+        MiembroComunidad miembro = MiembroComunidad.builder()
+                .usuario(usuario)
+                .comunidad(comunidad)
+                .rol(RolComunidad.MIEMBRO)
+                .build();
 
         return miembroComunidadRepository.save(miembro);
     }
 
     /** Abandona una comunidad. Si es único admin, lanza error. */
     public void leaveCommunity(Long userId, Long communityId) {
-        MiembroComunidad miembro =
-                miembroComunidadRepository
-                        .findByUsuarioIdAndComunidadId(userId, communityId)
-                        .orElseThrow(
-                                () ->
-                                        new IllegalArgumentException(
-                                                "No eres miembro de esta comunidad"));
+        MiembroComunidad miembro = miembroComunidadRepository
+                .findByUsuarioIdAndComunidadId(userId, communityId)
+                .orElseThrow(
+                        () -> new IllegalArgumentException(
+                                "No eres miembro de esta comunidad"));
 
         // Si es ADMIN, verificar que haya otros ADMINs
         if (miembro.getRol() == RolComunidad.ADMIN) {
-            long adminCount =
-                    miembroComunidadRepository.countByComunidadIdAndRol(
-                            communityId, RolComunidad.ADMIN);
+            long adminCount = miembroComunidadRepository.countByComunidadIdAndRol(
+                    communityId, RolComunidad.ADMIN);
             if (adminCount <= 1) {
                 throw new IllegalArgumentException(
                         "No puedes abandonar siendo el único admin. Transfiere la administración"
@@ -111,19 +105,16 @@ public class MemberService {
             throw new IllegalArgumentException("No puedes expulsarte a ti mismo");
         }
 
-        MiembroComunidad targetMiembro =
-                miembroComunidadRepository
-                        .findByUsuarioIdAndComunidadId(targetUserId, communityId)
-                        .orElseThrow(
-                                () ->
-                                        new IllegalArgumentException(
-                                                "El usuario no es miembro de esta comunidad"));
+        MiembroComunidad targetMiembro = miembroComunidadRepository
+                .findByUsuarioIdAndComunidadId(targetUserId, communityId)
+                .orElseThrow(
+                        () -> new IllegalArgumentException(
+                                "El usuario no es miembro de esta comunidad"));
 
         // No se puede expulsar al único admin
         if (targetMiembro.getRol() == RolComunidad.ADMIN) {
-            long adminCount =
-                    miembroComunidadRepository.countByComunidadIdAndRol(
-                            communityId, RolComunidad.ADMIN);
+            long adminCount = miembroComunidadRepository.countByComunidadIdAndRol(
+                    communityId, RolComunidad.ADMIN);
             if (adminCount <= 1) {
                 throw new IllegalArgumentException("No puedes expulsar al único admin");
             }
@@ -138,6 +129,12 @@ public class MemberService {
         return miembroComunidadRepository.findByComunidadId(communityId, pageable);
     }
 
+    /** Lista las membresías de comunidades de un usuario. */
+    @Transactional(readOnly = true)
+    public Page<MiembroComunidad> listUserMemberships(Long userId, Pageable pageable) {
+        return miembroComunidadRepository.findByUsuarioId(userId, pageable);
+    }
+
     /** Transfiere el rol ADMIN a otro miembro (solo ADMIN actual). */
     public MiembroComunidad transferAdmin(Long userId, Long communityId, Long newAdminId) {
         if (!authorizationService.isAdminOf(userId, communityId)) {
@@ -149,21 +146,17 @@ public class MemberService {
         }
 
         // Verificar que el nuevo admin sea miembro
-        MiembroComunidad nuevoAdmin =
-                miembroComunidadRepository
-                        .findByUsuarioIdAndComunidadId(newAdminId, communityId)
-                        .orElseThrow(
-                                () ->
-                                        new IllegalArgumentException(
-                                                "El nuevo admin debe ser miembro de la comunidad"));
+        MiembroComunidad nuevoAdmin = miembroComunidadRepository
+                .findByUsuarioIdAndComunidadId(newAdminId, communityId)
+                .orElseThrow(
+                        () -> new IllegalArgumentException(
+                                "El nuevo admin debe ser miembro de la comunidad"));
 
-        MiembroComunidad usuarioActual =
-                miembroComunidadRepository
-                        .findByUsuarioIdAndComunidadId(userId, communityId)
-                        .orElseThrow(
-                                () ->
-                                        new IllegalArgumentException(
-                                                "No eres miembro de esta comunidad"));
+        MiembroComunidad usuarioActual = miembroComunidadRepository
+                .findByUsuarioIdAndComunidadId(userId, communityId)
+                .orElseThrow(
+                        () -> new IllegalArgumentException(
+                                "No eres miembro de esta comunidad"));
 
         // Cambiar roles
         usuarioActual.setRol(RolComunidad.MIEMBRO);

@@ -20,4 +20,11 @@ public interface MensajeRepository extends JpaRepository<Mensaje, Long> {
 
     // Todos los mensajes recibidos por un usuario
     List<Mensaje> findByReceptorIdOrderByCreatedAtDesc(Long usuarioId);
+
+    List<Mensaje>
+            findByEmisorIdAndReceptorIdOrEmisorIdAndReceptorIdOrderByCreatedAtAsc(
+                    Long emisor1,
+                    Long receptor1,
+                    Long emisor2,
+                    Long receptor2);
 }

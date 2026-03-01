@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PersonIcon from '../icons/Person';
 import { communitiesApi } from '../../api/communities.api';
+import { getApiBaseUrl } from '../../api/baseUrl';
 import './ComunidadCard.css';
 
 export default function ComunidadCard({ comunidad, onJoined }) {
@@ -10,6 +11,24 @@ export default function ComunidadCard({ comunidad, onJoined }) {
     const [joined, setJoined] = useState(comunidad.esMiembro || false);
     const [error, setError] = useState(null);
     const currentUserId = localStorage.getItem('userId');
+    const communityImageRaw = comunidad.imagen || comunidad.imagenUrl || comunidad.foto;
+    const communityImage = (() => {
+        if (!communityImageRaw || !String(communityImageRaw).trim()) {
+            return 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
+        }
+
+        const value = String(communityImageRaw).trim();
+        if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
+            return value;
+        }
+
+        const base = getApiBaseUrl();
+        if (value.startsWith('/')) {
+            return `${base}${value}`;
+        }
+
+        return `${base}/${value}`;
+    })();
 
     const handleJoin = async (e) => {
         e.stopPropagation();
@@ -45,7 +64,7 @@ export default function ComunidadCard({ comunidad, onJoined }) {
             onClick={() => navigate(`/comunidades/${comunidad.id}`)}
             style={{ cursor: 'pointer' }}
         >
-            <img src={comunidad.imagenUrl || comunidad.imagen || '/logo192.png'} alt={comunidad.nombre} className="comunidad-image" />
+            <img src={communityImage} alt={comunidad.nombre} className="comunidad-image" />
             <div className="comunidad-info">
                 <div className='top-info'>
                     <h2>{comunidad.nombre}</h2>

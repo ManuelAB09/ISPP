@@ -26,5 +26,7 @@ public class MensajeComunidadResponse {
 
     private String usuarioNombre;
 
+    private String usuarioFoto;
+
     private Long comunidadId;
 }

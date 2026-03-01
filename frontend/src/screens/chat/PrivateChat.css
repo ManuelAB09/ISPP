@@ -24,6 +24,23 @@
     font-weight: 600;
 }
 
+.private-chat .private-chat-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.private-chat .private-chat-close {
+    border: none;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.22);
+    color: #fff;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
 .private-chat .status {
     display: flex;
     align-items: center;

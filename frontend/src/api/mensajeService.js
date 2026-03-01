@@ -71,10 +71,12 @@ export const eliminarMensajeComunidad = (comunidadId, mensajeId) => {
  * @returns {Promise} Respuesta del servidor.
  */
 export const enviarMensajePrivado = (tutorId, contenido) => {
-    return api.post('/mensajes', {
-        tutorId,
-        contenido,
-    });
+    const payload = { contenido };
+    if (tutorId !== undefined && tutorId !== null) {
+        payload.userId = tutorId;
+    }
+
+    return api.post('/mensajes', payload);
 };
 
 /**
@@ -83,5 +85,9 @@ export const enviarMensajePrivado = (tutorId, contenido) => {
  * @returns {Promise<Array>} Lista de mensajes privados.
  */
 export const obtenerHistorialPrivado = (tutorId) => {
-    return api.get(`/mensajes/tutor/${tutorId}`);
+    return api.get(`/mensajes/usuario/${tutorId}`);
+};
+
+export const eliminarMensajePrivado = (mensajeId) => {
+    return api.delete(`/mensajes/${mensajeId}`);
 };

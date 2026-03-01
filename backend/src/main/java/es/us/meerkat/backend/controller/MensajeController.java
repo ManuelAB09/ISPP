@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 import es.us.meerkat.backend.dto.EnviarMensajeRequest;
 import es.us.meerkat.backend.dto.MensajeResponse;
@@ -48,6 +49,31 @@ public class MensajeController {
             // Loggear el error
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al obtener la conversación: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/usuario/{userId}")
+    public ResponseEntity<?> obtenerConversacionConUsuario(
+            @AuthenticationPrincipal Usuario usuario, @PathVariable Long userId) {
+        try {
+            List<MensajeResponse> conversacion =
+                    mensajeService.obtenerConversacionConUsuario(usuario.getId(), userId);
+            return ResponseEntity.ok(conversacion);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al obtener la conversación: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{mensajeId}")
+    public ResponseEntity<?> eliminarMensaje(
+            @AuthenticationPrincipal Usuario usuario, @PathVariable Long mensajeId) {
+        try {
+            mensajeService.eliminarMensaje(usuario.getId(), mensajeId);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al eliminar el mensaje: " + e.getMessage());
         }
     }
 }

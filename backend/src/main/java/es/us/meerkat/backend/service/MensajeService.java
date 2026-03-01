@@ -28,22 +28,37 @@ public class MensajeService {
 
     @Transactional
     public MensajeResponse enviarMensaje(Long usuarioId, EnviarMensajeRequest request) {
-
-        Tutor tutor =
-                tutorRepository
-                        .findById(request.getTutorId())
-                        .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
-
-        if (!Boolean.TRUE.equals(tutor.getVerificado())) {
-            throw new RuntimeException("No puedes contactar un tutor no verificado");
-        }
-
         Usuario emisor =
                 usuarioRepository
                         .findById(usuarioId)
                         .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        Usuario receptor = tutor.getUs(); // el tutor recibe el mensaje
+                Usuario receptor;
+                Tutor tutor = null;
+
+                if (request.getUserId() != null) {
+                        receptor =
+                                        usuarioRepository
+                                                        .findById(request.getUserId())
+                                                        .orElseThrow(() -> new RuntimeException("Usuario receptor no encontrado"));
+                } else if (request.getTutorId() != null) {
+                        tutor =
+                                        tutorRepository
+                                                        .findById(request.getTutorId())
+                                                        .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
+
+                        if (!Boolean.TRUE.equals(tutor.getVerificado())) {
+                                throw new RuntimeException("No puedes contactar un tutor no verificado");
+                        }
+
+                        receptor = tutor.getUs();
+                } else {
+                        throw new RuntimeException("Debes indicar userId o tutorId");
+                }
+
+                if (receptor.getId().equals(usuarioId)) {
+                        throw new RuntimeException("No puedes enviarte mensajes a ti mismo");
+                }
 
         Mensaje mensaje =
                 Mensaje.builder()
@@ -75,6 +90,38 @@ public class MensajeService {
 
         return mensajes.stream().map(this::mapToResponse).toList();
     }
+
+        @Transactional(readOnly = true)
+        public List<MensajeResponse> obtenerConversacionConUsuario(Long usuarioId, Long otherUserId) {
+                if (otherUserId == null) {
+                        throw new RuntimeException("Usuario destino no indicado");
+                }
+
+                usuarioRepository
+                                .findById(otherUserId)
+                                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+                List<Mensaje> mensajes =
+                                mensajeRepository
+                                                .findByEmisorIdAndReceptorIdOrEmisorIdAndReceptorIdOrderByCreatedAtAsc(
+                                                                usuarioId, otherUserId, otherUserId, usuarioId);
+
+                return mensajes.stream().map(this::mapToResponse).toList();
+        }
+
+        @Transactional
+        public void eliminarMensaje(Long usuarioId, Long mensajeId) {
+                Mensaje mensaje =
+                                mensajeRepository
+                                                .findById(mensajeId)
+                                                .orElseThrow(() -> new RuntimeException("Mensaje no encontrado"));
+
+                if (!mensaje.getEmisor().getId().equals(usuarioId)) {
+                        throw new RuntimeException("No tienes permiso para eliminar este mensaje");
+                }
+
+                mensajeRepository.delete(mensaje);
+        }
 
     private MensajeResponse mapToResponse(Mensaje mensaje) {
         return MensajeResponse.builder()

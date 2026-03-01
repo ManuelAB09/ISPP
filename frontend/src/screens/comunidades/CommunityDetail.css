@@ -252,11 +252,6 @@
   margin: 0 0 1.5rem 0;
 }
 
-.cd-chat-section {
-  margin-top: 2rem;
-  min-height: 520px;
-}
-
 /* Responsive */
 @media (max-width: 768px) {
   .cd-header {
@@ -284,9 +279,6 @@
     font-size: 1.5rem;
   }
 
-  .cd-chat-section {
-    min-height: 480px;
-  }
 }
 
 @media (max-width: 480px) {

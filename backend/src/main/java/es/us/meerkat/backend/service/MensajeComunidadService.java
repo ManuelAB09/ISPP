@@ -130,6 +130,7 @@ public class MensajeComunidadService {
                 .editedAt(mensaje.getEditedAt())
                 .usuarioId(mensaje.getUsuario().getId())
                 .usuarioNombre(mensaje.getUsuario().getNombre())
+                .usuarioFoto(mensaje.getUsuario().getFoto())
                 .comunidadId(mensaje.getComunidad().getId())
                 .build();
     }

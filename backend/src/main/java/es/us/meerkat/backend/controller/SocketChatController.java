@@ -117,8 +117,8 @@ public class SocketChatController {
                                 return;
                         }
 
-                        final List<MensajeResponse> history = mensajeService.obtenerConversacion(usuario.getId(),
-                                        otherUserId);
+                        final List<MensajeResponse> history = mensajeService
+                                        .obtenerConversacionConUsuario(usuario.getId(), otherUserId);
 
                         broker.convertAndSendToUser(getUserDestinationKey(usuario), "/queue/dm_history", history);
                 } catch (final Exception e) {

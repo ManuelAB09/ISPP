@@ -1,20 +1,22 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useSocketContext } from '../contexts/SocketContext';
-import { enviarMensajePrivado, obtenerHistorialPrivado } from '../api/mensajeService';
+import { useSocketContext } from '../../contexts/SocketContext';
+import { enviarMensajePrivado, obtenerHistorialPrivado, eliminarMensajePrivado } from '../../api/mensajeService';
 import './PrivateChat.css';
 
 /**
  * Componente de chat privado en tiempo real con otro usuario.
  * @param {object} props - Props del componente.
- * @param {number} props.tutorId - ID del tutor/usuario destino.
- * @param {string} props.tutorNombre - Nombre del tutor.
+ * @param {number} props.tutorId - ID del usuario destino.
+ * @param {string} props.tutorNombre - Nombre del usuario destino.
  * @param {object} props.usuarioActual - Información del usuario autenticado.
  */
-const PrivateChat = ({ tutorId, tutorNombre, usuarioActual }) => {
+const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
     const { socket, isConnected } = useSocketContext();
     const [mensajes, setMensajes] = useState([]);
     const [contenido, setContenido] = useState('');
-    const [cargando, setCargando] = useState(false);
+    const [cargandoHistorial, setCargandoHistorial] = useState(false);
+    const [enviando, setEnviando] = useState(false);
+    const [procesandoId, setProcesandoId] = useState(null);
     const [error, setError] = useState(null);
     const messagesEndRef = useRef(null);
 
@@ -24,14 +26,14 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual }) => {
     useEffect(() => {
         const cargarHistorial = async () => {
             try {
-                setCargando(true);
+                setCargandoHistorial(true);
                 const { data } = await obtenerHistorialPrivado(tutorId);
                 setMensajes(data);
             } catch (err) {
                 setError('Error al cargar el historial de mensajes');
                 console.error(err);
             } finally {
-                setCargando(false);
+                setCargandoHistorial(false);
             }
         };
 
@@ -47,21 +49,32 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual }) => {
         // Escuchar nuevos mensajes privados
         const handleNewDM = (nuevoMensaje) => {
             const currentUserNumericId = Number(usuarioActual?.id);
+            const otherUserNumericId = Number(tutorId);
             const isCurrentConversation =
-                (nuevoMensaje?.emisorId === tutorId && nuevoMensaje?.receptorId === currentUserNumericId) ||
-                (nuevoMensaje?.emisorId === currentUserNumericId && nuevoMensaje?.receptorId === tutorId);
+                (Number(nuevoMensaje?.emisorId) === otherUserNumericId && Number(nuevoMensaje?.receptorId) === currentUserNumericId) ||
+                (Number(nuevoMensaje?.emisorId) === currentUserNumericId && Number(nuevoMensaje?.receptorId) === otherUserNumericId);
 
             if (!isCurrentConversation) {
                 return;
             }
 
-            setMensajes((prev) => [...prev, nuevoMensaje]);
+            setMensajes((prev) => {
+                if (!nuevoMensaje?.id) {
+                    return prev;
+                }
+                if (prev.some((msg) => msg.id === nuevoMensaje.id)) {
+                    return prev;
+                }
+                return [...prev, nuevoMensaje];
+            });
             scrollToBottom();
         };
 
         // Escuchar eliminación de mensajes
-        const handleDMDeleted = (messageId) => {
-            setMensajes((prev) => prev.filter((msg) => msg.id !== messageId));
+        const handleDMDeleted = (payload) => {
+            const deletedId = typeof payload === 'number' ? payload : payload?.messageId;
+            if (!deletedId) return;
+            setMensajes((prev) => prev.filter((msg) => msg.id !== deletedId));
         };
 
         // Escuchar errores
@@ -93,21 +106,29 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual }) => {
     const handleEnviarMensaje = async (e) => {
         e.preventDefault();
 
-        if (!contenido.trim() || cargando) return;
+        if (!contenido.trim() || enviando) return;
 
         try {
-            setCargando(true);
+            setEnviando(true);
             setError(null);
 
             const { data } = await enviarMensajePrivado(tutorId, contenido.trim());
-            setMensajes((prev) => [...prev, data]);
+            setMensajes((prev) => {
+                if (!data?.id) {
+                    return prev;
+                }
+                if (prev.some((msg) => msg.id === data.id)) {
+                    return prev;
+                }
+                return [...prev, data];
+            });
             setContenido('');
             scrollToBottom();
         } catch (err) {
             setError('Error al enviar el mensaje');
             console.error(err);
         } finally {
-            setCargando(false);
+            setEnviando(false);
         }
     };
 
@@ -116,10 +137,14 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual }) => {
      */
     const handleEliminarMensaje = async (mensajeId) => {
         try {
-            socket?.emit('dm.delete', { messageId: mensajeId });
+            setProcesandoId(mensajeId);
+            await eliminarMensajePrivado(mensajeId);
+            setMensajes((prev) => prev.filter((msg) => msg.id !== mensajeId));
         } catch (err) {
             setError('Error al eliminar el mensaje');
             console.error(err);
+        } finally {
+            setProcesandoId(null);
         }
     };
 
@@ -127,15 +152,22 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual }) => {
         <div className="private-chat">
             <div className="chat-header">
                 <h2>Chat con {tutorNombre}</h2>
-                <div className={`status ${isConnected ? 'conectado' : 'desconectado'}`}>
-                    {isConnected ? '⚪ En línea' : '⚫ Fuera de línea'}
+                <div className="private-chat-header-actions">
+                    <div className={`status ${isConnected ? 'conectado' : 'desconectado'}`}>
+                        {isConnected ? 'En línea' : 'Fuera de línea'}
+                    </div>
+                    {onClose && (
+                        <button type="button" className="private-chat-close" onClick={onClose}>
+                            Volver
+                        </button>
+                    )}
                 </div>
             </div>
 
             {error && <div className="error-message">{error}</div>}
 
             <div className="messages-container">
-                {cargando ? (
+                {cargandoHistorial ? (
                     <div className="loading">Cargando historial...</div>
                 ) : mensajes.length === 0 ? (
                     <div className="empty-state">
@@ -160,8 +192,9 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual }) => {
                                         className="btn-delete"
                                         onClick={() => handleEliminarMensaje(msg.id)}
                                         title="Eliminar mensaje"
+                                        disabled={procesandoId === msg.id}
                                     >
-                                        ✕
+                                        {procesandoId === msg.id ? '...' : '✕'}
                                     </button>
                                 </div>
                             )}
@@ -177,11 +210,11 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual }) => {
                     placeholder="Escribe un mensaje..."
                     value={contenido}
                     onChange={(e) => setContenido(e.target.value)}
-                    disabled={cargando}
+                    disabled={enviando}
                     maxLength={1000}
                 />
-                <button type="submit" disabled={cargando || !contenido.trim()}>
-                    {cargando ? '...' : '→'}
+                <button type="submit" disabled={enviando || !contenido.trim()}>
+                    {enviando ? '...' : '→'}
                 </button>
             </form>
         </div>

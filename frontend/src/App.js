@@ -18,6 +18,7 @@ import TeacherProfile from './screens/teacherProfile/TeacherProfile';
 import VerifiedTeachers from './screens/verifiedTeachers/VerifiedTeachers';
 import CrearUbicacionScreen from './screens/ubicaciones/CrearUbicacionScreen';
 import Profile from './screens/myProfile/Profile';
+import Chats from './screens/chat/Chats';
 
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
@@ -63,6 +64,7 @@ function AppRoutes() {
         <Route path="/register" element={<Register />} />
         <Route path="/perfil" element={<Profile />} />
         <Route path="/perfil/:userId" element={<Profile />} />
+        <Route path="/chats" element={<Chats />} />
         {ownerRoutes}
       </Routes>
     </SocketProvider>

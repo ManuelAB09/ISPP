@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 public class MensajeComunidadController {
 
     private final MensajeComunidadService mensajeComunidadService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     /**
      * Envía un mensaje en el chat de una comunidad.
@@ -46,6 +48,7 @@ public class MensajeComunidadController {
         try {
             request.setComunidadId(comunidadId);
             final MensajeComunidadResponse response = mensajeComunidadService.enviarMensaje(usuario.getId(), request);
+            messagingTemplate.convertAndSend("/topic/community." + comunidadId, response);
             return ResponseEntity.ok(response);
         } catch (final Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
