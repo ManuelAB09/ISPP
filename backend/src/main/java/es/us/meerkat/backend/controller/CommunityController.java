@@ -274,8 +274,8 @@ public class CommunityController {
      * /api/v1/communities/{communityId}/tutor
      */
     @PostMapping("/{communityId}/tutor")
-    @Operation(summary = "Contratar tutor", description = "Inicia el proceso de pago para contratar un tutor (solo para comunidades"
-            + " privadas)", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Contratar tutor", description = "Inicia el proceso de pago para contratar un tutor"
+            + " (solo para comunidades privadas)", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Tutor contratado exitosamente"),
             @ApiResponse(responseCode = "400", description = "No se puede contratar en comunidad pública"),
@@ -372,7 +372,8 @@ public class CommunityController {
      * /api/v1/communities/{communityId}/members/me
      */
     @GetMapping("/{communityId}/members/me")
-    @Operation(summary = "Obtener mi rol en la comunidad", description = "Devuelve el rol y membresía del usuario autenticado en esta comunidad", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Obtener mi rol en la comunidad", description = "Devuelve el rol y membresía del usuario autenticado"
+            + " en esta comunidad", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Membresía obtenida"),
             @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
@@ -397,7 +398,8 @@ public class CommunityController {
      * Abandona una comunidad. DELETE /api/v1/communities/{communityId}/members/me
      */
     @DeleteMapping("/{communityId}/members/me")
-    @Operation(summary = "Abandonar comunidad", description = "Abandona la comunidad (si eres admin único, debe designar sucesor)", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Abandonar comunidad", description = "Abandona la comunidad (si eres admin único,"
+            + " debe designar sucesor)", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Has abandonado la comunidad"),
             @ApiResponse(responseCode = "400", description = "No puedes abandonar siendo único admin"),
@@ -530,7 +532,8 @@ public class CommunityController {
     @Operation(summary = "Solicitar acceso", description = "Solicita acceso a una comunidad privada", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Solicitud creada correctamente"),
-            @ApiResponse(responseCode = "400", description = "No puedes solicitar (es pública, ya eres miembro, solicitud pendiente)"),
+            @ApiResponse(responseCode = "400", description = "No puedes solicitar (es pública, ya eres miembro,"
+                    + " solicitud pendiente)"),
             @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
     })
     public ResponseEntity<RequestResponse> requestAccess(

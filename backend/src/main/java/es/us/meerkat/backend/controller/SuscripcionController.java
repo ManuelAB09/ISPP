@@ -36,7 +36,9 @@ public class SuscripcionController {
      * @return Tipos de planes disponibles
      */
     @GetMapping("/plans")
-    @Operation(summary = "Ver planes disponibles", description = "Devuelve la lista de planes de suscripción disponibles")
+    @Operation(
+            summary = "Ver planes disponibles",
+            description = "Devuelve la lista de planes de suscripción disponibles")
     public ResponseEntity<TipoPlan[]> obtenerPlanes() {
         TipoPlan[] planes = suscripcionService.obtenerPlanesDisponibles();
         return ResponseEntity.ok(planes);
@@ -48,7 +50,9 @@ public class SuscripcionController {
      * @return Suscripción del usuario o plan FREE por defecto
      */
     @GetMapping("/me")
-    @Operation(summary = "Obtener mi suscripción", description = "Devuelve la suscripción actual del usuario autenticado")
+    @Operation(
+            summary = "Obtener mi suscripción",
+            description = "Devuelve la suscripción actual del usuario autenticado")
     public ResponseEntity<SubscriptionResponse> obtenerMiSuscripcion(
             @AuthenticationPrincipal final Usuario usuario) {
         Optional<Suscripcion> suscripcion = suscripcionService.obtenerMiSuscripcion(usuario.getId());

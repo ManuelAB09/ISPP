@@ -67,7 +67,9 @@ public class AsistenciaEventoController {
          * @return La asistencia del usuario.
          */
         @GetMapping("/me")
-        @Operation(summary = "Obtener asistencia propia", description = "Devuelve el estado de asistencia del usuario al evento")
+        @Operation(
+                        summary = "Obtener asistencia propia",
+                        description = "Devuelve el estado de asistencia del usuario al evento")
         public ResponseEntity<AttendanceResponse> obtenerAsistenciaPropia(
                         @PathVariable @Parameter(description = "ID del evento") final Long eventId,
                         @Parameter(description = "ID del usuario") @RequestParam final Long usuarioId) {
@@ -89,7 +91,9 @@ public class AsistenciaEventoController {
          * @return Respuesta vacía.
          */
         @DeleteMapping("/me")
-        @Operation(summary = "Cancelar asistencia propia", description = "Retira la confirmación de asistencia del usuario")
+        @Operation(
+                        summary = "Cancelar asistencia propia",
+                        description = "Retira la confirmación de asistencia del usuario")
         public ResponseEntity<Void> cancelarAsistenciaPropia(
                         @PathVariable @Parameter(description = "ID del evento") final Long eventId,
                         @Parameter(description = "ID del usuario") @RequestParam final Long usuarioId) {
@@ -115,7 +119,9 @@ public class AsistenciaEventoController {
          * @return Lista de asistencias del evento.
          */
         @GetMapping
-        @Operation(summary = "Listar asistencias", description = "Obtiene todas las asistencias registradas a un evento")
+        @Operation(
+                        summary = "Listar asistencias",
+                        description = "Obtiene todas las asistencias registradas a un evento")
         public ResponseEntity<List<AttendanceResponse>> obtenerAsistenciasEvento(
                         @PathVariable @Parameter(description = "ID del evento") final Long eventId) {
 
@@ -132,7 +138,9 @@ public class AsistenciaEventoController {
          * @return Lista de asistencias confirmadas.
          */
         @GetMapping("/confirmed")
-        @Operation(summary = "Listar asistentes confirmados", description = "Devuelve solo los usuarios que han confirmado su asistencia")
+        @Operation(
+                        summary = "Listar asistentes confirmados",
+                        description = "Devuelve solo los usuarios que han confirmado su asistencia")
         public ResponseEntity<List<AttendanceResponse>> obtenerAsistentesConfirmados(
                         @PathVariable @Parameter(description = "ID del evento") final Long eventId) {
 

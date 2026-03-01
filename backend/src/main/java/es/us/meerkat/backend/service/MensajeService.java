@@ -98,9 +98,10 @@ public class MensajeService {
 
                 Long tutorUserId = tutor.getUs().getId();
 
-                List<Mensaje> mensajes = mensajeRepository
-                                .findByTutorIdAndEmisorIdAndReceptorIdOrTutorIdAndEmisorIdAndReceptorIdOrderByCreatedAtAsc(
-                                                tutorId, usuarioId, tutorUserId, tutorId, tutorUserId, usuarioId);
+                List<Mensaje> mensajes = mensajeRepository.findConversationWithTutor(
+                                tutorId,
+                                usuarioId,
+                                tutorUserId);
 
                 return mensajes.stream().map(this::mapToResponse).toList();
         }

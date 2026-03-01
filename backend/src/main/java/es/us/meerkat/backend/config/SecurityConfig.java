@@ -80,11 +80,14 @@ public class SecurityConfig {
                                                                 .permitAll()
                                                                 // Permitir todas las rutas SPA (React Router)
                                                                 // que no empiecen por /api
-                                                                .requestMatchers(
-                                                                                request -> "GET".equals(
-                                                                                                request.getMethod())
-                                                                                                && !request.getRequestURI()
-                                                                                                                .startsWith("/api"))
+                                                                .requestMatchers(request -> {
+                                                                        final boolean isGet = "GET".equals(
+                                                                                        request.getMethod());
+                                                                        final boolean isApiRoute = request
+                                                                                        .getRequestURI()
+                                                                                        .startsWith("/api");
+                                                                        return isGet && !isApiRoute;
+                                                                })
                                                                 .permitAll()
                                                                 .requestMatchers(HttpMethod.GET,
                                                                                 "/api/v1/users/{userId}")
