@@ -29,11 +29,16 @@ public class MensajeController {
     @PostMapping
     public ResponseEntity<?> enviarMensaje(
             @AuthenticationPrincipal Usuario usuario, @RequestBody EnviarMensajeRequest request) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado");
+        }
+
         try {
             MensajeResponse response = mensajeService.enviarMensaje(usuario.getId(), request);
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
-            // Aquí puedes loggear el error si tienes un logger
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al enviar el mensaje: " + e.getMessage());
         }
@@ -42,11 +47,16 @@ public class MensajeController {
     @GetMapping("/tutor/{tutorId}")
     public ResponseEntity<?> obtenerConversacion(
             @AuthenticationPrincipal Usuario usuario, @PathVariable Long tutorId) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado");
+        }
+
         try {
             List<MensajeResponse> conversacion = mensajeService.obtenerConversacion(usuario.getId(), tutorId);
             return ResponseEntity.ok(conversacion);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
-            // Loggear el error
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al obtener la conversación: " + e.getMessage());
         }
@@ -55,10 +65,15 @@ public class MensajeController {
     @GetMapping("/usuario/{userId}")
     public ResponseEntity<?> obtenerConversacionConUsuario(
             @AuthenticationPrincipal Usuario usuario, @PathVariable Long userId) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado");
+        }
+
         try {
-            List<MensajeResponse> conversacion =
-                    mensajeService.obtenerConversacionConUsuario(usuario.getId(), userId);
+            List<MensajeResponse> conversacion = mensajeService.obtenerConversacionConUsuario(usuario.getId(), userId);
             return ResponseEntity.ok(conversacion);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al obtener la conversación: " + e.getMessage());
@@ -68,9 +83,15 @@ public class MensajeController {
     @DeleteMapping("/{mensajeId}")
     public ResponseEntity<?> eliminarMensaje(
             @AuthenticationPrincipal Usuario usuario, @PathVariable Long mensajeId) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado");
+        }
+
         try {
             mensajeService.eliminarMensaje(usuario.getId(), mensajeId);
             return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al eliminar el mensaje: " + e.getMessage());

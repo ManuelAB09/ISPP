@@ -2,6 +2,8 @@ package es.us.meerkat.backend.service;
 
 import java.util.List;
 
+import jakarta.annotation.PostConstruct;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,34 +20,49 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class MensajeService {
-    /** Repositorio para acceder a la información de tutores. */
-    private final TutorRepository tutorRepository;
+        /** Repositorio para acceder a la información de tutores. */
+        private final TutorRepository tutorRepository;
 
-    /** Repositorio para acceder a la información de usuarios. */
-    private final UsuarioRepository usuarioRepository;
+        /** Repositorio para acceder a la información de usuarios. */
+        private final UsuarioRepository usuarioRepository;
 
-    private final MensajeRepository mensajeRepository;
+        private final MensajeRepository mensajeRepository;
+        private final JdbcTemplate jdbcTemplate;
 
-    @Transactional
-    public MensajeResponse enviarMensaje(Long usuarioId, EnviarMensajeRequest request) {
-        Usuario emisor =
-                usuarioRepository
-                        .findById(usuarioId)
-                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        @PostConstruct
+        void ensureTutorColumnNullable() {
+                try {
+                        jdbcTemplate.execute("ALTER TABLE mensaje ALTER COLUMN tutor_id DROP NOT NULL");
+                } catch (Exception ignored) {
+                        try {
+                                jdbcTemplate.execute("ALTER TABLE MENSAJE ALTER COLUMN TUTOR_ID DROP NOT NULL");
+                        } catch (Exception ignoredAgain) {
+                                // Ignorado: en algunos entornos ya está nullable o la sintaxis difiere.
+                        }
+                }
+        }
+
+        @Transactional
+        public MensajeResponse enviarMensaje(Long usuarioId, EnviarMensajeRequest request) {
+                if (request == null || request.getContenido() == null || request.getContenido().isBlank()) {
+                        throw new IllegalArgumentException("El contenido del mensaje es obligatorio");
+                }
+
+                Usuario emisor = usuarioRepository
+                                .findById(usuarioId)
+                                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
                 Usuario receptor;
                 Tutor tutor = null;
 
                 if (request.getUserId() != null) {
-                        receptor =
-                                        usuarioRepository
-                                                        .findById(request.getUserId())
-                                                        .orElseThrow(() -> new RuntimeException("Usuario receptor no encontrado"));
+                        receptor = usuarioRepository
+                                        .findById(request.getUserId())
+                                        .orElseThrow(() -> new RuntimeException("Usuario receptor no encontrado"));
                 } else if (request.getTutorId() != null) {
-                        tutor =
-                                        tutorRepository
-                                                        .findById(request.getTutorId())
-                                                        .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
+                        tutor = tutorRepository
+                                        .findById(request.getTutorId())
+                                        .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
 
                         if (!Boolean.TRUE.equals(tutor.getVerificado())) {
                                 throw new RuntimeException("No puedes contactar un tutor no verificado");
@@ -53,84 +70,79 @@ public class MensajeService {
 
                         receptor = tutor.getUs();
                 } else {
-                        throw new RuntimeException("Debes indicar userId o tutorId");
+                        throw new IllegalArgumentException("Debes indicar userId o tutorId");
                 }
 
                 if (receptor.getId().equals(usuarioId)) {
-                        throw new RuntimeException("No puedes enviarte mensajes a ti mismo");
+                        throw new IllegalArgumentException("No puedes enviarte mensajes a ti mismo");
                 }
 
-        Mensaje mensaje =
-                Mensaje.builder()
-                        .contenido(request.getContenido())
-                        .emisor(emisor)
-                        .receptor(receptor)
-                        .tutor(tutor)
-                        .build();
+                Mensaje mensaje = Mensaje.builder()
+                                .contenido(request.getContenido())
+                                .emisor(emisor)
+                                .receptor(receptor)
+                                .tutor(tutor)
+                                .build();
 
-        mensajeRepository.save(mensaje);
+                mensajeRepository.save(mensaje);
 
-        return mapToResponse(mensaje);
-    }
+                return mapToResponse(mensaje);
+        }
 
-    @Transactional(readOnly = true)
-    public List<MensajeResponse> obtenerConversacion(Long usuarioId, Long tutorId) {
+        @Transactional(readOnly = true)
+        public List<MensajeResponse> obtenerConversacion(Long usuarioId, Long tutorId) {
 
-        Tutor tutor =
-                tutorRepository
-                        .findById(tutorId)
-                        .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
+                Tutor tutor = tutorRepository
+                                .findById(tutorId)
+                                .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
 
-        Long tutorUserId = tutor.getUs().getId();
+                Long tutorUserId = tutor.getUs().getId();
 
-        List<Mensaje> mensajes =
-                mensajeRepository
-                        .findByTutorIdAndEmisorIdAndReceptorIdOrTutorIdAndEmisorIdAndReceptorIdOrderByCreatedAtAsc(
-                                tutorId, usuarioId, tutorUserId, tutorId, tutorUserId, usuarioId);
+                List<Mensaje> mensajes = mensajeRepository
+                                .findByTutorIdAndEmisorIdAndReceptorIdOrTutorIdAndEmisorIdAndReceptorIdOrderByCreatedAtAsc(
+                                                tutorId, usuarioId, tutorUserId, tutorId, tutorUserId, usuarioId);
 
-        return mensajes.stream().map(this::mapToResponse).toList();
-    }
+                return mensajes.stream().map(this::mapToResponse).toList();
+        }
 
         @Transactional(readOnly = true)
         public List<MensajeResponse> obtenerConversacionConUsuario(Long usuarioId, Long otherUserId) {
                 if (otherUserId == null) {
-                        throw new RuntimeException("Usuario destino no indicado");
+                        throw new IllegalArgumentException("Usuario destino no indicado");
                 }
 
                 usuarioRepository
                                 .findById(otherUserId)
                                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-                List<Mensaje> mensajes =
-                                mensajeRepository
-                                                .findByEmisorIdAndReceptorIdOrEmisorIdAndReceptorIdOrderByCreatedAtAsc(
-                                                                usuarioId, otherUserId, otherUserId, usuarioId);
+                List<Mensaje> mensajes = mensajeRepository
+                                .findByEmisorIdAndReceptorIdOrEmisorIdAndReceptorIdOrderByCreatedAtAsc(
+                                                usuarioId, otherUserId, otherUserId, usuarioId);
 
                 return mensajes.stream().map(this::mapToResponse).toList();
         }
 
         @Transactional
         public void eliminarMensaje(Long usuarioId, Long mensajeId) {
-                Mensaje mensaje =
-                                mensajeRepository
-                                                .findById(mensajeId)
-                                                .orElseThrow(() -> new RuntimeException("Mensaje no encontrado"));
+                Mensaje mensaje = mensajeRepository
+                                .findById(mensajeId)
+                                .orElseThrow(() -> new IllegalArgumentException("Mensaje no encontrado"));
 
                 if (!mensaje.getEmisor().getId().equals(usuarioId)) {
-                        throw new RuntimeException("No tienes permiso para eliminar este mensaje");
+                        throw new IllegalArgumentException("No tienes permiso para eliminar este mensaje");
                 }
 
                 mensajeRepository.delete(mensaje);
         }
 
-    private MensajeResponse mapToResponse(Mensaje mensaje) {
-        return MensajeResponse.builder()
-                .id(mensaje.getId())
-                .contenido(mensaje.getContenido())
-                .editado(mensaje.getEditado())
-                .createdAt(mensaje.getCreatedAt())
-                .emisorId(mensaje.getEmisor().getId())
-                .receptorId(mensaje.getReceptor().getId())
-                .build();
-    }
+        private MensajeResponse mapToResponse(Mensaje mensaje) {
+                return MensajeResponse.builder()
+                                .id(mensaje.getId())
+                                .contenido(mensaje.getContenido())
+                                .editado(mensaje.getEditado())
+                                .createdAt(mensaje.getCreatedAt())
+                                .emisorId(mensaje.getEmisor().getId())
+                                .receptorId(mensaje.getReceptor().getId())
+                                .build();
+        }
 }
