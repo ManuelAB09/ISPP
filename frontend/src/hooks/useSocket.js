@@ -3,6 +3,8 @@ import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import { getApiBaseUrl } from '../api/baseUrl';
 
+const SOCKET_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+
 /**
  * Hook personalizado para manejar la conexión WebSocket (Socket.IO).
  * @param {string} token - Token JWT para autenticación.
@@ -12,7 +14,10 @@ export const useSocket = (token) => {
     const socketRef = useRef(null);
     const stompClientRef = useRef(null);
     const subscriptionsRef = useRef(new Map());
+    const subscriptionCounterRef = useRef(0);
     const localListenersRef = useRef(new Map());
+    const inactivityTimerRef = useRef(null);
+    const isIdleDisconnectedRef = useRef(false);
     const [isConnected, setIsConnected] = useState(false);
 
     useEffect(() => {
@@ -26,6 +31,94 @@ export const useSocket = (token) => {
         const WS_URL = `${SOCKET_SERVER}/ws`;
         const subscriptions = subscriptionsRef.current;
         const localListeners = localListenersRef.current;
+
+        const clearInactivityTimer = () => {
+            if (inactivityTimerRef.current) {
+                clearTimeout(inactivityTimerRef.current);
+                inactivityTimerRef.current = null;
+            }
+        };
+
+        const subscribeRecord = (record) => {
+            if (!stompClientRef.current || !stompClientRef.current.connected) {
+                return;
+            }
+
+            if (record.subscription) {
+                return;
+            }
+
+            record.subscription = stompClientRef.current.subscribe(record.destination, (frame) => {
+                try {
+                    const body = frame.body ? JSON.parse(frame.body) : null;
+                    record.callback(body);
+                } catch {
+                    record.callback(frame.body);
+                }
+            });
+        };
+
+        const subscribeAll = () => {
+            for (const [, record] of subscriptions.entries()) {
+                subscribeRecord(record);
+            }
+        };
+
+        const unsubscribeAll = () => {
+            for (const [, record] of subscriptions.entries()) {
+                if (record.subscription) {
+                    record.subscription.unsubscribe();
+                    record.subscription = null;
+                }
+            }
+        };
+
+        const deactivateSocket = () => {
+            if (stompClientRef.current?.active) {
+                unsubscribeAll();
+                stompClientRef.current.deactivate();
+            }
+        };
+
+        const activateSocket = () => {
+            if (!stompClientRef.current || stompClientRef.current.active) {
+                return;
+            }
+            stompClientRef.current.activate();
+        };
+
+        const handleInactivity = () => {
+            if (!stompClientRef.current?.connected) {
+                return;
+            }
+            isIdleDisconnectedRef.current = true;
+            console.log('🛑 Socket desconectado por inactividad');
+            deactivateSocket();
+        };
+
+        const resetInactivityTimer = () => {
+            clearInactivityTimer();
+            inactivityTimerRef.current = setTimeout(handleInactivity, SOCKET_IDLE_TIMEOUT_MS);
+        };
+
+        const handleUserActivity = () => {
+            if (isIdleDisconnectedRef.current) {
+                isIdleDisconnectedRef.current = false;
+                console.log('🔄 Actividad detectada: reconectando socket...');
+                activateSocket();
+            }
+            resetInactivityTimer();
+        };
+
+        const handleWindowFocus = () => {
+            handleUserActivity();
+        };
+
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                handleUserActivity();
+            }
+        };
 
         const emitLocal = (event, payload) => {
             const listeners = localListeners.get(event) || new Set();
@@ -78,22 +171,19 @@ export const useSocket = (token) => {
                 }
 
                 const destination = eventToSubscription(event);
-                const key = `${event}:${callback.toString()}:${Math.random()}`;
-                const subscription = stompClientRef.current.subscribe(destination, (frame) => {
-                    try {
-                        const body = frame.body ? JSON.parse(frame.body) : null;
-                        callback(body);
-                    } catch {
-                        callback(frame.body);
-                    }
-                });
-                subscriptions.set(key, { event, callback, subscription });
+                const key = `${event}:${subscriptionCounterRef.current++}`;
+                const record = { event, callback, destination, subscription: null };
+                subscriptions.set(key, record);
+                subscribeRecord(record);
             },
 
             off: (event, callback) => {
                 for (const [key, item] of subscriptions.entries()) {
                     if (item.event === event && (!callback || item.callback === callback)) {
-                        item.subscription.unsubscribe();
+                        if (item.subscription) {
+                            item.subscription.unsubscribe();
+                            item.subscription = null;
+                        }
                         subscriptions.delete(key);
                     }
                 }
@@ -137,6 +227,7 @@ export const useSocket = (token) => {
             heartbeatOutgoing: 10000,
             onConnect: () => {
                 setIsConnected(true);
+                subscribeAll();
                 emitLocal('connect', {});
                 console.log('✓ Conectado al servidor WebSocket (STOMP)');
             },
@@ -160,11 +251,24 @@ export const useSocket = (token) => {
         stompClientRef.current = client;
         client.activate();
 
+        const activityEvents = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'];
+        activityEvents.forEach((eventName) => {
+            window.addEventListener(eventName, handleUserActivity, { passive: true });
+        });
+        window.addEventListener('focus', handleWindowFocus);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        resetInactivityTimer();
+
         // Cleanup al desmontar
         return () => {
-            for (const [, item] of subscriptions.entries()) {
-                item.subscription.unsubscribe();
-            }
+            clearInactivityTimer();
+            activityEvents.forEach((eventName) => {
+                window.removeEventListener(eventName, handleUserActivity);
+            });
+            window.removeEventListener('focus', handleWindowFocus);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+
+            unsubscribeAll();
             subscriptions.clear();
             localListeners.clear();
 

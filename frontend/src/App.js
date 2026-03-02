@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './contexts/AuthContext';
 import { SocketProvider } from './contexts/SocketContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import './App.css';
 import Comunidades from './screens/comunidades/Comunidades';
 import CommunityDetail from './screens/comunidades/CommunityDetail';
@@ -52,29 +53,36 @@ function AppRoutes() {
   }
 
   return (
-    <SocketProvider token={socketToken}>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/comunidades" element={<Comunidades />} />
-        <Route path="/comunidades/:communityId" element={<CommunityDetail />} />
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/comunidades" element={<Comunidades />} />
+      <Route path="/comunidades/:communityId" element={<CommunityDetail />} />
 
-        <Route path="/crear-comunidad" element={<CrearComunidad />} />
-        <Route path="/crear-ubicacion" element={<CrearUbicacionScreen />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/perfil" element={<Profile />} />
-        <Route path="/perfil/:userId" element={<Profile />} />
-        <Route path="/chats" element={<Chats />} />
-        {ownerRoutes}
-      </Routes>
-    </SocketProvider>
+      <Route path="/crear-comunidad" element={<CrearComunidad />} />
+      <Route path="/crear-ubicacion" element={<CrearUbicacionScreen />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/perfil" element={<Profile />} />
+      <Route path="/perfil/:userId" element={<Profile />} />
+      <Route
+        path="/chats"
+        element={
+          <SocketProvider token={socketToken}>
+            <Chats />
+          </SocketProvider>
+        }
+      />
+      {ownerRoutes}
+    </Routes>
   );
 }
 
 function App() {
   return (
     <AuthProvider>
-      <AppRoutes />
+      <NotificationProvider>
+        <AppRoutes />
+      </NotificationProvider>
     </AuthProvider>
   );
 }
