@@ -53,27 +53,22 @@ function AppRoutes() {
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/comunidades" element={<Comunidades />} />
-      <Route path="/comunidades/:communityId" element={<CommunityDetail />} />
+    <SocketProvider token={socketToken}>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/comunidades" element={<Comunidades />} />
+        <Route path="/comunidades/:communityId" element={<CommunityDetail />} />
 
-      <Route path="/crear-comunidad" element={<CrearComunidad />} />
-      <Route path="/crear-ubicacion" element={<CrearUbicacionScreen />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/perfil" element={<Profile />} />
-      <Route path="/perfil/:userId" element={<Profile />} />
-      <Route
-        path="/chats"
-        element={
-          <SocketProvider token={socketToken}>
-            <Chats />
-          </SocketProvider>
-        }
-      />
-      {ownerRoutes}
-    </Routes>
+        <Route path="/crear-comunidad" element={<CrearComunidad />} />
+        <Route path="/crear-ubicacion" element={<CrearUbicacionScreen />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/perfil" element={<Profile />} />
+        <Route path="/perfil/:userId" element={<Profile />} />
+        <Route path="/chats" element={<Chats />} />
+        {ownerRoutes}
+      </Routes>
+    </SocketProvider>
   );
 }
 
