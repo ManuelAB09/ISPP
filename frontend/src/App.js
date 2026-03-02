@@ -1,18 +1,29 @@
 import { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import { useAuth } from './contexts/AuthContext';
+import { SocketProvider } from './contexts/SocketContext';
 import './App.css';
 import Comunidades from './screens/comunidades/Comunidades';
+import CommunityDetail from './screens/comunidades/CommunityDetail';
 import CrearComunidad from './screens/comunidades/CrearComunidad';
 import Home from './screens/home/Home';
-import CreateEvent from './screens/event/CreateEvent';
+import CrearEvento from './screens/evento/CrearEvento';
+import DetalleEvento from './screens/evento/DetalleEvento';
+import EventosMapaScreen from './screens/evento/EventosMapaScreen';
 import Register from './screens/auth/Register';
 import Login from './screens/auth/Login';
 import PlansScreen from './screens/planes/PlansScreen';
 import TeacherProfile from './screens/teacherProfile/TeacherProfile';
 import VerifiedTeachers from './screens/verifiedTeachers/VerifiedTeachers';
 import CrearUbicacionScreen from './screens/ubicaciones/CrearUbicacionScreen';
+import Profile from './screens/myProfile/Profile';
+import Chats from './screens/chat/Chats';
 
-function App() {
+function AppRoutes() {
+  const { isAuthenticated } = useAuth();
+  const socketToken = isAuthenticated ? localStorage.getItem('accessToken') : null;
+
   let ownerRoutes = <></>
 
   const init = async () => {
@@ -28,27 +39,43 @@ function App() {
     ownerRoutes = (
       <>
         <Route path="/profesores" element={<VerifiedTeachers />} />
+        <Route path="/profesores/nuevo" element={<TeacherProfile />} />
         <Route path="/profesores/:id" element={<TeacherProfile />} />
-        <Route path="/create-event/new" element={<CreateEvent />} />
-        <Route path="/create-event/:id" element={<CreateEvent />} />
+        <Route path="/crear-evento/new" element={<CrearEvento />} />
+        <Route path="/crear-evento/:id" element={<CrearEvento />} />
         <Route path="/planes" element={<PlansScreen />} />
         <Route path="/crear-ubicacion" element={<CrearUbicacionScreen />} />
+        <Route path="/eventos/:eventId" element={<DetalleEvento />} />
+        <Route path="/eventos-mapa" element={<EventosMapaScreen />} />
       </>
     )
   }
 
   return (
-    <div>
+    <SocketProvider token={socketToken}>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/comunidades/*" element={<Comunidades />} />
+        <Route path="/comunidades" element={<Comunidades />} />
+        <Route path="/comunidades/:communityId" element={<CommunityDetail />} />
+
         <Route path="/crear-comunidad" element={<CrearComunidad />} />
         <Route path="/crear-ubicacion" element={<CrearUbicacionScreen />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/perfil" element={<Profile />} />
+        <Route path="/perfil/:userId" element={<Profile />} />
+        <Route path="/chats" element={<Chats />} />
         {ownerRoutes}
       </Routes>
-    </div>
+    </SocketProvider>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
   );
 }
 

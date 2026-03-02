@@ -1,10 +1,15 @@
 // src/api/client.js
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:4010';
+import { getApiBaseUrl } from './baseUrl';
+
+const API_BASE_URL = getApiBaseUrl();
+
+// Helpful diagnostic when debugging networking issues:
+console.log('API_BASE_URL =', API_BASE_URL);
 
 class ApiClient {
   constructor(baseUrl) {
     this.baseUrl = baseUrl;
-    this.token = null;
+    this.token = localStorage.getItem('accessToken') || null;
   }
 
   setToken(token) {
@@ -16,8 +21,10 @@ class ApiClient {
       'Content-Type': 'application/json',
     };
 
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
+    // Always read the freshest token available
+    const currentToken = this.token || localStorage.getItem('accessToken');
+    if (currentToken) {
+      headers['Authorization'] = `Bearer ${currentToken}`;
     }
 
     const options = {

@@ -1,28 +1,42 @@
 // filepath: c:\Users\juana\OneDrive\Escritorio\Juan Antonio\Universidad\cuarto año\ISPP\ISPP\frontend\src\screens\auth\Register.js
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import './Register.css';
-import studyShareLogo from '../../static/images/studyShare_logo.png';
-
-const ACADEMIC_INTERESTS = [
-  'Ingeniería Software',
-  'Diseño',
-  'Física',
-  'Historia',
-  'Negocios',
-  'Medicina',
-];
+import studyShareLogo from '../../static/images/MeerKatters_logo.png';
 
 const Register = () => {
+  const navigate = useNavigate();
+  const { register, error: authError, clearError, isAuthenticated, loading } = useAuth();
+  
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     password: '',
-    interests: [],
     acceptTerms: false,
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [showMoreInterests, setShowMoreInterests] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // Si ya está autenticado, mostrar mensaje
+  if (!loading && isAuthenticated) {
+    return (
+      <div className="register-container">
+        <div className="register-already-logged">
+          <div className="register-already-logged__icon">✓</div>
+          <h1 className="register-already-logged__title">Ya has iniciado sesión</h1>
+          <p className="register-already-logged__text">
+            Ya tienes una sesión activa en la aplicación.
+          </p>
+          <div className="register-already-logged__buttons">
+            <Link to="/" className="btn-home">Ir al inicio</Link>
+            <Link to="/perfil" className="btn-profile">Ver mi perfil</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -30,22 +44,32 @@ const Register = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
-  };
-
-  const toggleInterest = (interest) => {
-    setFormData((prev) => ({
-      ...prev,
-      interests: prev.interests.includes(interest)
-        ? prev.interests.filter((i) => i !== interest)
-        : [...prev.interests, interest],
-    }));
+    // Limpiar errores al escribir
+    if (error) setError('');
+    if (authError) clearError();
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Implement registration logic with API
-    console.log('Form submitted:', formData);
-    // navigate('/login');
+    
+    // Validación de contraseña
+    if (formData.password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    const result = await register(formData.email, formData.password, formData.fullName);
+    
+    if (result.success) {
+      navigate('/');
+    } else {
+      setError(result.error || 'Error al registrarse');
+    }
+    
+    setIsLoading(false);
   };
 
   const handleGoogleRegister = () => {
@@ -62,10 +86,10 @@ const Register = () => {
     <div className="register-container">
       {/* Left Panel - Branding */}
       <div className="register-left-panel">
-        <div className="register-logo">
+        <Link to="/" className="register-logo">
           <img src={studyShareLogo} alt="MeerKatters Logo" className="register-logo-img" />
           <span className="logo-text">Meerkatters</span>
-        </div>
+        </Link>
 
         <div className="register-hero">
           <h1>Comienza tu viaje hacia la maestría</h1>
@@ -159,31 +183,6 @@ const Register = () => {
               </div>
             </div>
 
-            <div className="form-group">
-              <label>Intereses académicos</label>
-              <div className="interests-container">
-                {ACADEMIC_INTERESTS.map((interest) => (
-                  <button
-                    key={interest}
-                    type="button"
-                    className={`interest-chip ${
-                      formData.interests.includes(interest) ? 'selected' : ''
-                    }`}
-                    onClick={() => toggleInterest(interest)}
-                  >
-                    {interest}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  className="interest-chip more-chip"
-                  onClick={() => setShowMoreInterests(!showMoreInterests)}
-                >
-                  + Más
-                </button>
-              </div>
-            </div>
-
             <div className="form-group checkbox-group">
               <label className="checkbox-label">
                 <input
@@ -201,12 +200,20 @@ const Register = () => {
               </label>
             </div>
 
-            <button type="submit" className="register-button">
-              Registrar cuenta
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12"/>
-                <polyline points="12 5 19 12 12 19"/>
-              </svg>
+            {error && (
+              <div className="register-error-message">
+                {error}
+              </div>
+            )}
+
+            <button type="submit" className="register-button" disabled={isLoading}>
+              {isLoading ? 'Registrando...' : 'Registrar cuenta'}
+              {!isLoading && (
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                  <polyline points="12 5 19 12 12 19"/>
+                </svg>
+              )}
             </button>
           </form>
 

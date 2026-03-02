@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import es.us.meerkat.backend.dto.UbicacionRequest;
@@ -89,6 +90,21 @@ public final class UbicacionController {
     @GetMapping
     public List<Ubicacion> listarTodas() {
         return ubicacionService.obtenerTodas();
+    }
+
+    /**
+     * Busca sitios de estudio cercanos a una ubicación dada.
+     *
+     * @param lat Latitud del punto de referencia.
+     * @param lon Longitud del punto de referencia.
+     * @param radio Radio de búsqueda en metros.
+     * @return Lista de ubicaciones cercanas.
+     */
+    @GetMapping("/buscar-estudio")
+    public ResponseEntity<List<UbicacionResponse>> buscarSitiosEstudio(
+            @RequestParam Double lat, @RequestParam Double lon, @RequestParam Integer radio) {
+
+        return ResponseEntity.ok(ubicacionService.buscarSitiosEstudio(lat, lon, radio));
     }
 
     // ===============================

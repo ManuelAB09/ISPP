@@ -25,4 +25,10 @@ public class UbicacionResponse {
 
     /** Longitud geográfica. */
     private Double longitud;
+
+    /** Tipo de lugar (e.g., "cafe", "parque", "museo"). */
+    private String tipo;
+
+    /** Coste asociado al lugar (e.g., "gratis", "de pago", "desconocido"). */
+    private String coste;
 }

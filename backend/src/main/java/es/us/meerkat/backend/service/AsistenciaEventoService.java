@@ -7,10 +7,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.entity.AsistenciaEvento;
+import es.us.meerkat.backend.entity.EstadoAsistencia;
 import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
 import es.us.meerkat.backend.repository.EventoRepository;
+import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -31,6 +33,9 @@ public class AsistenciaEventoService {
 
     /** Repositorio para acceder a la información de usuarios. */
     private final UsuarioRepository usuarioRepository;
+
+    /** Repositorio para acceder a la información de miembros de comunidad. */
+    private final MiembroComunidadRepository miembroRepository;
 
     // ===============================
     // CONFIRMAR ASISTENCIA
@@ -56,6 +61,17 @@ public class AsistenciaEventoService {
                         .findById(usuarioIdParam)
                         .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
+        // Verificar si el usuario es miembro de la comunidad del evento
+        if (evento.getComunidad() != null) {
+            miembroRepository
+                    .findByUsuarioIdAndComunidadId(usuarioIdParam, evento.getComunidad().getId())
+                    .orElseThrow(
+                            () ->
+                                    new RuntimeException(
+                                            "Debes ser miembro de la comunidad para apuntarte a"
+                                                    + " este evento"));
+        }
+
         // Verificar si el evento está lleno
         if (evento.verificarAforo()) {
             throw new RuntimeException("El evento ha alcanzado su aforo máximo");
@@ -66,7 +82,12 @@ public class AsistenciaEventoService {
                 asistenciaRepository.findByEventoAndUsuario(eventoIdParam, usuarioIdParam);
         if (existente.isPresent()) {
             final AsistenciaEvento asistencia = existente.get();
+            final boolean yaConfirmada = EstadoAsistencia.CONFIRMADA.equals(asistencia.getEstado());
             asistencia.confirmarAsistencia();
+            if (!yaConfirmada) {
+                evento.setAsistentesConfirmados(evento.contarAsistentes() + 1);
+                eventoRepository.save(evento);
+            }
             return asistenciaRepository.save(asistencia);
         }
 
@@ -76,6 +97,10 @@ public class AsistenciaEventoService {
         asistencia.setUsuario(usuario);
         asistencia.confirmarAsistencia();
         asistencia.setCreatedAt(LocalDateTime.now());
+
+        // Actualizar contador de asistentes en el evento
+        evento.setAsistentesConfirmados(evento.contarAsistentes() + 1);
+        eventoRepository.save(evento);
 
         return asistenciaRepository.save(asistencia);
     }
@@ -97,8 +122,19 @@ public class AsistenciaEventoService {
                         .findByEventoAndUsuario(eventoIdParam, usuarioIdParam)
                         .orElseThrow(() -> new RuntimeException("Asistencia no encontrada"));
 
+        final boolean estabaConfirmada = EstadoAsistencia.CONFIRMADA.equals(asistencia.getEstado());
         asistencia.cancelarAsistencia();
         asistenciaRepository.save(asistencia);
+
+        // Actualizar contador de asistentes en el evento
+        if (estabaConfirmada) {
+            final Evento evento =
+                    eventoRepository
+                            .findById(eventoIdParam)
+                            .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
+            evento.setAsistentesConfirmados(Math.max(evento.contarAsistentes() - 1, 0));
+            eventoRepository.save(evento);
+        }
     }
 
     // ===============================

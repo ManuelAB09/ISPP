@@ -68,4 +68,7 @@ public class Comunidad {
 
     @OneToMany(mappedBy = "comunidad", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Categoria> categorias;
+
+    @OneToMany(mappedBy = "comunidad", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MensajeComunidad> mensajes;
 }

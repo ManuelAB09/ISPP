@@ -40,4 +40,14 @@ export const authApi = {
   getMe() {
     return apiClient.get('/api/v1/users/me');
   },
+
+  /**
+   * PUT /api/v1/users/me
+   * Actualizar perfil del usuario autenticado
+   * @param {Object} data - { nombre, foto, bio, universidad, grado, ubicacion, intereses }
+   * @returns {Promise<Object>} - UserResponse actualizado
+   */
+  updateMe(data) {
+    return apiClient.put('/api/v1/users/me', data);
+  },
 };

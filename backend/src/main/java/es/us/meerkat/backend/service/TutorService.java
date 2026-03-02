@@ -153,10 +153,8 @@ public class TutorService {
 
         final List<Tutor> tutores = tutorRepository.findAllByUsId(usuario.getId());
 
-        if (tutores.isEmpty()) {
-            throw new RuntimeException("No tienes perfiles de tutor creados");
-        }
-
+        // Devolver lista vacía si no hay perfiles; el controlador y el cliente
+        // saben cómo manejarlo.
         return tutores.stream().map(this::mapToResponse).toList();
     }
 
@@ -212,18 +210,28 @@ public class TutorService {
      * @param size Tamaño de página
      * @return Página de tutores filtrados
      */
-    public Page<Tutor> obtenerTutoresVerificados(
+    public Page<TutorProfileResponse> obtenerTutoresVerificados(
             String especialidad, BigDecimal tarifaMin, BigDecimal tarifaMax, int page, int size) {
-        // Valores por defecto
-        String espec = (especialidad != null) ? especialidad : "";
-        BigDecimal min = (tarifaMin != null) ? tarifaMin : BigDecimal.ZERO;
-        BigDecimal max = (tarifaMax != null) ? tarifaMax : new BigDecimal(Double.MAX_VALUE);
 
         PageRequest pageable = PageRequest.of(page, size);
 
-        return tutorRepository
-                .findByVerificadoTrueAndEspecialidadesContainingIgnoreCaseAndTarifaHoraBetween(
-                        espec, min, max, pageable);
+        Page<Tutor> pageResult;
+        // Sin filtros: devolver todos los verificados paginados
+        if (especialidad == null && tarifaMin == null && tarifaMax == null) {
+            pageResult = tutorRepository.findByVerificadoTrue(pageable);
+        } else {
+            // Con filtros: usar JPQL con JOIN sobre especialidades
+            BigDecimal min = (tarifaMin != null) ? tarifaMin : BigDecimal.ZERO;
+            BigDecimal max = (tarifaMax != null) ? tarifaMax : new BigDecimal("999999");
+            String espec = (especialidad != null) ? especialidad : "";
+
+            pageResult =
+                    tutorRepository.findVerificadosByEspecialidadAndTarifa(
+                            espec, min, max, pageable);
+        }
+
+        // Convertir cada entidad a DTO para evitar ciclos de serialización
+        return pageResult.map(this::mapToResponse);
     }
 
     // ===============================

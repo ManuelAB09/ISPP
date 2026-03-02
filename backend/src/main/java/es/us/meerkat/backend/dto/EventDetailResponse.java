@@ -35,15 +35,6 @@ public class EventDetailResponse {
     /** Fecha y hora de fin del evento. */
     private LocalDateTime fechaFin;
 
-    /** Ubicación física del evento. */
-    private String ubicacion;
-
-    /** Latitud de la ubicación. */
-    private Double latitud;
-
-    /** Longitud de la ubicación. */
-    private Double longitud;
-
     /** Aforo máximo del evento. */
     private Integer aforo;
 
@@ -54,7 +45,7 @@ public class EventDetailResponse {
     private String queLlevar;
 
     /** Si es visible en el mapa. */
-    private Boolean visibleEnMapa;
+    private Boolean visibleMapa;
 
     /** Si tiene modalidad virtual. */
     private Boolean esVirtual;
@@ -68,8 +59,14 @@ public class EventDetailResponse {
     /** Motivo de la cancelación. */
     private String motivoCancelacion;
 
-    /** Comunidad a la que pertenece el evento. */
-    // private CommunitySummaryResponse comunidad;
+    /** Si el evento es privado. */
+    private Boolean privado;
+
+    /** ID de la comunidad a la que pertenece el evento. */
+    private Long comunidadId;
+
+    /** Nombre de la comunidad a la que pertenece el evento. */
+    private String comunidadNombre;
 
     /** Usuario creador del evento. */
     private UserPublicResponse creador;
@@ -79,4 +76,7 @@ public class EventDetailResponse {
 
     /** Fecha de creación del evento. */
     private LocalDateTime createdAt;
+
+    /** Ubicación del evento. */
+    private UbicacionResponse ubicacion;
 }

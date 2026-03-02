@@ -48,14 +48,8 @@ import "./TutorModals.css";
        onGuardar(updated);
        onClose();
      } catch (err) {
-       console.error("Error al guardar perfil (usando mock fallback):", err);
-       // Fallback: Simulamos que se guardó correctamente en el Mock
-       const updatedMock = {
-         ...tutor,
-         ...payload
-       };
-       onGuardar(updatedMock);
-       onClose();
+       console.error("Error al guardar perfil:", err);
+       setError("No se pudieron guardar los cambios. Inténtalo de nuevo.");
      } finally {
        setGuardando(false);
      }

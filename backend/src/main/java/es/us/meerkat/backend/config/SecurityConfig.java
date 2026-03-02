@@ -10,6 +10,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import es.us.meerkat.backend.security.JwtAuthenticationFilter;
 
 /**
@@ -39,7 +41,11 @@ public class SecurityConfig {
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(
                         auth ->
-                                auth.requestMatchers(
+                                auth
+                                        // Permitir todos los métodos en WebSocket endpoints
+                                        .requestMatchers("/ws/**")
+                                        .permitAll()
+                                        .requestMatchers(
                                                 "/api/v1/auth/**",
                                                 "/api/ubicaciones",
                                                 "/api/ubicaciones/**",
@@ -60,6 +66,7 @@ public class SecurityConfig {
                                                 "/logo192.png",
                                                 "/logo512.png",
                                                 "/static/**",
+                                                "/ws/**",
                                                 "/error",
                                                 "/webjars/**",
                                                 "/h2-console/**",
@@ -71,12 +78,22 @@ public class SecurityConfig {
                                         // Permitir todas las rutas SPA (React Router)
                                         // que no empiecen por /api
                                         .requestMatchers(
-                                                request ->
-                                                        "GET".equals(request.getMethod())
-                                                                && !request.getRequestURI()
-                                                                        .startsWith("/api"))
+                                                request -> {
+                                                    final boolean isGet =
+                                                            "GET".equals(request.getMethod());
+                                                    final boolean isApiRoute =
+                                                            request.getRequestURI()
+                                                                    .startsWith("/api");
+                                                    return isGet && !isApiRoute;
+                                                })
                                         .permitAll()
                                         .requestMatchers(HttpMethod.GET, "/api/v1/users/{userId}")
+                                        .permitAll()
+                                        .requestMatchers(HttpMethod.GET, "/api/v1/communities/**")
+                                        .permitAll()
+                                        .requestMatchers(HttpMethod.GET, "/api/v1/events/**")
+                                        .permitAll()
+                                        .requestMatchers(HttpMethod.GET, "/api/v1/events")
                                         .permitAll()
                                         .anyRequest()
                                         .authenticated())
@@ -110,5 +127,15 @@ public class SecurityConfig {
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    /**
+     * Bean para mapear JSON a objetos Java y viceversa.
+     *
+     * @return Instancia de {@link ObjectMapper}.
+     */
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
     }
 }

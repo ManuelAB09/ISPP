@@ -12,9 +12,23 @@ export const communitiesApi = {
     if (params.search) query.set('search', params.search);
     if (params.page !== undefined) query.set('page', String(params.page));
     if (params.size !== undefined) query.set('size', String(params.size));
-    
+
     const queryString = query.toString();
     return apiClient.get(`/api/v1/communities${queryString ? '?' + queryString : ''}`);
+  },
+
+  /**
+   * GET /api/v1/communities/members/me
+   * Lista comunidades donde soy miembro
+   * @param {Object} params - { page?, size? }
+   */
+  listMine(params = {}) {
+    const query = new URLSearchParams();
+    if (params.page !== undefined) query.set('page', String(params.page));
+    if (params.size !== undefined) query.set('size', String(params.size));
+
+    const queryString = query.toString();
+    return apiClient.get(`/api/v1/communities/members/me${queryString ? '?' + queryString : ''}`);
   },
 
   /**
@@ -54,8 +68,34 @@ export const communitiesApi = {
     const query = new URLSearchParams();
     if (params.page !== undefined) query.set('page', String(params.page));
     if (params.size !== undefined) query.set('size', String(params.size));
-    
+
     const queryString = query.toString();
     return apiClient.get(`/api/v1/communities/${communityId}/members${queryString ? '?' + queryString : ''}`);
+  },
+
+  /**
+   * GET /api/v1/communities/{id}/members/me
+   * Obtener mi membresía en una comunidad
+   * @param {number} communityId
+   */
+  getMyMembership(communityId) {
+    return apiClient
+      .get(`/api/v1/communities/${communityId}/members/me`)
+      .catch((err) => {
+        if (err.status === 404) {
+          // no somos miembro, devolver null en vez de propagar el error
+          return null;
+        }
+        return Promise.reject(err);
+      });
+  },
+
+  /**
+   * DELETE /api/v1/communities/{id}/members/me
+   * Abandonar una comunidad
+   * @param {number} communityId
+   */
+  leave(communityId) {
+    return apiClient.delete(`/api/v1/communities/${communityId}/members/me`);
   },
 };
