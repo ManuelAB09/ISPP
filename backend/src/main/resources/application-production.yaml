@@ -33,3 +33,7 @@ logging:
   level:
     root: WARN
     es.us.meerkat: INFO
+
+app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:https://meerkatters-gwaqguhrhxdqfpax.spaincentral-01.azurewebsites.net}

@@ -35,3 +35,8 @@ logging:
   level:
     root: INFO
     es.us.meerkat: INFO
+
+# ── CORS: orígenes permitidos para este entorno ──
+app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:https://meerkatters-sprint1.onrender.com}

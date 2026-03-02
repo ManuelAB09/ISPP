@@ -1,5 +1,6 @@
 package es.us.meerkat.backend.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
@@ -28,11 +29,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
      *
      * @param registry registro de endpoints STOMP.
      */
+    @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:3001,http://localhost:8080}")
+    private String[] allowedOrigins;
+
     @Override
     public void registerStompEndpoints(final StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOrigins(
-                        "http://localhost:3000", "http://localhost:3001", "http://localhost:8080")
+                .setAllowedOrigins(allowedOrigins)
                 .withSockJS()
                 .setInterceptors();
     }
