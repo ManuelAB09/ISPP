@@ -121,8 +121,10 @@ public class EventoService {
 
         // Establecer ubicación si se proporcionó
         if (ubicacionId != null) {
-            final Ubicacion ubicacion = ubicacionRepository.findById(ubicacionId)
-                    .orElseThrow(() -> new RuntimeException("Ubicación no encontrada"));
+            final Ubicacion ubicacion =
+                    ubicacionRepository
+                            .findById(ubicacionId)
+                            .orElseThrow(() -> new RuntimeException("Ubicación no encontrada"));
             evento.setUbicacion(ubicacion);
         }
 
@@ -184,8 +186,10 @@ public class EventoService {
 
         // Actualizar ubicación
         if (ubicacionId != null) {
-            final Ubicacion ubicacion = ubicacionRepository.findById(ubicacionId)
-                    .orElseThrow(() -> new RuntimeException("Ubicación no encontrada"));
+            final Ubicacion ubicacion =
+                    ubicacionRepository
+                            .findById(ubicacionId)
+                            .orElseThrow(() -> new RuntimeException("Ubicación no encontrada"));
             evento.setUbicacion(ubicacion);
         } else if (Boolean.TRUE.equals(esVirtualParam)) {
             evento.setUbicacion(null);

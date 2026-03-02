@@ -148,7 +148,6 @@ public class DataSeeder {
 
             List<Usuario> usuarios = usuarioRepo.saveAll(List.of(u1, u2, u3, u4, u5, u6, u7, u8));
 
-
             // ============================
             // 2. UBICACIONES
             // ============================
@@ -160,7 +159,6 @@ public class DataSeeder {
                             .longitud(-5.9868)
                             .tipo("biblioteca")
                             .coste("gratis")
-
                             .build();
 
             Ubicacion ub2 =
@@ -171,7 +169,6 @@ public class DataSeeder {
                             .longitud(-5.9872)
                             .tipo("aula")
                             .coste("gratis")
-
                             .build();
 
             Ubicacion ub3 =
@@ -202,7 +199,6 @@ public class DataSeeder {
                             .longitud(-5.9870)
                             .tipo("biblioteca")
                             .coste("gratis")
-
                             .build();
 
             List<Ubicacion> ubicaciones = ubicacionRepo.saveAll(List.of(ub1, ub2, ub3, ub4, ub5));

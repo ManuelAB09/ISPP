@@ -10,12 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-
 import org.springframework.web.bind.annotation.*;
-
-import es.us.meerkat.backend.dto.*;
-import es.us.meerkat.backend.entity.Tutor;
-
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import es.us.meerkat.backend.dto.*;
+import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.PaymentService;
 import es.us.meerkat.backend.service.TutorService;
@@ -43,7 +40,6 @@ public class TutorController {
 
     private final TutorService tutorService;
     private final PaymentService paymentService;
-
 
     /**
      * Lista tutores disponibles con filtros opcionales.
@@ -82,8 +78,7 @@ public class TutorController {
                         especialidad, tarifaMin, tarifaMax, page, size);
 
         List<TutorProfileResponse> content =
-                tutores.getContent().stream()
-                        .collect(Collectors.toList());
+                tutores.getContent().stream().collect(Collectors.toList());
 
         var pageInfo =
                 PageInfo.builder()
@@ -97,7 +92,7 @@ public class TutorController {
 
         return ResponseEntity.ok(
                 TutorListResponse.builder().content(content).page(pageInfo).build());
-        }
+    }
 
     @GetMapping()
     public ResponseEntity<?> listarTutoresVerificados(
@@ -115,7 +110,6 @@ public class TutorController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al listar tutores verificados: " + e.getMessage());
         }
-
     }
 
     /**
@@ -328,4 +322,3 @@ public class TutorController {
                 .build();
     }
 }
-

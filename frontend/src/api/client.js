@@ -1,14 +1,7 @@
 // src/api/client.js
-// Compute base URL with a safe fallback. during development the
-// environment variable may accidentally be set to ":8080" or another
-// invalid value (see recent console errors).  In that case we ignore it
-// and default to localhost so the frontend keeps working without any
-// manual intervention.
-const rawUrl = process.env.REACT_APP_API_URL;
-const API_BASE_URL =
-  rawUrl && rawUrl.trim() && rawUrl.trim() !== ':8080'
-    ? rawUrl
-    : 'http://localhost:8080';
+import { getApiBaseUrl } from './baseUrl';
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Helpful diagnostic when debugging networking issues:
 console.log('API_BASE_URL =', API_BASE_URL);

@@ -1,15 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { LuPlus, LuArrowLeft, LuCalendar, LuUsers, LuLogIn, LuLogOut } from 'react-icons/lu';
 import Header from '../../components/Header/Header';
 import TarjetaEvento from '../../components/Evento/TarjetaEvento';
+import CommunityChat from '../chat/CommunityChat';
 import { communitiesApi } from '../../api/communities.api';
 import { listCommunityEvents, attendEvent, cancelAttendance, getMyAttendance } from '../../api/eventEndpoints';
+import { useAuth } from '../../contexts/AuthContext';
 import './CommunityDetail.css';
 
 export default function CommunityDetail() {
   const { communityId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user } = useAuth();
 
   const [community, setCommunity] = useState(null);
   const [events, setEvents] = useState([]);
@@ -23,6 +27,13 @@ export default function CommunityDetail() {
   const [membershipError, setMembershipError] = useState(null);
 
   const currentUserId = localStorage.getItem('userId');
+  const openChatOnLoad = searchParams.get('chat') === 'open';
+  const currentUser = {
+    id: Number(currentUserId),
+    nombre: user?.nombre || 'Usuario',
+    foto: user?.foto || null,
+  };
+  const communityImage = community?.imagen || community?.imagenUrl || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
 
   const fetchCommunity = useCallback(async () => {
     try {
@@ -175,7 +186,7 @@ export default function CommunityDetail() {
   if (loading) {
     return (
       <>
-        <Header page={'comunidades'} />
+        <Header page={'comunidades'} user={user} />
         <div className="cd-container">
           <p className="cd-loading">Cargando comunidad...</p>
         </div>
@@ -186,7 +197,7 @@ export default function CommunityDetail() {
   if (error && !community) {
     return (
       <>
-        <Header page={'comunidades'} />
+        <Header page={'comunidades'} user={user} />
         <div className="cd-container">
           <div className="cd-error">{error}</div>
           <button className="cd-back-btn" onClick={() => navigate('/comunidades')}>
@@ -199,7 +210,7 @@ export default function CommunityDetail() {
 
   return (
     <>
-      <Header page={'comunidades'} />
+      <Header page={'comunidades'} user={user} />
       <div className="cd-container">
         <button className="cd-back-btn" onClick={() => navigate('/comunidades')}>
           <LuArrowLeft /> Volver a comunidades
@@ -210,7 +221,7 @@ export default function CommunityDetail() {
           <div className="cd-header">
             <div className="cd-header-image">
               <img
-                src={community.imagen || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80'}
+                src={communityImage}
                 alt={community.nombre}
               />
             </div>
@@ -319,6 +330,16 @@ export default function CommunityDetail() {
             </div>
           )}
         </div>
+
+        {currentUserId && isMember && user ? (
+          <CommunityChat
+            comunidadId={Number(communityId)}
+            usuarioActual={currentUser}
+            comunidadNombre={community?.nombre}
+            comunidadImagen={communityImage}
+            initiallyOpen={openChatOnLoad}
+          />
+        ) : null}
       </div>
     </>
   );

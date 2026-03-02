@@ -117,6 +117,43 @@ Luego navega a `http://localhost:8081` y usa las mismas credenciales para conect
 - Usa variables de entorno (`SPRING_DATASOURCE_*`) para configurar la aplicación.
 - Considera restringir el acceso a PostgreSQL con Firewall si el servidor es público.
 
+## 6. Posibles fallos de instalación
+
+### Error: "La inicialización del clúster de la base de datos falló"
+
+Si durante la instalación de PostgreSQL aparece el mensaje:
+
+> *Problema al ejecutar el paso post instalación. La instalación no pudo finalizar correctamente.*
+> *La inicialización del clúster de la base de datos falló.*
+
+Esto suele ocurrir cuando se selecciona un idioma regional incompatible durante la instalación. Para solucionarlo:
+
+1. Desinstala PostgreSQL.
+2. Vuelve a ejecutar el instalador.
+3. Cuando el asistente te pregunte por el **Locale** (idioma/región), selecciona **Default locale** en lugar de "Español" u otro idioma.
+4. Continúa con el resto de la instalación normalmente.
+
+### El script de inicio no crea la base de datos o el usuario
+
+Si al ejecutar `start-backend.ps1` el backend falla porque no existe la base de datos o el usuario, puedes crearlos manualmente desde `psql`:
+
+```sql
+CREATE USER meerkatters_user WITH PASSWORD 'meerkatters_password';
+CREATE DATABASE meerkatters OWNER meerkatters_user;
+GRANT ALL PRIVILEGES ON DATABASE meerkatters TO meerkatters_user;
+```
+
+Para ejecutar estos comandos:
+
+1. Abre una terminal y conéctate como superusuario:
+   ```powershell
+   psql -U postgres -W
+   ```
+2. Introduce la contraseña del usuario `postgres`.
+3. Pega los tres comandos SQL anteriores y pulsa Enter.
+4. Verifica con `\l` que la base `meerkatters` aparece en el listado.
+5. Sal con `\q` y vuelve a lanzar `.\start-backend.ps1`.
+
 ---
 
 Con estas herramientas podrás inspeccionar, consultar y depurar el contenido de la base PostgreSQL usada por el backend.

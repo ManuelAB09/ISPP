@@ -1,13 +1,7 @@
 import axios from 'axios';
+import { getApiBaseUrl } from './baseUrl';
 
-// Historically we used port 4010 during the early stages of the
-// project; the backend now listens on 8080.  Use the same environment-check
-// logic as client.js so both fetch() and axios use the same base URL.
-const rawUrl = process.env.REACT_APP_API_URL;
-const API_BASE_URL =
-  rawUrl && rawUrl.trim() && rawUrl.trim() !== ':8080'
-    ? rawUrl
-    : 'http://localhost:8080';
+const API_BASE_URL = getApiBaseUrl();
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
