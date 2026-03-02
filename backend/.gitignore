@@ -33,4 +33,8 @@ build/
 
 # Ignorar configuración de VS Code
 .vscode/
+# Logs generados en ejecución (PostgreSQL, Spring, etc.)
+*.log
+pg.log
+
 data.sql

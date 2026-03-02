@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { LuCalendar, LuSquareCheck, LuMapPin, LuLink, LuArrowLeft, LuUsers, LuEye, LuEyeOff, LuMap, LuMapPinOff } from 'react-icons/lu';
-import './CreateEvent.css';
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { LuCalendar, LuSquareCheck, LuMapPin, LuLink, LuArrowLeft, LuUsers, LuEye, LuEyeOff, LuMap, LuMapPinOff, LuPlus } from 'react-icons/lu';
+import './CrearEvento.css';
 import Header from '../../components/Header/Header';
 import { createEvent, getEventById, updateEvent } from '../../api/eventEndpoints';
 import { communitiesApi } from '../../api/communities.api';
 
 
-const CreateEvent = () => {
+const CrearEvento = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const communityId = searchParams.get('communityId');
 
@@ -31,7 +32,12 @@ const CreateEvent = () => {
     direccion: '',
     aforo: '',
     privado: false,
-    visibleEnMapa: true
+    visibleEnMapa: true,
+    ubicacionId: null,
+    ubicacionNombre: '',
+    ubicacionDireccion: '',
+    ubicacionLatitud: null,
+    ubicacionLongitud: null
   });
 
   const [loading, setLoading] = useState(false);
@@ -40,6 +46,27 @@ const CreateEvent = () => {
 
   const isEdit = id && id !== 'new';
   const currentUserId = localStorage.getItem('userId');
+
+  // Recibir ubicación seleccionada desde CrearUbicacionScreen
+  useEffect(() => {
+    // Restaurar borrador del formulario PRIMERO
+    if (location.state?.eventFormDraft) {
+      setFormData(prev => ({ ...prev, ...location.state.eventFormDraft }));
+    }
+    // Luego aplicar la ubicación nueva (sobrescribe los campos de ubicación del draft)
+    if (location.state?.ubicacion) {
+      const ub = location.state.ubicacion;
+      setFormData(prev => ({
+        ...prev,
+        ubicacionId: ub.id,
+        ubicacionNombre: ub.nombre || '',
+        ubicacionDireccion: ub.direccion || '',
+        ubicacionLatitud: ub.latitud || null,
+        ubicacionLongitud: ub.longitud || null,
+        direccion: ub.direccion || ub.nombre || prev.direccion
+      }));
+    }
+  }, [location.state]);
 
   // Cargar datos del evento si es edición
   useEffect(() => {
@@ -76,7 +103,12 @@ const CreateEvent = () => {
             direccion: data.esVirtual ? (data.enlaceVirtual || '') : (data.ubicacion?.nombre || data.ubicacion || ''),
             aforo: data.aforo ? String(data.aforo) : '',
             privado: data.privado || false,
-            visibleEnMapa: data.visibleMapa !== undefined ? data.visibleMapa : (data.visibleEnMapa !== undefined ? data.visibleEnMapa : true)
+            visibleEnMapa: data.visibleMapa !== undefined ? data.visibleMapa : (data.visibleEnMapa !== undefined ? data.visibleEnMapa : true),
+            ubicacionId: data.ubicacion?.id || null,
+            ubicacionNombre: data.ubicacion?.nombre || '',
+            ubicacionDireccion: data.ubicacion?.direccion || '',
+            ubicacionLatitud: data.ubicacion?.latitud || null,
+            ubicacionLongitud: data.ubicacion?.longitud || null
           });
         } catch (err) {
           console.error('Error al cargar el evento:', err);
@@ -107,9 +139,15 @@ const CreateEvent = () => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     // Limpiar error de validación al cambiar campo
-    if (validationErrors[name]) {
-      setValidationErrors({ ...validationErrors, [name]: null });
+    const updatedErrors = { ...validationErrors };
+    if (updatedErrors[name]) {
+      updatedErrors[name] = null;
     }
+    // Limpiar error de fechaFin al cambiar cualquier campo de fecha/hora fin
+    if (['diaFin', 'mesFin', 'anioFin', 'horaFin', 'minutoFin'].includes(name)) {
+      updatedErrors.fechaFin = null;
+    }
+    setValidationErrors(updatedErrors);
   };
 
   const validateForm = () => {
@@ -121,10 +159,34 @@ const CreateEvent = () => {
     if (!formData.hora || !formData.minuto) errors.hora = 'La hora es obligatoria';
     if (!formData.aforo || parseInt(formData.aforo) < 1) errors.aforo = 'El aforo debe ser al menos 1';
     if (parseInt(formData.aforo) > 500) errors.aforo = 'El aforo no puede superar 500';
-    if (!formData.direccion.trim()) {
-      errors.direccion = formData.tipoLocalizacion === 'Online' 
-        ? 'El enlace virtual es obligatorio' 
-        : 'La dirección es obligatoria';
+
+    // Validar que la fecha de inicio no sea posterior a la fecha de fin
+    const tieneAlgunCampoFin = formData.diaFin || formData.mesFin || formData.anioFin || formData.horaFin || formData.minutoFin;
+    if (tieneAlgunCampoFin) {
+      if (!formData.diaFin || !formData.mesFin || !formData.anioFin) {
+        errors.fechaFin = 'Completa la fecha de fin (día, mes y año)';
+      } else {
+        const hFin = formData.horaFin ? parseInt(formData.horaFin) : 0;
+        const mFin = formData.minutoFin ? parseInt(formData.minutoFin) : 0;
+        const fechaInicio = new Date(
+          parseInt(formData.anio), parseInt(formData.mes) - 1, parseInt(formData.dia),
+          parseInt(formData.hora), parseInt(formData.minuto)
+        );
+        const fechaFin = new Date(
+          parseInt(formData.anioFin), parseInt(formData.mesFin) - 1, parseInt(formData.diaFin),
+          hFin, mFin
+        );
+        if (fechaInicio >= fechaFin) {
+          errors.fechaFin = 'La fecha de inicio debe ser anterior a la fecha de fin';
+        }
+      }
+    }
+
+    if (formData.tipoLocalizacion === 'Online' && !formData.direccion.trim()) {
+      errors.direccion = 'El enlace virtual es obligatorio';
+    }
+    if (formData.tipoLocalizacion === 'Presencial' && !formData.ubicacionId) {
+      errors.ubicacion = 'Debes seleccionar una ubicación para el evento presencial';
     }
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
@@ -149,12 +211,16 @@ const CreateEvent = () => {
     };
 
     // Fecha fin si se proporcionó
-    if (formData.diaFin && formData.mesFin && formData.anioFin && formData.horaFin && formData.minutoFin) {
-      payload.fechaFin = `${formData.anioFin}-${pad(formData.mesFin)}-${pad(formData.diaFin)}T${pad(formData.horaFin)}:${pad(formData.minutoFin)}:00`;
+    if (formData.diaFin && formData.mesFin && formData.anioFin) {
+      const hFin = formData.horaFin || '0';
+      const mFin = formData.minutoFin || '0';
+      payload.fechaFin = `${formData.anioFin}-${pad(formData.mesFin)}-${pad(formData.diaFin)}T${pad(hFin)}:${pad(mFin)}:00`;
     }
 
     if (!esVirtual) {
-      payload.ubicacion = formData.direccion;
+      if (formData.ubicacionId) {
+        payload.ubicacionId = formData.ubicacionId;
+      }
     } else {
       payload.enlaceVirtual = formData.direccion;
     }
@@ -265,18 +331,19 @@ const CreateEvent = () => {
             <div className="input-group">
               <label className="input-label">Fecha de fin (opcional)</label>
               <div className="input-row">
-                <input type="text" name="diaFin" placeholder="DD" value={formData.diaFin} onChange={handleChange} className="input-box input-small" maxLength={2} />
-                <input type="text" name="mesFin" placeholder="MM" value={formData.mesFin} onChange={handleChange} className="input-box input-small" maxLength={2} />
-                <input type="text" name="anioFin" placeholder="YYYY" value={formData.anioFin} onChange={handleChange} className="input-box input-medium" maxLength={4} />
+                <input type="text" name="diaFin" placeholder="DD" value={formData.diaFin} onChange={handleChange} className={`input-box input-small ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={2} />
+                <input type="text" name="mesFin" placeholder="MM" value={formData.mesFin} onChange={handleChange} className={`input-box input-small ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={2} />
+                <input type="text" name="anioFin" placeholder="YYYY" value={formData.anioFin} onChange={handleChange} className={`input-box input-medium ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={4} />
                 <LuCalendar className="input-icon" />
               </div>
+              {validationErrors.fechaFin && <span className="field-error">{validationErrors.fechaFin}</span>}
             </div>
 
             <div className="input-group">
               <label className="input-label">Hora de fin (opcional)</label>
               <div className="input-row">
-                <input type="text" name="horaFin" placeholder="HH" value={formData.horaFin} onChange={handleChange} className="input-box input-medium" maxLength={2} />
-                <input type="text" name="minutoFin" placeholder="mm" value={formData.minutoFin} onChange={handleChange} className="input-box input-medium" maxLength={2} />
+                <input type="text" name="horaFin" placeholder="HH" value={formData.horaFin} onChange={handleChange} className={`input-box input-medium ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={2} />
+                <input type="text" name="minutoFin" placeholder="mm" value={formData.minutoFin} onChange={handleChange} className={`input-box input-medium ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={2} />
                 <LuSquareCheck className="input-icon" />
               </div>
             </div>
@@ -380,9 +447,83 @@ const CreateEvent = () => {
           </div>
 
           <div className="right-column">
-            <label className="input-label">{formData.tipoLocalizacion === 'Online' ? 'Enlace virtual' : 'Dirección o lugar'} *</label>
-            <textarea name="direccion" placeholder={formData.tipoLocalizacion === 'Online' ? 'Ej. https://meet.google.com/abc-defg-hij' : '¿Dónde ocurrirá la reunión? Ej. Biblioteca de Facultad de Derecho (Sevilla)'} value={formData.direccion} onChange={handleChange} rows="3" className={`input-box input-large ${validationErrors.direccion ? 'input-error' : ''}`}></textarea>
-            {validationErrors.direccion && <span className="field-error">{validationErrors.direccion}</span>}
+            {formData.tipoLocalizacion === 'Online' && (
+              <>
+                <label className="input-label">Enlace virtual *</label>
+                <textarea name="direccion" placeholder="Ej. https://meet.google.com/abc-defg-hij" value={formData.direccion} onChange={handleChange} rows="3" className={`input-box input-large ${validationErrors.direccion ? 'input-error' : ''}`}></textarea>
+                {validationErrors.direccion && <span className="field-error">{validationErrors.direccion}</span>}
+              </>
+            )}
+
+            {formData.tipoLocalizacion === 'Presencial' && (
+              <div style={{ marginTop: '12px' }}>
+                {formData.ubicacionId ? (
+                  <div style={{
+                    background: '#f0faf5',
+                    border: '1px solid #b7eb8f',
+                    borderRadius: 10,
+                    padding: '16px',
+                    marginBottom: 4
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                          <LuMapPin style={{ color: '#52c41a', fontSize: '1.2rem' }} />
+                          <span style={{ fontWeight: 700, fontSize: '1.05rem', color: '#222' }}>
+                            {formData.ubicacionNombre || 'Ubicación seleccionada'}
+                          </span>
+                        </div>
+                        {formData.ubicacionDireccion && (
+                          <p style={{ margin: '0 0 6px 0', color: '#555', fontSize: '0.9rem', lineHeight: 1.4 }}>
+                            {formData.ubicacionDireccion}
+                          </p>
+                        )}
+                        {formData.ubicacionLatitud && formData.ubicacionLongitud && (
+                          <p style={{ margin: 0, color: '#888', fontSize: '0.8rem' }}>
+                            📍 {Number(formData.ubicacionLatitud).toFixed(5)}, {Number(formData.ubicacionLongitud).toFixed(5)}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-outline"
+                        style={{ fontSize: '0.85rem', padding: '6px 14px', whiteSpace: 'nowrap' }}
+                        onClick={() => {
+                          const returnPath = isEdit ? `/crear-evento/${id}` : `/crear-evento/new`;
+                          const returnQuery = communityId ? `?communityId=${communityId}` : '';
+                          navigate('/crear-ubicacion?returnTo=' + encodeURIComponent(returnPath + returnQuery), {
+                            state: { eventFormDraft: formData }
+                          });
+                        }}
+                      >
+                        Cambiar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                      onClick={() => {
+                        const returnPath = isEdit ? `/crear-evento/${id}` : `/crear-evento/new`;
+                        const returnQuery = communityId ? `?communityId=${communityId}` : '';
+                        navigate('/crear-ubicacion?returnTo=' + encodeURIComponent(returnPath + returnQuery), {
+                          state: { eventFormDraft: formData }
+                        });
+                      }}
+                    >
+                      <LuPlus /> Añadir ubicación del mapa
+                    </button>
+                    {validationErrors.ubicacion && <span className="field-error">{validationErrors.ubicacion}</span>}
+                  </>
+                )}
+                <span className="field-hint" style={{ marginTop: 4, display: 'block' }}>
+                  Selecciona o crea una ubicación para que aparezca en el mapa de eventos
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -407,4 +548,4 @@ const CreateEvent = () => {
   );
 };
 
-export default CreateEvent;
+export default CrearEvento;

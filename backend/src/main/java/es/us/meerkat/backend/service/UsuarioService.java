@@ -84,6 +84,16 @@ public class UsuarioService {
             usuario.setIntereses(requestParam.getIntereses());
         }
 
+        if (requestParam.getUniversidad() != null) {
+            usuario.setUniversidad(requestParam.getUniversidad());
+        }
+        if (requestParam.getGrado() != null) {
+            usuario.setGrado(requestParam.getGrado());
+        }
+        if (requestParam.getUbicacion() != null) {
+            usuario.setUbicacion(requestParam.getUbicacion());
+        }
+
         usuarioRepository.save(usuario);
         return mapToDetailResponse(usuario);
     }

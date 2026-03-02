@@ -138,6 +138,12 @@ public class MemberService {
         return miembroComunidadRepository.findByComunidadId(communityId, pageable);
     }
 
+    /** Lista las membresías de comunidades de un usuario. */
+    @Transactional(readOnly = true)
+    public Page<MiembroComunidad> listUserMemberships(Long userId, Pageable pageable) {
+        return miembroComunidadRepository.findByUsuarioId(userId, pageable);
+    }
+
     /** Transfiere el rol ADMIN a otro miembro (solo ADMIN actual). */
     public MiembroComunidad transferAdmin(Long userId, Long communityId, Long newAdminId) {
         if (!authorizationService.isAdminOf(userId, communityId)) {

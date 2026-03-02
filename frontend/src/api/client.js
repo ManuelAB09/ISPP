@@ -1,5 +1,10 @@
 // src/api/client.js
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+import { getApiBaseUrl } from './baseUrl';
+
+const API_BASE_URL = getApiBaseUrl();
+
+// Helpful diagnostic when debugging networking issues:
+console.log('API_BASE_URL =', API_BASE_URL);
 
 class ApiClient {
   constructor(baseUrl) {

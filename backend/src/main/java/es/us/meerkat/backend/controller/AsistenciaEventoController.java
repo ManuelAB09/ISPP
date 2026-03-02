@@ -73,8 +73,15 @@ public class AsistenciaEventoController {
     public ResponseEntity<AttendanceResponse> obtenerAsistenciaPropia(
             @PathVariable @Parameter(description = "ID del evento") final Long eventId,
             @Parameter(description = "ID del usuario") @RequestParam final Long usuarioId) {
-
-        return ResponseEntity.ok(asistenciaService.obtenerAsistencia(eventId, usuarioId).toDTO());
+        try {
+            return ResponseEntity.ok(
+                    asistenciaService.obtenerAsistencia(eventId, usuarioId).toDTO());
+        } catch (final RuntimeException e) {
+            if ("Asistencia no encontrada".equals(e.getMessage())) {
+                return ResponseEntity.noContent().build();
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
     }
 
     /**
@@ -91,9 +98,15 @@ public class AsistenciaEventoController {
     public ResponseEntity<Void> cancelarAsistenciaPropia(
             @PathVariable @Parameter(description = "ID del evento") final Long eventId,
             @Parameter(description = "ID del usuario") @RequestParam final Long usuarioId) {
-
-        asistenciaService.cancelarAsistencia(eventId, usuarioId);
-        return ResponseEntity.noContent().build();
+        try {
+            asistenciaService.cancelarAsistencia(eventId, usuarioId);
+            return ResponseEntity.noContent().build();
+        } catch (final RuntimeException e) {
+            if ("Asistencia no encontrada".equals(e.getMessage())) {
+                return ResponseEntity.noContent().build();
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
     }
 
     // ===============================

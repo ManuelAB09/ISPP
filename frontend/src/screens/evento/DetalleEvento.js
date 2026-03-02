@@ -5,7 +5,7 @@ import {
   LuPencil, LuX, LuArrowLeft, LuPackage,
   LuEye, LuEyeOff, LuMap, LuClock, LuCheck
 } from 'react-icons/lu';
-import './EventDetail.css';
+import './DetalleEvento.css';
 import Header from '../../components/Header/Header';
 import {
   getEventById, cancelEvent, attendEvent, cancelAttendance,
@@ -13,7 +13,7 @@ import {
 } from '../../api/eventEndpoints';
 import { communitiesApi } from '../../api/communities.api';
 
-const EventDetail = () => {
+const DetalleEvento = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
 
@@ -204,7 +204,7 @@ const EventDetail = () => {
             <div className="ed-organizer-actions">
               <button
                 className="ed-btn ed-btn-edit"
-                onClick={() => navigate(`/create-event/${eventId}`)}
+                onClick={() => navigate(`/crear-evento/${eventId}`)}
               >
                 <LuPencil /> Editar evento
               </button>
@@ -264,19 +264,51 @@ const EventDetail = () => {
                   </div>
                 )}
 
-                <div className="ed-detail-item">
-                  {event.esVirtual ? <LuLink className="ed-detail-icon" /> : <LuMapPin className="ed-detail-icon" />}
-                  <div>
-                    <span className="ed-detail-label">
-                      {event.esVirtual ? 'Enlace virtual' : 'Ubicación'}
-                    </span>
-                    <span className="ed-detail-value">
-                      {event.esVirtual
-                        ? (event.enlaceVirtual || 'Por confirmar')
-                        : (event.ubicacion?.nombre || event.ubicacion || 'Por confirmar')}
-                    </span>
+                {event.esVirtual ? (
+                  <div className="ed-detail-item">
+                    <LuLink className="ed-detail-icon" />
+                    <div>
+                      <span className="ed-detail-label">Enlace virtual</span>
+                      <span className="ed-detail-value">
+                        {event.enlaceVirtual ? (
+                          <a href={event.enlaceVirtual} target="_blank" rel="noopener noreferrer" style={{ color: '#1890ff', textDecoration: 'underline' }}>
+                            {event.enlaceVirtual}
+                          </a>
+                        ) : 'Por confirmar'}
+                      </span>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  event.ubicacion ? (
+                    <div className="ed-detail-item" style={{ alignItems: 'flex-start' }}>
+                      <LuMapPin className="ed-detail-icon" style={{ color: '#52c41a', fontSize: '1.3rem', marginTop: 2 }} />
+                      <div style={{ flex: 1 }}>
+                        <span className="ed-detail-label">Ubicación</span>
+                        <span className="ed-detail-value" style={{ fontWeight: 600, fontSize: '1rem' }}>
+                          {event.ubicacion.nombre || 'Ubicación'}
+                        </span>
+                        {event.ubicacion.direccion && (
+                          <p style={{ margin: '4px 0 2px 0', color: '#555', fontSize: '0.88rem', lineHeight: 1.4 }}>
+                            {event.ubicacion.direccion}
+                          </p>
+                        )}
+                        {event.ubicacion.latitud && event.ubicacion.longitud && (
+                          <p style={{ margin: '2px 0 0 0', color: '#888', fontSize: '0.8rem' }}>
+                            📍 {Number(event.ubicacion.latitud).toFixed(5)}, {Number(event.ubicacion.longitud).toFixed(5)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="ed-detail-item">
+                      <LuMapPin className="ed-detail-icon" />
+                      <div>
+                        <span className="ed-detail-label">Ubicación</span>
+                        <span className="ed-detail-value">Por confirmar</span>
+                      </div>
+                    </div>
+                  )
+                )}
 
                 <div className="ed-detail-item">
                   <LuUsers className="ed-detail-icon" />
@@ -453,4 +485,4 @@ const EventDetail = () => {
   );
 };
 
-export default EventDetail;
+export default DetalleEvento;

@@ -15,26 +15,11 @@ export const authApi = {
   /**
    * POST /api/v1/auth/register
    * Registrar nuevo usuario
-   * @param {Object} data - { email, password, nombre, profileImage? }
+   * @param {Object} data - { email, password, nombre }
    * @returns {Promise<Object>} - { accessToken, refreshToken, expiresIn, user }
    */
   register(data) {
-    const { profileImage, ...userData } = data;
-    
-    // Si hay imagen, usar FormData
-    if (profileImage) {
-      const formData = new FormData();
-      formData.append('email', userData.email);
-      formData.append('password', userData.password);
-      formData.append('nombre', userData.nombre);
-      formData.append('profileImage', profileImage);
-      return apiClient.post('/api/v1/auth/register', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-    }
-    
-    // Sin imagen, enviar JSON normal
-    return apiClient.post('/api/v1/auth/register', userData);
+    return apiClient.post('/api/v1/auth/register', data);
   },
 
   /**
@@ -54,5 +39,15 @@ export const authApi = {
    */
   getMe() {
     return apiClient.get('/api/v1/users/me');
+  },
+
+  /**
+   * PUT /api/v1/users/me
+   * Actualizar perfil del usuario autenticado
+   * @param {Object} data - { nombre, foto, bio, universidad, grado, ubicacion, intereses }
+   * @returns {Promise<Object>} - UserResponse actualizado
+   */
+  updateMe(data) {
+    return apiClient.put('/api/v1/users/me', data);
   },
 };
