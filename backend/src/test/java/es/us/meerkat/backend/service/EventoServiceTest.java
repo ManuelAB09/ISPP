@@ -48,9 +48,6 @@ class EventoServiceTest {
         evento.setDescripcion("Repaso de cálculo integral");
         evento.setFechaHora(ahora);
         evento.setFechaFin(mañana);
-        evento.setUbicacion("Biblioteca Central");
-        evento.setLatitud(41.5);
-        evento.setLongitud(-74.0);
         evento.setAforo(30);
         evento.setAsistentesConfirmados(10);
         evento.setQueLlevar("Libreta y bolígrafo");
@@ -84,13 +81,11 @@ class EventoServiceTest {
                         nuevaDescripcion,
                         nuevaFecha,
                         nuevaFecha.plusHours(2),
-                        "Aula 101",
-                        41.5,
-                        -74.0,
                         nuevoAforo,
                         "Calculadora",
                         false,
-                        false);
+                        false,
+                        null);
 
         // Then
         assertNotNull(resultado);
@@ -114,13 +109,11 @@ class EventoServiceTest {
                                 "Descripción",
                                 ahora,
                                 mañana,
-                                "Ubicación",
-                                41.5,
-                                -74.0,
                                 30,
                                 "Qué llevar",
                                 false,
-                                false));
+                                false,
+                                null));
 
         verify(eventoRepository).findById(999L);
         verify(eventoRepository, never()).save(any());

@@ -16,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import es.us.meerkat.backend.dto.AttendanceResponse;
 import es.us.meerkat.backend.entity.AsistenciaEvento;
 import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.Usuario;
@@ -24,7 +25,7 @@ import es.us.meerkat.backend.service.AsistenciaEventoService;
 /**
  * Tests del controlador de asistencia a eventos.
  *
- * <p>Valida el comportamiento de los endpoints REST de gestión de asistencia.
+ * <p>Valida que el controlador convierte correctamente las entidades a DTOs.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Tests del controlador de asistencia a eventos")
@@ -63,26 +64,25 @@ class AsistenciaEventoControllerTest {
     // ========================
 
     @Test
-    @DisplayName("POST /me - Debe confirmar asistencia exitosamente")
+    @DisplayName("POST {eventId}/attendance - Debe confirmar asistencia y convertir a DTO")
     void testConfirmarAsistencia_Exito() {
         // Given
         when(asistenciaService.confirmarAsistencia(1L, 1L)).thenReturn(asistencia);
 
         // When
-        ResponseEntity<AsistenciaEvento> response =
+        ResponseEntity<AttendanceResponse> response =
                 asistenciaController.confirmarAsistencia(1L, 1L);
 
         // Then
         assertNotNull(response);
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(asistencia.getId(), response.getBody().getId());
-        assertEquals(usuario.getId(), response.getBody().getUsuario().getId());
+        assertEquals(1L, response.getBody().getId());
         verify(asistenciaService).confirmarAsistencia(1L, 1L);
     }
 
     @Test
-    @DisplayName("POST /me - Debe retornar error si el evento no existe")
+    @DisplayName("POST {eventId}/attendance - Debe lanzar excepción si evento no existe")
     void testConfirmarAsistencia_EventoNoExiste() {
         // Given
         when(asistenciaService.confirmarAsistencia(999L, 1L))
@@ -91,12 +91,11 @@ class AsistenciaEventoControllerTest {
         // When & Then
         assertThrows(
                 RuntimeException.class, () -> asistenciaController.confirmarAsistencia(999L, 1L));
-
         verify(asistenciaService).confirmarAsistencia(999L, 1L);
     }
 
     @Test
-    @DisplayName("POST /me - Debe retornar error si el aforo está lleno")
+    @DisplayName("POST {eventId}/attendance - Debe lanzar excepción si aforo está lleno")
     void testConfirmarAsistencia_AforoLleno() {
         // Given
         when(asistenciaService.confirmarAsistencia(1L, 1L))
@@ -107,7 +106,6 @@ class AsistenciaEventoControllerTest {
                 assertThrows(
                         RuntimeException.class,
                         () -> asistenciaController.confirmarAsistencia(1L, 1L));
-
         assertEquals("El evento ha alcanzado su aforo máximo", exception.getMessage());
         verify(asistenciaService).confirmarAsistencia(1L, 1L);
     }
@@ -117,35 +115,36 @@ class AsistenciaEventoControllerTest {
     // ========================
 
     @Test
-    @DisplayName("GET /me - Debe obtener asistencia propia del usuario")
+    @DisplayName("GET {eventId}/attendance/me - Debe obtener asistencia como AttendanceResponse")
     void testObtenerAsistenciaPropia_Exito() {
         // Given
         when(asistenciaService.obtenerAsistencia(1L, 1L)).thenReturn(asistencia);
 
         // When
-        ResponseEntity<AsistenciaEvento> response =
+        ResponseEntity<AttendanceResponse> response =
                 asistenciaController.obtenerAsistenciaPropia(1L, 1L);
 
         // Then
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(asistencia.getId(), response.getBody().getId());
+        assertEquals(1L, response.getBody().getId());
         verify(asistenciaService).obtenerAsistencia(1L, 1L);
     }
 
     @Test
-    @DisplayName("GET /me - Debe retornar error si no existe asistencia")
+    @DisplayName("GET {eventId}/attendance/me - Devuelve NO_CONTENT si no existe")
     void testObtenerAsistenciaPropia_NoExiste() {
         // Given
         when(asistenciaService.obtenerAsistencia(1L, 999L))
                 .thenThrow(new RuntimeException("Asistencia no encontrada"));
 
-        // When & Then
-        assertThrows(
-                RuntimeException.class,
-                () -> asistenciaController.obtenerAsistenciaPropia(1L, 999L));
+        // When
+        ResponseEntity<AttendanceResponse> response =
+                asistenciaController.obtenerAsistenciaPropia(1L, 999L);
 
+        // Then
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         verify(asistenciaService).obtenerAsistencia(1L, 999L);
     }
 
@@ -154,7 +153,7 @@ class AsistenciaEventoControllerTest {
     // ========================
 
     @Test
-    @DisplayName("DELETE /me - Debe cancelar asistencia propia")
+    @DisplayName("DELETE {eventId}/attendance/me - Debe cancelar asistencia")
     void testCancelarAsistenciaPropia_Exito() {
         // Given
         doNothing().when(asistenciaService).cancelarAsistencia(1L, 1L);
@@ -169,18 +168,18 @@ class AsistenciaEventoControllerTest {
     }
 
     @Test
-    @DisplayName("DELETE /me - Debe retornar error si no existe asistencia para cancelar")
+    @DisplayName("DELETE {eventId}/attendance/me - Devuelve NO_CONTENT si no existe")
     void testCancelarAsistenciaPropia_NoExiste() {
         // Given
         doThrow(new RuntimeException("Asistencia no encontrada"))
                 .when(asistenciaService)
                 .cancelarAsistencia(1L, 999L);
 
-        // When & Then
-        assertThrows(
-                RuntimeException.class,
-                () -> asistenciaController.cancelarAsistenciaPropia(1L, 999L));
+        // When
+        ResponseEntity<Void> response = asistenciaController.cancelarAsistenciaPropia(1L, 999L);
 
+        // Then
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         verify(asistenciaService).cancelarAsistencia(1L, 999L);
     }
 
@@ -189,7 +188,7 @@ class AsistenciaEventoControllerTest {
     // ========================
 
     @Test
-    @DisplayName("Debe obtener lista de asistentes confirmados para un evento")
+    @DisplayName("GET {eventId}/attendance/confirmed - Debe convertir lista a AttendanceResponse")
     void testObtenerAsistentesConfirmados_Exito() {
         // Given
         Usuario usuario2 = new Usuario();
@@ -205,31 +204,29 @@ class AsistenciaEventoControllerTest {
         when(asistenciaService.obtenerAsistentesConfirmados(1L)).thenReturn(asistentes);
 
         // When
-        ResponseEntity<List<AsistenciaEvento>> response =
+        ResponseEntity<List<AttendanceResponse>> response =
                 asistenciaController.obtenerAsistentesConfirmados(1L);
 
         // Then
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
         assertEquals(2, response.getBody().size());
         verify(asistenciaService).obtenerAsistentesConfirmados(1L);
     }
 
     @Test
-    @DisplayName("Debe devolver lista vacía si no hay asistentes confirmados")
+    @DisplayName("GET {eventId}/attendance/confirmed - Devuelve lista vacía")
     void testObtenerAsistentesConfirmados_Vacio() {
         // Given
         when(asistenciaService.obtenerAsistentesConfirmados(1L)).thenReturn(List.of());
 
         // When
-        ResponseEntity<List<AsistenciaEvento>> response =
+        ResponseEntity<List<AttendanceResponse>> response =
                 asistenciaController.obtenerAsistentesConfirmados(1L);
 
         // Then
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
         assertTrue(response.getBody().isEmpty());
         verify(asistenciaService).obtenerAsistentesConfirmados(1L);
     }
@@ -239,7 +236,7 @@ class AsistenciaEventoControllerTest {
     // ========================
 
     @Test
-    @DisplayName("Debe contar asistentes confirmados de un evento")
+    @DisplayName("GET {eventId}/attendance/count - Debe retornar número de asistentes")
     void testContarAsistentes_Exito() {
         // Given
         when(asistenciaService.contarAsistentesConfirmados(1L)).thenReturn(5L);
@@ -250,40 +247,29 @@ class AsistenciaEventoControllerTest {
         // Then
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
         assertEquals(5L, response.getBody());
         verify(asistenciaService).contarAsistentesConfirmados(1L);
     }
 
     // ========================
-    // VALIDACIÓN DE CAPACIDAD
+    // OBTENER ASISTENCIAS DEL EVENTO
     // ========================
 
     @Test
-    @DisplayName("Debe validar que hay plazas disponibles en evento")
-    void testValidarPlazasDisponibles() {
+    @DisplayName("GET {eventId}/attendance - Debe retornar todas las asistencias")
+    void testObtenerAsistenciasEvento_Exito() {
         // Given
-        evento.setAforo(30);
-        evento.setAsistentesConfirmados(10);
+        List<AsistenciaEvento> asistencias = List.of(asistencia);
+        when(asistenciaService.obtenerAsistenciasEvento(1L)).thenReturn(asistencias);
 
         // When
-        boolean hayPlazas = evento.getAsistentesConfirmados() < evento.getAforo();
+        ResponseEntity<List<AttendanceResponse>> response =
+                asistenciaController.obtenerAsistenciasEvento(1L);
 
         // Then
-        assertTrue(hayPlazas);
-    }
-
-    @Test
-    @DisplayName("Debe validar que no hay plazas cuando aforo está completo")
-    void testNoHayPlazasAfroLleno() {
-        // Given
-        evento.setAforo(10);
-        evento.setAsistentesConfirmados(10);
-
-        // When
-        boolean hayPlazas = evento.getAsistentesConfirmados() < evento.getAforo();
-
-        // Then
-        assertFalse(hayPlazas);
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(1, response.getBody().size());
+        verify(asistenciaService).obtenerAsistenciasEvento(1L);
     }
 }
