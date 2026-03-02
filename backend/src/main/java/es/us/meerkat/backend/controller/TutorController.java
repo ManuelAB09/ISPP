@@ -49,7 +49,6 @@ public class TutorController {
     private final TutorService tutorService;
     private final PaymentService paymentService;
 
-
     /**
      * Lista tutores disponibles con filtros opcionales.
      *
@@ -87,8 +86,7 @@ public class TutorController {
                         especialidad, tarifaMin, tarifaMax, page, size);
 
         List<TutorProfileResponse> content =
-                tutores.getContent().stream()
-                        .collect(Collectors.toList());
+                tutores.getContent().stream().collect(Collectors.toList());
 
         var pageInfo =
                 PageInfo.builder()
@@ -314,4 +312,3 @@ public class TutorController {
                 .build();
     }
 }
-

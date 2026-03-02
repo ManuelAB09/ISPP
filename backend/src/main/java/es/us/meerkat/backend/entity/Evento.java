@@ -252,7 +252,6 @@ public class Evento {
                         .comunidadNombre(
                                 this.comunidad != null ? this.comunidad.getNombre() : null);
 
-
         if (this.creador != null) {
             builder.creador(
                     UserPublicResponse.builder()

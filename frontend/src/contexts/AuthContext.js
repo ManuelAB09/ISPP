@@ -63,10 +63,10 @@ export const AuthProvider = ({ children }) => {
       const token = localStorage.getItem('accessToken');
       if (token) {
         apiClient.setToken(token);
+        const storedData = getStoredUserData();
         try {
           const userData = await authApi.getMe();
           // Combinar datos de la API con los guardados localmente (para campos que la API no devuelve)
-          const storedData = getStoredUserData();
           const combinedUser = {
             ...userData,
             universidad: storedData?.universidad ?? '',
@@ -76,9 +76,14 @@ export const AuthProvider = ({ children }) => {
           setUser(combinedUser);
           saveUserToStorage(userData, storedData || {});
         } catch (err) {
-          // Token inválido o expirado
-          clearUserFromStorage();
-          apiClient.setToken(null);
+          const status = err?.status;
+          const unauthorized = status === 401 || status === 403;
+          if (unauthorized) {
+            clearUserFromStorage();
+            apiClient.setToken(null);
+          } else if (storedData) {
+            setUser(storedData);
+          }
         }
       }
       setLoading(false);
@@ -92,12 +97,12 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authApi.login({ email, password });
       const { accessToken, user: userData } = response;
-      
+
       localStorage.setItem('accessToken', accessToken);
       saveUserToStorage(userData);
       apiClient.setToken(accessToken);
       setUser(userData);
-      
+
       return { success: true };
     } catch (err) {
       const message = err.message || 'Error al iniciar sesión';
@@ -111,12 +116,12 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authApi.register({ email, password, nombre });
       const { accessToken, user: userData } = response;
-      
+
       localStorage.setItem('accessToken', accessToken);
       saveUserToStorage(userData);
       apiClient.setToken(accessToken);
       setUser(userData);
-      
+
       return { success: true };
     } catch (err) {
       const message = err.message || 'Error al registrarse';

@@ -1,5 +1,6 @@
 package es.us.meerkat.backend.controller;
 
+import java.time.LocalDate;
 import java.util.Map;
 import java.util.Optional;
 
@@ -60,7 +61,17 @@ public class SuscripcionController {
         if (suscripcion.isPresent()) {
             return ResponseEntity.ok(suscripcion.get().toDTO());
         } else {
-            return ResponseEntity.notFound().build();
+            SubscriptionResponse freePlan =
+                    SubscriptionResponse.builder()
+                            .id(null)
+                            .plan(TipoPlan.FREE)
+                            .fechaInicio(LocalDate.now())
+                            .fechaFin(LocalDate.now())
+                            .activa(true)
+                            .autoRenovar(false)
+                            .enPeriodoGracia(false)
+                            .build();
+            return ResponseEntity.ok(freePlan);
         }
     }
 

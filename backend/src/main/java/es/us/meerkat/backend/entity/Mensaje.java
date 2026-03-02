@@ -37,7 +37,7 @@ public class Mensaje {
 
     // Tutor relacionado (opcional pero recomendado)
     @ManyToOne
-    @JoinColumn(name = "tutor_id", nullable = false)
+    @JoinColumn(name = "tutor_id", nullable = true)
     private Tutor tutor;
 
     @PrePersist

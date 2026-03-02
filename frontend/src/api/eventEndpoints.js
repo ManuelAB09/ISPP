@@ -83,8 +83,15 @@ export const attendEvent = async (eventId) => {
  */
 export const getMyAttendance = async (eventId) => {
   const usuarioId = getUserId();
-  const response = await axiosInstance.get(`/api/v1/events/${eventId}/attendance/me`, { params: { usuarioId } });
-  return response.data;
+  try {
+    const response = await axiosInstance.get(`/api/v1/events/${eventId}/attendance/me`, { params: { usuarioId } });
+    return response.data;
+  } catch (error) {
+    if (error?.response?.status === 404) {
+      return null;
+    }
+    throw error;
+  }
 };
 
 /**

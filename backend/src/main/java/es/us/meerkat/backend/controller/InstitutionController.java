@@ -47,14 +47,26 @@ public class InstitutionController {
      */
     @PostMapping
     @Operation(summary = "Crear nueva institución")
-    public ResponseEntity<InstitutionResponse> crearInstitucion(
+    public ResponseEntity<?> crearInstitucion(
             @AuthenticationPrincipal Usuario usuario,
             @Valid @RequestBody CreateInstitutionRequest request) {
 
-        Institution institution = institutionService.crearInstitucion(usuario.getId(), request);
-        InstitutionResponse response = toInstitutionResponse(institution);
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        try {
+            Institution institution = institutionService.crearInstitucion(usuario.getId(), request);
+            InstitutionResponse response = toInstitutionResponse(institution);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (IllegalArgumentException e) {
+            String msg = e.getMessage();
+            if (msg != null && msg.contains("dominio")) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(java.util.Map.of("error", msg));
+            }
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", msg));
+        }
     }
 
     /**
@@ -113,16 +125,26 @@ public class InstitutionController {
      */
     @PostMapping("/{institutionId}/plan")
     @Operation(summary = "Contratar plan corporativo")
-    public ResponseEntity<PaymentUrlResponse> contratarPlanCorporativo(
+    public ResponseEntity<?> contratarPlanCorporativo(
             @PathVariable Long institutionId,
             @AuthenticationPrincipal Usuario usuario,
             @Valid @RequestBody CorporatePlanRequest request) {
 
-        PaymentUrlResponse paymentUrl =
-                institutionService.contratarPlanCorporativo(
-                        institutionId, usuario.getId(), request);
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
 
-        return ResponseEntity.ok(paymentUrl);
+        try {
+            PaymentUrlResponse paymentUrl =
+                    institutionService.contratarPlanCorporativo(
+                            institutionId, usuario.getId(), request);
+            return ResponseEntity.ok(paymentUrl);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Map.of("error", "Error al conectar con la pasarela de pago"));
+        }
     }
 
     /**

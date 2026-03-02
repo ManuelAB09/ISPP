@@ -2,10 +2,25 @@ import { Link } from "react-router-dom";
 import './Header.css';
 
 export default function Header({ user, page }) {
+    const storedUser = (() => {
+        try {
+            return JSON.parse(localStorage.getItem('userProfile') || 'null');
+        } catch {
+            return null;
+        }
+    })();
+
+    const profileImage =
+        user?.avatar ||
+        user?.foto ||
+        storedUser?.avatar ||
+        storedUser?.foto ||
+        '/MeerKatters_logo.png';
+
     return (
         <div className="header-container">
             <Link to="/perfil">
-                <img src={user?.avatar || 'https://via.placeholder.com/150'} alt="" />
+                <img src={profileImage} alt="Perfil" />
             </Link>
             <div className="header-links">
                 <Link to="/" className={page === 'inicio' ? 'active' : ''}>Inicio</Link>
