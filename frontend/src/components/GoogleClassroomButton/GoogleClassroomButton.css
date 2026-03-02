@@ -1,0 +1,89 @@
+/* GoogleClassroomButton styles */
+
+.gc-section {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  background: #f8f9fc;
+  border-radius: 10px;
+  border: 1px solid #e2e5f1;
+}
+
+.gc-linked {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.gc-linked-icon {
+  font-size: 1.5rem;
+}
+
+.gc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.gc-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.gc-btn-link {
+  background: #4285f4;
+  color: white;
+}
+
+.gc-btn-link:hover:not(:disabled) {
+  background: #3367d6;
+}
+
+.gc-btn-unlink {
+  background: #dc3545;
+  color: white;
+}
+
+.gc-btn-unlink:hover:not(:disabled) {
+  background: #c82333;
+}
+
+.gc-btn-select {
+  background: #34a853;
+  color: white;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+.gc-btn-select:hover:not(:disabled) {
+  background: #2d8f47;
+}
+
+.gc-courses-list {
+  margin-top: 0.75rem;
+}
+
+.gc-courses {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.gc-course-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.75rem;
+  background: white;
+  border: 1px solid #e2e5f1;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}

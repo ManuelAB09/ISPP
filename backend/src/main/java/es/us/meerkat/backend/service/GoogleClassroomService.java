@@ -2,16 +2,22 @@ package es.us.meerkat.backend.service;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import es.us.meerkat.backend.entity.Comunidad;
+import es.us.meerkat.backend.entity.ComunidadClassroom;
 import es.us.meerkat.backend.entity.GoogleClassroomConnection;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.ComunidadClassroomRepository;
+import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.GoogleClassroomConnectionRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -20,6 +26,8 @@ import lombok.RequiredArgsConstructor;
 public class GoogleClassroomService {
 
     private final GoogleClassroomConnectionRepository connectionRepository;
+    private final ComunidadClassroomRepository comunidadClassroomRepository;
+    private final ComunidadRepository comunidadRepository;
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Value("${google.classroom.client-id}")
@@ -95,5 +103,48 @@ public class GoogleClassroomService {
         connection.setAccessToken(newAccessToken);
         connection.setExpiresAt(Instant.now().plusSeconds(expiresIn));
         connectionRepository.save(connection);
+    }
+
+    // =====================================================
+    // VINCULACIÓN COMUNIDAD ↔ GOOGLE CLASSROOM
+    // =====================================================
+
+    /** Vincula un curso de Google Classroom a una comunidad. */
+    public ComunidadClassroom vincularCurso(Long comunidadId, String courseId, String courseName) {
+        Comunidad comunidad =
+                comunidadRepository
+                        .findById(comunidadId)
+                        .orElseThrow(
+                                () -> new RuntimeException("Comunidad no encontrada"));
+
+        // Si ya existe una vinculación, la actualizamos
+        ComunidadClassroom cc =
+                comunidadClassroomRepository
+                        .findByComunidad(comunidad)
+                        .orElse(ComunidadClassroom.builder().comunidad(comunidad).build());
+
+        cc.setClassroomCourseId(courseId);
+        cc.setClassroomCourseName(courseName);
+        cc.setActiva(true);
+
+        return comunidadClassroomRepository.save(cc);
+    }
+
+    /** Desvincula el curso de Google Classroom de una comunidad. */
+    @Transactional
+    public void desvincularCurso(Long comunidadId) {
+        ComunidadClassroom cc =
+                comunidadClassroomRepository
+                        .findByComunidadId(comunidadId)
+                        .orElseThrow(
+                                () ->
+                                        new RuntimeException(
+                                                "No hay curso vinculado a esta comunidad"));
+        comunidadClassroomRepository.delete(cc);
+    }
+
+    /** Obtiene la vinculación de una comunidad con Google Classroom, si existe. */
+    public Optional<ComunidadClassroom> getVinculacion(Long comunidadId) {
+        return comunidadClassroomRepository.findByComunidadId(comunidadId);
     }
 }

@@ -98,4 +98,34 @@ export const communitiesApi = {
   leave(communityId) {
     return apiClient.delete(`/api/v1/communities/${communityId}/members/me`);
   },
+
+  // ─── Google Classroom ───
+
+  /**
+   * GET /api/v1/communities/{id}/classroom
+   * Obtener curso vinculado de Google Classroom
+   * @param {number} communityId
+   */
+  getClassroom(communityId) {
+    return apiClient.get(`/api/v1/communities/${communityId}/classroom`);
+  },
+
+  /**
+   * POST /api/v1/communities/{id}/classroom
+   * Vincular curso de Google Classroom a la comunidad
+   * @param {number} communityId
+   * @param {Object} data - { courseId, courseName }
+   */
+  linkClassroom(communityId, data) {
+    return apiClient.post(`/api/v1/communities/${communityId}/classroom`, data);
+  },
+
+  /**
+   * DELETE /api/v1/communities/{id}/classroom
+   * Desvincular curso de Google Classroom
+   * @param {number} communityId
+   */
+  unlinkClassroom(communityId) {
+    return apiClient.delete(`/api/v1/communities/${communityId}/classroom`);
+  },
 };
