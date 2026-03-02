@@ -96,6 +96,98 @@ public class MensajeService {
         return mapToResponse(mensaje);
     }
 
+    @Transactional
+    public MensajeResponse enviarArchivo(
+            Long usuarioId,
+            Long userId,
+            Long tutorId,
+            String contenido,
+            String archivoNombre,
+            String archivoMimeType,
+            Long archivoTamano,
+            byte[] archivoData) {
+        if (archivoData == null || archivoData.length == 0) {
+            throw new IllegalArgumentException("El contenido del archivo es obligatorio");
+        }
+
+        Usuario emisor =
+                usuarioRepository
+                        .findById(usuarioId)
+                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Usuario receptor;
+        Tutor tutor = null;
+
+        if (userId != null) {
+            receptor =
+                    usuarioRepository
+                            .findById(userId)
+                            .orElseThrow(
+                                    () -> new RuntimeException("Usuario receptor no encontrado"));
+        } else if (tutorId != null) {
+            tutor =
+                    tutorRepository
+                            .findById(tutorId)
+                            .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
+
+            if (!Boolean.TRUE.equals(tutor.getVerificado())) {
+                throw new RuntimeException("No puedes contactar un tutor no verificado");
+            }
+
+            receptor = tutor.getUs();
+        } else {
+            throw new IllegalArgumentException("Debes indicar userId o tutorId");
+        }
+
+        if (receptor.getId().equals(usuarioId)) {
+            throw new IllegalArgumentException("No puedes enviarte mensajes a ti mismo");
+        }
+
+        String contenidoFinal =
+                (contenido == null || contenido.isBlank())
+                        ? "[Adjunto] " + archivoNombre
+                        : contenido;
+
+        Mensaje mensaje =
+                Mensaje.builder()
+                        .contenido(contenidoFinal)
+                        .archivoNombre(archivoNombre)
+                        .archivoMimeType(archivoMimeType)
+                        .archivoTamano(archivoTamano)
+                        .archivoData(archivoData)
+                        .emisor(emisor)
+                        .receptor(receptor)
+                        .tutor(tutor)
+                        .build();
+
+        mensajeRepository.save(mensaje);
+        mensaje.setArchivoUrl("/api/v1/mensajes/" + mensaje.getId() + "/archivo");
+        mensajeRepository.save(mensaje);
+        return mapToResponse(mensaje);
+    }
+
+    @Transactional(readOnly = true)
+    public MensajeArchivo obtenerArchivo(final Long usuarioId, final Long mensajeId) {
+        final Mensaje mensaje =
+                mensajeRepository
+                        .findById(mensajeId)
+                        .orElseThrow(() -> new IllegalArgumentException("Mensaje no encontrado"));
+
+        final boolean autorizado =
+                mensaje.getEmisor().getId().equals(usuarioId)
+                        || mensaje.getReceptor().getId().equals(usuarioId);
+        if (!autorizado) {
+            throw new IllegalArgumentException("No tienes permiso para acceder a este archivo");
+        }
+
+        if (mensaje.getArchivoData() == null || mensaje.getArchivoData().length == 0) {
+            throw new IllegalArgumentException("El mensaje no contiene archivo");
+        }
+
+        return new MensajeArchivo(
+                mensaje.getArchivoData(), mensaje.getArchivoNombre(), mensaje.getArchivoMimeType());
+    }
+
     @Transactional(readOnly = true)
     public List<MensajeResponse> obtenerConversacion(Long usuarioId, Long tutorId) {
 
@@ -223,6 +315,12 @@ public class MensajeService {
                 .createdAt(mensaje.getCreatedAt())
                 .emisorId(mensaje.getEmisor().getId())
                 .receptorId(mensaje.getReceptor().getId())
+                .archivoUrl(mensaje.getArchivoUrl())
+                .archivoNombre(mensaje.getArchivoNombre())
+                .archivoMimeType(mensaje.getArchivoMimeType())
+                .archivoTamano(mensaje.getArchivoTamano())
                 .build();
     }
+
+    public record MensajeArchivo(byte[] data, String nombre, String mimeType) {}
 }
