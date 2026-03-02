@@ -26,3 +26,9 @@ spring:
 
 server:
   port: 8080
+
+google:
+  classroom:
+    client-id: ${GOOGLE_CLASSROOM_CLIENT_ID:test-client-id}
+    client-secret: ${GOOGLE_CLASSROOM_CLIENT_SECRET:test-client-secret}
+    redirect-uri: ${GOOGLE_CLASSROOM_REDIRECT_URI:http://localhost:8080/oauth2/callback/google-classroom}
