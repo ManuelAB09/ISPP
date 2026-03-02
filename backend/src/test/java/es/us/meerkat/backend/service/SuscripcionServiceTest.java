@@ -7,7 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -299,13 +299,13 @@ class SuscripcionServiceTest {
 
     // Helper methods
     private Usuario buildUsuario(Long id) {
-        return Usuario.builder()
-                .id(id)
-                .nombre("Test User")
-                .email("test@example.com")
-                .password("password")
-                .plan(TipoPlan.FREE)
-                .build();
+        Usuario usuario = new Usuario();
+        usuario.setId(id);
+        usuario.setNombre("Test User");
+        usuario.setEmail("test@example.com");
+        usuario.setPassword("password");
+        usuario.setPlan(TipoPlan.FREE);
+        return usuario;
     }
 
     private Suscripcion buildSuscripcion(Long id, Long usuarioId, boolean activa) {
@@ -314,8 +314,8 @@ class SuscripcionServiceTest {
         suscripcion.setId(id);
         suscripcion.setUsuario(usuario);
         suscripcion.setActiva(activa);
-        suscripcion.setFechaInicio(LocalDateTime.now());
-        suscripcion.setFechaFin(LocalDateTime.now().plusMonths(1));
+        suscripcion.setFechaInicio(LocalDate.now());
+        suscripcion.setFechaFin(LocalDate.now().plusMonths(1));
         return suscripcion;
     }
 }

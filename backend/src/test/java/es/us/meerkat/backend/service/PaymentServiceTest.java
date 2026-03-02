@@ -72,8 +72,8 @@ class PaymentServiceTest {
                 paymentService.generarPagoUpgradeComunidad(comunidadId, monto);
 
         assertThat(response).isNotNull();
-        assertThat(response.getUrl()).isNotNull();
-        assertThat(response.getSessionId()).isNotNull();
+        assertThat(response.paymentUrl()).isNotNull();
+        assertThat(response.sessionId()).isNotNull();
     }
 
     @Test
@@ -166,13 +166,15 @@ class PaymentServiceTest {
     @Test
     void obtenerHistorialPagosShouldReturnPageOfTransactions() {
         Long usuarioId = 1L;
-        when(transaccionRepository.findByUsuarioId(usuarioId, PageRequest.of(0, 10)))
+        when(transaccionRepository.findByUsuarioIdOrderByIniciadoAtDesc(
+                        usuarioId, PageRequest.of(0, 10)))
                 .thenReturn(new PageImpl<>(java.util.List.of()));
 
         var result = paymentService.obtenerHistorialPagos(usuarioId, PageRequest.of(0, 10));
 
         assertThat(result).isNotNull();
-        verify(transaccionRepository).findByUsuarioId(usuarioId, PageRequest.of(0, 10));
+        verify(transaccionRepository)
+                .findByUsuarioIdOrderByIniciadoAtDesc(usuarioId, PageRequest.of(0, 10));
     }
 
     @Test
@@ -208,12 +210,12 @@ class PaymentServiceTest {
 
     // Helper methods
     private Usuario buildUsuario(Long id) {
-        return Usuario.builder()
-                .id(id)
-                .nombre("Juan")
-                .email("juan@example.com")
-                .password("password")
-                .build();
+        Usuario usuario = new Usuario();
+        usuario.setId(id);
+        usuario.setNombre("Juan");
+        usuario.setEmail("juan@example.com");
+        usuario.setPassword("password");
+        return usuario;
     }
 
     private TransaccionPago buildTransaccion(Long id, Long usuarioId) {

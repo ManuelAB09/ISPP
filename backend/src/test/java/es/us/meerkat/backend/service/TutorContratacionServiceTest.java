@@ -48,7 +48,7 @@ class TutorContratacionServiceTest {
         Tutor tutor = buildTutor(tutorId, true);
         HireTutorRequest request = new HireTutorRequest();
         request.setModalidad("Online");
-        request.setDuracion(3);
+        request.setDuracion("3 meses");
         request.setTarifaAcordada(new BigDecimal("50.00"));
 
         when(comunidadRepository.findById(comunidadId)).thenReturn(Optional.of(comunidad));
@@ -66,7 +66,7 @@ class TutorContratacionServiceTest {
                         comunidadId, tutorId, request, usuarioId);
 
         assertThat(response).isNotNull();
-        assertThat(response.getUrl()).isEqualTo("http://payment.url");
+        assertThat(response.paymentUrl()).isEqualTo("http://payment.url");
         verify(tutorContratacionRepository).save(any(TutorContratacion.class));
     }
 
@@ -323,16 +323,22 @@ class TutorContratacionServiceTest {
 
     // Helper methods
     private Comunidad buildComunidad(Long id, Long adminId) {
-        Usuario admin =
-                Usuario.builder().id(adminId).nombre("Admin").email("admin@test.com").build();
-        return Comunidad.builder().id(id).nombre("Test Comunidad").creador(admin).build();
+        Usuario admin = new Usuario();
+        admin.setId(adminId);
+        admin.setNombre("Admin");
+        admin.setEmail("admin@test.com");
+        Comunidad comunidad = new Comunidad();
+        comunidad.setId(id);
+        comunidad.setNombre("Test Comunidad");
+        comunidad.setCreador(admin);
+        return comunidad;
     }
 
     private Tutor buildTutor(Long id, boolean verificado) {
-        return Tutor.builder()
-                .id(id)
-                .verificado(verificado)
-                .tarifaHora(new BigDecimal("50.00"))
-                .build();
+        Tutor tutor = new Tutor();
+        tutor.setId(id);
+        tutor.setVerificado(verificado);
+        tutor.setTarifaHora(new BigDecimal("50.00"));
+        return tutor;
     }
 }

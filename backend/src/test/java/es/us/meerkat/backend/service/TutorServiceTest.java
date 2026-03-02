@@ -44,7 +44,7 @@ class TutorServiceTest {
         Long usuarioId = 1L;
         Usuario usuario = buildUsuario(usuarioId, true);
         TutorProfileRequest request = new TutorProfileRequest();
-        request.setEspecialidades("Matemáticas, Física");
+        request.setEspecialidades(java.util.List.of("Matemáticas", "Física"));
         request.setTarifaHora(new BigDecimal("50.00"));
         request.setDisponibilidad("Lunes a Viernes 15:00-19:00");
         request.setBio("Profesor de matemáticas con 10 años de experiencia");
@@ -69,7 +69,7 @@ class TutorServiceTest {
     @Test
     void crearPerfilShouldFailWhenUserIsNotTutor() {
         Long usuarioId = 1L;
-        Usuario usuario = buildUsuario(usuarioId, false); // Not tutor
+        Usuario usuario = buildUsuario(usuarioId, false);
         TutorProfileRequest request = new TutorProfileRequest();
 
         when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
@@ -100,7 +100,7 @@ class TutorServiceTest {
         Tutor tutor = buildTutor(tutorId, usuarioId);
 
         TutorProfileRequest request = new TutorProfileRequest();
-        request.setEspecialidades("Nuevas especialidades");
+        request.setEspecialidades(java.util.List.of("Nuevas especialidades"));
         request.setTarifaHora(new BigDecimal("60.00"));
         request.setDisponibilidad("Nuevo horario");
         request.setBio("Nuevo bio");
@@ -115,7 +115,7 @@ class TutorServiceTest {
         ArgumentCaptor<Tutor> captor = ArgumentCaptor.forClass(Tutor.class);
         verify(tutorRepository).save(captor.capture());
 
-        assertThat(captor.getValue().getEspecialidades()).isEqualTo("Nuevas especialidades");
+        assertThat(captor.getValue().getEspecialidades()).isEqualTo(request.getEspecialidades());
         assertThat(captor.getValue().getTarifaHora()).isEqualTo(new BigDecimal("60.00"));
     }
 
@@ -124,7 +124,7 @@ class TutorServiceTest {
         Long usuarioId = 1L;
         Long tutorId = 1L;
         Usuario usuario = buildUsuario(usuarioId, true);
-        Tutor tutor = buildTutor(tutorId, 999L); // Different user
+        Tutor tutor = buildTutor(tutorId, 999L);
 
         TutorProfileRequest request = new TutorProfileRequest();
 
@@ -152,7 +152,7 @@ class TutorServiceTest {
         Long usuarioId = 1L;
         Tutor tutor = buildTutor(1L, usuarioId);
 
-        when(tutorRepository.findByUsId(usuarioId)).thenReturn(java.util.List.of(tutor));
+        when(tutorRepository.findAllByUsId(usuarioId)).thenReturn(java.util.List.of(tutor));
 
         var result = tutorService.obtenerPerfilesPorUsuario(usuarioId);
 
@@ -174,7 +174,7 @@ class TutorServiceTest {
 
     @Test
     void obtenerTutoresVerificadosShouldReturnVerifiedTutors() {
-        when(tutorRepository.findVerificados(
+        when(tutorRepository.findVerificadosByEspecialidadAndTarifa(
                         null, new BigDecimal("0"), new BigDecimal("1000"), PageRequest.of(0, 10)))
                 .thenReturn(new PageImpl<>(java.util.List.of()));
 
@@ -220,7 +220,7 @@ class TutorServiceTest {
         Long usuarioId = 1L;
         Tutor tutor = buildTutor(1L, usuarioId);
 
-        when(tutorRepository.findByUsId(usuarioId)).thenReturn(java.util.List.of(tutor));
+        when(tutorRepository.findAllByUsId(usuarioId)).thenReturn(java.util.List.of(tutor));
 
         var result = tutorService.obtenerTutorPorUsuarioId(usuarioId);
 
@@ -247,7 +247,7 @@ class TutorServiceTest {
         Tutor tutor = buildTutor(1L, usuarioId);
         String googleEmail = "profesor@gmail.com";
 
-        when(tutorRepository.findByUsId(usuarioId)).thenReturn(java.util.List.of(tutor));
+        when(tutorRepository.findAllByUsId(usuarioId)).thenReturn(java.util.List.of(tutor));
         when(tutorRepository.save(any(Tutor.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -263,7 +263,7 @@ class TutorServiceTest {
         Tutor tutor = buildTutor(1L, usuarioId);
         tutor.setClassroomConectado(true);
 
-        when(tutorRepository.findByUsId(usuarioId)).thenReturn(java.util.List.of(tutor));
+        when(tutorRepository.findAllByUsId(usuarioId)).thenReturn(java.util.List.of(tutor));
         when(tutorRepository.save(any(Tutor.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -275,12 +275,10 @@ class TutorServiceTest {
     @Test
     void tienePagoVerificacionPendienteShouldReturnTrueWhenExists() {
         Long tutorId = 1L;
-        TransaccionPago transaccion = buildTransaccion(1L, tutorId);
-        transaccion.setEstado(EstadoTransaccion.PENDIENTE);
 
-        when(transaccionPagoRepository.findByTutorIdAndTipoAndEstado(
+        when(transaccionPagoRepository.existsByTutorIdAndTipoAndEstado(
                         tutorId, TipoTransaccion.PAGO_VERIFICACION, EstadoTransaccion.PENDIENTE))
-                .thenReturn(java.util.List.of(transaccion));
+                .thenReturn(true);
 
         boolean result = tutorService.tienePagoVerificacionPendiente(tutorId);
 
@@ -291,9 +289,9 @@ class TutorServiceTest {
     void tienePagoVerificacionPendienteShouldReturnFalseWhenNotExists() {
         Long tutorId = 1L;
 
-        when(transaccionPagoRepository.findByTutorIdAndTipoAndEstado(
+        when(transaccionPagoRepository.existsByTutorIdAndTipoAndEstado(
                         tutorId, TipoTransaccion.PAGO_VERIFICACION, EstadoTransaccion.PENDIENTE))
-                .thenReturn(java.util.List.of());
+                .thenReturn(false);
 
         boolean result = tutorService.tienePagoVerificacionPendiente(tutorId);
 
@@ -311,9 +309,9 @@ class TutorServiceTest {
         transaccion.setEstado(EstadoTransaccion.COMPLETADA);
 
         when(tutorRepository.findById(tutorId)).thenReturn(Optional.of(tutor));
-        when(transaccionPagoRepository.findByTutorIdAndTipo(
+        when(transaccionPagoRepository.findTopByTutorIdAndTipoOrderByIniciadoAtDesc(
                         tutorId, TipoTransaccion.PAGO_VERIFICACION))
-                .thenReturn(java.util.List.of(transaccion));
+                .thenReturn(Optional.of(transaccion));
         when(tutorRepository.save(any(Tutor.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -327,37 +325,37 @@ class TutorServiceTest {
 
     // Helper methods
     private Usuario buildUsuario(Long id, boolean esTutor) {
-        return Usuario.builder()
-                .id(id)
-                .nombre("Test User")
-                .email("test@example.com")
-                .esTutor(esTutor)
-                .build();
+        Usuario usuario = new Usuario();
+        usuario.setId(id);
+        usuario.setNombre("Test User");
+        usuario.setEmail("test@example.com");
+        usuario.setEsTutor(esTutor);
+        return usuario;
     }
 
     private Tutor buildTutor(Long id, Long usuarioId) {
         Usuario usuario = buildUsuario(usuarioId, true);
-        return Tutor.builder()
-                .id(id)
-                .us(usuario)
-                .especialidades("Matemáticas")
-                .tarifaHora(new BigDecimal("50.00"))
-                .disponibilidad("Lunes a Viernes")
-                .bio("Profesor de matemáticas")
-                .verificado(false)
-                .classroomConectado(false)
-                .createdAt(LocalDateTime.now())
-                .build();
+        Tutor tutor = new Tutor();
+        tutor.setId(id);
+        tutor.setUs(usuario);
+        tutor.setEspecialidades(java.util.List.of("Matemáticas"));
+        tutor.setTarifaHora(new BigDecimal("50.00"));
+        tutor.setDisponibilidad("Lunes a Viernes");
+        tutor.setBio("Profesor de matemáticas");
+        tutor.setVerificado(false);
+        tutor.setClassroomConectado(false);
+        tutor.setCreatedAt(LocalDateTime.now());
+        return tutor;
     }
 
     private TransaccionPago buildTransaccion(Long id, Long tutorId) {
         Tutor tutor = buildTutor(tutorId, 1L);
-        return TransaccionPago.builder()
-                .id(id)
-                .tutor(tutor)
-                .tipo(TipoTransaccion.PAGO_VERIFICACION)
-                .monto(new BigDecimal("9.99"))
-                .estado(EstadoTransaccion.PENDIENTE)
-                .build();
+        TransaccionPago transaccion = new TransaccionPago();
+        transaccion.setId(id);
+        transaccion.setTutor(tutor);
+        transaccion.setTipo(TipoTransaccion.PAGO_VERIFICACION);
+        transaccion.setMonto(new BigDecimal("9.99"));
+        transaccion.setEstado(EstadoTransaccion.PENDIENTE);
+        return transaccion;
     }
 }

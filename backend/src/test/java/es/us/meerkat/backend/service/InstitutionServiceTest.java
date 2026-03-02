@@ -127,10 +127,12 @@ class InstitutionServiceTest {
         Long usuarioId = 1L;
         Institution institution = buildInstitution(institutionId, usuarioId);
 
-        UpdateInstitutionRequest request = new UpdateInstitutionRequest();
-        request.setNombre("Nuevo nombre");
-        request.setDescripcion("Nueva descripción");
-        request.setEmailContacto("newemail@universidad.es");
+        UpdateInstitutionRequest request =
+                UpdateInstitutionRequest.builder()
+                        .nombre("Nuevo nombre")
+                        .descripcion("Nueva descripción")
+                        .emailContacto("newemail@universidad.es")
+                        .build();
 
         when(institutionRepository.findById(institutionId)).thenReturn(Optional.of(institution));
         when(institutionRepository.save(any(Institution.class)))
@@ -154,13 +156,13 @@ class InstitutionServiceTest {
         Institution institution = buildInstitution(institutionId, usuarioId);
 
         CorporatePlanRequest request = new CorporatePlanRequest();
-        request.setTipoPlan("COMPLETO");
+        request.setTipoPlan("BASICO");
         request.setNumUsuarios(100);
         request.setDuracionMeses(12);
 
         when(institutionRepository.findById(institutionId)).thenReturn(Optional.of(institution));
         when(paymentService.generarPagoPlanCorporativo(
-                        institutionId, TipoPlanCorporativo.COMPLETO, any(BigDecimal.class)))
+                        institutionId, TipoPlanCorporativo.BASICO, any(BigDecimal.class)))
                 .thenReturn(new PaymentUrlResponse("http://payment.url", "session123"));
         when(institutionRepository.save(any(Institution.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -169,7 +171,7 @@ class InstitutionServiceTest {
                 institutionService.contratarPlanCorporativo(institutionId, usuarioId, request);
 
         assertThat(response).isNotNull();
-        assertThat(response.getUrl()).isEqualTo("http://payment.url");
+        assertThat(response.paymentUrl()).isEqualTo("http://payment.url");
         verify(institutionRepository).save(any(Institution.class));
     }
 
@@ -194,10 +196,6 @@ class InstitutionServiceTest {
 
     @Test
     void validarEligibilidadPlanReducidoShouldAcceptPublicEducationDomains() {
-        String dominioPublico = "escuela.educacion.es";
-
-        // This method should not throw for valid public domains
-        // Since it throws exception for invalid domains, we test with private domain
         String dominioPrivado = "empresa-privada.com";
 
         assertThatThrownBy(() -> institutionService.validarEligibilidadPlanReducido(dominioPrivado))
@@ -304,30 +302,30 @@ class InstitutionServiceTest {
 
     // Helper methods
     private Usuario buildUsuario(Long id) {
-        return Usuario.builder()
-                .id(id)
-                .nombre("Admin User")
-                .email("admin@test.com")
-                .password("password")
-                .build();
+        Usuario usuario = new Usuario();
+        usuario.setId(id);
+        usuario.setNombre("Admin User");
+        usuario.setEmail("admin@test.com");
+        usuario.setPassword("password");
+        return usuario;
     }
 
     private Institution buildInstitution(Long id, Long adminId) {
         Usuario admin = buildUsuario(adminId);
-        return Institution.builder()
-                .id(id)
-                .nombre("Test Institution")
-                .descripcion("Test Description")
-                .emailContacto("contact@test.edu")
-                .telefonoContacto("+34 654 123 456")
-                .dominioEmail("test.edu")
-                .ubicacion("Test City")
-                .sitioweb("https://test.edu")
-                .logoUrl("https://logo.test.edu")
-                .usuarioAdmin(admin)
-                .verificada(false)
-                .planActivo(false)
-                .createdAt(LocalDateTime.now())
-                .build();
+        Institution institution = new Institution();
+        institution.setId(id);
+        institution.setNombre("Test Institution");
+        institution.setDescripcion("Test Description");
+        institution.setEmailContacto("contact@test.edu");
+        institution.setTelefonoContacto("+34 654 123 456");
+        institution.setDominioEmail("test.edu");
+        institution.setUbicacion("Test City");
+        institution.setSitioweb("https://test.edu");
+        institution.setLogoUrl("https://logo.test.edu");
+        institution.setUsuarioAdmin(admin);
+        institution.setVerificada(false);
+        institution.setPlanActivo(false);
+        institution.setCreatedAt(LocalDateTime.now());
+        return institution;
     }
 }
