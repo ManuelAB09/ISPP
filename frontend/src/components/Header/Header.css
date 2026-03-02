@@ -39,5 +39,28 @@
         }
     }
 
+.classroom-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  border-radius: 2rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}   
+
+.classroom-btn {
+  background-color: #6B73A1;
+  color: white;
+  box-shadow: 0 2px 6px rgba(107, 115, 161, 0.3);
+}
+
+.classroom-btn:hover {
+  background-color: #525983;
+}
+
 
 }

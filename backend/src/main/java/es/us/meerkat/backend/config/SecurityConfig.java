@@ -37,6 +37,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(
             final HttpSecurity http, final JwtAuthenticationFilter jwtAuthFilter) throws Exception {
         http.csrf(csrf -> csrf.disable())
+                .cors(cors -> {})
                 .sessionManagement(
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(
@@ -45,6 +46,10 @@ public class SecurityConfig {
                                         // Permitir todos los métodos en WebSocket endpoints
                                         .requestMatchers("/ws/**")
                                         .permitAll()
+                                        .requestMatchers("/oauth2/callback/**")
+                                        .permitAll()
+                                        .requestMatchers("/oauth2/authorize/google-classroom-url")
+                                        .authenticated()
                                         .requestMatchers(
                                                 "/api/v1/auth/**",
                                                 "/api/ubicaciones",

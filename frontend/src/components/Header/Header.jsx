@@ -23,6 +23,9 @@ export default function Header({ user, page }) {
             <Link to="/perfil">
                 <img src={profileImage} alt="Perfil" />
             </Link>
+                        <div className="header-actions">
+                <GoogleClassroomButton />
+            </div>
             <div className="header-links">
                 <Link to="/" className={page === 'inicio' ? 'active' : ''}>Inicio</Link>
                 <Link to="/comunidades" className={page === 'comunidades' ? 'active' : ''}>Comunidades</Link>
@@ -30,9 +33,6 @@ export default function Header({ user, page }) {
                 <Link to="/profesores" className={page === 'profesores' ? 'active' : ''}>Profesores</Link>
                 <Link to="/chats" className={page === 'chats' ? 'active' : ''}>Chats</Link>
                 <Link to="/planes" className={page === 'planes' ? 'active' : ''}>Planes</Link>
-            </div>
-            <div className="header-actions">
-                <GoogleClassroomButton />
             </div>
         </div>
     );
