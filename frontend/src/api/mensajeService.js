@@ -88,6 +88,24 @@ export const obtenerHistorialPrivado = (tutorId) => {
     return api.get(`/mensajes/usuario/${tutorId}`);
 };
 
+/**
+ * Obtiene la lista de conversaciones privadas del usuario actual.
+ * @returns {Promise<Array>} Lista de conversaciones con usuarios que han escrito.
+ */
+export const obtenerConversaciones = () => {
+    return api.get('/mensajes/conversaciones');
+};
+
 export const eliminarMensajePrivado = (mensajeId) => {
     return api.delete(`/mensajes/${mensajeId}`);
+};
+
+/**
+ * Edita un mensaje privado.
+ * @param {number} mensajeId - ID del mensaje.
+ * @param {string} contenido - Nuevo contenido.
+ * @returns {Promise} Respuesta del servidor.
+ */
+export const editarMensajePrivado = (mensajeId, contenido) => {
+    return api.put(`/mensajes/${mensajeId}`, { contenido });
 };

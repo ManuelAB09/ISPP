@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -82,6 +83,21 @@ public class MensajeController {
         }
     }
 
+    @GetMapping("/conversaciones")
+    public ResponseEntity<?> obtenerConversaciones(@AuthenticationPrincipal Usuario usuario) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado");
+        }
+
+        try {
+            var conversaciones = mensajeService.obtenerConversaciones(usuario.getId());
+            return ResponseEntity.ok(conversaciones);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al obtener conversaciones: " + e.getMessage());
+        }
+    }
+
     @DeleteMapping("/{mensajeId}")
     public ResponseEntity<?> eliminarMensaje(
             @AuthenticationPrincipal Usuario usuario, @PathVariable Long mensajeId) {
@@ -97,6 +113,28 @@ public class MensajeController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al eliminar el mensaje: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/{mensajeId}")
+    public ResponseEntity<?> editarMensaje(
+            @AuthenticationPrincipal Usuario usuario,
+            @PathVariable Long mensajeId,
+            @RequestBody EnviarMensajeRequest request) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado");
+        }
+
+        try {
+            MensajeResponse response =
+                    mensajeService.editarMensaje(
+                            usuario.getId(), mensajeId, request.getContenido());
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al editar el mensaje: " + e.getMessage());
         }
     }
 }

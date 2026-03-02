@@ -325,7 +325,10 @@ const CommunityChat = ({
                                         </button>
                                         {msg.editado && <span className="editado-badge">(editado)</span>}
                                         <span className="timestamp">
-                                            {new Date(msg.createdAt).toLocaleTimeString()}
+                                            {new Date(msg.createdAt).toLocaleTimeString([], {
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                                })}
                                         </span>
                                     </div>
 

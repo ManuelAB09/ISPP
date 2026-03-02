@@ -16,9 +16,11 @@ import es.us.meerkat.backend.repository.TutorRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MensajeService {
     /** Repositorio para acceder a la información de tutores. */
     private final TutorRepository tutorRepository;
@@ -128,6 +130,55 @@ public class MensajeService {
         return mensajes.stream().map(this::mapToResponse).toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<?> obtenerConversaciones(Long usuarioId) {
+        log.info("Obteniendo conversaciones para usuario: {}", usuarioId);
+
+        usuarioRepository
+                .findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        List<Mensaje> messages = mensajeRepository.findAllConversations(usuarioId);
+        log.info("Total de mensajes encontrados: {}", messages.size());
+
+        java.util.Map<Long, java.util.Map<String, Object>> conversationMap =
+                new java.util.LinkedHashMap<>();
+
+        for (Mensaje msg : messages) {
+            try {
+                // Validar que emisor y receptor no sean nulos
+                if (msg.getEmisor() == null || msg.getReceptor() == null) {
+                    log.warn("Mensaje {} tiene emisor o receptor nulo, omitiendo", msg.getId());
+                    continue;
+                }
+
+                Long otherId =
+                        msg.getEmisor().getId().equals(usuarioId)
+                                ? msg.getReceptor().getId()
+                                : msg.getEmisor().getId();
+                Usuario otherUser =
+                        msg.getEmisor().getId().equals(usuarioId)
+                                ? msg.getReceptor()
+                                : msg.getEmisor();
+
+                if (!conversationMap.containsKey(otherId)) {
+                    java.util.Map<String, Object> convData = new java.util.HashMap<>();
+                    convData.put("usuarioId", otherId);
+                    convData.put("usuarioNombre", otherUser.getNombre());
+                    convData.put("usuarioFoto", otherUser.getFoto());
+                    convData.put("ultimoMensaje", msg.getContenido());
+                    convData.put("ultimaFecha", msg.getCreatedAt());
+                    conversationMap.put(otherId, convData);
+                }
+            } catch (Exception e) {
+                log.error("Error procesando mensaje {}: {}", msg.getId(), e.getMessage(), e);
+            }
+        }
+
+        log.info("Total de conversaciones únicas: {}", conversationMap.size());
+        return new java.util.ArrayList<>(conversationMap.values());
+    }
+
     @Transactional
     public void eliminarMensaje(Long usuarioId, Long mensajeId) {
         Mensaje mensaje =
@@ -140,6 +191,28 @@ public class MensajeService {
         }
 
         mensajeRepository.delete(mensaje);
+    }
+
+    @Transactional
+    public MensajeResponse editarMensaje(Long usuarioId, Long mensajeId, String nuevoContenido) {
+        if (nuevoContenido == null || nuevoContenido.isBlank()) {
+            throw new IllegalArgumentException("El contenido del mensaje no puede estar vacío");
+        }
+
+        Mensaje mensaje =
+                mensajeRepository
+                        .findById(mensajeId)
+                        .orElseThrow(() -> new IllegalArgumentException("Mensaje no encontrado"));
+
+        if (!mensaje.getEmisor().getId().equals(usuarioId)) {
+            throw new IllegalArgumentException("No tienes permiso para editar este mensaje");
+        }
+
+        mensaje.setContenido(nuevoContenido.trim());
+        mensaje.setEditado(true);
+        mensajeRepository.save(mensaje);
+
+        return mapToResponse(mensaje);
     }
 
     private MensajeResponse mapToResponse(Mensaje mensaje) {

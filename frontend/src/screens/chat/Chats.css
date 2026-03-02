@@ -17,6 +17,36 @@
     font-size: 0.95rem;
 }
 
+/* Tabs styling */
+.chats-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+    border-bottom: 2px solid #EAEBF0;
+}
+
+.chats-tab {
+    border: none;
+    background: transparent;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #6B73A1;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s ease;
+}
+
+.chats-tab:hover {
+    color: var(--spaceIndigo);
+}
+
+.chats-tab.active {
+    color: var(--spaceIndigo);
+    border-bottom: 2px solid var(--glaucous);
+    margin-bottom: -2px;
+}
+
 .chats-loading,
 .chats-error {
     margin-top: 1.5rem;

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useSocketContext } from '../../contexts/SocketContext';
-import { enviarMensajePrivado, obtenerHistorialPrivado, eliminarMensajePrivado } from '../../api/mensajeService';
+import { enviarMensajePrivado, obtenerHistorialPrivado, eliminarMensajePrivado, editarMensajePrivado } from '../../api/mensajeService';
 import './PrivateChat.css';
 
 /**
@@ -18,6 +18,8 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
     const [enviando, setEnviando] = useState(false);
     const [procesandoId, setProcesandoId] = useState(null);
     const [error, setError] = useState(null);
+    const [editandoId, setEditandoId] = useState(null);
+    const [contenidoEditado, setContenidoEditado] = useState('');
     const messagesEndRef = useRef(null);
 
     /**
@@ -77,6 +79,14 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
             setMensajes((prev) => prev.filter((msg) => msg.id !== deletedId));
         };
 
+        // Escuchar edición de mensajes
+        const handleDMUpdated = (payload) => {
+            if (!payload?.id) return;
+            setMensajes((prev) =>
+                prev.map((msg) => (msg.id === payload.id ? { ...msg, ...payload } : msg))
+            );
+        };
+
         // Escuchar errores
         const handleSocketError = (error) => {
             setError(`Error: ${error.message}`);
@@ -84,11 +94,13 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
 
         socket.on('dm_message', handleNewDM);
         socket.on('dm_delete_success', handleDMDeleted);
+        socket.on('dm_update_success', handleDMUpdated);
         socket.on('error', handleSocketError);
 
         return () => {
             socket.off('dm_message', handleNewDM);
             socket.off('dm_delete_success', handleDMDeleted);
+            socket.off('dm_update_success', handleDMUpdated);
             socket.off('error', handleSocketError);
         };
     }, [socket, isConnected, tutorId, usuarioActual?.id]);
@@ -137,11 +149,44 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
      */
     const handleEliminarMensaje = async (mensajeId) => {
         try {
+            setError(null);
             setProcesandoId(mensajeId);
             await eliminarMensajePrivado(mensajeId);
             setMensajes((prev) => prev.filter((msg) => msg.id !== mensajeId));
         } catch (err) {
             setError('Error al eliminar el mensaje');
+            console.error(err);
+        } finally {
+            setProcesandoId(null);
+        }
+    };
+
+    /**
+     * Edita un mensaje privado.
+     */
+    const startEditarMensaje = (mensajeId, contenidoActual) => {
+        setEditandoId(mensajeId);
+        setContenidoEditado(contenidoActual);
+    };
+
+    const cancelEditarMensaje = () => {
+        setEditandoId(null);
+        setContenidoEditado('');
+    };
+
+    const handleEditarMensaje = async (mensajeId) => {
+        const nuevoContenido = contenidoEditado.trim();
+        if (!nuevoContenido) return;
+
+        try {
+            setError(null);
+            setProcesandoId(mensajeId);
+            const { data } = await editarMensajePrivado(mensajeId, nuevoContenido);
+            setMensajes((prev) => prev.map((msg) => (msg.id === mensajeId ? { ...msg, ...data } : msg)));
+
+            cancelEditarMensaje();
+        } catch (err) {
+            setError('Error al editar el mensaje');
             console.error(err);
         } finally {
             setProcesandoId(null);
@@ -179,22 +224,65 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
                             key={msg.id}
                             className={`message ${msg.emisorId === usuarioActual.id ? 'propio' : 'otro'}`}
                         >
-                            <div className="message-content">{msg.contenido}</div>
-                            <div className="message-footer">
+                            <div className="message-header">
                                 <span className="timestamp">
-                                    {new Date(msg.createdAt).toLocaleTimeString()}
+                                    {new Date(msg.createdAt).toLocaleTimeString([], {
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                        })}
                                 </span>
+                            </div>
+
+                            {editandoId === msg.id ? (
+                                <div className="edit-form">
+                                    <input
+                                        type="text"
+                                        value={contenidoEditado}
+                                        onChange={(e) => setContenidoEditado(e.target.value)}
+                                        maxLength={1000}
+                                    />
+                                    <div className="edit-actions">
+                                        <button
+                                            type="button"
+                                            className="btn-save"
+                                            onClick={() => handleEditarMensaje(msg.id)}
+                                            disabled={!contenidoEditado.trim() || procesandoId === msg.id}
+                                        >
+                                            {procesandoId === msg.id ? 'Guardando...' : 'Guardar'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn-cancel"
+                                            onClick={cancelEditarMensaje}
+                                            disabled={procesandoId === msg.id}
+                                        >
+                                            Cancelar
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="message-content">{msg.contenido}</div>
+                            )}
+
+                            <div className="message-footer">
                                 {msg.editado && <span className="editado-badge">(editado)</span>}
                             </div>
-                            {msg.emisorId === usuarioActual.id && (
+
+                            {msg.emisorId === usuarioActual.id && editandoId !== msg.id && (
                                 <div className="message-actions">
+                                    <button
+                                        className="btn-edit"
+                                        onClick={() => startEditarMensaje(msg.id, msg.contenido)}
+                                        disabled={procesandoId === msg.id}
+                                    >
+                                        Editar
+                                    </button>
                                     <button
                                         className="btn-delete"
                                         onClick={() => handleEliminarMensaje(msg.id)}
-                                        title="Eliminar mensaje"
                                         disabled={procesandoId === msg.id}
                                     >
-                                        {procesandoId === msg.id ? '...' : '✕'}
+                                        {procesandoId === msg.id ? 'Eliminando...' : 'Eliminar'}
                                     </button>
                                 </div>
                             )}
