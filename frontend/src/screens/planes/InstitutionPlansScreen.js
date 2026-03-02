@@ -125,16 +125,11 @@ export default function InstitutionPlansScreen() {
       <div className="instPlansPage">
         {/* ── Hero Header ─────────────────────────────── */}
         <div className="instPlansHeader">
-          <div className="instPlansHeaderTitle">
-            <span className="instLine" />
+          <div className="headerTitle">
+            <p>Soluciones adaptadas para academias, universidades y centros educativos con gestión avanzada</p>
+            <span className="line"></span>
             <h1>Planes para Instituciones</h1>
-            <span className="instLine" />
           </div>
-          <p className="instPlansHeaderDesc">
-            Soluciones adaptadas para academias, universidades y centros
-            educativos. Gestión avanzada de grupos, múltiples administradores y
-            estadísticas detalladas para sacar el máximo partido a MeerKatters.
-          </p>
           <button
             className="instBtnBack"
             onClick={() => navigate("/planes")}

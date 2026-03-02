@@ -42,17 +42,8 @@
   font-family: 'spacegrotesk', sans-serif;
   font-size: 70px;
   font-weight: 700;
-  color: #2d3250;
-}
-
-.headerDescription {
-  font-family: 'inter', sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  max-width: 600px;
-  text-align: center;
-  color: #374151;
-  margin-top: 16px;
+  color: var(--spaceIndigo);
+  text-align: end;
 }
 
 .plansContent{
