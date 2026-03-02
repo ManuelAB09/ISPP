@@ -23,6 +23,8 @@ import es.us.meerkat.backend.service.AuthorizationService;
 import es.us.meerkat.backend.service.CategoryService;
 import es.us.meerkat.backend.service.CommunityService;
 import es.us.meerkat.backend.service.EventoService;
+import es.us.meerkat.backend.service.GoogleClassroomService;
+import es.us.meerkat.backend.entity.ComunidadClassroom;
 import es.us.meerkat.backend.service.MemberService;
 import es.us.meerkat.backend.service.RequestService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -50,6 +52,7 @@ public class CommunityController {
     private final CategoryService categoryService;
     private final AuthorizationService authorizationService;
     private final EventoService eventoService;
+    private final GoogleClassroomService googleClassroomService;
 
     // =====================================================
     // COMUNIDADES - LISTADO Y CRUD BÁSICO
@@ -880,6 +883,107 @@ public class CommunityController {
     }
 
     // =====================================================
+    // GOOGLE CLASSROOM - VINCULAR CURSO
+    // =====================================================
+
+    /** Vincula un curso de Google Classroom a una comunidad. POST /api/v1/communities/{id}/classroom */
+    @PostMapping("/{communityId}/classroom")
+    @Operation(
+            summary = "Vincular curso de Google Classroom",
+            description = "Vincula un curso de Google Classroom a la comunidad. Solo el admin puede hacerlo.",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Curso vinculado correctamente"),
+        @ApiResponse(responseCode = "401", description = "No autenticado"),
+        @ApiResponse(responseCode = "403", description = "No tienes permisos para vincular un curso"),
+        @ApiResponse(responseCode = "404", description = "Comunidad no encontrada")
+    })
+    public ResponseEntity<ClassroomInfoResponse> linkClassroom(
+            @PathVariable Long communityId,
+            @RequestBody LinkClassroomRequest request,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        try {
+            ComunidadClassroom cc =
+                    googleClassroomService.vincularCurso(
+                            communityId, request.courseId(), request.courseName());
+            return ResponseEntity.ok(
+                    new ClassroomInfoResponse(
+                            cc.getId(),
+                            cc.getClassroomCourseId(),
+                            cc.getClassroomCourseName(),
+                            cc.getActiva()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
+    /** Desvincula el curso de Google Classroom de una comunidad. DELETE /api/v1/communities/{id}/classroom */
+    @DeleteMapping("/{communityId}/classroom")
+    @Operation(
+            summary = "Desvincular curso de Google Classroom",
+            description = "Elimina la vinculación con Google Classroom. Solo el admin puede hacerlo.",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Curso desvinculado correctamente"),
+        @ApiResponse(responseCode = "401", description = "No autenticado"),
+        @ApiResponse(responseCode = "403", description = "No tienes permisos"),
+        @ApiResponse(responseCode = "404", description = "No hay curso vinculado")
+    })
+    public ResponseEntity<Void> unlinkClassroom(
+            @PathVariable Long communityId,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        try {
+            googleClassroomService.desvincularCurso(communityId);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
+    /** Obtiene la info del curso vinculado. GET /api/v1/communities/{id}/classroom */
+    @GetMapping("/{communityId}/classroom")
+    @Operation(
+            summary = "Obtener curso vinculado",
+            description = "Devuelve la información del curso de Google Classroom vinculado a la comunidad")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Información del curso vinculado"),
+        @ApiResponse(responseCode = "404", description = "No hay curso vinculado")
+    })
+    public ResponseEntity<ClassroomInfoResponse> getLinkedClassroom(
+            @PathVariable Long communityId) {
+
+        return googleClassroomService
+                .getVinculacion(communityId)
+                .map(
+                        cc ->
+                                ResponseEntity.ok(
+                                        new ClassroomInfoResponse(
+                                                cc.getId(),
+                                                cc.getClassroomCourseId(),
+                                                cc.getClassroomCourseName(),
+                                                cc.getActiva())))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // =====================================================
     // HELPER METHODS FOR DTO CONVERSION
     // =====================================================
 
@@ -892,6 +996,19 @@ public class CommunityController {
             miRol = authorizationService.getUserRoleInCommunityAsString(userId, comunidad.getId());
             esMiembro = miRol != null;
         }
+
+        // Obtener info de Google Classroom vinculado (si existe)
+        ClassroomInfoResponse classroomInfo =
+                googleClassroomService
+                        .getVinculacion(comunidad.getId())
+                        .map(
+                                cc ->
+                                        new ClassroomInfoResponse(
+                                                cc.getId(),
+                                                cc.getClassroomCourseId(),
+                                                cc.getClassroomCourseName(),
+                                                cc.getActiva()))
+                        .orElse(null);
 
         return new CommunityDetailResponse(
                 comunidad.getId(),
@@ -907,7 +1024,8 @@ public class CommunityController {
                 miRol,
                 comunidad.getCreatedAt(),
                 comunidad.getUpdatedAt(),
-                comunidad.getImagenUrl());
+                comunidad.getImagenUrl(),
+                classroomInfo);
     }
 
     private MemberResponse entityToMemberResponse(MiembroComunidad miembro) {
