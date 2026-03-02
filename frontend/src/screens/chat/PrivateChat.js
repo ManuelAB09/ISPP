@@ -1,6 +1,14 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useSocketContext } from '../../contexts/SocketContext';
-import { enviarMensajePrivado, obtenerHistorialPrivado, eliminarMensajePrivado, editarMensajePrivado } from '../../api/mensajeService';
+import {
+    enviarMensajePrivado,
+    obtenerHistorialPrivado,
+    eliminarMensajePrivado,
+    editarMensajePrivado,
+    obtenerPreviewEnlace,
+} from '../../api/mensajeService';
+import { extractFirstUrl } from '../../utils/linkPreview';
+import LinkPreviewCard from './LinkPreviewCard';
 import './PrivateChat.css';
 
 /**
@@ -20,7 +28,11 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
     const [error, setError] = useState(null);
     const [editandoId, setEditandoId] = useState(null);
     const [contenidoEditado, setContenidoEditado] = useState('');
+    const [previewsByMessageId, setPreviewsByMessageId] = useState({});
     const messagesEndRef = useRef(null);
+    const previewCacheByUrlRef = useRef(new Map());
+    const pendingPreviewKeysRef = useRef(new Set());
+    const previewsByMessageIdRef = useRef({});
 
     // helper para determinar si un mensaje pertenece al usuario actual
     const isOwnMessage = (msg) =>
@@ -127,6 +139,88 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
             socket.off('error', handleSocketError);
         };
     }, [socket, isConnected, tutorId, usuarioActual?.id]);
+
+    useEffect(() => {
+        previewsByMessageIdRef.current = previewsByMessageId;
+    }, [previewsByMessageId]);
+
+    useEffect(() => {
+        const activeIds = new Set(
+            mensajes
+                .map((msg) => msg?.id)
+                .filter((id) => id !== null && id !== undefined)
+                .map((id) => String(id))
+        );
+
+        setPreviewsByMessageId((prev) => {
+            let changed = false;
+            const next = { ...prev };
+
+            Object.keys(next).forEach((messageId) => {
+                if (!activeIds.has(messageId)) {
+                    delete next[messageId];
+                    changed = true;
+                }
+            });
+
+            return changed ? next : prev;
+        });
+
+        mensajes.forEach((msg) => {
+            const messageId = msg?.id;
+            if (messageId === null || messageId === undefined) {
+                return;
+            }
+
+            const messageKey = String(messageId);
+            const extractedUrl = extractFirstUrl(msg?.contenido);
+
+            if (!extractedUrl) {
+                setPreviewsByMessageId((prev) => {
+                    if (!prev[messageKey]) {
+                        return prev;
+                    }
+                    const next = { ...prev };
+                    delete next[messageKey];
+                    return next;
+                });
+                return;
+            }
+
+            const currentEntry = previewsByMessageIdRef.current[messageKey];
+            if (currentEntry?.url === extractedUrl) {
+                return;
+            }
+
+            if (previewCacheByUrlRef.current.has(extractedUrl)) {
+                const cachedPreview = previewCacheByUrlRef.current.get(extractedUrl);
+                setPreviewsByMessageId((prev) => ({
+                    ...prev,
+                    [messageKey]: { url: extractedUrl, preview: cachedPreview },
+                }));
+                return;
+            }
+
+            const pendingKey = `${messageKey}:${extractedUrl}`;
+            if (pendingPreviewKeysRef.current.has(pendingKey)) {
+                return;
+            }
+
+            pendingPreviewKeysRef.current.add(pendingKey);
+
+            obtenerPreviewEnlace(extractedUrl)
+                .then(({ data }) => {
+                    previewCacheByUrlRef.current.set(extractedUrl, data || null);
+                    setPreviewsByMessageId((prev) => ({
+                        ...prev,
+                        [messageKey]: { url: extractedUrl, preview: data || null },
+                    }));
+                })
+                .catch(() => {
+                    previewCacheByUrlRef.current.set(extractedUrl, null);
+                });
+        });
+    }, [mensajes]);
 
     /**
      * Desplaza la vista al último mensaje.
@@ -294,7 +388,17 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="message-content">{msg.contenido}</div>
+                                <>
+                                    <div className="message-content">{msg.contenido}</div>
+                                    <LinkPreviewCard
+                                        preview={
+                                            previewsByMessageId[String(msg.id)]?.url
+                                                === extractFirstUrl(msg.contenido)
+                                                ? previewsByMessageId[String(msg.id)]?.preview
+                                                : null
+                                        }
+                                    />
+                                </>
                             )}
 
                             <div className="message-footer">

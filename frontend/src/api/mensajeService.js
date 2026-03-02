@@ -109,3 +109,12 @@ export const eliminarMensajePrivado = (mensajeId) => {
 export const editarMensajePrivado = (mensajeId, contenido) => {
     return api.put(`/mensajes/${mensajeId}`, { contenido });
 };
+
+/**
+ * Obtiene metadatos de una URL para mostrar su vista previa en el chat.
+ * @param {string} url - URL del mensaje a previsualizar.
+ * @returns {Promise} Respuesta con título, descripción, imagen y dominio.
+ */
+export const obtenerPreviewEnlace = (url) => {
+    return api.post('/link-preview', { url });
+};

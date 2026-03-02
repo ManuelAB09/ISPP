@@ -6,7 +6,10 @@ import {
     obtenerHistorialComunidad,
     editarMensajeComunidad,
     eliminarMensajeComunidad,
+    obtenerPreviewEnlace,
 } from '../../api/mensajeService';
+import { extractFirstUrl } from '../../utils/linkPreview';
+import LinkPreviewCard from './LinkPreviewCard';
 import { LuMessageCircle, LuX } from 'react-icons/lu';
 import './CommunityChat.css';
 
@@ -37,7 +40,11 @@ const CommunityChat = ({
     const [editandoId, setEditandoId] = useState(null);
     const [contenidoEditado, setContenidoEditado] = useState('');
     const [procesandoId, setProcesandoId] = useState(null);
+    const [previewsByMessageId, setPreviewsByMessageId] = useState({});
     const messagesEndRef = useRef(null);
+    const previewCacheByUrlRef = useRef(new Map());
+    const pendingPreviewKeysRef = useRef(new Set());
+    const previewsByMessageIdRef = useRef({});
 
     const isOwnMessage = (msg) => Number(msg?.usuarioId) === Number(usuarioActual?.id);
 
@@ -117,6 +124,88 @@ const CommunityChat = ({
         }
         setChatAbierto(initiallyOpen);
     }, [initiallyOpen, isEmbedded]);
+
+    useEffect(() => {
+        previewsByMessageIdRef.current = previewsByMessageId;
+    }, [previewsByMessageId]);
+
+    useEffect(() => {
+        const activeIds = new Set(
+            mensajes
+                .map((msg) => msg?.id)
+                .filter((id) => id !== null && id !== undefined)
+                .map((id) => String(id))
+        );
+
+        setPreviewsByMessageId((prev) => {
+            let changed = false;
+            const next = { ...prev };
+
+            Object.keys(next).forEach((messageId) => {
+                if (!activeIds.has(messageId)) {
+                    delete next[messageId];
+                    changed = true;
+                }
+            });
+
+            return changed ? next : prev;
+        });
+
+        mensajes.forEach((msg) => {
+            const messageId = msg?.id;
+            if (messageId === null || messageId === undefined) {
+                return;
+            }
+
+            const messageKey = String(messageId);
+            const extractedUrl = extractFirstUrl(msg?.contenido);
+
+            if (!extractedUrl) {
+                setPreviewsByMessageId((prev) => {
+                    if (!prev[messageKey]) {
+                        return prev;
+                    }
+                    const next = { ...prev };
+                    delete next[messageKey];
+                    return next;
+                });
+                return;
+            }
+
+            const currentEntry = previewsByMessageIdRef.current[messageKey];
+            if (currentEntry?.url === extractedUrl) {
+                return;
+            }
+
+            if (previewCacheByUrlRef.current.has(extractedUrl)) {
+                const cachedPreview = previewCacheByUrlRef.current.get(extractedUrl);
+                setPreviewsByMessageId((prev) => ({
+                    ...prev,
+                    [messageKey]: { url: extractedUrl, preview: cachedPreview },
+                }));
+                return;
+            }
+
+            const pendingKey = `${messageKey}:${extractedUrl}`;
+            if (pendingPreviewKeysRef.current.has(pendingKey)) {
+                return;
+            }
+
+            pendingPreviewKeysRef.current.add(pendingKey);
+
+            obtenerPreviewEnlace(extractedUrl)
+                .then(({ data }) => {
+                    previewCacheByUrlRef.current.set(extractedUrl, data || null);
+                    setPreviewsByMessageId((prev) => ({
+                        ...prev,
+                        [messageKey]: { url: extractedUrl, preview: data || null },
+                    }));
+                })
+                .catch(() => {
+                    previewCacheByUrlRef.current.set(extractedUrl, null);
+                });
+        });
+    }, [mensajes]);
 
     /**
      * Desplaza la vista al último mensaje.
@@ -360,7 +449,17 @@ const CommunityChat = ({
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="message-content">{msg.contenido}</div>
+                                        <>
+                                            <div className="message-content">{msg.contenido}</div>
+                                            <LinkPreviewCard
+                                                preview={
+                                                    previewsByMessageId[String(msg.id)]?.url
+                                                        === extractFirstUrl(msg.contenido)
+                                                        ? previewsByMessageId[String(msg.id)]?.preview
+                                                        : null
+                                                }
+                                            />
+                                        </>
                                     )}
 
                                     {isOwnMessage(msg) && editandoId !== msg.id && (
