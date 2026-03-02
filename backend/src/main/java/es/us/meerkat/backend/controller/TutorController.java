@@ -10,12 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-
-import org.springframework.web.bind.annotation.*;
-
-import es.us.meerkat.backend.dto.*;
-import es.us.meerkat.backend.entity.Tutor;
-
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +20,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import es.us.meerkat.backend.dto.ConnectClassroomRequest;
+import es.us.meerkat.backend.dto.CreateTutorRequest;
+import es.us.meerkat.backend.dto.MessageResponse;
+import es.us.meerkat.backend.dto.PageInfo;
+import es.us.meerkat.backend.dto.PaymentUrlResponse;
+import es.us.meerkat.backend.dto.TutorListResponse;
+import es.us.meerkat.backend.dto.TutorProfileResponse;
+import es.us.meerkat.backend.dto.TutorResponse;
+import es.us.meerkat.backend.dto.UpdateTutorRequest;
+import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.PaymentService;
 import es.us.meerkat.backend.service.TutorService;
@@ -97,25 +102,6 @@ public class TutorController {
 
         return ResponseEntity.ok(
                 TutorListResponse.builder().content(content).page(pageInfo).build());
-        }
-
-    @GetMapping()
-    public ResponseEntity<?> listarTutoresVerificados(
-            @RequestParam(required = false) String especialidad,
-            @RequestParam(required = false) BigDecimal tarifaMin,
-            @RequestParam(required = false) BigDecimal tarifaMax,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        try {
-            Page<TutorProfileResponse> tutores =
-                    tutorService.obtenerTutoresVerificados(
-                            especialidad, tarifaMin, tarifaMax, page, size);
-            return ResponseEntity.ok(tutores);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error al listar tutores verificados: " + e.getMessage());
-        }
-
     }
 
     /**
