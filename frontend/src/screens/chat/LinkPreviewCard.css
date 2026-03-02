@@ -1,0 +1,61 @@
+.link-preview-card {
+    margin-top: 0.55rem;
+    display: flex;
+    flex-direction: row;
+    border: 1px solid #D8DEEE;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    background: #FFFFFF;
+    text-decoration: none;
+    color: inherit;
+}
+
+.link-preview-card:hover {
+    border-color: #BFC8E2;
+    background: #FAFBFE;
+}
+
+.link-preview-image {
+    width: 9rem;
+    min-width: 9rem;
+    height: auto;
+    object-fit: cover;
+    display: block;
+    border-right: 1px solid #E5EAF6;
+}
+
+.link-preview-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.55rem 0.65rem;
+    min-width: 0;
+}
+
+.link-preview-site {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #6C74A1;
+    text-transform: uppercase;
+}
+
+.link-preview-title {
+    font-size: 0.82rem;
+    line-height: 1.3;
+    color: #2E3559;
+    word-break: break-word;
+}
+
+.link-preview-description {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    color: #545E88;
+    word-break: break-word;
+}
+
+.link-preview-url {
+    font-size: 0.68rem;
+    color: #7B84AB;
+}

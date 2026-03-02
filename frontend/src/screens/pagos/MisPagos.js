@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { paymentsApi } from "../../api/payments.api";
 import Header from "../../components/Header/Header";
 import "./MisPagos.css";
@@ -87,8 +87,11 @@ const MisPagos = () => {
         <div className="mp-container">
           {/* Page title */}
           <div className="mp-page-header">
-            <h1 className="mp-page-title">Mis pagos</h1>
-            <p className="mp-page-subtitle">Historial de transacciones de tu cuenta</p>
+            <div className="headerTitle">
+              <p>Historial de transacciones de tu cuenta y resumen de actividad financiera</p>
+              <span className="line"></span>
+              <h1>Mis pagos</h1>
+            </div>
           </div>
 
           {/* Summary cards */}

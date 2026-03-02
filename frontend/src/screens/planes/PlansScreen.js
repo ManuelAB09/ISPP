@@ -190,12 +190,10 @@ export default function PlansScreen() {
       <div className="plansPage">
         <div className="header">
           <div className="headerTitle">
+            <p>Elige el plan perfecto para desbloquear todas las funcionalidades y sacar el máximo provecho de MeerKatters</p>
             <span className="line"></span>
             <h1>Planes de Suscripción</h1>
           </div>
-          <p className="headerDescription">
-            Elige el plan perfecto para desbloquear todas las funcionalidades y sacar el máximo provecho de MeerKatters
-          </p>
         </div>
 
         <main className="plansContent">

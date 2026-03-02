@@ -2,12 +2,15 @@ package es.us.meerkat.backend.entity;
 
 import java.time.LocalDateTime;
 
+import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
@@ -35,6 +38,22 @@ public class MensajeComunidad {
 
     @Column(nullable = false, length = 1000)
     private String contenido;
+
+    @Column(length = 2048)
+    private String archivoUrl;
+
+    @Column(length = 255)
+    private String archivoNombre;
+
+    @Column(length = 100)
+    private String archivoMimeType;
+
+    @Column private Long archivoTamano;
+
+    @Lob
+    @Basic(fetch = FetchType.LAZY)
+    @Column(name = "archivo_data")
+    private byte[] archivoData;
 
     @Column(nullable = false)
     private Boolean editado = false;
