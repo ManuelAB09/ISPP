@@ -95,11 +95,11 @@ public class JwtService {
      * @return Claims del token.
      */
     private Claims extractAllClaims(final String token) {
-        return Jwts.parser()
-                .verifyingKey(getSigningKey())
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
                 .build()
-                .parseSignedClaims(token)
-                .getPayload();
+                .parseClaimsJws(token)
+                .getBody();
     }
 
     /**
