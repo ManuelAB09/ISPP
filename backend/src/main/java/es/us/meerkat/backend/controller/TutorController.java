@@ -94,24 +94,6 @@ public class TutorController {
                 TutorListResponse.builder().content(content).page(pageInfo).build());
     }
 
-    @GetMapping()
-    public ResponseEntity<?> listarTutoresVerificados(
-            @RequestParam(required = false) String especialidad,
-            @RequestParam(required = false) BigDecimal tarifaMin,
-            @RequestParam(required = false) BigDecimal tarifaMax,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        try {
-            Page<TutorProfileResponse> tutores =
-                    tutorService.obtenerTutoresVerificados(
-                            especialidad, tarifaMin, tarifaMax, page, size);
-            return ResponseEntity.ok(tutores);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error al listar tutores verificados: " + e.getMessage());
-        }
-    }
-
     /**
      * Crea un nuevo perfil de tutor para el usuario autenticado.
      *

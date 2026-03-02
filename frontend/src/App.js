@@ -15,6 +15,7 @@ import EventosMapaScreen from './screens/evento/EventosMapaScreen';
 import Home from './screens/home/Home';
 import Profile from './screens/myProfile/Profile';
 import MisPagos from './screens/pagos/MisPagos';
+import PagoExitoso from './screens/pagos/PagoExitoso';
 import InstitutionPlansScreen from './screens/planes/InstitutionPlansScreen';
 import PasarelaPago from './screens/planes/PasarelaPago';
 import PlansScreen from './screens/planes/PlansScreen';
@@ -76,6 +77,7 @@ function AppRoutes() {
         <Route path="/perfil" element={<Profile />} />
         <Route path="/perfil/:userId" element={<Profile />} />
         <Route path="/chats" element={<Chats />} />
+        <Route path="/success" element={<PagoExitoso />} />
         {ownerRoutes}
       </Routes>
     </SocketProvider>

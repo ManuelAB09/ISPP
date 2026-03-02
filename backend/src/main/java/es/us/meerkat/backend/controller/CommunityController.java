@@ -324,28 +324,6 @@ public class CommunityController {
                         .build());
     }
 
-    /** Desvincula un tutor de la comunidad. DELETE /api/v1/communities/{communityId}/tutor */
-    @DeleteMapping("/{communityId}/tutor")
-    @Operation(
-            summary = "Desvincular tutor",
-            description = "Termina la contratación del tutor actual (solo" + " admin)",
-            security = @SecurityRequirement(name = "bearerAuth"))
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Tutor desvinculado"),
-        @ApiResponse(responseCode = "403", description = "No tienes permisos"),
-        @ApiResponse(responseCode = "404", description = "Tutor no encontrado")
-    })
-    public ResponseEntity<MessageResponse> removeTutor(
-            @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
-
-        if (usuario == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        return ResponseEntity.ok(
-                MessageResponse.builder().message("Tutor desvinculado correctamente").build());
-    }
-
     // =====================================================
     // MIEMBROS
     // =====================================================
