@@ -1,0 +1,37 @@
+# ═══════════════════════════════════════════════════
+#  Perfil SPRINT1 — Render + Neon (PostgreSQL serverless)
+#
+#  Activar con: SPRING_PROFILES_ACTIVE=sprint1
+#  Las variables se configuran en Render Dashboard
+#  → Environment → Environment Variables
+#
+#  Base de datos: Neon (instancia dedicada al Sprint 1)
+# ═══════════════════════════════════════════════════
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+      connection-timeout: 20000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+
+server:
+  port: ${PORT:8080}
+
+logging:
+  level:
+    root: INFO
+    es.us.meerkat: INFO
