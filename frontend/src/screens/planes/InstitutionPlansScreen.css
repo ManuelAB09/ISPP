@@ -1,0 +1,414 @@
+/* ── Page wrapper ──────────────────────────────────── */
+.instPlansPage {
+  background: #f5f6fa;
+  min-height: 100vh;
+  color: #111827;
+}
+
+/* ── Header ────────────────────────────────────────── */
+.instPlansHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 40px;
+  padding-bottom: 60px;
+}
+
+.instPlansHeader .headerTitle {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 20px;
+  align-items: center;
+  width: 100%;
+}
+
+.instPlansHeader .headerTitle .line {
+  border: 2px solid #2d3250a6;
+  width: 100%;
+}
+
+.instPlansHeader .headerTitle p {
+  min-width: 330px;
+  max-width: 500px;
+  font-family: 'inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.instPlansHeader .headerTitle h1 {
+  font-family: 'spacegrotesk', sans-serif;
+  font-size: 70px;
+  font-weight: 700;
+  color: var(--spaceIndigo);
+  text-align: end;
+  margin: 0;
+}
+
+.instBtnBack {
+  background: none;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+.instBtnBack:hover {
+  background: #eef2f7;
+  color: #374151;
+}
+
+/* ── Content wrapper ───────────────────────────────── */
+.instPlansContent {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 40px 60px;
+  width: 100%;
+}
+
+/* ── Feature highlights ────────────────────────────── */
+.instFeaturesHighlight {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 40px;
+}
+
+.instFeatureItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #fff;
+  border: 1px solid #eef2f7;
+  border-radius: 14px;
+  padding: 16px 14px;
+  box-shadow: 0 4px 12px rgba(17, 24, 39, 0.04);
+}
+
+.instFeatureIcon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.instFeatureItem strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  color: #1f2a4a;
+  margin-bottom: 3px;
+}
+
+.instFeatureItem p {
+  margin: 0;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+/* ── Sections ──────────────────────────────────────── */
+.instPlansSection {
+  margin-bottom: 40px;
+}
+
+.instSpecialSection {
+  margin-top: 8px;
+}
+
+.instSectionHead {
+  margin-bottom: 18px;
+}
+
+.instSectionHead h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 800;
+  color: #1f2a4a;
+}
+
+.instSectionHead p {
+  margin: 0;
+  font-size: 12px;
+  color: #6b7280;
+  max-width: 640px;
+}
+
+/* ── Eligibility notice ────────────────────────────── */
+.instEligibilityNotice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 12px;
+  color: #92400e;
+  margin-bottom: 18px;
+}
+
+.instEligibilityIcon {
+  font-size: 16px;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+
+/* ── Card grids ────────────────────────────────────── */
+.instCardsGrid {
+  display: grid;
+  gap: 18px;
+  align-items: start;
+}
+
+.instCardsGrid--3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.instCardsGrid--2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (max-width: 900px) {
+  .instCardsGrid--3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .instFeaturesHighlight {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .instPlansHeaderTitle h1 {
+    font-size: 36px;
+  }
+}
+
+@media (max-width: 600px) {
+  .instCardsGrid--3,
+  .instCardsGrid--2 {
+    grid-template-columns: 1fr;
+  }
+  .instFeaturesHighlight {
+    grid-template-columns: 1fr;
+  }
+  .instPlansHeaderTitle h1 {
+    font-size: 28px;
+  }
+  .instPlansContent {
+    padding: 24px 20px 40px;
+  }
+}
+
+/* ── Plan card ─────────────────────────────────────── */
+.instPlanCard {
+  position: relative;
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px 18px;
+  box-shadow: 0 10px 20px rgba(17, 24, 39, 0.06);
+  border: 1px solid #eef2f7;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.instPlanCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 32px rgba(17, 24, 39, 0.1);
+}
+
+.instPlanCard--destacado {
+  border: 2px solid #F2C18E;
+  box-shadow: 0 14px 28px rgba(242, 193, 142, 0.15);
+}
+
+.instPlanCard--special {
+  border: 2px solid #a78bfa;
+  box-shadow: 0 14px 28px rgba(167, 139, 250, 0.12);
+}
+
+/* ── Badges ────────────────────────────────────────── */
+.instBadgeRecomendado {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #F2C18E;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 5px 14px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.instBadgeDescuento {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #7c3aed;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 5px 14px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* ── Card top row ──────────────────────────────────── */
+.instPlanCardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.instPlanName {
+  font-weight: 800;
+  color: #111827;
+  font-size: 14px;
+}
+
+.instPlanSub {
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.instPlanPrice {
+  font-weight: 900;
+  color: #111827;
+  font-size: 12px;
+  text-align: right;
+  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.25;
+}
+
+.instPlanPriceAccent {
+  font-weight: 900;
+  color: #F2C18E;
+  font-size: 12px;
+  text-align: right;
+  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.25;
+}
+
+.instPlanCard--special .instPlanPriceAccent {
+  color: #7c3aed;
+}
+
+.instPlanPriceMain {
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.instPlanPriceSub {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+/* ── Capacity badge ────────────────────────────────── */
+.instPlanCapacity {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 4px 10px;
+  display: inline-block;
+  margin-bottom: 12px;
+}
+
+/* ── Features list ─────────────────────────────────── */
+.instPlanFeatures {
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+  color: #374151;
+  font-size: 12px;
+  flex: 1;
+}
+
+.instPlanFeatures li {
+  margin: 7px 0;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.instPlanFeatures li::before {
+  content: "✓";
+  font-weight: 900;
+  color: #10b981;
+  flex-shrink: 0;
+}
+
+.instPlanCard--special .instPlanFeatures li::before {
+  color: #7c3aed;
+}
+
+/* ── Eligibility info box inside card ──────────────── */
+.instEligibilityBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 11px;
+  color: #5b21b6;
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+.instEligibilityBoxIcon {
+  font-size: 14px;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+
+/* ── Buttons ───────────────────────────────────────── */
+.instBtn {
+  width: 100%;
+  border-radius: 10px;
+  padding: 10px 12px;
+  border: 0;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+  margin-top: auto;
+}
+
+.instBtn:hover {
+  opacity: 0.88;
+}
+
+.instBtn--primary {
+  background: #F2C18E;
+  color: #fff;
+}
+
+.instBtn--secondary {
+  background: #676F9D;
+  color: #fff;
+}
+
+.instBtn--special {
+  background: #7c3aed;
+  color: #fff;
+}

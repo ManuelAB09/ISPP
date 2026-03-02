@@ -1,5 +1,6 @@
 package es.us.meerkat.backend.service;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -7,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.entity.Suscripcion;
 import es.us.meerkat.backend.entity.TipoPlan;
+import es.us.meerkat.backend.entity.TipoTransaccion;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.SuscripcionRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
@@ -19,6 +21,7 @@ public class SuscripcionService {
 
     private final SuscripcionRepository suscripcionRepository;
     private final UsuarioRepository usuarioRepository;
+    private final PaymentService paymentService;
 
     /**
      * Obtiene todos los planes disponibles.
@@ -107,5 +110,83 @@ public class SuscripcionService {
         suscripcion.renovar();
         Suscripcion renovada = suscripcionRepository.save(suscripcion);
         return renovada;
+    }
+
+    /**
+     * Activa la suscripción PREMIUM tras confirmación de pago por Stripe. Crea la Suscripcion,
+     * registra la TransaccionPago y actualiza el plan del Usuario.
+     *
+     * @param usuarioId ID del usuario extraído de los metadata de Stripe
+     * @param monto monto cobrado (ya convertido de centavos a euros)
+     */
+    @Transactional
+    public void activarSuscripcionTrasStripe(Long usuarioId, BigDecimal monto) {
+        Usuario usuario =
+                usuarioRepository
+                        .findById(usuarioId)
+                        .orElseThrow(
+                                () ->
+                                        new IllegalArgumentException(
+                                                "Usuario no encontrado: " + usuarioId));
+
+        // 1. Crear o reutilizar suscripción
+        Optional<Suscripcion> existente = suscripcionRepository.findByUsuarioId(usuarioId);
+        Suscripcion suscripcion;
+
+        if (existente.isPresent()) {
+            // Ya tenía una suscripción anterior (cancelada o expirada): reactivar
+            suscripcion = existente.get();
+            suscripcion.renovar();
+
+        } else {
+            // Primera vez
+            suscripcion = Suscripcion.suscribir();
+            suscripcion.setUsuario(usuario);
+        }
+        suscripcionRepository.save(suscripcion);
+
+        // 2. Registrar transacción de pago
+        paymentService.procesarPagoExitoso(
+                usuarioId,
+                TipoTransaccion.SUSCRIPCION,
+                monto,
+                "Suscripción PREMIUM activada vía Stripe",
+                null);
+
+        // 3. Actualizar plan del usuario si tu entidad Usuario tiene campo plan
+        // Si no tienes este campo, elimina estas dos líneas
+        usuario.setPlan(TipoPlan.PREMIUM);
+        usuarioRepository.save(usuario);
+    }
+
+    /**
+     * Renueva la suscripción PREMIUM tras cobro recurrente exitoso de Stripe. Renueva la
+     * Suscripcion y registra la TransaccionPago.
+     *
+     * @param usuarioId ID del usuario extraído de los metadata de Stripe
+     * @param monto monto cobrado (ya convertido de centavos a euros)
+     */
+    @Transactional
+    public void renovarSuscripcionTrasStripe(Long usuarioId, BigDecimal monto) {
+        // 1. Renovar suscripción
+        Suscripcion suscripcion =
+                suscripcionRepository
+                        .findByUsuarioId(usuarioId)
+                        .orElseThrow(
+                                () ->
+                                        new IllegalArgumentException(
+                                                "No se encontró suscripción para renovar. Usuario: "
+                                                        + usuarioId));
+
+        suscripcion.renovar();
+        suscripcionRepository.save(suscripcion);
+
+        // 2. Registrar transacción de pago
+        paymentService.procesarPagoExitoso(
+                usuarioId,
+                TipoTransaccion.SUSCRIPCION,
+                monto,
+                "Renovación PREMIUM vía Stripe",
+                null);
     }
 }
