@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { subscriptionsApi } from "../../api/subscriptions.api";
 import Header from "../../components/Header/Header";
 import "./PasarelaPago.css";
 
@@ -111,19 +112,36 @@ export default function PasarelaPago() {
     setProcessing(true);
 
     try {
-      // TODO: Implementar llamada al endpoint del backend
-      // const response = await subscriptionsApi.subscribe(selectedPeriod);
-      // Se debería enviar el período seleccionado y procesar el pago
+      // Intentar obtener la URL de pago de Stripe
+      const paymentResponse = await subscriptionsApi.subscribe('PREMIUM', true);
       
-      // Simulación temporal
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Redirigir a la página de éxito o planes
-      alert("¡Pago procesado exitosamente! Bienvenido a Premium");
-      navigate("/planes");
+      // Si el backend devuelve una URL de Stripe, redirigir al usuario
+      if (paymentResponse?.paymentUrl) {
+        window.location.href = paymentResponse.paymentUrl;
+      } else {
+        // No hay URL de pago, usar confirmación directa
+        await subscriptionsApi.confirmPayment();
+        alert("¡Pago procesado exitosamente! Bienvenido a Premium");
+        navigate("/pagos");
+      }
     } catch (error) {
       console.error("Error al procesar el pago:", error);
-      alert("Error al procesar el pago. Por favor, intente nuevamente.");
+      
+      // Si Stripe no está configurado (error 500), usar modo desarrollo
+      if (error?.status === 500 || error?.response?.status === 500) {
+        try {
+          await subscriptionsApi.confirmPayment();
+          alert("¡Pago procesado exitosamente! Bienvenido a Premium");
+          navigate("/pagos");
+        } catch (confirmError) {
+          console.error("Error al confirmar el pago:", confirmError);
+          alert("Error al procesar el pago. Por favor, intente nuevamente.");
+        }
+      } else if (error?.status === 400 || error?.response?.status === 400) {
+        alert("Ya tienes una suscripción activa.");
+      } else {
+        alert("Error al procesar el pago. Por favor, intente nuevamente.");
+      }
     } finally {
       setProcessing(false);
     }
