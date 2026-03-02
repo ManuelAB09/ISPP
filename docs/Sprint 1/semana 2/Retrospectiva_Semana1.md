@@ -13,7 +13,7 @@
 **Sprint:** Sprint 1  
 **Semana:** Semana 2  
 **Estado:** Aprobado  
-**Fecha:** 20/02/2026  
+**Fecha:** 02/03/2026  
 **Hora:** 16:00 - 17:00  
 **Lugar:** Online (Teams)  
 **Autor:** Manuel Artero Bellido  
