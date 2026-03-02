@@ -2,5 +2,8 @@
     "java.checkstyle.configuration": "${workspaceFolder}\\backend\\target\\checkstyle-checker.xml",
     "java.configuration.updateBuildConfiguration": "interactive",
     "java.debug.settings.onBuildFailureProceed": true,
-    "java.compile.nullAnalysis.mode": "automatic"
+    "java.compile.nullAnalysis.mode": "automatic",
+    "conventionalCommits.scopes": [
+        "Frontend"
+    ]
 }
