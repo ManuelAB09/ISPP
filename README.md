@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>ISPP - MerrKatters</h1>
+  <h1>ISPP - MeerKatters</h1>
   <p><strong>Grupo 9 - Turno de tarde</strong></p>
 </div>
 
