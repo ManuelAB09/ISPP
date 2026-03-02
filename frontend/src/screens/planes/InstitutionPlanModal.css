@@ -1,0 +1,506 @@
+/* ── Overlay ────────────────────────────────────── */
+.instModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* ── Modal container ────────────────────────────── */
+.instModal {
+  background: #fff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 60px rgba(17, 24, 39, 0.18);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ─────────────────────────────────────── */
+.instModalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 22px 24px 0;
+  gap: 12px;
+}
+
+.instModalTitle {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: #1f2a4a;
+}
+
+.instModalPrice {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 3px;
+}
+
+.instModalClose {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.instModalClose:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+/* ── Step Indicator ─────────────────────────────── */
+.instStepIndicator {
+  display: flex;
+  align-items: center;
+  padding: 18px 24px 0;
+  gap: 0;
+}
+
+.instStepItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.instStepItem:last-child {
+  flex: 0;
+}
+
+.instStepDot {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 2px solid #e5e7eb;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.instStepDot--active {
+  background: #F2C18E;
+  color: #fff;
+  border-color: #F2C18E;
+}
+
+.instStepDot--done {
+  background: #10b981;
+  color: #fff;
+  border-color: #10b981;
+}
+
+.instStepLabel {
+  font-size: 10px;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.instStepLabel--active {
+  font-size: 10px;
+  color: #1f2a4a;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.instStepLine {
+  flex: 1;
+  height: 2px;
+  background: #e5e7eb;
+  margin: 0 4px;
+}
+
+/* ── Body ───────────────────────────────────────── */
+.instModalBody {
+  padding: 20px 24px 0;
+  flex: 1;
+}
+
+.instStepContent h3 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #1f2a4a;
+}
+
+.instStepDesc {
+  margin: 0 0 18px;
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.instStepIcon {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+/* ── Form ───────────────────────────────────────── */
+.instFormGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 14px;
+  flex: 1;
+}
+
+.instFormGroup label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.instInput {
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: #111827;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.instInput:focus {
+  border-color: #F2C18E;
+}
+
+.instTextarea {
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: #111827;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.instTextarea:focus {
+  border-color: #F2C18E;
+}
+
+.instFormHint {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.instFormRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* ── Domain status ──────────────────────────────── */
+.instDomainStatus {
+  font-size: 11px;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.instDomainStatus--ok {
+  background: #f0fdf4;
+  border: 1px solid #dcfce7;
+  color: #15803d;
+}
+
+.instDomainStatus--warn {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+/* ── Range slider ───────────────────────────────── */
+.instRange {
+  width: 100%;
+  accent-color: #F2C18E;
+}
+
+.instRangeLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+/* ── Duration buttons ───────────────────────────── */
+.instDuracionGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.instDuracionBtn {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 9px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #f9fafb;
+  color: #374151;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.instDuracionBtn:hover {
+  background: #fff7ed;
+  border-color: #F2C18E;
+}
+
+.instDuracionBtn--active {
+  background: #F2C18E;
+  border-color: #F2C18E;
+  color: #fff;
+}
+
+/* ── Config summary ─────────────────────────────── */
+.instConfigSummary {
+  background: #f9fafb;
+  border: 1px solid #eef2f7;
+  border-radius: 14px;
+  padding: 14px;
+  margin-top: 18px;
+}
+
+.instConfigRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #6b7280;
+  padding: 5px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.instConfigRow:last-child {
+  border-bottom: none;
+}
+
+.instConfigRow--price {
+  color: #1f2a4a;
+  font-weight: 700;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: none;
+}
+
+.instConfigRow--price strong {
+  color: #F2C18E;
+  font-size: 15px;
+}
+
+/* ── Info box ───────────────────────────────────── */
+.instInfoBox {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 12px;
+  color: #1e40af;
+  margin-bottom: 14px;
+}
+
+/* ── Summary card ───────────────────────────────── */
+.instSummaryCard {
+  background: #f9fafb;
+  border: 1px solid #eef2f7;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.instSummaryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #6b7280;
+  padding: 5px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.instSummaryRow:last-child {
+  border-bottom: none;
+}
+
+.instSummaryRow--price {
+  color: #1f2a4a;
+  font-weight: 700;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: none;
+}
+
+.instSummaryRow--price strong {
+  color: #F2C18E;
+  font-size: 15px;
+}
+
+/* ── Eligibility reminder ───────────────────────── */
+.instEligibilityReminder {
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 11px;
+  color: #5b21b6;
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+/* ── Terms checkbox ─────────────────────────────── */
+.instTermsLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12px;
+  color: #374151;
+  cursor: pointer;
+  line-height: 1.5;
+}
+
+.instTermsLabel input {
+  margin-top: 2px;
+  accent-color: #F2C18E;
+  flex-shrink: 0;
+}
+
+.instTermsLabel a {
+  color: #F2C18E;
+  text-decoration: underline;
+}
+
+/* ── Error ──────────────────────────────────────── */
+.instModalError {
+  background: #fff;
+  border: 1px solid #fee2e2;
+  color: #b91c1c;
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin: 14px 24px 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ── Actions ────────────────────────────────────── */
+.instModalActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 18px 24px 22px;
+}
+
+.instModalBtnCancel {
+  background: none;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.instModalBtnCancel:hover {
+  background: #f3f4f6;
+}
+
+.instModalBtnBack {
+  background: none;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  margin-right: auto;
+}
+
+.instModalBtnBack:hover {
+  background: #f3f4f6;
+}
+
+.instModalBtnNext {
+  background: #676F9D;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 20px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.instModalBtnNext:hover {
+  opacity: 0.88;
+}
+
+.instModalBtnSubmit {
+  background: #F2C18E;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 20px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.instModalBtnSubmit:hover {
+  opacity: 0.88;
+}
+
+.instModalBtnSubmit:disabled,
+.instModalBtnNext:disabled,
+.instModalBtnBack:disabled,
+.instModalBtnCancel:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 560px) {
+  .instModal {
+    max-height: 95vh;
+    border-radius: 14px 14px 0 0;
+    align-self: flex-end;
+  }
+  .instFormRow {
+    grid-template-columns: 1fr;
+  }
+  .instDuracionGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

@@ -7,6 +7,7 @@ import EditProfileModal from "./EditProfileModal";
 import CreateProfileModal from "./CreateProfileModal";
 import VerificacionModal from "./VerificacionModal";
 import Settings from "../myProfile/Settings";
+import HireTutorModal from "./HireTutorModal";
 import "./TeacherProfile.css";
 
 
@@ -37,6 +38,7 @@ const TeacherProfile = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showVerificacion, setShowVerificacion] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showHireModal, setShowHireModal] = useState(false);
 
   // Callback: actualiza estado local tras editar
   const handlePerfilGuardado = (updatedTutor) => {
@@ -170,12 +172,12 @@ const TeacherProfile = () => {
           <div className="tp-header__left">
             <img
               className="tp-header__photo"
-              src={tutor.usuario.foto}
-              alt={tutor.usuario.nombre}
+              src={tutor.usuario?.foto}
+              alt={tutor.usuario?.nombre}
             />
             <div className="tp-header__info">
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <h1 className="tp-header__name">{tutor.usuario.nombre}</h1>
+                <h1 className="tp-header__name">{tutor.usuario?.nombre}</h1>
                 {tutor.verificado && (
                   <span style={{ 
                     backgroundColor: '#eafaf1', 
@@ -235,6 +237,18 @@ const TeacherProfile = () => {
             </button>
           </div>
           )}
+
+          {/* Acciones para visitantes (otro usuario viendo el perfil) */}
+          {user?.id !== tutor.usuario?.id && (
+          <div className="tp-header__actions">
+            <button className="tp-btn tp-btn--contact">
+              💬 Contactar
+            </button>
+            <button className="tp-btn tp-btn--hire" onClick={() => setShowHireModal(true)}>
+              🎓 Contratar
+            </button>
+          </div>
+          )}
         </header>
       </div>
 
@@ -249,13 +263,13 @@ const TeacherProfile = () => {
 
           <div className="tp-dato">
             <span className="tp-dato__label">NOMBRE COMPLETO</span>
-            <span className="tp-dato__value">{tutor.usuario.nombre}</span>
+            <span className="tp-dato__value">{tutor.usuario?.nombre}</span>
           </div>
           {/* email, universidad, grado y ubicacion no existen en el backend (Usuario entity).
               TODO: Añadir estos campos al entity/DTO cuando el backend los soporte. */}
           <div className="tp-dato">
             <span className="tp-dato__label">BIO</span>
-            <span className="tp-dato__value">{tutor.usuario.bio || tutor.bio || "—"}</span>
+            <span className="tp-dato__value">{tutor.usuario?.bio || tutor.bio || "—"}</span>
           </div>
           <div className="tp-dato">
             <span className="tp-dato__label">ESPECIALIDADES</span>
@@ -382,6 +396,10 @@ const TeacherProfile = () => {
 
       </div>{/* cierre tp-content */}
     </div>
+
+    {showHireModal && (
+      <HireTutorModal tutor={tutor} onClose={() => setShowHireModal(false)} />
+    )}
     </>
   );
 };

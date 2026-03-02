@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getVerifiedTutors, getMyTutorProfiles } from "../../api/tutorEndpoints";
+import { getMyTutorProfiles, getVerifiedTutors } from "../../api/tutorEndpoints";
+import Header from "../../components/Header/Header";
 import { useAuth } from "../../contexts/AuthContext";
 import CreateProfileModal from "../teacherProfile/CreateProfileModal";
-import Header from "../../components/Header/Header";
 import "./VerifiedTeachers.css";
 
 /**
@@ -124,16 +124,15 @@ const VerifiedTeachers = () => {
       {/* ── Header ──────────────────────────────────────────── */}
       <div className="vt-header">
         <div className="vt-header__inner">
-          <h1 className="vt-header__title">
-            <span className="vt-header__badge"></span> Profesores Verificados
-          </h1>
-          <p className="vt-header__subtitle">
-            Profesionales con identidad confirmada, calidad contrastada y acceso directo al contacto.
-          </p>
+          <div className="headerTitle">
+            <p>Profesionales con identidad confirmada, calidad contrastada y acceso directo al contacto</p>
+            <span className="line"></span>
+            <h1>Profesores Verificados</h1>
+          </div>
           {isAuthenticated && user?.esTutor && !yaTienePerfilTutor && (
             <button
               className="vt-btn vt-btn--primary"
-              style={{ marginTop: '12px' }}
+              style={{ marginTop: '24px' }}
               onClick={() => setShowCreateModal(true)}
             >
               + Crear Perfil de Profesor

@@ -1,0 +1,487 @@
+/* Página de pasarela de pago para tutores */
+.ppt-page {
+  background: #f5f6fa;
+  min-height: 100vh;
+  padding: 40px 20px;
+  font-family: 'Inter', sans-serif;
+}
+
+.ppt-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 32px;
+  align-items: start;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* COLUMNA IZQUIERDA - RESUMEN */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.ppt-summary {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 20px;
+}
+
+.ppt-summary-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--spaceIndigo, #2d3250);
+  margin: 0 0 24px 0;
+}
+
+/* Card del tutor */
+.ppt-tutor-card {
+  display: flex;
+  gap: 16px;
+  align-items: start;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e8eaf6 100%);
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.ppt-tutor-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.ppt-tutor-info {
+  flex: 1;
+}
+
+.ppt-tutor-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--spaceIndigo, #2d3250);
+  margin: 0 0 6px 0;
+}
+
+.ppt-tutor-especialidad {
+  font-size: 13px;
+  color: var(--glaucous, #676f9d);
+  margin: 0 0 8px 0;
+}
+
+.ppt-tutor-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #f59e0b;
+  background: #fff;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+/* Mensaje de aceptación de solicitud */
+.ppt-acceptance-notice {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: #f0fdf4;
+  border: 2px solid #dcfce7;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.ppt-acceptance-icon {
+  width: 36px;
+  height: 36px;
+  background: #10b981;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.ppt-acceptance-text {
+  font-size: 14px;
+  color: #15803d;
+  line-height: 1.5;
+}
+
+.ppt-acceptance-text strong {
+  color: #14532d;
+}
+
+/* Detalles de la contratación */
+.ppt-details-box {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.ppt-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  font-size: 14px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.ppt-detail-row:last-child {
+  border-bottom: none;
+}
+
+.ppt-detail-label {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.ppt-detail-value {
+  color: var(--graphite, #2b2b2b);
+  font-weight: 600;
+  text-align: right;
+}
+
+/* Desglose de pago */
+.ppt-payment-breakdown {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 20px;
+}
+
+.ppt-breakdown-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--spaceIndigo, #2d3250);
+  margin: 0 0 16px 0;
+}
+
+.ppt-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--graphite, #2b2b2b);
+}
+
+.ppt-breakdown-row span:last-child {
+  font-weight: 600;
+}
+
+.ppt-breakdown-row--muted {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.ppt-breakdown-row--muted span:last-child {
+  font-weight: 500;
+}
+
+.ppt-breakdown-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 16px 0;
+}
+
+.ppt-breakdown-row--total {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--spaceIndigo, #2d3250);
+  margin-bottom: 12px;
+}
+
+.ppt-breakdown-row--total span {
+  color: var(--spaceIndigo, #2d3250);
+}
+
+.ppt-breakdown-note {
+  font-size: 12px;
+  color: #10b981;
+  background: #f0fdf4;
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 600;
+  margin-top: 12px;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* COLUMNA DERECHA - FORMULARIO */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.ppt-form-section {
+  background: #fff;
+  border-radius: 16px;
+  padding: 40px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.ppt-header {
+  margin-bottom: 32px;
+}
+
+.ppt-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--spaceIndigo, #2d3250);
+  margin: 0 0 8px 0;
+}
+
+.ppt-subtitle {
+  font-size: 15px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Formulario */
+.ppt-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.ppt-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ppt-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--graphite, #2b2b2b);
+}
+
+.ppt-input-wrapper {
+  position: relative;
+}
+
+.ppt-card-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  pointer-events: none;
+}
+
+.ppt-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: 'Inter', sans-serif;
+  color: var(--graphite, #2b2b2b);
+  transition: all 0.2s ease;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.ppt-input-wrapper .ppt-input {
+  padding-left: 48px;
+}
+
+.ppt-input:focus {
+  border-color: var(--glaucous, #676f9d);
+  box-shadow: 0 0 0 3px rgba(103, 111, 157, 0.15);
+}
+
+.ppt-input--error {
+  border-color: #ef4444;
+}
+
+.ppt-input--error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.ppt-error {
+  font-size: 13px;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Fila para expiración y CVV */
+.ppt-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Información de seguridad */
+.ppt-security-info {
+  background: #f0fdf4;
+  border: 1px solid #dcfce7;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: start;
+}
+
+.ppt-security-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.ppt-security-info p {
+  margin: 0;
+  font-size: 13px;
+  color: #15803d;
+  line-height: 1.5;
+}
+
+/* Términos */
+.ppt-terms {
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #92400e;
+  line-height: 1.5;
+}
+
+.ppt-terms p {
+  margin: 0;
+}
+
+.ppt-terms a {
+  color: #b45309;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.ppt-terms a:hover {
+  color: #92400e;
+}
+
+/* Botones */
+.ppt-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.ppt-btn {
+  flex: 1;
+  padding: 16px 24px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.ppt-btn--secondary {
+  background: #f3f4f6;
+  color: var(--graphite, #2b2b2b);
+  border: 2px solid #e5e7eb;
+}
+
+.ppt-btn--secondary:hover:not(:disabled) {
+  background: #e5e7eb;
+  transform: translateY(-1px);
+}
+
+.ppt-btn--primary {
+  background: linear-gradient(135deg, var(--spaceIndigo, #2d3250) 0%, var(--glaucous, #676f9d) 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(45, 50, 80, 0.3);
+}
+
+.ppt-btn--primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(45, 50, 80, 0.4);
+}
+
+.ppt-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Spinner de carga */
+.ppt-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: ppt-spin 0.6s linear infinite;
+}
+
+@keyframes ppt-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* RESPONSIVE */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+@media (max-width: 968px) {
+  .ppt-container {
+    grid-template-columns: 1fr;
+  }
+
+  .ppt-summary {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .ppt-page {
+    padding: 20px 12px;
+  }
+
+  .ppt-form-section {
+    padding: 24px 20px;
+  }
+
+  .ppt-summary {
+    padding: 24px 20px;
+  }
+
+  .ppt-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .ppt-actions {
+    flex-direction: column-reverse;
+  }
+
+  .ppt-btn {
+    width: 100%;
+  }
+
+  .ppt-title {
+    font-size: 24px;
+  }
+
+  .ppt-tutor-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+}

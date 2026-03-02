@@ -23,10 +23,12 @@ export const subscriptionsApi = {
   /**
    * POST /api/v1/subscriptions/me
    * Suscribir al usuario a un plan Premium
-   * @returns {Promise<Object>} - Suscripción creada
+   * @param {string} planId - ID del plan (PREMIUM)
+   * @param {boolean} aceptarTerminos - Aceptación de términos
+   * @returns {Promise<Object>} - PaymentUrlResponse con URL de pago de Stripe
    */
-  subscribe() {
-    return apiClient.post('/api/v1/subscriptions/me');
+  subscribe(planId = 'PREMIUM', aceptarTerminos = true) {
+    return apiClient.post('/api/v1/subscriptions/me', { planId, aceptarTerminos });
   },
 
   /**
@@ -36,5 +38,13 @@ export const subscriptionsApi = {
    */
   cancelSubscription() {
     return apiClient.delete('/api/v1/subscriptions/me');
-  }
+  },
+
+  /**
+   * POST /api/v1/subscriptions/me/confirm-payment
+   * (Solo desarrollo) Confirma pago sin Stripe
+   */
+  confirmPayment() {
+    return apiClient.post('/api/v1/subscriptions/me/confirm-payment');
+  },
 };
