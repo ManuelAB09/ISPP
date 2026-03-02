@@ -44,8 +44,8 @@ class PaymentServiceTest {
                 paymentService.generarPagoVerificacionTutor(tutorId, usuarioId);
 
         assertThat(response).isNotNull();
-        assertThat(response.getUrl()).isNotNull();
-        assertThat(response.getSessionId()).isNotNull();
+        assertThat(response.paymentUrl()).isNotNull();
+        assertThat(response.sessionId()).isNotNull();
     }
 
     @Test
@@ -59,8 +59,8 @@ class PaymentServiceTest {
                 paymentService.generarPagoContratacionTutor(tutorId, comunidadId, monto, usuarioId);
 
         assertThat(response).isNotNull();
-        assertThat(response.getUrl()).isNotNull();
-        assertThat(response.getSessionId()).isNotNull();
+        assertThat(response.paymentUrl()).isNotNull();
+        assertThat(response.sessionId()).isNotNull();
     }
 
     @Test

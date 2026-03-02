@@ -283,7 +283,11 @@ class InstitutionServiceTest {
     @Test
     void contarUsuariosShouldReturnUserCount() {
         Long institutionId = 1L;
-        when(institutionRepository.countByUsuariosInInstitution(institutionId)).thenReturn(5L);
+        Institution institution = buildInstitution(institutionId, 1L);
+
+        when(institutionRepository.findById(institutionId)).thenReturn(Optional.of(institution));
+        when(institutionRepository.countUsuariosByDominioEmail(institution.getDominioEmail()))
+                .thenReturn(5L);
 
         long result = institutionService.contarUsuarios(institutionId);
 
@@ -293,7 +297,7 @@ class InstitutionServiceTest {
     @Test
     void contarComunidadesShouldReturnCommunityCount() {
         Long institutionId = 1L;
-        when(institutionRepository.countByCommunitiesInInstitution(institutionId)).thenReturn(3L);
+        when(institutionRepository.countComunidadesByInstitutionId(institutionId)).thenReturn(3L);
 
         long result = institutionService.contarComunidades(institutionId);
 
