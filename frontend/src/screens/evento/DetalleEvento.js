@@ -5,6 +5,9 @@ import {
   LuPencil, LuX, LuArrowLeft, LuPackage,
   LuEye, LuEyeOff, LuMap, LuClock, LuCheck
 } from 'react-icons/lu';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 import './DetalleEvento.css';
 import Header from '../../components/Header/Header';
 import {
@@ -12,6 +15,15 @@ import {
   getConfirmedAttendees, getMyAttendance
 } from '../../api/eventEndpoints';
 import { communitiesApi } from '../../api/communities.api';
+
+const eventIconRed = L.icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+  shadowSize: [41, 41],
+});
 
 const DetalleEvento = () => {
   const { eventId } = useParams();
@@ -288,14 +300,28 @@ const DetalleEvento = () => {
                           {event.ubicacion.nombre || 'Ubicación'}
                         </span>
                         {event.ubicacion.direccion && (
-                          <p style={{ margin: '4px 0 2px 0', color: '#555', fontSize: '0.88rem', lineHeight: 1.4 }}>
+                          <p style={{ margin: '4px 0 8px 0', color: '#555', fontSize: '0.88rem', lineHeight: 1.4 }}>
                             {event.ubicacion.direccion}
                           </p>
                         )}
                         {event.ubicacion.latitud && event.ubicacion.longitud && (
-                          <p style={{ margin: '2px 0 0 0', color: '#888', fontSize: '0.8rem' }}>
-                            📍 {Number(event.ubicacion.latitud).toFixed(5)}, {Number(event.ubicacion.longitud).toFixed(5)}
-                          </p>
+                          <div className="ed-location-map-wrap">
+                            <MapContainer
+                              center={[Number(event.ubicacion.latitud), Number(event.ubicacion.longitud)]}
+                              zoom={15}
+                              scrollWheelZoom={true}
+                              className="ed-location-map"
+                            >
+                              <TileLayer
+                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                              />
+                              <Marker
+                                position={[Number(event.ubicacion.latitud), Number(event.ubicacion.longitud)]}
+                                icon={eventIconRed}
+                              />
+                            </MapContainer>
+                          </div>
                         )}
                       </div>
                     </div>
