@@ -15,4 +15,8 @@ public class MensajeResponse {
     private LocalDateTime createdAt;
     private Long emisorId;
     private Long receptorId;
+    private String archivoUrl;
+    private String archivoNombre;
+    private String archivoMimeType;
+    private Long archivoTamano;
 }

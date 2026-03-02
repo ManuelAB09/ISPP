@@ -1,6 +1,10 @@
 spring:
   application:
     name: backend
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
 
 # ── configuración por defecto: PostgreSQL (usa variables de entorno) ──
 # En Azure se activa "staging" o "production" via SPRING_PROFILES_ACTIVE

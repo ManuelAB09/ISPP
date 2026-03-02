@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './contexts/AuthContext';
 import { SocketProvider } from './contexts/SocketContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import './App.css';
 import Comunidades from './screens/comunidades/Comunidades';
 import CommunityDetail from './screens/comunidades/CommunityDetail';
@@ -74,7 +75,9 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <AppRoutes />
+      <NotificationProvider>
+        <AppRoutes />
+      </NotificationProvider>
     </AuthProvider>
   );
 }
