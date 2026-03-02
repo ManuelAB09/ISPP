@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useSocketContext } from '../../contexts/SocketContext';
-import { enviarMensajePrivado, obtenerHistorialPrivado, eliminarMensajePrivado } from '../../api/mensajeService';
+import { enviarMensajePrivado, obtenerHistorialPrivado, eliminarMensajePrivado, editarMensajePrivado } from '../../api/mensajeService';
 import './PrivateChat.css';
 
 /**
@@ -18,7 +18,13 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
     const [enviando, setEnviando] = useState(false);
     const [procesandoId, setProcesandoId] = useState(null);
     const [error, setError] = useState(null);
+    const [editandoId, setEditandoId] = useState(null);
+    const [contenidoEditado, setContenidoEditado] = useState('');
     const messagesEndRef = useRef(null);
+
+    // helper para determinar si un mensaje pertenece al usuario actual
+    const isOwnMessage = (msg) =>
+        Number(msg?.emisorId) === Number(usuarioActual?.id);
 
     /**
      * Carga el historial de mensajes privados al montar.
@@ -28,7 +34,16 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
             try {
                 setCargandoHistorial(true);
                 const { data } = await obtenerHistorialPrivado(tutorId);
-                setMensajes(data);
+                // normalizar IDs numéricos para evitar discrepancias de tipo
+                setMensajes(
+                    Array.isArray(data)
+                        ? data.map((m) => ({
+                              ...m,
+                              emisorId: Number(m.emisorId),
+                              receptorId: Number(m.receptorId),
+                          }))
+                        : []
+                );
             } catch (err) {
                 setError('Error al cargar el historial de mensajes');
                 console.error(err);
@@ -77,18 +92,38 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
             setMensajes((prev) => prev.filter((msg) => msg.id !== deletedId));
         };
 
+        // Escuchar edición de mensajes
+        const handleDMUpdated = (payload) => {
+            if (!payload?.id) return;
+            setMensajes((prev) =>
+                prev.map((msg) => (msg.id === payload.id ? { ...msg, ...payload } : msg))
+            );
+        };
+
         // Escuchar errores
         const handleSocketError = (error) => {
             setError(`Error: ${error.message}`);
         };
 
-        socket.on('dm_message', handleNewDM);
+        socket.on('dm_message', (nuevoMensaje) => {
+            // normalizar antes de procesar
+            const normalized = nuevoMensaje
+                ? {
+                      ...nuevoMensaje,
+                      emisorId: Number(nuevoMensaje.emisorId),
+                      receptorId: Number(nuevoMensaje.receptorId),
+                  }
+                : nuevoMensaje;
+            handleNewDM(normalized);
+        });
         socket.on('dm_delete_success', handleDMDeleted);
+        socket.on('dm_update_success', handleDMUpdated);
         socket.on('error', handleSocketError);
 
         return () => {
             socket.off('dm_message', handleNewDM);
             socket.off('dm_delete_success', handleDMDeleted);
+            socket.off('dm_update_success', handleDMUpdated);
             socket.off('error', handleSocketError);
         };
     }, [socket, isConnected, tutorId, usuarioActual?.id]);
@@ -113,14 +148,22 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
             setError(null);
 
             const { data } = await enviarMensajePrivado(tutorId, contenido.trim());
+            // normalizar los campos numéricos
+            const msg = data
+                ? {
+                      ...data,
+                      emisorId: Number(data.emisorId),
+                      receptorId: Number(data.receptorId),
+                  }
+                : data;
             setMensajes((prev) => {
-                if (!data?.id) {
+                if (!msg?.id) {
                     return prev;
                 }
-                if (prev.some((msg) => msg.id === data.id)) {
+                if (prev.some((m) => m.id === msg.id)) {
                     return prev;
                 }
-                return [...prev, data];
+                return [...prev, msg];
             });
             setContenido('');
             scrollToBottom();
@@ -137,11 +180,44 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
      */
     const handleEliminarMensaje = async (mensajeId) => {
         try {
+            setError(null);
             setProcesandoId(mensajeId);
             await eliminarMensajePrivado(mensajeId);
             setMensajes((prev) => prev.filter((msg) => msg.id !== mensajeId));
         } catch (err) {
             setError('Error al eliminar el mensaje');
+            console.error(err);
+        } finally {
+            setProcesandoId(null);
+        }
+    };
+
+    /**
+     * Edita un mensaje privado.
+     */
+    const startEditarMensaje = (mensajeId, contenidoActual) => {
+        setEditandoId(mensajeId);
+        setContenidoEditado(contenidoActual);
+    };
+
+    const cancelEditarMensaje = () => {
+        setEditandoId(null);
+        setContenidoEditado('');
+    };
+
+    const handleEditarMensaje = async (mensajeId) => {
+        const nuevoContenido = contenidoEditado.trim();
+        if (!nuevoContenido) return;
+
+        try {
+            setError(null);
+            setProcesandoId(mensajeId);
+            const { data } = await editarMensajePrivado(mensajeId, nuevoContenido);
+            setMensajes((prev) => prev.map((msg) => (msg.id === mensajeId ? { ...msg, ...data } : msg)));
+
+            cancelEditarMensaje();
+        } catch (err) {
+            setError('Error al editar el mensaje');
             console.error(err);
         } finally {
             setProcesandoId(null);
@@ -174,32 +250,78 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
                         Sin historial de mensajes. ¡Inicia la conversación!
                     </div>
                 ) : (
-                    mensajes.map((msg) => (
-                        <div
-                            key={msg.id}
-                            className={`message ${msg.emisorId === usuarioActual.id ? 'propio' : 'otro'}`}
-                        >
-                            <div className="message-content">{msg.contenido}</div>
-                            <div className="message-footer">
+                    mensajes.map((msg) => {
+                        const own = isOwnMessage(msg);
+                        return (
+                            <div
+                                key={msg.id}
+                                className={`message ${own ? 'propio' : 'otro'}`}
+                            >
+                            <div className="message-header">
                                 <span className="timestamp">
-                                    {new Date(msg.createdAt).toLocaleTimeString()}
+                                    {new Date(msg.createdAt).toLocaleTimeString([], {
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                        })}
                                 </span>
+                            </div>
+
+                            {editandoId === msg.id ? (
+                                <div className="edit-form">
+                                    <input
+                                        type="text"
+                                        value={contenidoEditado}
+                                        onChange={(e) => setContenidoEditado(e.target.value)}
+                                        maxLength={1000}
+                                    />
+                                    <div className="edit-actions">
+                                        <button
+                                            type="button"
+                                            className="btn-save"
+                                            onClick={() => handleEditarMensaje(msg.id)}
+                                            disabled={!contenidoEditado.trim() || procesandoId === msg.id}
+                                        >
+                                            {procesandoId === msg.id ? 'Guardando...' : 'Guardar'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn-cancel"
+                                            onClick={cancelEditarMensaje}
+                                            disabled={procesandoId === msg.id}
+                                        >
+                                            Cancelar
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="message-content">{msg.contenido}</div>
+                            )}
+
+                            <div className="message-footer">
                                 {msg.editado && <span className="editado-badge">(editado)</span>}
                             </div>
-                            {msg.emisorId === usuarioActual.id && (
+
+                            {own && editandoId !== msg.id && (
                                 <div className="message-actions">
+                                    <button
+                                        className="btn-edit"
+                                        onClick={() => startEditarMensaje(msg.id, msg.contenido)}
+                                        disabled={procesandoId === msg.id}
+                                    >
+                                        Editar
+                                    </button>
                                     <button
                                         className="btn-delete"
                                         onClick={() => handleEliminarMensaje(msg.id)}
-                                        title="Eliminar mensaje"
                                         disabled={procesandoId === msg.id}
                                     >
-                                        {procesandoId === msg.id ? '...' : '✕'}
+                                        {procesandoId === msg.id ? 'Eliminando...' : 'Eliminar'}
                                     </button>
                                 </div>
                             )}
-                        </div>
-                    ))
+                            </div>
+                        );
+                    })
                 )}
                 <div ref={messagesEndRef} />
             </div>

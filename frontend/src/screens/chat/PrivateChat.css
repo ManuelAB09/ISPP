@@ -1,6 +1,7 @@
 .private-chat {
     display: flex;
     flex-direction: column;
+    width: 100%;
     height: 100%;
     background: #fff;
     border-radius: 1rem;
@@ -88,6 +89,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 100%;
     height: 100%;
     color: #848BA8;
     font-size: 0.88rem;
@@ -102,7 +104,8 @@
     border-radius: 0.85rem;
     word-wrap: break-word;
     border: 1px solid #EAEBF0;
-    position: relative;
+    display: flex;
+    flex-direction: column;
 }
 
 .private-chat .message.propio {
@@ -114,6 +117,16 @@
 .private-chat .message.otro {
     align-self: flex-start;
     background: #fff;
+}
+
+.private-chat .message-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.45rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6C74A1;
 }
 
 .private-chat .message-content {
@@ -136,11 +149,12 @@
 }
 
 .private-chat .message-actions {
-    position: absolute;
-    top: 0.25rem;
-    right: 0.3rem;
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 0.45rem;
 }
 
+.private-chat .btn-edit,
 .private-chat .btn-delete {
     background: none;
     border: none;
@@ -149,13 +163,15 @@
     opacity: 0.9;
     padding: 0;
     font-size: 0.75rem;
-    font-weight: 700;
+    font-weight: 600;
 }
 
+.private-chat .btn-edit:hover,
 .private-chat .btn-delete:hover {
-    color: #C84B4B;
+    color: var(--spaceIndigo);
 }
 
+.private-chat .btn-edit:disabled,
 .private-chat .btn-delete:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -209,6 +225,56 @@
 .private-chat .message-input-form button:disabled {
     background: #C7CBDA;
     cursor: not-allowed;
+}
+
+.private-chat .edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.private-chat .edit-form input {
+    width: 100%;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid #D7DCEF;
+    border-radius: 0.55rem;
+    font-size: 0.85rem;
+    font-family: inherit;
+}
+
+.private-chat .edit-form input:focus {
+    outline: none;
+    border-color: var(--glaucous);
+}
+
+.private-chat .edit-actions {
+    display: flex;
+    gap: 0.45rem;
+}
+
+.private-chat .btn-save,
+.private-chat .btn-cancel {
+    border: none;
+    border-radius: 0.45rem;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.private-chat .btn-save {
+    background: var(--glaucous);
+    color: #fff;
+}
+
+.private-chat .btn-save:disabled {
+    background: #C7CBDA;
+    cursor: not-allowed;
+}
+
+.private-chat .btn-cancel {
+    background: #ECEFF8;
+    color: #4E587F;
 }
 
 .private-chat .messages-container::-webkit-scrollbar {

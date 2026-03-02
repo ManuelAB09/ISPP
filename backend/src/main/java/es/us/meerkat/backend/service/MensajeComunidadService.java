@@ -59,6 +59,91 @@ public class MensajeComunidadService {
     }
 
     /**
+     * Envía un archivo en el chat de una comunidad.
+     *
+     * @param usuarioId ID del usuario que envía el archivo.
+     * @param comunidadId ID de la comunidad destino.
+     * @param contenido texto opcional del mensaje.
+     * @param archivoUrl URL del archivo subido.
+     * @param archivoNombre nombre original del archivo.
+     * @param archivoMimeType tipo MIME del archivo.
+     * @param archivoTamano tamaño del archivo en bytes.
+     * @return respuesta con el mensaje creado.
+     */
+    @Transactional
+    public MensajeComunidadResponse enviarArchivo(
+            final Long usuarioId,
+            final Long comunidadId,
+            final String contenido,
+            final String archivoNombre,
+            final String archivoMimeType,
+            final Long archivoTamano,
+            final byte[] archivoData) {
+
+        if (archivoData == null || archivoData.length == 0) {
+            throw new IllegalArgumentException("El contenido del archivo es obligatorio");
+        }
+
+        final Usuario usuario =
+                usuarioRepository
+                        .findById(usuarioId)
+                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        final Comunidad comunidad =
+                comunidadRepository
+                        .findById(comunidadId)
+                        .orElseThrow(() -> new RuntimeException("Comunidad no encontrada"));
+
+        final String contenidoFinal =
+                (contenido == null || contenido.isBlank())
+                        ? "[Adjunto] " + archivoNombre
+                        : contenido;
+
+        final MensajeComunidad mensaje =
+                MensajeComunidad.builder()
+                        .contenido(contenidoFinal)
+                        .archivoNombre(archivoNombre)
+                        .archivoMimeType(archivoMimeType)
+                        .archivoTamano(archivoTamano)
+                        .archivoData(archivoData)
+                        .usuario(usuario)
+                        .comunidad(comunidad)
+                        .editado(false)
+                        .build();
+
+        final MensajeComunidad saved = mensajeComunidadRepository.save(mensaje);
+        saved.setArchivoUrl(
+                "/api/v1/comunidades/" + comunidadId + "/mensajes/" + saved.getId() + "/archivo");
+        mensajeComunidadRepository.save(saved);
+        return mapToResponse(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public MensajeComunidadArchivo obtenerArchivo(
+            final Long usuarioId, final Long comunidadId, final Long mensajeId) {
+
+        usuarioRepository
+                .findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        final MensajeComunidad mensaje =
+                mensajeComunidadRepository
+                        .findById(mensajeId)
+                        .orElseThrow(() -> new RuntimeException("Mensaje no encontrado"));
+
+        if (!mensaje.getComunidad().getId().equals(comunidadId)) {
+            throw new IllegalArgumentException("El mensaje no pertenece a la comunidad indicada");
+        }
+
+        if (mensaje.getArchivoData() == null || mensaje.getArchivoData().length == 0) {
+            throw new IllegalArgumentException("El mensaje no contiene archivo");
+        }
+
+        return new MensajeComunidadArchivo(
+                mensaje.getArchivoData(), mensaje.getArchivoNombre(), mensaje.getArchivoMimeType());
+    }
+
+    /**
      * Obtiene el historial de mensajes de una comunidad.
      *
      * @param comunidadId ID de la comunidad.
@@ -139,6 +224,12 @@ public class MensajeComunidadService {
                 .usuarioNombre(mensaje.getUsuario().getNombre())
                 .usuarioFoto(mensaje.getUsuario().getFoto())
                 .comunidadId(mensaje.getComunidad().getId())
+                .archivoUrl(mensaje.getArchivoUrl())
+                .archivoNombre(mensaje.getArchivoNombre())
+                .archivoMimeType(mensaje.getArchivoMimeType())
+                .archivoTamano(mensaje.getArchivoTamano())
                 .build();
     }
+
+    public record MensajeComunidadArchivo(byte[] data, String nombre, String mimeType) {}
 }
