@@ -16,6 +16,9 @@ on:
     branches:
       - main
       - trunk
+      - sprint1
+      - sprint2
+      - sprint3
       - 'feature/**'
       - 'bugfix/**'
       - 'hotfix/**'
