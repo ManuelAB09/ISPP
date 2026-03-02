@@ -2,7 +2,9 @@ package es.us.meerkat.backend.controller;
 
 import java.util.List;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -13,11 +15,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import es.us.meerkat.backend.dto.EnviarMensajeComunidadRequest;
 import es.us.meerkat.backend.dto.MensajeComunidadResponse;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.service.ChatFileStorageService;
 import es.us.meerkat.backend.service.MensajeComunidadService;
 import lombok.RequiredArgsConstructor;
 
@@ -28,6 +33,7 @@ import lombok.RequiredArgsConstructor;
 public class MensajeComunidadController {
 
     private final MensajeComunidadService mensajeComunidadService;
+    private final ChatFileStorageService chatFileStorageService;
     private final SimpMessagingTemplate messagingTemplate;
 
     /**
@@ -118,6 +124,76 @@ public class MensajeComunidadController {
         } catch (final Exception e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("Error al eliminar el mensaje: " + e.getMessage());
+        }
+    }
+
+    @PostMapping(
+            value = "/{comunidadId}/mensajes/upload",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> enviarArchivo(
+            @PathVariable final Long comunidadId,
+            @AuthenticationPrincipal final Usuario usuario,
+            @RequestParam("file") final MultipartFile file,
+            @RequestParam(required = false) final String contenido) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado");
+        }
+
+        try {
+            ChatFileStorageService.ValidatedChatFile validatedFile =
+                    chatFileStorageService.validateAndExtract(file);
+
+            MensajeComunidadResponse response =
+                    mensajeComunidadService.enviarArchivo(
+                            usuario.getId(),
+                            comunidadId,
+                            contenido,
+                            validatedFile.originalName(),
+                            validatedFile.mimeType(),
+                            validatedFile.sizeBytes(),
+                            validatedFile.content());
+
+            messagingTemplate.convertAndSend("/topic/community." + comunidadId, response);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al subir archivo en comunidad: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/{comunidadId}/mensajes/{mensajeId}/archivo")
+    public ResponseEntity<?> descargarArchivo(
+            @PathVariable final Long comunidadId,
+            @PathVariable final Long mensajeId,
+            @AuthenticationPrincipal final Usuario usuario) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado");
+        }
+
+        try {
+            MensajeComunidadService.MensajeComunidadArchivo archivo =
+                    mensajeComunidadService.obtenerArchivo(usuario.getId(), comunidadId, mensajeId);
+
+            String mimeType =
+                    archivo.mimeType() == null || archivo.mimeType().isBlank()
+                            ? MediaType.APPLICATION_OCTET_STREAM_VALUE
+                            : archivo.mimeType();
+            String nombre =
+                    archivo.nombre() == null || archivo.nombre().isBlank()
+                            ? "adjunto"
+                            : archivo.nombre();
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(mimeType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + nombre + "\"")
+                    .body(archivo.data());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al descargar archivo en comunidad: " + e.getMessage());
         }
     }
 }
