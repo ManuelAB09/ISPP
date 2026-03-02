@@ -3,3 +3,5 @@
 pg.log
 \n# Ignore docker compose files or workspace-level things if you want
 # docker-compose.yaml
+.vscode/
+.idea/
