@@ -42,6 +42,23 @@ export default function Chats() {
     const [selectedCommunityId, setSelectedCommunityId] = useState(null);
     const [privateTarget, setPrivateTarget] = useState(null);
     const [activeTab, setActiveTab] = useState('communities'); // 'communities' o 'private'
+
+    // lista que se mostrará en la barra lateral de privados; incluye el target cuando
+    // no hay conversaciones serializadas para que siempre aparezca al menos ese usuario.
+    const sidebarConversations =
+        conversaciones.length > 0
+            ? conversaciones
+            : privateTarget
+            ? [
+                  {
+                      usuarioId: privateTarget.id,
+                      usuarioNombre: privateTarget.nombre,
+                      usuarioFoto: privateTarget.foto || null,
+                      ultimoMensaje: '',
+                  },
+              ]
+            : [];
+    const hasSidebar = sidebarConversations.length > 0;
     const communityIdFromQuery = Number(searchParams.get('communityId'));
     const privateUserIdFromQuery = Number(searchParams.get('userId'));
     const privateUserNameFromQuery = searchParams.get('userName');
@@ -87,12 +104,27 @@ export default function Chats() {
                 }
 
                 if (privateUserIdFromQuery) {
-                    setPrivateTarget({
+                    const targetObj = {
                         id: privateUserIdFromQuery,
                         nombre: privateUserNameFromQuery || `Usuario ${privateUserIdFromQuery}`,
                         foto: privateUserPhotoFromQuery || null,
-                    });
+                    };
+                    setPrivateTarget(targetObj);
                     setActiveTab('private');
+                    setConversaciones((prev) => {
+                        if (prev.some((c) => c.usuarioId === privateUserIdFromQuery)) {
+                            return prev;
+                        }
+                        return [
+                            ...prev,
+                            {
+                                usuarioId: privateUserIdFromQuery,
+                                usuarioNombre: targetObj.nombre,
+                                usuarioFoto: targetObj.foto,
+                                ultimoMensaje: '',
+                            },
+                        ];
+                    });
                 }
 
                 // Cargar conversaciones
@@ -127,15 +159,51 @@ export default function Chats() {
             const fetchConversaciones = async () => {
                 try {
                     const { data } = await obtenerConversaciones();
-                    setConversaciones(Array.isArray(data) ? data : []);
+                    const serverList = Array.isArray(data) ? data : [];
+                    setConversaciones((prev) => {
+                        // si ya tenemos un target seleccionado que no está en el servidor,
+                        // agréguelo para que la barra lateral muestre al usuario clicado
+                        if (
+                            privateTarget &&
+                            !serverList.some((c) => c.usuarioId === privateTarget.id)
+                        ) {
+                            return [
+                                ...serverList,
+                                {
+                                    usuarioId: privateTarget.id,
+                                    usuarioNombre: privateTarget.nombre,
+                                    usuarioFoto: privateTarget.foto || null,
+                                    ultimoMensaje: '',
+                                },
+                            ];
+                        }
+                        return serverList;
+                    });
                 } catch (err) {
                     console.error('Error al cargar conversaciones:', err);
-                    setConversaciones([]);
+                    setConversaciones((prev) => {
+                        // keep any existing manual conversation when fetch fails
+                        if (
+                            privateTarget &&
+                            !prev.some((c) => c.usuarioId === privateTarget.id)
+                        ) {
+                            return [
+                                ...prev,
+                                {
+                                    usuarioId: privateTarget.id,
+                                    usuarioNombre: privateTarget.nombre,
+                                    usuarioFoto: privateTarget.foto || null,
+                                    ultimoMensaje: '',
+                                },
+                            ];
+                        }
+                        return prev;
+                    });
                 }
             };
             fetchConversaciones();
         }
-    }, [activeTab]);
+    }, [activeTab, privateTarget]);
 
     return (
         <>
@@ -217,12 +285,29 @@ export default function Chats() {
                                             mode="embedded"
                                             initiallyOpen={true}
                                             onOpenPrivateChat={(target) => {
+                                                const id = Number(target.userId);
+                                                const nombre = target.userName;
+                                                const foto = target.userPhoto || null;
                                                 setPrivateTarget({
-                                                    id: Number(target.userId),
-                                                    nombre: target.userName,
-                                                    foto: target.userPhoto || null,
+                                                    id,
+                                                    nombre,
+                                                    foto,
                                                 });
                                                 setActiveTab('private');
+                                                setConversaciones((prev) => {
+                                                    if (prev.some((c) => c.usuarioId === id)) {
+                                                        return prev;
+                                                    }
+                                                    return [
+                                                        ...prev,
+                                                        {
+                                                            usuarioId: id,
+                                                            usuarioNombre: nombre,
+                                                            usuarioFoto: foto,
+                                                            ultimoMensaje: '',
+                                                        },
+                                                    ];
+                                                });
                                             }}
                                         />
                                     ) : (
@@ -241,10 +326,10 @@ export default function Chats() {
                 {activeTab === 'private' && (
                     <>
                         {!loading && (privateTarget || conversaciones.length > 0) && (
-                            <div className="chats-layout">
-                                {conversaciones.length > 0 && (
+                            <div className={`chats-layout ${hasSidebar ? '' : 'no-sidebar'}`}>
+                                {hasSidebar && (
                                     <aside className="chats-sidebar">
-                                        {conversaciones.map((conv, idx) => {
+                                        {sidebarConversations.map((conv, idx) => {
                                             const isSelected = privateTarget?.id === conv.usuarioId;
                                             return (
                                                 <button

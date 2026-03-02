@@ -22,6 +22,10 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
     const [contenidoEditado, setContenidoEditado] = useState('');
     const messagesEndRef = useRef(null);
 
+    // helper para determinar si un mensaje pertenece al usuario actual
+    const isOwnMessage = (msg) =>
+        Number(msg?.emisorId) === Number(usuarioActual?.id);
+
     /**
      * Carga el historial de mensajes privados al montar.
      */
@@ -30,7 +34,16 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
             try {
                 setCargandoHistorial(true);
                 const { data } = await obtenerHistorialPrivado(tutorId);
-                setMensajes(data);
+                // normalizar IDs numéricos para evitar discrepancias de tipo
+                setMensajes(
+                    Array.isArray(data)
+                        ? data.map((m) => ({
+                              ...m,
+                              emisorId: Number(m.emisorId),
+                              receptorId: Number(m.receptorId),
+                          }))
+                        : []
+                );
             } catch (err) {
                 setError('Error al cargar el historial de mensajes');
                 console.error(err);
@@ -92,7 +105,17 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
             setError(`Error: ${error.message}`);
         };
 
-        socket.on('dm_message', handleNewDM);
+        socket.on('dm_message', (nuevoMensaje) => {
+            // normalizar antes de procesar
+            const normalized = nuevoMensaje
+                ? {
+                      ...nuevoMensaje,
+                      emisorId: Number(nuevoMensaje.emisorId),
+                      receptorId: Number(nuevoMensaje.receptorId),
+                  }
+                : nuevoMensaje;
+            handleNewDM(normalized);
+        });
         socket.on('dm_delete_success', handleDMDeleted);
         socket.on('dm_update_success', handleDMUpdated);
         socket.on('error', handleSocketError);
@@ -125,14 +148,22 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
             setError(null);
 
             const { data } = await enviarMensajePrivado(tutorId, contenido.trim());
+            // normalizar los campos numéricos
+            const msg = data
+                ? {
+                      ...data,
+                      emisorId: Number(data.emisorId),
+                      receptorId: Number(data.receptorId),
+                  }
+                : data;
             setMensajes((prev) => {
-                if (!data?.id) {
+                if (!msg?.id) {
                     return prev;
                 }
-                if (prev.some((msg) => msg.id === data.id)) {
+                if (prev.some((m) => m.id === msg.id)) {
                     return prev;
                 }
-                return [...prev, data];
+                return [...prev, msg];
             });
             setContenido('');
             scrollToBottom();
@@ -219,11 +250,13 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
                         Sin historial de mensajes. ¡Inicia la conversación!
                     </div>
                 ) : (
-                    mensajes.map((msg) => (
-                        <div
-                            key={msg.id}
-                            className={`message ${msg.emisorId === usuarioActual.id ? 'propio' : 'otro'}`}
-                        >
+                    mensajes.map((msg) => {
+                        const own = isOwnMessage(msg);
+                        return (
+                            <div
+                                key={msg.id}
+                                className={`message ${own ? 'propio' : 'otro'}`}
+                            >
                             <div className="message-header">
                                 <span className="timestamp">
                                     {new Date(msg.createdAt).toLocaleTimeString([], {
@@ -268,7 +301,7 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
                                 {msg.editado && <span className="editado-badge">(editado)</span>}
                             </div>
 
-                            {msg.emisorId === usuarioActual.id && editandoId !== msg.id && (
+                            {own && editandoId !== msg.id && (
                                 <div className="message-actions">
                                     <button
                                         className="btn-edit"
@@ -286,8 +319,9 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
                                     </button>
                                 </div>
                             )}
-                        </div>
-                    ))
+                            </div>
+                        );
+                    })
                 )}
                 <div ref={messagesEndRef} />
             </div>

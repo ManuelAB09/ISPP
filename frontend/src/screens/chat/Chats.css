@@ -89,6 +89,7 @@
 .chats-layout {
     margin-top: 1.25rem;
     display: grid;
+    width: 100%;
     grid-template-columns: 340px 1fr;
     gap: 1rem;
     min-height: calc(100vh - 220px);
@@ -160,6 +161,7 @@
 .chats-main {
     min-height: 100%;
     height: calc(100vh - 220px);
+    width: 100%;
 }
 
 .chats-main-empty {
