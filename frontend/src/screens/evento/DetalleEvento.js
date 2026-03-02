@@ -5,7 +5,7 @@ import {
   LuPencil, LuX, LuArrowLeft, LuPackage,
   LuEye, LuEyeOff, LuMap, LuClock, LuCheck
 } from 'react-icons/lu';
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import './DetalleEvento.css';
@@ -319,7 +319,18 @@ const DetalleEvento = () => {
                               <Marker
                                 position={[Number(event.ubicacion.latitud), Number(event.ubicacion.longitud)]}
                                 icon={eventIconRed}
-                              />
+                              >
+                                <Popup>
+                                  <a
+                                    href={`https://www.google.com/maps/search/?api=1&query=${Number(event.ubicacion.latitud)},${Number(event.ubicacion.longitud)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{ color: '#1890ff', textDecoration: 'underline', fontWeight: 600 }}
+                                  >
+                                    Abrir en Google Maps
+                                  </a>
+                                </Popup>
+                              </Marker>
                             </MapContainer>
                           </div>
                         )}
