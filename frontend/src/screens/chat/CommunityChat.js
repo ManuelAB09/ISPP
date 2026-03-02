@@ -3,10 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { useSocketContext } from '../../contexts/SocketContext';
 import {
     enviarMensajeComunidad,
+    enviarArchivoComunidad,
     obtenerHistorialComunidad,
     editarMensajeComunidad,
     eliminarMensajeComunidad,
+    obtenerPreviewEnlace,
+    obtenerArchivoChatBlob,
 } from '../../api/mensajeService';
+import { extractFirstUrl } from '../../utils/linkPreview';
+import LinkPreviewCard from './LinkPreviewCard';
 import { LuMessageCircle, LuX } from 'react-icons/lu';
 import './CommunityChat.css';
 
@@ -37,7 +42,19 @@ const CommunityChat = ({
     const [editandoId, setEditandoId] = useState(null);
     const [contenidoEditado, setContenidoEditado] = useState('');
     const [procesandoId, setProcesandoId] = useState(null);
+    const [previewsByMessageId, setPreviewsByMessageId] = useState({});
+    const [archivoSeleccionado, setArchivoSeleccionado] = useState(null);
+    const [archivoSeleccionadoPreviewUrl, setArchivoSeleccionadoPreviewUrl] = useState('');
+    const [descargandoId, setDescargandoId] = useState(null);
+    const [abriendoId, setAbriendoId] = useState(null);
+    const [attachmentPreviewByMessageId, setAttachmentPreviewByMessageId] = useState({});
     const messagesEndRef = useRef(null);
+    const fileInputRef = useRef(null);
+    const previewCacheByUrlRef = useRef(new Map());
+    const pendingPreviewKeysRef = useRef(new Set());
+    const previewsByMessageIdRef = useRef({});
+    const attachmentObjectUrlsRef = useRef(new Map());
+    const pendingAttachmentPreviewRef = useRef(new Set());
 
     const isOwnMessage = (msg) => Number(msg?.usuarioId) === Number(usuarioActual?.id);
 
@@ -118,6 +135,194 @@ const CommunityChat = ({
         setChatAbierto(initiallyOpen);
     }, [initiallyOpen, isEmbedded]);
 
+    useEffect(() => {
+        previewsByMessageIdRef.current = previewsByMessageId;
+    }, [previewsByMessageId]);
+
+    useEffect(() => {
+        return () => {
+            attachmentObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+            attachmentObjectUrlsRef.current.clear();
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!archivoSeleccionado) {
+            setArchivoSeleccionadoPreviewUrl('');
+            return;
+        }
+
+        const mimeType = String(archivoSeleccionado.type || '').toLowerCase();
+        if (!mimeType.startsWith('image/')) {
+            setArchivoSeleccionadoPreviewUrl('');
+            return;
+        }
+
+        const objectUrl = URL.createObjectURL(archivoSeleccionado);
+        setArchivoSeleccionadoPreviewUrl(objectUrl);
+
+        return () => {
+            URL.revokeObjectURL(objectUrl);
+        };
+    }, [archivoSeleccionado]);
+
+    useEffect(() => {
+        const activeIds = new Set(
+            mensajes
+                .map((msg) => msg?.id)
+                .filter((id) => id !== null && id !== undefined)
+                .map((id) => String(id))
+        );
+
+        setPreviewsByMessageId((prev) => {
+            let changed = false;
+            const next = { ...prev };
+
+            Object.keys(next).forEach((messageId) => {
+                if (!activeIds.has(messageId)) {
+                    delete next[messageId];
+                    changed = true;
+                }
+            });
+
+            return changed ? next : prev;
+        });
+
+        mensajes.forEach((msg) => {
+            const messageId = msg?.id;
+            if (messageId === null || messageId === undefined) {
+                return;
+            }
+
+            const messageKey = String(messageId);
+            const extractedUrl = extractFirstUrl(msg?.contenido);
+
+            if (!extractedUrl) {
+                setPreviewsByMessageId((prev) => {
+                    if (!prev[messageKey]) {
+                        return prev;
+                    }
+                    const next = { ...prev };
+                    delete next[messageKey];
+                    return next;
+                });
+                return;
+            }
+
+            const currentEntry = previewsByMessageIdRef.current[messageKey];
+            if (currentEntry?.url === extractedUrl) {
+                return;
+            }
+
+            if (previewCacheByUrlRef.current.has(extractedUrl)) {
+                const cachedPreview = previewCacheByUrlRef.current.get(extractedUrl);
+                setPreviewsByMessageId((prev) => ({
+                    ...prev,
+                    [messageKey]: { url: extractedUrl, preview: cachedPreview },
+                }));
+                return;
+            }
+
+            const pendingKey = `${messageKey}:${extractedUrl}`;
+            if (pendingPreviewKeysRef.current.has(pendingKey)) {
+                return;
+            }
+
+            pendingPreviewKeysRef.current.add(pendingKey);
+
+            obtenerPreviewEnlace(extractedUrl)
+                .then(({ data }) => {
+                    previewCacheByUrlRef.current.set(extractedUrl, data || null);
+                    setPreviewsByMessageId((prev) => ({
+                        ...prev,
+                        [messageKey]: { url: extractedUrl, preview: data || null },
+                    }));
+                })
+                .catch(() => {
+                    previewCacheByUrlRef.current.set(extractedUrl, null);
+                });
+        });
+    }, [mensajes]);
+
+    useEffect(() => {
+        const activeIds = new Set(
+            mensajes
+                .map((msg) => msg?.id)
+                .filter((id) => id !== null && id !== undefined)
+                .map((id) => String(id))
+        );
+
+        Object.keys(attachmentPreviewByMessageId).forEach((messageId) => {
+            if (!activeIds.has(messageId)) {
+                const objectUrl = attachmentObjectUrlsRef.current.get(messageId);
+                if (objectUrl) {
+                    URL.revokeObjectURL(objectUrl);
+                    attachmentObjectUrlsRef.current.delete(messageId);
+                }
+                pendingAttachmentPreviewRef.current.delete(messageId);
+            }
+        });
+
+        setAttachmentPreviewByMessageId((prev) => {
+            const next = { ...prev };
+            let changed = false;
+            Object.keys(next).forEach((messageId) => {
+                if (!activeIds.has(messageId)) {
+                    delete next[messageId];
+                    changed = true;
+                }
+            });
+            return changed ? next : prev;
+        });
+
+        mensajes.forEach((msg) => {
+            const messageId = msg?.id;
+            if (messageId === null || messageId === undefined) {
+                return;
+            }
+
+            const mimeType = String(msg?.archivoMimeType || '').toLowerCase();
+            const isImage = mimeType.startsWith('image/');
+            const hasFile = Boolean(msg?.archivoUrl || msg?.archivoNombre);
+            const key = String(messageId);
+
+            if (!hasFile || !isImage || !msg?.archivoUrl || attachmentPreviewByMessageId[key]) {
+                return;
+            }
+
+            if (pendingAttachmentPreviewRef.current.has(key)) {
+                return;
+            }
+
+            pendingAttachmentPreviewRef.current.add(key);
+
+            obtenerArchivoChatBlob(msg.archivoUrl)
+                .then(({ data }) => {
+                    const objectUrl = URL.createObjectURL(data);
+
+                    const prevUrl = attachmentObjectUrlsRef.current.get(key);
+                    if (prevUrl) {
+                        URL.revokeObjectURL(prevUrl);
+                    }
+
+                    attachmentObjectUrlsRef.current.set(key, objectUrl);
+                    setAttachmentPreviewByMessageId((prev) => ({
+                        ...prev,
+                        [key]: objectUrl,
+                    }));
+                })
+                .catch(() => {
+                    setAttachmentPreviewByMessageId((prev) => ({
+                        ...prev,
+                        [key]: null,
+                    }));
+                })
+                .finally(() => {
+                    pendingAttachmentPreviewRef.current.delete(key);
+                });
+        });
+    }, [mensajes, attachmentPreviewByMessageId]);
+
     /**
      * Desplaza la vista al último mensaje.
      */
@@ -131,14 +336,26 @@ const CommunityChat = ({
     const handleEnviarMensaje = async (e) => {
         e.preventDefault();
 
-        if (!contenido.trim() || enviando) return;
+        if ((!contenido.trim() && !archivoSeleccionado) || enviando) return;
 
         try {
             setEnviando(true);
             setError(null);
 
-            const messageContent = contenido.trim();
-            const { data } = await enviarMensajeComunidad(comunidadId, messageContent);
+            let data;
+            if (archivoSeleccionado) {
+                const response = await enviarArchivoComunidad(
+                    comunidadId,
+                    archivoSeleccionado,
+                    contenido.trim()
+                );
+                data = response.data;
+            } else {
+                const messageContent = contenido.trim();
+                const response = await enviarMensajeComunidad(comunidadId, messageContent);
+                data = response.data;
+            }
+
             setMensajes((prev) => {
                 if (!data?.id) {
                     return prev;
@@ -150,13 +367,206 @@ const CommunityChat = ({
             });
 
             setContenido('');
+            clearArchivoSeleccionado();
             scrollToBottom();
         } catch (err) {
-            setError('Error al enviar el mensaje');
+            setError('Error al enviar el mensaje o archivo');
             console.error(err);
         } finally {
             setEnviando(false);
         }
+    };
+
+    const formatearTamanoArchivo = (bytes) => {
+        if (!bytes && bytes !== 0) return '';
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    };
+
+    const clearArchivoSeleccionado = () => {
+        setArchivoSeleccionado(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const handleDescargarArchivo = async (msg) => {
+        if (!msg?.archivoUrl || !msg?.id) return;
+
+        try {
+            setDescargandoId(msg.id);
+            const { data } = await obtenerArchivoChatBlob(msg.archivoUrl);
+            const blobUrl = URL.createObjectURL(data);
+            const anchor = document.createElement('a');
+            anchor.href = blobUrl;
+            anchor.download = msg.archivoNombre || 'adjunto';
+            document.body.appendChild(anchor);
+            anchor.click();
+            anchor.remove();
+            URL.revokeObjectURL(blobUrl);
+        } catch (err) {
+            setError('No se pudo descargar el archivo');
+            console.error(err);
+        } finally {
+            setDescargandoId(null);
+        }
+    };
+
+    const handleAbrirArchivo = async (msg) => {
+        if (!msg?.archivoUrl || !msg?.id) return;
+
+        try {
+            setAbriendoId(msg.id);
+            const { data } = await obtenerArchivoChatBlob(msg.archivoUrl);
+            const blobUrl = URL.createObjectURL(data);
+            window.open(blobUrl, '_blank', 'noopener,noreferrer');
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+        } catch (err) {
+            setError('No se pudo abrir el archivo');
+            console.error(err);
+        } finally {
+            setAbriendoId(null);
+        }
+    };
+
+    const renderAdjunto = (msg) => {
+        if (!msg?.archivoNombre && !msg?.archivoUrl) {
+            return null;
+        }
+
+        const mimeType = String(msg?.archivoMimeType || '').toLowerCase();
+        const isImage = mimeType.startsWith('image/');
+        const previewSrc = attachmentPreviewByMessageId[String(msg.id)];
+
+        if (isImage && previewSrc) {
+            return (
+                <div className="chat-attachment-image-block">
+                    <button
+                        type="button"
+                        className="chat-attachment-image-trigger"
+                        onClick={() => handleAbrirArchivo(msg)}
+                        disabled={abriendoId === msg.id}
+                        aria-label="Abrir imagen adjunta"
+                    >
+                        <img
+                            src={previewSrc}
+                            alt={msg.archivoNombre || 'Imagen adjunta'}
+                            className="chat-attachment-image-large"
+                            loading="lazy"
+                        />
+                    </button>
+
+                    <div className="chat-attachment-image-footer">
+                        <span className="chat-attachment-name">{msg.archivoNombre || 'Imagen'}</span>
+                        <div className="chat-attachment-actions row">
+                            <button
+                                type="button"
+                                className="chat-attachment-open"
+                                onClick={() => handleAbrirArchivo(msg)}
+                                disabled={abriendoId === msg.id}
+                            >
+                                {abriendoId === msg.id ? 'Abriendo...' : 'Abrir'}
+                            </button>
+                            <button
+                                type="button"
+                                className="chat-attachment-download"
+                                onClick={() => handleDescargarArchivo(msg)}
+                                disabled={descargandoId === msg.id}
+                            >
+                                {descargandoId === msg.id ? 'Descargando...' : 'Descargar'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <div className="chat-attachment-card">
+                <div className="chat-attachment-file-icon">📎</div>
+
+                <div className="chat-attachment-meta">
+                    <span className="chat-attachment-name">{msg.archivoNombre || 'Adjunto'}</span>
+                    <span className="chat-attachment-extra">
+                        {msg.archivoMimeType || 'Archivo'}
+                        {msg.archivoTamano ? ` · ${formatearTamanoArchivo(msg.archivoTamano)}` : ''}
+                    </span>
+                </div>
+
+                <div className="chat-attachment-actions">
+                    <button
+                        type="button"
+                        className="chat-attachment-open"
+                        onClick={() => handleAbrirArchivo(msg)}
+                        disabled={abriendoId === msg.id}
+                    >
+                        {abriendoId === msg.id ? 'Abriendo...' : 'Abrir'}
+                    </button>
+                    <button
+                        type="button"
+                        className="chat-attachment-download"
+                        onClick={() => handleDescargarArchivo(msg)}
+                        disabled={descargandoId === msg.id}
+                    >
+                        {descargandoId === msg.id ? 'Descargando...' : 'Descargar'}
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
+    const getContenidoVisible = (msg) => {
+        const content = String(msg?.contenido || '');
+        const hasAttachment = Boolean(msg?.archivoNombre || msg?.archivoUrl);
+
+        if (!hasAttachment) {
+            return content;
+        }
+
+        const cleaned = content.replace(/^\[Adjunto\]\s*/i, '').trim();
+        if (cleaned !== content.trim()) {
+            if (!cleaned) {
+                return '';
+            }
+            if (msg?.archivoNombre && cleaned === msg.archivoNombre) {
+                return '';
+            }
+            return cleaned;
+        }
+
+        return content;
+    };
+
+    const renderAdjuntoPendiente = () => {
+        if (!archivoSeleccionado) {
+            return null;
+        }
+
+        return (
+            <div className="chat-pending-attachment">
+                {archivoSeleccionadoPreviewUrl ? (
+                    <img
+                        src={archivoSeleccionadoPreviewUrl}
+                        alt={archivoSeleccionado.name || 'Adjunto seleccionado'}
+                        className="chat-pending-attachment-image"
+                    />
+                ) : (
+                    <div className="chat-pending-attachment-icon">📎</div>
+                )}
+
+                <div className="chat-pending-attachment-meta">
+                    <span className="chat-pending-attachment-name">{archivoSeleccionado.name}</span>
+                    <span className="chat-pending-attachment-extra">
+                        {archivoSeleccionado.type || 'Archivo'} · {formatearTamanoArchivo(archivoSeleccionado.size)}
+                    </span>
+                </div>
+
+                <button type="button" className="chat-pending-attachment-remove" onClick={clearArchivoSeleccionado}>
+                    Quitar
+                </button>
+            </div>
+        );
     };
 
     /**
@@ -360,7 +770,20 @@ const CommunityChat = ({
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="message-content">{msg.contenido}</div>
+                                        <>
+                                            {getContenidoVisible(msg) ? (
+                                                <div className="message-content">{getContenidoVisible(msg)}</div>
+                                            ) : null}
+                                            {renderAdjunto(msg)}
+                                            <LinkPreviewCard
+                                                preview={
+                                                    previewsByMessageId[String(msg.id)]?.url
+                                                        === extractFirstUrl(msg.contenido)
+                                                        ? previewsByMessageId[String(msg.id)]?.preview
+                                                        : null
+                                                }
+                                            />
+                                        </>
                                     )}
 
                                     {isOwnMessage(msg) && editandoId !== msg.id && (
@@ -387,7 +810,21 @@ const CommunityChat = ({
                         <div ref={messagesEndRef} />
                     </div>
 
+                    {renderAdjuntoPendiente()}
+
                     <form onSubmit={handleEnviarMensaje} className="message-input-form">
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            id={`community-chat-file-${comunidadId}`}
+                            accept="image/jpeg,image/png,image/webp,application/pdf"
+                            onChange={(e) => setArchivoSeleccionado(e.target.files?.[0] || null)}
+                            style={{ display: 'none' }}
+                            disabled={enviando}
+                        />
+                        <label htmlFor={`community-chat-file-${comunidadId}`} className="chat-file-label">
+                            {archivoSeleccionado ? 'Archivo listo' : 'Adjuntar'}
+                        </label>
                         <input
                             type="text"
                             placeholder="Escribe un mensaje..."
@@ -396,7 +833,7 @@ const CommunityChat = ({
                             disabled={enviando}
                             maxLength={1000}
                         />
-                        <button type="submit" disabled={enviando || !contenido.trim()}>
+                        <button type="submit" disabled={enviando || (!contenido.trim() && !archivoSeleccionado)}>
                             {enviando ? 'Enviando...' : 'Enviar'}
                         </button>
                     </form>

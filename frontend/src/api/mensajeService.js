@@ -80,12 +80,77 @@ export const enviarMensajePrivado = (tutorId, contenido) => {
 };
 
 /**
+ * Envía un archivo en chat privado.
+ * @param {number} userId - ID del usuario receptor.
+ * @param {File} file - Archivo a enviar.
+ * @param {string} contenido - Texto opcional.
+ * @returns {Promise} Respuesta del servidor.
+ */
+export const enviarArchivoPrivado = (userId, file, contenido = '') => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    if (userId !== undefined && userId !== null) {
+        formData.append('userId', String(userId));
+    }
+
+    if (contenido && contenido.trim()) {
+        formData.append('contenido', contenido.trim());
+    }
+
+    return api.post('/mensajes/upload', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+};
+
+/**
  * Obtiene el historial de mensajes privados con un usuario.
  * @param {number} tutorId - ID del tutor.
  * @returns {Promise<Array>} Lista de mensajes privados.
  */
 export const obtenerHistorialPrivado = (tutorId) => {
     return api.get(`/mensajes/usuario/${tutorId}`);
+};
+
+/**
+ * Envía un archivo en chat de comunidad.
+ * @param {number} comunidadId - ID de la comunidad.
+ * @param {File} file - Archivo a enviar.
+ * @param {string} contenido - Texto opcional.
+ * @returns {Promise} Respuesta del servidor.
+ */
+export const enviarArchivoComunidad = (comunidadId, file, contenido = '') => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    if (contenido && contenido.trim()) {
+        formData.append('contenido', contenido.trim());
+    }
+
+    return api.post(`/comunidades/${comunidadId}/mensajes/upload`, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+};
+
+/**
+ * Descarga/obtiene el blob de un archivo de chat.
+ * @param {string} archivoUrl - URL relativa o absoluta del archivo.
+ * @returns {Promise} Respuesta axios con blob.
+ */
+export const obtenerArchivoChatBlob = (archivoUrl) => {
+    if (!archivoUrl) {
+        return Promise.reject(new Error('archivoUrl es obligatorio'));
+    }
+
+    const normalizedUrl = String(archivoUrl).startsWith('/api/v1/')
+        ? String(archivoUrl).replace('/api/v1/', '/')
+        : archivoUrl;
+
+    return api.get(normalizedUrl, { responseType: 'blob' });
 };
 
 /**
@@ -108,4 +173,13 @@ export const eliminarMensajePrivado = (mensajeId) => {
  */
 export const editarMensajePrivado = (mensajeId, contenido) => {
     return api.put(`/mensajes/${mensajeId}`, { contenido });
+};
+
+/**
+ * Obtiene metadatos de una URL para mostrar su vista previa en el chat.
+ * @param {string} url - URL del mensaje a previsualizar.
+ * @returns {Promise} Respuesta con título, descripción, imagen y dominio.
+ */
+export const obtenerPreviewEnlace = (url) => {
+    return api.post('/link-preview', { url });
 };
