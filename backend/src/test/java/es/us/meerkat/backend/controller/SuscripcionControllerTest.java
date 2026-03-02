@@ -100,7 +100,7 @@ class SuscripcionControllerTest {
     }
 
     @Test
-    @DisplayName("GET /me - Debe devolver 404 si no hay suscripción activa")
+    @DisplayName("GET /me - Debe devolver plan FREE si no hay suscripción activa")
     void testObtenerMiSuscripcion_NoEncontrada() {
         // Given
         when(suscripcionService.obtenerMiSuscripcion(1L)).thenReturn(Optional.empty());
@@ -111,7 +111,9 @@ class SuscripcionControllerTest {
 
         // Then
         assertNotNull(response);
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(TipoPlan.FREE, response.getBody().getPlan());
         verify(suscripcionService).obtenerMiSuscripcion(1L);
     }
 
