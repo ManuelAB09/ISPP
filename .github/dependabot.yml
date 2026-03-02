@@ -1,22 +1,25 @@
 # ═══════════════════════════════════════════════════════
-# Dependabot — Actualización automática de dependencias
+# Dependabot — DESACTIVADO TEMPORALMENTE
+# ═══════════════════════════════════════════════════════
+# Para reactivar: descomentar todo el bloque "version: 2" / "updates:"
+# y quitar el open-pull-requests-limit: 0.
 # ═══════════════════════════════════════════════════════
 #
-# Estrategia de agrupación:
+# Estrategia de agrupación (cuando esté activo):
 #   - minor + patch → 1 PR agrupado por ecosistema (auto-mergeable si CI ✅)
 #   - major         → PR individual por dependencia (requiere revisión manual)
 # ═══════════════════════════════════════════════════════
 
 version: 2
 updates:
-  # Maven (backend)
+  # Maven (backend) — DESACTIVADO
   - package-ecosystem: "maven"
     directory: "/backend"
     target-branch: "trunk"
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0  # ← desactiva sin borrar config
     labels:
       - "dependencies"
       - "backend"
@@ -28,14 +31,14 @@ updates:
           - "minor"
           - "patch"
 
-  # npm (frontend)
+  # npm (frontend) — DESACTIVADO
   - package-ecosystem: "npm"
     directory: "/frontend"
     target-branch: "trunk"
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0  # ← desactiva sin borrar config
     labels:
       - "dependencies"
       - "frontend"
@@ -47,14 +50,14 @@ updates:
           - "minor"
           - "patch"
 
-  # GitHub Actions
+  # GitHub Actions — DESACTIVADO
   - package-ecosystem: "github-actions"
     directory: "/"
     target-branch: "trunk"
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0  # ← desactiva sin borrar config
     labels:
       - "dependencies"
       - "ci"

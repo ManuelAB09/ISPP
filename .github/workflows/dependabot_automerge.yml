@@ -1,6 +1,8 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-# Dependabot Auto-merge
+# Dependabot Auto-merge — DESACTIVADO TEMPORALMENTE
 # ═══════════════════════════════════════════════════════════════════════════════
+#
+# Para reactivar: quitar "false &&" del campo 'if' del job auto-merge.
 #
 # Activa auto-merge en PRs de Dependabot cuando:
 #   Es una actualización minor o patch (nunca major)
@@ -23,7 +25,7 @@ jobs:
   auto-merge:
     name: Auto-merge minor/patch
     runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]'
+    if: false && github.actor == 'dependabot[bot]'  # ← DESACTIVADO
 
     steps:
       - name: Obtener metadatos del PR
