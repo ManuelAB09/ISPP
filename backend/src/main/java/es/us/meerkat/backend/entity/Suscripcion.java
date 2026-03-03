@@ -77,8 +77,9 @@ public class Suscripcion {
         this.activa = false;
         this.autoRenovar = false;
         this.plan = TipoPlan.FREE;
-        this.fechaInicio = null;
-        this.fechaFin = null;
+        // NO PUEDE SER NULL (cambiado)
+        this.fechaInicio = LocalDate.now();
+        this.fechaFin = LocalDate.now();
     }
 
     /** Renueva la suscripción extendiendo las fechas de vigencia. */

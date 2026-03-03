@@ -19,6 +19,22 @@ public class Mensaje {
     @Column(nullable = false, length = 1000)
     private String contenido;
 
+    @Column(length = 2048)
+    private String archivoUrl;
+
+    @Column(length = 255)
+    private String archivoNombre;
+
+    @Column(length = 100)
+    private String archivoMimeType;
+
+    @Column private Long archivoTamano;
+
+    @Lob
+    @Basic(fetch = FetchType.LAZY)
+    @Column(name = "archivo_data")
+    private byte[] archivoData;
+
     @Column(nullable = false)
     private Boolean editado = false;
 
@@ -37,7 +53,7 @@ public class Mensaje {
 
     // Tutor relacionado (opcional pero recomendado)
     @ManyToOne
-    @JoinColumn(name = "tutor_id", nullable = false)
+    @JoinColumn(name = "tutor_id", nullable = true)
     private Tutor tutor;
 
     @PrePersist

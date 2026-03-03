@@ -5,6 +5,8 @@ target/
 !**/src/test/**/target/
 application-local.properties
 
+.env
+
 ### STS ###
 .apt_generated
 .classpath
@@ -32,4 +34,14 @@ build/
 
 # Ignorar configuración de VS Code
 .vscode/
+
 data.sql
+
+application-local.properties
+
+# Logs generados en ejecución (PostgreSQL, Spring, etc.)
+*.log
+pg.log
+
+data.sql
+

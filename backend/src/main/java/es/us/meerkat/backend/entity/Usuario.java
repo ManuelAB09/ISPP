@@ -9,6 +9,8 @@ import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -52,6 +54,15 @@ public class Usuario {
     /** URL de la foto de perfil del usuario. */
     private String foto;
 
+    /** Universidad del usuario. */
+    private String universidad;
+
+    /** Grado del usuario. */
+    private String grado;
+
+    /** Ubicación del usuario. */
+    private String ubicacion;
+
     /** Breve biografía del usuario. */
     private String bio;
 
@@ -76,6 +87,9 @@ public class Usuario {
     private Boolean esTutor = false;
 
     // AÑADIR tipo plan cuando se cree la clase
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TipoPlan plan = TipoPlan.FREE;
 
     /** Fecha y hora de creación de la cuenta. */
     @Column(nullable = false, updatable = false)

@@ -10,4 +10,14 @@ export const ubicacionesApi = {
     create(data) {
         return apiClient.post('/api/ubicaciones', data);
     },
+    /**
+     * GET /api/ubicaciones/buscar-estudio
+     * Buscar ubicaciones por lat, lon, radio, tipo
+     * @param {Object} params - { lat, lon, radio, tipo }
+     */
+    buscarEstudio({ lat, lon, radio, tipo }) {
+        let url = `/api/ubicaciones/buscar-estudio?lat=${lat}&lon=${lon}&radio=${radio}`;
+        if (tipo) url += `&tipo=${encodeURIComponent(tipo)}`;
+        return apiClient.get(url);
+    },
 };

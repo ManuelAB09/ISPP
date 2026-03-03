@@ -186,9 +186,12 @@ refactor(groups)!: cambia estructura de módulo  # con BREAKING CHANGE footer
 
 ## 5. Despliegue Continuo (CD)
 
-### Arquitectura: 1 App Service Plan B1 con 2 Web Apps
+### Arquitectura: 2 Web Apps independientes
 
-Un único plan B1 (~€11/mes) aloja **2 Web Apps** (staging y producción) que comparten los mismos recursos (1 vCPU, 1.75 GB RAM). Ambas tienen **Always On** habilitado.
+Cada entorno (staging y producción) dispone de su **propio App Service Plan
+B1** (~€11/mes cada uno), de modo que no comparten CPU/RAM ni se afectan
+directamente entre sí. Ambas Web Apps tienen **Always On** habilitado para
+el backend Docker.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -199,33 +202,35 @@ Un único plan B1 (~€11/mes) aloja **2 Web Apps** (staging y producción) que 
 │  │         Frontend Staging    │    Frontend Producción           │ │
 │  └────────────────────────────────────────────────────────────────┘ │
 │                                                                     │
-│  ┌────────────────────────────────────────────────────────────────┐ │
-│  │              App Service Plan B1 (~€11/mes)                    │ │
-│  │     1 vCPU  │  1.75 GB RAM  │  Always On  │  Linux             │ │
-│  │                                                                │ │
-│  │  ┌─────────────────────┐  ┌─────────────────────────────────┐  │ │
-│  │  │  Web App: Staging   │  │  Web App: Producción            │  │ │
-│  │  │  (Docker)           │  │  (Docker)                       │  │ │
-│  │  │  Always On: Si      │  │  Always On: Si                  │  │ │
-│  │  └─────────────────────┘  └─────────────────────────────────┘  │ │
-│  └────────────────────────────────────────────────────────────────┘ │
+│  ┌───────────────┐    ┌───────────────┐                             │
+│  │ Plan B1 Staging│    │ Plan B1 Prod  │                             │
+│  │  (1 vCPU,     │    │  (1 vCPU,     │                             │
+│  │   1.75 GB RAM,│    │   1.75 GB RAM,│                             │
+│  │   Always On)  │    │   Always On)  │                             │
+│  └───────────────┘    └───────────────┘                             │
 │                                                                     │
 │  ┌────────────────────────────────────────────────────────────────┐ │
 │  │              PostgreSQL Flexible B1ms (~€12.50/mes)            │ │
 │  │         schema staging    │    schema production               │ │
 │  └────────────────────────────────────────────────────────────────┘ │
 │                                                                     │
-│                    TOTAL: ~€23.50/mes                               │
+│                    TOTAL: ~€34.50/mes                               │
 └─────────────────────────────────────────────────────────────────────┘
+
+recrearse si fuese necesario.
 ```
 
-**¿Por qué 1 plan con 2 Web Apps?**
-- Un App Service Plan es el "servidor" (CPU + RAM). Las Web Apps son aplicaciones dentro de él.
-- Se pueden meter **tantas Web Apps como se quiera** en cualquier plan de pago (B1 incluido), sin coste adicional.
-- El tier B1 no soporta **deployment slots** (requiere Standard S1 ~€58/mes), por lo que usamos 2 Web Apps independientes como alternativa.
-- Ambas Web Apps tienen **Always On** habilitado (disponible en B1), eliminando cold starts.
-- Con 2 Spring Boot (~300-500 MB cada uno), queda ~0.75 GB libre. Suficiente para un proyecto universitario.
-- Si se necesita más capacidad, se escala a **B2** (€22/mes, 2 vCPU, 3.5 GB) sin cambiar la estructura.
+**¿Por qué usar planes separados para staging y producción?**
+- Cada Web App corre en su propio App Service Plan B1, evitando que una carga elevada en
+  staging ralentice producción (y viceversa).
+- Aunque un solo plan permite varias Web Apps, esa configuración compartida
+  puede complicar la escalabilidad y el diagnóstico en entornos de pago.
+- El tier B1 no soporta **deployment slots** (requiere Standard S1 ~€58/mes),
+  por lo que mantenemos Web Apps independientes en planes B1 separados.
+- Las dos aplicaciones siguen teniendo **Always On** habilitado para evitar
+  cold starts.
+- Si el consumo crece, cada plan puede escalarse de forma autónoma a **B2**
+  (€22/mes, 2 vCPU, 3.5 GB) sin afectar a la otra app.
 
 > **Precios:** Linux, West Europe, EUR. B1 = €11.002/mes (fuente: Azure Pricing Calculator). Crédito Azure for Students = $100 USD ≈ €83.72.
 
@@ -237,7 +242,7 @@ Un único plan B1 (~€11/mes) aloja **2 Web Apps** (staging y producción) que 
 |------|--------|
 | 1 | Build imagen Docker del backend → push a GHCR con tag `:staging` |
 | 2 | Login en Azure con `AZURE_CREDENTIALS` (único Service Principal) |
-| 3 | Deploy a la **Web App staging** (mismo App Service Plan B1) |
+| 3 | Deploy a la **Web App staging** (Plan B1 dedicado) |
 | 4 | Build frontend React → deploy a Static Web App staging |
 
 ### CD Producción (`CD_production.yml`)
@@ -248,12 +253,36 @@ Un único plan B1 (~€11/mes) aloja **2 Web Apps** (staging y producción) que 
 |------|--------|
 | 1 | Build imagen Docker del backend → push a GHCR con tag `:latest` |
 | 2 | Login en Azure con `AZURE_CREDENTIALS` (mismo Service Principal) |
-| 3 | Deploy a la **Web App producción** (App Service Plan B1, Always On) |
+| 3 | Deploy a la **Web App producción** (Plan B1 dedicado, Always On) |
 | 4 | Build frontend React → deploy a Static Web App producción |
 
 ### ¿Un AZURE_CREDENTIALS o dos?
 
-**Uno solo.** Como todos los recursos (Web Apps, PostgreSQL, Static Web Apps) están en un **único Resource Group**, basta con un Service Principal con rol `contributor` sobre ese Resource Group. Ambos workflows CD usan el mismo secreto `AZURE_CREDENTIALS`.
+**Uno solo.** Aunque ahora utilizamos **dos App Service Plans independientes** (uno por entorno), todos los recursos se mantienen en el mismo **Resource Group**. Por tanto, un único Service Principal con rol `contributor` sobre ese grupo sigue siendo suficiente, y ambos workflows CD usan el mismo secreto `AZURE_CREDENTIALS`.
+
+### Máquinas adicionales y despliegue por sprint
+
+Para los primeros tres sprints se mantiene un entorno paralelo en **Render**,
+cada uno compuesto por tres máquinas (dos frontends y un backend) que se
+conectan a una base de datos **Neon** dedicada. Estas instancias replican el
+pipeline estándar pero no forman parte de Azure; sirven únicamente para pruebas
+históricas y demostraciones de sprint.
+
+| Sprint | Rama dedicada | Destino despliegue | BD Neon |
+|--------|---------------|--------------------|---------|
+| 1      | `sprint1`     | Render (3 VMs)     | Neon #1 |
+| 2      | `sprint2`     | Render (3 VMs)     | Neon #2 |
+| 3      | `sprint3`     | Render (3 VMs)     | Neon #3 |
+
+Cada una de estas ramas dispone de un workflow propio (`CD_sprint1.yml`,
+`CD_sprint2.yml`, `CD_sprint3.yml`) que se dispara al hacer push. Tras la
+finalización del sprint correspondiente, la rama queda **congelada**: no se
+aceptan nuevos commits ni merges, garantizando la inmutabilidad del estado
+para futuras consultas o retrocesos.
+
+Las máquinas de Render son temporales y pueden destruirse después de Sprint 3,
+pero los scripts de despliegue se mantienen en el repositorio para que puedan
+recrearse si fuese necesario.
 
 ---
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { subscriptionsApi } from "../../api/subscriptions.api";
 import Header from "../../components/Header/Header";
 import CheckoutModal from "../../components/plans/CheckoutModal";
@@ -20,6 +21,7 @@ const DEFAULT_PLANS = [
 ];
 
 export default function PlansScreen() {
+  const navigate = useNavigate();
   const [plans, setPlans] = useState(DEFAULT_PLANS);
   const [myPlan, setMyPlan] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -67,26 +69,29 @@ export default function PlansScreen() {
 
     loadData();
   }, []);
-  /*
-  const handleSubscribe = async () => {
+
+  const handleSubscribe = async (period) => {
     setSubmitting(true);
     setError("");
 
     try {
-      const res = await subscriptionsApi.subscribe();
+      const res = await subscriptionsApi.subscribe(period);
       setMyPlan(res || null);
       setShowCheckout(false);
       alert("¡Suscripción Premium activada!");
     } catch (e) {
+      if (e?.status === 403) {
+        setError("Por favor, inicia sesión para continuar");
+      }else { 
       setError(e?.message || "No se pudo iniciar la suscripción");
+      }
     } finally {
       setSubmitting(false);
     }
   };
-  */
 
   //MOCK: simular suscripción exitosa 
-
+/*
   const handleSubscribe = async (period) => {
   setSubmitting(true);
   setError("");
@@ -123,7 +128,8 @@ export default function PlansScreen() {
       setSubmitting(false);
     }
   };
-/*
+*/  
+
    const handleCancel = async () => {
     setSubmitting(true);
     setError("");
@@ -142,8 +148,9 @@ export default function PlansScreen() {
       setSubmitting(false);
     }
   };
-*/
+
   //MOCK: simular cancelación exitosa
+/*  
   const handleCancel = async () => {
     setSubmitting(true);
     setError("");
@@ -176,19 +183,17 @@ export default function PlansScreen() {
       </>
     );
   }
-
+*/
   return (
     <>
       <Header page={'planes'} />
       <div className="plansPage">
         <div className="header">
           <div className="headerTitle">
+            <p>Elige el plan perfecto para desbloquear todas las funcionalidades y sacar el máximo provecho de MeerKatters</p>
             <span className="line"></span>
             <h1>Planes de Suscripción</h1>
           </div>
-          <p className="headerDescription">
-            Elige el plan perfecto para desbloquear todas las funcionalidades y sacar el máximo provecho de MeerKatters
-          </p>
         </div>
 
         <main className="plansContent">
@@ -254,7 +259,7 @@ export default function PlansScreen() {
                         <button
                           className="btn btn--primary"
                           disabled={isPremium || submitting}
-                          onClick={() => setShowCheckout(true)}
+                          onClick={() => navigate("/planes/pasarela")}
                         >
                           {isPremium ? "Ya eres Premium" : "Mejorar a Premium"}
                         </button>
@@ -269,6 +274,36 @@ export default function PlansScreen() {
               ) : (
                 <div>No hay planes disponibles</div>
               )}
+            </div>
+          </section>
+
+          {/* ── Institutional plans banner ─────────────── */}
+          <section className="instBannerSection">
+            <div className="instBannerContent">
+              <div className="instBannerLeft">
+                <div className="instBannerIcon">🏛️</div>
+                <div>
+                  <h2 className="instBannerTitle">¿Eres una institución educativa?</h2>
+                  <p className="instBannerDesc">
+                    Ofrecemos planes especiales para academias, universidades y centros
+                    educativos, con gestión de grupos, múltiples administradores y
+                    estadísticas avanzadas. También disponemos de precios reducidos para
+                    centros públicos y concertados.
+                  </p>
+                  <div className="instBannerFeatures">
+                    <span>👥 Múltiples admins</span>
+                    <span>📊 Estadísticas avanzadas</span>
+                    <span>🏫 Gestión de grupos</span>
+                    <span>💜 Precios especiales</span>
+                  </div>
+                </div>
+              </div>
+              <button
+                className="instBannerBtn"
+                onClick={() => navigate("/planes/instituciones")}
+              >
+                Ver planes institucionales →
+              </button>
             </div>
           </section>
 
@@ -309,7 +344,7 @@ export default function PlansScreen() {
           open={showCheckout}
           plan="PREMIUM"
           onClose={() => !submitting && setShowCheckout(false)}
-          onConfirm={handleSubscribe}
+          onConfirm={(period) => handleSubscribe(period)}
           loading={submitting}
         />
       </div>

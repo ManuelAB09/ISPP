@@ -1,6 +1,7 @@
 package es.us.meerkat.backend.controller;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import es.us.meerkat.backend.dto.AttendanceResponse;
 import es.us.meerkat.backend.entity.AsistenciaEvento;
 import es.us.meerkat.backend.service.AsistenciaEventoService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -44,13 +46,13 @@ public class AsistenciaEventoController {
     @Operation(
             summary = "Confirmar asistencia",
             description = "Confirma que un usuario asistirá a un evento")
-    public ResponseEntity<AsistenciaEvento> confirmarAsistencia(
+    public ResponseEntity<AttendanceResponse> confirmarAsistencia(
             @PathVariable @Parameter(description = "ID del evento") final Long eventId,
             @Parameter(description = "ID del usuario") @RequestParam final Long usuarioId) {
 
         final AsistenciaEvento asistencia =
                 asistenciaService.confirmarAsistencia(eventId, usuarioId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(asistencia);
+        return ResponseEntity.status(HttpStatus.CREATED).body(asistencia.toDTO());
     }
 
     // ===============================
@@ -68,11 +70,18 @@ public class AsistenciaEventoController {
     @Operation(
             summary = "Obtener asistencia propia",
             description = "Devuelve el estado de asistencia del usuario al evento")
-    public ResponseEntity<AsistenciaEvento> obtenerAsistenciaPropia(
+    public ResponseEntity<AttendanceResponse> obtenerAsistenciaPropia(
             @PathVariable @Parameter(description = "ID del evento") final Long eventId,
             @Parameter(description = "ID del usuario") @RequestParam final Long usuarioId) {
-
-        return ResponseEntity.ok(asistenciaService.obtenerAsistencia(eventId, usuarioId));
+        try {
+            return ResponseEntity.ok(
+                    asistenciaService.obtenerAsistencia(eventId, usuarioId).toDTO());
+        } catch (final RuntimeException e) {
+            if ("Asistencia no encontrada".equals(e.getMessage())) {
+                return ResponseEntity.noContent().build();
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
     }
 
     /**
@@ -89,9 +98,15 @@ public class AsistenciaEventoController {
     public ResponseEntity<Void> cancelarAsistenciaPropia(
             @PathVariable @Parameter(description = "ID del evento") final Long eventId,
             @Parameter(description = "ID del usuario") @RequestParam final Long usuarioId) {
-
-        asistenciaService.cancelarAsistencia(eventId, usuarioId);
-        return ResponseEntity.noContent().build();
+        try {
+            asistenciaService.cancelarAsistencia(eventId, usuarioId);
+            return ResponseEntity.noContent().build();
+        } catch (final RuntimeException e) {
+            if ("Asistencia no encontrada".equals(e.getMessage())) {
+                return ResponseEntity.noContent().build();
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
     }
 
     // ===============================
@@ -108,10 +123,13 @@ public class AsistenciaEventoController {
     @Operation(
             summary = "Listar asistencias",
             description = "Obtiene todas las asistencias registradas a un evento")
-    public ResponseEntity<List<AsistenciaEvento>> obtenerAsistenciasEvento(
+    public ResponseEntity<List<AttendanceResponse>> obtenerAsistenciasEvento(
             @PathVariable @Parameter(description = "ID del evento") final Long eventId) {
 
-        return ResponseEntity.ok(asistenciaService.obtenerAsistenciasEvento(eventId));
+        return ResponseEntity.ok(
+                asistenciaService.obtenerAsistenciasEvento(eventId).stream()
+                        .map(AsistenciaEvento::toDTO)
+                        .collect(Collectors.toList()));
     }
 
     /**
@@ -124,10 +142,13 @@ public class AsistenciaEventoController {
     @Operation(
             summary = "Listar asistentes confirmados",
             description = "Devuelve solo los usuarios que han confirmado su asistencia")
-    public ResponseEntity<List<AsistenciaEvento>> obtenerAsistentesConfirmados(
+    public ResponseEntity<List<AttendanceResponse>> obtenerAsistentesConfirmados(
             @PathVariable @Parameter(description = "ID del evento") final Long eventId) {
 
-        return ResponseEntity.ok(asistenciaService.obtenerAsistentesConfirmados(eventId));
+        return ResponseEntity.ok(
+                asistenciaService.obtenerAsistentesConfirmados(eventId).stream()
+                        .map(AsistenciaEvento::toDTO)
+                        .collect(Collectors.toList()));
     }
 
     /**

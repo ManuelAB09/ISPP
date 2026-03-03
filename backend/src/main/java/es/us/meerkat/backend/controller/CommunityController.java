@@ -15,14 +15,17 @@ import es.us.meerkat.backend.dto.*;
 import es.us.meerkat.backend.entity.Categoria;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.EstadoSolicitud;
+import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.MiembroComunidad;
 import es.us.meerkat.backend.entity.SolicitudComunidad;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.AuthorizationService;
 import es.us.meerkat.backend.service.CategoryService;
 import es.us.meerkat.backend.service.CommunityService;
+import es.us.meerkat.backend.service.EventoService;
 import es.us.meerkat.backend.service.MemberService;
 import es.us.meerkat.backend.service.RequestService;
+import es.us.meerkat.backend.service.TutorContratacionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -47,6 +50,8 @@ public class CommunityController {
     private final RequestService requestService;
     private final CategoryService categoryService;
     private final AuthorizationService authorizationService;
+    private final TutorContratacionService tutorContratacionService;
+    private final EventoService eventoService;
 
     // =====================================================
     // COMUNIDADES - LISTADO Y CRUD BÁSICO
@@ -56,17 +61,49 @@ public class CommunityController {
     @GetMapping
     @Operation(
             summary = "Explorar comunidades",
-            description = "Lista comunidades públicas con opciones de búsqueda y filtrado")
+            description = "Lista comunidades públicas con opciones de búsqueda" + " y filtrado")
     @ApiResponse(responseCode = "200", description = "Lista de comunidades obtenida correctamente")
     public ResponseEntity<CommunityListResponse> listCommunities(
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @AuthenticationPrincipal Usuario usuario) {
 
+        Long userId = usuario != null ? usuario.getId() : null;
         Pageable pageable = PageRequest.of(page, size);
         Page<Comunidad> comunidades = communityService.listPublicCommunities(search, pageable);
         Page<CommunityDetailResponse> response =
-                comunidades.map(c -> entityToDetailResponse(c, null));
+                comunidades.map(c -> entityToDetailResponse(c, userId));
+        return ResponseEntity.ok(new CommunityListResponse(response));
+    }
+
+    /** Lista las comunidades de las que el usuario autenticado es miembro. */
+    @GetMapping("/members/me")
+    @Operation(
+            summary = "Listar mis comunidades",
+            description = "Lista las comunidades donde el usuario autenticado" + " tiene membresía",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Lista de comunidades obtenida"),
+        @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
+    })
+    public ResponseEntity<CommunityListResponse> listMyCommunities(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<MiembroComunidad> memberships =
+                memberService.listUserMemberships(usuario.getId(), pageable);
+        Page<CommunityDetailResponse> response =
+                memberships.map(
+                        membership ->
+                                entityToDetailResponse(membership.getComunidad(), usuario.getId()));
+
         return ResponseEntity.ok(new CommunityListResponse(response));
     }
 
@@ -75,14 +112,14 @@ public class CommunityController {
     @Operation(
             summary = "Crear comunidad",
             description =
-                    "Crea una nueva comunidad. El creador se convierte automáticamente en"
-                            + " administrador.",
+                    "Crea una nueva comunidad. El creador se convierte"
+                            + " automáticamente en administrador.",
             security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Comunidad creada correctamente"),
         @ApiResponse(
                 responseCode = "400",
-                description = "Datos inválidos o límite de comunidades gratuitas alcanzado"),
+                description = "Datos inválidos o límite de comunidades gratuitas" + " alcanzado"),
         @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
     })
     public ResponseEntity<CommunityDetailResponse> createCommunity(
@@ -169,7 +206,7 @@ public class CommunityController {
     @DeleteMapping("/{communityId}")
     @Operation(
             summary = "Eliminar comunidad",
-            description = "Elimina la comunidad y todo su contenido (solo admin)",
+            description = "Elimina la comunidad y todo su contenido (solo" + " admin)",
             security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Comunidad eliminada correctamente"),
@@ -197,7 +234,7 @@ public class CommunityController {
     @PutMapping("/{communityId}/privacy")
     @Operation(
             summary = "Configurar privacidad",
-            description = "Cambia si la comunidad es pública o privada (solo admin)",
+            description = "Cambia si la comunidad es pública o privada (solo" + " admin)",
             security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Privacidad actualizada correctamente"),
@@ -229,7 +266,7 @@ public class CommunityController {
     @PostMapping("/{communityId}/upgrade")
     @Operation(
             summary = "Mejorar comunidad a Premium",
-            description = "Inicia el proceso de pago para convertir la comunidad a Premium",
+            description = "Inicia el proceso de pago para convertir la" + " comunidad a Premium",
             security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Comunidad mejorada a Premium"),
@@ -262,8 +299,8 @@ public class CommunityController {
     @Operation(
             summary = "Contratar tutor",
             description =
-                    "Inicia el proceso de pago para contratar un tutor (solo para comunidades"
-                            + " privadas)",
+                    "Inicia el proceso de pago para contratar un tutor"
+                            + " (solo para comunidades privadas)",
             security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Tutor contratado exitosamente"),
@@ -285,28 +322,6 @@ public class CommunityController {
                 MessageResponse.builder()
                         .message("Funcionalidad de contratación de tutores en implementación")
                         .build());
-    }
-
-    /** Desvincula un tutor de la comunidad. DELETE /api/v1/communities/{communityId}/tutor */
-    @DeleteMapping("/{communityId}/tutor")
-    @Operation(
-            summary = "Desvincular tutor",
-            description = "Termina la contratación del tutor actual (solo admin)",
-            security = @SecurityRequirement(name = "bearerAuth"))
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Tutor desvinculado"),
-        @ApiResponse(responseCode = "403", description = "No tienes permisos"),
-        @ApiResponse(responseCode = "404", description = "Tutor no encontrado")
-    })
-    public ResponseEntity<MessageResponse> removeTutor(
-            @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
-
-        if (usuario == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        return ResponseEntity.ok(
-                MessageResponse.builder().message("Tutor desvinculado correctamente").build());
     }
 
     // =====================================================
@@ -335,7 +350,7 @@ public class CommunityController {
     @PostMapping("/{communityId}/members")
     @Operation(
             summary = "Unirse a comunidad pública",
-            description = "Se une a una comunidad pública sin necesidad de aprobación",
+            description = "Se une a una comunidad pública sin necesidad de" + " aprobación",
             security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(
@@ -369,7 +384,8 @@ public class CommunityController {
     @GetMapping("/{communityId}/members/me")
     @Operation(
             summary = "Obtener mi rol en la comunidad",
-            description = "Devuelve el rol y membresía del usuario autenticado en esta comunidad",
+            description =
+                    "Devuelve el rol y membresía del usuario autenticado" + " en esta comunidad",
             security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Membresía obtenida"),
@@ -395,7 +411,7 @@ public class CommunityController {
     @DeleteMapping("/{communityId}/members/me")
     @Operation(
             summary = "Abandonar comunidad",
-            description = "Abandona la comunidad (si eres admin único, debe designar sucesor)",
+            description = "Abandona la comunidad (si eres admin único, debe" + " designar sucesor)",
             security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Has abandonado la comunidad"),
@@ -460,7 +476,7 @@ public class CommunityController {
     @PostMapping("/{communityId}/admin/transfer")
     @Operation(
             summary = "Transferir administración",
-            description = "Transfiere el rol de admin a otro miembro (solo admin actual)",
+            description = "Transfiere el rol de admin a otro miembro (solo" + " admin actual)",
             security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Administración transferida"),
@@ -501,7 +517,8 @@ public class CommunityController {
     @GetMapping("/{communityId}/requests")
     @Operation(
             summary = "Listar solicitudes de acceso",
-            description = "Lista las solicitudes pendientes de acceso a la comunidad (solo admin)",
+            description =
+                    "Lista las solicitudes pendientes de acceso a la" + " comunidad (solo admin)",
             security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Lista de solicitudes obtenida"),
@@ -542,7 +559,8 @@ public class CommunityController {
         @ApiResponse(
                 responseCode = "400",
                 description =
-                        "No puedes solicitar (es pública, ya eres miembro, solicitud pendiente)"),
+                        "No puedes solicitar (es pública, ya eres miembro,"
+                                + " solicitud pendiente)"),
         @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
     })
     public ResponseEntity<RequestResponse> requestAccess(
@@ -571,7 +589,7 @@ public class CommunityController {
     @PutMapping("/{communityId}/requests/{requestId}")
     @Operation(
             summary = "Responder solicitud",
-            description = "Acepta o rechaza una solicitud de acceso (solo admin)",
+            description = "Acepta o rechaza una solicitud de acceso (solo" + " admin)",
             security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Solicitud respondida"),
@@ -760,6 +778,88 @@ public class CommunityController {
     }
 
     // =====================================================
+    // EVENTOS DE COMUNIDAD
+    // =====================================================
+
+    /** Crea un nuevo evento en una comunidad. POST /api/v1/communities/{communityId}/events */
+    @PostMapping("/{communityId}/events")
+    @Operation(
+            summary = "Crear evento en comunidad",
+            description = "Crea un nuevo evento asociado a una comunidad",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Evento creado correctamente"),
+        @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
+        @ApiResponse(responseCode = "404", description = "Comunidad no encontrada")
+    })
+    public ResponseEntity<EventDetailResponse> createEvent(
+            @PathVariable Long communityId,
+            @Valid @RequestBody CreateEventRequest request,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            communityService.getCommunityById(communityId, null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        try {
+            Evento evento =
+                    eventoService.crearEvento(
+                            usuario.getId(),
+                            communityId,
+                            request.getTitulo(),
+                            request.getDescripcion(),
+                            request.getFechaHora(),
+                            request.getFechaFin(),
+                            request.getAforo(),
+                            request.getQueLlevar(),
+                            request.getEsVirtual(),
+                            false, // privado por defecto
+                            request.getEnlaceVirtual(),
+                            request.getVisibleEnMapa(),
+                            request.getUbicacionId());
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(evento.toDTO());
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().contains("no perteneces")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+            throw e;
+        }
+    }
+
+    /** Lista los eventos de una comunidad. GET /api/v1/communities/{communityId}/events */
+    @GetMapping("/{communityId}/events")
+    @Operation(
+            summary = "Listar eventos de comunidad",
+            description = "Devuelve los eventos asociados a una comunidad")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Lista de eventos obtenida"),
+        @ApiResponse(responseCode = "404", description = "Comunidad no encontrada")
+    })
+    public ResponseEntity<List<EventSummaryResponse>> listCommunityEvents(
+            @PathVariable Long communityId,
+            @RequestParam(name = "cancelados", defaultValue = "false") boolean cancelados) {
+
+        try {
+            communityService.getCommunityById(communityId, null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        List<Evento> eventos = eventoService.obtenerEventosPorComunidad(communityId, cancelados);
+        List<EventSummaryResponse> response =
+                eventos.stream().map(Evento::toSummaryDTO).collect(Collectors.toList());
+
+        return ResponseEntity.ok(response);
+    }
+
+    // =====================================================
     // HELPER METHODS FOR DTO CONVERSION
     // =====================================================
 
@@ -817,6 +917,145 @@ public class CommunityController {
                 categoria.getNombre(),
                 categoria.getDescripcion(),
                 categoria.getOrden());
+    }
+
+    // =====================================================
+    // CONTRATACIÓN DE TUTORES
+    // =====================================================
+
+    /**
+     * Contrata un tutor para la comunidad. Inicializa el pago y retorna URL de pago.
+     *
+     * <p>POST /api/v1/communities/{communityId}/tutor/{tutorId}
+     *
+     * @param communityId ID de la comunidad
+     * @param tutorId ID del tutor a contratar
+     * @param request Datos de la contratación
+     * @param usuario Usuario autenticado (debe ser admin de comunidad)
+     * @return PaymentUrlResponse con URL para procesar pago
+     */
+    @PostMapping("/{communityId}/tutor/{tutorId}")
+    @Operation(
+            summary = "Contratar tutor",
+            description = "Contrata un tutor para la comunidad. Retorna URL de pago.",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(
+                responseCode = "200",
+                description = "Tutor contratación iniciada, URL de pago generada"),
+        @ApiResponse(responseCode = "400", description = "Datos inválidos o validación fallida"),
+        @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
+        @ApiResponse(
+                responseCode = "403",
+                description = "No tienes permisos para contratar en esta comunidad"),
+        @ApiResponse(responseCode = "404", description = "Comunidad o tutor no encontrado")
+    })
+    public ResponseEntity<PaymentUrlResponse> hireTutor(
+            @PathVariable Long communityId,
+            @PathVariable Long tutorId,
+            @Valid @RequestBody HireTutorRequest request,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            PaymentUrlResponse paymentUrl =
+                    tutorContratacionService.crearContratacion(
+                            communityId, tutorId, request, usuario.getId());
+            return ResponseEntity.ok(paymentUrl);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Cancela la contratación de un tutor por la comunidad.
+     *
+     * <p>DELETE /api/v1/communities/{communityId}/tutor
+     *
+     * @param communityId ID de la comunidad
+     * @param usuario Usuario autenticado (debe ser admin de comunidad)
+     * @return MessageResponse con confirmación
+     */
+    @DeleteMapping("/{communityId}/tutor")
+    @Operation(
+            summary = "Cancelar tutor",
+            description = "Cancela la contratación del tutor activo de la comunidad.",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Contratación cancelada exitosamente"),
+        @ApiResponse(responseCode = "400", description = "No hay tutor contratado"),
+        @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
+        @ApiResponse(responseCode = "403", description = "No tienes permisos para cancelar"),
+        @ApiResponse(responseCode = "404", description = "Comunidad no encontrada")
+    })
+    public ResponseEntity<?> cancelarTutor(
+            @PathVariable Long communityId,
+            @RequestParam String motivo,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            var contratacion =
+                    tutorContratacionService.obtenerContratacionActivaDeComunidad(communityId);
+
+            if (contratacion.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(
+                                MessageResponse.builder()
+                                        .message("No hay tutor contratado en esta comunidad")
+                                        .build());
+            }
+
+            tutorContratacionService.cancelarContratacion(
+                    contratacion.get().getId(), usuario.getId(), motivo);
+
+            return ResponseEntity.ok()
+                    .body(
+                            MessageResponse.builder()
+                                    .message("Contratación cancelada exitosamente")
+                                    .build());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(MessageResponse.builder().message(e.getMessage()).build());
+        }
+    }
+
+    /**
+     * Obtiene el tutor actualmente contratado por la comunidad.
+     *
+     * <p>GET /api/v1/communities/{communityId}/tutor
+     *
+     * @param communityId ID de la comunidad
+     * @return TutorResponse del tutor activo o 404 si no hay
+     */
+    @GetMapping("/{communityId}/tutor")
+    @Operation(
+            summary = "Obtener tutor activo",
+            description = "Obtiene el tutor actualmente contratado por la comunidad")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Tutor encontrado"),
+        @ApiResponse(
+                responseCode = "404",
+                description = "Comunidad no encontrada o sin tutor activo")
+    })
+    public ResponseEntity<?> obtenerTutorActivo(@PathVariable Long communityId) {
+        try {
+            var tutor = tutorContratacionService.obtenerTutorActivoDeComunidad(communityId);
+
+            if (tutor.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            return ResponseEntity.ok(tutor.get());
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     private UserSimpleResponse convertUserToSimple(Usuario usuario) {

@@ -6,5 +6,6 @@ import lombok.Data;
 public class EnviarMensajeRequest {
 
     private Long tutorId;
+    private Long userId;
     private String contenido;
 }

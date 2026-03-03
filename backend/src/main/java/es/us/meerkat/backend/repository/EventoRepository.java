@@ -57,4 +57,20 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
      */
     @Override
     Optional<Evento> findById(Long id);
+
+    /**
+     * Obtiene todos los eventos de una comunidad.
+     *
+     * @param comunidadId Identificador de la comunidad.
+     * @return Lista de eventos de la comunidad.
+     */
+    List<Evento> findByComunidadId(Long comunidadId);
+
+    /**
+     * Obtiene los eventos no cancelados de una comunidad.
+     *
+     * @param comunidadId Identificador de la comunidad.
+     * @return Lista de eventos activos de la comunidad.
+     */
+    List<Evento> findByComunidadIdAndCanceladoFalse(Long comunidadId);
 }

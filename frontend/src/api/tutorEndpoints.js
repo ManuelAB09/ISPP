@@ -18,6 +18,15 @@ export const getVerifiedTutors = (params = {}) => {
 };
 
 /**
+ * POST /api/v1/tutors
+ * Crear perfil de tutor para el usuario autenticado
+ * @param {Object} data - { especialidades, tarifaHora, disponibilidad, bio }
+ */
+export const createTutorProfile = (data) => {
+  return apiClient.post('/api/v1/tutors', data);
+};
+
+/**
  * GET /api/v1/tutors/{tutorId}
  * Obtener perfil público de un tutor
  * @param {number|string} id

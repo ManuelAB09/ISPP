@@ -5,6 +5,13 @@ import { MemoryRouter } from 'react-router-dom';
 import PlansScreen from './PlansScreen';
 import * as subscriptionsApi from '../../api/subscriptions.api';
 
+const mockNavigate = jest.fn();
+
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => mockNavigate,
+}));
+
 // Mock de la API de suscripciones
 jest.mock('../../api/subscriptions.api');
 
@@ -35,6 +42,7 @@ describe('PlansScreen', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
+    mockNavigate.mockClear();
     // Por defecto, simular carga exitosa de planes y sin suscripción
     subscriptionsApi.subscriptionsApi.listPlans.mockResolvedValue(mockPlans);
     subscriptionsApi.subscriptionsApi.getMySubscription.mockRejectedValue({ status: 404 });
@@ -52,13 +60,10 @@ describe('PlansScreen', () => {
   // TESTS DE CARGA
   // ==============================
 
-  test('muestra estado de carga inicial', () => {
-    // Simular carga lenta
-    subscriptionsApi.subscriptionsApi.listPlans.mockImplementation(
-      () => new Promise(() => {}) // Never resolves
-    );
+  test('renderiza la página aunque la carga sea lenta', () => {
+    subscriptionsApi.subscriptionsApi.listPlans.mockImplementation(() => new Promise(() => {}));
     renderScreen();
-    expect(screen.getByText(/Cargando.../i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Planes de Suscripción/i })).toBeInTheDocument();
   });
 
   test('carga y muestra los planes disponibles', async () => {
@@ -195,10 +200,10 @@ describe('PlansScreen', () => {
   });
 
   // ==============================
-  // TESTS DE CHECKOUT MODAL
+  // TESTS DE NAVEGACIÓN
   // ==============================
 
-  test('abre el modal de checkout al hacer clic en "Mejorar a Premium"', async () => {
+  test('navega a pasarela al hacer clic en "Mejorar a Premium"', async () => {
     renderScreen();
     
     await waitFor(() => {
@@ -208,85 +213,20 @@ describe('PlansScreen', () => {
     const upgradeBtn = screen.getByRole('button', { name: /Mejorar a Premium/i });
     await userEvent.click(upgradeBtn);
 
-    expect(screen.getByText(/Confirmar suscripción/i)).toBeInTheDocument();
+    expect(mockNavigate).toHaveBeenCalledWith('/planes/pasarela');
   });
 
-  test('cierra el modal de checkout al hacer clic en Cancelar', async () => {
+  test('navega a planes institucionales al hacer clic en su botón', async () => {
     renderScreen();
     
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /Mejorar a Premium/i })).toBeInTheDocument();
     });
 
-    // Abrir modal
-    await userEvent.click(screen.getByRole('button', { name: /Mejorar a Premium/i }));
-    expect(screen.getByText(/Confirmar suscripción/i)).toBeInTheDocument();
+    const instButton = screen.getByRole('button', { name: /Ver planes institucionales/i });
+    await userEvent.click(instButton);
 
-    // Cerrar modal
-    const cancelBtn = screen.getByRole('button', { name: /Cancelar/i });
-    await userEvent.click(cancelBtn);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/Confirmar suscripción/i)).not.toBeInTheDocument();
-    });
-  });
-
-  // ==============================
-  // TESTS DE SUSCRIPCIÓN (MOCK)
-  // ==============================
-
-  test('muestra mensaje de éxito al confirmar suscripción mensual', async () => {
-    jest.useFakeTimers();
-    
-    renderScreen();
-    
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Mejorar a Premium/i })).toBeInTheDocument();
-    });
-
-    // Abrir modal y confirmar
-    await userEvent.click(screen.getByRole('button', { name: /Mejorar a Premium/i }));
-    const confirmBtn = screen.getByRole('button', { name: /Confirmar/i });
-    await userEvent.click(confirmBtn);
-
-    // Avanzar timers para el mock delay
-    jest.advanceTimersByTime(1000);
-
-    await waitFor(() => {
-      expect(screen.getByText(/Premium mensual activada/i)).toBeInTheDocument();
-    });
-
-    jest.useRealTimers();
-  });
-
-  test('muestra mensaje de éxito al confirmar suscripción anual', async () => {
-    jest.useFakeTimers();
-    
-    renderScreen();
-    
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Mejorar a Premium/i })).toBeInTheDocument();
-    });
-
-    // Abrir modal
-    await userEvent.click(screen.getByRole('button', { name: /Mejorar a Premium/i }));
-    
-    // Seleccionar anual
-    const yearlyBtn = screen.getByRole('button', { name: /PREMIUM anual/i });
-    await userEvent.click(yearlyBtn);
-    
-    // Confirmar
-    const confirmBtn = screen.getByRole('button', { name: /Confirmar/i });
-    await userEvent.click(confirmBtn);
-
-    // Avanzar timers para el mock delay
-    jest.advanceTimersByTime(1000);
-
-    await waitFor(() => {
-      expect(screen.getByText(/Premium anual activada/i)).toBeInTheDocument();
-    });
-
-    jest.useRealTimers();
+    expect(mockNavigate).toHaveBeenCalledWith('/planes/instituciones');
   });
 
   // ==============================
@@ -294,8 +234,8 @@ describe('PlansScreen', () => {
   // ==============================
 
   test('muestra mensaje de éxito al cancelar suscripción', async () => {
-    jest.useFakeTimers();
     subscriptionsApi.subscriptionsApi.getMySubscription.mockResolvedValue(mockSubscription);
+    subscriptionsApi.subscriptionsApi.cancelSubscription.mockResolvedValue(null);
     
     renderScreen();
     
@@ -305,14 +245,9 @@ describe('PlansScreen', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /Cancelar suscripción/i }));
 
-    // Avanzar timers para el mock delay
-    jest.advanceTimersByTime(1000);
-
     await waitFor(() => {
       expect(screen.getByText(/Suscripción cancelada exitosamente/i)).toBeInTheDocument();
     });
-
-    jest.useRealTimers();
   });
 
   // ==============================

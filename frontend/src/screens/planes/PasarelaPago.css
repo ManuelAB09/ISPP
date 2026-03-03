@@ -1,0 +1,440 @@
+/* Página de pasarela de pago */
+.pasarela-page {
+  background: #f5f6fa;
+  min-height: 100vh;
+  padding: 40px 20px;
+  font-family: 'Inter', sans-serif;
+}
+
+.pasarela-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 32px;
+  align-items: start;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* COLUMNA IZQUIERDA - RESUMEN */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.pasarela-summary {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 20px;
+}
+
+.pasarela-summary-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--spaceIndigo, #2d3250);
+  margin: 0 0 24px 0;
+}
+
+/* Card del plan */
+.pasarela-plan-card {
+  background: linear-gradient(135deg, #2d3250 0%, #676f9d 100%);
+  border-radius: 12px;
+  padding: 24px;
+  color: #fff;
+  margin-bottom: 24px;
+}
+
+.pasarela-plan-badge {
+  display: inline-block;
+  background: var(--peachGlow, #f2c18e);
+  color: var(--spaceIndigo, #2d3250);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+
+.pasarela-plan-name {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+.pasarela-plan-description {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 20px 0;
+  line-height: 1.5;
+}
+
+.pasarela-features-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pasarela-features-list li {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.95);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Selector de período */
+.pasarela-period-selector {
+  margin-bottom: 24px;
+}
+
+.pasarela-period-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--graphite, #2b2b2b);
+  margin: 0 0 12px 0;
+}
+
+.pasarela-period-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pasarela-period-btn {
+  background: #fff;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+
+.pasarela-period-btn:hover {
+  border-color: var(--glaucous, #676f9d);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.pasarela-period-btn--active {
+  border-color: var(--spaceIndigo, #2d3250);
+  background: linear-gradient(135deg, #f8f9fa 0%, #e8eaf6 100%);
+  box-shadow: 0 4px 12px rgba(45, 50, 80, 0.15);
+}
+
+.pasarela-period-btn--active::before {
+  content: "✓";
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  color: var(--spaceIndigo, #2d3250);
+  font-weight: 700;
+}
+
+.pasarela-period-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--graphite, #2b2b2b);
+  margin-bottom: 4px;
+}
+
+.pasarela-period-price {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--spaceIndigo, #2d3250);
+}
+
+.pasarela-period-save {
+  display: inline-block;
+  background: #10b981;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  margin-top: 6px;
+}
+
+/* Total */
+.pasarela-total {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 16px;
+}
+
+.pasarela-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.pasarela-total-row span:last-child {
+  font-weight: 600;
+  color: var(--graphite, #2b2b2b);
+}
+
+.pasarela-total-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 16px 0;
+}
+
+.pasarela-total-final {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--spaceIndigo, #2d3250) !important;
+  margin-bottom: 0;
+}
+
+.pasarela-total-final span {
+  color: var(--spaceIndigo, #2d3250) !important;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* COLUMNA DERECHA - FORMULARIO */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.pasarela-form-section {
+  background: #fff;
+  border-radius: 16px;
+  padding: 40px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.pasarela-header {
+  margin-bottom: 32px;
+}
+
+.pasarela-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--spaceIndigo, #2d3250);
+  margin: 0 0 8px 0;
+}
+
+.pasarela-subtitle {
+  font-size: 15px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Formulario */
+.pasarela-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.pasarela-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pasarela-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--graphite, #2b2b2b);
+}
+
+.pasarela-input-wrapper {
+  position: relative;
+}
+
+.pasarela-card-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  pointer-events: none;
+}
+
+.pasarela-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: 'Inter', sans-serif;
+  color: var(--graphite, #2b2b2b);
+  transition: all 0.2s ease;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.pasarela-input-wrapper .pasarela-input {
+  padding-left: 48px;
+}
+
+.pasarela-input:focus {
+  border-color: var(--glaucous, #676f9d);
+  box-shadow: 0 0 0 3px rgba(103, 111, 157, 0.15);
+}
+
+.pasarela-input--error {
+  border-color: #ef4444;
+}
+
+.pasarela-input--error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.pasarela-error {
+  font-size: 13px;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Fila para expiración y CVV */
+.pasarela-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Información de seguridad */
+.pasarela-security-info {
+  background: #f0fdf4;
+  border: 1px solid #dcfce7;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: start;
+}
+
+.pasarela-security-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.pasarela-security-info p {
+  margin: 0;
+  font-size: 13px;
+  color: #15803d;
+  line-height: 1.5;
+}
+
+/* Botones */
+.pasarela-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.pasarela-btn {
+  flex: 1;
+  padding: 16px 24px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.pasarela-btn--secondary {
+  background: #f3f4f6;
+  color: var(--graphite, #2b2b2b);
+  border: 2px solid #e5e7eb;
+}
+
+.pasarela-btn--secondary:hover:not(:disabled) {
+  background: #e5e7eb;
+  transform: translateY(-1px);
+}
+
+.pasarela-btn--primary {
+  background: linear-gradient(135deg, var(--spaceIndigo, #2d3250) 0%, var(--glaucous, #676f9d) 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(45, 50, 80, 0.3);
+}
+
+.pasarela-btn--primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(45, 50, 80, 0.4);
+}
+
+.pasarela-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Spinner de carga */
+.pasarela-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: pasarela-spin 0.6s linear infinite;
+}
+
+@keyframes pasarela-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* RESPONSIVE */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+@media (max-width: 968px) {
+  .pasarela-container {
+    grid-template-columns: 1fr;
+  }
+
+  .pasarela-summary {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .pasarela-page {
+    padding: 20px 12px;
+  }
+
+  .pasarela-form-section {
+    padding: 24px 20px;
+  }
+
+  .pasarela-summary {
+    padding: 24px 20px;
+  }
+
+  .pasarela-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .pasarela-actions {
+    flex-direction: column-reverse;
+  }
+
+  .pasarela-btn {
+    width: 100%;
+  }
+
+  .pasarela-title {
+    font-size: 24px;
+  }
+}

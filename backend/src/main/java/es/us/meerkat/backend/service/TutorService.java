@@ -153,10 +153,8 @@ public class TutorService {
 
         final List<Tutor> tutores = tutorRepository.findAllByUsId(usuario.getId());
 
-        if (tutores.isEmpty()) {
-            throw new RuntimeException("No tienes perfiles de tutor creados");
-        }
-
+        // Devolver lista vacía si no hay perfiles; el controlador y el cliente
+        // saben cómo manejarlo.
         return tutores.stream().map(this::mapToResponse).toList();
     }
 
@@ -212,18 +210,28 @@ public class TutorService {
      * @param size Tamaño de página
      * @return Página de tutores filtrados
      */
-    public Page<Tutor> obtenerTutoresVerificados(
+    public Page<TutorProfileResponse> obtenerTutoresVerificados(
             String especialidad, BigDecimal tarifaMin, BigDecimal tarifaMax, int page, int size) {
-        // Valores por defecto
-        String espec = (especialidad != null) ? especialidad : "";
-        BigDecimal min = (tarifaMin != null) ? tarifaMin : BigDecimal.ZERO;
-        BigDecimal max = (tarifaMax != null) ? tarifaMax : new BigDecimal(Double.MAX_VALUE);
 
         PageRequest pageable = PageRequest.of(page, size);
 
-        return tutorRepository
-                .findByVerificadoTrueAndEspecialidadesContainingIgnoreCaseAndTarifaHoraBetween(
-                        espec, min, max, pageable);
+        Page<Tutor> pageResult;
+        // Sin filtros: devolver todos los verificados paginados
+        if (especialidad == null && tarifaMin == null && tarifaMax == null) {
+            pageResult = tutorRepository.findByVerificadoTrue(pageable);
+        } else {
+            // Con filtros: usar JPQL con JOIN sobre especialidades
+            BigDecimal min = (tarifaMin != null) ? tarifaMin : BigDecimal.ZERO;
+            BigDecimal max = (tarifaMax != null) ? tarifaMax : new BigDecimal("999999");
+            String espec = (especialidad != null) ? especialidad : "";
+
+            pageResult =
+                    tutorRepository.findVerificadosByEspecialidadAndTarifa(
+                            espec, min, max, pageable);
+        }
+
+        // Convertir cada entidad a DTO para evitar ciclos de serialización
+        return pageResult.map(this::mapToResponse);
     }
 
     // ===============================
@@ -297,5 +305,190 @@ public class TutorService {
                         tutorIdParam, TipoTransaccion.PAGO_VERIFICACION)
                 .map(tx -> tx.getEstado().name())
                 .orElse("SIN_SOLICITUD");
+    }
+
+    // ===============================
+    // NUEVOS MÉTODOS PARA CONTROLADOR
+    // ===============================
+
+    /**
+     * Obtiene el tutor de un usuario por su ID.
+     *
+     * @param usuarioId ID del usuario
+     * @return Tutor si existe
+     */
+    public java.util.Optional<Tutor> obtenerTutorPorUsuarioId(Long usuarioId) {
+        Usuario usuario =
+                usuarioRepository
+                        .findById(usuarioId)
+                        .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        return tutorRepository.findByUs(usuario);
+    }
+
+    /**
+     * Obtiene un tutor por su ID.
+     *
+     * @param tutorId ID del tutor
+     * @return Tutor si existe
+     */
+    public java.util.Optional<Tutor> obtenerTutorPorId(Long tutorId) {
+        return tutorRepository.findById(tutorId);
+    }
+
+    /**
+     * Crea un nuevo tutor usando CreateTutorRequest.
+     *
+     * @param usuarioId ID del usuario
+     * @param request datos del tutor
+     * @return tutor creado
+     */
+    @Transactional
+    public Tutor crearPerfil(Long usuarioId, es.us.meerkat.backend.dto.CreateTutorRequest request) {
+        Usuario usuario =
+                usuarioRepository
+                        .findById(usuarioId)
+                        .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
+        if (tutorRepository.findByUs(usuario).isPresent()) {
+            throw new IllegalArgumentException("El usuario ya tiene un perfil de tutor");
+        }
+
+        Tutor tutor = new Tutor();
+        tutor.setUs(usuario);
+        tutor.setEspecialidades(request.getEspecialidades());
+        tutor.setTarifaHora(request.getTarifaPorHora());
+        tutor.setBio(request.getBiografia());
+        tutor.setVerificado(false);
+        tutor.setClassroomConectado(false);
+        tutor.setCreatedAt(LocalDateTime.now());
+
+        return tutorRepository.save(tutor);
+    }
+
+    /**
+     * Actualiza el perfil de un tutor.
+     *
+     * @param usuarioId ID del usuario
+     * @param request datos actualizados
+     * @return tutor actualizado
+     */
+    @Transactional
+    public Tutor actualizarPerfil(
+            Long usuarioId, es.us.meerkat.backend.dto.UpdateTutorRequest request) {
+        Usuario usuario =
+                usuarioRepository
+                        .findById(usuarioId)
+                        .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
+        Tutor tutor =
+                tutorRepository
+                        .findByUs(usuario)
+                        .orElseThrow(
+                                () -> new IllegalArgumentException("No tienes perfil de tutor"));
+
+        if (request.getEspecialidades() != null) {
+            tutor.setEspecialidades(request.getEspecialidades());
+        }
+        if (request.getTarifaPorHora() != null) {
+            tutor.setTarifaHora(request.getTarifaPorHora());
+        }
+        if (request.getBiografia() != null) {
+            tutor.setBio(request.getBiografia());
+        }
+
+        return tutorRepository.save(tutor);
+    }
+
+    /**
+     * Conecta Google Classroom a un tutor.
+     *
+     * @param usuarioId ID del usuario
+     * @param googleEmail email de google
+     * @return tutor actualizado
+     */
+    @Transactional
+    public Tutor conectarClassroom(Long usuarioId, String googleEmail) {
+        Usuario usuario =
+                usuarioRepository
+                        .findById(usuarioId)
+                        .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
+        Tutor tutor =
+                tutorRepository
+                        .findByUs(usuario)
+                        .orElseThrow(
+                                () -> new IllegalArgumentException("No tienes perfil de tutor"));
+
+        tutor.setClassroomConectado(true);
+        tutor.setEmailClassroom(googleEmail);
+
+        return tutorRepository.save(tutor);
+    }
+
+    /**
+     * Desconecta Google Classroom de un tutor.
+     *
+     * @param usuarioId ID del usuario
+     */
+    @Transactional
+    public void desconectarClassroom(Long usuarioId) {
+        Usuario usuario =
+                usuarioRepository
+                        .findById(usuarioId)
+                        .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
+        Tutor tutor =
+                tutorRepository
+                        .findByUs(usuario)
+                        .orElseThrow(
+                                () -> new IllegalArgumentException("No tienes perfil de tutor"));
+
+        tutor.setClassroomConectado(false);
+        tutor.setEmailClassroom(null);
+
+        tutorRepository.save(tutor);
+    }
+
+    /**
+     * Comprueba si un tutor ya tiene un pago de verificación pendiente.
+     *
+     * @param tutorId ID del tutor
+     * @return true si ya existe una transacción pendiente
+     */
+    public boolean tienePagoVerificacionPendiente(Long tutorId) {
+        return transaccionPagoRepository.existsByTutorIdAndTipoAndEstado(
+                tutorId, TipoTransaccion.PAGO_VERIFICACION, EstadoTransaccion.PENDIENTE);
+    }
+
+    /**
+     * Activa la verificación del tutor tras confirmación de pago por Stripe. Marca el tutor como
+     * verificado y completa la transacción.
+     *
+     * @param tutorId ID del tutor
+     */
+    @Transactional
+    public void activarVerificacion(Long tutorId) {
+        Tutor tutor =
+                tutorRepository
+                        .findById(tutorId)
+                        .orElseThrow(
+                                () ->
+                                        new IllegalArgumentException(
+                                                "Tutor no encontrado: " + tutorId));
+
+        // Activar verificación en el perfil
+        tutor.setVerificado(true);
+        tutorRepository.save(tutor);
+
+        // Completar la transacción pendiente si existe
+        transaccionPagoRepository
+                .findTopByTutorIdAndTipoOrderByIniciadoAtDesc(
+                        tutorId, TipoTransaccion.PAGO_VERIFICACION)
+                .ifPresent(
+                        tx -> {
+                            tx.setEstado(EstadoTransaccion.COMPLETADA);
+                            tx.setCompletadoAt(java.time.LocalDateTime.now());
+                            transaccionPagoRepository.save(tx);
+                        });
     }
 }

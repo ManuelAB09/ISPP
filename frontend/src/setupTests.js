@@ -20,3 +20,27 @@ jest.mock('leaflet', () => ({
   icon: jest.fn(() => ({})),
   divIcon: jest.fn(() => ({})),
 }));
+
+const originalConsoleWarn = console.warn;
+const originalConsoleLog = console.log;
+
+jest.spyOn(console, 'warn').mockImplementation((...args) => {
+  const firstArg = typeof args[0] === 'string' ? args[0] : '';
+  if (firstArg.includes('React Router Future Flag Warning')) {
+    return;
+  }
+  originalConsoleWarn(...args);
+});
+
+jest.spyOn(console, 'log').mockImplementation((...args) => {
+  const firstArg = typeof args[0] === 'string' ? args[0] : '';
+  if (firstArg.includes('API_BASE_URL =')) {
+    return;
+  }
+  originalConsoleLog(...args);
+});
+
+afterAll(() => {
+  console.warn.mockRestore();
+  console.log.mockRestore();
+});
