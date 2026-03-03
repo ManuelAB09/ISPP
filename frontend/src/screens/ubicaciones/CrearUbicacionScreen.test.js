@@ -110,8 +110,8 @@ describe('CrearUbicacionScreen', () => {
     renderComponent();
 
     const textboxes = screen.getAllByRole('textbox');
-    fireEvent.change(textboxes[0], { target: { value: 'Sala A' } }); // nombre
-    fireEvent.change(textboxes[2], { target: { value: 'Av. Test 1' } }); // dirección seleccionada
+    fireEvent.change(textboxes[0], { target: { value: 'Sala A' } }); 
+    fireEvent.change(textboxes[2], { target: { value: 'Av. Test 1' } }); 
 
     fireEvent.click(screen.getByRole('button', { name: /Crear Ubicación/i }));
 
@@ -133,8 +133,8 @@ describe('CrearUbicacionScreen', () => {
     renderComponent();
 
     const textboxes = screen.getAllByRole('textbox');
-    fireEvent.change(textboxes[0], { target: { value: 'Sala B' } }); // nombre
-    fireEvent.change(textboxes[2], { target: { value: 'Av. Fallo 2' } }); // dirección seleccionada
+    fireEvent.change(textboxes[0], { target: { value: 'Sala B' } }); 
+    fireEvent.change(textboxes[2], { target: { value: 'Av. Fallo 2' } }); 
 
     fireEvent.click(screen.getByRole('button', { name: /Crear Ubicación/i }));
 
