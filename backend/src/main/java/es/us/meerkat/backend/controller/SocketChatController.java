@@ -22,9 +22,7 @@ import es.us.meerkat.backend.service.MensajeComunidadService;
 import es.us.meerkat.backend.service.MensajeService;
 import lombok.RequiredArgsConstructor;
 
-/** Controlador WebSocket STOMP para manejo de
- * mensajes privados y de eventos en tiempo real. */
-
+/** Controlador WebSocket STOMP para manejo de mensajes privados y de eventos en tiempo real. */
 @Controller
 @RequiredArgsConstructor
 public class SocketChatController {
