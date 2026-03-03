@@ -389,6 +389,17 @@
   background: var(--tp-bg);
 }
 
+/* Contratar */
+.tp-btn--hire {
+  background: var(--tp-primary);
+  color: var(--tp-white);
+  font-weight: 700;
+}
+
+.tp-btn--hire:hover {
+  background: var(--tp-primary-dark);
+}
+
 /* Aparecer en la lista de profesores */
 .tp-btn--list {
   background: var(--tp-primary);

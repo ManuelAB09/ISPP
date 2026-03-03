@@ -114,8 +114,7 @@ public class GoogleClassroomService {
         Comunidad comunidad =
                 comunidadRepository
                         .findById(comunidadId)
-                        .orElseThrow(
-                                () -> new RuntimeException("Comunidad no encontrada"));
+                        .orElseThrow(() -> new RuntimeException("Comunidad no encontrada"));
 
         // Si ya existe una vinculación, la actualizamos
         ComunidadClassroom cc =

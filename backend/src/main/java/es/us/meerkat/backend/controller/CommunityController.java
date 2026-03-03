@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import es.us.meerkat.backend.dto.*;
 import es.us.meerkat.backend.entity.Categoria;
 import es.us.meerkat.backend.entity.Comunidad;
+import es.us.meerkat.backend.entity.ComunidadClassroom;
 import es.us.meerkat.backend.entity.EstadoSolicitud;
 import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.MiembroComunidad;
@@ -24,9 +25,9 @@ import es.us.meerkat.backend.service.CategoryService;
 import es.us.meerkat.backend.service.CommunityService;
 import es.us.meerkat.backend.service.EventoService;
 import es.us.meerkat.backend.service.GoogleClassroomService;
-import es.us.meerkat.backend.entity.ComunidadClassroom;
 import es.us.meerkat.backend.service.MemberService;
 import es.us.meerkat.backend.service.RequestService;
+import es.us.meerkat.backend.service.TutorContratacionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -51,6 +52,7 @@ public class CommunityController {
     private final RequestService requestService;
     private final CategoryService categoryService;
     private final AuthorizationService authorizationService;
+    private final TutorContratacionService tutorContratacionService;
     private final EventoService eventoService;
     private final GoogleClassroomService googleClassroomService;
 
@@ -323,28 +325,6 @@ public class CommunityController {
                 MessageResponse.builder()
                         .message("Funcionalidad de contratación de tutores en implementación")
                         .build());
-    }
-
-    /** Desvincula un tutor de la comunidad. DELETE /api/v1/communities/{communityId}/tutor */
-    @DeleteMapping("/{communityId}/tutor")
-    @Operation(
-            summary = "Desvincular tutor",
-            description = "Termina la contratación del tutor actual (solo" + " admin)",
-            security = @SecurityRequirement(name = "bearerAuth"))
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Tutor desvinculado"),
-        @ApiResponse(responseCode = "403", description = "No tienes permisos"),
-        @ApiResponse(responseCode = "404", description = "Tutor no encontrado")
-    })
-    public ResponseEntity<MessageResponse> removeTutor(
-            @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
-
-        if (usuario == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        return ResponseEntity.ok(
-                MessageResponse.builder().message("Tutor desvinculado correctamente").build());
     }
 
     // =====================================================
@@ -886,16 +866,22 @@ public class CommunityController {
     // GOOGLE CLASSROOM - VINCULAR CURSO
     // =====================================================
 
-    /** Vincula un curso de Google Classroom a una comunidad. POST /api/v1/communities/{id}/classroom */
+    /**
+     * Vincula un curso de Google Classroom a una comunidad. POST /api/v1/communities/{id}/classroom
+     */
     @PostMapping("/{communityId}/classroom")
     @Operation(
             summary = "Vincular curso de Google Classroom",
-            description = "Vincula un curso de Google Classroom a la comunidad. Solo el admin puede hacerlo.",
+            description =
+                    "Vincula un curso de Google Classroom a la comunidad. Solo el admin puede"
+                            + " hacerlo.",
             security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Curso vinculado correctamente"),
         @ApiResponse(responseCode = "401", description = "No autenticado"),
-        @ApiResponse(responseCode = "403", description = "No tienes permisos para vincular un curso"),
+        @ApiResponse(
+                responseCode = "403",
+                description = "No tienes permisos para vincular un curso"),
         @ApiResponse(responseCode = "404", description = "Comunidad no encontrada")
     })
     public ResponseEntity<ClassroomInfoResponse> linkClassroom(
@@ -926,11 +912,15 @@ public class CommunityController {
         }
     }
 
-    /** Desvincula el curso de Google Classroom de una comunidad. DELETE /api/v1/communities/{id}/classroom */
+    /**
+     * Desvincula el curso de Google Classroom de una comunidad. DELETE
+     * /api/v1/communities/{id}/classroom
+     */
     @DeleteMapping("/{communityId}/classroom")
     @Operation(
             summary = "Desvincular curso de Google Classroom",
-            description = "Elimina la vinculación con Google Classroom. Solo el admin puede hacerlo.",
+            description =
+                    "Elimina la vinculación con Google Classroom. Solo el admin puede hacerlo.",
             security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Curso desvinculado correctamente"),
@@ -939,8 +929,7 @@ public class CommunityController {
         @ApiResponse(responseCode = "404", description = "No hay curso vinculado")
     })
     public ResponseEntity<Void> unlinkClassroom(
-            @PathVariable Long communityId,
-            @AuthenticationPrincipal Usuario usuario) {
+            @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
 
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -962,7 +951,9 @@ public class CommunityController {
     @GetMapping("/{communityId}/classroom")
     @Operation(
             summary = "Obtener curso vinculado",
-            description = "Devuelve la información del curso de Google Classroom vinculado a la comunidad")
+            description =
+                    "Devuelve la información del curso de Google Classroom vinculado a la"
+                            + " comunidad")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Información del curso vinculado"),
         @ApiResponse(responseCode = "404", description = "No hay curso vinculado")
@@ -1055,6 +1046,145 @@ public class CommunityController {
                 categoria.getNombre(),
                 categoria.getDescripcion(),
                 categoria.getOrden());
+    }
+
+    // =====================================================
+    // CONTRATACIÓN DE TUTORES
+    // =====================================================
+
+    /**
+     * Contrata un tutor para la comunidad. Inicializa el pago y retorna URL de pago.
+     *
+     * <p>POST /api/v1/communities/{communityId}/tutor/{tutorId}
+     *
+     * @param communityId ID de la comunidad
+     * @param tutorId ID del tutor a contratar
+     * @param request Datos de la contratación
+     * @param usuario Usuario autenticado (debe ser admin de comunidad)
+     * @return PaymentUrlResponse con URL para procesar pago
+     */
+    @PostMapping("/{communityId}/tutor/{tutorId}")
+    @Operation(
+            summary = "Contratar tutor",
+            description = "Contrata un tutor para la comunidad. Retorna URL de pago.",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(
+                responseCode = "200",
+                description = "Tutor contratación iniciada, URL de pago generada"),
+        @ApiResponse(responseCode = "400", description = "Datos inválidos o validación fallida"),
+        @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
+        @ApiResponse(
+                responseCode = "403",
+                description = "No tienes permisos para contratar en esta comunidad"),
+        @ApiResponse(responseCode = "404", description = "Comunidad o tutor no encontrado")
+    })
+    public ResponseEntity<PaymentUrlResponse> hireTutor(
+            @PathVariable Long communityId,
+            @PathVariable Long tutorId,
+            @Valid @RequestBody HireTutorRequest request,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            PaymentUrlResponse paymentUrl =
+                    tutorContratacionService.crearContratacion(
+                            communityId, tutorId, request, usuario.getId());
+            return ResponseEntity.ok(paymentUrl);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Cancela la contratación de un tutor por la comunidad.
+     *
+     * <p>DELETE /api/v1/communities/{communityId}/tutor
+     *
+     * @param communityId ID de la comunidad
+     * @param usuario Usuario autenticado (debe ser admin de comunidad)
+     * @return MessageResponse con confirmación
+     */
+    @DeleteMapping("/{communityId}/tutor")
+    @Operation(
+            summary = "Cancelar tutor",
+            description = "Cancela la contratación del tutor activo de la comunidad.",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Contratación cancelada exitosamente"),
+        @ApiResponse(responseCode = "400", description = "No hay tutor contratado"),
+        @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
+        @ApiResponse(responseCode = "403", description = "No tienes permisos para cancelar"),
+        @ApiResponse(responseCode = "404", description = "Comunidad no encontrada")
+    })
+    public ResponseEntity<?> cancelarTutor(
+            @PathVariable Long communityId,
+            @RequestParam String motivo,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            var contratacion =
+                    tutorContratacionService.obtenerContratacionActivaDeComunidad(communityId);
+
+            if (contratacion.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(
+                                MessageResponse.builder()
+                                        .message("No hay tutor contratado en esta comunidad")
+                                        .build());
+            }
+
+            tutorContratacionService.cancelarContratacion(
+                    contratacion.get().getId(), usuario.getId(), motivo);
+
+            return ResponseEntity.ok()
+                    .body(
+                            MessageResponse.builder()
+                                    .message("Contratación cancelada exitosamente")
+                                    .build());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(MessageResponse.builder().message(e.getMessage()).build());
+        }
+    }
+
+    /**
+     * Obtiene el tutor actualmente contratado por la comunidad.
+     *
+     * <p>GET /api/v1/communities/{communityId}/tutor
+     *
+     * @param communityId ID de la comunidad
+     * @return TutorResponse del tutor activo o 404 si no hay
+     */
+    @GetMapping("/{communityId}/tutor")
+    @Operation(
+            summary = "Obtener tutor activo",
+            description = "Obtiene el tutor actualmente contratado por la comunidad")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Tutor encontrado"),
+        @ApiResponse(
+                responseCode = "404",
+                description = "Comunidad no encontrada o sin tutor activo")
+    })
+    public ResponseEntity<?> obtenerTutorActivo(@PathVariable Long communityId) {
+        try {
+            var tutor = tutorContratacionService.obtenerTutorActivoDeComunidad(communityId);
+
+            if (tutor.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            return ResponseEntity.ok(tutor.get());
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     private UserSimpleResponse convertUserToSimple(Usuario usuario) {

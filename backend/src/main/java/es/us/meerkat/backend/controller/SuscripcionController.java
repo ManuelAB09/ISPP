@@ -1,24 +1,25 @@
 package es.us.meerkat.backend.controller;
 
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import es.us.meerkat.backend.dto.PaymentUrlResponse;
+import es.us.meerkat.backend.dto.SubscribeRequest;
 import es.us.meerkat.backend.dto.SubscriptionResponse;
 import es.us.meerkat.backend.entity.Suscripcion;
 import es.us.meerkat.backend.entity.TipoPlan;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.service.PaymentService;
 import es.us.meerkat.backend.service.SuscripcionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 /** Controlador REST para gestionar suscripciones de usuarios. */
@@ -29,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 public class SuscripcionController {
 
     private final SuscripcionService suscripcionService;
+    private final PaymentService paymentService;
 
     /**
      * Obtiene todos los planes de suscripción disponibles.
@@ -38,7 +40,7 @@ public class SuscripcionController {
     @GetMapping("/plans")
     @Operation(
             summary = "Ver planes disponibles",
-            description = "Devuelve la lista de planes de suscripción disponibles")
+            description = " lista de planes de suscripción disponibles")
     public ResponseEntity<TipoPlan[]> obtenerPlanes() {
         TipoPlan[] planes = suscripcionService.obtenerPlanesDisponibles();
         return ResponseEntity.ok(planes);
@@ -50,9 +52,7 @@ public class SuscripcionController {
      * @return Suscripción del usuario o plan FREE por defecto
      */
     @GetMapping("/me")
-    @Operation(
-            summary = "Obtener mi suscripción",
-            description = "Devuelve la suscripción actual del usuario autenticado")
+    @Operation(summary = "Obtener mi suscripción", description = "Devuelve la suscripción actual")
     public ResponseEntity<SubscriptionResponse> obtenerMiSuscripcion(
             @AuthenticationPrincipal final Usuario usuario) {
         Optional<Suscripcion> suscripcion =
@@ -76,15 +76,51 @@ public class SuscripcionController {
     }
 
     /**
-     * Suscribe al usuario autenticado a un plan Premium.
+     * Inicia el proceso de suscripción a un plan Premium.
      *
-     * @return Suscripción creada o URL de pago
+     * @param usuario Usuario autenticado
+     * @param request Datos de subscripción
+     * @return URL de pago para completar la suscripción
      */
     @PostMapping("/me")
     @Operation(
-            summary = "Suscribirse a Premium",
-            description = "Inicia el proceso de suscripción a un plan Premium")
-    public ResponseEntity<SubscriptionResponse> suscribirse(
+            summary = "Suscribirse a plan Premium",
+            description = "Inicia el proceso de suscripción")
+    public ResponseEntity<?> suscribirse(
+            @AuthenticationPrincipal final Usuario usuario,
+            @Valid @RequestBody SubscribeRequest request) {
+        try {
+            Optional<Suscripcion> suscripcionActiva =
+                    suscripcionService.obtenerMiSuscripcion(usuario.getId());
+            if (suscripcionActiva.isPresent()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Ya tienes una suscripción activa"));
+            }
+
+            PaymentUrlResponse paymentUrl =
+                    paymentService.generarPagoSuscripcion(usuario, TipoPlan.PREMIUM);
+            return ResponseEntity.status(HttpStatus.CREATED).body(paymentUrl);
+
+        } catch (com.stripe.exception.StripeException e) {
+
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Error al conectar con la pasarela de pago"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Simula la completación del pago de suscripción. En producción, Stripe webhook haría esto.
+     *
+     * @param usuario Usuario autenticado
+     * @return Suscripción creada
+     */
+    @PostMapping("/me/confirm-payment")
+    @Operation(
+            summary = "Confirmar pago de suscripción",
+            description = "confirma el pago de la suscripción ")
+    public ResponseEntity<SubscriptionResponse> confirmarPagoSuscripcion(
             @AuthenticationPrincipal final Usuario usuario) {
         try {
             Suscripcion suscripcion = suscripcionService.suscribirse(usuario.getId());
