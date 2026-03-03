@@ -231,7 +231,7 @@ export const NotificationProvider = ({ children }) => {
                 console.log('🛑 Polling detenido');
             }
         };
-    }, [isAuthenticated, isInChatRoute, permission]);
+    }, [isAuthenticated, isInChatRoute, permission, navigate, showNotification]);
 
     // Resetear el estado conocido cuando entramos a /chats o /comunidades
     useEffect(() => {
