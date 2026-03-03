@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import './Header.css';
-import GoogleClassroomButton from '../GoogleClassroomButton/GoogleClassroomButton';
+import GoogleClassroomButton from '../GoogleClassroomButton/GoogleClassroomButton.jsx';
 
 export default function Header({ user, page }) {
     const storedUser = (() => {

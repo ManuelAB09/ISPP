@@ -52,7 +52,9 @@ public class GoogleClassroomController {
     private final RestTemplate rest = new RestTemplate();
     private final ObjectMapper mapper = new ObjectMapper();
 
-    private final Map<String, Long> oauthStateStore = new ConcurrentHashMap<>();
+    private static record OAuthCtx(Long userId, Long communityId, Long requestId) {}
+
+    private final Map<String, OAuthCtx> oauthStateStore = new ConcurrentHashMap<>();
     private final SecureRandom secureRandom = new SecureRandom();
 
     private String generateState() {
@@ -62,7 +64,10 @@ public class GoogleClassroomController {
     }
 
     @GetMapping("/authorize/google-classroom-url")
-    public ResponseEntity<Map<String, String>> authorizeUrl() {
+    public ResponseEntity<Map<String, String>> authorizeUrl(
+            @RequestParam(required = false) Long communityId,
+            @RequestParam(required = false) Long requestId) {
+
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getName())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -80,7 +85,7 @@ public class GoogleClassroomController {
         }
 
         String state = generateState();
-        oauthStateStore.put(state, userId);
+        oauthStateStore.put(state, new OAuthCtx(userId, communityId, requestId));
 
         String scope =
                 URLEncoder.encode(
@@ -116,7 +121,7 @@ public class GoogleClassroomController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         String state = generateState();
-        oauthStateStore.put(state, userId);
+        oauthStateStore.put(state, new OAuthCtx(userId, null, null));
         String scope =
                 URLEncoder.encode(
                         "https://www.googleapis.com/auth/classroom.courses.readonly",
@@ -146,38 +151,29 @@ public class GoogleClassroomController {
             @RequestParam(name = "error", required = false) String error,
             @RequestParam(name = "state", required = false) String state)
             throws Exception {
+
         if (error != null) {
-            String errHtml =
-                    "<html><body><script>window.opener.postMessage({error:'"
-                            + error
-                            + "'}, '*');window.close();</script></body></html>";
-            return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(errHtml);
-        }
-        if (code == null) {
-            String errHtml =
-                    "<html><body><script>window.opener.postMessage({error:'no_code'},"
-                            + " '*');window.close();</script></body></html>";
-            return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(errHtml);
+            return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(htmlError(error));
         }
 
-        // String email = oauthStateStore.remove(state);
-        /*
-        Usuario usuarioActual = usuarioRepository.findByEmail(email).orElse(null);
-        if (usuarioActual == null) return ResponseEntity.ok()
-        .contentType(MediaType.TEXT_HTML)
-        .body(htmlError("unauthorized"));
-        */
+        if (code == null) {
+            return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(htmlError("no_code"));
+        }
 
         if (state == null) {
             return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(htmlError("no_state"));
         }
 
-        Long userId = oauthStateStore.remove(state);
-        if (userId == null) {
+        OAuthCtx ctx = oauthStateStore.remove(state);
+        if (ctx == null) {
             return ResponseEntity.ok()
                     .contentType(MediaType.TEXT_HTML)
                     .body(htmlError("invalid_state"));
         }
+
+        Long userId = ctx.userId();
+        Long communityId = ctx.communityId(); // puede ser null
+        Long requestId = ctx.requestId(); // puede ser null
 
         Usuario usuarioActual = usuarioRepository.findById(userId).orElse(null);
         if (usuarioActual == null) {
@@ -186,6 +182,7 @@ public class GoogleClassroomController {
                     .body(htmlError("user_not_found:" + userId));
         }
 
+        // Intercambiar code por tokens
         String tokenUrl = "https://oauth2.googleapis.com/token";
 
         HttpHeaders headers = new HttpHeaders();
@@ -201,54 +198,75 @@ public class GoogleClassroomController {
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(form, headers);
 
         ResponseEntity<String> tokenResp = rest.postForEntity(tokenUrl, request, String.class);
-        if (!tokenResp.getStatusCode().is2xxSuccessful()) {
-            String errHtml =
-                    "<html><body><script>window.opener.postMessage({error:'token_error'},"
-                            + " '*');window.close();</script></body></html>";
-            return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(errHtml);
+        if (!tokenResp.getStatusCode().is2xxSuccessful() || tokenResp.getBody() == null) {
+            return ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_HTML)
+                    .body(htmlError("token_error"));
         }
 
         JsonNode tokenJson = mapper.readTree(tokenResp.getBody());
-        String accessToken = tokenJson.get("access_token").asText();
-        if (accessToken == null) {
-            String errHtml =
-                    "<html><body><script>window.opener.postMessage({error:'no_access_token'},"
-                            + " '*');window.close();</script></body></html>";
-            return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(errHtml);
-        }
-        String refreshToken =
-                tokenJson.has("refresh_token") ? tokenJson.get("refresh_token").asText() : null;
 
-        long expiresIn = tokenJson.get("expires_in").asLong();
+        String accessToken =
+                tokenJson.hasNonNull("access_token")
+                        ? tokenJson.get("access_token").asText()
+                        : null;
+
+        if (accessToken == null) {
+            return ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_HTML)
+                    .body(htmlError("no_access_token"));
+        }
+
+        String refreshToken =
+                tokenJson.hasNonNull("refresh_token")
+                        ? tokenJson.get("refresh_token").asText()
+                        : null;
+
+        long expiresIn =
+                tokenJson.hasNonNull("expires_in") ? tokenJson.get("expires_in").asLong() : 3600;
 
         googleClassroomService.guardarConexionOAuth(
                 usuarioActual, accessToken, refreshToken, expiresIn);
 
-        // Call Classroom API to list courses
+        // Listar cursos
         String coursesUrl = "https://classroom.googleapis.com/v1/courses";
-        HttpHeaders auth = new HttpHeaders();
-        auth.setBearerAuth(accessToken);
-        HttpEntity<Void> coursesReq = new HttpEntity<>(auth);
+        HttpHeaders authHeaders = new HttpHeaders();
+        authHeaders.setBearerAuth(accessToken);
+
+        HttpEntity<Void> coursesReq = new HttpEntity<>(authHeaders);
 
         ResponseEntity<String> coursesResp =
                 rest.exchange(coursesUrl, HttpMethod.GET, coursesReq, String.class);
+
         String payload = "{}";
-        if (coursesResp.getStatusCode().is2xxSuccessful()) {
+        if (coursesResp.getStatusCode().is2xxSuccessful() && coursesResp.getBody() != null) {
             payload = coursesResp.getBody();
         }
 
         String safe = payload.replace("</", "<\\/");
+
         String html =
-                "<html><body><script>window.opener.postMessage({courses:"
+                "<html><body><script>"
+                        + "window.opener.postMessage({courses:"
                         + safe
-                        + "}, '*');window.close();</script></body></html>";
+                        + ", communityId:"
+                        + (communityId == null ? "null" : communityId)
+                        + ", requestId:"
+                        + (requestId == null ? "null" : requestId)
+                        + "}, '*');"
+                        + "window.close();"
+                        + "</script></body></html>";
 
         return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
     }
 
     private String htmlError(String code) {
+        if (code == null) {
+            code = "error";
+        }
+        String safe = code.replace("'", "\\'");
         return "<html><body><script>window.opener.postMessage({error:'"
-                + code
+                + safe
                 + "'}, '*');window.close();</script></body></html>";
     }
 }
