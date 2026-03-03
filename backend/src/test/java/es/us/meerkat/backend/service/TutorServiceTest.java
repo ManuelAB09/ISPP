@@ -3,6 +3,7 @@ package es.us.meerkat.backend.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -149,13 +150,20 @@ class TutorServiceTest {
     @Test
     void obtenerPerfilesPorUsuarioShouldReturnUserProfiles() {
         Long usuarioId = 1L;
+        Usuario usuario = buildUsuario(usuarioId, true);
         Tutor tutor = buildTutor(1L, usuarioId);
 
-        when(tutorRepository.findAllByUsId(usuarioId)).thenReturn(java.util.List.of(tutor));
+        // Mock del repositorio de usuarios
+        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
+
+        // Mock del repositorio de tutores
+        when(tutorRepository.findAllByUsId(usuario.getId())).thenReturn(java.util.List.of(tutor));
 
         var result = tutorService.obtenerPerfilesPorUsuario(usuarioId);
 
         assertThat(result).isNotNull();
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getId()).isEqualTo(tutor.getId());
     }
 
     @Test
@@ -174,7 +182,10 @@ class TutorServiceTest {
     @Test
     void obtenerTutoresVerificadosShouldReturnVerifiedTutors() {
         when(tutorRepository.findVerificadosByEspecialidadAndTarifa(
-                        null, new BigDecimal("0"), new BigDecimal("1000"), PageRequest.of(0, 10)))
+                        anyString(),
+                        any(BigDecimal.class),
+                        any(BigDecimal.class),
+                        any(PageRequest.class)))
                 .thenReturn(new PageImpl<>(java.util.List.of()));
 
         var result =
@@ -192,12 +203,13 @@ class TutorServiceTest {
         tutor.setVerificado(false);
 
         when(tutorRepository.findByIdAndUsId(tutorId, usuarioId)).thenReturn(Optional.of(tutor));
-        when(tutorRepository.save(any(Tutor.class)))
+        when(transaccionPagoRepository.save(any(TransaccionPago.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         tutorService.solicitarVerificacion(usuarioId, tutorId);
 
-        verify(tutorRepository).save(any(Tutor.class));
+        // Verificar que la transacción fue creada y guardada
+        verify(transaccionPagoRepository).save(any(TransaccionPago.class));
     }
 
     @Test
@@ -218,8 +230,10 @@ class TutorServiceTest {
     void obtenerTutorPorUsuarioIdShouldReturnTutor() {
         Long usuarioId = 1L;
         Tutor tutor = buildTutor(1L, usuarioId);
+        Usuario usuario = tutor.getUs(); // el usuario asociado al tutor
 
-        when(tutorRepository.findAllByUsId(usuarioId)).thenReturn(java.util.List.of(tutor));
+        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
+        when(tutorRepository.findByUs(usuario)).thenReturn(Optional.of(tutor));
 
         var result = tutorService.obtenerTutorPorUsuarioId(usuarioId);
 
@@ -243,14 +257,23 @@ class TutorServiceTest {
         Long usuarioId = 1L;
         Tutor tutor = buildTutor(1L, usuarioId);
         String googleEmail = "profesor@gmail.com";
+        Usuario usuario = tutor.getUs();
 
-        when(tutorRepository.findAllByUsId(usuarioId)).thenReturn(java.util.List.of(tutor));
+        // Mock del repositorio de usuario
+        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
+
+        // Mock del repositorio de tutor
+        when(tutorRepository.findByUs(usuario)).thenReturn(Optional.of(tutor));
+
+        // Mock del save
         when(tutorRepository.save(any(Tutor.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         Tutor result = tutorService.conectarClassroom(usuarioId, googleEmail);
 
         assertThat(result).isNotNull();
+        assertThat(result.getClassroomConectado()).isTrue();
+        assertThat(result.getEmailClassroom()).isEqualTo(googleEmail);
         verify(tutorRepository).save(any(Tutor.class));
     }
 
@@ -259,13 +282,22 @@ class TutorServiceTest {
         Long usuarioId = 1L;
         Tutor tutor = buildTutor(1L, usuarioId);
         tutor.setClassroomConectado(true);
+        Usuario usuario = tutor.getUs();
 
-        when(tutorRepository.findAllByUsId(usuarioId)).thenReturn(java.util.List.of(tutor));
+        // Mock del repositorio de usuario
+        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
+
+        // Mock del repositorio de tutor
+        when(tutorRepository.findByUs(usuario)).thenReturn(Optional.of(tutor));
+
+        // Mock del save
         when(tutorRepository.save(any(Tutor.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         tutorService.desconectarClassroom(usuarioId);
 
+        assertThat(tutor.getClassroomConectado()).isFalse();
+        assertThat(tutor.getEmailClassroom()).isNull();
         verify(tutorRepository).save(any(Tutor.class));
     }
 

@@ -3,6 +3,7 @@ package es.us.meerkat.backend.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -161,9 +162,14 @@ class InstitutionServiceTest {
         request.setDuracionMeses(12);
 
         when(institutionRepository.findById(institutionId)).thenReturn(Optional.of(institution));
+
+        // 15 * 100 * 12 = 18000
+        BigDecimal montoEsperado = new BigDecimal("18000");
+
         when(paymentService.generarPagoPlanCorporativo(
-                        institutionId, TipoPlanCorporativo.BASICO, any(BigDecimal.class)))
+                        eq(institutionId), eq(TipoPlanCorporativo.BASICO), eq(montoEsperado)))
                 .thenReturn(new PaymentUrlResponse("http://payment.url", "session123"));
+
         when(institutionRepository.save(any(Institution.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -172,7 +178,12 @@ class InstitutionServiceTest {
 
         assertThat(response).isNotNull();
         assertThat(response.paymentUrl()).isEqualTo("http://payment.url");
-        verify(institutionRepository).save(any(Institution.class));
+
+        ArgumentCaptor<Institution> captor = ArgumentCaptor.forClass(Institution.class);
+        verify(institutionRepository).save(captor.capture());
+
+        assertThat(captor.getValue().getNumUsuariosPermitidos()).isEqualTo(100);
+        assertThat(captor.getValue().getPlanCorporativo()).isEqualTo(TipoPlanCorporativo.BASICO);
     }
 
     @Test
