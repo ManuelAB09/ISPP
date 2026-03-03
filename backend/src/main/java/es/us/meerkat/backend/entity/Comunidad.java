@@ -10,6 +10,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
@@ -51,6 +52,10 @@ public class Comunidad {
     private TipoPlanComunidad tipoPlan = TipoPlanComunidad.FREE;
 
     private String imagenUrl;
+
+    @ManyToOne
+    @JoinColumn(name = "institution_id")
+    private Institution institution;
 
     @Builder.Default private Integer maxMiembros = 50;
 

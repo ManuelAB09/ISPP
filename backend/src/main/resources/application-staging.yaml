@@ -23,7 +23,6 @@ spring:
     show-sql: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: false
 
 server:
@@ -33,3 +32,7 @@ logging:
   level:
     root: INFO
     es.us.meerkat: INFO
+
+app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:https://meerkatters-stg-hzfafkfnhcf5hgeb.spaincentral-01.azurewebsites.net}
