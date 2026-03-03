@@ -140,9 +140,10 @@ const CommunityChat = ({
     }, [previewsByMessageId]);
 
     useEffect(() => {
+        const objectUrls = attachmentObjectUrlsRef.current;
         return () => {
-            attachmentObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
-            attachmentObjectUrlsRef.current.clear();
+            objectUrls.forEach((url) => URL.revokeObjectURL(url));
+            objectUrls.clear();
         };
     }, []);
 
