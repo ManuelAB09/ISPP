@@ -16,8 +16,14 @@ public class TutorResponse {
     @Schema(description = "ID del tutor", example = "1")
     private Long id;
 
+    @Schema(description = "Datos del usuario propietario del perfil")
+    private UsuarioDto usuario;
+
     @Schema(description = "Biografía del tutor")
     private String biografia;
+
+    @Schema(description = "Disponibilidad horaria del tutor")
+    private String disponibilidad;
 
     @Schema(description = "Tarifa por hora")
     private BigDecimal tarifaPorHora;
@@ -33,4 +39,12 @@ public class TutorResponse {
 
     @Schema(description = "Fecha de creación del perfil")
     private String createdAt;
+
+    @Data
+    @Builder
+    public static class UsuarioDto {
+        private Long id;
+        private String nombre;
+        private String foto;
+    }
 }

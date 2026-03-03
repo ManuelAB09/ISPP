@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { verificarTutor } from "../../api/tutorEndpoints";
 import "./TutorModals.css";
 
 /**
@@ -52,14 +53,16 @@ const VerificacionModal = ({ tutorId, verificado, onClose, onVerificado }) => {
   const handleSolicitar = React.useCallback(async () => {
     setSolicitando(true);
     setErrorMsg(null);
-
-    // Simulación inmediata sin llamadas a red
-    setTimeout(() => {
-      setEstado("PENDIENTE");
+    try {
+      await verificarTutor();
+      setEstado("VERIFICADO");
       setExito(true);
       onVerificado && onVerificado();
+    } catch (err) {
+      setErrorMsg("No se pudo completar la verificación. Inténtalo de nuevo.");
+    } finally {
       setSolicitando(false);
-    }, 800);
+    }
   }, [onVerificado]);
 
   // Efecto para procesar la solicitud tras el pago exitoso
