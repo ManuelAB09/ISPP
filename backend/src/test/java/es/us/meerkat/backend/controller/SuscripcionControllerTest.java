@@ -1,10 +1,10 @@
 package es.us.meerkat.backend.controller;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -17,10 +17,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import es.us.meerkat.backend.dto.PaymentUrlResponse;
+import es.us.meerkat.backend.dto.SubscribeRequest;
 import es.us.meerkat.backend.dto.SubscriptionResponse;
 import es.us.meerkat.backend.entity.Suscripcion;
 import es.us.meerkat.backend.entity.TipoPlan;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.service.PaymentService;
 import es.us.meerkat.backend.service.SuscripcionService;
 
 /**
@@ -34,6 +37,7 @@ import es.us.meerkat.backend.service.SuscripcionService;
 class SuscripcionControllerTest {
 
     @Mock private SuscripcionService suscripcionService;
+    @Mock private PaymentService paymentService;
 
     @InjectMocks private SuscripcionController suscripcionController;
 
@@ -111,18 +115,69 @@ class SuscripcionControllerTest {
 
         // Then
         assertNotNull(response);
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(TipoPlan.FREE, response.getBody().getPlan());
+        assertTrue(response.getBody().getActiva());
         verify(suscripcionService).obtenerMiSuscripcion(1L);
     }
 
     @Test
     @DisplayName("POST /me - Debe suscribir al usuario exitosamente")
-    void testSuscribirse_Exito() {
+    void testSuscribirse_Exito() throws Exception {
+        // Given
+        SubscribeRequest request =
+                SubscribeRequest.builder().planId("PREMIUM").aceptarTerminos(true).build();
+        PaymentUrlResponse paymentUrlResponse =
+                new PaymentUrlResponse("https://pay.test", "sess_123");
+        when(suscripcionService.obtenerMiSuscripcion(1L)).thenReturn(Optional.empty());
+        when(paymentService.generarPagoSuscripcion(usuario, TipoPlan.PREMIUM))
+                .thenReturn(paymentUrlResponse);
+
+        // When
+        ResponseEntity<?> response = suscripcionController.suscribirse(usuario, request);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(paymentUrlResponse, response.getBody());
+        verify(suscripcionService).obtenerMiSuscripcion(1L);
+        verify(paymentService).generarPagoSuscripcion(usuario, TipoPlan.PREMIUM);
+    }
+
+    @Test
+    @DisplayName("POST /me - Debe devolver 400 si el usuario ya tiene suscripción")
+    void testSuscribirse_YaTieneSuscripcion() {
+        // Given
+        SubscribeRequest request =
+                SubscribeRequest.builder().planId("PREMIUM").aceptarTerminos(true).build();
+        when(suscripcionService.obtenerMiSuscripcion(1L)).thenReturn(Optional.of(suscripcion));
+
+        // When
+        ResponseEntity<?> response = suscripcionController.suscribirse(usuario, request);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody() instanceof Map);
+        @SuppressWarnings("unchecked")
+        Map<String, String> body = (Map<String, String>) response.getBody();
+        assertEquals("Ya tienes una suscripción activa", body.get("error"));
+        verify(suscripcionService).obtenerMiSuscripcion(1L);
+        verifyNoInteractions(paymentService);
+    }
+
+    @Test
+    @DisplayName("POST /me/confirm-payment - Debe confirmar el pago y crear suscripción")
+    void testConfirmarPagoSuscripcion_Exito() {
         // Given
         when(suscripcionService.suscribirse(1L)).thenReturn(suscripcion);
 
         // When
-        ResponseEntity<SubscriptionResponse> response = suscripcionController.suscribirse(usuario);
+        ResponseEntity<SubscriptionResponse> response =
+                suscripcionController.confirmarPagoSuscripcion(usuario);
 
         // Then
         assertNotNull(response);
@@ -130,23 +185,6 @@ class SuscripcionControllerTest {
         assertNotNull(response.getBody());
         assertEquals(1L, response.getBody().getId());
         assertEquals(TipoPlan.PREMIUM, response.getBody().getPlan());
-        assertTrue(response.getBody().getActiva());
-        verify(suscripcionService).suscribirse(1L);
-    }
-
-    @Test
-    @DisplayName("POST /me - Debe devolver 400 si el usuario ya tiene suscripción")
-    void testSuscribirse_YaTieneSuscripcion() {
-        // Given
-        when(suscripcionService.suscribirse(1L))
-                .thenThrow(new IllegalArgumentException("Ya tienes una suscripción activa"));
-
-        // When
-        ResponseEntity<SubscriptionResponse> response = suscripcionController.suscribirse(usuario);
-
-        // Then
-        assertNotNull(response);
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         verify(suscripcionService).suscribirse(1L);
     }
 
