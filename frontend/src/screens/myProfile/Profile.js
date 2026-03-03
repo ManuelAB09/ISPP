@@ -1,11 +1,13 @@
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { useAuth } from "../../contexts/AuthContext"
+import { getApiBaseUrl } from "../../api/baseUrl"
+import { communitiesApi } from "../../api/communities.api"
 import { getMyTutorProfiles } from "../../api/tutorEndpoints"
 import Header from "../../components/Header/Header"
-import Settings from "./Settings"
+import { useAuth } from "../../contexts/AuthContext"
 import EditProfile from "./EditProfile"
 import "./MyProfile.css"
+import Settings from "./Settings"
 
 const MyProfile = () => {
     const { isAuthenticated, loading, user } = useAuth()
@@ -13,6 +15,15 @@ const MyProfile = () => {
     const [showSettings, setShowSettings] = useState(false)
     const [showEditProfile, setShowEditProfile] = useState(false)
     const [checkingTutor, setCheckingTutor] = useState(true)
+    const [misComunidades, setMisComunidades] = useState([])
+    const [comunidadesCreadas, setComunidadesCreadas] = useState([])
+    const [loadingCommunities, setLoadingCommunities] = useState(true)
+    const [stats, setStats] = useState({
+        comunidades: 0,
+        apuntesSubidos: 0,
+        valoracionMedia: 0,
+        descargas: 0
+    })
     const isOwner = true // Siempre es el propietario en esta pantalla
 
     // Si el usuario tiene perfil de tutor, redirigir a su perfil de profesor
@@ -33,6 +44,49 @@ const MyProfile = () => {
                 setCheckingTutor(false);
             });
     }, [isAuthenticated, loading, navigate]);
+
+    // Cargar comunidades del usuario
+    useEffect(() => {
+        if (!isAuthenticated || loading) {
+            setLoadingCommunities(false);
+            return;
+        }
+
+        const fetchCommunities = async () => {
+            setLoadingCommunities(true);
+            try {
+                const response = await communitiesApi.listMine({ page: 0, size: 100 });
+                const comunidades = response.content || [];
+                
+                // Filtrar comunidades donde soy admin/creador
+                const creadas = comunidades.filter(c => 
+                    c.miRol === 'ADMIN' || c.miRol === 'ADMINISTRADOR' || 
+                    c.creador?.id === user?.id || parseInt(localStorage.getItem('userId')) === c.creador?.id
+                );
+                
+                // Filtrar comunidades donde solo soy miembro
+                const miembro = comunidades.filter(c => 
+                    c.miRol !== 'ADMIN' && c.miRol !== 'ADMINISTRADOR' && 
+                    c.creador?.id !== user?.id && parseInt(localStorage.getItem('userId')) !== c.creador?.id
+                );
+                
+                setComunidadesCreadas(creadas);
+                setMisComunidades(miembro);
+                
+                // Actualizar estadísticas
+                setStats(prev => ({
+                    ...prev,
+                    comunidades: comunidades.length
+                }));
+            } catch (err) {
+                console.error('Error al cargar comunidades:', err);
+            } finally {
+                setLoadingCommunities(false);
+            }
+        };
+
+        fetchCommunities();
+    }, [isAuthenticated, loading, user]);
 
     if (loading || checkingTutor) {
         return (
@@ -85,44 +139,26 @@ const MyProfile = () => {
         return value && value.trim() !== '' ? value : <span className="no-info">Sin información</span>
     }
 
-    const stats = {
-        comunidades: 12,
-        apuntesSubidos: 45,
-        valoracionMedia: 4.8,
-        descargas: "1.2k"
+    // Función para formatear URL de imagen de comunidad
+    const getCommunityImageUrl = (comunidad) => {
+        const communityImageRaw = comunidad.imagen || comunidad.imagenUrl || comunidad.foto;
+        
+        if (!communityImageRaw || !String(communityImageRaw).trim()) {
+            return 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
+        }
+
+        const value = String(communityImageRaw).trim();
+        if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
+            return value;
+        }
+
+        const base = getApiBaseUrl();
+        if (value.startsWith('/')) {
+            return `${base}${value}`;
+        }
+
+        return `${base}/${value}`;
     }
-
-    const misComunidades = [
-        {
-            id: 1,
-            nombre: "IISSI 2 - Universidad de Sevilla",
-            descripcion: "Comunidad sobre la asignatura IISSI 2 para resolver exámenes y ejercicios."
-        },
-        {
-            id: 2,
-            nombre: "IISSI 2 - Universidad de Sevilla",
-            descripcion: "Comunidad sobre la asignatura IISSI 2 para resolver exámenes y ejercicios."
-        }
-    ]
-
-    const comunidadesCreadas = [
-        {
-            id: 1,
-            nombre: "Biología 2º Bachillerato",
-            descripcion: "Estudio sobre los temas y ejercicios de Biología centrados en la preparación para selectividad.",
-            tags: ["Bachillerato", "Biología"],
-            inscritos: 20,
-            maxInscritos: 30
-        },
-        {
-            id: 2,
-            nombre: "Biología 2º Bachillerato",
-            descripcion: "Estudio sobre los temas y ejercicios de Biología centrados en la preparación para selectividad.",
-            tags: ["Bachillerato", "Biología"],
-            inscritos: 20,
-            maxInscritos: 30
-        }
-    ]
 
     return (
         <>
@@ -222,25 +258,48 @@ const MyProfile = () => {
                 {/* Sección Mis comunidades */}
                 <section className="my-communities-section">
                     <h2 className="section-title">Mis comunidades</h2>
-                    <div className="communities-grid">
-                        {misComunidades.map((comunidad) => (
-                            <div key={comunidad.id} className="community-card">
-                                <div className="community-card__image"></div>
-                                <div className="community-card__content">
-                                    <h3 className="community-card__name">{comunidad.nombre}</h3>
-                                    <p className="community-card__description">{comunidad.descripcion}</p>
+                    {loadingCommunities ? (
+                        <div className="loading-communities">Cargando comunidades...</div>
+                    ) : misComunidades.length > 0 ? (
+                        <div className="communities-list">
+                            {misComunidades.map((comunidad) => (
+                                <div key={comunidad.id} className="community-card" onClick={() => navigate(`/comunidades/${comunidad.id}`)} style={{ cursor: 'pointer' }}>
+                                    <img 
+                                        src={getCommunityImageUrl(comunidad)} 
+                                        alt={comunidad.nombre} 
+                                        className="community-card__image" 
+                                    />
+                                    <div className="community-card__info">
+                                        <div className="community-card__top">
+                                            <h3 className="community-card__name">{comunidad.nombre}</h3>
+                                            {comunidad.categoria && comunidad.categoria.length > 0 && (
+                                                <div className="community-card__tags">
+                                                    {comunidad.categoria.slice(0, 2).map(cat => (
+                                                        <span key={cat} className="community-tag">{cat}</span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            <p className="community-card__description">{comunidad.descripcion || 'Sin descripción disponible'}</p>
+                                        </div>
+                                        <div className="community-card__bottom">
+                                            <div className="community-card__members">
+                                                <span className="members-icon">👥</span>
+                                                <span className="members-count">{comunidad.miembrosActuales || 0}/ <span className="members-max">{comunidad.maxMiembros || 0}</span></span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
+                            ))}
+                            <div className="view-all-container">
+                                <Link to="/comunidades" className="view-all-link">Ver todas mis comunidades →</Link>
                             </div>
-                        ))}
-                        <div className="community-card community-card--explore">
-                            <div className="explore-icon">+</div>
-                            <h3 className="explore-title">Explorar más comunidades</h3>
-                            <p className="explore-text">Busca entre miles de comunidades de estudio adaptadas a tus necesidades</p>
                         </div>
-                        <div className="communities-view-all">
-                            <a href="/comunidades" className="view-all-link">Ver todas</a>
+                    ) : (
+                        <div className="no-communities">
+                            <p>No formas parte de ninguna comunidad todavía.</p>
+                            <button className="btn-explore" onClick={() => navigate('/comunidades')}>Explorar comunidades</button>
                         </div>
-                    </div>
+                    )}
                 </section>
 
                 {/* Sección Comunidades creadas */}
@@ -250,33 +309,52 @@ const MyProfile = () => {
                             <h2 className="section-title">Comunidades creadas</h2>
                             <p className="section-subtitle">Crea comunidades, une a estudiantes y enseña sobre lo que sabes.</p>
                         </div>
-                        <button className="btn-create-new">+ Crear Nueva</button>
+                        <button className="btn-create-new" onClick={() => navigate('/crear-comunidad')}>+ Crear Nueva</button>
                     </div>
-                    <div className="created-communities-list">
-                        {comunidadesCreadas.map((comunidad) => (
-                            <div key={comunidad.id} className="created-community-card">
-                                <div className="created-community-card__image"></div>
-                                <div className="created-community-card__content">
-                                    <div className="created-community-card__header">
-                                        <h3 className="created-community-card__name">{comunidad.nombre}</h3>
-                                        <div className="created-community-card__tags">
-                                            {comunidad.tags.map((tag, index) => (
-                                                <span key={index} className="tag">{tag}</span>
-                                            ))}
+                    {loadingCommunities ? (
+                        <div className="loading-communities">Cargando comunidades...</div>
+                    ) : comunidadesCreadas.length > 0 ? (
+                        <div className="created-communities-list">
+                            {comunidadesCreadas.map((comunidad) => (
+                                <div key={comunidad.id} className="created-community-card" onClick={() => navigate(`/comunidades/${comunidad.id}`)} style={{ cursor: 'pointer' }}>
+                                    <img 
+                                        src={getCommunityImageUrl(comunidad)} 
+                                        alt={comunidad.nombre} 
+                                        className="created-community-card__image" 
+                                    />
+                                    <div className="created-community-card__info">
+                                        <div className="created-community-card__top">
+                                            <h3 className="created-community-card__name">{comunidad.nombre}</h3>
+                                            <div className="created-community-card__tags">
+                                                {comunidad.categoria && comunidad.categoria.length > 0 && comunidad.categoria.slice(0, 2).map(cat => (
+                                                    <span key={cat} className="created-tag">{cat}</span>
+                                                ))}
+                                                <span className="created-tag created-tag--plan">{comunidad.tipoPlan || 'FREE'}</span>
+                                            </div>
+                                            <p className="created-community-card__description">{comunidad.descripcion || 'Sin descripción disponible'}</p>
+                                        </div>
+                                        <div className="created-community-card__bottom">
+                                            <div className="created-community-card__members">
+                                                <span className="members-icon">👥</span>
+                                                <span className="members-text">Inscritos: <strong>{comunidad.miembrosActuales || 0}</strong>/{comunidad.maxMiembros || 0}</span>
+                                            </div>
+                                            {isOwner && (
+                                                <div className="created-community-card__actions">
+                                                    <Link to={`/comunidades/${comunidad.id}/editar`} className="action-link" onClick={(e) => e.stopPropagation()}>✏️ Editar</Link>
+                                                    <Link to={`/comunidades/${comunidad.id}/apuntes`} className="action-link" onClick={(e) => e.stopPropagation()}>📄 Subir apuntes</Link>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-                                    <p className="created-community-card__description">{comunidad.descripcion}</p>
-                                    <p className="created-community-card__members">Personas inscritas: {comunidad.inscritos}/{comunidad.maxInscritos}</p>
-                                    {isOwner && (
-                                        <div className="created-community-card__actions">
-                                            <a href="#editar" className="action-link">Editar</a>
-                                            <a href="#subir" className="action-link">Subir apuntes</a>
-                                        </div>
-                                    )}
                                 </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="no-communities-created">
+                            <p>Aún no has creado ninguna comunidad.</p>
+                            <button className="btn-create-first" onClick={() => navigate('/crear-comunidad')}>Crear mi primera comunidad</button>
+                        </div>
+                    )}
                 </section>
             </main>
 

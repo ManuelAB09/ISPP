@@ -87,6 +87,10 @@ public class SecurityConfig {
                                                     return isGet && !isApiRoute;
                                                 })
                                         .permitAll()
+                                        .requestMatchers(HttpMethod.GET, "/api/v1/tutors")
+                                        .permitAll()
+                                        .requestMatchers(HttpMethod.GET, "/api/v1/tutors/**")
+                                        .permitAll()
                                         .requestMatchers(HttpMethod.GET, "/api/v1/users/{userId}")
                                         .permitAll()
                                         .requestMatchers(HttpMethod.GET, "/api/v1/communities/**")
