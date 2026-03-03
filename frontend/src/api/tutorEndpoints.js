@@ -42,7 +42,7 @@ export const getTutorById = (id) => {
  * @param {Object} data
  */
 export const updateTutorProfile = (tutorId, data) => {
-  return apiClient.put(`/api/v1/tutors/${tutorId}`, data);
+  return apiClient.put('/api/v1/tutors/me', data);
 };
 
 /**
@@ -61,6 +61,14 @@ export const getTutorVerificationStatus = (tutorId) => {
  */
 export const requestTutorVerification = (tutorId) => {
   return apiClient.post(`/api/v1/tutors/me/${tutorId}/verification`, {});
+};
+
+/**
+ * POST /api/v1/tutors/me/verificar
+ * Verificar tutor directamente (activa verificado=true en BD)
+ */
+export const verificarTutor = () => {
+  return apiClient.post('/api/v1/tutors/me/verificar', {});
 };
 
 /**

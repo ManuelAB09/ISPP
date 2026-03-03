@@ -202,6 +202,12 @@ const EventosMapaScreen = () => {
     return [...set].sort((a, b) => a.localeCompare(b, 'es'));
   }, [eventos, cityByCoords]);
 
+  useEffect(() => {
+    if (selectedCity !== 'all' && !cities.includes(selectedCity)) {
+      setSelectedCity('all');
+    }
+  }, [cities, selectedCity]);
+
   const hasInvalidDateRange = useMemo(
     () => dateFrom && dateTo && new Date(dateFrom) > new Date(dateTo),
     [dateFrom, dateTo]
@@ -217,7 +223,7 @@ const EventosMapaScreen = () => {
         if (lat == null || lon == null) return false;
 
         const key = getCoordsKey(lat, lon);
-        if (cityByCoords[key] !== selectedCity) return false;
+        if (cityByCoords[key]?.toLowerCase() !== selectedCity.toLowerCase()) return false;
       }
 
       const eventStart = getEventStartDate(ev);
@@ -253,7 +259,7 @@ const EventosMapaScreen = () => {
           <select
             id="cityFilter"
             value={selectedCity}
-            onChange={(e) => setSelectedCity(e.target.value)}
+            onChange={(e) => setSelectedCity(normalizeText(e.target.value))}
             style={{
               minWidth: 220,
               padding: '8px 10px',

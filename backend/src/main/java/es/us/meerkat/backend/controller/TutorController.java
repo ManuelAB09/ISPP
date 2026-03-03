@@ -183,6 +183,32 @@ public class TutorController {
     }
 
     /**
+     * Verifica directamente el tutor (sin pago, para demo/pruebas).
+     *
+     * @param usuario Usuario autenticado
+     * @return Perfil actualizado con verificado=true
+     */
+    @PostMapping("/me/verificar")
+    @Operation(summary = "Verificar tutor", description = "Activa la verificación del tutor")
+    public ResponseEntity<TutorResponse> verificarTutor(
+            @AuthenticationPrincipal final Usuario usuario) {
+        try {
+            Tutor tutor =
+                    tutorService
+                            .obtenerTutorPorUsuarioId(usuario.getId())
+                            .orElseThrow(
+                                    () ->
+                                            new IllegalArgumentException(
+                                                    "No tienes perfil de tutor"));
+            tutorService.activarVerificacion(tutor.getId());
+            Tutor tutorActualizado = tutorService.obtenerTutorPorId(tutor.getId()).orElseThrow();
+            return ResponseEntity.ok(toTutorResponse(tutorActualizado));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
      * Solicita la verificación del tutor mediante pago.
      *
      * @param usuario Usuario autenticado
@@ -303,7 +329,16 @@ public class TutorController {
     private TutorResponse toTutorResponse(Tutor tutor) {
         return TutorResponse.builder()
                 .id(tutor.getId())
+                .usuario(
+                        tutor.getUs() != null
+                                ? TutorResponse.UsuarioDto.builder()
+                                        .id(tutor.getUs().getId())
+                                        .nombre(tutor.getUs().getNombre())
+                                        .foto(tutor.getUs().getFoto())
+                                        .build()
+                                : null)
                 .biografia(tutor.getBio())
+                .disponibilidad(tutor.getDisponibilidad())
                 .tarifaPorHora(tutor.getTarifaHora())
                 .especialidades(tutor.getEspecialidades())
                 .verificado(tutor.getVerificado())
