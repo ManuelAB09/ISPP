@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, act } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import PrivateChat from './PrivateChat';
 
 // Mock scrollIntoView para jsdom
@@ -57,76 +57,56 @@ describe('PrivateChat', () => {
     });
 
     describe('Renderizado inicial', () => {
-        it('debería renderizar el componente sin errores', async () => {
-            await act(async () => {
-                render(<PrivateChat {...defaultProps} />);
-            });
+        it('debería renderizar el componente sin errores', () => {
+            render(<PrivateChat {...defaultProps} />);
             expect(true).toBe(true);
         });
 
-        it('debería aceptar props requeridas', async () => {
-            let container;
-            await act(async () => {
-                const result = render(<PrivateChat {...defaultProps} />);
-                container = result.container;
-            });
+        it('debería aceptar props requeridas', () => {
+            const { container } = render(<PrivateChat {...defaultProps} />);
             expect(container).toBeTruthy();
         });
     });
 
     describe('Estado del chat privado', () => {
-        it('debería cargar el historial de mensajes privados', async () => {
-            await act(async () => {
-                render(<PrivateChat {...defaultProps} />);
-            });
+        it('debería cargar el historial de mensajes privados', () => {
+            render(<PrivateChat {...defaultProps} />);
             expect(true).toBe(true);
         });
 
-        it('debería identificar mensajes propios correctamente', async () => {
-            await act(async () => {
-                render(<PrivateChat {...defaultProps} />);
-            });
+        it('debería identificar mensajes propios correctamente', () => {
+            render(<PrivateChat {...defaultProps} />);
             expect(defaultProps.usuarioActual.id).toBe(1);
         });
     });
 
     describe('Funcionalidad WebSocket', () => {
-        it('debería suscribirse a mensajes privados', async () => {
-            await act(async () => {
-                render(<PrivateChat {...defaultProps} />);
-            });
+        it('debería suscribirse a mensajes privados', () => {
+            render(<PrivateChat {...defaultProps} />);
             expect(true).toBe(true);
         });
 
-        it('debería gestionar la reconexión automática', async () => {
-            await act(async () => {
-                render(<PrivateChat {...defaultProps} />);
-            });
+        it('debería gestionar la reconexión automática', () => {
+            render(<PrivateChat {...defaultProps} />);
             expect(true).toBe(true);
         });
     });
 
     describe('Envío de mensajes', () => {
-        it('debería permitir enviar mensajes de texto', async () => {
-            await act(async () => {
-                render(<PrivateChat {...defaultProps} />);
-            });
+        it('debería permitir enviar mensajes de texto', () => {
+            render(<PrivateChat {...defaultProps} />);
             expect(true).toBe(true);
         });
 
-        it('debería mostrar información del remitente', async () => {
-            await act(async () => {
-                render(<PrivateChat {...defaultProps} />);
-            });
+        it('debería mostrar información del remitente', () => {
+            render(<PrivateChat {...defaultProps} />);
             expect(defaultProps.usuarioActual.nombre).toBe('Usuario Test');
         });
     });
 
     describe('Archivos adjuntos en chat privado', () => {
-        it('debería soportar adjuntar archivos', async () => {
-            await act(async () => {
-                render(<PrivateChat {...defaultProps} />);
-            });
+        it('debería soportar adjuntar archivos', () => {
+            render(<PrivateChat {...defaultProps} />);
             expect(true).toBe(true);
         });
 
@@ -147,26 +127,20 @@ describe('PrivateChat', () => {
     });
 
     describe('Enlaces externos en chat privado', () => {
-        it('debería soportar compartir enlaces', async () => {
-            await act(async () => {
-                render(<PrivateChat {...defaultProps} />);
-            });
+        it('debería soportar compartir enlaces', () => {
+            render(<PrivateChat {...defaultProps} />);
             expect(true).toBe(true);
         });
 
-        it('debería obtener preview de enlaces', async () => {
-            await act(async () => {
-                render(<PrivateChat {...defaultProps} />);
-            });
+        it('debería obtener preview de enlaces', () => {
+            render(<PrivateChat {...defaultProps} />);
             expect(true).toBe(true);
         });
     });
 
     describe('Cierre del chat', () => {
-        it('debería tener callback onClose disponible', async () => {
-            await act(async () => {
-                render(<PrivateChat {...defaultProps} />);
-            });
+        it('debería tener callback onClose disponible', () => {
+            render(<PrivateChat {...defaultProps} />);
             expect(defaultProps.onClose).toBeDefined();
         });
     });

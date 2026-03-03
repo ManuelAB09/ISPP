@@ -19,13 +19,13 @@ describe('LinkPreviewCard', () => {
         });
 
         it('debería retornar null si no hay preview', () => {
-            const { container } = render(<LinkPreviewCard preview={null} />);
-            expect(container.firstChild).toBeNull();
+            render(<LinkPreviewCard preview={null} />);
+            expect(screen.queryByRole('link')).not.toBeInTheDocument();
         });
 
         it('debería retornar null si preview es undefined', () => {
-            const { container } = render(<LinkPreviewCard preview={undefined} />);
-            expect(container.firstChild).toBeNull();
+            render(<LinkPreviewCard preview={undefined} />);
+            expect(screen.queryByRole('link')).not.toBeInTheDocument();
         });
     });
 

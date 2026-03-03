@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, act } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import CommunityChat from './CommunityChat';
 
 // Mock scrollIntoView para jsdom
@@ -65,101 +65,75 @@ describe('CommunityChat', () => {
     });
 
     describe('Renderizado inicial', () => {
-        it('debería renderizar el componente sin errores', async () => {
-            await act(async () => {
-                render(<CommunityChat {...defaultProps} />);
-            });
+        it('debería renderizar el componente sin errores', () => {
+            render(<CommunityChat {...defaultProps} />);
             // El componente debería montarse sin errores
             expect(true).toBe(true);
         });
 
-        it('debería renderizar en modo floating por defecto', async () => {
-            let container;
-            await act(async () => {
-                const result = render(<CommunityChat {...defaultProps} />);
-                container = result.container;
-            });
+        it('debería renderizar en modo floating por defecto', () => {
+            const { container } = render(<CommunityChat {...defaultProps} />);
             expect(container).toBeTruthy();
         });
 
-        it('debería renderizar en modo embedded cuando se especifica', async () => {
-            let container;
-            await act(async () => {
-                const result = render(
-                    <CommunityChat {...defaultProps} mode="embedded" />
-                );
-                container = result.container;
-            });
+        it('debería renderizar en modo embedded cuando se especifica', () => {
+            const { container } = render(
+                <CommunityChat {...defaultProps} mode="embedded" />
+            );
             expect(container).toBeTruthy();
         });
     });
 
     describe('Estado del chat', () => {
-        it('debería estar cerrado inicialmente en modo floating', async () => {
-            await act(async () => {
-                render(<CommunityChat {...defaultProps} initiallyOpen={false} />);
-            });
+        it('debería estar cerrado inicialmente en modo floating', () => {
+            render(<CommunityChat {...defaultProps} initiallyOpen={false} />);
             // Chat por defecto cerrado
             expect(true).toBe(true);
         });
 
-        it('debería aceptar un usuario actual válido', async () => {
-            await act(async () => {
-                render(<CommunityChat {...defaultProps} />);
-            });
+        it('debería aceptar un usuario actual válido', () => {
+            render(<CommunityChat {...defaultProps} />);
             expect(defaultProps.usuarioActual.id).toBe(1);
         });
     });
 
     describe('Conexión WebSocket', () => {
-        it('debería gestionar la conexión del socket', async () => {
-            await act(async () => {
-                render(<CommunityChat {...defaultProps} />);
-            });
+        it('debería gestionar la conexión del socket', () => {
+            render(<CommunityChat {...defaultProps} />);
             // La conexión WebSocket debería manejarse correctamente
             expect(true).toBe(true);
         });
 
-        it('debería permitir la reconexión automática', async () => {
-            await act(async () => {
-                render(<CommunityChat {...defaultProps} />);
-            });
+        it('debería permitir la reconexión automática', () => {
+            render(<CommunityChat {...defaultProps} />);
             // Simulación de reconexión automática
             expect(true).toBe(true);
         });
     });
 
     describe('Mensajes', () => {
-        it('debería cargar el historial de mensajes', async () => {
-            await act(async () => {
-                render(<CommunityChat {...defaultProps} />);
-            });
+        it('debería cargar el historial de mensajes', () => {
+            render(<CommunityChat {...defaultProps} />);
             // El historial se carga de forma asíncrona
             expect(true).toBe(true);
         });
 
-        it('debería soportar el envío de mensajes', async () => {
-            await act(async () => {
-                render(<CommunityChat {...defaultProps} />);
-            });
+        it('debería soportar el envío de mensajes', () => {
+            render(<CommunityChat {...defaultProps} />);
             // El componente debería tener capacidad de enviar mensajes
             expect(true).toBe(true);
         });
 
-        it('debería mostrar mensajes con nombre del remitente', async () => {
-            await act(async () => {
-                render(<CommunityChat {...defaultProps} />);
-            });
+        it('debería mostrar mensajes con nombre del remitente', () => {
+            render(<CommunityChat {...defaultProps} />);
             // Los mensajes incluyen el nombre del remitente
             expect(true).toBe(true);
         });
     });
 
     describe('Archivos adjuntos', () => {
-        it('debería soportar adjuntar archivos', async () => {
-            await act(async () => {
-                render(<CommunityChat {...defaultProps} />);
-            });
+        it('debería soportar adjuntar archivos', () => {
+            render(<CommunityChat {...defaultProps} />);
             // El componente debería permitir adjuntar archivos
             expect(true).toBe(true);
         });
@@ -177,10 +151,8 @@ describe('CommunityChat', () => {
     });
 
     describe('Enlaces externos', () => {
-        it('debería soportar compartir enlaces externos', async () => {
-            await act(async () => {
-                render(<CommunityChat {...defaultProps} />);
-            });
+        it('debería soportar compartir enlaces externos', () => {
+            render(<CommunityChat {...defaultProps} />);
             // El componente debería permitir compartir enlaces
             expect(true).toBe(true);
         });
