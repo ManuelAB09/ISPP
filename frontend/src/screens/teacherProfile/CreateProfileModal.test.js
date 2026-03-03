@@ -8,11 +8,13 @@ import * as tutorEndpoints from '../../api/tutorEndpoints';
 jest.mock('../../api/tutorEndpoints');
 
 describe('CreateProfileModal', () => {
-  const mockOnClose = jest.fn();
-  const mockOnCreado = jest.fn();
+  let mockOnClose;
+  let mockOnCreado;
 
   beforeEach(() => {
     jest.resetAllMocks();
+    mockOnClose = jest.fn();
+    mockOnCreado = jest.fn();
   });
 
   const renderModal = () => {

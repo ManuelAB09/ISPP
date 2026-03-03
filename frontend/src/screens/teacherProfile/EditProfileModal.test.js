@@ -8,8 +8,8 @@ import * as tutorEndpoints from '../../api/tutorEndpoints';
 jest.mock('../../api/tutorEndpoints');
 
 describe('EditProfileModal', () => {
-  const mockOnClose = jest.fn();
-  const mockOnGuardar = jest.fn();
+  let mockOnClose;
+  let mockOnGuardar;
 
   const mockTutor = {
     id: 1,
@@ -25,7 +25,9 @@ describe('EditProfileModal', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
+    mockOnClose = jest.fn();
+    mockOnGuardar = jest.fn();
   });
 
   const renderModal = (tutor = mockTutor) => {
