@@ -16,7 +16,7 @@
 **Documento:** Entrega  
 **Sprint:** Sprint S1  
 **Semana:** Semana 2  
-**Estado:** Borrador 
+**Estado:** Aprobado 
 **Fecha:** 03/003/2026  
 **Autor(es):** Alejandro Soult Toscano
 
@@ -80,6 +80,24 @@
 | Aitor Rodríguez Dueñas | arodriguez56@us.es | Profesor |
 | Manuel Márquez Pinto | manuelmarqpinto@gmail.com | Alumno |
 | Diego López Caballero | dieg3p@gmail.com | Alumno |
+| Mariano Velo Moreno | marianovelomoreno@gmail.com | Profesor |
+| Paula Clavijo Peral | paulaclape@gmail.com | Profesor |
+| Pablo Hernández Hernández | pablohhdez79@gmail.com | Alumno |
+| María Esther Barquero Fernández | mariaestherbarquero@gmail.com | Alumno |
+| Irene González Quirós | iregonqui@alum.us.es | Profesor |
+| Adrián Abreu | adrianabreuln@gmail.com | Alumno |
+| Almudena Barrena Palacios | almudena.barrena.palacios@gmail.com | Alumno |
+| Fernando Corrales Pavía | fernandocorralespavia@gmail.com | Profesor |
+| Daniel Ruiz Martín | danielrumar8@gmail.com | Alumno |
+| Emma Martín Navarro | emmartinavarro@gmail.com | Alumno |
+| Mariana | mariosceb@gmail.com | Alumno |
+| Lara San Millán Ruiz | sanmillanruizlara@gmail.com | Profesor |
+| Eva de Prado Gil | edpind01@gmail.com | Profesor |
+| Cristina Mateos Redondo | cristinamateosredondo@gmail.com | Profesor |
+| María Parreño Domínguez | mariaparrenodominguez@gmail.com | Profesor |
+| Carmen Gálvez | carmenclases28@gmail.com | Profesor |
+| Sara Reyes Merino | sarreymer1@alum.us.es | Alumno |
+| Marina Varela Sánchez | marinavarelasanchez@gmail.com | Alumno |
 
 ---
 
