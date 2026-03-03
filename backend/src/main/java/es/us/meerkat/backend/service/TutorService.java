@@ -358,6 +358,7 @@ public class TutorService {
         tutor.setEspecialidades(request.getEspecialidades());
         tutor.setTarifaHora(request.getTarifaPorHora());
         tutor.setBio(request.getBiografia());
+        tutor.setDisponibilidad(request.getDisponibilidad());
         tutor.setVerificado(false);
         tutor.setClassroomConectado(false);
         tutor.setCreatedAt(LocalDateTime.now());
@@ -394,6 +395,9 @@ public class TutorService {
         }
         if (request.getBiografia() != null) {
             tutor.setBio(request.getBiografia());
+        }
+        if (request.getDisponibilidad() != null) {
+            tutor.setDisponibilidad(request.getDisponibilidad());
         }
 
         return tutorRepository.save(tutor);

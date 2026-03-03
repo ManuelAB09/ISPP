@@ -15,9 +15,9 @@ import "./TutorModals.css";
  const EditProfileModal = ({ tutor, onClose, onGuardar }) => {
    const [form, setForm] = useState({
      especialidades: (tutor.especialidades || []).join(", "),
-     tarifaHora: tutor.tarifaHora ?? "",
+     tarifaHora: tutor.tarifaPorHora ?? "",
      disponibilidad: tutor.disponibilidad ?? "",
-     bio: tutor.bio ?? "",
+     bio: tutor.biografia ?? "",
    });
    const [guardando, setGuardando] = useState(false);
    const [error, setError] = useState(null);
@@ -38,9 +38,9 @@ import "./TutorModals.css";
          .split(",")
          .map((s) => s.trim())
          .filter(Boolean),
-       tarifaHora: parseFloat(form.tarifaHora) || 0,
+       tarifaPorHora: parseFloat(form.tarifaHora) || 0,
        disponibilidad: form.disponibilidad.trim(),
-       bio: form.bio.trim(),
+       biografia: form.bio.trim(),
      };
  
      try {

@@ -101,11 +101,16 @@ public class Suscripcion {
      * @return true si la suscripción está dentro del período válido
      */
     public Boolean estaActiva() {
+        if (this.fechaInicio == null || this.fechaFin == null) {
+            return false;
+        }
         LocalDate hoy = LocalDate.now();
         return !hoy.isBefore(this.fechaInicio) && !hoy.isAfter(this.fechaFin);
     }
 
     public SubscriptionResponse toDTO() {
+        boolean enPeriodoGracia =
+                !this.activa && this.fechaFin != null && this.fechaFin.isAfter(LocalDate.now());
         return SubscriptionResponse.builder()
                 .id(this.id)
                 .plan(this.plan)
@@ -113,7 +118,7 @@ public class Suscripcion {
                 .fechaFin(this.fechaFin)
                 .activa(this.activa)
                 .autoRenovar(this.autoRenovar)
-                .enPeriodoGracia(!this.activa && this.fechaFin.isAfter(LocalDate.now()))
+                .enPeriodoGracia(enPeriodoGracia)
                 .build();
     }
 }
