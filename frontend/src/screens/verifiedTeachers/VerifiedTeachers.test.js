@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import VerifiedTeachers from './VerifiedTeachers';
 import * as tutorEndpoints from '../../api/tutorEndpoints';
@@ -57,7 +57,10 @@ describe('VerifiedTeachers', () => {
         <VerifiedTeachers />
       </MemoryRouter>
     );
-    await screen.findByText('Juan García');
+    await waitFor(() => {
+      expect(tutorEndpoints.getVerifiedTutors).toHaveBeenCalled();
+    });
+    await screen.findByText('Juan García', {}, { timeout: 10000 });
   };
 
   test('renderiza el título y subtítulo', async () => {
