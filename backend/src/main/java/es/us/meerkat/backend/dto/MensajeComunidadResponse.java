@@ -27,4 +27,12 @@ public class MensajeComunidadResponse {
     private String usuarioFoto;
 
     private Long comunidadId;
+
+    private String archivoUrl;
+
+    private String archivoNombre;
+
+    private String archivoMimeType;
+
+    private Long archivoTamano;
 }

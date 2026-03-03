@@ -63,6 +63,9 @@ public class Tutor {
     /** Indica si el tutor está conectado a Classroom. */
     private Boolean classroomConectado = false;
 
+    /** Email de Google Classroom del tutor. */
+    private String emailClassroom;
+
     /** Fecha de creación del registro. */
     private LocalDateTime createdAt;
 

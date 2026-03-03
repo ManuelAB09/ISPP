@@ -1,0 +1,403 @@
+/* HireTutorModal.css */
+
+/* Overlay */
+.htm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+/* Modal container */
+.htm-modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+/* Header */
+.htm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.htm-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+  color: #111827;
+}
+
+.htm-close {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.htm-close:hover {
+  background: #f3f4f6;
+  color: #111;
+}
+
+/* Step indicators */
+.htm-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 1.5rem 0;
+  gap: 0.5rem;
+}
+
+.htm-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+.htm-step--active {
+  opacity: 1;
+}
+
+.htm-step__num {
+  width: 24px;
+  height: 24px;
+  background: #6366f1;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.htm-step__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.htm-step__line {
+  flex: 1;
+  height: 2px;
+  background: #e5e7eb;
+  max-width: 60px;
+}
+
+/* Body */
+.htm-body {
+  padding: 1.25rem 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.htm-subtitle {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Form fields */
+.htm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.htm-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.htm-input {
+  padding: 0.55rem 0.75rem;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #111827;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+}
+
+.htm-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+/* Community search list */
+.htm-loading,
+.htm-empty {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  text-align: center;
+  padding: 0.5rem 0;
+}
+
+.htm-community-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.4rem;
+}
+
+.htm-community-item {
+  text-align: left;
+  background: none;
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+  width: 100%;
+}
+
+.htm-community-item:hover {
+  background: #f3f4f6;
+}
+
+.htm-community-item--selected {
+  background: #eef2ff;
+  border-color: #6366f1;
+}
+
+.htm-community-item__name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #111827;
+}
+
+.htm-community-item__desc {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Summary box (step 2) */
+.htm-summary-box {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.3rem 1rem;
+  border: 1px solid #e5e7eb;
+}
+
+.htm-summary-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  align-self: center;
+}
+
+.htm-summary-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Radio group */
+.htm-radio-group {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.htm-radio {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: #374151;
+  cursor: pointer;
+}
+
+.htm-radio input[type="radio"] {
+  accent-color: #6366f1;
+}
+
+/* Commission breakdown */
+.htm-commission-info {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.htm-commission-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.htm-commission-row--muted {
+  color: #9ca3af;
+  font-size: 0.82rem;
+}
+
+.htm-commission-row--net {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 0.35rem;
+  margin-top: 0.15rem;
+  color: #059669;
+}
+
+/* Terms checkbox */
+.htm-terms {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #374151;
+  cursor: pointer;
+  line-height: 1.5;
+}
+
+.htm-terms input[type="checkbox"] {
+  accent-color: #6366f1;
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.htm-terms a {
+  color: #6366f1;
+  text-decoration: underline;
+}
+
+/* Error */
+.htm-error {
+  font-size: 0.875rem;
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  margin: 0;
+}
+
+/* Footer buttons */
+.htm-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid #e5e7eb;
+  margin-top: auto;
+}
+
+.htm-btn {
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.htm-btn:active {
+  transform: scale(0.98);
+}
+
+.htm-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.htm-btn--primary {
+  background: #6366f1;
+  color: #fff;
+}
+
+.htm-btn--primary:hover:not(:disabled) {
+  background: #4f46e5;
+}
+
+.htm-btn--secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.htm-btn--secondary:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+/* Success state */
+.htm-body--success {
+  align-items: center;
+  text-align: center;
+  padding: 2rem 1.5rem;
+  gap: 1rem;
+}
+
+.htm-success-icon {
+  width: 64px;
+  height: 64px;
+  background: #ecfdf5;
+  border: 2px solid #6ee7b7;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  color: #059669;
+  font-weight: 700;
+}
+
+.htm-success-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.htm-success-text {
+  font-size: 0.9rem;
+  color: #374151;
+  margin: 0;
+  max-width: 380px;
+  line-height: 1.6;
+}
+
+.htm-success-text--muted {
+  color: #9ca3af;
+  font-size: 0.82rem;
+}
