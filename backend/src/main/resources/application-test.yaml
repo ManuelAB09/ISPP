@@ -30,3 +30,11 @@ server:
 stripe:
   api:
     key: stripe.api.key
+  webhook:
+    secret: stripe.webhook.secret
+  success: 
+    url: http://localhost:3000/success
+  cancel:
+    url: http://localhost:3000/cancel
+  price:
+    premium: prod_U3x4AB7AnO2JPG
