@@ -12,7 +12,7 @@ describe('CreateProfileModal', () => {
   const mockOnCreado = jest.fn();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
   });
 
   const renderModal = () => {
@@ -147,6 +147,10 @@ describe('CreateProfileModal', () => {
     await userEvent.click(submitBtn);
 
     expect(screen.getByRole('button', { name: /Creando…/i })).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(mockOnCreado).toHaveBeenCalledWith({ id: 1 });
+    });
   });
 
   test('muestra mensaje de error cuando falla la creación', async () => {

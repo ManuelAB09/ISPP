@@ -92,6 +92,7 @@ describe('CommunityDetail', () => {
 
   test('muestra estado de carga inicialmente', async () => {
     communitiesApi.getById.mockImplementation(() => new Promise(() => {}));
+    eventEndpoints.listCommunityEvents.mockImplementation(() => new Promise(() => {}));
     render(
       <MemoryRouter initialEntries={['/comunidades/1']}>
         <Routes>
@@ -211,6 +212,7 @@ describe('CommunityDetail', () => {
   });
 
   test('muestra error especial al intentar abandonar siendo único admin', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     localStorage.setItem('userId', '100');
     useAuth.mockReturnValue({
       user: { id: 100, nombre: 'Test User' },
@@ -227,6 +229,7 @@ describe('CommunityDetail', () => {
     userEvent.click(leaveButton);
 
     await screen.findByText(/No puedes abandonar siendo el único admin/i);
+    consoleSpy.mockRestore();
   });
 
   test('renderiza sección de eventos', async () => {

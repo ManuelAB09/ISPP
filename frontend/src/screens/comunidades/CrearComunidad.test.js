@@ -208,6 +208,7 @@ describe('CrearComunidad', () => {
   });
 
   test('muestra error cuando falla la creación', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     communitiesApi.create.mockRejectedValue({
       response: { data: { message: 'Error del servidor' } },
     });
@@ -221,6 +222,7 @@ describe('CrearComunidad', () => {
     userEvent.click(createButton);
 
     await screen.findByText(/Error del servidor/i);
+    consoleSpy.mockRestore();
   });
 
   test('renderiza la sección de subida de imagen', () => {
