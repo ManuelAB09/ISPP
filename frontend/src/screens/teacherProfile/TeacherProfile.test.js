@@ -125,11 +125,9 @@ describe('TeacherProfile', () => {
 
   test('muestra la foto del profesor', async () => {
     renderWithId();
-    await waitFor(() => {
-      const img = screen.getByAltText('Juan Pérez García');
-      expect(img).toBeInTheDocument();
-      expect(img).toHaveAttribute('src', 'https://example.com/foto.jpg');
-    });
+    const img = await screen.findByAltText('Juan Pérez García');
+    expect(img).toBeInTheDocument();
+    expect(img).toHaveAttribute('src', 'https://example.com/foto.jpg');
   });
 
   test('muestra las especialidades del profesor', async () => {
@@ -202,18 +200,14 @@ describe('TeacherProfile', () => {
 
   test('muestra el estado de verificación en los datos', async () => {
     renderWithId();
-    await waitFor(() => {
-      expect(screen.getByText('VERIFICADO')).toBeInTheDocument();
-      expect(screen.getByText('Sí ✓')).toBeInTheDocument();
-    });
+    expect(await screen.findByText('VERIFICADO')).toBeInTheDocument();
+    expect(screen.getByText('Sí ✓')).toBeInTheDocument();
   });
 
   test('muestra la tarifa por hora', async () => {
     renderWithId();
-    await waitFor(() => {
-      expect(screen.getByText('TARIFA POR HORA')).toBeInTheDocument();
-      expect(screen.getByText('30€ / h')).toBeInTheDocument();
-    });
+    expect(await screen.findByText('TARIFA POR HORA')).toBeInTheDocument();
+    expect(screen.getByText('30€ / h')).toBeInTheDocument();
   });
 
   // ==============================
@@ -229,26 +223,20 @@ describe('TeacherProfile', () => {
 
   test('muestra el número de comunidades', async () => {
     renderWithId();
-    await waitFor(() => {
-      expect(screen.getByText('5')).toBeInTheDocument();
-      expect(screen.getByText('COMUNIDADES')).toBeInTheDocument();
-    });
+    expect(await screen.findByText('COMUNIDADES')).toBeInTheDocument();
+    expect(screen.getByText('5')).toBeInTheDocument();
   });
 
   test('muestra el número de apuntes subidos', async () => {
     renderWithId();
-    await waitFor(() => {
-      expect(screen.getByText('12')).toBeInTheDocument();
-      expect(screen.getByText('APUNTES SUBIDOS')).toBeInTheDocument();
-    });
+    expect(await screen.findByText('APUNTES SUBIDOS')).toBeInTheDocument();
+    expect(screen.getByText('12')).toBeInTheDocument();
   });
 
   test('muestra las descargas formateadas (1.5k)', async () => {
     renderWithId();
-    await waitFor(() => {
-      expect(screen.getByText('1.5k')).toBeInTheDocument();
-      expect(screen.getByText('DESCARGAS')).toBeInTheDocument();
-    });
+    expect(await screen.findByText('DESCARGAS')).toBeInTheDocument();
+    expect(screen.getByText('1.5k')).toBeInTheDocument();
   });
 
   // ==============================
