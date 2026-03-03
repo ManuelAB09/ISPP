@@ -278,13 +278,14 @@ const TeacherProfile = () => {
       {/* ═══════════════ CONTENIDO PRINCIPAL (fondo blanco plano) ═══════════════ */}
      <div className="tp-content">
 
-      {/* Solicitudes de vinculación Google Classroom (solo propietario del perfil) */}
+      {/* Solicitudes de vinculación Google Classroom (solo propietario del perfil) 
+      /*
       {user?.id === tutor.usuario?.id && user?.esTutor && (
         <div style={{ marginBottom: "1rem" }}>
           <ClassroomLinkRequests />
         </div>
       )}
-
+      */}
       {/* ═══════════════ FILA: MIS DATOS + ACTIVIDAD ═══════════════ */}
       <div className="tp-row tp-row--datos-actividad">
         {/* — Mis datos — */}
