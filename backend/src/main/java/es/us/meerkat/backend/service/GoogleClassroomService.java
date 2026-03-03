@@ -152,6 +152,61 @@ public class GoogleClassroomService {
         return comunidadClassroomRepository.findByComunidadId(comunidadId);
     }
 
+    /**
+     * Lista archivos/materiales del curso vinculado a la comunidad.
+     *
+     * @param usuario Usuario que realizará la petición (debe tener conexión OAuth activa)
+     * @param comunidadId ID de la comunidad
+     * @return Map con claves "materials" y "courseWork" con la información obtenida de Classroom
+     */
+    public Map<String, Object> listarArchivosCursoVinculado(Usuario usuario, Long comunidadId) {
+        ComunidadClassroom vinculacion =
+                comunidadClassroomRepository
+                        .findByComunidadId(comunidadId)
+                        .orElseThrow(
+                                () ->
+                                        new RuntimeException(
+                                                "No hay curso vinculado a la comunidad"));
+
+        String courseId = vinculacion.getClassroomCourseId();
+
+        String accessToken = getAccessTokenValido(usuario);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        HttpEntity<Void> req = new HttpEntity<>(headers);
+
+        String materialsUrl =
+                "https://classroom.googleapis.com/v1/courses/" + courseId + "/courseWorkMaterials";
+        String courseworkUrl =
+                "https://classroom.googleapis.com/v1/courses/" + courseId + "/courseWork";
+
+        ResponseEntity<String> matResp =
+                restTemplate.exchange(materialsUrl, HttpMethod.GET, req, String.class);
+        ResponseEntity<String> workResp =
+                restTemplate.exchange(courseworkUrl, HttpMethod.GET, req, String.class);
+
+        try {
+            Map<String, Object> result = new java.util.HashMap<>();
+
+            if (matResp.getStatusCode().is2xxSuccessful() && matResp.getBody() != null) {
+                result.put("materials", objectMapper.readValue(matResp.getBody(), Map.class));
+            } else {
+                result.put("materials", Map.of());
+            }
+
+            if (workResp.getStatusCode().is2xxSuccessful() && workResp.getBody() != null) {
+                result.put("courseWork", objectMapper.readValue(workResp.getBody(), Map.class));
+            } else {
+                result.put("courseWork", Map.of());
+            }
+
+            return result;
+        } catch (Exception e) {
+            throw new RuntimeException("Error al parsear respuesta de Classroom", e);
+        }
+    }
+
     // =====================================================
     // GESTIÓN DE ESTUDIANTES Y PROFESORES
     // =====================================================

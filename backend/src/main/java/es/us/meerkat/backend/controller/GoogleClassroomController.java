@@ -460,6 +460,36 @@ public class GoogleClassroomController {
     }
 
     /**
+     * GET /oauth2/communities/{communityId}/files Devuelve los archivos/materiales del curso
+     * vinculado a la comunidad para el usuario autenticado.
+     */
+    @GetMapping("/communities/{communityId}/files")
+    public ResponseEntity<?> listarArchivosCursoVinculado(@PathVariable Long communityId) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getName())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "unauthorized"));
+        }
+
+        Object principal = auth.getPrincipal();
+        if (!(principal instanceof Usuario)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "invalid_user"));
+        }
+
+        Usuario usuario = (Usuario) principal;
+
+        try {
+            Map<String, Object> resp =
+                    googleClassroomService.listarArchivosCursoVinculado(usuario, communityId);
+            return ResponseEntity.ok(resp);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
      * POST /oauth2/teachers/{courseId} Crea un profesor en un curso de Google Classroom.
      *
      * @param courseId ID del curso en Google Classroom
