@@ -21,6 +21,8 @@ public interface MiembroComunidadRepository extends JpaRepository<MiembroComunid
     Page<MiembroComunidad> findByComunidadIdAndRol(
             Long comunidadId, RolComunidad rol, Pageable pageable);
 
+    List<MiembroComunidad> findByComunidadIdAndRol(Long comunidadId, RolComunidad rol);
+
     Page<MiembroComunidad> findByUsuarioId(Long usuarioId, Pageable pageable);
 
     long countByComunidadId(Long comunidadId);

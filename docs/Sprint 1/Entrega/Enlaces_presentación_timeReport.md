@@ -18,5 +18,5 @@
 
 ---
 
-**Vínculo de 9-S1-time-report**: TODO
-**Vínculo de la presentación 9-S1-slides**: TODO
+**Vínculo de 9-S1-time-report**: https://uses0.sharepoint.com/:b:/s/ISPP_dvkxr7/IQCbBh6DGzOZRZPkipotClFBAcJYFf1rXJ43cnb7xntVanA?e=shBEJk
+**Vínculo de la presentación 9-S1-slides**: TODO 

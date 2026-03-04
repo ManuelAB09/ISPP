@@ -28,13 +28,13 @@
 
 ## 1. Enlace a la Base de Conocimiento compartida
 
-Toda la información presente se encuentra en un [documento excel compartido](https://uses0-my.sharepoint.com/:x:/g/personal/alereyper_alum_us_es/IQCT5FMXpD2HTYXddK6Er3KwATUqaO9z2soT8Vu6Uwl-nxs?e=20UbB6) entre los líderes/representantes de cada grupo, de forma que solo ellos pueden editarlo.
+Toda la información presente se encuentra en un [Repo Github compartido](https://github.com/ASoult10/Knowledge-Base-Turno-De-Tarde-ISPP-25-26) entre los líderes/representantes de cada grupo, de forma que solo ellos pueden editarlo.
 
 ---
 
 ## 2. Contenido específico aportado
 
-Nuestro equipo ha contribuido con el feedback específico recibido el 05/02/2026 y el 12/02/2026 y acciones tomadas. Además, se ha contribuido al feedback general de ambas sesiones de evaluación. Todo se encuentra en las hojas llamadas "Grupo 9 - MeerKatters" y "General Turno de Tarde"
+Nuestro equipo ha contribuido con el feedback específico recibido el 26/02/2026 y el 03/03/2026 y acciones tomadas. Además, se ha contribuido al feedback general de ambas sesiones de evaluación.
 
 ---
 
@@ -73,3 +73,20 @@ Nuestro equipo ha contribuido con el feedback específico recibido el 05/02/2026
 - Se ha desglosado el presupuesto en la presentación.
 - Se ha considerado hacer gráficas para señalizar el punto de equilibrio entre gastos y ganancias.
 - Se ha planeado introducir los elementos visual de forma que se adapten al discurso, y no al revés.
+
+## 4. Feedback general apuntado por nuestro grupo
+ 
+### Semana 1: Sesión de presentación del 26/02/2026
+ 
+- Incluir el contenido completo directamente en la diapositiva, evitando depender en exceso de la explicación oral.
+- Mostrar explícitamente el Commitment Agreement de cada miembro del equipo para evidenciar el grado de cumplimiento individual.
+- Incorporar un diagrama específico que refleje claramente las tareas completadas, evitando centrarse únicamente en replanificaciones.
+- Construir un hilo argumentativo sólido en la presentación, asegurando que todas las partes estén conectadas y tengan coherencia narrativa.
+- Ajustarse estrictamente al tiempo establecido, ya que no se tolerará exceder la duración asignada en futuras presentaciones.
+- En el análisis de costes, diferenciar claramente el feedback aplicado distinguiendo entre costes de capital (CAPEX) y costes operativos (OPEX).
+- En el presupuesto, distinguir correctamente entre salario neto, salario bruto y coste real del contrato para la empresa.
+- En el apartado de riesgos, no solo identificarlos, sino explicar cómo se están mitigando y evaluar si las soluciones implementadas están funcionando.
+- Dar máxima prioridad a la reacción frente al feedback de los usuarios piloto, demostrando capacidad de adaptación y mejora continua.
+- Fomentar actividades de team building fuera del entorno estrictamente académico o laboral para reforzar cohesión y comunicación interna.
+- En la base de conocimientos compartida, permitir la clasificación del feedback por categorías, facilitando su consulta rápida (por ejemplo, localizar fácilmente observaciones relacionadas con aspectos visuales).
+ 

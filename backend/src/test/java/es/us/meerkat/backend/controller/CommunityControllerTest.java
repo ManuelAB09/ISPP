@@ -33,8 +33,10 @@ import es.us.meerkat.backend.service.AuthorizationService;
 import es.us.meerkat.backend.service.CategoryService;
 import es.us.meerkat.backend.service.CommunityService;
 import es.us.meerkat.backend.service.EventoService;
+import es.us.meerkat.backend.service.GoogleClassroomService;
 import es.us.meerkat.backend.service.MemberService;
 import es.us.meerkat.backend.service.RequestService;
+import es.us.meerkat.backend.service.TutorContratacionService;
 
 @ExtendWith(MockitoExtension.class)
 class CommunityControllerTest {
@@ -44,7 +46,9 @@ class CommunityControllerTest {
     @Mock private RequestService requestService;
     @Mock private CategoryService categoryService;
     @Mock private AuthorizationService authorizationService;
+    @Mock private TutorContratacionService tutorContratacionService;
     @Mock private EventoService eventoService;
+    @Mock private GoogleClassroomService googleClassroomService;
 
     @InjectMocks private CommunityController communityController;
 

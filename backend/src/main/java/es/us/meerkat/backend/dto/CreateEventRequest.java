@@ -36,6 +36,9 @@ public class CreateEventRequest {
     /** Si el evento tiene modalidad virtual (por defecto false). */
     private Boolean esVirtual;
 
+    /** Si el evento es privado o no. */
+    private Boolean privado;
+
     /** Enlace para participación virtual (si aplica). */
     private String enlaceVirtual;
 
