@@ -19,6 +19,7 @@ import es.us.meerkat.backend.entity.Institution;
 import es.us.meerkat.backend.entity.MiembroComunidad;
 import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.TipoGrupo;
+import es.us.meerkat.backend.entity.TipoPlan;
 import es.us.meerkat.backend.entity.TipoPlanComunidad;
 import es.us.meerkat.backend.entity.TipoPlanCorporativo;
 import es.us.meerkat.backend.entity.Tutor;
@@ -75,6 +76,7 @@ public class DataSeeder {
             u1.setIntereses(List.of("Gestión", "Tecnología", "Educación"));
             u1.setVisibleEnListados(true);
             u1.setEsTutor(false);
+            u1.setPlan(TipoPlan.FREE);
 
             Usuario u2 = new Usuario();
             u2.setEmail("maria.garcia@alum.us.es");
@@ -85,6 +87,7 @@ public class DataSeeder {
             u2.setIntereses(List.of("Programación", "Diseño Web", "Bases de Datos"));
             u2.setVisibleEnListados(true);
             u2.setEsTutor(false);
+            u2.setPlan(TipoPlan.FREE);
 
             Usuario u3 = new Usuario();
             u3.setEmail("carlos.ruiz@alum.us.es");
@@ -95,6 +98,7 @@ public class DataSeeder {
             u3.setIntereses(List.of("Java", "Spring Boot", "Microservicios"));
             u3.setVisibleEnListados(true);
             u3.setEsTutor(true);
+            u3.setPlan(TipoPlan.FREE);
 
             Usuario u4 = new Usuario();
             u4.setEmail("laura.fernandez@alum.us.es");
@@ -105,6 +109,7 @@ public class DataSeeder {
             u4.setIntereses(List.of("IA", "Machine Learning", "Python"));
             u4.setVisibleEnListados(true);
             u4.setEsTutor(true);
+            u4.setPlan(TipoPlan.FREE);
 
             Usuario u5 = new Usuario();
             u5.setEmail("pedro.sanchez@alum.us.es");
@@ -115,6 +120,7 @@ public class DataSeeder {
             u5.setIntereses(List.of("Ciberseguridad", "Redes", "Linux"));
             u5.setVisibleEnListados(true);
             u5.setEsTutor(true);
+            u5.setPlan(TipoPlan.FREE);
 
             Usuario u6 = new Usuario();
             u6.setEmail("ana.lopez@alum.us.es");
@@ -125,6 +131,7 @@ public class DataSeeder {
             u6.setIntereses(List.of("Estadística", "R", "Visualización de Datos"));
             u6.setVisibleEnListados(true);
             u6.setEsTutor(true);
+            u6.setPlan(TipoPlan.FREE);
 
             Usuario u7 = new Usuario();
             u7.setEmail("jorge.moreno@alum.us.es");
@@ -135,6 +142,7 @@ public class DataSeeder {
             u7.setIntereses(List.of("React", "TypeScript", "UX/UI"));
             u7.setVisibleEnListados(true);
             u7.setEsTutor(false);
+            u7.setPlan(TipoPlan.FREE);
 
             Usuario u8 = new Usuario();
             u8.setEmail("sara.jimenez@alum.us.es");
@@ -145,8 +153,10 @@ public class DataSeeder {
             u8.setIntereses(List.of("SQL", "NoSQL", "Arquitectura"));
             u8.setVisibleEnListados(false);
             u8.setEsTutor(false);
+            u8.setPlan(TipoPlan.FREE);
 
             List<Usuario> usuarios = usuarioRepo.saveAll(List.of(u1, u2, u3, u4, u5, u6, u7, u8));
+            usuarioRepo.flush();
 
             // ============================
             // 2. UBICACIONES

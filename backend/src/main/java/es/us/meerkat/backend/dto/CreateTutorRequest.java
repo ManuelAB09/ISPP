@@ -5,12 +5,16 @@ import java.util.List;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /** DTO para crear un perfil de tutor. */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Schema(description = "Datos para crear un perfil de tutor")
 public class CreateTutorRequest {
 
@@ -38,6 +42,9 @@ public class CreateTutorRequest {
     @Schema(description = "Teléfono de contacto", example = "+34612345678")
     @Pattern(regexp = "^\\+?[0-9]{10,}$", message = "Teléfono inválido")
     private String telefonoContacto;
+
+    @Schema(description = "Disponibilidad horaria del tutor", example = "Tardes y fines de semana")
+    private String disponibilidad;
 
     @Schema(description = "Biografia corta para listados", example = "Profesor de Matemáticas")
     @Size(max = 200, message = "La biotrafia corta no puede exceder 200 caracteres")

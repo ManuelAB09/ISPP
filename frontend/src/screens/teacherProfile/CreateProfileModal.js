@@ -35,9 +35,9 @@ const CreateProfileModal = ({ onClose, onCreado }) => {
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean),
-      tarifaHora: parseFloat(form.tarifaHora) || 0,
+      tarifaPorHora: parseFloat(form.tarifaHora) || 0,
       disponibilidad: form.disponibilidad.trim(),
-      bio: form.bio.trim(),
+      biografia: form.bio.trim(),
     };
 
     try {

@@ -15,7 +15,7 @@ const VerifiedTeachers = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [yaTienePerfilTutor, setYaTienePerfilTutor] = useState(false);
+  const [miPerfilTutor, setMiPerfilTutor] = useState(null);
   const [profesores, setProfesores] = useState([]);
   const [total, setTotal] = useState(0);
   const [pagina, setPagina] = useState(0);
@@ -26,8 +26,8 @@ const VerifiedTeachers = () => {
   useEffect(() => {
     if (!isAuthenticated) return;
     getMyTutorProfiles()
-      .then((perfiles) => {
-        if (perfiles && perfiles.length > 0) setYaTienePerfilTutor(true);
+      .then((perfil) => {
+        if (perfil && perfil.id) setMiPerfilTutor(perfil);
       })
       .catch(() => {});
   }, [isAuthenticated]);
@@ -118,7 +118,10 @@ const VerifiedTeachers = () => {
       {showCreateModal && (
         <CreateProfileModal
           onClose={() => setShowCreateModal(false)}
-          onCreado={(newTutor) => navigate(`/profesores/${newTutor.id}`)}
+          onCreado={(newTutor) => {
+            setMiPerfilTutor(newTutor);
+            navigate(`/profesores/${newTutor.id}`);
+          }}
         />
       )}
       {/* ── Header ──────────────────────────────────────────── */}
@@ -129,14 +132,24 @@ const VerifiedTeachers = () => {
             <span className="line"></span>
             <h1>Profesores Verificados</h1>
           </div>
-          {isAuthenticated && user?.esTutor && !yaTienePerfilTutor && (
-            <button
-              className="vt-btn vt-btn--primary"
-              style={{ marginTop: '24px' }}
-              onClick={() => setShowCreateModal(true)}
-            >
-              + Crear Perfil de Profesor
-            </button>
+          {isAuthenticated && user?.esTutor && (
+            miPerfilTutor ? (
+              <button
+                className="vt-btn vt-btn--primary"
+                style={{ marginTop: '24px' }}
+                onClick={() => navigate(`/profesores/${miPerfilTutor.id}`)}
+              >
+                Ver mi perfil de profesor
+              </button>
+            ) : (
+              <button
+                className="vt-btn vt-btn--primary"
+                style={{ marginTop: '24px' }}
+                onClick={() => setShowCreateModal(true)}
+              >
+                + Crear Perfil de Profesor
+              </button>
+            )
           )}
         </div>
       </div>

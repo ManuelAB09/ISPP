@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { getTutorById } from "../../api/tutorEndpoints";
+import { getTutorById, getMyTutorProfiles } from "../../api/tutorEndpoints";
 import Header from "../../components/Header/Header";
 import EditProfileModal from "./EditProfileModal";
 import CreateProfileModal from "./CreateProfileModal";
@@ -34,6 +34,7 @@ const TeacherProfile = () => {
   const [tutor, setTutor] = useState(null);
   const [cargando, setCargando] = useState(!esNuevo);
   const [error, setError] = useState(null);
+  const [miPerfilExistente, setMiPerfilExistente] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showVerificacion, setShowVerificacion] = useState(false);
@@ -57,6 +58,15 @@ const TeacherProfile = () => {
   const handlePerfilCreado = (newTutor) => {
     navigate(`/profesores/${newTutor.id}`, { replace: true });
   };
+
+  useEffect(() => {
+    if (!esNuevo || !user?.esTutor) return;
+    getMyTutorProfiles()
+      .then((perfil) => {
+        if (perfil && perfil.id) setMiPerfilExistente(perfil);
+      })
+      .catch(() => {});
+  }, [esNuevo, user]);
 
   useEffect(() => {
     if (esNuevo) return;
@@ -99,12 +109,21 @@ const TeacherProfile = () => {
               </div>
               {user?.esTutor && (
               <div className="tp-header__actions">
-                <button
-                  className="tp-btn tp-btn--edit"
-                  onClick={() => setShowCreateModal(true)}
-                >
-                  + Crear Perfil de Profesor
-                </button>
+                {miPerfilExistente ? (
+                  <button
+                    className="tp-btn tp-btn--edit"
+                    onClick={() => navigate(`/profesores/${miPerfilExistente.id}`, { replace: true })}
+                  >
+                    Ver mi perfil de profesor
+                  </button>
+                ) : (
+                  <button
+                    className="tp-btn tp-btn--edit"
+                    onClick={() => setShowCreateModal(true)}
+                  >
+                    + Crear Perfil de Profesor
+                  </button>
+                )}
               </div>
               )}
             </header>
@@ -122,9 +141,12 @@ const TeacherProfile = () => {
               {user?.esTutor && (
               <button
                 className="tp-btn tp-btn--edit"
-                onClick={() => setShowCreateModal(true)}
+                onClick={() => miPerfilExistente
+                  ? navigate(`/profesores/${miPerfilExistente.id}`, { replace: true })
+                  : setShowCreateModal(true)
+                }
               >
-                + Crear Perfil de Profesor
+                {miPerfilExistente ? 'Ver mi perfil de profesor' : '+ Crear Perfil de Profesor'}
               </button>
               )}
             </div>
@@ -269,7 +291,7 @@ const TeacherProfile = () => {
               TODO: Añadir estos campos al entity/DTO cuando el backend los soporte. */}
           <div className="tp-dato">
             <span className="tp-dato__label">BIO</span>
-            <span className="tp-dato__value">{tutor.usuario?.bio || tutor.bio || "—"}</span>
+            <span className="tp-dato__value">{tutor.biografia || "—"}</span>
           </div>
           <div className="tp-dato">
             <span className="tp-dato__label">ESPECIALIDADES</span>
@@ -285,7 +307,7 @@ const TeacherProfile = () => {
           </div>
           <div className="tp-dato">
             <span className="tp-dato__label">TARIFA POR HORA</span>
-            <span className="tp-dato__value">{tutor.tarifaHora}€ / h</span>
+            <span className="tp-dato__value">{tutor.tarifaPorHora}€ / h</span>
           </div>
         </section>
 
