@@ -2,6 +2,9 @@ package es.us.meerkat.backend.entity;
 
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,9 +33,9 @@ public class Mensaje {
 
     @Column private Long archivoTamano;
 
-    @Lob
     @Basic(fetch = FetchType.LAZY)
     @Column(name = "archivo_data")
+    @JdbcTypeCode(SqlTypes.VARBINARY)
     private byte[] archivoData;
 
     @Builder.Default
