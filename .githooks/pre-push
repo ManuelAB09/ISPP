@@ -34,7 +34,7 @@ fi
 # Ramas de bugfix con issue:
 #   bugfix/#<ID>_<NombreEnUpperCamelCase>
 
-main_re='^(main|trunk|hotfix|bugfix|develop)$'
+main_re='^(main|trunk|hotfix|bugfix|develop|sprint1)$'
 task_re='^(feature|doc|test)/#[0-9]+_[A-Z][^ ]*$'
 bugfix_re='^bugfix/#[0-9]+_[A-Z][^ ]*$'
 
