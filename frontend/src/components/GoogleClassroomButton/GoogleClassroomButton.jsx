@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { communitiesApi } from '../../api/communities.api';
+import { getApiBaseUrl } from '../../api/baseUrl';
 import './GoogleClassroomButton.css';
 
 /**
@@ -39,7 +40,7 @@ export default function GoogleClassroomButton({ communityId, linkedCourse, isAdm
     const left = window.screenX + (window.innerWidth - width) / 2;
     const top = window.screenY + (window.innerHeight - height) / 2;
 
-    const backendBase = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
+    const backendBase = getApiBaseUrl();
     const token = localStorage.getItem('accessToken');
 
     const resp = await fetch(`${backendBase}/oauth2/authorize/google-classroom-url`, {
