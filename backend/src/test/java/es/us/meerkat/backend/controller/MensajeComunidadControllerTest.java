@@ -12,9 +12,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockMultipartFile;
 
 import es.us.meerkat.backend.dto.EnviarMensajeComunidadRequest;
 import es.us.meerkat.backend.dto.MensajeComunidadResponse;
@@ -32,9 +32,12 @@ class MensajeComunidadControllerTest {
 
     @Test
     void enviarMensaje_ok() {
-        Usuario usuario = new Usuario(); usuario.setId(1L);
-        EnviarMensajeComunidadRequest req = new EnviarMensajeComunidadRequest(); req.setContenido("Hola");
-        MensajeComunidadResponse resp = MensajeComunidadResponse.builder().contenido("Hola").build();
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        EnviarMensajeComunidadRequest req = new EnviarMensajeComunidadRequest();
+        req.setContenido("Hola");
+        MensajeComunidadResponse resp =
+                MensajeComunidadResponse.builder().contenido("Hola").build();
         when(mensajeComunidadService.enviarMensaje(1L, req)).thenReturn(resp);
 
         ResponseEntity<?> r = controller.enviarMensaje(1L, usuario, req);
@@ -44,19 +47,25 @@ class MensajeComunidadControllerTest {
 
     @Test
     void obtenerHistorial_ok() {
-        when(mensajeComunidadService.obtenerHistorial(1L)).thenReturn(List.of(MensajeComunidadResponse.builder().build()));
+        when(mensajeComunidadService.obtenerHistorial(1L))
+                .thenReturn(List.of(MensajeComunidadResponse.builder().build()));
         ResponseEntity<?> r = controller.obtenerHistorial(1L);
         assertThat(r.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
     void enviarArchivo_ok() {
-        Usuario usuario = new Usuario(); usuario.setId(1L);
-        MockMultipartFile file = new MockMultipartFile("file", "test.txt", "text/plain", "contenido".getBytes());
-        var vf = new ChatFileStorageService.ValidatedChatFile("contenido".getBytes(), "test.txt", "text/plain", 9L);
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        MockMultipartFile file =
+                new MockMultipartFile("file", "test.txt", "text/plain", "contenido".getBytes());
+        var vf =
+                new ChatFileStorageService.ValidatedChatFile(
+                        "contenido".getBytes(), "test.txt", "text/plain", 9L);
         when(chatFileStorageService.validateAndExtract(any())).thenReturn(vf);
-        when(mensajeComunidadService.enviarArchivo(anyLong(), anyLong(), any(), any(), any(), anyLong(), any()))
-            .thenReturn(MensajeComunidadResponse.builder().build());
+        when(mensajeComunidadService.enviarArchivo(
+                        anyLong(), anyLong(), any(), any(), any(), anyLong(), any()))
+                .thenReturn(MensajeComunidadResponse.builder().build());
 
         ResponseEntity<?> r = controller.enviarArchivo(1L, usuario, file, "mensaje");
         assertThat(r.getStatusCode()).isEqualTo(HttpStatus.OK);
