@@ -1,6 +1,4 @@
-# Título del Documento
-
-## Subtítulo (si aplica)
+# Análisis de Monetización
 
 ### Grupo 9 – Turno de tarde
 
@@ -9,12 +7,12 @@
 ---
 
 **Proyecto:** MeerKatters  
-**Documento:** Tipo de documento (Acta / Plan de proyecto / Arquitectura / Normativa / Desarrollo)  
-**Sprint:** Sprint X  
-**Semana:** Semana X  
-**Estado:** Borrador / En revisión / Aprobado  
-**Fecha:** DD/MM/YYYY  
-**Autor(es):** Nombre(s)
+**Documento:** Desarrollo  
+**Sprint:** Sprint 1  
+**Semana:** Semana 2  
+**Estado:** Aprobado  
+**Fecha:** 04/03/2026  
+**Autor(es):** Macarena Pereira Campos
 
 ---
 
@@ -24,8 +22,6 @@
 3. [Estrategia de Precios](#3-Estrategia-de-Precios)
 4. [Presupuesto del Proyecto y Estado Actual](#4-Presupuesto-del-Proyecto-y-Estado-Actual)
 5. [Rentabilidad](#5-Rentabilidad)
-6. [Escenarios financieros](#6-Escenarios-financieros)
-7. [Plan de Implementación de Pagos](#7-Plan-de-Implementación-de-Pagos)
 
 ---
 
@@ -147,28 +143,28 @@ Para este análisis, se han considerado exclusivamente las horas reales incurrid
 
 | Equipo     | Horas     | Precio/hora | Total € |
 |------------|-----------|-------------|---------|
-| Líder Frontend | 36    | 30          | 1.080     |
-| Frontend   | 239       | 18          | 4.302     |
-| Líder Backend | 67     | 32          | 2.144     |
-| Backend    | 203       | 20          | 4.060     |
-| Líder Arquitectura | 78| 40          | 3.120     |
-| Arquitectura | 54      | 35          | 1.890     |
-| Líder RRSS | 52        | 25          | 1.300     |
-| RRSS       | 45        | 18          | 810       |
-| Líder Marketing | 57   | 30          | 1.710     |
-| Marketing  | 45        | 22          | 990       |
-| Total      | 874       |             | 21.406    |
+| Líder Frontend | 46    | 25          | 1.150     |
+| Frontend   | 299       | 12          | 3.588     |
+| Líder Backend | 80     | 25          | 2.000     |
+| Backend    | 282       | 13          | 3.666     |
+| Líder Arquitectura | 86| 30          | 2.580     |
+| Arquitectura | 65      | 20          | 1.300     |
+| Líder RRSS | 58        | 15          | 870       |
+| RRSS       | 54        | 10          | 540       |
+| Líder Marketing | 69   | 20          | 1.380     |
+| Marketing  | 58        | 12          | 696       |
+| Total      | 1097      |             | 17.770    |
 
 | Miembro directivo  | Horas | Pecio/hora | Total  |
 |--------------------|-------|------------|--------| 
-| Project Manager    | 61    | 25         | 1.525  |
-| Scrum Master       | 58    | 23         | 1.334  |
-| Total              | 119    |           | 2.859  |
+| Project Manager    | 69    | 22         | 1.518  |
+| Scrum Master       | 66    | 20         | 1.320  |
+| Total              | 135    |           | 2.838  |
 
 - Amortización de equipos: correspondiente a un mes del uso de hardware por parte del equipo, lo que equivale a **550 €**
 - Costes de infraestructura: quedan en **0 €** de la base de datos en azure ya que aún no se agotaron los creditos gratuitos. En cuanto a la app el gasto es ínfimo (**0,01 €**)
 
-En total llevamos un gasto de **24815,01 €** de los **28856,9 €** presupuestados para el primer Sprint, Lo que nos mantiene muy levemente por debajo del presupuesto.
+En total llevamos un gasto de **21.158,01 €** de los **28.856,9 €** presupuestados para el primer Sprint, Lo que nos mantiene muy levemente por debajo del presupuesto.
 
 ## 5. Rentabilidad
 Para asegurar la viabilidad financiera de MeerKatters, es necesario calcular cuántos usuarios de pago se necesitan tanto para mantener la operatividad diaria de la plataforma como para amortizar la inversión inicial de desarrollo.
