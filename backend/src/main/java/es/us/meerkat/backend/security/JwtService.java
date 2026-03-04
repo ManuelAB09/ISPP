@@ -47,9 +47,9 @@ public class JwtService {
      */
     public String generateToken(final String email) {
         return Jwts.builder()
-                .subject(email)
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .setSubject(email)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -94,11 +94,11 @@ public class JwtService {
      * @return Claims del token.
      */
     private Claims extractAllClaims(final String token) {
-        return Jwts.parser()
-                .verifyWith((javax.crypto.SecretKey) getSigningKey())
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
                 .build()
-                .parseSignedClaims(token)
-                .getPayload();
+                .parseClaimsJws(token)
+                .getBody();
     }
 
     /**
