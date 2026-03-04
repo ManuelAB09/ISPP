@@ -3,6 +3,7 @@ package es.us.meerkat.backend.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -18,6 +19,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
 import com.stripe.exception.StripeException;
+import com.stripe.model.checkout.Session;
+import com.stripe.param.checkout.SessionCreateParams;
 
 import es.us.meerkat.backend.dto.PaymentUrlResponse;
 import es.us.meerkat.backend.entity.EstadoTransaccion;
@@ -40,12 +43,21 @@ class PaymentServiceTest {
         Long tutorId = 1L;
         Long usuarioId = 10L;
 
-        PaymentUrlResponse response =
-                paymentService.generarPagoVerificacionTutor(tutorId, usuarioId);
+        Session sessionMock = org.mockito.Mockito.mock(Session.class);
+        when(sessionMock.getUrl()).thenReturn("http://fake.url");
+        when(sessionMock.getId()).thenReturn("session123");
 
-        assertThat(response).isNotNull();
-        assertThat(response.paymentUrl()).isNotNull();
-        assertThat(response.sessionId()).isNotNull();
+        try (var mocked = mockStatic(Session.class)) {
+            mocked.when(() -> Session.create(any(SessionCreateParams.class)))
+                    .thenReturn(sessionMock);
+
+            PaymentUrlResponse response =
+                    paymentService.generarPagoVerificacionTutor(tutorId, usuarioId);
+
+            assertThat(response).isNotNull();
+            assertThat(response.paymentUrl()).isEqualTo("http://fake.url");
+            assertThat(response.sessionId()).isEqualTo("session123");
+        }
     }
 
     @Test
@@ -55,12 +67,22 @@ class PaymentServiceTest {
         BigDecimal monto = new BigDecimal("100.00");
         Long usuarioId = 20L;
 
-        PaymentUrlResponse response =
-                paymentService.generarPagoContratacionTutor(tutorId, comunidadId, monto, usuarioId);
+        Session sessionMock = org.mockito.Mockito.mock(Session.class);
+        when(sessionMock.getUrl()).thenReturn("http://fake.url");
+        when(sessionMock.getId()).thenReturn("session123");
 
-        assertThat(response).isNotNull();
-        assertThat(response.paymentUrl()).isNotNull();
-        assertThat(response.sessionId()).isNotNull();
+        try (var mocked = mockStatic(Session.class)) {
+            mocked.when(() -> Session.create(any(SessionCreateParams.class)))
+                    .thenReturn(sessionMock);
+
+            PaymentUrlResponse response =
+                    paymentService.generarPagoContratacionTutor(
+                            tutorId, comunidadId, monto, usuarioId);
+
+            assertThat(response).isNotNull();
+            assertThat(response.paymentUrl()).isEqualTo("http://fake.url");
+            assertThat(response.sessionId()).isEqualTo("session123");
+        }
     }
 
     @Test
@@ -68,12 +90,21 @@ class PaymentServiceTest {
         Long comunidadId = 10L;
         BigDecimal monto = new BigDecimal("50.00");
 
-        PaymentUrlResponse response =
-                paymentService.generarPagoUpgradeComunidad(comunidadId, monto);
+        Session sessionMock = org.mockito.Mockito.mock(Session.class);
+        when(sessionMock.getUrl()).thenReturn("http://fake.url");
+        when(sessionMock.getId()).thenReturn("session123");
 
-        assertThat(response).isNotNull();
-        assertThat(response.paymentUrl()).isNotNull();
-        assertThat(response.sessionId()).isNotNull();
+        try (var mocked = mockStatic(Session.class)) {
+            mocked.when(() -> Session.create(any(SessionCreateParams.class)))
+                    .thenReturn(sessionMock);
+
+            PaymentUrlResponse response =
+                    paymentService.generarPagoUpgradeComunidad(comunidadId, monto);
+
+            assertThat(response).isNotNull();
+            assertThat(response.paymentUrl()).isEqualTo("http://fake.url");
+            assertThat(response.sessionId()).isEqualTo("session123");
+        }
     }
 
     @Test
