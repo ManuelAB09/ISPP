@@ -223,7 +223,7 @@ public class Evento {
      *
      * @return String con el enlace virtual generado.
      */
-    public String generarEnlaceVirtual() { // TODO: Cambiar cuando se tenga una url definitiva
+    public String generarEnlaceVirtual() {
         if (this.enlaceVirtual == null || this.enlaceVirtual.isEmpty()) {
             this.enlaceVirtual = "https://evento.meet/" + UUID.randomUUID().toString();
         }

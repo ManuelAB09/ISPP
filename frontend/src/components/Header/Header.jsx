@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import './Header.css';
+import GoogleClassroomButton from '../GoogleClassroomButton/GoogleClassroomButton.jsx';
 
 export default function Header({ user, page }) {
     const storedUser = (() => {
@@ -22,6 +23,9 @@ export default function Header({ user, page }) {
             <Link to="/perfil">
                 <img src={profileImage} alt="Perfil" />
             </Link>
+                        <div className="header-actions">
+                <GoogleClassroomButton />
+            </div>
             <div className="header-links">
                 <Link to="/" className={page === 'inicio' ? 'active' : ''}>Inicio</Link>
                 <Link to="/comunidades" className={page === 'comunidades' ? 'active' : ''}>Comunidades</Link>

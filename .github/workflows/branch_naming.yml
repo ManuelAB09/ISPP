@@ -15,6 +15,8 @@ on:
       - main
       - trunk
       - develop
+      - hotfix
+      - bugfix
       - sprint1
       - sprint2
       - sprint3
