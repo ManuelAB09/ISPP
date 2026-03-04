@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { classroomLinkRequestsApi } from "../../api/classroomLinkRequests.api";
+import { getApiBaseUrl } from "../../api/baseUrl";
 
 export default function ClassroomLinkRequests() {
   const [requests, setRequests] = useState([]);
@@ -9,7 +10,7 @@ export default function ClassroomLinkRequests() {
   const [linking, setLinking] = useState(false);
   const [error, setError] = useState(null);
 
-  const backendBase = process.env.REACT_APP_BACKEND_URL || "http://localhost:8080";
+  const backendBase = getApiBaseUrl();
 
   const load = async () => {
     try {
