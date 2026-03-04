@@ -3,11 +3,13 @@ package es.us.meerkat.backend.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -16,11 +18,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
+import es.us.meerkat.backend.dto.CreateTutorRequest;
 import es.us.meerkat.backend.dto.TutorProfileRequest;
 import es.us.meerkat.backend.dto.TutorProfileResponse;
+import es.us.meerkat.backend.dto.UpdateTutorRequest;
 import es.us.meerkat.backend.entity.EstadoTransaccion;
 import es.us.meerkat.backend.entity.TipoTransaccion;
 import es.us.meerkat.backend.entity.TransaccionPago;
@@ -39,323 +44,518 @@ class TutorServiceTest {
 
     @InjectMocks private TutorService tutorService;
 
-    @Test
-    void crearPerfilShouldCreateNewTutorProfile() {
-        Long usuarioId = 1L;
-        Usuario usuario = buildUsuario(usuarioId, true);
-        TutorProfileRequest request = new TutorProfileRequest();
-        request.setEspecialidades(java.util.List.of("Matemáticas", "Física"));
-        request.setTarifaHora(new BigDecimal("50.00"));
-        request.setDisponibilidad("Lunes a Viernes 15:00-19:00");
-        request.setBio("Profesor de matemáticas con 10 años de experiencia");
+    // =============================================
+    // crearPerfil(Long, TutorProfileRequest)
+    // =============================================
 
-        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
+    @Test
+    void createProfileShouldCreateProfileAndReturnResponse() {
+        Long userId = 1L;
+        Usuario usuario = buildUsuario(userId, true);
+        TutorProfileRequest request = buildProfileRequest();
+
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
         when(tutorRepository.findByUs(usuario)).thenReturn(Optional.empty());
         when(tutorRepository.save(any(Tutor.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+                .thenAnswer(
+                        inv -> {
+                            Tutor t = inv.getArgument(0);
+                            t.setId(10L);
+                            return t;
+                        });
 
-        TutorProfileResponse response = tutorService.crearPerfil(usuarioId, request);
+        TutorProfileResponse response = tutorService.crearPerfil(userId, request);
 
-        ArgumentCaptor<Tutor> captor = ArgumentCaptor.forClass(Tutor.class);
-        verify(tutorRepository).save(captor.capture());
-
-        Tutor saved = captor.getValue();
-        assertThat(saved.getEspecialidades()).isEqualTo(request.getEspecialidades());
-        assertThat(saved.getTarifaHora()).isEqualTo(request.getTarifaHora());
-        assertThat(saved.getVerificado()).isFalse();
-        assertThat(saved.getClassroomConectado()).isFalse();
-    }
-
-    @Test
-    void crearPerfilShouldFailWhenUserIsNotTutor() {
-        Long usuarioId = 1L;
-        Usuario usuario = buildUsuario(usuarioId, false);
-        TutorProfileRequest request = new TutorProfileRequest();
-
-        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
-
-        assertThatThrownBy(() -> tutorService.crearPerfil(usuarioId, request))
-                .isInstanceOf(RuntimeException.class);
-    }
-
-    @Test
-    void crearPerfilShouldFailWhenUserAlreadyHasProfile() {
-        Long usuarioId = 1L;
-        Usuario usuario = buildUsuario(usuarioId, true);
-        Tutor existingTutor = buildTutor(1L, usuarioId);
-        TutorProfileRequest request = new TutorProfileRequest();
-
-        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
-        when(tutorRepository.findByUs(usuario)).thenReturn(Optional.of(existingTutor));
-
-        assertThatThrownBy(() -> tutorService.crearPerfil(usuarioId, request))
-                .isInstanceOf(RuntimeException.class);
-    }
-
-    @Test
-    void editarPerfilShouldUpdateTutorData() {
-        Long usuarioId = 1L;
-        Long tutorId = 1L;
-        Usuario usuario = buildUsuario(usuarioId, true);
-        Tutor tutor = buildTutor(tutorId, usuarioId);
-
-        TutorProfileRequest request = new TutorProfileRequest();
-        request.setEspecialidades(java.util.List.of("Nuevas especialidades"));
-        request.setTarifaHora(new BigDecimal("60.00"));
-        request.setDisponibilidad("Nuevo horario");
-        request.setBio("Nuevo bio");
-
-        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
-        when(tutorRepository.findByIdAndUsId(tutorId, usuarioId)).thenReturn(Optional.of(tutor));
-        when(tutorRepository.save(any(Tutor.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-
-        TutorProfileResponse response = tutorService.editarPerfil(usuarioId, tutorId, request);
+        assertThat(response).isNotNull();
+        assertThat(response.getTarifaHora()).isEqualByComparingTo(new BigDecimal("25.00"));
+        assertThat(response.getVerificado()).isFalse();
 
         ArgumentCaptor<Tutor> captor = ArgumentCaptor.forClass(Tutor.class);
         verify(tutorRepository).save(captor.capture());
-
-        assertThat(captor.getValue().getEspecialidades()).isEqualTo(request.getEspecialidades());
-        assertThat(captor.getValue().getTarifaHora()).isEqualTo(new BigDecimal("60.00"));
+        assertThat(captor.getValue().getUs()).isEqualTo(usuario);
+        assertThat(captor.getValue().getEspecialidades()).containsExactly("Matemáticas", "Física");
     }
 
     @Test
-    void editarPerfilShouldFailWhenTutorNotBelongsToUser() {
-        Long usuarioId = 1L;
-        Long tutorId = 1L;
-        Usuario usuario = buildUsuario(usuarioId, true);
-        Tutor tutor = buildTutor(tutorId, 999L);
+    void createProfileShouldFailWhenUserNotFound() {
+        when(usuarioRepository.findById(99L)).thenReturn(Optional.empty());
 
-        TutorProfileRequest request = new TutorProfileRequest();
-
-        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
-        when(tutorRepository.findByIdAndUsId(tutorId, usuarioId)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> tutorService.editarPerfil(usuarioId, tutorId, request))
-                .isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> tutorService.crearPerfil(99L, buildProfileRequest()))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("no encontrado");
     }
 
     @Test
-    void obtenerPerfilPublicoShouldReturnPublicProfile() {
-        Long tutorId = 1L;
-        Tutor tutor = buildTutor(tutorId, 1L);
+    void createProfileShouldFailWhenUserIsNotTutor() {
+        Long userId = 1L;
+        Usuario usuario = buildUsuario(userId, false);
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
 
+        assertThatThrownBy(() -> tutorService.crearPerfil(userId, buildProfileRequest()))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("rol de profesor");
+    }
+
+    @Test
+    void createProfileShouldFailWhenProfileAlreadyExists() {
+        Long userId = 1L;
+        Usuario usuario = buildUsuario(userId, true);
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
+        when(tutorRepository.findByUs(usuario)).thenReturn(Optional.of(buildTutor(10L, usuario)));
+
+        assertThatThrownBy(() -> tutorService.crearPerfil(userId, buildProfileRequest()))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("perfil ya existe");
+    }
+
+    // =============================================
+    // editarPerfil
+    // =============================================
+
+    @Test
+    void editProfileShouldUpdateTutorData() {
+        Long userId = 1L;
+        Long tutorId = 10L;
+        Usuario usuario = buildUsuario(userId, true);
+        Tutor tutor = buildTutor(tutorId, usuario);
+        TutorProfileRequest request = buildProfileRequest();
+        request.setBio("Nueva bio");
+
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
+        when(tutorRepository.findByIdAndUsId(tutorId, userId)).thenReturn(Optional.of(tutor));
+        when(tutorRepository.save(any(Tutor.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        TutorProfileResponse response = tutorService.editarPerfil(userId, tutorId, request);
+
+        assertThat(response.getBio()).isEqualTo("Nueva bio");
+        verify(tutorRepository).save(tutor);
+    }
+
+    @Test
+    void editProfileShouldFailWhenTutorNotFound() {
+        Long userId = 1L;
+        Long tutorId = 99L;
+        when(usuarioRepository.findById(userId))
+                .thenReturn(Optional.of(buildUsuario(userId, true)));
+        when(tutorRepository.findByIdAndUsId(tutorId, userId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> tutorService.editarPerfil(userId, tutorId, buildProfileRequest()))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("no encontrado");
+    }
+
+    // =============================================
+    // obtenerPerfilPublico
+    // =============================================
+
+    @Test
+    void getPublicProfileShouldReturnProfile() {
+        Long tutorId = 10L;
+        Tutor tutor = buildTutor(tutorId, buildUsuario(1L, true));
         when(tutorRepository.findById(tutorId)).thenReturn(Optional.of(tutor));
 
-        var result = tutorService.obtenerPerfilPublico(tutorId);
+        TutorProfileResponse response = tutorService.obtenerPerfilPublico(tutorId);
 
-        assertThat(result).isNotNull();
+        assertThat(response).isNotNull();
+        assertThat(response.getId()).isEqualTo(tutorId);
     }
 
     @Test
-    void obtenerPerfilesPorUsuarioShouldReturnUserProfiles() {
-        Long usuarioId = 1L;
-        Tutor tutor = buildTutor(1L, usuarioId);
+    void getPublicProfileShouldFailWhenTutorNotFound() {
+        when(tutorRepository.findById(99L)).thenReturn(Optional.empty());
 
-        when(tutorRepository.findAllByUsId(usuarioId)).thenReturn(java.util.List.of(tutor));
+        assertThatThrownBy(() -> tutorService.obtenerPerfilPublico(99L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("no encontrado");
+    }
 
-        var result = tutorService.obtenerPerfilesPorUsuario(usuarioId);
+    // =============================================
+    // obtenerPerfilesPorUsuario
+    // =============================================
 
-        assertThat(result).isNotNull();
+    @Test
+    void getProfilesByUserShouldReturnList() {
+        Long userId = 1L;
+        Usuario usuario = buildUsuario(userId, true);
+        Tutor tutor = buildTutor(10L, usuario);
+
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
+        when(tutorRepository.findAllByUsId(userId)).thenReturn(List.of(tutor));
+
+        List<TutorProfileResponse> result = tutorService.obtenerPerfilesPorUsuario(userId);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getId()).isEqualTo(10L);
+    }
+
+    // =============================================
+    // obtenerPerfilDelUsuario
+    // =============================================
+
+    @Test
+    void getUserProfileShouldFailWhenNotFound() {
+        when(tutorRepository.findByIdAndUsId(99L, 1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> tutorService.obtenerPerfilDelUsuario(1L, 99L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("no encontrado");
+    }
+
+    // =============================================
+    // obtenerTutoresVerificados
+    // =============================================
+
+    @Test
+    void getVerifiedTutorsShouldUseSimpleQueryWhenNoFilters() {
+        Tutor tutor = buildTutor(10L, buildUsuario(1L, true));
+        tutor.setVerificado(true);
+        Page<Tutor> page = new PageImpl<>(List.of(tutor));
+
+        when(tutorRepository.findByVerificadoTrue(any(PageRequest.class))).thenReturn(page);
+
+        Page<TutorProfileResponse> result =
+                tutorService.obtenerTutoresVerificados(null, null, null, 0, 20);
+
+        assertThat(result.getContent()).hasSize(1);
+        verify(tutorRepository).findByVerificadoTrue(any(PageRequest.class));
     }
 
     @Test
-    void obtenerPerfilDelUsuarioShouldReturnUserSpecificProfile() {
-        Long usuarioId = 1L;
-        Long tutorId = 1L;
-        Tutor tutor = buildTutor(tutorId, usuarioId);
+    void getVerifiedTutorsShouldUseFilterQueryWhenFiltersProvided() {
+        Tutor tutor = buildTutor(10L, buildUsuario(1L, true));
+        tutor.setVerificado(true);
+        Page<Tutor> page = new PageImpl<>(List.of(tutor));
 
-        when(tutorRepository.findByIdAndUsId(tutorId, usuarioId)).thenReturn(Optional.of(tutor));
-
-        var result = tutorService.obtenerPerfilDelUsuario(usuarioId, tutorId);
-
-        assertThat(result).isNotNull();
-    }
-
-    @Test
-    void obtenerTutoresVerificadosShouldReturnVerifiedTutors() {
         when(tutorRepository.findVerificadosByEspecialidadAndTarifa(
-                        null, new BigDecimal("0"), new BigDecimal("1000"), PageRequest.of(0, 10)))
-                .thenReturn(new PageImpl<>(java.util.List.of()));
+                        eq("Matemáticas"),
+                        any(BigDecimal.class),
+                        any(BigDecimal.class),
+                        any(PageRequest.class)))
+                .thenReturn(page);
 
-        var result =
+        Page<TutorProfileResponse> result =
                 tutorService.obtenerTutoresVerificados(
-                        null, new BigDecimal("0"), new BigDecimal("1000"), 0, 10);
+                        "Matemáticas", new BigDecimal("10"), new BigDecimal("50"), 0, 20);
 
-        assertThat(result).isNotNull();
+        assertThat(result.getContent()).hasSize(1);
+    }
+
+    // =============================================
+    // Classroom: conectar / desconectar
+    // =============================================
+
+    @Test
+    void connectClassroomShouldSetConnectedAndSaveEmail() {
+        Long userId = 1L;
+        Usuario usuario = buildUsuario(userId, true);
+        Tutor tutor = buildTutor(10L, usuario);
+
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
+        when(tutorRepository.findByUs(usuario)).thenReturn(Optional.of(tutor));
+        when(tutorRepository.save(any(Tutor.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Tutor result = tutorService.conectarClassroom(userId, "tutor@gmail.com");
+
+        assertThat(result.getClassroomConectado()).isTrue();
+        assertThat(result.getEmailClassroom()).isEqualTo("tutor@gmail.com");
+        verify(tutorRepository).save(tutor);
     }
 
     @Test
-    void solicitarVerificacionShouldMarkAsPendingVerification() {
-        Long usuarioId = 1L;
-        Long tutorId = 1L;
-        Tutor tutor = buildTutor(tutorId, usuarioId);
+    void connectClassroomShouldFailWhenNoTutorProfile() {
+        Long userId = 1L;
+        Usuario usuario = buildUsuario(userId, true);
+
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
+        when(tutorRepository.findByUs(usuario)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> tutorService.conectarClassroom(userId, "email@test.com"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("perfil de tutor");
+    }
+
+    @Test
+    void disconnectClassroomShouldClearClassroomData() {
+        Long userId = 1L;
+        Usuario usuario = buildUsuario(userId, true);
+        Tutor tutor = buildTutor(10L, usuario);
+        tutor.setClassroomConectado(true);
+        tutor.setEmailClassroom("tutor@gmail.com");
+
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
+        when(tutorRepository.findByUs(usuario)).thenReturn(Optional.of(tutor));
+
+        tutorService.desconectarClassroom(userId);
+
+        assertThat(tutor.getClassroomConectado()).isFalse();
+        assertThat(tutor.getEmailClassroom()).isNull();
+        verify(tutorRepository).save(tutor);
+    }
+
+    // =============================================
+    // crearPerfil(Long, CreateTutorRequest)
+    // =============================================
+
+    @Test
+    void createProfileWithCreateRequestShouldCreateNewTutor() {
+        Long userId = 1L;
+        Usuario usuario = buildUsuario(userId, true);
+        CreateTutorRequest request =
+                CreateTutorRequest.builder()
+                        .biografia("Profesor experimentado")
+                        .tarifaPorHora(new BigDecimal("30.00"))
+                        .especialidades(List.of("Inglés"))
+                        .disponibilidad("Mañanas")
+                        .build();
+
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
+        when(tutorRepository.findByUs(usuario)).thenReturn(Optional.empty());
+        when(tutorRepository.save(any(Tutor.class)))
+                .thenAnswer(
+                        inv -> {
+                            Tutor t = inv.getArgument(0);
+                            t.setId(20L);
+                            return t;
+                        });
+
+        Tutor result = tutorService.crearPerfil(userId, request);
+
+        assertThat(result.getBio()).isEqualTo("Profesor experimentado");
+        assertThat(result.getTarifaHora()).isEqualByComparingTo(new BigDecimal("30.00"));
+        assertThat(result.getVerificado()).isFalse();
+    }
+
+    @Test
+    void createProfileWithCreateRequestShouldFailWhenProfileExists() {
+        Long userId = 1L;
+        Usuario usuario = buildUsuario(userId, true);
+
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
+        when(tutorRepository.findByUs(usuario)).thenReturn(Optional.of(buildTutor(10L, usuario)));
+
+        CreateTutorRequest request =
+                CreateTutorRequest.builder()
+                        .biografia("Bio")
+                        .tarifaPorHora(BigDecimal.TEN)
+                        .especialidades(List.of("X"))
+                        .build();
+
+        assertThatThrownBy(() -> tutorService.crearPerfil(userId, request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("ya tiene un perfil");
+    }
+
+    // =============================================
+    // actualizarPerfil
+    // =============================================
+
+    @Test
+    void updateProfileShouldOnlyUpdateNonNullFields() {
+        Long userId = 1L;
+        Usuario usuario = buildUsuario(userId, true);
+        Tutor tutor = buildTutor(10L, usuario);
+        tutor.setBio("Bio original");
+        tutor.setTarifaHora(new BigDecimal("20.00"));
+
+        UpdateTutorRequest request =
+                UpdateTutorRequest.builder().biografia("Bio actualizada").build();
+
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
+        when(tutorRepository.findByUs(usuario)).thenReturn(Optional.of(tutor));
+        when(tutorRepository.save(any(Tutor.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Tutor result = tutorService.actualizarPerfil(userId, request);
+
+        assertThat(result.getBio()).isEqualTo("Bio actualizada");
+        // tarifaHora no estaba en request → se mantiene
+        assertThat(result.getTarifaHora()).isEqualByComparingTo(new BigDecimal("20.00"));
+    }
+
+    // =============================================
+    // solicitarVerificacion
+    // =============================================
+
+    @Test
+    void requestVerificationShouldCreatePendingTransaction() {
+        Long userId = 1L;
+        Long tutorId = 10L;
+        Usuario usuario = buildUsuario(userId, true);
+        Tutor tutor = buildTutor(tutorId, usuario);
         tutor.setVerificado(false);
 
-        when(tutorRepository.findByIdAndUsId(tutorId, usuarioId)).thenReturn(Optional.of(tutor));
-        when(tutorRepository.save(any(Tutor.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-
-        tutorService.solicitarVerificacion(usuarioId, tutorId);
-
-        verify(tutorRepository).save(any(Tutor.class));
-    }
-
-    @Test
-    void obtenerEstadoVerificacionShouldReturnVerificationStatus() {
-        Long usuarioId = 1L;
-        Long tutorId = 1L;
-        Tutor tutor = buildTutor(tutorId, usuarioId);
-        tutor.setVerificado(true);
-
-        when(tutorRepository.findByIdAndUsId(tutorId, usuarioId)).thenReturn(Optional.of(tutor));
-
-        String status = tutorService.obtenerEstadoVerificacion(usuarioId, tutorId);
-
-        assertThat(status).isNotNull();
-    }
-
-    @Test
-    void obtenerTutorPorUsuarioIdShouldReturnTutor() {
-        Long usuarioId = 1L;
-        Tutor tutor = buildTutor(1L, usuarioId);
-
-        when(tutorRepository.findAllByUsId(usuarioId)).thenReturn(java.util.List.of(tutor));
-
-        var result = tutorService.obtenerTutorPorUsuarioId(usuarioId);
-
-        assertThat(result).isPresent();
-        assertThat(result.get()).isEqualTo(tutor);
-    }
-
-    @Test
-    void obtenerTutorPorIdShouldReturnTutor() {
-        Long tutorId = 1L;
-        Tutor tutor = buildTutor(tutorId, 1L);
-
-        when(tutorRepository.findById(tutorId)).thenReturn(Optional.of(tutor));
-
-        var result = tutorService.obtenerTutorPorId(tutorId);
-
-        assertThat(result).isPresent();
-        assertThat(result.get()).isEqualTo(tutor);
-    }
-
-    @Test
-    void conectarClassroomShouldLinkGoogleClassroom() {
-        Long usuarioId = 1L;
-        Tutor tutor = buildTutor(1L, usuarioId);
-        String googleEmail = "profesor@gmail.com";
-
-        when(tutorRepository.findAllByUsId(usuarioId)).thenReturn(java.util.List.of(tutor));
-        when(tutorRepository.save(any(Tutor.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-
-        Tutor result = tutorService.conectarClassroom(usuarioId, googleEmail);
-
-        assertThat(result).isNotNull();
-        verify(tutorRepository).save(any(Tutor.class));
-    }
-
-    @Test
-    void desconectarClassroomShouldUnlinkGoogleClassroom() {
-        Long usuarioId = 1L;
-        Tutor tutor = buildTutor(1L, usuarioId);
-        tutor.setClassroomConectado(true);
-
-        when(tutorRepository.findAllByUsId(usuarioId)).thenReturn(java.util.List.of(tutor));
-        when(tutorRepository.save(any(Tutor.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-
-        tutorService.desconectarClassroom(usuarioId);
-
-        verify(tutorRepository).save(any(Tutor.class));
-    }
-
-    @Test
-    void tienePagoVerificacionPendienteShouldReturnTrueWhenExists() {
-        Long tutorId = 1L;
-
-        when(transaccionPagoRepository.existsByTutorIdAndTipoAndEstado(
-                        tutorId, TipoTransaccion.PAGO_VERIFICACION, EstadoTransaccion.PENDIENTE))
-                .thenReturn(true);
-
-        boolean result = tutorService.tienePagoVerificacionPendiente(tutorId);
-
-        assertThat(result).isTrue();
-    }
-
-    @Test
-    void tienePagoVerificacionPendienteShouldReturnFalseWhenNotExists() {
-        Long tutorId = 1L;
-
+        when(tutorRepository.findByIdAndUsId(tutorId, userId)).thenReturn(Optional.of(tutor));
         when(transaccionPagoRepository.existsByTutorIdAndTipoAndEstado(
                         tutorId, TipoTransaccion.PAGO_VERIFICACION, EstadoTransaccion.PENDIENTE))
                 .thenReturn(false);
 
-        boolean result = tutorService.tienePagoVerificacionPendiente(tutorId);
+        tutorService.solicitarVerificacion(userId, tutorId);
 
-        assertThat(result).isFalse();
+        ArgumentCaptor<TransaccionPago> captor = ArgumentCaptor.forClass(TransaccionPago.class);
+        verify(transaccionPagoRepository).save(captor.capture());
+        TransaccionPago tx = captor.getValue();
+        assertThat(tx.getTipo()).isEqualTo(TipoTransaccion.PAGO_VERIFICACION);
+        assertThat(tx.getEstado()).isEqualTo(EstadoTransaccion.PENDIENTE);
+        assertThat(tx.getMonto()).isEqualByComparingTo(new BigDecimal("19.99"));
     }
 
     @Test
-    void activarVerificacionShouldVerifyTutorAndCompleteTransaction() {
-        Long tutorId = 1L;
-        Long usuarioId = 1L;
-        Tutor tutor = buildTutor(tutorId, usuarioId);
+    void requestVerificationShouldFailWhenAlreadyVerified() {
+        Long userId = 1L;
+        Long tutorId = 10L;
+        Tutor tutor = buildTutor(tutorId, buildUsuario(userId, true));
+        tutor.setVerificado(true);
+
+        when(tutorRepository.findByIdAndUsId(tutorId, userId)).thenReturn(Optional.of(tutor));
+
+        assertThatThrownBy(() -> tutorService.solicitarVerificacion(userId, tutorId))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("ya está verificado");
+    }
+
+    // =============================================
+    // activarVerificacion
+    // =============================================
+
+    @Test
+    void activateVerificationShouldMarkVerifiedAndCompleteTransaction() {
+        Long tutorId = 10L;
+        Usuario usuario = buildUsuario(1L, true);
+        Tutor tutor = buildTutor(tutorId, usuario);
         tutor.setVerificado(false);
 
-        TransaccionPago transaccion = buildTransaccion(1L, tutorId);
-        transaccion.setEstado(EstadoTransaccion.COMPLETADA);
+        TransaccionPago tx =
+                TransaccionPago.builder()
+                        .id(100L)
+                        .tipo(TipoTransaccion.PAGO_VERIFICACION)
+                        .estado(EstadoTransaccion.PENDIENTE)
+                        .monto(new BigDecimal("19.99"))
+                        .moneda("EUR")
+                        .usuario(usuario)
+                        .tutor(tutor)
+                        .build();
 
         when(tutorRepository.findById(tutorId)).thenReturn(Optional.of(tutor));
         when(transaccionPagoRepository.findTopByTutorIdAndTipoOrderByIniciadoAtDesc(
                         tutorId, TipoTransaccion.PAGO_VERIFICACION))
-                .thenReturn(Optional.of(transaccion));
-        when(tutorRepository.save(any(Tutor.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+                .thenReturn(Optional.of(tx));
 
         tutorService.activarVerificacion(tutorId);
 
-        ArgumentCaptor<Tutor> captor = ArgumentCaptor.forClass(Tutor.class);
-        verify(tutorRepository).save(captor.capture());
-
-        assertThat(captor.getValue().getVerificado()).isTrue();
+        assertThat(tutor.getVerificado()).isTrue();
+        assertThat(tx.getEstado()).isEqualTo(EstadoTransaccion.COMPLETADA);
+        assertThat(tx.getCompletadoAt()).isNotNull();
+        verify(tutorRepository).save(tutor);
+        verify(transaccionPagoRepository).save(tx);
     }
 
-    // Helper methods
-    private Usuario buildUsuario(Long id, boolean esTutor) {
-        Usuario usuario = new Usuario();
-        usuario.setId(id);
-        usuario.setNombre("Test User");
-        usuario.setEmail("test@example.com");
-        usuario.setEsTutor(esTutor);
-        return usuario;
+    // =============================================
+    // obtenerEstadoVerificacion
+    // =============================================
+
+    @Test
+    void getVerificationStatusShouldReturnVerifiedWhenTutorIsVerified() {
+        Long userId = 1L;
+        Long tutorId = 10L;
+        Tutor tutor = buildTutor(tutorId, buildUsuario(userId, true));
+        tutor.setVerificado(true);
+
+        when(tutorRepository.findByIdAndUsId(tutorId, userId)).thenReturn(Optional.of(tutor));
+
+        String estado = tutorService.obtenerEstadoVerificacion(userId, tutorId);
+
+        assertThat(estado).isEqualTo("VERIFICADO");
     }
 
-    private Tutor buildTutor(Long id, Long usuarioId) {
-        Usuario usuario = buildUsuario(usuarioId, true);
-        Tutor tutor = new Tutor();
-        tutor.setId(id);
-        tutor.setUs(usuario);
-        tutor.setEspecialidades(java.util.List.of("Matemáticas"));
-        tutor.setTarifaHora(new BigDecimal("50.00"));
-        tutor.setDisponibilidad("Lunes a Viernes");
-        tutor.setBio("Profesor de matemáticas");
+    @Test
+    void getVerificationStatusShouldReturnNoRequestWhenNoTransaction() {
+        Long userId = 1L;
+        Long tutorId = 10L;
+        Tutor tutor = buildTutor(tutorId, buildUsuario(userId, true));
         tutor.setVerificado(false);
-        tutor.setClassroomConectado(false);
-        tutor.setCreatedAt(LocalDateTime.now());
-        return tutor;
+
+        when(tutorRepository.findByIdAndUsId(tutorId, userId)).thenReturn(Optional.of(tutor));
+        when(transaccionPagoRepository.findTopByTutorIdAndTipoOrderByIniciadoAtDesc(
+                        tutorId, TipoTransaccion.PAGO_VERIFICACION))
+                .thenReturn(Optional.empty());
+
+        String estado = tutorService.obtenerEstadoVerificacion(userId, tutorId);
+
+        assertThat(estado).isEqualTo("SIN_SOLICITUD");
     }
 
-    private TransaccionPago buildTransaccion(Long id, Long tutorId) {
-        Tutor tutor = buildTutor(tutorId, 1L);
-        TransaccionPago transaccion = new TransaccionPago();
-        transaccion.setId(id);
-        transaccion.setTutor(tutor);
-        transaccion.setTipo(TipoTransaccion.PAGO_VERIFICACION);
-        transaccion.setMonto(new BigDecimal("9.99"));
-        transaccion.setEstado(EstadoTransaccion.PENDIENTE);
-        return transaccion;
+    // =============================================
+    // tienePagoVerificacionPendiente
+    // =============================================
+
+    @Test
+    void hasPendingVerificationPaymentShouldReturnTrue() {
+        when(transaccionPagoRepository.existsByTutorIdAndTipoAndEstado(
+                        10L, TipoTransaccion.PAGO_VERIFICACION, EstadoTransaccion.PENDIENTE))
+                .thenReturn(true);
+
+        assertThat(tutorService.tienePagoVerificacionPendiente(10L)).isTrue();
+    }
+
+    // =============================================
+    // obtenerTutorPorUsuarioId / obtenerTutorPorId
+    // =============================================
+
+    @Test
+    void getTutorByUserIdShouldReturnTutor() {
+        Long userId = 1L;
+        Usuario usuario = buildUsuario(userId, true);
+        Tutor tutor = buildTutor(10L, usuario);
+
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
+        when(tutorRepository.findByUs(usuario)).thenReturn(Optional.of(tutor));
+
+        Optional<Tutor> result = tutorService.obtenerTutorPorUsuarioId(userId);
+
+        assertThat(result).isPresent();
+        assertThat(result.get().getId()).isEqualTo(10L);
+    }
+
+    @Test
+    void getTutorByIdShouldReturnTutor() {
+        Tutor tutor = buildTutor(10L, buildUsuario(1L, true));
+        when(tutorRepository.findById(10L)).thenReturn(Optional.of(tutor));
+
+        assertThat(tutorService.obtenerTutorPorId(10L)).isPresent();
+    }
+
+    // =============================================
+    // Helpers
+    // =============================================
+
+    private Usuario buildUsuario(Long id, boolean esTutor) {
+        Usuario u = new Usuario();
+        u.setId(id);
+        u.setNombre("Usuario " + id);
+        u.setEmail("user" + id + "@meerkat.es");
+        u.setEsTutor(esTutor);
+        return u;
+    }
+
+    private Tutor buildTutor(Long id, Usuario usuario) {
+        Tutor t = new Tutor();
+        t.setId(id);
+        t.setUs(usuario);
+        t.setEspecialidades(List.of("Matemáticas"));
+        t.setTarifaHora(new BigDecimal("25.00"));
+        t.setDisponibilidad("Tardes");
+        t.setBio("Bio de prueba");
+        t.setVerificado(false);
+        t.setClassroomConectado(false);
+        t.setCreatedAt(LocalDateTime.now());
+        return t;
+    }
+
+    private TutorProfileRequest buildProfileRequest() {
+        TutorProfileRequest r = new TutorProfileRequest();
+        r.setEspecialidades(List.of("Matemáticas", "Física"));
+        r.setTarifaHora(new BigDecimal("25.00"));
+        r.setDisponibilidad("Tardes y fines de semana");
+        r.setBio("Profesor con experiencia");
+        return r;
     }
 }

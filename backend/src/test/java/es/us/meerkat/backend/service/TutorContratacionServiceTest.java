@@ -7,6 +7,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -15,13 +18,17 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import es.us.meerkat.backend.dto.HireTutorRequest;
 import es.us.meerkat.backend.dto.PaymentUrlResponse;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.EstadoContratacion;
+import es.us.meerkat.backend.entity.TipoGrupo;
+import es.us.meerkat.backend.entity.TipoPlanComunidad;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.TutorContratacion;
 import es.us.meerkat.backend.entity.Usuario;
@@ -39,215 +46,194 @@ class TutorContratacionServiceTest {
 
     @InjectMocks private TutorContratacionService tutorContratacionService;
 
+    // =============================================
+    // crearContratacion
+    // =============================================
+
     @Test
-    void crearContratacionShouldCreateAndReturnPaymentUrl() throws Exception {
-        Long comunidadId = 10L;
-        Long tutorId = 1L;
-        Long usuarioId = 20L;
-        Comunidad comunidad = buildComunidad(comunidadId, usuarioId);
-        Tutor tutor = buildTutor(tutorId, true);
-        HireTutorRequest request = new HireTutorRequest();
-        request.setModalidad("Online");
-        request.setDuracion("3 meses");
-        request.setTarifaAcordada(new BigDecimal("50.00"));
+    void createHiringShouldCreateContractAndReturnPaymentUrl() throws Exception {
+        Long comunidadId = 1L;
+        Long tutorId = 10L;
+        Long usuarioId = 5L;
+        Usuario creador = buildUsuario(usuarioId);
+        Comunidad comunidad = buildComunidad(comunidadId, creador);
+        Tutor tutor = buildTutorVerificado(tutorId, buildUsuario(20L));
+        HireTutorRequest request = buildHireTutorRequest();
 
         when(comunidadRepository.findById(comunidadId)).thenReturn(Optional.of(comunidad));
         when(tutorRepository.findById(tutorId)).thenReturn(Optional.of(tutor));
         when(tutorContratacionRepository.findActivaByComunidadId(comunidadId))
                 .thenReturn(Optional.empty());
         when(tutorContratacionRepository.save(any(TutorContratacion.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+                .thenAnswer(
+                        inv -> {
+                            TutorContratacion tc = inv.getArgument(0);
+                            tc.setId(100L);
+                            return tc;
+                        });
         when(paymentService.generarPagoContratacionTutor(
                         tutorId, comunidadId, request.getTarifaAcordada(), usuarioId))
-                .thenReturn(new PaymentUrlResponse("http://payment.url", "session123"));
+                .thenReturn(new PaymentUrlResponse("https://stripe.com/pay/123", "sess_123"));
 
         PaymentUrlResponse response =
                 tutorContratacionService.crearContratacion(
                         comunidadId, tutorId, request, usuarioId);
 
-        assertThat(response).isNotNull();
-        assertThat(response.paymentUrl()).isEqualTo("http://payment.url");
-        verify(tutorContratacionRepository).save(any(TutorContratacion.class));
+        assertThat(response.paymentUrl()).contains("stripe.com");
+
+        ArgumentCaptor<TutorContratacion> captor = ArgumentCaptor.forClass(TutorContratacion.class);
+        verify(tutorContratacionRepository).save(captor.capture());
+        TutorContratacion saved = captor.getValue();
+        assertThat(saved.getEstado()).isEqualTo(EstadoContratacion.PENDIENTE_PAGO);
+        assertThat(saved.getTutor()).isEqualTo(tutor);
+        assertThat(saved.getComunidad()).isEqualTo(comunidad);
+        assertThat(saved.getModalidad()).isEqualTo("horaria");
     }
 
     @Test
-    void crearContratacionShouldFailWhenUserIsNotAdmin() {
-        Long comunidadId = 10L;
-        Long tutorId = 1L;
-        Long usuarioId = 20L;
-        Comunidad comunidad = buildComunidad(comunidadId, 999L); // Different admin
-        HireTutorRequest request = new HireTutorRequest();
+    void createHiringShouldFailWhenCommunityNotFound() {
+        when(comunidadRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(
+                        () ->
+                                tutorContratacionService.crearContratacion(
+                                        99L, 10L, buildHireTutorRequest(), 5L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Comunidad no encontrada");
+    }
+
+    @Test
+    void createHiringShouldFailWhenUserIsNotCommunityCreator() {
+        Long comunidadId = 1L;
+        Long otroUsuarioId = 999L;
+        Comunidad comunidad = buildComunidad(comunidadId, buildUsuario(5L));
 
         when(comunidadRepository.findById(comunidadId)).thenReturn(Optional.of(comunidad));
 
         assertThatThrownBy(
                         () ->
                                 tutorContratacionService.crearContratacion(
-                                        comunidadId, tutorId, request, usuarioId))
+                                        comunidadId, 10L, buildHireTutorRequest(), otroUsuarioId))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("permisos");
+                .hasMessageContaining("No tienes permisos");
     }
 
     @Test
-    void crearContratacionShouldFailWhenTutorNotVerified() {
-        Long comunidadId = 10L;
-        Long tutorId = 1L;
-        Long usuarioId = 20L;
-        Comunidad comunidad = buildComunidad(comunidadId, usuarioId);
-        Tutor tutor = buildTutor(tutorId, false); // Not verified
-        HireTutorRequest request = new HireTutorRequest();
+    void createHiringShouldFailWhenCommunityAlreadyHasActiveTutor() {
+        Long comunidadId = 1L;
+        Long usuarioId = 5L;
+        Usuario creador = buildUsuario(usuarioId);
+        Comunidad comunidad = buildComunidad(comunidadId, creador);
+        Tutor tutor = buildTutorVerificado(10L, buildUsuario(20L));
 
         when(comunidadRepository.findById(comunidadId)).thenReturn(Optional.of(comunidad));
-        when(tutorRepository.findById(tutorId)).thenReturn(Optional.of(tutor));
-
-        assertThatThrownBy(
-                        () ->
-                                tutorContratacionService.crearContratacion(
-                                        comunidadId, tutorId, request, usuarioId))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("verificado");
-    }
-
-    @Test
-    void crearContratacionShouldFailWhenCommunityAlreadyHasActiveTutor() {
-        Long comunidadId = 10L;
-        Long tutorId = 1L;
-        Long usuarioId = 20L;
-        Comunidad comunidad = buildComunidad(comunidadId, usuarioId);
-        Tutor tutor = buildTutor(tutorId, true);
-        HireTutorRequest request = new HireTutorRequest();
-        TutorContratacion existingContratacion = new TutorContratacion();
-
-        when(comunidadRepository.findById(comunidadId)).thenReturn(Optional.of(comunidad));
-        when(tutorRepository.findById(tutorId)).thenReturn(Optional.of(tutor));
+        when(tutorRepository.findById(10L)).thenReturn(Optional.of(tutor));
         when(tutorContratacionRepository.findActivaByComunidadId(comunidadId))
-                .thenReturn(Optional.of(existingContratacion));
+                .thenReturn(Optional.of(new TutorContratacion()));
 
         assertThatThrownBy(
                         () ->
                                 tutorContratacionService.crearContratacion(
-                                        comunidadId, tutorId, request, usuarioId))
+                                        comunidadId, 10L, buildHireTutorRequest(), usuarioId))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("ya tiene un tutor activo");
     }
 
     @Test
-    void obtenerContratacionesDelTutorShouldReturnPageOfContrataciones() {
-        Long tutorId = 1L;
-        when(tutorContratacionRepository.findByTutorId(tutorId, PageRequest.of(0, 10)))
-                .thenReturn(new PageImpl<>(java.util.List.of()));
+    void createHiringShouldFailWhenTutorIsNotVerified() {
+        Long comunidadId = 1L;
+        Long usuarioId = 5L;
+        Usuario creador = buildUsuario(usuarioId);
+        Comunidad comunidad = buildComunidad(comunidadId, creador);
+        Tutor tutorNoVerificado = buildTutorVerificado(10L, buildUsuario(20L));
+        tutorNoVerificado.setVerificado(false);
 
-        var result =
-                tutorContratacionService.obtenerContratacionesDelTutor(
-                        tutorId, PageRequest.of(0, 10));
-
-        assertThat(result).isNotNull();
-        verify(tutorContratacionRepository).findByTutorId(tutorId, PageRequest.of(0, 10));
-    }
-
-    @Test
-    void obtenerContratacionesDeLaComunidadShouldReturnPageOfContrataciones() {
-        Long comunidadId = 10L;
-        when(tutorContratacionRepository.findByComunidadId(comunidadId, PageRequest.of(0, 10)))
-                .thenReturn(new PageImpl<>(java.util.List.of()));
-
-        var result =
-                tutorContratacionService.obtenerContratacionesDeLaComunidad(
-                        comunidadId, PageRequest.of(0, 10));
-
-        assertThat(result).isNotNull();
-        verify(tutorContratacionRepository).findByComunidadId(comunidadId, PageRequest.of(0, 10));
-    }
-
-    @Test
-    void obtenerContratacionActivaDeComunidadShouldReturnActiveContratacion() {
-        Long comunidadId = 10L;
-        TutorContratacion contratacion = new TutorContratacion();
+        when(comunidadRepository.findById(comunidadId)).thenReturn(Optional.of(comunidad));
+        when(tutorRepository.findById(10L)).thenReturn(Optional.of(tutorNoVerificado));
         when(tutorContratacionRepository.findActivaByComunidadId(comunidadId))
-                .thenReturn(Optional.of(contratacion));
+                .thenReturn(Optional.empty());
 
-        var result = tutorContratacionService.obtenerContratacionActivaDeComunidad(comunidadId);
+        assertThatThrownBy(
+                        () ->
+                                tutorContratacionService.crearContratacion(
+                                        comunidadId, 10L, buildHireTutorRequest(), usuarioId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("verificado");
+    }
 
-        assertThat(result).isPresent();
-        assertThat(result.get()).isEqualTo(contratacion);
+    // =============================================
+    // activarContratacion
+    // =============================================
+
+    @Test
+    void activateHiringShouldChangeStatusToActive() {
+        TutorContratacion contratacion = buildContratacion(100L, EstadoContratacion.PENDIENTE_PAGO);
+
+        when(tutorContratacionRepository.findById(100L)).thenReturn(Optional.of(contratacion));
+
+        tutorContratacionService.activarContratacion(100L);
+
+        assertThat(contratacion.getEstado()).isEqualTo(EstadoContratacion.ACTIVA);
+        assertThat(contratacion.getFechaInicio()).isEqualTo(LocalDate.now());
+        verify(tutorContratacionRepository).save(contratacion);
     }
 
     @Test
-    void obtenerContratacionShouldReturnContratacion() {
-        Long contratacionId = 1L;
-        TutorContratacion contratacion = new TutorContratacion();
-        when(tutorContratacionRepository.findById(contratacionId))
-                .thenReturn(Optional.of(contratacion));
+    void activateHiringShouldFailWhenStatusIsNotPendingPayment() {
+        TutorContratacion contratacion = buildContratacion(100L, EstadoContratacion.ACTIVA);
 
-        var result = tutorContratacionService.obtenerContratacion(contratacionId);
+        when(tutorContratacionRepository.findById(100L)).thenReturn(Optional.of(contratacion));
 
-        assertThat(result).isPresent();
-        assertThat(result.get()).isEqualTo(contratacion);
+        assertThatThrownBy(() -> tutorContratacionService.activarContratacion(100L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("PENDIENTE_PAGO");
     }
 
     @Test
-    void activarContratacionShouldChangeStateToActive() {
-        Long contratacionId = 1L;
-        TutorContratacion contratacion = new TutorContratacion();
-        contratacion.setId(contratacionId);
-        contratacion.setEstado(EstadoContratacion.PENDIENTE_PAGO);
+    void activateHiringShouldFailWhenNotFound() {
+        when(tutorContratacionRepository.findById(999L)).thenReturn(Optional.empty());
 
-        when(tutorContratacionRepository.findById(contratacionId))
-                .thenReturn(Optional.of(contratacion));
-        when(tutorContratacionRepository.save(any(TutorContratacion.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-
-        tutorContratacionService.activarContratacion(contratacionId);
-
-        ArgumentCaptor<TutorContratacion> captor = ArgumentCaptor.forClass(TutorContratacion.class);
-        verify(tutorContratacionRepository).save(captor.capture());
-
-        assertThat(captor.getValue().getEstado()).isEqualTo(EstadoContratacion.ACTIVA);
+        assertThatThrownBy(() -> tutorContratacionService.activarContratacion(999L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("no encontrada");
     }
 
-    @Test
-    void activarContratacionShouldFailWhenNotPendingPayment() {
-        Long contratacionId = 1L;
-        TutorContratacion contratacion = new TutorContratacion();
-        contratacion.setEstado(EstadoContratacion.ACTIVA);
-
-        when(tutorContratacionRepository.findById(contratacionId))
-                .thenReturn(Optional.of(contratacion));
-
-        assertThatThrownBy(() -> tutorContratacionService.activarContratacion(contratacionId))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
+    // =============================================
+    // cancelarContratacion
+    // =============================================
 
     @Test
-    void cancelarContratacionShouldChangeStateToCanceled() {
-        Long contratacionId = 1L;
-        Long usuarioId = 20L;
-        Comunidad comunidad = buildComunidad(10L, usuarioId);
-        TutorContratacion contratacion = new TutorContratacion();
-        contratacion.setId(contratacionId);
+    void cancelHiringShouldCancelSuccessfully() {
+        Long contratacionId = 100L;
+        Long usuarioId = 5L;
+        Usuario creador = buildUsuario(usuarioId);
+        Comunidad comunidad = buildComunidad(1L, creador);
+
+        TutorContratacion contratacion =
+                buildContratacion(contratacionId, EstadoContratacion.ACTIVA);
         contratacion.setComunidad(comunidad);
-        contratacion.setEstado(EstadoContratacion.ACTIVA);
 
         when(tutorContratacionRepository.findById(contratacionId))
                 .thenReturn(Optional.of(contratacion));
-        when(tutorContratacionRepository.save(any(TutorContratacion.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
 
         tutorContratacionService.cancelarContratacion(
-                contratacionId, usuarioId, "Cambio de planes");
+                contratacionId, usuarioId, "Ya no lo necesitamos");
 
-        ArgumentCaptor<TutorContratacion> captor = ArgumentCaptor.forClass(TutorContratacion.class);
-        verify(tutorContratacionRepository).save(captor.capture());
-
-        assertThat(captor.getValue().getEstado()).isEqualTo(EstadoContratacion.CANCELADA);
+        assertThat(contratacion.getEstado()).isEqualTo(EstadoContratacion.CANCELADA);
+        assertThat(contratacion.getMotivoCancelacion()).isEqualTo("Ya no lo necesitamos");
+        assertThat(contratacion.getFechaFin()).isEqualTo(LocalDate.now());
+        verify(tutorContratacionRepository).save(contratacion);
     }
 
     @Test
-    void cancelarContratacionShouldFailWhenUserIsNotAdmin() {
-        Long contratacionId = 1L;
-        Long usuarioId = 20L;
-        Comunidad comunidad = buildComunidad(10L, 999L); // Different admin
-        TutorContratacion contratacion = new TutorContratacion();
+    void cancelHiringShouldFailWhenUserIsNotCreator() {
+        Long contratacionId = 100L;
+        Long otroUsuarioId = 999L;
+        Usuario creador = buildUsuario(5L);
+        Comunidad comunidad = buildComunidad(1L, creador);
+
+        TutorContratacion contratacion =
+                buildContratacion(contratacionId, EstadoContratacion.ACTIVA);
         contratacion.setComunidad(comunidad);
 
         when(tutorContratacionRepository.findById(contratacionId))
@@ -256,89 +242,198 @@ class TutorContratacionServiceTest {
         assertThatThrownBy(
                         () ->
                                 tutorContratacionService.cancelarContratacion(
-                                        contratacionId, usuarioId, "Motivo"))
-                .isInstanceOf(IllegalArgumentException.class);
+                                        contratacionId, otroUsuarioId, "motivo"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("No tienes permisos");
+    }
+
+    // =============================================
+    // completarContratacion
+    // =============================================
+
+    @Test
+    void completeHiringShouldChangeStatusToCompleted() {
+        TutorContratacion contratacion = buildContratacion(100L, EstadoContratacion.ACTIVA);
+
+        when(tutorContratacionRepository.findById(100L)).thenReturn(Optional.of(contratacion));
+
+        tutorContratacionService.completarContratacion(100L);
+
+        assertThat(contratacion.getEstado()).isEqualTo(EstadoContratacion.COMPLETADA);
+        assertThat(contratacion.getFechaFin()).isEqualTo(LocalDate.now());
+        verify(tutorContratacionRepository).save(contratacion);
+    }
+
+    // =============================================
+    // tieneTutorActivo
+    // =============================================
+
+    @Test
+    void hasActiveTutorShouldReturnTrueWhenExists() {
+        when(tutorContratacionRepository.findActivaByComunidadId(1L))
+                .thenReturn(Optional.of(new TutorContratacion()));
+
+        assertThat(tutorContratacionService.tieneTutorActivo(1L)).isTrue();
     }
 
     @Test
-    void completarContratacionShouldChangeStateToCompleted() {
-        Long contratacionId = 1L;
-        TutorContratacion contratacion = new TutorContratacion();
-        contratacion.setId(contratacionId);
-        contratacion.setEstado(EstadoContratacion.ACTIVA);
+    void hasActiveTutorShouldReturnFalseWhenNotExists() {
+        when(tutorContratacionRepository.findActivaByComunidadId(1L)).thenReturn(Optional.empty());
 
-        when(tutorContratacionRepository.findById(contratacionId))
+        assertThat(tutorContratacionService.tieneTutorActivo(1L)).isFalse();
+    }
+
+    // =============================================
+    // obtenerContratacionesDelTutor
+    // =============================================
+
+    @Test
+    void getTutorHiringsShouldReturnPage() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<TutorContratacion> page =
+                new PageImpl<>(List.of(buildContratacion(1L, EstadoContratacion.ACTIVA)));
+
+        when(tutorContratacionRepository.findByTutorId(10L, pageable)).thenReturn(page);
+
+        Page<TutorContratacion> result =
+                tutorContratacionService.obtenerContratacionesDelTutor(10L, pageable);
+
+        assertThat(result.getContent()).hasSize(1);
+    }
+
+    // =============================================
+    // obtenerContratacionesDeLaComunidad
+    // =============================================
+
+    @Test
+    void getCommunityHiringsShouldReturnPage() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<TutorContratacion> page = new PageImpl<>(List.of());
+
+        when(tutorContratacionRepository.findByComunidadId(1L, pageable)).thenReturn(page);
+
+        Page<TutorContratacion> result =
+                tutorContratacionService.obtenerContratacionesDeLaComunidad(1L, pageable);
+
+        assertThat(result.getContent()).isEmpty();
+    }
+
+    // =============================================
+    // obtenerContratacionActivaDeComunidad
+    // =============================================
+
+    @Test
+    void getActiveHiringByCommunityShouldReturnHiring() {
+        TutorContratacion contratacion = buildContratacion(100L, EstadoContratacion.ACTIVA);
+        when(tutorContratacionRepository.findActivaByComunidadId(1L))
                 .thenReturn(Optional.of(contratacion));
-        when(tutorContratacionRepository.save(any(TutorContratacion.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
 
-        tutorContratacionService.completarContratacion(contratacionId);
-
-        ArgumentCaptor<TutorContratacion> captor = ArgumentCaptor.forClass(TutorContratacion.class);
-        verify(tutorContratacionRepository).save(captor.capture());
-
-        assertThat(captor.getValue().getEstado()).isEqualTo(EstadoContratacion.COMPLETADA);
-    }
-
-    @Test
-    void tieneTutorActivoShouldReturnTrueWhenTutorExists() {
-        Long comunidadId = 10L;
-        TutorContratacion contratacion = new TutorContratacion();
-
-        when(tutorContratacionRepository.findActivaByComunidadId(comunidadId))
-                .thenReturn(Optional.of(contratacion));
-
-        boolean tiene = tutorContratacionService.tieneTutorActivo(comunidadId);
-
-        assertThat(tiene).isTrue();
-    }
-
-    @Test
-    void tieneTutorActivoShouldReturnFalseWhenTutorNotExists() {
-        Long comunidadId = 10L;
-
-        when(tutorContratacionRepository.findActivaByComunidadId(comunidadId))
-                .thenReturn(Optional.empty());
-
-        boolean tiene = tutorContratacionService.tieneTutorActivo(comunidadId);
-
-        assertThat(tiene).isFalse();
-    }
-
-    @Test
-    void obtenerTutorActivoDeComunidadShouldReturnTutor() {
-        Long comunidadId = 10L;
-        Tutor tutor = buildTutor(1L, true);
-        TutorContratacion contratacion = new TutorContratacion();
-        contratacion.setTutor(tutor);
-
-        when(tutorContratacionRepository.findActivaByComunidadId(comunidadId))
-                .thenReturn(Optional.of(contratacion));
-
-        var result = tutorContratacionService.obtenerTutorActivoDeComunidad(comunidadId);
+        Optional<TutorContratacion> result =
+                tutorContratacionService.obtenerContratacionActivaDeComunidad(1L);
 
         assertThat(result).isPresent();
-        assertThat(result.get()).isEqualTo(tutor);
+        assertThat(result.get().getEstado()).isEqualTo(EstadoContratacion.ACTIVA);
     }
 
-    // Helper methods
-    private Comunidad buildComunidad(Long id, Long adminId) {
-        Usuario admin = new Usuario();
-        admin.setId(adminId);
-        admin.setNombre("Admin");
-        admin.setEmail("admin@test.com");
-        Comunidad comunidad = new Comunidad();
-        comunidad.setId(id);
-        comunidad.setNombre("Test Comunidad");
-        comunidad.setCreador(admin);
-        return comunidad;
+    // =============================================
+    // obtenerContratacion
+    // =============================================
+
+    @Test
+    void getHiringByIdShouldReturnHiring() {
+        TutorContratacion contratacion = buildContratacion(100L, EstadoContratacion.COMPLETADA);
+        when(tutorContratacionRepository.findById(100L)).thenReturn(Optional.of(contratacion));
+
+        Optional<TutorContratacion> result = tutorContratacionService.obtenerContratacion(100L);
+
+        assertThat(result).isPresent();
     }
 
-    private Tutor buildTutor(Long id, boolean verificado) {
-        Tutor tutor = new Tutor();
-        tutor.setId(id);
-        tutor.setVerificado(verificado);
-        tutor.setTarifaHora(new BigDecimal("50.00"));
-        return tutor;
+    // =============================================
+    // obtenerTutorActivoDeComunidad
+    // =============================================
+
+    @Test
+    void getActiveTutorByCcommunityShouldReturnTutor() {
+        Tutor tutor = buildTutorVerificado(10L, buildUsuario(20L));
+        TutorContratacion contratacion = buildContratacion(100L, EstadoContratacion.ACTIVA);
+        contratacion.setTutor(tutor);
+
+        when(tutorContratacionRepository.findActivaByComunidadId(1L))
+                .thenReturn(Optional.of(contratacion));
+
+        Optional<Tutor> result = tutorContratacionService.obtenerTutorActivoDeComunidad(1L);
+
+        assertThat(result).isPresent();
+        assertThat(result.get().getId()).isEqualTo(10L);
+    }
+
+    @Test
+    void getActiveTutorByCommunityShouldReturnEmptyWhenNoActive() {
+        when(tutorContratacionRepository.findActivaByComunidadId(1L)).thenReturn(Optional.empty());
+
+        Optional<Tutor> result = tutorContratacionService.obtenerTutorActivoDeComunidad(1L);
+
+        assertThat(result).isEmpty();
+    }
+
+    // =============================================
+    // Helpers
+    // =============================================
+
+    private Usuario buildUsuario(Long id) {
+        Usuario u = new Usuario();
+        u.setId(id);
+        u.setNombre("Usuario " + id);
+        u.setEmail("user" + id + "@meerkat.es");
+        return u;
+    }
+
+    private Comunidad buildComunidad(Long id, Usuario creador) {
+        return Comunidad.builder()
+                .id(id)
+                .nombre("Comunidad Test")
+                .descripcion("Descripción")
+                .tipoGrupo(TipoGrupo.COMUNIDAD_PUBLICA)
+                .tipoPlan(TipoPlanComunidad.FREE)
+                .maxMiembros(50)
+                .creador(creador)
+                .build();
+    }
+
+    private Tutor buildTutorVerificado(Long id, Usuario usuario) {
+        Tutor t = new Tutor();
+        t.setId(id);
+        t.setUs(usuario);
+        t.setEspecialidades(List.of("Matemáticas"));
+        t.setTarifaHora(new BigDecimal("25.00"));
+        t.setDisponibilidad("Tardes");
+        t.setBio("Bio de prueba");
+        t.setVerificado(true);
+        t.setClassroomConectado(false);
+        t.setCreatedAt(LocalDateTime.now());
+        return t;
+    }
+
+    private TutorContratacion buildContratacion(Long id, EstadoContratacion estado) {
+        TutorContratacion tc = new TutorContratacion();
+        tc.setId(id);
+        tc.setEstado(estado);
+        tc.setModalidad("horaria");
+        tc.setDuracion("3 meses");
+        tc.setTarifaAcordada(new BigDecimal("25.50"));
+        tc.setFechaInicio(LocalDate.now());
+        tc.setFechaFin(LocalDate.now().plusMonths(3));
+        tc.setCreatedAt(LocalDateTime.now());
+        return tc;
+    }
+
+    private HireTutorRequest buildHireTutorRequest() {
+        return HireTutorRequest.builder()
+                .modalidad("horaria")
+                .duracion("3 meses")
+                .tarifaAcordada(new BigDecimal("25.50"))
+                .aceptarTerminos(true)
+                .build();
     }
 }

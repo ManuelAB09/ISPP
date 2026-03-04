@@ -5,12 +5,16 @@ import java.util.List;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /** DTO para actualizar un perfil de tutor. */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Schema(description = "Datos para actualizar un perfil de tutor")
 public class UpdateTutorRequest {
 
@@ -27,6 +31,9 @@ public class UpdateTutorRequest {
     @Schema(description = "Especialidades del tutor", example = "[\"Matemáticas\", \"Física\"]")
     @NotEmpty(message = "Debe tener al menos una especialidad")
     private List<String> especialidades;
+
+    @Schema(description = "Disponibilidad horaria del tutor", example = "Tardes y fines de semana")
+    private String disponibilidad;
 
     @Schema(description = "URL de experiencia o certificados")
     private String urlExperiencia;

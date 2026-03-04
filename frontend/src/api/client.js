@@ -4,7 +4,9 @@ import { getApiBaseUrl } from './baseUrl';
 const API_BASE_URL = getApiBaseUrl();
 
 // Helpful diagnostic when debugging networking issues:
-console.log('API_BASE_URL =', API_BASE_URL);
+if (process.env.NODE_ENV !== 'test') {
+  console.log('API_BASE_URL =', API_BASE_URL);
+}
 
 class ApiClient {
   constructor(baseUrl) {

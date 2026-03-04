@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -53,16 +54,18 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
     List<Tutor> findAllByUsId(Long usuarioId);
 
     /**
-     * Devuelve todos los tutores verificados con paginación.
+     * Devuelve todos los tutores verificados con paginación. Utiliza @EntityGraph para cargar la
+     * relación con Usuario de forma eager.
      *
      * @param pageable Información de paginación.
      * @return Página de tutores verificados.
      */
+    @EntityGraph(attributePaths = {"us"})
     Page<Tutor> findByVerificadoTrue(Pageable pageable);
 
     /**
      * Busca tutores verificados filtrando por especialidad (JOIN sobre ElementCollection) y rango
-     * de tarifa.
+     * de tarifa. Utiliza @EntityGraph para cargar la relación con Usuario de forma eager.
      *
      * @param especialidad Especialidad buscada (contiene, case-insensitive)
      * @param tarifaMin Tarifa mínima
@@ -70,6 +73,7 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
      * @param pageable Información de paginación
      * @return Página de tutores filtrados
      */
+    @EntityGraph(attributePaths = {"us"})
     @Query(
             "SELECT DISTINCT t FROM Tutor t JOIN t.especialidades e "
                     + "WHERE t.verificado = true "
