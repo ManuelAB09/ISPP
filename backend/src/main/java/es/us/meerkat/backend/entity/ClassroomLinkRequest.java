@@ -25,10 +25,12 @@ public class ClassroomLinkRequest {
     @Column(name = "tutor_id", nullable = false)
     private Long tutorId;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ClassroomLinkRequestStatus estado = ClassroomLinkRequestStatus.PENDIENTE;
 
+    @Builder.Default
     @Column(nullable = false)
     private LocalDateTime fechaCreacion = LocalDateTime.now();
 

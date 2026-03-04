@@ -85,10 +85,8 @@ rectangle "Gestión de Contenido" as GCO {
     usecase "Comprar Archivo" as UC43 <<MVP>>
     usecase "Descargar Archivos" as UC44 <<MVP>>
     usecase "Eliminar Archivos" as UC45 <<MVP>>
-    usecase "Descargar con
-Anuncios (Free)" as UC46a <<MVP>>
-    usecase "Descargar sin
-Anuncios (Premium)" as UC46b <<MVP>>
+    usecase "Descargar con Anuncios (Free)" as UC46a <<MVP>>
+    usecase "Descargar sin Anuncios (Premium)" as UC46b <<MVP>>
 }
 
 rectangle "Suscripciones y Pagos" as SP {
