@@ -38,6 +38,7 @@ public class GoogleClassroomConnection {
     private Instant expiresAt;
 
     /** Indica si la conexión está activa */
+    @Builder.Default
     @Column(nullable = false)
     private Boolean activa = true;
 

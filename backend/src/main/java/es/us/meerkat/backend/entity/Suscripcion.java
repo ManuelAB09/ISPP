@@ -41,6 +41,7 @@ public class Suscripcion {
     private Usuario usuario;
 
     /** Tipo de plan contratado (FREE o PREMIUM). */
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TipoPlan plan = TipoPlan.FREE;
@@ -54,10 +55,12 @@ public class Suscripcion {
     private LocalDate fechaFin;
 
     /** Indica si la suscripción está activa. */
+    @Builder.Default
     @Column(nullable = false)
     private Boolean activa = true;
 
     /** Indica si la renovación automática está habilitada. */
+    @Builder.Default
     @Column(nullable = false)
     private Boolean autoRenovar = true;
 

@@ -51,6 +51,7 @@ public class TutorContratacion {
     private BigDecimal tarifaAcordada;
 
     /** Estado de la contratación. */
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EstadoContratacion estado = EstadoContratacion.ACTIVA;
@@ -69,6 +70,7 @@ public class TutorContratacion {
     private LocalDate fechaFin;
 
     /** Fecha de creación del registro. */
+    @Builder.Default
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
