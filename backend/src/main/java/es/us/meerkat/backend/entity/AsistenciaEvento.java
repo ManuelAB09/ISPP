@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import es.us.meerkat.backend.dto.AttendanceResponse;
 import es.us.meerkat.backend.dto.UserPublicResponse;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -31,6 +33,7 @@ public class AsistenciaEvento {
     private Long id;
 
     /** Estado en el que se encuentra la asistencia al evento. */
+    @Enumerated(EnumType.STRING)
     private EstadoAsistencia estado;
 
     /** Fecha y hora de la asistencia al evento. */

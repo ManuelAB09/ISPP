@@ -16,4 +16,5 @@ public record CommunityDetailResponse(
         String miRol,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
-        String imagenUrl) {}
+        String imagenUrl,
+        ClassroomInfoResponse classroom) {}

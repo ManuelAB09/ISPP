@@ -83,3 +83,9 @@ springdoc:
       enabled: false
   api-docs:
     enabled: true
+
+google:
+  classroom:
+    client-id: placeholder
+    client-secret: placeholder
+    redirect-uri: http://localhost:8080/oauth2/callback/google-classroom

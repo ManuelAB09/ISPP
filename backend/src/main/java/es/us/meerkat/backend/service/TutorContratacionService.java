@@ -31,6 +31,8 @@ public class TutorContratacionService {
 
     @Autowired private PaymentService paymentService;
 
+    @Autowired private ClassroomLinkRequestService classroomLinkRequestService;
+
     // ===============================
     // OPERACIONES DE CONTRATACIÓN
     // ===============================
@@ -172,6 +174,10 @@ public class TutorContratacionService {
         contratacion.setFechaInicio(LocalDate.now());
 
         tutorContratacionRepository.save(contratacion);
+
+        Long comunidadId = contratacion.getComunidad().getId();
+        Long tutorId = contratacion.getTutor().getUs().getId();
+        classroomLinkRequestService.crearSolicitud(comunidadId, tutorId);
     }
 
     /**
