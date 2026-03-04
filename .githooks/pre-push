@@ -23,7 +23,7 @@ fi
 # ── Patrones permitidos (§8 política de ramas) ──────────────
 #
 # Ramas principales: nombre exacto
-#   main | trunk | hotfix
+#   main | trunk | hotfix | develop
 #
 # Ramas de tarea:
 #   (feature|doc|test)/#<ID>_<NombreEnUpperCamelCase>
@@ -34,7 +34,7 @@ fi
 # Ramas de bugfix:
 #   bugfix/#<ID>_<NombreEnUpperCamelCase>
 
-main_re='^(main|trunk|hotfix)$'
+main_re='^(main|trunk|hotfix|develop)$'
 task_re='^(feature|doc|test)/#[0-9]+_[A-Z][^ ]*$'
 bugfix_re='^bugfix/#[0-9]+_[A-Z][^ ]*$'
 
@@ -63,6 +63,7 @@ echo "  Ramas principales (nombre exacto):"
 echo "    main"
 echo "    trunk"
 echo "    hotfix"
+echo "    develop"
 echo ""
 echo "  Ramas auxiliares:"
 echo "    feature/#<ID>_<NombreEnUpperCamelCase>   → nueva funcionalidad"
