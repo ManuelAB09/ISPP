@@ -15,11 +15,13 @@ on:
       - main
       - trunk
       - develop
-      - hotfix
       - bugfix
+      - hotfix
       - sprint1
       - sprint2
       - sprint3
+      - bugfix
+      - hotfix
       - 'dependabot/**'
 
 jobs:
