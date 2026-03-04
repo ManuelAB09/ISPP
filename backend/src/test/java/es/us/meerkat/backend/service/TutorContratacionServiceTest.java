@@ -43,6 +43,7 @@ class TutorContratacionServiceTest {
     @Mock private TutorRepository tutorRepository;
     @Mock private ComunidadRepository comunidadRepository;
     @Mock private PaymentService paymentService;
+    @Mock private ClassroomLinkRequestService classroomLinkRequestService;
 
     @InjectMocks private TutorContratacionService tutorContratacionService;
 
@@ -168,6 +169,11 @@ class TutorContratacionServiceTest {
     @Test
     void activateHiringShouldChangeStatusToActive() {
         TutorContratacion contratacion = buildContratacion(100L, EstadoContratacion.PENDIENTE_PAGO);
+        Usuario tutorUser = buildUsuario(20L);
+        Tutor tutor = buildTutorVerificado(10L, tutorUser);
+        Comunidad comunidad = buildComunidad(1L, buildUsuario(5L));
+        contratacion.setTutor(tutor);
+        contratacion.setComunidad(comunidad);
 
         when(tutorContratacionRepository.findById(100L)).thenReturn(Optional.of(contratacion));
 
@@ -176,6 +182,7 @@ class TutorContratacionServiceTest {
         assertThat(contratacion.getEstado()).isEqualTo(EstadoContratacion.ACTIVA);
         assertThat(contratacion.getFechaInicio()).isEqualTo(LocalDate.now());
         verify(tutorContratacionRepository).save(contratacion);
+        verify(classroomLinkRequestService).crearSolicitud(comunidad.getId(), tutorUser.getId());
     }
 
     @Test
