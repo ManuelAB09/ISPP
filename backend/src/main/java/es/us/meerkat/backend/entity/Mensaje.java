@@ -35,6 +35,7 @@ public class Mensaje {
     @Column(name = "archivo_data")
     private byte[] archivoData;
 
+    @Builder.Default
     @Column(nullable = false)
     private Boolean editado = false;
 

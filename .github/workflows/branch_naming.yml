@@ -20,8 +20,6 @@ on:
       - sprint1
       - sprint2
       - sprint3
-      - bugfix
-      - hotfix
       - 'dependabot/**'
 
 jobs:

@@ -52,11 +52,13 @@ public class TransaccionPago {
     private BigDecimal comision;
 
     /** Estado actual de la transacción (pendiente, completada, fallida). */
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EstadoTransaccion estado = EstadoTransaccion.PENDIENTE;
 
     /** Fecha y hora en que se inició la transacción. */
+    @Builder.Default
     @Column(nullable = false)
     private LocalDateTime iniciadoAt = LocalDateTime.now();
 

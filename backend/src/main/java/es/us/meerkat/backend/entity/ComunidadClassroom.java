@@ -33,6 +33,7 @@ public class ComunidadClassroom {
     private String classroomCourseName;
 
     /** Indica si la vinculación está activa */
+    @Builder.Default
     @Column(nullable = false)
     private Boolean activa = true;
 }
