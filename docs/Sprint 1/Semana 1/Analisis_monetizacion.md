@@ -1,7 +1,5 @@
 # Título del Documento
 
-## Subtítulo (si aplica)
-
 ### Grupo 9 – Turno de tarde
 
 ![Logo App](../../images/logoapp.jpeg)
@@ -9,12 +7,12 @@
 ---
 
 **Proyecto:** MeerKatters  
-**Documento:** Tipo de documento (Acta / Plan de proyecto / Arquitectura / Normativa / Desarrollo)  
-**Sprint:** Sprint X  
-**Semana:** Semana X  
-**Estado:** Borrador / En revisión / Aprobado  
-**Fecha:** DD/MM/YYYY  
-**Autor(es):** Nombre(s)
+**Documento:** Desarrollo  
+**Sprint:** Sprint 1  
+**Semana:** Semana 2  
+**Estado:** Aprobado  
+**Fecha:** 04/03/2026  
+**Autor(es):** Macarena Pereira Campos
 
 ---
 
@@ -24,8 +22,6 @@
 3. [Estrategia de Precios](#3-Estrategia-de-Precios)
 4. [Presupuesto del Proyecto y Estado Actual](#4-Presupuesto-del-Proyecto-y-Estado-Actual)
 5. [Rentabilidad](#5-Rentabilidad)
-6. [Escenarios financieros](#6-Escenarios-financieros)
-7. [Plan de Implementación de Pagos](#7-Plan-de-Implementación-de-Pagos)
 
 ---
 
