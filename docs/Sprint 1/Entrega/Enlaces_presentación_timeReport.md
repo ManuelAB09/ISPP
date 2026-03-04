@@ -1,6 +1,6 @@
 # Enlaces de la presentación y reporte de tiempo
 
-## Sprint DP
+## Sprint S1
 
 ### Grupo 9 – Turno de tarde
 
@@ -12,7 +12,7 @@
 **Documento:** Entrega  
 **Sprint:** Sprint 1  
 **Semana:** Semana 2  
-**Estado:** Borrador 
+**Estado:** Aprobado
 **Fecha:** 03/03/2026  
 **Autor(es):** Manuel Artero Bellido
 

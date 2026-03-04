@@ -101,9 +101,9 @@ describe('CreateProfileModal', () => {
     const mockNewTutor = {
       id: 1,
       especialidades: ['Matemáticas', 'Física'],
-      tarifaHora: 25,
+      tarifaPorHora: 25,
       disponibilidad: 'Tardes',
-      bio: 'Profesor experto',
+      biografia: 'Profesor experto',
     };
     tutorEndpoints.createTutorProfile.mockResolvedValue(mockNewTutor);
 
@@ -122,9 +122,9 @@ describe('CreateProfileModal', () => {
     await waitFor(() => {
       expect(tutorEndpoints.createTutorProfile).toHaveBeenCalledWith({
         especialidades: ['Matemáticas', 'Física'],
-        tarifaHora: 25,
+        tarifaPorHora: 25,
         disponibilidad: 'Tardes',
-        bio: 'Profesor experto',
+        biografia: 'Profesor experto',
       });
     });
 
