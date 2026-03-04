@@ -23,8 +23,13 @@ class LinkPreviewControllerTest {
 
     @Test
     void previewShouldReturnOkWhenUrlIsValid() {
-        LinkPreviewRequest req = new LinkPreviewRequest(); req.setUrl("https://example.com");
-        LinkPreviewResponse resp = LinkPreviewResponse.builder().url("https://example.com").domain("example.com").build();
+        LinkPreviewRequest req = new LinkPreviewRequest();
+        req.setUrl("https://example.com");
+        LinkPreviewResponse resp =
+                LinkPreviewResponse.builder()
+                        .url("https://example.com")
+                        .domain("example.com")
+                        .build();
         when(service.getPreview(req.getUrl())).thenReturn(resp);
 
         ResponseEntity<LinkPreviewResponse> r = controller.preview(req);
@@ -35,9 +40,12 @@ class LinkPreviewControllerTest {
 
     @Test
     void previewShouldReturnBadRequestWhenUrlIsBlank() {
-        LinkPreviewRequest req = new LinkPreviewRequest(); req.setUrl("   ");
-        // validation would normally trigger; controller forwards to service — simulate service behavior
-        when(service.getPreview(req.getUrl())).thenThrow(new IllegalArgumentException("La URL es obligatoria"));
+        LinkPreviewRequest req = new LinkPreviewRequest();
+        req.setUrl("   ");
+        // validation would normally trigger; controller forwards to service — simulate service
+        // behavior
+        when(service.getPreview(req.getUrl()))
+                .thenThrow(new IllegalArgumentException("La URL es obligatoria"));
 
         try {
             controller.preview(req);
