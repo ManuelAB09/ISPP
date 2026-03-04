@@ -9,7 +9,7 @@
 **Proyecto:** MeerKatters  
 **Documento:** Desarrollo  
 **Sprint:** Sprint 1  
-**Semana:** Semana 2  
+**Semana:** Semana 1  
 **Estado:** Aprobado  
 **Fecha:** 04/03/2026  
 **Autor(es):** Macarena Pereira Campos
