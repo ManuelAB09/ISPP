@@ -69,9 +69,9 @@ describe('TeacherProfile', () => {
       bio: 'Profesor experimentado en ciencias',
     },
     especialidades: ['Matemáticas', 'Física', 'Química'],
-    tarifaHora: 30,
+    tarifaPorHora: 30,
     disponibilidad: 'Tardes y fines de semana',
-    bio: 'Profesor con 10 años de experiencia',
+    biografia: 'Profesor con 10 años de experiencia',
     verificado: true,
     actividad: {
       comunidades: 5,
@@ -92,6 +92,7 @@ describe('TeacherProfile', () => {
       user: { id: 100, esTutor: true },
     });
     tutorEndpoints.getTutorById.mockResolvedValue(mockTutor);
+    tutorEndpoints.getMyTutorProfiles.mockResolvedValue(null);
   });
 
   const renderWithId = (id = '1') => {

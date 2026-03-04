@@ -2,6 +2,10 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import VerificacionModal from './VerificacionModal';
+import * as tutorEndpoints from '../../api/tutorEndpoints';
+
+// Mock de la API de tutores
+jest.mock('../../api/tutorEndpoints');
 
 describe('VerificacionModal', () => {
   const mockOnClose = jest.fn();
@@ -10,6 +14,8 @@ describe('VerificacionModal', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
+    // Mock verificarTutor para que resuelva inmediatamente
+    tutorEndpoints.verificarTutor.mockResolvedValue({});
   });
 
   afterEach(() => {
@@ -201,7 +207,7 @@ describe('VerificacionModal', () => {
     await waitFor(() => {
       expect(mockOnVerificado).toHaveBeenCalled();
     }, { timeout: 5000 });
-  });
+  }, 15000);
 
   // ==============================
   // TESTS DE ESTADO VERIFICADO

@@ -14,9 +14,9 @@ describe('EditProfileModal', () => {
   const mockTutor = {
     id: 1,
     especialidades: ['Matemáticas', 'Física'],
-    tarifaHora: 25,
+    tarifaPorHora: 25,
     disponibilidad: 'Tardes y fines de semana',
-    bio: 'Soy un profesor con 5 años de experiencia',
+    biografia: 'Soy un profesor con 5 años de experiencia',
     usuario: {
       id: 100,
       nombre: 'Juan Pérez',
@@ -62,9 +62,9 @@ describe('EditProfileModal', () => {
     const tutorVacio = {
       id: 2,
       especialidades: [],
-      tarifaHora: null,
+      tarifaPorHora: null,
       disponibilidad: null,
-      bio: null,
+      biografia: null,
     };
     renderModal(tutorVacio);
     expect(screen.getByLabelText(/Especialidades/i)).toHaveValue('');
@@ -135,7 +135,7 @@ describe('EditProfileModal', () => {
     const mockUpdatedTutor = {
       ...mockTutor,
       especialidades: ['Programación', 'Bases de Datos'],
-      tarifaHora: 35,
+      tarifaPorHora: 35,
     };
     tutorEndpoints.updateTutorProfile.mockResolvedValue(mockUpdatedTutor);
 
@@ -157,9 +157,9 @@ describe('EditProfileModal', () => {
     await waitFor(() => {
       expect(tutorEndpoints.updateTutorProfile).toHaveBeenCalledWith(mockTutor.id, {
         especialidades: ['Programación', 'Bases de Datos'],
-        tarifaHora: 35,
+        tarifaPorHora: 35,
         disponibilidad: 'Tardes y fines de semana',
-        bio: 'Soy un profesor con 5 años de experiencia',
+        biografia: 'Soy un profesor con 5 años de experiencia',
       });
     });
 
@@ -243,7 +243,7 @@ describe('EditProfileModal', () => {
 
     await waitFor(() => {
       const llamada = tutorEndpoints.updateTutorProfile.mock.calls[0];
-      expect(typeof llamada[1].tarifaHora).toBe('number');
+      expect(typeof llamada[1].tarifaPorHora).toBe('number');
     });
   });
 
