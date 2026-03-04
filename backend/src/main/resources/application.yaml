@@ -39,6 +39,12 @@ jwt:
   secret: dGhpcyBpcyBhIHNlY3JldCBrZXkgZm9yIG1lZXJrYXQgYmFja2VuZCBqd3Q=
   expiration: 86400000
 
+google:
+  classroom:
+    client-id: ${GOOGLE_CLASSROOM_CLIENT_ID}
+    client-secret: ${GOOGLE_CLASSROOM_CLIENT_SECRET}
+    redirect-uri: ${GOOGLE_CLASSROOM_REDIRECT_URI:http://localhost:8080/oauth2/callback/google-classroom}
+
 
 # perfil especial para arrancar con H2 cuando se quiera
 ---
@@ -83,9 +89,3 @@ springdoc:
       enabled: false
   api-docs:
     enabled: true
-
-google:
-  classroom:
-    client-id: placeholder
-    client-secret: placeholder
-    redirect-uri: http://localhost:8080/oauth2/callback/google-classroom
