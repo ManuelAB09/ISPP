@@ -1,10 +1,10 @@
-name: CD - Despliegue Staging (trunk → Azure)
+name: CD - Despliegue Staging (develop → Azure)
 
 # ════════════════════════════════════════════════════════════
 # CONFIGURACIÓN OPTIMIZADA PARA ESTUDIANTES
 # 
 # Se ejecuta cuando el workflow de CI completa con éxito
-# en la rama trunk. Despliega:
+# en la rama develop. Despliega:
 #   - Full-stack: React + Spring Boot en una sola Web App
 #
 # El Dockerfile multi-stage compila React y lo embebe como
@@ -22,7 +22,7 @@ name: CD - Despliegue Staging (trunk → Azure)
 on:
   workflow_run:
     workflows: ["CI - Integración Continua"]
-    branches: [trunk]
+    branches: [develop]
     types: [completed]
 
 permissions:
