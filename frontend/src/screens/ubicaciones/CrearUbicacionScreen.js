@@ -10,6 +10,24 @@ import './CrearUbicacionScreen.css';
 
 const defaultPosition = [37.3891, -5.9845]; // Sevilla por defecto
 
+const getFriendlyErrorMessage = (err) => {
+    if (!err) return 'No se pudo completar la operación.';
+
+    if (err.status === 401 || err.status === 403) {
+        return 'Tu sesión ha expirado o no tienes permisos. Vuelve a iniciar sesión.';
+    }
+
+    if (err.status >= 500) {
+        return 'Ha ocurrido un error en el servidor. Inténtalo de nuevo en unos segundos.';
+    }
+
+    if (typeof err.message === 'string' && err.message.trim()) {
+        return err.message;
+    }
+
+    return 'Error al crear la ubicación.';
+};
+
 
 function LocationMarker({ latitud, longitud, setLatitud, setLongitud, setDireccion }) {
     useMapEvents({
@@ -36,6 +54,7 @@ const CrearUbicacionScreen = () => {
     const location = useLocation();
     const returnTo = searchParams.get('returnTo');
     const eventFormDraft = location.state?.eventFormDraft || null;
+    const fromSource = location.state?.from || null;
 
     const [nombre, setNombre] = useState('');
     const [direccion, setDireccion] = useState('');
@@ -86,8 +105,14 @@ const CrearUbicacionScreen = () => {
         setError(null);
         setSuccess(false);
         try {
+            if (!direccion.trim()) {
+                setError('Debes indicar una dirección o seleccionar un punto en el mapa.');
+                setLoading(false);
+                return;
+            }
+
             const payload = {
-                nombre,
+                nombre: nombre.trim(),
                 direccion,
                 latitud,
                 longitud,
@@ -99,16 +124,23 @@ const CrearUbicacionScreen = () => {
 
             // Si venimos desde crear/editar evento, volver con la ubicación creada
             if (returnTo) {
+                const nombreFinal =
+                    (createdUbicacion?.nombre && String(createdUbicacion.nombre).trim())
+                    || nombre.trim()
+                    || direccion.split(',')[0]?.trim()
+                    || 'Ubicación';
+
                 navigate(returnTo, {
                     state: {
                         ubicacion: {
                             id: createdUbicacion?.id || createdUbicacion?.ubicacionId,
-                            nombre: nombre,
+                            nombre: nombreFinal,
                             direccion: direccion,
                             latitud: latitud,
                             longitud: longitud
                         },
-                        eventFormDraft: eventFormDraft
+                        eventFormDraft: eventFormDraft,
+                        from: fromSource
                     }
                 });
                 return;
@@ -121,7 +153,7 @@ const CrearUbicacionScreen = () => {
             setLongitud(defaultPosition[1]);
             setSearch('');
         } catch (err) {
-            setError(err.message || 'Error al crear la ubicación');
+            setError(getFriendlyErrorMessage(err));
         } finally {
             setLoading(false);
         }
@@ -137,7 +169,7 @@ const CrearUbicacionScreen = () => {
                 {success && <div style={{ color: 'green', marginBottom: 16 }}>Ubicación creada correctamente.</div>}
                 {returnTo && (
                     <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 8, padding: '12px 16px', marginBottom: 16 }}>
-                        <strong>Selecciona o crea una ubicación</strong> para vincularla a tu evento presencial.
+                        <strong>Selecciona o crea una ubicación</strong> para vincular
                         <button type="button" className="btn btn-outline" style={{ marginLeft: 12, fontSize: '0.85rem', padding: '4px 12px' }} onClick={() => navigate(returnTo, { state: { eventFormDraft: eventFormDraft } })}>
                             Volver sin seleccionar
                         </button>
@@ -176,7 +208,8 @@ const CrearUbicacionScreen = () => {
                                             latitud: u.latitud,
                                             longitud: u.longitud
                                         },
-                                        eventFormDraft: eventFormDraft
+                                        eventFormDraft: eventFormDraft,
+                                        from: fromSource
                                     }
                                 });
                             }
@@ -195,8 +228,8 @@ const CrearUbicacionScreen = () => {
                 )}
                 <form onSubmit={handleSubmit} style={{ maxWidth: 500, margin: '0 auto', background: '#fff', borderRadius: 8, padding: 24, boxShadow: '0 2px 8px #0001' }}>
                     <div className="input-group">
-                        <label>Nombre</label>
-                        <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} required className="input-box input-large" />
+                        <label>Nombre (opcional)</label>
+                        <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} className="input-box input-large" placeholder="Ej: Biblioteca Central" />
                     </div>
                     <div className="input-group">
                         <label>Buscar dirección</label>
@@ -231,7 +264,7 @@ const CrearUbicacionScreen = () => {
                         </div>
                     </div>
                     <button type="submit" className="btn btn-primary" disabled={loading} style={{ marginTop: 24 }}>
-                        {loading ? 'Creando...' : (returnTo ? 'Crear y vincular al evento' : 'Crear Ubicación')}
+                        {loading ? 'Creando...' : (returnTo ? 'Crear y vincular' : 'Crear Ubicación')}
                     </button>
                 </form>
             </div>

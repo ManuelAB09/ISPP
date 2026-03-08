@@ -69,12 +69,17 @@ export const AuthProvider = ({ children }) => {
           // Combinar datos de la API con los guardados localmente (para campos que la API no devuelve)
           const combinedUser = {
             ...userData,
-            universidad: storedData?.universidad ?? '',
-            grado: storedData?.grado ?? '',
-            ubicacion: storedData?.ubicacion ?? '',
+            universidad: storedData?.universidad ?? userData.universidad ?? '',
+            grado: storedData?.grado ?? userData.grado ?? '',
+            ubicacion: userData.ubicacion ?? storedData?.ubicacion ?? '',
           };
           setUser(combinedUser);
-          saveUserToStorage(userData, storedData || {});
+          saveUserToStorage(userData, {
+            ...(storedData || {}),
+            universidad: combinedUser.universidad,
+            grado: combinedUser.grado,
+            ubicacion: combinedUser.ubicacion,
+          });
         } catch (err) {
           const status = err?.status;
           const unauthorized = status === 401 || status === 403;
@@ -136,19 +141,31 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   }, []);
 
-  const updateProfile = useCallback(async (profileData) => {
+  const updateProfile = useCallback(async (profileData, ubicacionSeleccionada = null) => {
     setError(null);
     try {
-      const updatedUser = await authApi.updateMe(profileData);
+      const requestPayload = {
+        ...profileData,
+        ubicacion:
+          typeof profileData.ubicacion === 'string'
+            ? profileData.ubicacion
+            : (profileData.ubicacion?.nombre || ''),
+      };
+
+      const updatedUser = await authApi.updateMe(requestPayload);
       // La API no devuelve universidad, grado, ubicacion, así que los mantenemos del profileData enviado
       const combinedUser = {
         ...updatedUser,
-        universidad: profileData.universidad ?? '',
-        grado: profileData.grado ?? '',
-        ubicacion: profileData.ubicacion ?? '',
+        universidad: requestPayload.universidad ?? '',
+        grado: requestPayload.grado ?? '',
+        ubicacion: ubicacionSeleccionada ?? updatedUser.ubicacion ?? requestPayload.ubicacion ?? '',
       };
       setUser(combinedUser);
-      saveUserToStorage(updatedUser, profileData);
+      saveUserToStorage(updatedUser, {
+        universidad: combinedUser.universidad,
+        grado: combinedUser.grado,
+        ubicacion: combinedUser.ubicacion,
+      });
       return { success: true, user: combinedUser };
     } catch (err) {
       const message = err.message || 'Error al actualizar el perfil';

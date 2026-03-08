@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import { useAuth } from "../../contexts/AuthContext"
 import "./EditProfile.css"
 
@@ -15,8 +16,9 @@ const ACADEMIC_INTERESTS = [
     'Derecho',
 ]
 
-const EditProfile = ({ onClose, onSave }) => {
+const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
     const { user, updateProfile } = useAuth()
+    const navigate = useNavigate()
     
     // Estados para los campos del formulario
     const [formData, setFormData] = useState({
@@ -30,6 +32,7 @@ const EditProfile = ({ onClose, onSave }) => {
     
     const [profileImage, setProfileImage] = useState(null)
     const [profileImagePreview, setProfileImagePreview] = useState('')
+    const [ubicacionSeleccionada, setUbicacionSeleccionada] = useState(null)
     const [isSaving, setIsSaving] = useState(false)
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
@@ -42,7 +45,10 @@ const EditProfile = ({ onClose, onSave }) => {
                 descripcion: user.bio || "",
                 universidad: user.universidad || "",
                 grado: user.grado || "",
-                ubicacion: user.ubicacion || "",
+                ubicacion:
+                    typeof user.ubicacion === 'string'
+                        ? user.ubicacion
+                        : user.ubicacion?.nombre || "",
                 intereses: user.intereses || [],
             })
             if (user.foto) {
@@ -51,12 +57,35 @@ const EditProfile = ({ onClose, onSave }) => {
         }
     }, [user])
 
+    useEffect(() => {
+        if (!ubicacionPreseleccionada) {
+            return
+        }
+
+        const nombreUbicacion =
+            typeof ubicacionPreseleccionada === 'string'
+                ? ubicacionPreseleccionada
+                : (ubicacionPreseleccionada.nombre || '')
+
+        setFormData((prev) => ({
+            ...prev,
+            ubicacion: nombreUbicacion,
+        }))
+
+        if (typeof ubicacionPreseleccionada === 'object') {
+            setUbicacionSeleccionada(ubicacionPreseleccionada)
+        }
+    }, [ubicacionPreseleccionada])
+
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target
         setFormData((prev) => ({
             ...prev,
             [name]: type === 'checkbox' ? checked : value,
         }))
+        if (name === 'ubicacion') {
+            setUbicacionSeleccionada(null)
+        }
         if (error) setError('')
     }
 
@@ -121,7 +150,12 @@ const EditProfile = ({ onClose, onSave }) => {
                 foto: profileImage ? profileImagePreview : (user?.foto || ''),
             }
 
-            const result = await updateProfile(profileData)
+            const ubicacionParaGuardar =
+                ubicacionSeleccionada && ubicacionSeleccionada.nombre === profileData.ubicacion
+                    ? ubicacionSeleccionada
+                    : null
+
+            const result = await updateProfile(profileData, ubicacionParaGuardar)
             
             if (result.success) {
                 setSuccess('Perfil actualizado correctamente')
@@ -143,6 +177,10 @@ const EditProfile = ({ onClose, onSave }) => {
         } finally {
             setIsSaving(false)
         }
+    }
+
+    const handleElegirUbicacionEnMapa = () => {
+        navigate('/crear-ubicacion?returnTo=/perfil')
     }
 
     return (
@@ -270,6 +308,17 @@ const EditProfile = ({ onClose, onSave }) => {
                                 onChange={handleInputChange}
                                 placeholder="Ciudad, País"
                             />
+                            <p className="edit-profile-field-hint">
+                                Selecciona tu ubicación exacta en el mapa.
+                            </p>
+                            <button
+                                type="button"
+                                className="edit-profile-btn edit-profile-btn--secondary"
+                                onClick={handleElegirUbicacionEnMapa}
+                                style={{ marginTop: 10 }}
+                            >
+                                Elegir ubicación en el mapa
+                            </button>
                         </div>
                     </section>
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { getApiBaseUrl } from "../../api/baseUrl"
 import { communitiesApi } from "../../api/communities.api"
 import { getMyTutorProfiles } from "../../api/tutorEndpoints"
@@ -12,9 +12,11 @@ import Settings from "./Settings"
 const MyProfile = () => {
     const { isAuthenticated, loading, user } = useAuth()
     const navigate = useNavigate()
+    const location = useLocation()
     const [showSettings, setShowSettings] = useState(false)
     const [showEditProfile, setShowEditProfile] = useState(false)
-    const [checkingTutor, setCheckingTutor] = useState(true)
+    const [ubicacionPreseleccionada, setUbicacionPreseleccionada] = useState(null)
+    const [miPerfilTutor, setMiPerfilTutor] = useState(null)
     const [misComunidades, setMisComunidades] = useState([])
     const [comunidadesCreadas, setComunidadesCreadas] = useState([])
     const [loadingCommunities, setLoadingCommunities] = useState(true)
@@ -26,24 +28,33 @@ const MyProfile = () => {
     })
     const isOwner = true // Siempre es el propietario en esta pantalla
 
-    // Si el usuario tiene perfil de tutor, redirigir a su perfil de profesor
+    // Si el usuario tiene perfil de tutor, guardarlo para acceso rápido
     useEffect(() => {
         if (!isAuthenticated || loading) {
-            setCheckingTutor(false);
             return;
         }
         getMyTutorProfiles()
             .then((perfiles) => {
-                if (perfiles && perfiles.length > 0) {
-                    navigate(`/profesores/${perfiles[0].id}`, { replace: true });
-                } else {
-                    setCheckingTutor(false);
-                }
+                const primerPerfil = Array.isArray(perfiles) ? perfiles[0] : perfiles;
+                setMiPerfilTutor(primerPerfil?.id ? primerPerfil : null);
             })
             .catch(() => {
-                setCheckingTutor(false);
+                setMiPerfilTutor(null);
             });
-    }, [isAuthenticated, loading, navigate]);
+    }, [isAuthenticated, loading]);
+
+    // Volver desde el mapa con una ubicación ya elegida para abrir el modal y precargarla.
+    useEffect(() => {
+        const ubicacion = location.state?.ubicacion;
+        if (!ubicacion) {
+            return;
+        }
+
+        setUbicacionPreseleccionada(ubicacion);
+        setShowEditProfile(true);
+
+        navigate(location.pathname, { replace: true, state: {} });
+    }, [location.pathname, location.state, navigate]);
 
     // Cargar comunidades del usuario
     useEffect(() => {
@@ -88,7 +99,7 @@ const MyProfile = () => {
         fetchCommunities();
     }, [isAuthenticated, loading, user]);
 
-    if (loading || checkingTutor) {
+    if (loading) {
         return (
             <>
                 <Header page={'inicio'} />
@@ -129,14 +140,20 @@ const MyProfile = () => {
         email: user?.email || "Sin email",
         universidad: user?.universidad || "",
         grado: user?.grado || "",
-        ubicacion: user?.ubicacion || "",
+        ubicacion:
+            typeof user?.ubicacion === 'string'
+                ? user.ubicacion
+                : user?.ubicacion?.nombre || '',
         foto: user?.foto || null,
         intereses: user?.intereses || []
     }
 
     // Función para mostrar valor o texto de "sin información"
     const displayValue = (value) => {
-        return value && value.trim() !== '' ? value : <span className="no-info">Sin información</span>
+        if (typeof value !== 'string') {
+            return value ? String(value) : <span className="no-info">Sin información</span>;
+        }
+        return value.trim() !== '' ? value : <span className="no-info">Sin información</span>
     }
 
     // Función para formatear URL de imagen de comunidad
@@ -199,6 +216,15 @@ const MyProfile = () => {
                                     <span className="btn-icon">⚙️</span>
                                     Configuración
                                 </button>
+                                {miPerfilTutor?.id && (
+                                    <button
+                                        className="btn-settings"
+                                        onClick={() => navigate(`/profesores/${miPerfilTutor.id}`)}
+                                    >
+                                        <span className="btn-icon">🎓</span>
+                                        Mi perfil de profesor
+                                    </button>
+                                )}
                             </>
                         )}
                     </div>
@@ -367,9 +393,11 @@ const MyProfile = () => {
             {showEditProfile && (
                 <EditProfile 
                     onClose={() => setShowEditProfile(false)} 
+                    ubicacionPreseleccionada={ubicacionPreseleccionada}
                     onSave={(updatedUser) => {
                         // Los datos se actualizan automáticamente en el contexto
                         setShowEditProfile(false)
+                        setUbicacionPreseleccionada(null)
                     }}
                 />
             )}

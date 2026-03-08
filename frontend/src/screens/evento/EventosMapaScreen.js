@@ -1,15 +1,35 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, LayersControl } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, LayersControl, Circle } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { listMapEvents } from '../../api/eventEndpoints';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header/Header';
+import { useAuth } from '../../contexts/AuthContext';
+import { getCurrentPosition } from '../../utils/geoUtils';
 
 const defaultPosition = [37.3891, -5.9845];
 
 const eventIconRed = L.icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+  shadowSize: [41, 41],
+});
+
+const profileUserIcon = L.icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+  shadowSize: [41, 41],
+});
+
+const liveUserIcon = L.icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
@@ -65,7 +85,7 @@ const isWithinDateRange = (eventDate, fromStr, toStr) => {
   return true;
 };
 
-function AutoFitMapToEvents({ eventos, defaultCenter, defaultZoom = 13 }) {
+function AutoFitMapToEvents({ eventos, defaultCenter, defaultZoom = 12, userLocation }) {
   const map = useMap();
 
   useEffect(() => {
@@ -78,6 +98,14 @@ function AutoFitMapToEvents({ eventos, defaultCenter, defaultZoom = 13 }) {
       })
       .filter(Boolean);
 
+    // Si el usuario tiene ubicación, solo centrar sin ajustar automáticamente
+    // Esto permite que el mapa se mantenga centrado en la ubicación del usuario
+    if (userLocation?.lat != null && userLocation?.lng != null) {
+      // No hacer ajuste automático, mantener la vista centrada en el usuario
+      return;
+    }
+
+    // Si no hay puntos y no hay ubicación de usuario, usar defaultCenter
     if (!points.length) {
       map.setView(defaultCenter, defaultZoom, { animate: true });
       return;
@@ -90,12 +118,13 @@ function AutoFitMapToEvents({ eventos, defaultCenter, defaultZoom = 13 }) {
 
     const bounds = L.latLngBounds(points);
     map.fitBounds(bounds, { padding: [40, 40], animate: true, maxZoom: 14 });
-  }, [eventos, map, defaultCenter, defaultZoom]);
+  }, [eventos, map, defaultCenter, defaultZoom, userLocation]);
 
   return null;
 }
 
 const EventosMapaScreen = () => {
+  const { user, loading: authLoading } = useAuth();
   const [eventos, setEventos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cityLoading, setCityLoading] = useState(false);
@@ -109,7 +138,96 @@ const EventosMapaScreen = () => {
 
   const [tipoEvento, setTipoEvento] = useState('all'); // 'all', 'virtual', 'presencial'
 
+  const [ubicacionUsuario, setUbicacionUsuario] = useState(null); // { lat, lng, direccion }
+  const [origenUbicacion, setOrigenUbicacion] = useState(''); // 'perfil' | 'gps'
+  const [radioKm, setRadioKm] = useState(5); // Radio de búsqueda en kilómetros
+
   const navigate = useNavigate();
+
+  // Prioriza la ubicación del perfil del usuario; si no existe, usa geolocalización actual.
+  useEffect(() => {
+    let isMounted = true;
+
+    const setUserLocation = (lat, lng, direccion, origen) => {
+      if (!isMounted) return;
+      setUbicacionUsuario({ lat, lng, direccion });
+      setOrigenUbicacion(origen);
+    };
+
+    const resolverUbicacionUsuario = async () => {
+      const ubicacionPerfil = user?.ubicacion;
+
+      // Caso 1: la ubicación del perfil viene con coordenadas (objeto UbicacionResponse)
+      if (
+        ubicacionPerfil
+        && typeof ubicacionPerfil === 'object'
+        && ubicacionPerfil.latitud != null
+        && ubicacionPerfil.longitud != null
+      ) {
+        setUserLocation(
+          Number(ubicacionPerfil.latitud),
+          Number(ubicacionPerfil.longitud),
+          ubicacionPerfil.direccion || ubicacionPerfil.nombre || 'Ubicación de tu perfil',
+          'perfil'
+        );
+        return;
+      }
+
+      // Caso 2: la ubicación del perfil es texto (nombre/cadena) y se geocodifica
+      const textoUbicacionPerfil =
+        typeof ubicacionPerfil === 'string'
+          ? ubicacionPerfil.trim()
+          : (ubicacionPerfil?.nombre || '').trim();
+
+      if (textoUbicacionPerfil) {
+        try {
+          const searchResp = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(textoUbicacionPerfil)}&limit=1&accept-language=es`
+          );
+          const searchData = await searchResp.json();
+          if (Array.isArray(searchData) && searchData.length > 0) {
+            setUserLocation(
+              Number(searchData[0].lat),
+              Number(searchData[0].lon),
+              searchData[0].display_name || textoUbicacionPerfil,
+              'perfil'
+            );
+            return;
+          }
+        } catch {
+          // Si falla la geocodificación, intentamos GPS como respaldo.
+        }
+      }
+
+      // Caso 3: fallback a ubicación actual por GPS
+      try {
+        const posicion = await getCurrentPosition();
+
+        // Obtener dirección desde Nominatim
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${posicion.latitude}&lon=${posicion.longitude}&accept-language=es`
+        );
+        const data = await response.json();
+        const direccion = data.display_name || 'Tu ubicación';
+
+        setUserLocation(posicion.latitude, posicion.longitude, direccion, 'gps');
+      } catch (error) {
+        console.error('No se pudo obtener la ubicación del usuario:', error);
+        if (isMounted) {
+          setUbicacionUsuario(null);
+          setOrigenUbicacion('');
+        }
+      }
+    };
+
+    if (!authLoading) {
+      resolverUbicacionUsuario();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, authLoading]);
 
   useEffect(() => {
     const fetchEventos = async () => {
@@ -309,6 +427,24 @@ const EventosMapaScreen = () => {
           </select>
         </div>
 
+        {ubicacionUsuario && (
+          <div style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <label htmlFor="radioFilter" style={{ fontWeight: 600, color: '#2E3559' }}>
+              Radio de búsqueda:
+            </label>
+            <input
+              id="radioFilter"
+              type="range"
+              min="1"
+              max="50"
+              value={radioKm}
+              onChange={(e) => setRadioKm(parseInt(e.target.value))}
+              style={{ width: 200 }}
+            />
+            <span style={{ fontWeight: 600, color: '#1a237e' }}>{radioKm} km</span>
+          </div>
+        )}
+
         <div style={{ marginBottom: 14, display: 'flex', alignItems: 'end', gap: 10, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <label htmlFor="dateFrom" style={{ fontWeight: 600, color: '#2E3559' }}>
@@ -381,7 +517,11 @@ const EventosMapaScreen = () => {
             boxShadow: '0 2px 8px #0001',
           }}
         >
-          <MapContainer center={defaultPosition} zoom={13} style={{ height: '100%', width: '100%' }}>
+          <MapContainer 
+            center={ubicacionUsuario ? [ubicacionUsuario.lat, ubicacionUsuario.lng] : defaultPosition} 
+            zoom={12} 
+            style={{ height: '100%', width: '100%' }}
+          >
             <LayersControl position="topright">
               <LayersControl.BaseLayer checked name="Mapa estándar">
                 <TileLayer
@@ -398,7 +538,45 @@ const EventosMapaScreen = () => {
               </LayersControl.BaseLayer>
             </LayersControl>
 
-            <AutoFitMapToEvents eventos={eventosFiltrados} defaultCenter={defaultPosition} defaultZoom={13} />
+            <AutoFitMapToEvents 
+              eventos={eventosFiltrados} 
+              defaultCenter={defaultPosition} 
+              defaultZoom={12}
+              userLocation={ubicacionUsuario}
+            />
+
+            {/* Marcador de ubicación del usuario */}
+            {ubicacionUsuario && (
+              <>
+                <Marker 
+                  position={[ubicacionUsuario.lat, ubicacionUsuario.lng]} 
+                  icon={origenUbicacion === 'perfil' ? profileUserIcon : liveUserIcon}
+                >
+                  <Popup>
+                    <div style={{ minWidth: 180 }}>
+                      <div style={{ fontWeight: 700, color: '#1976d2', fontSize: 17 }}>
+                        {origenUbicacion === 'perfil' ? 'Tu ubicación de perfil' : 'Tu ubicación actual'}
+                      </div>
+                      <div style={{ fontSize: 13, color: '#555', marginTop: 4 }}>
+                        {ubicacionUsuario.direccion}
+                      </div>
+                    </div>
+                  </Popup>
+                </Marker>
+                
+                {/* Círculo de radio de búsqueda */}
+                <Circle
+                  center={[ubicacionUsuario.lat, ubicacionUsuario.lng]}
+                  radius={radioKm * 1000} // Convertir km a metros
+                  pathOptions={{
+                    color: '#1976d2',
+                    fillColor: '#1976d2',
+                    fillOpacity: 0.1,
+                    weight: 2,
+                  }}
+                />
+              </>
+            )}
 
             {eventosFiltrados.map((ev) => {
               const lat = ev?.ubicacion?.latitud;

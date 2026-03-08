@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { getMyTutorProfiles, getVerifiedTutors } from "../../api/tutorEndpoints";
 import Header from "../../components/Header/Header";
 import { useAuth } from "../../contexts/AuthContext";
+import { filterTutorsByDistance, formatDistance, calculateDistance } from "../../utils/geoUtils";
 import CreateProfileModal from "../teacherProfile/CreateProfileModal";
 import "./VerifiedTeachers.css";
 
@@ -17,10 +18,14 @@ const VerifiedTeachers = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [miPerfilTutor, setMiPerfilTutor] = useState(null);
   const [profesores, setProfesores] = useState([]);
+  const [profesoresOriginales, setProfesoresOriginales] = useState([]);
   const [total, setTotal] = useState(0);
   const [pagina, setPagina] = useState(0);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
+  const [mostrarModalCercania, setMostrarModalCercania] = useState(false);
+  const [busquedaCercaniaActiva, setBusquedaCercaniaActiva] = useState(false);
+  const [radioKm, setRadioKm] = useState(10);
 
   // Comprobar si el usuario autenticado ya tiene perfil de tutor
   useEffect(() => {
@@ -57,9 +62,31 @@ const VerifiedTeachers = () => {
           size: 20,
         });
         // La respuesta es Page<TutorProfileResponse>: { content, totalElements, number, ... }
-        const contenido = resp?.content ?? (Array.isArray(resp) ? resp : []);
+        let contenido = resp?.content ?? (Array.isArray(resp) ? resp : []);
         const totalElem = resp?.totalElements ?? contenido.length;
+        
+        // Calcular distancias si el usuario tiene ubicación
+        if (user?.ubicacion && typeof user.ubicacion === 'object' && user.ubicacion.latitud && user.ubicacion.longitud) {
+          contenido = contenido.map(tutor => {
+            if (tutor.ubicacion && tutor.ubicacion.latitud && tutor.ubicacion.longitud) {
+              return {
+                ...tutor,
+                distanciaKm: calculateDistance(
+                  user.ubicacion.latitud,
+                  user.ubicacion.longitud,
+                  tutor.ubicacion.latitud,
+                  tutor.ubicacion.longitud
+                )
+              };
+            }
+            return tutor;
+          });
+        }
+        
         setProfesores((prev) =>
+          nuevaPagina === 0 ? contenido : [...prev, ...contenido]
+        );
+        setProfesoresOriginales((prev) =>
           nuevaPagina === 0 ? contenido : [...prev, ...contenido]
         );
         setTotal(totalElem);
@@ -71,7 +98,7 @@ const VerifiedTeachers = () => {
         setCargando(false);
       }
     },
-    [filtrosActivos]
+    [filtrosActivos, user]
   );
 
   useEffect(() => {
@@ -93,6 +120,42 @@ const VerifiedTeachers = () => {
     const vacios = { especialidad: "", tarifaMin: "", tarifaMax: "" };
     setFiltros(vacios);
     setFiltrosActivos(vacios);
+    setBusquedaCercaniaActiva(false);
+    setProfesores(profesoresOriginales);
+  };
+
+  const handleBuscarPorCercania = () => {
+    if (!user?.ubicacion) {
+      alert('No tienes una ubicación configurada en tu perfil. Por favor, edita tu perfil para añadir una ubicación.');
+      return;
+    }
+
+    if (typeof user.ubicacion !== 'object' || !user.ubicacion.latitud || !user.ubicacion.longitud) {
+      alert('Tu ubicación no tiene coordenadas válidas. Por favor, actualiza tu ubicación en el perfil.');
+      return;
+    }
+
+    setMostrarModalCercania(true);
+  };
+
+  const aplicarBusquedaCercania = () => {
+    // Filtrar solo tutores con ubicación válida
+    const tutoresConUbicacion = profesoresOriginales.filter(
+      (t) => t.ubicacion && t.ubicacion.latitud && t.ubicacion.longitud
+    );
+
+    // Filtrar y calcular distancia para los que tienen ubicación dentro del radio
+    const tutoresFiltrados = filterTutorsByDistance(
+      tutoresConUbicacion,
+      user.ubicacion.latitud,
+      user.ubicacion.longitud,
+      radioKm
+    );
+
+    // Solo mostrar los profesores dentro del radio especificado
+    setProfesores(tutoresFiltrados);
+    setBusquedaCercaniaActiva(true);
+    setMostrarModalCercania(false);
   };
 
   const handleCargarMas = () => {
@@ -190,7 +253,14 @@ const VerifiedTeachers = () => {
             <span className="vt-filtros__unit">€/h</span>
           </div>
           <button type="submit" className="vt-btn vt-btn--primary">Buscar</button>
-          {(filtrosActivos.especialidad || filtrosActivos.tarifaMin || filtrosActivos.tarifaMax) && (
+          <button 
+            type="button" 
+            className="vt-btn vt-btn--secondary"
+            onClick={handleBuscarPorCercania}
+          >
+            📍 Buscar por cercanía
+          </button>
+          {(filtrosActivos.especialidad || filtrosActivos.tarifaMin || filtrosActivos.tarifaMax || busquedaCercaniaActiva) && (
             <button type="button" className="vt-btn vt-btn--ghost" onClick={handleLimpiar}>
               Limpiar
             </button>
@@ -199,6 +269,11 @@ const VerifiedTeachers = () => {
         {!cargando && !error && (
           <span className="vt-total">
             {total} profesor{total !== 1 ? "es" : ""} verificado{total !== 1 ? "s" : ""}
+            {busquedaCercaniaActiva && (
+              <span style={{ marginLeft: 8, color: '#676F9D' }}>
+                • A menos de {radioKm} km de ti
+              </span>
+            )}
           </span>
         )}
       </div>
@@ -234,6 +309,17 @@ const VerifiedTeachers = () => {
                 <div key={tutor.id ?? i} className="vt-card">
                   {/* Insignia verificado */}
                   <span className="vt-card__badge">Verificado</span>
+
+                  {/* Etiqueta de distancia */}
+                  {user?.ubicacion && typeof user.ubicacion === 'object' && user.ubicacion.latitud && user.ubicacion.longitud && (
+                    <span className={`vt-card__badge-distancia ${tutor.distanciaKm == null ? 'vt-card__badge-distancia--sin' : ''}`}>
+                      {tutor.distanciaKm != null ? (
+                        <>📍 {formatDistance(tutor.distanciaKm)}</>
+                      ) : (
+                        'Sin ubicación'
+                      )}
+                    </span>
+                  )}
 
                   {/* Avatar */}
                   <div
@@ -308,6 +394,59 @@ const VerifiedTeachers = () => {
             </div>
           )}
       </div>
+
+      {/* ── Modal Búsqueda por Cercanía ──────────────────── */}
+      {mostrarModalCercania && (
+        <div className="vt-modal-overlay" onClick={() => setMostrarModalCercania(false)}>
+          <div className="vt-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="vt-modal__header">
+              <h2>Buscar por cercanía</h2>
+              <button 
+                className="vt-modal__close"
+                onClick={() => setMostrarModalCercania(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="vt-modal__body">
+              <p className="vt-modal__descripcion">
+                Encuentra profesores cerca de tu ubicación:
+                <br />
+                <strong>
+                  {user?.ubicacion?.nombre || user?.ubicacion?.direccion || 'Tu ubicación'}
+                </strong>
+              </p>
+              <div className="vt-modal__radio-control">
+                <label>Radio de búsqueda:</label>
+                <div className="vt-modal__radio-slider">
+                  <input
+                    type="range"
+                    min="1"
+                    max="50"
+                    value={radioKm}
+                    onChange={(e) => setRadioKm(parseInt(e.target.value))}
+                  />
+                  <span className="vt-modal__radio-value">{radioKm} km</span>
+                </div>
+              </div>
+            </div>
+            <div className="vt-modal__footer">
+              <button 
+                className="vt-btn vt-btn--ghost"
+                onClick={() => setMostrarModalCercania(false)}
+              >
+                Cancelar
+              </button>
+              <button 
+                className="vt-btn vt-btn--primary"
+                onClick={aplicarBusquedaCercania}
+              >
+                Buscar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
