@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { getTutorById, getMyTutorProfiles } from "../../api/tutorEndpoints";
 import Header from "../../components/Header/Header";
+import PersonIcon from "../../components/icons/Person";
 import EditProfileModal from "./EditProfileModal";
 import CreateProfileModal from "./CreateProfileModal";
 import VerificacionModal from "./VerificacionModal";
@@ -43,7 +44,7 @@ const Estrellas = ({ valor }) => (
 const TeacherProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const esNuevo = id === "nuevo";
 
   const [tutor, setTutor] = useState(null);
@@ -55,6 +56,7 @@ const TeacherProfile = () => {
   const [showVerificacion, setShowVerificacion] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showHireModal, setShowHireModal] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   // Callback: actualiza estado local tras editar
   const handlePerfilGuardado = (updatedTutor) => {
@@ -75,13 +77,13 @@ const TeacherProfile = () => {
   };
 
   useEffect(() => {
-    if (!esNuevo || !user?.esTutor) return;
+    if (!esNuevo || loading || !user?.esTutor) return;
     getMyTutorProfiles()
       .then((perfil) => {
         if (perfil && perfil.id) setMiPerfilExistente(perfil);
       })
       .catch(() => {});
-  }, [esNuevo, user]);
+  }, [esNuevo, user, loading]);
 
   useEffect(() => {
     if (esNuevo) return;
@@ -207,11 +209,26 @@ const TeacherProfile = () => {
       <div className="tp-banner">
         <header className="tp-header">
           <div className="tp-header__left">
+<<<<<<< HEAD
             <img
               className="tp-header__photo"
               src={toAbsoluteImageUrl(tutor.usuario?.foto)}
               alt={tutor.usuario?.nombre}
             />
+=======
+            {tutor.usuario?.foto && !avatarError ? (
+              <img
+                className="tp-header__photo"
+                src={tutor.usuario.foto}
+                alt={tutor.usuario?.nombre}
+                onError={() => setAvatarError(true)}
+              />
+            ) : (
+              <div className="tp-header__photo tp-header__photo--placeholder">
+                <PersonIcon width="55%" height="55%" fill="#9CA3AF" />
+              </div>
+            )}
+>>>>>>> eca116ed85821c43b971a54ebf7d99cd4b29557b
             <div className="tp-header__info">
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <h1 className="tp-header__name">{tutor.usuario?.nombre}</h1>
