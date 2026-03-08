@@ -41,6 +41,7 @@ public class Suscripcion {
     private Usuario usuario;
 
     /** Tipo de plan contratado (FREE o PREMIUM). */
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TipoPlan plan = TipoPlan.FREE;
@@ -54,10 +55,12 @@ public class Suscripcion {
     private LocalDate fechaFin;
 
     /** Indica si la suscripción está activa. */
+    @Builder.Default
     @Column(nullable = false)
     private Boolean activa = true;
 
     /** Indica si la renovación automática está habilitada. */
+    @Builder.Default
     @Column(nullable = false)
     private Boolean autoRenovar = true;
 
@@ -83,15 +86,18 @@ public class Suscripcion {
     }
 
     /** Renueva la suscripción extendiendo las fechas de vigencia. */
+    /** Renueva la suscripción extendiendo las fechas de vigencia. */
     public void renovar() {
+        this.plan = TipoPlan.PREMIUM; // ← añadir esto
+        this.activa = true;
+        this.autoRenovar = true;
+
         if (this.estaActiva()) {
             this.fechaInicio = this.fechaFin;
             this.fechaFin = this.fechaFin.plusMonths(ConstantUtils.MESES_SUSCRIPCION);
-            this.activa = true;
         } else {
             this.fechaInicio = LocalDate.now();
             this.fechaFin = LocalDate.now().plusMonths(ConstantUtils.MESES_SUSCRIPCION);
-            this.activa = true;
         }
     }
 

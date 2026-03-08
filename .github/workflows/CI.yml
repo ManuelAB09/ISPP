@@ -22,6 +22,7 @@ on:
       - sprint3
       - 'feature/**'
       - 'bugfix/**'
+      - 'fix/**'
       - 'hotfix/**'
       - 'doc/**'
       - 'test/**'
@@ -192,6 +193,7 @@ jobs:
         working-directory: backend
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/meerkatters_test
+          SPRING_DATASOURCE_DRIVER: org.postgresql.Driver
           SPRING_DATASOURCE_USERNAME: meerkatters_user
           SPRING_DATASOURCE_PASSWORD: meerkatters_password
           SPRING_PROFILES_ACTIVE: test

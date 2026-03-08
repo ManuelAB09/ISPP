@@ -194,7 +194,7 @@ export const NotificationProvider = ({ children }) => {
                         // Notificación de mensaje privado
                         title = conv.usuarioNombre || 'Nuevo mensaje';
                         body = conv.ultimoMensaje || 'Tienes un nuevo mensaje';
-                        icon = conv.usuarioFoto || '/favicon.ico';
+                        icon = toAbsoluteImageUrl(conv.usuarioFoto, '/favicon.ico');
                         tag = `msg-${conv.usuarioId}-${Date.now()}`;
                         clickHandler = () => {
                             navigate(`/chats?userId=${conv.usuarioId}&userName=${encodeURIComponent(conv.usuarioNombre)}`);

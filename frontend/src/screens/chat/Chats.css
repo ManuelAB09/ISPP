@@ -134,7 +134,7 @@
     background: transparent;
     width: 100%;
     display: grid;
-    grid-template-columns: 58px 1fr;
+    grid-template-columns: 72px 1fr;
     align-items: center;
     gap: 0.65rem;
     padding: 0.6rem;
@@ -152,11 +152,17 @@
 }
 
 .chat-list-image {
-    width: 58px;
-    height: 58px;
+    width: 72px;
+    height: 72px;
     border-radius: 0.8rem;
     object-fit: cover;
-    background: var(--silver);
+    background: #fff;
+    border: 1px solid #D9DDE8;
+    padding: 2px;
+    box-sizing: border-box;
+    /* Mejora la nitidez al escalar miniaturas en navegadores WebKit */
+    image-rendering: -webkit-optimize-contrast;
+    transform: translateZ(0);
 }
 
 .chat-list-content {

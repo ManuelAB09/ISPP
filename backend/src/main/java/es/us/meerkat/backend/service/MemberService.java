@@ -6,10 +6,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.entity.Comunidad;
+import es.us.meerkat.backend.entity.ComunidadClassroom;
 import es.us.meerkat.backend.entity.MiembroComunidad;
 import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.TipoGrupo;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.ComunidadClassroomRepository;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
@@ -22,9 +24,11 @@ public class MemberService {
 
     private final MiembroComunidadRepository miembroComunidadRepository;
     private final ComunidadRepository comunidadRepository;
+    private final ComunidadClassroomRepository comunidadClassroomRepository;
     private final UsuarioRepository usuarioRepository;
     private final AuthorizationService authorizationService;
     private final CommunityService communityService;
+    private final GoogleClassroomService googleClassroomService;
 
     /** Se une a una comunidad pública (verifica aforo y tipo). */
     public MiembroComunidad joinPublicCommunity(Long userId, Long communityId) {
@@ -64,7 +68,12 @@ public class MemberService {
                         .rol(RolComunidad.MIEMBRO)
                         .build();
 
-        return miembroComunidadRepository.save(miembro);
+        MiembroComunidad miembroGuardado = miembroComunidadRepository.save(miembro);
+
+        // Sincronizar con Google Classroom si existe vinculación
+        sincronizarConClassroom(usuario, comunidad);
+
+        return miembroGuardado;
     }
 
     /** Abandona una comunidad. Si es único admin, lanza error. */
@@ -88,6 +97,12 @@ public class MemberService {
                                 + " primero.");
             }
         }
+
+        Usuario usuario = miembro.getUsuario();
+        Comunidad comunidad = miembro.getComunidad();
+
+        // Desincronizar de Google Classroom
+        desincronizarDeClassroom(usuario, comunidad);
 
         miembroComunidadRepository.delete(miembro);
     }
@@ -128,6 +143,12 @@ public class MemberService {
                 throw new IllegalArgumentException("No puedes expulsar al único admin");
             }
         }
+
+        Usuario targetUsuario = targetMiembro.getUsuario();
+        Comunidad comunidad = targetMiembro.getComunidad();
+
+        // Desincronizar de Google Classroom
+        desincronizarDeClassroom(targetUsuario, comunidad);
 
         miembroComunidadRepository.delete(targetMiembro);
     }
@@ -183,5 +204,154 @@ public class MemberService {
     @Transactional(readOnly = true)
     public long countAdmins(Long communityId) {
         return miembroComunidadRepository.countByComunidadIdAndRol(communityId, RolComunidad.ADMIN);
+    }
+
+    // =====================================================
+    // SINCRONIZACIÓN CON GOOGLE CLASSROOM
+    // =====================================================
+
+    /**
+     * Sincroniza un usuario con Google Classroom cuando se une a una comunidad. Si la comunidad
+     * tiene una vinculación activa con Classroom, agrega automáticamente al usuario como estudiante
+     * o profesor según su rol de tutor.
+     *
+     * @param usuario Usuario que se une a la comunidad
+     * @param comunidad Comunidad a la que se une
+     */
+    private void sincronizarConClassroom(Usuario usuario, Comunidad comunidad) {
+        try {
+            // Verificar si la comunidad tiene vinculación con Google Classroom
+            ComunidadClassroom vinculacion =
+                    comunidadClassroomRepository.findByComunidadId(comunidad.getId()).orElse(null);
+
+            if (vinculacion == null || !vinculacion.getActiva()) {
+                return;
+            }
+
+            // Obtener el ADMIN de la comunidad para obtener su token
+            Usuario adminComunidad =
+                    miembroComunidadRepository
+                            .findByComunidadIdAndRol(comunidad.getId(), RolComunidad.ADMIN)
+                            .stream()
+                            .findFirst()
+                            .map(MiembroComunidad::getUsuario)
+                            .orElseThrow(
+                                    () ->
+                                            new RuntimeException(
+                                                    "No se encontró admin de la comunidad para"
+                                                            + " sincronizar con Classroom"));
+
+            // Determinar el rol en Classroom basado en si es tutor
+            if (usuario.getEsTutor() != null && usuario.getEsTutor()) {
+                // Agregar como TEACHER
+                agregarProfesorAClassroom(
+                        adminComunidad, usuario, vinculacion.getClassroomCourseId());
+            } else {
+                // Agregar como STUDENT
+                agregarEstudianteAClassroom(
+                        adminComunidad, usuario, vinculacion.getClassroomCourseId());
+            }
+
+        } catch (Exception e) {
+            System.out.println("Jeje god" + e);
+        }
+    }
+
+    /**
+     * Agrega un usuario como estudiante a un curso de Google Classroom.
+     *
+     * @param adminUsuario Usuario admin con token OAuth
+     * @param studiantUsuario Usuario a agregar como estudiante
+     * @param courseId ID del curso en Google Classroom
+     */
+    private void agregarEstudianteAClassroom(
+            Usuario adminUsuario, Usuario studiantUsuario, String courseId) {
+        String studentData = String.format("{\"userId\":\"%s\"}", studiantUsuario.getEmail());
+        googleClassroomService.crearEstudiante(adminUsuario, courseId, studentData);
+    }
+
+    /**
+     * Agrega un usuario como profesor a un curso de Google Classroom.
+     *
+     * @param adminUsuario Usuario admin con token OAuth
+     * @param teacherUsuario Usuario a agregar como profesor
+     * @param courseId ID del curso en Google Classroom
+     */
+    private void agregarProfesorAClassroom(
+            Usuario adminUsuario, Usuario teacherUsuario, String courseId) {
+        String teacherData = String.format("{\"userId\":\"%s\"}", teacherUsuario.getEmail());
+        googleClassroomService.crearProfesor(adminUsuario, courseId, teacherData);
+    }
+
+    /**
+     * Desincroniza un usuario de Google Classroom cuando abandona o es expulsado de una comunidad.
+     * Si la comunidad tiene una vinculación activa con Classroom, elimina automáticamente al
+     * usuario como estudiante o profesor según su rol de tutor.
+     *
+     * @param usuario Usuario que abandona o es expulsado de la comunidad
+     * @param comunidad Comunidad de la que se va
+     */
+    private void desincronizarDeClassroom(Usuario usuario, Comunidad comunidad) {
+        try {
+            // Verificar si la comunidad tiene vinculación con Google Classroom
+            ComunidadClassroom vinculacion =
+                    comunidadClassroomRepository.findByComunidadId(comunidad.getId()).orElse(null);
+
+            if (vinculacion == null || !vinculacion.getActiva()) {
+                return;
+            }
+
+            // Obtener el ADMIN de la comunidad para obtener su token
+            Usuario adminComunidad =
+                    miembroComunidadRepository
+                            .findByComunidadIdAndRol(comunidad.getId(), RolComunidad.ADMIN)
+                            .stream()
+                            .findFirst()
+                            .map(MiembroComunidad::getUsuario)
+                            .orElseThrow(
+                                    () ->
+                                            new RuntimeException(
+                                                    "No se encontró admin de la comunidad para"
+                                                            + " desincronizar con Classroom"));
+
+            // Determinar el rol en Classroom basado en si es tutor
+            if (usuario.getEsTutor() != null && usuario.getEsTutor()) {
+                // Eliminar como TEACHER
+                eliminarProfesorDeClassroom(
+                        adminComunidad, usuario, vinculacion.getClassroomCourseId());
+            } else {
+                // Eliminar como STUDENT
+                eliminarEstudianteDeClassroom(
+                        adminComunidad, usuario, vinculacion.getClassroomCourseId());
+            }
+
+        } catch (Exception e) {
+            System.out.println("Jeje god" + e);
+        }
+    }
+
+    /**
+     * Elimina un usuario como estudiante de un curso de Google Classroom.
+     *
+     * @param adminUsuario Usuario admin con token OAuth
+     * @param studentUsuario Usuario a eliminar como estudiante
+     * @param courseId ID del curso en Google Classroom
+     */
+    private void eliminarEstudianteDeClassroom(
+            Usuario adminUsuario, Usuario studentUsuario, String courseId) {
+        googleClassroomService.eliminarEstudiante(
+                adminUsuario, courseId, studentUsuario.getEmail());
+    }
+
+    /**
+     * Elimina un usuario como profesor de un curso de Google Classroom.
+     *
+     * @param adminUsuario Usuario admin con token OAuth
+     * @param teacherUsuario Usuario a eliminar como profesor
+     * @param courseId ID del curso en Google Classroom
+     */
+    private void eliminarProfesorDeClassroom(
+            Usuario adminUsuario, Usuario teacherUsuario, String courseId) {
+        googleClassroomService.eliminarProfesor(adminUsuario, courseId, teacherUsuario.getEmail());
     }
 }

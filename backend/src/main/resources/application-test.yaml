@@ -10,23 +10,24 @@
 
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/meerkatters_test}
-    username: ${SPRING_DATASOURCE_USERNAME:meerkatters_user}
-    password: ${SPRING_DATASOURCE_PASSWORD:meerkatters_password}
-    driver-class-name: org.postgresql.Driver
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.h2.Driver}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
 
   jpa:
     hibernate:
       ddl-auto: create-drop
     show-sql: false
-    database-platform: org.hibernate.dialect.PostgreSQL10Dialect
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
 
 server:
   port: 8080
 
+google:
+  classroom:
+    client-id: ${GOOGLE_CLASSROOM_CLIENT_ID:test-client-id}
+    client-secret: ${GOOGLE_CLASSROOM_CLIENT_SECRET:test-client-secret}
+    redirect-uri: ${GOOGLE_CLASSROOM_REDIRECT_URI:http://localhost:8080/oauth2/callback/google-classroom}
 stripe:
   api:
     key: stripe.api.key

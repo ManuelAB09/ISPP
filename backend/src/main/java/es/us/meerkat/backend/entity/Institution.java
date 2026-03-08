@@ -59,6 +59,7 @@ public class Institution {
     private String logoUrl;
 
     /** Indica si la institución está verificada. */
+    @Builder.Default
     @Column(nullable = false)
     private Boolean verificada = false;
 
@@ -68,6 +69,7 @@ public class Institution {
     private TipoPlanCorporativo planCorporativo;
 
     /** Indica si el plan está activo. */
+    @Builder.Default
     @Column(nullable = false)
     private Boolean planActivo = false;
 
@@ -86,6 +88,7 @@ public class Institution {
     private Usuario usuarioAdmin;
 
     /** Fecha de creación. */
+    @Builder.Default
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 

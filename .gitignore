@@ -5,3 +5,4 @@ pg.log
 # docker-compose.yaml
 .vscode/
 .idea/
+.env

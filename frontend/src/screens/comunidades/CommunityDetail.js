@@ -4,6 +4,7 @@ import { LuPlus, LuArrowLeft, LuCalendar, LuUsers, LuLogIn, LuLogOut } from 'rea
 import Header from '../../components/Header/Header';
 import TarjetaEvento from '../../components/Evento/TarjetaEvento';
 import CommunityChat from '../chat/CommunityChat';
+import GoogleClassroomButton from '../../components/GoogleClassroomButton/GoogleClassroomButton';
 import { communitiesApi } from '../../api/communities.api';
 import { listCommunityEvents, attendEvent, cancelAttendance, getMyAttendance } from '../../api/eventEndpoints';
 import { useAuth } from '../../contexts/AuthContext';
@@ -32,6 +33,7 @@ export default function CommunityDetail() {
     id: Number(currentUserId),
     nombre: user?.nombre || 'Usuario',
     foto: user?.foto || null,
+    fotoBackgroundColor: user?.fotoBackgroundColor || '#ffffff',
   };
   const communityImage = community?.imagen || community?.imagenUrl || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
 
@@ -272,6 +274,16 @@ export default function CommunityDetail() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Sección de Google Classroom */}
+        {community && (isMember || community.classroom) && (
+          <GoogleClassroomButton
+            communityId={Number(communityId)}
+            linkedCourse={community.classroom}
+            isAdmin={community.miRol === 'ADMIN'}
+            onLinked={fetchCommunity}
+          />
         )}
 
         {/* Sección de eventos */}

@@ -11,11 +11,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import es.us.meerkat.backend.dto.CreateEventRequest;
 import es.us.meerkat.backend.dto.EventDetailResponse;
 import es.us.meerkat.backend.dto.EventSummaryResponse;
 import es.us.meerkat.backend.entity.Evento;
@@ -37,36 +39,49 @@ public class EventoController {
     private final EventoService eventoService;
 
     // ===============================
-    // COMUNIDAD CREAR EVENTO                   //TODO: Hacer cuando la parte de comunidades este
+    // CREAR EVENTO
     // ===============================
 
     /**
-     * Crea un nuevo evento.
+     * Crea un nuevo evento en una comunidad.
      *
-     * @param organizadorId Identificador del usuario organizador.
-     * @param titulo Título del evento.
-     * @param descripcion Descripción del evento.
-     * @param fechaInicio Fecha y hora de inicio.
-     * @param fechaFin Fecha y hora de fin.
-     * @param aforo Aforo máximo.
-     * @param queLlevar Qué llevar al evento.
-     * @param esVirtual Si es evento virtual.
-     * @param privado Si es un evento privado.
-     * @return El evento creado. @PostMapping @Operation(summary = "Crear nuevo evento", description
-     *     = "Crea un nuevo evento de estudio") public ResponseEntity<Evento>
-     *     crearEvento( @Parameter(description = "ID del organizador") @RequestParam final Long
-     *     organizadorId, @Parameter(description = "Título del evento") @RequestParam final String
-     *     titulo, @Parameter(description = "Descripción") @RequestParam final String
-     *     descripcion, @Parameter(description = "Fecha/hora inicio") @RequestParam final
-     *     LocalDateTime fechaInicio, @Parameter(description = "Fecha/hora fin") @RequestParam final
-     *     LocalDateTime fechaFin, @Parameter(description = "Aforo máximo") @RequestParam final
-     *     Integer aforo, @Parameter(description = "Qué llevar") @RequestParam final String
-     *     queLlevar, @Parameter(description = "Es virtual") @RequestParam final Boolean
-     *     esVirtual, @Parameter(description = "Es privado") @RequestParam final Boolean privado) {
-     *     <p>final Evento evento = eventoService.crearEvento(organizadorId, titulo, descripcion,
-     *     fechaInicio, fechaFin, aforo, queLlevar, esVirtual, privado);
-     *     <p>return ResponseEntity.status(HttpStatus.CREATED).body(evento); }
+     * @param comunidadId Identificador de la comunidad.
+     * @param request DTO con los datos del evento.
+     * @param usuario Usuario autenticado que crea el evento.
+     * @return El evento creado.
      */
+    @PostMapping("/{comunidadId}")
+    @Operation(
+            summary = "Crear nuevo evento",
+            description = "Crea un nuevo evento de estudio en una comunidad")
+    public ResponseEntity<EventDetailResponse> crearEvento(
+            @PathVariable @Parameter(description = "ID de la comunidad") final Long comunidadId,
+            @RequestBody final CreateEventRequest request,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado");
+        }
+
+        final Evento evento =
+                eventoService.crearEvento(
+                        usuario.getId(),
+                        comunidadId,
+                        request.getTitulo(),
+                        request.getDescripcion(),
+                        request.getFechaHora(),
+                        request.getFechaFin(),
+                        request.getAforo(),
+                        request.getQueLlevar(),
+                        request.getEsVirtual(),
+                        request.getPrivado(),
+                        request.getEnlaceVirtual(),
+                        request.getVisibleEnMapa(),
+                        null);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(evento.toDTO());
+    }
+
     // ===============================
     // OBTENER EVENTO
     // ===============================
