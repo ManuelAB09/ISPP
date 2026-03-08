@@ -168,29 +168,39 @@ public class InstitutionService {
             validarEligibilidadPlanReducido(institution.getDominioEmail());
         }
 
-        BigDecimal monto =
-                new BigDecimal("15")
-                        .multiply(new BigDecimal(request.getNumUsuarios()))
-                        .multiply(new BigDecimal(request.getDuracionMeses()));
-
-        if (tipoPlan == TipoPlanCorporativo.REDUCIDO_PUBLICA
-                || tipoPlan == TipoPlanCorporativo.REDUCIDO_PRIVADA) {
-            monto = monto.multiply(new BigDecimal("0.60"));
-        }
+        // El monto ya no se calcula aquí — Stripe usa el priceId fijo
+        // Solo se usa para registrar la transacción interna si hace falta
+        BigDecimal montoEstimado = calcularMontoEstimado(tipoPlan, request.getPeriodo());
 
         PaymentUrlResponse paymentUrl;
         try {
-            paymentUrl = paymentService.generarPagoPlanCorporativo(institutionId, tipoPlan, monto);
+            paymentUrl =
+                    paymentService.generarPagoPlanCorporativo(
+                            institutionId,
+                            tipoPlan,
+                            montoEstimado,
+                            request.getPeriodo(),
+                            institution.getEmailContacto()); // ← email para prerellenar Stripe
         } catch (com.stripe.exception.StripeException e) {
             throw new RuntimeException("Error al conectar con la pasarela de pago", e);
         }
 
-        // Solo actualizamos la institución si Stripe respondió correctamente
         institution.setNumUsuariosPermitidos(request.getNumUsuarios());
         institution.setPlanCorporativo(tipoPlan);
         institutionRepository.save(institution);
 
         return paymentUrl;
+    }
+
+    // Helper para calcular monto estimado según plan y periodo
+    private BigDecimal calcularMontoEstimado(TipoPlanCorporativo tipoPlan, String periodo) {
+        boolean esAnual = "anual".equalsIgnoreCase(periodo);
+        return switch (tipoPlan) {
+            case BASICO -> esAnual ? new BigDecimal("499.99") : new BigDecimal("49.99");
+            case ESTANDAR -> esAnual ? new BigDecimal("999.99") : new BigDecimal("99.99");
+            case PREMIUM -> esAnual ? new BigDecimal("1999.99") : new BigDecimal("199.99");
+            default -> BigDecimal.ZERO;
+        };
     }
 
     /**

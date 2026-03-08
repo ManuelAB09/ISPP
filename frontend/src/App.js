@@ -21,6 +21,7 @@ import PagoExitoso from './screens/pagos/PagoExitoso';
 import InstitutionPlansScreen from './screens/planes/InstitutionPlansScreen';
 import PasarelaPago from './screens/planes/PasarelaPago';
 import PlansScreen from './screens/planes/PlansScreen';
+import PlanesSuccess from './screens/planes/PlanesSuccess';
 import PasarelaPagoTutor from './screens/teacherProfile/PasarelaPagoTutor';
 import TeacherProfile from './screens/teacherProfile/TeacherProfile';
 import CrearUbicacionScreen from './screens/ubicaciones/CrearUbicacionScreen';
@@ -66,6 +67,7 @@ function AppRoutes() {
         <Route path="/pagos" element={<MisPagos />} />
         <Route path="/eventos/:eventId" element={<DetalleEvento />} />
         <Route path="/eventos-mapa" element={<EventosMapaScreen />} />
+        <Route path="/planes/success" element={<PlanesSuccess />} />
       </>
     )
   }

@@ -1,5 +1,6 @@
 package es.us.meerkat.backend.controller;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Map;
 import java.util.Optional;
@@ -8,6 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import com.stripe.exception.StripeException;
+import com.stripe.model.checkout.Session;
 
 import es.us.meerkat.backend.dto.PaymentUrlResponse;
 import es.us.meerkat.backend.dto.SubscribeRequest;
@@ -21,7 +25,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j // ← añadir esto
 /** Controlador REST para gestionar suscripciones de usuarios. */
 @RestController
 @RequestMapping("/api/v1/subscriptions")
@@ -83,30 +89,24 @@ public class SuscripcionController {
      * @return URL de pago para completar la suscripción
      */
     @PostMapping("/me")
-    @Operation(
-            summary = "Suscribirse a plan Premium",
-            description = "Inicia el proceso de suscripción")
     public ResponseEntity<?> suscribirse(
             @AuthenticationPrincipal final Usuario usuario,
             @Valid @RequestBody SubscribeRequest request) {
+
         try {
-            Optional<Suscripcion> suscripcionActiva =
-                    suscripcionService.obtenerMiSuscripcion(usuario.getId());
-            if (suscripcionActiva.isPresent()) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Ya tienes una suscripción activa"));
-            }
-
             PaymentUrlResponse paymentUrl =
-                    paymentService.generarPagoSuscripcion(usuario, TipoPlan.PREMIUM);
+                    paymentService.generarPagoSuscripcion(
+                            usuario, TipoPlan.PREMIUM, request.getPeriodo());
             return ResponseEntity.status(HttpStatus.CREATED).body(paymentUrl);
-
-        } catch (com.stripe.exception.StripeException e) {
+        } catch (StripeException e) {
 
             return ResponseEntity.internalServerError()
-                    .body(Map.of("error", "Error al conectar con la pasarela de pago"));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+                    .body(
+                            Map.of(
+                                    "error",
+                                    "Error al conectar con la pasarela de pago",
+                                    "detalle",
+                                    e.getMessage()));
         }
     }
 
@@ -150,6 +150,74 @@ public class SuscripcionController {
             return ResponseEntity.ok(cancelada.toDTO());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/me/verify-session")
+    public ResponseEntity<?> verificarSesion(
+            @AuthenticationPrincipal final Usuario usuario, @RequestBody Map<String, String> body) {
+
+        String sessionId = body.get("sessionId");
+        log.info(
+                "=== VERIFY SESSION START === sessionId: {}, usuarioId: {}",
+                sessionId,
+                usuario.getId());
+
+        if (sessionId == null || sessionId.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "sessionId requerido"));
+        }
+
+        try {
+            Session session = Session.retrieve(sessionId);
+            log.info(
+                    "Session recuperada - status: {}, amountTotal: {}, metadata: {}",
+                    session.getStatus(),
+                    session.getAmountTotal(),
+                    session.getMetadata());
+
+            if (!"complete".equals(session.getStatus())) {
+                log.warn("Session no completada, status: {}", session.getStatus());
+                return ResponseEntity.badRequest()
+                        .body(
+                                Map.of(
+                                        "error",
+                                        "El pago no está completado: " + session.getStatus()));
+            }
+
+            String usuarioIdEnSession = session.getMetadata().get("usuarioId");
+            log.info(
+                    "usuarioId en metadata: {} vs actual: {}", usuarioIdEnSession, usuario.getId());
+
+            if (!usuario.getId().toString().equals(usuarioIdEnSession)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Sesión no válida para este usuario"));
+            }
+
+            BigDecimal monto =
+                    session.getAmountTotal() != null
+                            ? BigDecimal.valueOf(session.getAmountTotal())
+                                    .divide(BigDecimal.valueOf(100))
+                            : BigDecimal.valueOf(2.99);
+
+            log.info("Llamando activarSuscripcionTrasStripe con monto: {}", monto);
+            suscripcionService.activarSuscripcionTrasStripe(usuario.getId(), monto);
+            log.info("=== SUSCRIPCIÓN ACTIVADA CORRECTAMENTE ===");
+
+            return ResponseEntity.ok(Map.of("mensaje", "Suscripción activada correctamente"));
+
+        } catch (StripeException e) {
+            log.error("StripeException: code={}, message={}", e.getCode(), e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Error Stripe: " + e.getMessage()));
+
+        } catch (Exception e) {
+            log.error(
+                    "ERROR INESPERADO: clase={}, mensaje={}",
+                    e.getClass().getSimpleName(),
+                    e.getMessage(),
+                    e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", e.getClass().getSimpleName() + ": " + e.getMessage()));
         }
     }
 }
