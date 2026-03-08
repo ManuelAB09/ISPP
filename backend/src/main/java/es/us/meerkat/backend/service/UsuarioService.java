@@ -10,6 +10,7 @@ import es.us.meerkat.backend.dto.UserDetailResponse;
 import es.us.meerkat.backend.dto.UserPublicResponse;
 import es.us.meerkat.backend.dto.VisibilityRequest;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -28,6 +29,9 @@ public class UsuarioService {
 
     /** Repositorio para acceder a la información de usuarios. */
     private final UsuarioRepository usuarioRepository;
+
+    /** Repositorio para gestionar membresías de comunidades. */
+    private final MiembroComunidadRepository miembroComunidadRepository;
 
     /** Codificador de contraseñas BCrypt. */
     private final BCryptPasswordEncoder passwordEncoder;
@@ -112,6 +116,12 @@ public class UsuarioService {
      */
     @Transactional
     public void eliminarCuenta(final Usuario usuario) {
+        if (usuario == null || usuario.getId() == null) {
+            throw new RuntimeException("Usuario no autenticado");
+        }
+
+        // Eliminar primero relaciones que referencian al usuario.
+        miembroComunidadRepository.deleteByUsuarioId(usuario.getId());
         usuarioRepository.delete(usuario);
     }
 
