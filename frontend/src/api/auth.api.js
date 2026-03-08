@@ -50,4 +50,25 @@ export const authApi = {
   updateMe(data) {
     return apiClient.put('/api/v1/users/me', data);
   },
+
+  /**
+   * POST /api/v1/users/me/photo
+   * Subir foto de perfil personalizada
+   * @param {File} file - Imagen de perfil
+   * @returns {Promise<Object>} - UserResponse actualizado
+   */
+  uploadProfilePhoto(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiClient.post('/api/v1/users/me/photo', formData);
+  },
+
+  /**
+   * GET /api/v1/users/profile-avatars
+   * Obtener avatares predefinidos para foto de perfil
+   * @returns {Promise<string[]>} - Lista de rutas públicas de avatares
+   */
+  getProfileAvatars() {
+    return apiClient.get('/api/v1/users/profile-avatars');
+  },
 };

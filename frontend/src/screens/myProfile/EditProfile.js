@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react"
+import { authApi } from "../../api/auth.api"
+import { getApiBaseUrl } from "../../api/baseUrl"
 import { useAuth } from "../../contexts/AuthContext"
 import "./EditProfile.css"
 
@@ -15,6 +17,40 @@ const ACADEMIC_INTERESTS = [
     'Derecho',
 ]
 
+const RENATA_PATH_PREFIX = '/static/images/renata/'
+
+const toAbsoluteImageUrl = (imageUrl) => {
+    if (!imageUrl || !String(imageUrl).trim()) {
+        return ''
+    }
+
+    const value = String(imageUrl).trim()
+    if (/^https?:\/\//i.test(value) || value.startsWith('data:image/') || value.startsWith('blob:')) {
+        return value
+    }
+
+    const base = getApiBaseUrl()
+    if (value.startsWith('/')) {
+        return `${base}${value}`
+    }
+
+    return `${base}/${value}`
+}
+
+const extractRenataAvatarPath = (imageUrl) => {
+    if (!imageUrl || !String(imageUrl).trim()) {
+        return ''
+    }
+
+    const value = String(imageUrl).trim()
+    const markerIndex = value.indexOf(RENATA_PATH_PREFIX)
+    if (markerIndex >= 0) {
+        return value.slice(markerIndex)
+    }
+
+    return ''
+}
+
 const EditProfile = ({ onClose, onSave }) => {
     const { user, updateProfile } = useAuth()
     
@@ -28,11 +64,17 @@ const EditProfile = ({ onClose, onSave }) => {
         intereses: [],
     })
     
-    const [profileImage, setProfileImage] = useState(null)
+    const [selectedAvatar, setSelectedAvatar] = useState('')
+    const [fotoToSave, setFotoToSave] = useState('')
+    const [avatarOptions, setAvatarOptions] = useState([])
+    const [loadingAvatars, setLoadingAvatars] = useState(false)
     const [profileImagePreview, setProfileImagePreview] = useState('')
+    const [selectedPhotoFile, setSelectedPhotoFile] = useState(null)
+    const [fileInputKey, setFileInputKey] = useState(0)
     const [isSaving, setIsSaving] = useState(false)
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
+    const [fotoBackgroundColor, setFotoBackgroundColor] = useState('#ffffff')
 
     // Cargar datos del usuario al montar el componente
     useEffect(() => {
@@ -45,11 +87,39 @@ const EditProfile = ({ onClose, onSave }) => {
                 ubicacion: user.ubicacion || "",
                 intereses: user.intereses || [],
             })
-            if (user.foto) {
-                setProfileImagePreview(user.foto)
-            }
+
+            const userAvatarPath = extractRenataAvatarPath(user.foto)
+            setSelectedAvatar(userAvatarPath)
+            setFotoToSave(userAvatarPath || user.foto || '')
+            setProfileImagePreview(toAbsoluteImageUrl(user.foto))
+            setFotoBackgroundColor(user.fotoBackgroundColor || '#ffffff')
         }
     }, [user])
+
+    useEffect(() => {
+        const loadAvatars = async () => {
+            setLoadingAvatars(true)
+            try {
+                const data = await authApi.getProfileAvatars()
+                const options = Array.isArray(data) ? data : []
+                setAvatarOptions(options)
+            } catch {
+                setAvatarOptions([])
+            } finally {
+                setLoadingAvatars(false)
+            }
+        }
+
+        loadAvatars()
+    }, [])
+
+    useEffect(() => {
+        return () => {
+            if (profileImagePreview.startsWith('blob:')) {
+                URL.revokeObjectURL(profileImagePreview)
+            }
+        }
+    }, [profileImagePreview])
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target
@@ -69,31 +139,45 @@ const EditProfile = ({ onClose, onSave }) => {
         }))
     }
 
-    const handleImageChange = (e) => {
-        const file = e.target.files[0]
-        if (file) {
-            // Validar tipo de archivo
-            if (!file.type.startsWith('image/')) {
-                setError('Por favor, selecciona un archivo de imagen válido')
-                return
-            }
-            // Validar tamaño (máx 5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                setError('La imagen no debe superar los 5MB')
-                return
-            }
-            setProfileImage(file)
-            setProfileImagePreview(URL.createObjectURL(file))
-            if (error) setError('')
+    const handleSelectAvatar = (avatarPath) => {
+        setSelectedAvatar(avatarPath)
+        setSelectedPhotoFile(null)
+        setFotoToSave(avatarPath)
+        setProfileImagePreview(toAbsoluteImageUrl(avatarPath))
+        if (error) setError('')
+    }
+
+    const handleFileSelection = (e) => {
+        const file = e.target.files?.[0]
+        if (!file) {
+            return
         }
+
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+        if (!allowedTypes.includes(file.type)) {
+            setError('Formato no permitido. Usa JPG, PNG o WEBP.')
+            return
+        }
+
+        const maxBytes = 5 * 1024 * 1024
+        if (file.size > maxBytes) {
+            setError('La imagen supera el límite de 5MB.')
+            return
+        }
+
+        const blobUrl = URL.createObjectURL(file)
+        setSelectedAvatar('')
+        setSelectedPhotoFile(file)
+        setProfileImagePreview(blobUrl)
+        if (error) setError('')
     }
 
     const removeProfileImage = () => {
-        setProfileImage(null)
-        if (profileImagePreview) {
-            URL.revokeObjectURL(profileImagePreview)
-        }
+        setSelectedAvatar('')
+        setSelectedPhotoFile(null)
+        setFotoToSave('')
         setProfileImagePreview('')
+        setFileInputKey((prev) => prev + 1)
     }
 
     const handleSubmit = async (e) => {
@@ -110,6 +194,10 @@ const EditProfile = ({ onClose, onSave }) => {
         }
 
         try {
+            if (selectedPhotoFile) {
+                await authApi.uploadProfilePhoto(selectedPhotoFile)
+            }
+
             // Preparar datos para el endpoint
             const profileData = {
                 nombre: formData.nombre.trim(),
@@ -118,7 +206,13 @@ const EditProfile = ({ onClose, onSave }) => {
                 grado: formData.grado.trim(),
                 ubicacion: formData.ubicacion.trim(),
                 intereses: formData.intereses,
-                foto: profileImage ? profileImagePreview : (user?.foto || ''),
+                fotoBackgroundColor: fotoBackgroundColor,
+            }
+
+            // Solo enviamos foto cuando no se subió archivo en esta misma acción.
+            // Si hubo upload, el backend ya guardó la imagen y evitamos reenviar un payload grande.
+            if (!selectedPhotoFile) {
+                profileData.foto = fotoToSave
             }
 
             const result = await updateProfile(profileData)
@@ -161,7 +255,7 @@ const EditProfile = ({ onClose, onSave }) => {
                         <h2 className="edit-profile-section__title">Foto de perfil</h2>
                         <div className="edit-profile-image-container">
                             {profileImagePreview ? (
-                                <div className="edit-profile-image-preview">
+                                <div className="edit-profile-image-preview" style={{ backgroundColor: fotoBackgroundColor }}>
                                     <img src={profileImagePreview} alt="Vista previa" />
                                     <button
                                         type="button"
@@ -176,29 +270,56 @@ const EditProfile = ({ onClose, onSave }) => {
                                     </button>
                                 </div>
                             ) : (
-                                <div className="edit-profile-image-placeholder">
+                                <div className="edit-profile-image-placeholder" style={{ backgroundColor: fotoBackgroundColor }}>
                                     <span className="placeholder-icon">👤</span>
                                 </div>
                             )}
                             <div className="edit-profile-image-actions">
-                                <label htmlFor="profileImageEdit" className="edit-profile-upload-btn">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                        <polyline points="17 8 12 3 7 8"/>
-                                        <line x1="12" y1="3" x2="12" y2="15"/>
-                                    </svg>
-                                    Subir imagen
+                                <label className="edit-profile-upload-btn" htmlFor="profile-photo-input">
+                                    Subir foto
                                 </label>
                                 <input
+                                    key={fileInputKey}
+                                    id="profile-photo-input"
                                     type="file"
-                                    id="profileImageEdit"
-                                    name="profileImage"
-                                    accept="image/*"
-                                    onChange={handleImageChange}
                                     className="edit-profile-image-input"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    onChange={handleFileSelection}
                                 />
-                                <p className="edit-profile-image-hint">JPG, PNG o GIF. Máx 5MB.</p>
+                                <p className="edit-profile-image-hint">
+                                    Sube una imagen (JPG, PNG o WEBP, máx. 5MB) o elige un avatar.
+                                </p>
                             </div>
+                        </div>
+                        <div className="edit-profile-color-picker">
+                            <label htmlFor="foto-background-color">Color de fondo:</label>
+                            <input
+                                type="color"
+                                id="foto-background-color"
+                                value={fotoBackgroundColor}
+                                onChange={(e) => setFotoBackgroundColor(e.target.value)}
+                                title="Selecciona el color de fondo"
+                            />
+                        </div>
+                        <div className="edit-profile-avatar-gallery">
+                            {loadingAvatars ? (
+                                <p className="edit-profile-image-hint">Cargando avatares...</p>
+                            ) : avatarOptions.length === 0 ? (
+                                <p className="edit-profile-image-hint">No hay avatares disponibles ahora mismo.</p>
+                            ) : (
+                                avatarOptions.map((avatarPath) => (
+                                    <button
+                                        type="button"
+                                        key={avatarPath}
+                                        className={`edit-profile-avatar-option ${selectedAvatar === avatarPath ? 'selected' : ''}`}
+                                        onClick={() => handleSelectAvatar(avatarPath)}
+                                        aria-label={`Seleccionar avatar ${avatarPath}`}
+                                        title={avatarPath.split('/').pop() || 'Avatar'}
+                                    >
+                                        <img src={toAbsoluteImageUrl(avatarPath)} alt={avatarPath} />
+                                    </button>
+                                ))
+                            )}
                         </div>
                     </section>
 
