@@ -196,7 +196,7 @@
 .input-with-icon input[type="password"],
 .input-with-icon input[type="text"] {
   width: 100%;
-  padding: 14px 16px 14px 44px;
+  padding: 14px 16px 14px 50px;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   font-size: 15px;
@@ -217,7 +217,7 @@
 
 /* Password Input Container */
 .login-form .password-input-container input {
-  padding-right: 50px;
+  padding-right: 60px;
 }
 
 .login-form .password-toggle {

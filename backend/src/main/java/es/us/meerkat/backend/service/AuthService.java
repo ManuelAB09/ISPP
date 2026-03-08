@@ -120,7 +120,8 @@ public class AuthService {
         final Usuario usuario =
                 usuarioRepository
                         .findByEmail(requestParam.getEmail())
-                        .orElseThrow(() -> new ValidationException("Credenciales incorrectas"));
+                        .orElseThrow(
+                                () -> new ValidationException("Este email no está registrado"));
 
         if (!passwordEncoder.matches(requestParam.getPassword(), usuario.getPassword())) {
             throw new ValidationException("Credenciales incorrectas");
