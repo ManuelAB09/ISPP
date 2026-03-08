@@ -33,6 +33,7 @@ export default function CommunityDetail() {
     id: Number(currentUserId),
     nombre: user?.nombre || 'Usuario',
     foto: user?.foto || null,
+    fotoBackgroundColor: user?.fotoBackgroundColor || '#ffffff',
   };
   const communityImage = community?.imagen || community?.imagenUrl || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
 

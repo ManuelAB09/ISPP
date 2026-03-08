@@ -7,7 +7,9 @@ import lombok.Data;
 /**
  * DTO para actualizar el perfil del usuario autenticado.
  *
- * <p>Corresponde al schema UpdateUserRequest del OpenAPI. Todos los campos son opcionales: solo se
+ * <p>
+ * Corresponde al schema UpdateUserRequest del OpenAPI. Todos los campos son
+ * opcionales: solo se
  * actualizan los que no sean nulos.
  */
 @Data
@@ -18,6 +20,9 @@ public class UpdateUserRequest {
 
     /** Nueva URL de foto de perfil. */
     private String foto;
+
+    /** Nuevo color de fondo para la foto de perfil. */
+    private String fotoBackgroundColor;
 
     /** Nueva biografía. */
     private String bio;

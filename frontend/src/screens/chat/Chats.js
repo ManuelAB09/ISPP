@@ -10,6 +10,8 @@ import PrivateChat from './PrivateChat';
 import { obtenerConversaciones } from '../../api/mensajeService';
 
 const DEFAULT_COMMUNITY_IMAGE = 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
+const DEFAULT_PROFILE_AVATAR =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='60' fill='%23E6EAF3'/%3E%3Ccircle cx='60' cy='46' r='22' fill='%2395A1BB'/%3E%3Cpath d='M20 106c6-20 22-32 40-32s34 12 40 32' fill='%2395A1BB'/%3E%3C/svg%3E";
 
 const resolveCommunityImage = (community) => {
     const raw = community?.imagen || community?.imagenUrl || community?.foto;
@@ -19,6 +21,25 @@ const resolveCommunityImage = (community) => {
     }
 
     const value = String(raw).trim();
+    if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
+        return value;
+    }
+
+    const base = getApiBaseUrl();
+    if (value.startsWith('/')) {
+        return `${base}${value}`;
+    }
+
+    return `${base}/${value}`;
+};
+
+const resolveUserImage = (rawPhoto) => {
+    const fallback = DEFAULT_PROFILE_AVATAR;
+    if (!rawPhoto || !String(rawPhoto).trim()) {
+        return fallback;
+    }
+
+    const value = String(rawPhoto).trim();
     if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
         return value;
     }
@@ -54,6 +75,7 @@ export default function Chats() {
                       usuarioId: privateTarget.id,
                       usuarioNombre: privateTarget.nombre,
                       usuarioFoto: privateTarget.foto || null,
+                      usuarioFotoBackgroundColor: privateTarget.fotoBackgroundColor || '#ffffff',
                       ultimoMensaje: '',
                   },
               ]
@@ -63,11 +85,13 @@ export default function Chats() {
     const privateUserIdFromQuery = Number(searchParams.get('userId'));
     const privateUserNameFromQuery = searchParams.get('userName');
     const privateUserPhotoFromQuery = searchParams.get('userPhoto');
+    const privateUserPhotoBgFromQuery = searchParams.get('userPhotoBg');
 
     const currentUser = {
         id: Number(localStorage.getItem('userId')),
         nombre: user?.nombre || 'Usuario',
         foto: user?.foto || null,
+        fotoBackgroundColor: user?.fotoBackgroundColor || '#ffffff',
     };
 
     useEffect(() => {
@@ -108,6 +132,7 @@ export default function Chats() {
                         id: privateUserIdFromQuery,
                         nombre: privateUserNameFromQuery || `Usuario ${privateUserIdFromQuery}`,
                         foto: privateUserPhotoFromQuery || null,
+                        fotoBackgroundColor: privateUserPhotoBgFromQuery || '#ffffff',
                     };
                     setPrivateTarget(targetObj);
                     setActiveTab('private');
@@ -121,6 +146,7 @@ export default function Chats() {
                                 usuarioId: privateUserIdFromQuery,
                                 usuarioNombre: targetObj.nombre,
                                 usuarioFoto: targetObj.foto,
+                                usuarioFotoBackgroundColor: targetObj.fotoBackgroundColor,
                                 ultimoMensaje: '',
                             },
                         ];
@@ -151,6 +177,7 @@ export default function Chats() {
         privateUserIdFromQuery,
         privateUserNameFromQuery,
         privateUserPhotoFromQuery,
+        privateUserPhotoBgFromQuery,
     ]);
 
     // Recargar conversaciones cuando se abre la pestaña de privados
@@ -173,6 +200,7 @@ export default function Chats() {
                                     usuarioId: privateTarget.id,
                                     usuarioNombre: privateTarget.nombre,
                                     usuarioFoto: privateTarget.foto || null,
+                                    usuarioFotoBackgroundColor: privateTarget.fotoBackgroundColor || '#ffffff',
                                     ultimoMensaje: '',
                                 },
                             ];
@@ -193,6 +221,7 @@ export default function Chats() {
                                     usuarioId: privateTarget.id,
                                     usuarioNombre: privateTarget.nombre,
                                     usuarioFoto: privateTarget.foto || null,
+                                    usuarioFotoBackgroundColor: privateTarget.fotoBackgroundColor || '#ffffff',
                                     ultimoMensaje: '',
                                 },
                             ];
@@ -275,10 +304,12 @@ export default function Chats() {
                                                 const id = Number(target.userId);
                                                 const nombre = target.userName;
                                                 const foto = target.userPhoto || null;
+                                                const fotoBackgroundColor = target.userPhotoBg || '#ffffff';
                                                 setPrivateTarget({
                                                     id,
                                                     nombre,
                                                     foto,
+                                                    fotoBackgroundColor,
                                                 });
                                                 setActiveTab('private');
                                                 setConversaciones((prev) => {
@@ -291,6 +322,7 @@ export default function Chats() {
                                                             usuarioId: id,
                                                             usuarioNombre: nombre,
                                                             usuarioFoto: foto,
+                                                            usuarioFotoBackgroundColor: fotoBackgroundColor,
                                                             ultimoMensaje: '',
                                                         },
                                                     ];
@@ -328,13 +360,21 @@ export default function Chats() {
                                                             id: conv.usuarioId,
                                                             nombre: conv.usuarioNombre,
                                                             foto: conv.usuarioFoto || null,
+                                                            fotoBackgroundColor: conv.usuarioFotoBackgroundColor || '#ffffff',
                                                         })
                                                     }
                                                 >
                                                     <img
-                                                        src={conv.usuarioFoto || '/MeerKatters_logo.png'}
+                                                        src={resolveUserImage(conv.usuarioFoto)}
                                                         alt={conv.usuarioNombre}
                                                         className="chat-list-image"
+                                                        style={{
+                                                            backgroundColor:
+                                                                conv.usuarioFotoBackgroundColor ||
+                                                                (privateTarget?.id === conv.usuarioId
+                                                                    ? privateTarget.fotoBackgroundColor
+                                                                    : '#ffffff'),
+                                                        }}
                                                     />
                                                     <div className="chat-list-content">
                                                         <h3>{conv.usuarioNombre}</h3>
