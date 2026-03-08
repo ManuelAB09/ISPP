@@ -24,13 +24,13 @@ const VerifiedTeachers = () => {
 
   // Comprobar si el usuario autenticado ya tiene perfil de tutor
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !user?.esTutor) return;
     getMyTutorProfiles()
       .then((perfil) => {
         if (perfil && perfil.id) setMiPerfilTutor(perfil);
       })
       .catch(() => {});
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   // Filtros
   const [filtros, setFiltros] = useState({
