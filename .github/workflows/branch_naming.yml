@@ -5,7 +5,7 @@ name: Validar nombre de rama
 # del proyecto antes de permitir trabajar en ellas.
 #
 # Convención: tipo/descripcion o tipo/#issue_descripcion
-# Tipos: feature, bugfix, hotfix, doc, test, release
+# Tipos: feature, bugfix, fix, hotfix, doc, test, release
 # Ramas exentas: main, trunk, develop, sprintN, dependabot/**
 # ════════════════════════════════════════════════════════════
 
@@ -16,6 +16,7 @@ on:
       - trunk
       - develop
       - bugfix
+      - fix
       - hotfix
       - sprint1
       - sprint2
@@ -33,14 +34,14 @@ jobs:
           BRANCH="${GITHUB_REF#refs/heads/}"
           echo "Rama: $BRANCH"
 
-          VALID_RE='^(feature|bugfix|hotfix|doc|test|release)/(#[0-9]+_)?[a-zA-Z0-9áéíóúñÁÉÍÓÚÑ._-]+$'
+          VALID_RE='^(feature|bugfix|fix|hotfix|doc|test|release)/(#[0-9]+_)?[a-zA-Z0-9áéíóúñÁÉÍÓÚÑ._-]+$'
 
           if ! [[ "$BRANCH" =~ $VALID_RE ]]; then
             echo ""
             echo "ERROR: El nombre de la rama '$BRANCH' no sigue la convención."
             echo ""
             echo "Formato: tipo/descripcion  o  tipo/#123_descripcion"
-            echo "Tipos:   feature | bugfix | hotfix | doc | test | release"
+            echo "Tipos:   feature | bugfix | fix | hotfix | doc | test | release"
             echo ""
             echo "Ejemplos válidos:"
             echo "  feature/#42_login-google"
