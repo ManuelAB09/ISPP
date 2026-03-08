@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { subscriptionsApi } from "../../api/subscriptions.api";
 import Header from "../../components/Header/Header";
 
@@ -13,13 +13,12 @@ const benefits = [
 
 export default function PlanesSuccess() {
     const [searchParams] = useSearchParams();
-    const navigate = useNavigate();
     const [estado, setEstado] = useState("verificando");
 
     useEffect(() => {
         const sessionId = searchParams.get("session_id");
         if (!sessionId) {
-            navigate("/planes");
+            window.location.href = "/planes";
             return;
         }
         subscriptionsApi.verifySession(sessionId)
@@ -32,7 +31,6 @@ export default function PlanesSuccess() {
             <Header page={"planes"} />
             <div style={styles.page}>
 
-                {/* ── Verificando ── */}
                 {estado === "verificando" && (
                     <div style={styles.centerBox}>
                         <div style={styles.spinnerWrap}>
@@ -43,7 +41,6 @@ export default function PlanesSuccess() {
                     </div>
                 )}
 
-                {/* ── Error ── */}
                 {estado === "error" && (
                     <div style={styles.centerBox}>
                         <div style={{ ...styles.iconCircle, background: "#fee2e2" }}>
@@ -54,21 +51,19 @@ export default function PlanesSuccess() {
                             No pudimos activar tu suscripción. Por favor contacta a soporte o inténtalo de nuevo.
                         </p>
                         <div style={styles.errorBtns}>
-                            <button style={styles.btnSecondary} onClick={() => navigate("/planes/pasarela")}>
+                            <button style={styles.btnSecondary} onClick={() => { window.location.href = "/planes/pasarela"; }}>
                                 Reintentar
                             </button>
-                            <button style={styles.btnMuted} onClick={() => navigate("/planes")}>
+                            <button style={styles.btnMuted} onClick={() => { window.location.href = "/planes"; }}>
                                 Volver a planes
                             </button>
                         </div>
                     </div>
                 )}
 
-                {/* ── Éxito ── */}
                 {estado === "ok" && (
                     <div style={styles.successWrap}>
 
-                        {/* Hero */}
                         <div style={styles.hero}>
                             <div style={styles.confettiRow}>
                                 {["🎉", "⭐", "✨", "🎊", "💎"].map((e, i) => (
@@ -82,10 +77,7 @@ export default function PlanesSuccess() {
                             </p>
                         </div>
 
-                        {/* Content grid */}
                         <div style={styles.grid}>
-
-                            {/* Resumen de pago */}
                             <div style={styles.card}>
                                 <div style={styles.cardHeader}>
                                     <span style={styles.cardIcon}>🧾</span>
@@ -111,7 +103,6 @@ export default function PlanesSuccess() {
                                 </div>
                             </div>
 
-                            {/* Beneficios */}
                             <div style={styles.card}>
                                 <div style={styles.cardHeader}>
                                     <span style={styles.cardIcon}>💎</span>
@@ -133,12 +124,11 @@ export default function PlanesSuccess() {
                             </div>
                         </div>
 
-                        {/* CTA */}
                         <div style={styles.ctaRow}>
-                            <button style={styles.btnPrimary} onClick={() => navigate("/")}>
+                            <button style={styles.btnPrimary} onClick={() => { window.location.href = "/"; }}>
                                 Ir al inicio →
                             </button>
-                            <button style={styles.btnSecondary} onClick={() => navigate("/planes")}>
+                            <button style={styles.btnSecondary} onClick={() => { window.location.href = "/planes"; }}>
                                 Ver mi plan
                             </button>
                         </div>
@@ -148,19 +138,19 @@ export default function PlanesSuccess() {
             </div>
 
             <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-        @keyframes popIn {
-          0%   { opacity: 0; transform: scale(0.5) translateY(10px); }
-          70%  { transform: scale(1.15) translateY(-2px); }
-          100% { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(24px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+                @keyframes spin {
+                    to { transform: rotate(360deg); }
+                }
+                @keyframes popIn {
+                    0%   { opacity: 0; transform: scale(0.5) translateY(10px); }
+                    70%  { transform: scale(1.15) translateY(-2px); }
+                    100% { opacity: 1; transform: scale(1) translateY(0); }
+                }
+                @keyframes fadeUp {
+                    from { opacity: 0; transform: translateY(24px); }
+                    to   { opacity: 1; transform: translateY(0); }
+                }
+            `}</style>
         </>
     );
 }
@@ -225,8 +215,6 @@ const styles = {
         justifyContent: "center",
         flexWrap: "wrap",
     },
-
-    /* Success layout */
     successWrap: {
         maxWidth: 860,
         width: "100%",
@@ -272,8 +260,6 @@ const styles = {
         margin: "0 auto",
         lineHeight: 1.7,
     },
-
-    /* Grid */
     grid: {
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
@@ -293,9 +279,7 @@ const styles = {
         gap: 10,
         marginBottom: 18,
     },
-    cardIcon: {
-        fontSize: 22,
-    },
+    cardIcon: { fontSize: 22 },
     cardTitle: {
         fontFamily: "'spacegrotesk', sans-serif",
         fontWeight: 800,
@@ -303,23 +287,14 @@ const styles = {
         color: "#1f2a4a",
         margin: 0,
     },
-
-    /* Summary */
     summaryRow: {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
         padding: "10px 0",
     },
-    summaryLabel: {
-        fontSize: 13,
-        color: "#6b7280",
-    },
-    summaryValue: {
-        fontSize: 13,
-        fontWeight: 700,
-        color: "#111827",
-    },
+    summaryLabel: { fontSize: 13, color: "#6b7280" },
+    summaryValue: { fontSize: 13, fontWeight: 700, color: "#111827" },
     statusBadge: {
         background: "#f0fdf4",
         color: "#15803d",
@@ -328,10 +303,7 @@ const styles = {
         padding: "3px 10px",
         fontSize: 12,
     },
-    divider: {
-        height: 1,
-        background: "#f3f4f6",
-    },
+    divider: { height: 1, background: "#f3f4f6" },
     secureNote: {
         display: "flex",
         alignItems: "center",
@@ -343,8 +315,6 @@ const styles = {
         fontSize: 11,
         color: "#9ca3af",
     },
-
-    /* Benefits */
     benefitsList: {
         listStyle: "none",
         margin: 0,
@@ -353,11 +323,7 @@ const styles = {
         flexDirection: "column",
         gap: 12,
     },
-    benefitItem: {
-        display: "flex",
-        alignItems: "flex-start",
-        gap: 12,
-    },
+    benefitItem: { display: "flex", alignItems: "flex-start", gap: 12 },
     benefitIconWrap: {
         width: 36,
         height: 36,
@@ -369,22 +335,9 @@ const styles = {
         justifyContent: "center",
         flexShrink: 0,
     },
-    benefitIcon: {
-        fontSize: 16,
-    },
-    benefitTitle: {
-        fontSize: 13,
-        fontWeight: 700,
-        color: "#111827",
-        marginBottom: 2,
-    },
-    benefitDesc: {
-        fontSize: 11,
-        color: "#9ca3af",
-        lineHeight: 1.4,
-    },
-
-    /* CTA */
+    benefitIcon: { fontSize: 16 },
+    benefitTitle: { fontSize: 13, fontWeight: 700, color: "#111827", marginBottom: 2 },
+    benefitDesc: { fontSize: 11, color: "#9ca3af", lineHeight: 1.4 },
     ctaRow: {
         display: "flex",
         gap: 12,
