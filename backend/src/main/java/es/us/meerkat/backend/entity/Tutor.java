@@ -13,8 +13,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -38,9 +38,9 @@ public class Tutor {
     private Long id;
 
     /** Usuario asociado al tutor. */
-    @ManyToOne
-    @JoinColumn(name = "usuario_id", nullable = false)
-    private Usuario us;
+    @OneToOne
+    @JoinColumn(name = "usuario_id", nullable = false, unique = true)
+    private Usuario usuario;
 
     /** Lista de especialidades del tutor. */
     @ElementCollection

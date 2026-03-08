@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -55,7 +56,7 @@ class TutorServiceTest {
         TutorProfileRequest request = buildProfileRequest();
 
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
-        when(tutorRepository.findByUs(usuario)).thenReturn(Optional.empty());
+        when(tutorRepository.findByUsuario(usuario)).thenReturn(Optional.empty());
         when(tutorRepository.save(any(Tutor.class)))
                 .thenAnswer(
                         inv -> {
@@ -72,7 +73,7 @@ class TutorServiceTest {
 
         ArgumentCaptor<Tutor> captor = ArgumentCaptor.forClass(Tutor.class);
         verify(tutorRepository).save(captor.capture());
-        assertThat(captor.getValue().getUs()).isEqualTo(usuario);
+        assertThat(captor.getValue().getUsuario()).isEqualTo(usuario);
         assertThat(captor.getValue().getEspecialidades()).containsExactly("Matemáticas", "Física");
     }
 
@@ -101,7 +102,8 @@ class TutorServiceTest {
         Long userId = 1L;
         Usuario usuario = buildUsuario(userId, true);
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
-        when(tutorRepository.findByUs(usuario)).thenReturn(Optional.of(buildTutor(10L, usuario)));
+        when(tutorRepository.findByUsuario(usuario))
+                .thenReturn(Optional.of(buildTutor(10L, usuario)));
 
         assertThatThrownBy(() -> tutorService.crearPerfil(userId, buildProfileRequest()))
                 .isInstanceOf(RuntimeException.class)
@@ -122,7 +124,7 @@ class TutorServiceTest {
         request.setBio("Nueva bio");
 
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
-        when(tutorRepository.findByIdAndUsId(tutorId, userId)).thenReturn(Optional.of(tutor));
+        when(tutorRepository.findByIdAndUsuarioId(tutorId, userId)).thenReturn(Optional.of(tutor));
         when(tutorRepository.save(any(Tutor.class))).thenAnswer(inv -> inv.getArgument(0));
 
         TutorProfileResponse response = tutorService.editarPerfil(userId, tutorId, request);
@@ -137,7 +139,7 @@ class TutorServiceTest {
         Long tutorId = 99L;
         when(usuarioRepository.findById(userId))
                 .thenReturn(Optional.of(buildUsuario(userId, true)));
-        when(tutorRepository.findByIdAndUsId(tutorId, userId)).thenReturn(Optional.empty());
+        when(tutorRepository.findByIdAndUsuarioId(tutorId, userId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> tutorService.editarPerfil(userId, tutorId, buildProfileRequest()))
                 .isInstanceOf(RuntimeException.class)
@@ -180,7 +182,7 @@ class TutorServiceTest {
         Tutor tutor = buildTutor(10L, usuario);
 
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
-        when(tutorRepository.findAllByUsId(userId)).thenReturn(List.of(tutor));
+        when(tutorRepository.findAllByUsuarioId(userId)).thenReturn(List.of(tutor));
 
         List<TutorProfileResponse> result = tutorService.obtenerPerfilesPorUsuario(userId);
 
@@ -194,7 +196,7 @@ class TutorServiceTest {
 
     @Test
     void getUserProfileShouldFailWhenNotFound() {
-        when(tutorRepository.findByIdAndUsId(99L, 1L)).thenReturn(Optional.empty());
+        when(tutorRepository.findByIdAndUsuarioId(99L, 1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> tutorService.obtenerPerfilDelUsuario(1L, 99L))
                 .isInstanceOf(RuntimeException.class)
@@ -211,13 +213,16 @@ class TutorServiceTest {
         tutor.setVerificado(true);
         Page<Tutor> page = new PageImpl<>(List.of(tutor));
 
-        when(tutorRepository.findByVerificadoTrue(any(PageRequest.class))).thenReturn(page);
+        when(tutorRepository.findVerificadosFiltrados(
+                        isNull(), isNull(), isNull(), any(PageRequest.class)))
+                .thenReturn(page);
 
         Page<TutorProfileResponse> result =
                 tutorService.obtenerTutoresVerificados(null, null, null, 0, 20);
 
         assertThat(result.getContent()).hasSize(1);
-        verify(tutorRepository).findByVerificadoTrue(any(PageRequest.class));
+        verify(tutorRepository)
+                .findVerificadosFiltrados(isNull(), isNull(), isNull(), any(PageRequest.class));
     }
 
     @Test
@@ -226,7 +231,7 @@ class TutorServiceTest {
         tutor.setVerificado(true);
         Page<Tutor> page = new PageImpl<>(List.of(tutor));
 
-        when(tutorRepository.findVerificadosByEspecialidadAndTarifa(
+        when(tutorRepository.findVerificadosFiltrados(
                         eq("Matemáticas"),
                         any(BigDecimal.class),
                         any(BigDecimal.class),
@@ -251,7 +256,7 @@ class TutorServiceTest {
         Tutor tutor = buildTutor(10L, usuario);
 
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
-        when(tutorRepository.findByUs(usuario)).thenReturn(Optional.of(tutor));
+        when(tutorRepository.findByUsuario(usuario)).thenReturn(Optional.of(tutor));
         when(tutorRepository.save(any(Tutor.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Tutor result = tutorService.conectarClassroom(userId, "tutor@gmail.com");
@@ -267,7 +272,7 @@ class TutorServiceTest {
         Usuario usuario = buildUsuario(userId, true);
 
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
-        when(tutorRepository.findByUs(usuario)).thenReturn(Optional.empty());
+        when(tutorRepository.findByUsuario(usuario)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> tutorService.conectarClassroom(userId, "email@test.com"))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -283,7 +288,7 @@ class TutorServiceTest {
         tutor.setEmailClassroom("tutor@gmail.com");
 
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
-        when(tutorRepository.findByUs(usuario)).thenReturn(Optional.of(tutor));
+        when(tutorRepository.findByUsuario(usuario)).thenReturn(Optional.of(tutor));
 
         tutorService.desconectarClassroom(userId);
 
@@ -309,7 +314,7 @@ class TutorServiceTest {
                         .build();
 
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
-        when(tutorRepository.findByUs(usuario)).thenReturn(Optional.empty());
+        when(tutorRepository.findByUsuario(usuario)).thenReturn(Optional.empty());
         when(tutorRepository.save(any(Tutor.class)))
                 .thenAnswer(
                         inv -> {
@@ -331,7 +336,8 @@ class TutorServiceTest {
         Usuario usuario = buildUsuario(userId, true);
 
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
-        when(tutorRepository.findByUs(usuario)).thenReturn(Optional.of(buildTutor(10L, usuario)));
+        when(tutorRepository.findByUsuario(usuario))
+                .thenReturn(Optional.of(buildTutor(10L, usuario)));
 
         CreateTutorRequest request =
                 CreateTutorRequest.builder()
@@ -361,7 +367,7 @@ class TutorServiceTest {
                 UpdateTutorRequest.builder().biografia("Bio actualizada").build();
 
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
-        when(tutorRepository.findByUs(usuario)).thenReturn(Optional.of(tutor));
+        when(tutorRepository.findByUsuario(usuario)).thenReturn(Optional.of(tutor));
         when(tutorRepository.save(any(Tutor.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Tutor result = tutorService.actualizarPerfil(userId, request);
@@ -383,7 +389,7 @@ class TutorServiceTest {
         Tutor tutor = buildTutor(tutorId, usuario);
         tutor.setVerificado(false);
 
-        when(tutorRepository.findByIdAndUsId(tutorId, userId)).thenReturn(Optional.of(tutor));
+        when(tutorRepository.findByIdAndUsuarioId(tutorId, userId)).thenReturn(Optional.of(tutor));
         when(transaccionPagoRepository.existsByTutorIdAndTipoAndEstado(
                         tutorId, TipoTransaccion.PAGO_VERIFICACION, EstadoTransaccion.PENDIENTE))
                 .thenReturn(false);
@@ -405,7 +411,7 @@ class TutorServiceTest {
         Tutor tutor = buildTutor(tutorId, buildUsuario(userId, true));
         tutor.setVerificado(true);
 
-        when(tutorRepository.findByIdAndUsId(tutorId, userId)).thenReturn(Optional.of(tutor));
+        when(tutorRepository.findByIdAndUsuarioId(tutorId, userId)).thenReturn(Optional.of(tutor));
 
         assertThatThrownBy(() -> tutorService.solicitarVerificacion(userId, tutorId))
                 .isInstanceOf(RuntimeException.class)
@@ -459,7 +465,7 @@ class TutorServiceTest {
         Tutor tutor = buildTutor(tutorId, buildUsuario(userId, true));
         tutor.setVerificado(true);
 
-        when(tutorRepository.findByIdAndUsId(tutorId, userId)).thenReturn(Optional.of(tutor));
+        when(tutorRepository.findByIdAndUsuarioId(tutorId, userId)).thenReturn(Optional.of(tutor));
 
         String estado = tutorService.obtenerEstadoVerificacion(userId, tutorId);
 
@@ -473,7 +479,7 @@ class TutorServiceTest {
         Tutor tutor = buildTutor(tutorId, buildUsuario(userId, true));
         tutor.setVerificado(false);
 
-        when(tutorRepository.findByIdAndUsId(tutorId, userId)).thenReturn(Optional.of(tutor));
+        when(tutorRepository.findByIdAndUsuarioId(tutorId, userId)).thenReturn(Optional.of(tutor));
         when(transaccionPagoRepository.findTopByTutorIdAndTipoOrderByIniciadoAtDesc(
                         tutorId, TipoTransaccion.PAGO_VERIFICACION))
                 .thenReturn(Optional.empty());
@@ -507,7 +513,7 @@ class TutorServiceTest {
         Tutor tutor = buildTutor(10L, usuario);
 
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
-        when(tutorRepository.findByUs(usuario)).thenReturn(Optional.of(tutor));
+        when(tutorRepository.findByUsuario(usuario)).thenReturn(Optional.of(tutor));
 
         Optional<Tutor> result = tutorService.obtenerTutorPorUsuarioId(userId);
 
@@ -539,7 +545,7 @@ class TutorServiceTest {
     private Tutor buildTutor(Long id, Usuario usuario) {
         Tutor t = new Tutor();
         t.setId(id);
-        t.setUs(usuario);
+        t.setUsuario(usuario);
         t.setEspecialidades(List.of("Matemáticas"));
         t.setTarifaHora(new BigDecimal("25.00"));
         t.setDisponibilidad("Tardes");

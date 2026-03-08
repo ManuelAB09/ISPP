@@ -312,11 +312,11 @@ public class TutorController {
         return TutorResponse.builder()
                 .id(tutor.getId())
                 .usuario(
-                        tutor.getUs() != null
+                        tutor.getUsuario() != null
                                 ? TutorResponse.UsuarioDto.builder()
-                                        .id(tutor.getUs().getId())
-                                        .nombre(tutor.getUs().getNombre())
-                                        .foto(tutor.getUs().getFoto())
+                                        .id(tutor.getUsuario().getId())
+                                        .nombre(tutor.getUsuario().getNombre())
+                                        .foto(tutor.getUsuario().getFoto())
                                         .build()
                                 : null)
                 .biografia(tutor.getBio())

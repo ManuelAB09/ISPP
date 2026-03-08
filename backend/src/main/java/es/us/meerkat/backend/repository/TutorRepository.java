@@ -27,7 +27,7 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
      * @param us Usuario asociado al tutor.
      * @return Optional que contiene el tutor si existe.
      */
-    Optional<Tutor> findByUs(Usuario us);
+    Optional<Tutor> findByUsuario(Usuario us);
 
     /**
      * Devuelve todos los tutores que estén verificados.
@@ -43,7 +43,7 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
      * @param usuarioId id del user logueado.
      * @return Optional que contiene el tutor si existe.
      */
-    Optional<Tutor> findByIdAndUsId(Long tutorId, Long usuarioId);
+    Optional<Tutor> findByIdAndUsuarioId(Long tutorId, Long usuarioId);
 
     /**
      * Busca un todos los tutores asociado a un usuario específico.
@@ -51,7 +51,7 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
      * @param usuarioId id del user logueado.
      * @return Optional que contiene el tutor si existe.
      */
-    List<Tutor> findAllByUsId(Long usuarioId);
+    List<Tutor> findAllByUsuarioId(Long usuarioId);
 
     /**
      * Devuelve todos los tutores verificados con paginación. Utiliza @EntityGraph para cargar la

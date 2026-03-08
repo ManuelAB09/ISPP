@@ -48,8 +48,8 @@ public class UsuarioService {
                 usuarioRepository
                         .findByEmail(usuario.getEmail())
                         .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        if (usuarioActualizado.getTutores() != null) {
-            usuarioActualizado.getTutores().size();
+        if (usuarioActualizado.getTutor() != null) {
+            usuarioActualizado.getTutor();
         }
         return mapToDetailResponse(usuarioActualizado);
     }

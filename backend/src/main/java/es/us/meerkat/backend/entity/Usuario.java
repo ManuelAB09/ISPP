@@ -16,7 +16,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -30,7 +30,7 @@ import lombok.ToString;
  */
 @Entity
 @Data
-@ToString(exclude = {"tutores", "intereses"})
+@ToString(exclude = {"intereses"})
 @NoArgsConstructor
 @AllArgsConstructor
 public class Usuario {
@@ -95,9 +95,13 @@ public class Usuario {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    /** Lista de tutores asociados al usuario (si es tutor). */
-    @OneToMany(mappedBy = "us", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Tutor> tutores = new ArrayList<>();
+    /** Perfil de tutor del usuario (null si no es tutor). */
+    @OneToOne(
+            mappedBy = "usuario",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY)
+    private Tutor tutor;
 
     /** Inicializa campos antes de persistir la entidad. */
     @PrePersist
