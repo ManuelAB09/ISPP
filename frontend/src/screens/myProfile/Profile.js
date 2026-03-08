@@ -2,7 +2,6 @@ import { useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { getApiBaseUrl } from "../../api/baseUrl"
 import { communitiesApi } from "../../api/communities.api"
-import { getMyTutorProfiles } from "../../api/tutorEndpoints"
 import Header from "../../components/Header/Header"
 import { useAuth } from "../../contexts/AuthContext"
 import EditProfile from "./EditProfile"
@@ -14,7 +13,6 @@ const MyProfile = () => {
     const navigate = useNavigate()
     const [showSettings, setShowSettings] = useState(false)
     const [showEditProfile, setShowEditProfile] = useState(false)
-    const [checkingTutor, setCheckingTutor] = useState(true)
     const [misComunidades, setMisComunidades] = useState([])
     const [comunidadesCreadas, setComunidadesCreadas] = useState([])
     const [loadingCommunities, setLoadingCommunities] = useState(true)
@@ -25,25 +23,6 @@ const MyProfile = () => {
         descargas: 0
     })
     const isOwner = true // Siempre es el propietario en esta pantalla
-
-    // Si el usuario tiene perfil de tutor, redirigir a su perfil de profesor
-    useEffect(() => {
-        if (!isAuthenticated || loading) {
-            setCheckingTutor(false);
-            return;
-        }
-        getMyTutorProfiles()
-            .then((perfiles) => {
-                if (perfiles && perfiles.length > 0) {
-                    navigate(`/profesores/${perfiles[0].id}`, { replace: true });
-                } else {
-                    setCheckingTutor(false);
-                }
-            })
-            .catch(() => {
-                setCheckingTutor(false);
-            });
-    }, [isAuthenticated, loading, navigate]);
 
     // Cargar comunidades del usuario
     useEffect(() => {
@@ -88,7 +67,7 @@ const MyProfile = () => {
         fetchCommunities();
     }, [isAuthenticated, loading, user]);
 
-    if (loading || checkingTutor) {
+    if (loading) {
         return (
             <>
                 <Header page={'inicio'} />
