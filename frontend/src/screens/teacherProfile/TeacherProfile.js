@@ -8,8 +8,22 @@ import CreateProfileModal from "./CreateProfileModal";
 import VerificacionModal from "./VerificacionModal";
 import Settings from "../myProfile/Settings";
 import HireTutorModal from "./HireTutorModal";
+import { getApiBaseUrl } from "../../api/baseUrl";
 import "./TeacherProfile.css";
 import ClassroomLinkRequests from "../../components/GoogleClassroomButton/ClassroomLinkRequests";
+
+const toAbsoluteImageUrl = (imageUrl, fallback = '/MeerKatters_logo.png') => {
+  const raw = String(imageUrl || '').trim();
+  if (!raw) {
+    return fallback;
+  }
+  if (/^https?:\/\//i.test(raw) || raw.startsWith('data:') || raw.startsWith('blob:')) {
+    return raw;
+  }
+
+  const base = getApiBaseUrl();
+  return raw.startsWith('/') ? `${base}${raw}` : `${base}/${raw}`;
+};
 
 
 /* Estrellas (0-5) */
@@ -195,7 +209,7 @@ const TeacherProfile = () => {
           <div className="tp-header__left">
             <img
               className="tp-header__photo"
-              src={tutor.usuario?.foto}
+              src={toAbsoluteImageUrl(tutor.usuario?.foto)}
               alt={tutor.usuario?.nombre}
             />
             <div className="tp-header__info">

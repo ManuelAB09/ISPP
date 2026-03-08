@@ -169,8 +169,8 @@
 
 .private-chat .chat-attachment-image-large {
     width: 100%;
-    max-width: 260px;
-    max-height: 260px;
+    max-width: 360px;
+    max-height: 360px;
     object-fit: cover;
     border: 1px solid #D7DCEF;
     border-radius: 0.75rem;
@@ -186,8 +186,8 @@
 }
 
 .private-chat .chat-attachment-image {
-    width: 3.25rem;
-    height: 3.25rem;
+    width: 4.25rem;
+    height: 4.25rem;
     border-radius: 0.5rem;
     object-fit: cover;
     border: 1px solid #D7DCEF;
@@ -322,16 +322,16 @@
 }
 
 .private-chat .chat-pending-attachment-image {
-    width: 2.8rem;
-    height: 2.8rem;
+    width: 3.6rem;
+    height: 3.6rem;
     border-radius: 0.5rem;
     object-fit: cover;
     border: 1px solid #D7DCEF;
 }
 
 .private-chat .chat-pending-attachment-icon {
-    width: 2.8rem;
-    height: 2.8rem;
+    width: 3.6rem;
+    height: 3.6rem;
     border-radius: 0.5rem;
     border: 1px solid #D7DCEF;
     background: #EEF2FF;

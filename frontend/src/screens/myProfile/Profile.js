@@ -10,6 +10,24 @@ import EditProfile from "./EditProfile"
 import "./MyProfile.css"
 import Settings from "./Settings"
 
+const toAbsoluteImageUrl = (imageUrl) => {
+    if (!imageUrl || !String(imageUrl).trim()) {
+        return ''
+    }
+
+    const value = String(imageUrl).trim()
+    if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
+        return value
+    }
+
+    const base = getApiBaseUrl()
+    if (value.startsWith('/')) {
+        return `${base}${value}`
+    }
+
+    return `${base}/${value}`
+}
+
 const MyProfile = () => {
     const { isAuthenticated, loading, user, updateProfile } = useAuth()
     const navigate = useNavigate()
@@ -139,6 +157,7 @@ const MyProfile = () => {
         grado: user?.grado || "",
         ubicacion: user?.ubicacion || "",
         foto: user?.foto || null,
+        fotoBackgroundColor: user?.fotoBackgroundColor || '#ffffff',
         intereses: user?.intereses || []
     }
 
@@ -176,9 +195,9 @@ const MyProfile = () => {
                 {/* Sección de perfil principal */}
                 <section className="profile-header">
                     <div className="profile-header__left">
-                        <div className="profile-avatar">
+                        <div className="profile-avatar" style={{ backgroundColor: userData.fotoBackgroundColor }}>
                             {userData.foto ? (
-                                <img src={userData.foto} alt={userData.nombre} className="profile-avatar-img" />
+                                <img src={toAbsoluteImageUrl(userData.foto)} alt={userData.nombre} className="profile-avatar-img" />
                             ) : (
                                 <span className="profile-avatar-placeholder">👤</span>
                             )}

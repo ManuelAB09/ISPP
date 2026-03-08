@@ -1,14 +1,20 @@
 package es.us.meerkat.backend.controller;
 
+import java.util.List;
+
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import es.us.meerkat.backend.dto.ChangePasswordRequest;
 import es.us.meerkat.backend.dto.MessageResponse;
@@ -66,6 +72,29 @@ public final class UsuarioController {
             @AuthenticationPrincipal final Usuario usuario,
             @RequestBody final UpdateUserRequest request) {
         return ResponseEntity.ok(usuarioService.actualizarPerfil(usuario, request));
+    }
+
+    /**
+     * Sube una foto de perfil personalizada para el usuario autenticado.
+     *
+     * <p>POST /api/v1/users/me/photo (multipart/form-data)
+     *
+     * @param usuario Usuario autenticado.
+     * @param file Archivo de imagen a usar como foto de perfil.
+     * @return Perfil actualizado.
+     */
+    @PostMapping(value = "/me/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UserDetailResponse> uploadProfilePhoto(
+            @AuthenticationPrincipal final Usuario usuario,
+            @RequestParam("file") final MultipartFile file) {
+        if (usuario == null) {
+            return ResponseEntity.status(401).build();
+        }
+        try {
+            return ResponseEntity.ok(usuarioService.actualizarFotoPerfil(usuario, file));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     /**
@@ -127,5 +156,17 @@ public final class UsuarioController {
     @GetMapping("/{userId}")
     public ResponseEntity<UserPublicResponse> getUserById(@PathVariable final Long userId) {
         return ResponseEntity.ok(usuarioService.obtenerPerfilPublico(userId));
+    }
+
+    /**
+     * Devuelve los avatares predefinidos disponibles para foto de perfil.
+     *
+     * <p>GET /api/v1/users/profile-avatars
+     *
+     * @return Lista de rutas públicas de avatares.
+     */
+    @GetMapping("/profile-avatars")
+    public ResponseEntity<List<String>> getProfileAvatars() {
+        return ResponseEntity.ok(usuarioService.obtenerAvataresPerfilDisponibles());
     }
 }

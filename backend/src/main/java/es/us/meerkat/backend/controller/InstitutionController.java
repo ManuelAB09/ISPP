@@ -1,10 +1,15 @@
 package es.us.meerkat.backend.controller;
 
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import com.stripe.exception.StripeException;
+import com.stripe.model.checkout.Session;
 
 import es.us.meerkat.backend.dto.CorporatePlanRequest;
 import es.us.meerkat.backend.dto.CreateInstitutionRequest;
@@ -18,7 +23,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 /**
  * Controlador para manejar operaciones con instituciones educativas y planes corporativos.
  *
@@ -233,5 +240,57 @@ public class InstitutionController {
                 .createdAt(institution.getCreatedAt())
                 .updatedAt(institution.getUpdatedAt())
                 .build();
+    }
+
+    @PostMapping("/verify-session")
+    public ResponseEntity<?> verificarSesionCorporativa(@RequestBody Map<String, String> body) {
+
+        String sessionId = body.get("sessionId");
+        if (sessionId == null || sessionId.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "sessionId requerido"));
+        }
+
+        try {
+            Session session = Session.retrieve(sessionId);
+            log.info(
+                    "Verificando sesión institucional: {} status: {}",
+                    sessionId,
+                    session.getStatus());
+
+            if (!"complete".equals(session.getStatus())) {
+                return ResponseEntity.badRequest()
+                        .body(
+                                Map.of(
+                                        "error",
+                                        "El pago no está completado: " + session.getStatus()));
+            }
+
+            // Obtener datos de los metadata de Stripe
+            Map<String, String> metadata = session.getMetadata();
+            String institucionIdStr = metadata.get("institucionId");
+            String duracionStr = metadata.get("duracionMeses");
+
+            if (institucionIdStr == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Sesión sin institucionId en metadata"));
+            }
+
+            Long institucionId = Long.parseLong(institucionIdStr);
+            Integer duracionMeses = duracionStr != null ? Integer.parseInt(duracionStr) : 12;
+
+            institutionService.activarPlanCorporativo(institucionId, duracionMeses);
+            log.info("Plan corporativo activado para institución {}", institucionId);
+
+            return ResponseEntity.ok(
+                    Map.of("mensaje", "Plan institucional activado correctamente"));
+
+        } catch (StripeException e) {
+            log.error("StripeException verificando sesión institucional: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Error Stripe: " + e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error activando plan corporativo: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
     }
 }

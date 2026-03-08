@@ -60,7 +60,7 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
      * @param pageable Información de paginación.
      * @return Página de tutores verificados.
      */
-    @EntityGraph(attributePaths = {"us"})
+    @EntityGraph(attributePaths = {"usuario"})
     Page<Tutor> findByVerificadoTrue(Pageable pageable);
 
     /**
@@ -73,7 +73,7 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
      * @param pageable Información de paginación
      * @return Página de tutores filtrados
      */
-    @EntityGraph(attributePaths = {"us"})
+    @EntityGraph(attributePaths = {"usuario"})
     @Query(
             "SELECT DISTINCT t FROM Tutor t JOIN t.especialidades e "
                     + "WHERE t.verificado = true "
@@ -85,7 +85,7 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
             @Param("tarifaMax") BigDecimal tarifaMax,
             Pageable pageable);
 
-    @EntityGraph(attributePaths = {"us"})
+    @EntityGraph(attributePaths = {"usuario"})
     @Query(
             """
     SELECT DISTINCT t
