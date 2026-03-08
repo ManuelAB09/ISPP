@@ -148,6 +148,111 @@
     color: white;
 }
 
+.btn-become-tutor {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background-color: transparent;
+    color: var(--spaceIndigo);
+    font-family: 'inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 12px 24px;
+    border: 2px solid var(--spaceIndigo);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-become-tutor:hover:not(:disabled) {
+    background-color: var(--spaceIndigo);
+    color: white;
+}
+
+.btn-become-tutor:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.become-tutor-error {
+    font-size: 12px;
+    color: #dc2626;
+    text-align: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Sección Perfil de Profesor
+   ═══════════════════════════════════════════════════════════════ */
+.tutor-profile-section {
+    margin-bottom: 50px;
+}
+
+.tutor-profile-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px 24px;
+    gap: 16px;
+}
+
+.tutor-profile-card__info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tutor-profile-card__header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tutor-profile-card__name {
+    font-family: 'spacegrotesk', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--spaceIndigo);
+    margin: 0;
+}
+
+.tutor-profile-card__badge {
+    background: #eafaf1;
+    color: #1a7c42;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 10px;
+    border-radius: 20px;
+    border: 1px solid #1a7c42;
+}
+
+.tutor-profile-card__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.tutor-profile-card__tag {
+    background: #f3f4f6;
+    color: #374151;
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 20px;
+}
+
+.tutor-profile-card__tarifa {
+    font-size: 14px;
+    color: #4b5563;
+    margin: 0;
+}
+
+.tutor-profile-card__actions {
+    flex-shrink: 0;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    Sección Mis Datos + Tu Actividad
    ═══════════════════════════════════════════════════════════════ */

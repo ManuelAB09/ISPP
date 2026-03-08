@@ -264,7 +264,9 @@ const TeacherProfile = () => {
           {/* Acciones para visitantes (otro usuario viendo el perfil) */}
           {user?.id !== tutor.usuario?.id && (
           <div className="tp-header__actions">
-            <button className="tp-btn tp-btn--contact">
+            <button
+              className="tp-btn tp-btn--contact"
+            >
               💬 Contactar
             </button>
             <button className="tp-btn tp-btn--hire" onClick={() => setShowHireModal(true)}>
@@ -316,7 +318,7 @@ const TeacherProfile = () => {
           </div>
           <div className="tp-dato">
             <span className="tp-dato__label">TARIFA POR HORA</span>
-            <span className="tp-dato__value">{tutor.tarifaPorHora}€ / h</span>
+            <span className="tp-dato__value">{tutor.tarifaPorHora != null ? `${tutor.tarifaPorHora}€ / h` : '—'}</span>
           </div>
         </section>
 

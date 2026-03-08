@@ -2,17 +2,24 @@ import { useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { getApiBaseUrl } from "../../api/baseUrl"
 import { communitiesApi } from "../../api/communities.api"
+import { getMyTutorProfiles } from "../../api/tutorEndpoints"
 import Header from "../../components/Header/Header"
 import { useAuth } from "../../contexts/AuthContext"
+import CreateProfileModal from "../teacherProfile/CreateProfileModal"
 import EditProfile from "./EditProfile"
 import "./MyProfile.css"
 import Settings from "./Settings"
 
 const MyProfile = () => {
-    const { isAuthenticated, loading, user } = useAuth()
+    const { isAuthenticated, loading, user, updateProfile } = useAuth()
     const navigate = useNavigate()
     const [showSettings, setShowSettings] = useState(false)
     const [showEditProfile, setShowEditProfile] = useState(false)
+    const [becomingTutor, setBecomingTutor] = useState(false)
+    const [becomeTutorError, setBecomeTutorError] = useState('')
+    const [miPerfilTutor, setMiPerfilTutor] = useState(null)
+    const [loadingTutorProfile, setLoadingTutorProfile] = useState(false)
+    const [showCreateTutorModal, setShowCreateTutorModal] = useState(false)
     const [misComunidades, setMisComunidades] = useState([])
     const [comunidadesCreadas, setComunidadesCreadas] = useState([])
     const [loadingCommunities, setLoadingCommunities] = useState(true)
@@ -23,6 +30,28 @@ const MyProfile = () => {
         descargas: 0
     })
     const isOwner = true // Siempre es el propietario en esta pantalla
+
+    const handleBecomeTutor = async () => {
+        setBecomingTutor(true)
+        setBecomeTutorError('')
+        const result = await updateProfile({ esTutor: true })
+        if (!result.success) {
+            setBecomeTutorError(result.error || 'Error al actualizar el rol')
+        }
+        setBecomingTutor(false)
+    }
+
+    // Cargar perfil de tutor cuando el usuario es tutor
+    useEffect(() => {
+        if (!isAuthenticated || loading || !user?.esTutor) return;
+        setLoadingTutorProfile(true);
+        getMyTutorProfiles()
+            .then((perfil) => {
+                if (perfil && perfil.id) setMiPerfilTutor(perfil);
+            })
+            .catch(() => {})
+            .finally(() => setLoadingTutorProfile(false));
+    }, [isAuthenticated, loading, user]);
 
     // Cargar comunidades del usuario
     useEffect(() => {
@@ -104,7 +133,7 @@ const MyProfile = () => {
     const userData = {
         nombre: user?.nombre || "Sin nombre",
         descripcion: user?.bio || "",
-        rol: user?.esTutor ? "Profesor" : "Estudiante",
+        rol: user?.esTutor ? 'Estudiante y Profesor' : 'Estudiante',
         email: user?.email || "Sin email",
         universidad: user?.universidad || "",
         grado: user?.grado || "",
@@ -178,6 +207,21 @@ const MyProfile = () => {
                                     <span className="btn-icon">⚙️</span>
                                     Configuración
                                 </button>
+                                {!user?.esTutor && (
+                                    <>
+                                        <button
+                                            className="btn-become-tutor"
+                                            onClick={handleBecomeTutor}
+                                            disabled={becomingTutor}
+                                        >
+                                            <span className="btn-icon">🎓</span>
+                                            {becomingTutor ? 'Actualizando...' : 'Convertirme en tutor'}
+                                        </button>
+                                        {becomeTutorError && (
+                                            <span className="become-tutor-error">{becomeTutorError}</span>
+                                        )}
+                                    </>
+                                )}
                             </>
                         )}
                     </div>
@@ -281,6 +325,64 @@ const MyProfile = () => {
                     )}
                 </section>
 
+                {/* Sección Perfil de Profesor */}
+                {user?.esTutor && (
+                    <section className="tutor-profile-section">
+                        <div className="created-header">
+                            <div>
+                                <h2 className="section-title">Mi perfil de profesor</h2>
+                                <p className="section-subtitle">Gestiona tu perfil como tutor y consigue alumnos.</p>
+                            </div>
+                            {!miPerfilTutor && (
+                                <button className="btn-create-new" onClick={() => setShowCreateTutorModal(true)}>
+                                    + Crear nuevo perfil de profesor
+                                </button>
+                            )}
+                        </div>
+                        {loadingTutorProfile ? (
+                            <div className="loading-communities">Cargando perfil de tutor...</div>
+                        ) : miPerfilTutor ? (
+                            <div className="tutor-profile-card">
+                                <div className="tutor-profile-card__info">
+                                    <div className="tutor-profile-card__header">
+                                        <h3 className="tutor-profile-card__name">{userData.nombre}</h3>
+                                        {miPerfilTutor.verificado && (
+                                            <span className="tutor-profile-card__badge">✓ Verificado</span>
+                                        )}
+                                    </div>
+                                    {miPerfilTutor.especialidades && miPerfilTutor.especialidades.length > 0 && (
+                                        <div className="tutor-profile-card__tags">
+                                            {miPerfilTutor.especialidades.slice(0, 4).map((esp, i) => (
+                                                <span key={i} className="tutor-profile-card__tag">{esp}</span>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {miPerfilTutor.tarifaPorHora != null && (
+                                        <p className="tutor-profile-card__tarifa">
+                                            <strong>{Number(miPerfilTutor.tarifaPorHora).toFixed(2)} €</strong> / hora
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="tutor-profile-card__actions">
+                                    <button
+                                        className="btn-create-new"
+                                        onClick={() => navigate(`/profesores/${miPerfilTutor.id}`)}
+                                    >
+                                        Ver mi perfil
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="no-communities-created">
+                                <p>Aún no tienes perfil de profesor.</p>
+                                <button className="btn-create-first" onClick={() => setShowCreateTutorModal(true)}>
+                                    + Crear nuevo perfil de profesor
+                                </button>
+                            </div>
+                        )}
+                    </section>
+                )}
+
                 {/* Sección Comunidades creadas */}
                 <section className="created-communities-section">
                     <div className="created-header">
@@ -336,6 +438,18 @@ const MyProfile = () => {
                     )}
                 </section>
             </main>
+
+            {/* Modal de crear perfil de profesor */}
+            {showCreateTutorModal && (
+                <CreateProfileModal
+                    onClose={() => setShowCreateTutorModal(false)}
+                    onCreado={(newTutor) => {
+                        setMiPerfilTutor(newTutor);
+                        setShowCreateTutorModal(false);
+                        navigate(`/profesores/${newTutor.id}`);
+                    }}
+                />
+            )}
 
             {/* Modal de configuración */}
             {showSettings && (
