@@ -80,39 +80,36 @@ public class PaymentService {
         return new PaymentUrlResponse(session.getUrl(), session.getId());
     }
 
-    /** Suscripción PREMIUM → TipoTransaccion.SUSCRIPCION, modo SUBSCRIPTION (recurrente) */
-    @Transactional
-    public PaymentUrlResponse generarPagoSuscripcion(Usuario usuario, TipoPlan plan)
+    /** ID del precio Premium mensual en Stripe */
+    private static final String PRICE_PREMIUM_MENSUAL = "price_1T5p9zIti4eEH8Y0Sr09PRkj";
+
+    /** ID del precio Premium anual en Stripe */
+    private static final String PRICE_PREMIUM_ANUAL = "price_1T8hTmIti4eEH8Y01iZAD8gY";
+
+    public PaymentUrlResponse generarPagoSuscripcion(Usuario usuario, TipoPlan plan, String periodo)
             throws StripeException {
 
-        if (plan == TipoPlan.FREE) {
-            throw new IllegalArgumentException("El plan FREE no requiere pago");
-        }
-
-        Map<String, String> metadata = new HashMap<>();
-        metadata.put("tipo", TipoTransaccion.SUSCRIPCION.name());
-        metadata.put("usuarioId", usuario.getId().toString());
-        metadata.put("plan", plan.name());
+        String priceId =
+                periodo.equalsIgnoreCase("anual") ? PRICE_PREMIUM_ANUAL : PRICE_PREMIUM_MENSUAL;
 
         SessionCreateParams params =
                 SessionCreateParams.builder()
                         .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
-                        .setSuccessUrl(successUrl + "?session_id={CHECKOUT_SESSION_ID}")
-                        .setCancelUrl(cancelUrl)
+                        .setSuccessUrl(
+                                "http://localhost:3000/planes/success?session_id={CHECKOUT_SESSION_ID}")
+                        .setCancelUrl("http://localhost:3000/planes")
                         .setCustomerEmail(usuario.getEmail())
                         .addLineItem(
                                 SessionCreateParams.LineItem.builder()
+                                        .setPrice(priceId)
                                         .setQuantity(1L)
-                                        .setPrice(pricePremium)
                                         .build())
-                        .putAllMetadata(metadata)
+                        .putMetadata("usuarioId", usuario.getId().toString())
+                        .putMetadata("plan", plan.name())
+                        .putMetadata("periodo", periodo)
                         .build();
 
         Session session = Session.create(params);
-        log.info(
-                "Sesión Stripe suscripción PREMIUM creada para usuario {}: {}",
-                usuario.getId(),
-                session.getId());
         return new PaymentUrlResponse(session.getUrl(), session.getId());
     }
 
