@@ -4,144 +4,47 @@ import { subscriptionsApi } from "../../api/subscriptions.api";
 import Header from "../../components/Header/Header";
 import "./PasarelaPago.css";
 
+/**
+ * Componente de la pasarela de pago de suscripción PREMIUM
+ * Funciona con Stripe Checkout: no maneja tarjetas directamente
+ */
 export default function PasarelaPago() {
   const navigate = useNavigate();
   const [selectedPeriod, setSelectedPeriod] = useState("mensual");
-  const [formData, setFormData] = useState({
-    cardNumber: "",
-    cardName: "",
-    expiryDate: "",
-    cvv: "",
-  });
   const [processing, setProcessing] = useState(false);
-  const [errors, setErrors] = useState({});
 
   const prices = {
     mensual: "2.99",
     anual: "25.99",
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    let formattedValue = value;
-
-    // Formatear número de tarjeta (espacios cada 4 dígitos)
-    if (name === "cardNumber") {
-      formattedValue = value
-        .replace(/\s/g, "")
-        .replace(/(\d{4})/g, "$1 ")
-        .trim();
-      formattedValue = formattedValue.substring(0, 19); // Máx 16 dígitos + 3 espacios
-    }
-
-    // Formatear fecha de expiración (MM/YY)
-    if (name === "expiryDate") {
-      formattedValue = value
-        .replace(/\D/g, "")
-        .replace(/(\d{2})(\d)/, "$1/$2")
-        .substring(0, 5);
-    }
-
-    // Limitar CVV a 3 dígitos
-    if (name === "cvv") {
-      formattedValue = value.replace(/\D/g, "").substring(0, 3);
-    }
-
-    setFormData((prev) => ({ ...prev, [name]: formattedValue }));
-
-    // Limpiar error del campo
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    // Validar número de tarjeta
-    const cardNumberClean = formData.cardNumber.replace(/\s/g, "");
-    if (!cardNumberClean) {
-      newErrors.cardNumber = "El número de tarjeta es requerido";
-    } else if (cardNumberClean.length !== 16) {
-      newErrors.cardNumber = "El número de tarjeta debe tener 16 dígitos";
-    }
-
-    // Validar nombre
-    if (!formData.cardName.trim()) {
-      newErrors.cardName = "El nombre del titular es requerido";
-    }
-
-    // Validar fecha de expiración
-    if (!formData.expiryDate) {
-      newErrors.expiryDate = "La fecha de expiración es requerida";
-    } else if (formData.expiryDate.length !== 5) {
-      newErrors.expiryDate = "Formato inválido (MM/YY)";
-    } else {
-      const [month, year] = formData.expiryDate.split("/");
-      const currentYear = new Date().getFullYear() % 100;
-      const currentMonth = new Date().getMonth() + 1;
-
-      if (parseInt(month) < 1 || parseInt(month) > 12) {
-        newErrors.expiryDate = "Mes inválido";
-      } else if (
-        parseInt(year) < currentYear ||
-        (parseInt(year) === currentYear && parseInt(month) < currentMonth)
-      ) {
-        newErrors.expiryDate = "Tarjeta expirada";
-      }
-    }
-
-    // Validar CVV
-    if (!formData.cvv) {
-      newErrors.cvv = "El CVV es requerido";
-    } else if (formData.cvv.length !== 3) {
-      newErrors.cvv = "El CVV debe tener 3 dígitos";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
+  /**
+   * Maneja el envío del formulario
+   */
+  const handleSubscribe = async () => {
     setProcessing(true);
-
     try {
-      // Intentar obtener la URL de pago de Stripe
-      const paymentResponse = await subscriptionsApi.subscribe('PREMIUM', true);
-      
-      // Si el backend devuelve una URL de Stripe, redirigir al usuario
+      // Llamada al backend con plan y periodo
+      const paymentResponse = await subscriptionsApi.subscribe({
+        planId: "PREMIUM",
+        aceptarTerminos: true,
+        periodo: selectedPeriod, // mensual o anual
+      });
+
       if (paymentResponse?.paymentUrl) {
+        // Redirige al checkout de Stripe
         window.location.href = paymentResponse.paymentUrl;
       } else {
-        // No hay URL de pago, usar confirmación directa
+        // En desarrollo o fallback
         await subscriptionsApi.confirmPayment();
         alert("¡Pago procesado exitosamente! Bienvenido a Premium");
         navigate("/pagos");
       }
     } catch (error) {
       console.error("Error al procesar el pago:", error);
-      
-      // Si Stripe no está configurado (error 500), usar modo desarrollo
-      if (error?.status === 500 || error?.response?.status === 500) {
-        try {
-          await subscriptionsApi.confirmPayment();
-          alert("¡Pago procesado exitosamente! Bienvenido a Premium");
-          navigate("/pagos");
-        } catch (confirmError) {
-          console.error("Error al confirmar el pago:", confirmError);
-          alert("Error al procesar el pago. Por favor, intente nuevamente.");
-        }
-      } else if (error?.status === 400 || error?.response?.status === 400) {
-        alert("Ya tienes una suscripción activa.");
-      } else {
-        alert("Error al procesar el pago. Por favor, intente nuevamente.");
-      }
+      alert(
+        error?.response?.data?.error || "Error al procesar el pago. Intenta de nuevo."
+      );
     } finally {
       setProcessing(false);
     }
@@ -178,9 +81,10 @@ export default function PasarelaPago() {
               <div className="pasarela-period-options">
                 <button
                   type="button"
-                  className={`pasarela-period-btn ${
-                    selectedPeriod === "mensual" ? "pasarela-period-btn--active" : ""
-                  }`}
+                  className={`pasarela-period-btn ${selectedPeriod === "mensual"
+                    ? "pasarela-period-btn--active"
+                    : ""
+                    }`}
                   onClick={() => setSelectedPeriod("mensual")}
                 >
                   <div className="pasarela-period-label">Mensual</div>
@@ -189,9 +93,8 @@ export default function PasarelaPago() {
 
                 <button
                   type="button"
-                  className={`pasarela-period-btn ${
-                    selectedPeriod === "anual" ? "pasarela-period-btn--active" : ""
-                  }`}
+                  className={`pasarela-period-btn ${selectedPeriod === "anual" ? "pasarela-period-btn--active" : ""
+                    }`}
                   onClick={() => setSelectedPeriod("anual")}
                 >
                   <div className="pasarela-period-label">Anual</div>
@@ -219,138 +122,43 @@ export default function PasarelaPago() {
             </div>
           </div>
 
-          {/* Columna derecha - Formulario de pago */}
+          {/* Columna derecha - Botón de pago */}
           <div className="pasarela-form-section">
             <div className="pasarela-header">
               <h1 className="pasarela-title">Información de pago</h1>
               <p className="pasarela-subtitle">
-                Completa los datos de tu tarjeta para finalizar la suscripción
+                Serás redirigido de forma segura a Stripe para completar la suscripción.
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="pasarela-form">
-              {/* Número de tarjeta */}
-              <div className="pasarela-form-group">
-                <label htmlFor="cardNumber" className="pasarela-label">
-                  Número de tarjeta
-                </label>
-                <div className="pasarela-input-wrapper">
-                  <span className="pasarela-card-icon">💳</span>
-                  <input
-                    type="text"
-                    id="cardNumber"
-                    name="cardNumber"
-                    value={formData.cardNumber}
-                    onChange={handleInputChange}
-                    placeholder="1234 5678 9012 3456"
-                    className={`pasarela-input ${
-                      errors.cardNumber ? "pasarela-input--error" : ""
-                    }`}
-                  />
-                </div>
-                {errors.cardNumber && (
-                  <span className="pasarela-error">{errors.cardNumber}</span>
-                )}
-              </div>
+            <div className="pasarela-actions">
+              <button
+                type="button"
+                onClick={() => navigate("/planes")}
+                className="pasarela-btn pasarela-btn--secondary"
+                disabled={processing}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSubscribe}
+                className="pasarela-btn pasarela-btn--primary"
+                disabled={processing}
+              >
+                {processing
+                  ? "Procesando..."
+                  : `Pagar ${(parseFloat(prices[selectedPeriod]) * 1.21).toFixed(2)}€`}
+              </button>
+            </div>
 
-              {/* Nombre del titular */}
-              <div className="pasarela-form-group">
-                <label htmlFor="cardName" className="pasarela-label">
-                  Nombre del titular
-                </label>
-                <input
-                  type="text"
-                  id="cardName"
-                  name="cardName"
-                  value={formData.cardName}
-                  onChange={handleInputChange}
-                  placeholder="NOMBRE APELLIDO"
-                  className={`pasarela-input ${
-                    errors.cardName ? "pasarela-input--error" : ""
-                  }`}
-                  style={{ textTransform: "uppercase" }}
-                />
-                {errors.cardName && (
-                  <span className="pasarela-error">{errors.cardName}</span>
-                )}
-              </div>
-
-              {/* Fecha de expiración y CVV */}
-              <div className="pasarela-form-row">
-                <div className="pasarela-form-group">
-                  <label htmlFor="expiryDate" className="pasarela-label">
-                    Fecha de expiración
-                  </label>
-                  <input
-                    type="text"
-                    id="expiryDate"
-                    name="expiryDate"
-                    value={formData.expiryDate}
-                    onChange={handleInputChange}
-                    placeholder="MM/YY"
-                    className={`pasarela-input ${
-                      errors.expiryDate ? "pasarela-input--error" : ""
-                    }`}
-                  />
-                  {errors.expiryDate && (
-                    <span className="pasarela-error">{errors.expiryDate}</span>
-                  )}
-                </div>
-
-                <div className="pasarela-form-group">
-                  <label htmlFor="cvv" className="pasarela-label">
-                    CVV
-                  </label>
-                  <input
-                    type="text"
-                    id="cvv"
-                    name="cvv"
-                    value={formData.cvv}
-                    onChange={handleInputChange}
-                    placeholder="123"
-                    className={`pasarela-input ${
-                      errors.cvv ? "pasarela-input--error" : ""
-                    }`}
-                  />
-                  {errors.cvv && <span className="pasarela-error">{errors.cvv}</span>}
-                </div>
-              </div>
-
-              {/* Información de seguridad */}
-              <div className="pasarela-security-info">
-                <span className="pasarela-security-icon">🔒</span>
-                <p>
-                  Tu información está protegida con encriptación SSL de 256 bits.
-                  No almacenamos datos de tarjetas de crédito.
-                </p>
-              </div>
-
-              {/* Botones de acción */}
-              <div className="pasarela-actions">
-                <button
-                  type="button"
-                  onClick={() => navigate("/planes")}
-                  className="pasarela-btn pasarela-btn--secondary"
-                  disabled={processing}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="pasarela-btn pasarela-btn--primary"
-                  disabled={processing}
-                >
-                  {processing ? (
-                    <>
-                      <span className="pasarela-spinner"></span>
-                      Procesando...
-                    </>
-                  ) : (
-                    `Pagar ${(parseFloat(prices[selectedPeriod]) * 1.21).toFixed(2)}€`
-                  )}
-                </button>
-              </div>
-            </form>
+            <div className="pasarela-security-info">
+              <span className="pasarela-security-icon">🔒</span>
+              <p>
+                Tu información está protegida con encriptación SSL de 256 bits.
+                No almacenamos datos de tarjetas de crédito.
+              </p>
+            </div>
           </div>
         </div>
       </div>

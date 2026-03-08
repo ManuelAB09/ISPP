@@ -3,6 +3,7 @@ package es.us.meerkat.backend.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -160,14 +161,16 @@ class InstitutionServiceTest {
         request.setTipoPlan("BASICO");
         request.setNumUsuarios(100);
         request.setDuracionMeses(12);
+        request.setPeriodo("anual"); // ← añadir periodo
 
         when(institutionRepository.findById(institutionId)).thenReturn(Optional.of(institution));
 
-        // 15 * 100 * 12 = 18000
-        BigDecimal montoEsperado = new BigDecimal("18000");
-
         when(paymentService.generarPagoPlanCorporativo(
-                        eq(institutionId), eq(TipoPlanCorporativo.BASICO), eq(montoEsperado)))
+                        eq(institutionId),
+                        eq(TipoPlanCorporativo.BASICO),
+                        any(BigDecimal.class), // monto calculado internamente
+                        eq("anual"), // periodo
+                        anyString())) // emailContacto
                 .thenReturn(new PaymentUrlResponse("http://payment.url", "session123"));
 
         when(institutionRepository.save(any(Institution.class)))

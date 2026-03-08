@@ -34,4 +34,7 @@ public class CorporatePlanRequest {
 
     @Schema(description = "Documentación de elegibilidad (para planes reducidos)")
     private String documentacionEligibilidad;
+
+    @Schema(description = "Periodo de facturación", example = "mensual")
+    private String periodo; // "mensual" o "anual"
 }

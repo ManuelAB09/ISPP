@@ -140,6 +140,7 @@ export default function InstitutionPlanModal({ plan, onClose }) {
         numUsuarios,
         duracionMeses,
         aceptarTerminos: true,
+        periodo: duracionMeses >= 12 ? "anual" : "mensual",
         documentacionEligibilidad:
           plan.requiereEligibilidad && documentacion.trim()
             ? documentacion.trim()
