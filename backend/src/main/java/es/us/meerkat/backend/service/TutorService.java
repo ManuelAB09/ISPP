@@ -185,9 +185,9 @@ public class TutorService {
                         TutorProfileResponse.UsuarioDto.builder()
                                 .id(tutor.getUs().getId())
                                 .nombre(tutor.getUs().getNombre())
-                                // .foto(tutor.getUs().)
-                                // .bio(tutor.getUs().getBio())
-                                // .intereses(tutor.getUs().getIntereses())
+                                .foto(tutor.getUs().getFoto())
+                                .bio(tutor.getUs().getBio())
+                                .intereses(tutor.getUs().getIntereses())
                                 .esTutor(tutor.getUs().getEsTutor())
                                 .build())
                 .especialidades(tutor.getEspecialidades())
@@ -196,7 +196,7 @@ public class TutorService {
                 .bio(tutor.getBio())
                 .verificado(tutor.getVerificado())
                 .classroomConectado(tutor.getClassroomConectado())
-                .createdAt(tutor.getCreatedAt().toString())
+                .createdAt(tutor.getCreatedAt() != null ? tutor.getCreatedAt().toString() : null)
                 .build();
     }
 
@@ -215,22 +215,10 @@ public class TutorService {
 
         PageRequest pageable = PageRequest.of(page, size);
 
-        Page<Tutor> pageResult;
-        // Sin filtros: devolver todos los verificados paginados
-        if (especialidad == null && tarifaMin == null && tarifaMax == null) {
-            pageResult = tutorRepository.findByVerificadoTrue(pageable);
-        } else {
-            // Con filtros: usar JPQL con JOIN sobre especialidades
-            BigDecimal min = (tarifaMin != null) ? tarifaMin : BigDecimal.ZERO;
-            BigDecimal max = (tarifaMax != null) ? tarifaMax : new BigDecimal("999999");
-            String espec = (especialidad != null) ? especialidad : "";
+        Page<Tutor> pageResult =
+                tutorRepository.findVerificadosFiltrados(
+                        especialidad, tarifaMin, tarifaMax, pageable);
 
-            pageResult =
-                    tutorRepository.findVerificadosByEspecialidadAndTarifa(
-                            espec, min, max, pageable);
-        }
-
-        // Convertir cada entidad a DTO para evitar ciclos de serialización
         return pageResult.map(this::mapToResponse);
     }
 

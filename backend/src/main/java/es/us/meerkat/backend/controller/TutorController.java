@@ -1,12 +1,8 @@
 package es.us.meerkat.backend.controller;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -61,32 +57,16 @@ public class TutorController {
      * @return Lista paginada de tutores
      */
     @GetMapping
-    @Operation(
-            summary = "Listar tutores",
-            description =
-                    "Devuelve la lista de tutores. Por defecto solo muestra verificados en"
-                            + " posiciones destacadas")
     public ResponseEntity<TutorListResponse> listTutors(
-            @Parameter(description = "Filtrar por especialidad") @RequestParam(required = false)
-                    String especialidad,
-            @Parameter(description = "Filtrar solo verificados") @RequestParam(required = false)
-                    Boolean verificado,
-            @Parameter(description = "Tarifa mínima por hora") @RequestParam(required = false)
-                    BigDecimal tarifaMin,
-            @Parameter(description = "Tarifa máxima por hora") @RequestParam(required = false)
-                    BigDecimal tarifaMax,
-            @Parameter(description = "Página (0-indexed)") @RequestParam(defaultValue = "0")
-                    int page,
-            @Parameter(description = "Elementos por página") @RequestParam(defaultValue = "20")
-                    int size) {
+            @RequestParam(required = false) String especialidad,
+            @RequestParam(required = false) BigDecimal tarifaMin,
+            @RequestParam(required = false) BigDecimal tarifaMax,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
 
-        Pageable pageable = PageRequest.of(page, size);
         Page<TutorProfileResponse> tutores =
                 tutorService.obtenerTutoresVerificados(
                         especialidad, tarifaMin, tarifaMax, page, size);
-
-        List<TutorProfileResponse> content =
-                tutores.getContent().stream().collect(Collectors.toList());
 
         var pageInfo =
                 PageInfo.builder()
@@ -99,7 +79,7 @@ public class TutorController {
                         .build();
 
         return ResponseEntity.ok(
-                TutorListResponse.builder().content(content).page(pageInfo).build());
+                TutorListResponse.builder().content(tutores.getContent()).page(pageInfo).build());
     }
 
     /**
@@ -252,17 +232,19 @@ public class TutorController {
             // Devolver URL de pago + resumen del coste y beneficio
             return ResponseEntity.ok(
                     java.util.Map.of(
-                            "paymentUrl", paymentUrl.paymentUrl(),
-                            "sessionId", paymentUrl.sessionId(),
+                            "paymentUrl",
+                            paymentUrl.paymentUrl(),
+                            "sessionId",
+                            paymentUrl.sessionId(),
                             "resumen",
-                                    java.util.Map.of(
-                                            "coste",
-                                            "19.99€",
-                                            "beneficio",
-                                            "Insignia 'Verificado' en tu perfil",
-                                            "descripcion",
-                                            "Tu perfil aparecerá destacado en los listados de"
-                                                    + " tutores")));
+                            java.util.Map.of(
+                                    "coste",
+                                    "19.99€",
+                                    "beneficio",
+                                    "Insignia 'Verificado' en tu perfil",
+                                    "descripcion",
+                                    "Tu perfil aparecerá destacado en los listados de"
+                                            + " tutores")));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body(

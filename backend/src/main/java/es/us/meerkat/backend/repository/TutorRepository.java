@@ -84,4 +84,21 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
             @Param("tarifaMin") BigDecimal tarifaMin,
             @Param("tarifaMax") BigDecimal tarifaMax,
             Pageable pageable);
+
+    @EntityGraph(attributePaths = {"us"})
+    @Query(
+            """
+    SELECT DISTINCT t
+    FROM Tutor t
+    LEFT JOIN t.especialidades e
+    WHERE t.verificado = true
+    AND (:especialidad IS NULL OR LOWER(e) LIKE LOWER(CONCAT('%', CAST(:especialidad AS string), '%')))
+    AND (:tarifaMin IS NULL OR t.tarifaHora >= :tarifaMin)
+    AND (:tarifaMax IS NULL OR t.tarifaHora <= :tarifaMax)
+""")
+    Page<Tutor> findVerificadosFiltrados(
+            @Param("especialidad") String especialidad,
+            @Param("tarifaMin") BigDecimal tarifaMin,
+            @Param("tarifaMax") BigDecimal tarifaMax,
+            Pageable pageable);
 }
