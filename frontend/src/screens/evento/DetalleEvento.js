@@ -366,7 +366,7 @@ const DetalleEvento = () => {
                   <LuPackage className="ed-section-icon" /> Materiales necesarios
                 </h2>
                 <div className="ed-materials">
-                  {event.queLlevar.split(',').map((material, index) => (
+                  {event.queLlevar.split(',').filter(m => m.trim() !== '').map((material, index) => (
                     <span key={index} className="ed-material-tag">
                       {material.trim()}
                     </span>
