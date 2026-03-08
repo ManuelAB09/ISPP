@@ -162,6 +162,32 @@
     display: none;
 }
 
+.edit-profile-color-picker {
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.edit-profile-color-picker label {
+    font-weight: 600;
+    color: var(--spaceIndigo, #1e3a5f);
+    font-size: 0.95rem;
+}
+
+.edit-profile-color-picker input[type="color"] {
+    width: 60px;
+    height: 40px;
+    border: 2px solid var(--alabasterGray, #e5e7eb);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+
+.edit-profile-color-picker input[type="color"]:hover {
+    border-color: var(--glaucous, #3854d5);
+}
+
 .edit-profile-avatar-gallery {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));

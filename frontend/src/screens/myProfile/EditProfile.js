@@ -74,6 +74,7 @@ const EditProfile = ({ onClose, onSave }) => {
     const [isSaving, setIsSaving] = useState(false)
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
+    const [fotoBackgroundColor, setFotoBackgroundColor] = useState('#ffffff')
 
     // Cargar datos del usuario al montar el componente
     useEffect(() => {
@@ -91,6 +92,7 @@ const EditProfile = ({ onClose, onSave }) => {
             setSelectedAvatar(userAvatarPath)
             setFotoToSave(userAvatarPath || user.foto || '')
             setProfileImagePreview(toAbsoluteImageUrl(user.foto))
+            setFotoBackgroundColor(user.fotoBackgroundColor || '#ffffff')
         }
     }, [user])
 
@@ -204,6 +206,7 @@ const EditProfile = ({ onClose, onSave }) => {
                 grado: formData.grado.trim(),
                 ubicacion: formData.ubicacion.trim(),
                 intereses: formData.intereses,
+                fotoBackgroundColor: fotoBackgroundColor,
             }
 
             // Solo enviamos foto cuando no se subió archivo en esta misma acción.
@@ -252,7 +255,7 @@ const EditProfile = ({ onClose, onSave }) => {
                         <h2 className="edit-profile-section__title">Foto de perfil</h2>
                         <div className="edit-profile-image-container">
                             {profileImagePreview ? (
-                                <div className="edit-profile-image-preview">
+                                <div className="edit-profile-image-preview" style={{ backgroundColor: fotoBackgroundColor }}>
                                     <img src={profileImagePreview} alt="Vista previa" />
                                     <button
                                         type="button"
@@ -267,7 +270,7 @@ const EditProfile = ({ onClose, onSave }) => {
                                     </button>
                                 </div>
                             ) : (
-                                <div className="edit-profile-image-placeholder">
+                                <div className="edit-profile-image-placeholder" style={{ backgroundColor: fotoBackgroundColor }}>
                                     <span className="placeholder-icon">👤</span>
                                 </div>
                             )}
@@ -287,6 +290,16 @@ const EditProfile = ({ onClose, onSave }) => {
                                     Sube una imagen (JPG, PNG o WEBP, máx. 5MB) o elige un avatar.
                                 </p>
                             </div>
+                        </div>
+                        <div className="edit-profile-color-picker">
+                            <label htmlFor="foto-background-color">Color de fondo:</label>
+                            <input
+                                type="color"
+                                id="foto-background-color"
+                                value={fotoBackgroundColor}
+                                onChange={(e) => setFotoBackgroundColor(e.target.value)}
+                                title="Selecciona el color de fondo"
+                            />
                         </div>
                         <div className="edit-profile-avatar-gallery">
                             {loadingAvatars ? (

@@ -36,10 +36,20 @@ export default function Header({ user, page }) {
         DEFAULT_PROFILE_AVATAR
     );
 
+    const profileBackgroundColor =
+        user?.fotoBackgroundColor ||
+        storedUser?.fotoBackgroundColor ||
+        '#ffffff';
+
     return (
         <div className="header-container">
             <Link to="/perfil">
-                <img className="header-profile-image" src={profileImage} alt="Perfil" />
+                <img
+                    className="header-profile-image"
+                    src={profileImage}
+                    alt="Perfil"
+                    style={{ backgroundColor: profileBackgroundColor }}
+                />
             </Link>
                         <div className="header-actions">
                 <GoogleClassroomButton />

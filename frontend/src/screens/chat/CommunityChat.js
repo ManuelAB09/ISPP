@@ -75,6 +75,16 @@ const CommunityChat = ({
 
     const isOwnMessage = (msg) => Number(msg?.usuarioId) === Number(usuarioActual?.id);
 
+    const resolveAvatarBackgroundColor = (msg) => {
+        if (msg?.usuarioFotoBackgroundColor) {
+            return msg.usuarioFotoBackgroundColor;
+        }
+        if (isOwnMessage(msg) && usuarioActual?.fotoBackgroundColor) {
+            return usuarioActual.fotoBackgroundColor;
+        }
+        return '#ffffff';
+    };
+
     /**
      * Carga el historial de mensajes al montar el componente.
      */
@@ -650,6 +660,7 @@ const CommunityChat = ({
             userId: targetId,
             userName: msg?.usuarioNombre || `Usuario ${targetId}`,
             userPhoto: msg?.usuarioFoto || '',
+            userPhotoBg: msg?.usuarioFotoBackgroundColor || '#ffffff',
         };
 
         if (onOpenPrivateChat) {
@@ -664,6 +675,9 @@ const CommunityChat = ({
         });
         if (payload.userPhoto) {
             params.set('userPhoto', payload.userPhoto);
+        }
+        if (payload.userPhotoBg) {
+            params.set('userPhotoBg', payload.userPhotoBg);
         }
         navigate(`/chats?${params.toString()}`);
     };
@@ -750,6 +764,7 @@ const CommunityChat = ({
                                                 className="usuario-foto"
                                                 src={toAbsoluteImageUrl(msg.usuarioFoto, DEFAULT_PROFILE_AVATAR)}
                                                 alt={msg.usuarioNombre || 'Usuario'}
+                                                style={{ backgroundColor: resolveAvatarBackgroundColor(msg) }}
                                             />
                                             <span className="usuario-nombre">{msg.usuarioNombre}</span>
                                         </button>

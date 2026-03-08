@@ -149,6 +149,7 @@ const MyProfile = () => {
         grado: user?.grado || "",
         ubicacion: user?.ubicacion || "",
         foto: user?.foto || null,
+        fotoBackgroundColor: user?.fotoBackgroundColor || '#ffffff',
         intereses: user?.intereses || []
     }
 
@@ -186,7 +187,7 @@ const MyProfile = () => {
                 {/* Sección de perfil principal */}
                 <section className="profile-header">
                     <div className="profile-header__left">
-                        <div className="profile-avatar">
+                        <div className="profile-avatar" style={{ backgroundColor: userData.fotoBackgroundColor }}>
                             {userData.foto ? (
                                 <img src={toAbsoluteImageUrl(userData.foto)} alt={userData.nombre} className="profile-avatar-img" />
                             ) : (

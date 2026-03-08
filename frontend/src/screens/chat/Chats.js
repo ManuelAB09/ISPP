@@ -75,6 +75,7 @@ export default function Chats() {
                       usuarioId: privateTarget.id,
                       usuarioNombre: privateTarget.nombre,
                       usuarioFoto: privateTarget.foto || null,
+                      usuarioFotoBackgroundColor: privateTarget.fotoBackgroundColor || '#ffffff',
                       ultimoMensaje: '',
                   },
               ]
@@ -84,11 +85,13 @@ export default function Chats() {
     const privateUserIdFromQuery = Number(searchParams.get('userId'));
     const privateUserNameFromQuery = searchParams.get('userName');
     const privateUserPhotoFromQuery = searchParams.get('userPhoto');
+    const privateUserPhotoBgFromQuery = searchParams.get('userPhotoBg');
 
     const currentUser = {
         id: Number(localStorage.getItem('userId')),
         nombre: user?.nombre || 'Usuario',
         foto: user?.foto || null,
+        fotoBackgroundColor: user?.fotoBackgroundColor || '#ffffff',
     };
 
     useEffect(() => {
@@ -129,6 +132,7 @@ export default function Chats() {
                         id: privateUserIdFromQuery,
                         nombre: privateUserNameFromQuery || `Usuario ${privateUserIdFromQuery}`,
                         foto: privateUserPhotoFromQuery || null,
+                        fotoBackgroundColor: privateUserPhotoBgFromQuery || '#ffffff',
                     };
                     setPrivateTarget(targetObj);
                     setActiveTab('private');
@@ -142,6 +146,7 @@ export default function Chats() {
                                 usuarioId: privateUserIdFromQuery,
                                 usuarioNombre: targetObj.nombre,
                                 usuarioFoto: targetObj.foto,
+                                usuarioFotoBackgroundColor: targetObj.fotoBackgroundColor,
                                 ultimoMensaje: '',
                             },
                         ];
@@ -172,6 +177,7 @@ export default function Chats() {
         privateUserIdFromQuery,
         privateUserNameFromQuery,
         privateUserPhotoFromQuery,
+        privateUserPhotoBgFromQuery,
     ]);
 
     // Recargar conversaciones cuando se abre la pestaña de privados
@@ -194,6 +200,7 @@ export default function Chats() {
                                     usuarioId: privateTarget.id,
                                     usuarioNombre: privateTarget.nombre,
                                     usuarioFoto: privateTarget.foto || null,
+                                    usuarioFotoBackgroundColor: privateTarget.fotoBackgroundColor || '#ffffff',
                                     ultimoMensaje: '',
                                 },
                             ];
@@ -214,6 +221,7 @@ export default function Chats() {
                                     usuarioId: privateTarget.id,
                                     usuarioNombre: privateTarget.nombre,
                                     usuarioFoto: privateTarget.foto || null,
+                                    usuarioFotoBackgroundColor: privateTarget.fotoBackgroundColor || '#ffffff',
                                     ultimoMensaje: '',
                                 },
                             ];
@@ -296,10 +304,12 @@ export default function Chats() {
                                                 const id = Number(target.userId);
                                                 const nombre = target.userName;
                                                 const foto = target.userPhoto || null;
+                                                const fotoBackgroundColor = target.userPhotoBg || '#ffffff';
                                                 setPrivateTarget({
                                                     id,
                                                     nombre,
                                                     foto,
+                                                    fotoBackgroundColor,
                                                 });
                                                 setActiveTab('private');
                                                 setConversaciones((prev) => {
@@ -312,6 +322,7 @@ export default function Chats() {
                                                             usuarioId: id,
                                                             usuarioNombre: nombre,
                                                             usuarioFoto: foto,
+                                                            usuarioFotoBackgroundColor: fotoBackgroundColor,
                                                             ultimoMensaje: '',
                                                         },
                                                     ];
@@ -349,6 +360,7 @@ export default function Chats() {
                                                             id: conv.usuarioId,
                                                             nombre: conv.usuarioNombre,
                                                             foto: conv.usuarioFoto || null,
+                                                            fotoBackgroundColor: conv.usuarioFotoBackgroundColor || '#ffffff',
                                                         })
                                                     }
                                                 >
@@ -356,6 +368,13 @@ export default function Chats() {
                                                         src={resolveUserImage(conv.usuarioFoto)}
                                                         alt={conv.usuarioNombre}
                                                         className="chat-list-image"
+                                                        style={{
+                                                            backgroundColor:
+                                                                conv.usuarioFotoBackgroundColor ||
+                                                                (privateTarget?.id === conv.usuarioId
+                                                                    ? privateTarget.fotoBackgroundColor
+                                                                    : '#ffffff'),
+                                                        }}
                                                     />
                                                     <div className="chat-list-content">
                                                         <h3>{conv.usuarioNombre}</h3>

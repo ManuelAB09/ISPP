@@ -106,6 +106,9 @@ public class UsuarioService {
         if (requestParam.getFoto() != null) {
             usuario.setFoto(normalizarFotoPerfil(requestParam.getFoto()));
         }
+        if (requestParam.getFotoBackgroundColor() != null) {
+            usuario.setFotoBackgroundColor(requestParam.getFotoBackgroundColor());
+        }
         if (requestParam.getBio() != null) {
             usuario.setBio(requestParam.getBio());
         }
@@ -290,6 +293,7 @@ public class UsuarioService {
                 .email(usuario.getEmail())
                 .nombre(usuario.getNombre())
                 .foto(usuario.getFoto())
+                .fotoBackgroundColor(usuario.getFotoBackgroundColor())
                 .bio(usuario.getBio())
                 .intereses(usuario.getIntereses())
                 .visibleEnListados(usuario.getVisibleEnListados())

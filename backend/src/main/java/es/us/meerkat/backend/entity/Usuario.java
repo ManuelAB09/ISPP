@@ -58,6 +58,10 @@ public class Usuario {
     @Column(columnDefinition = "TEXT")
     private String foto;
 
+    /** Color de fondo para la foto de perfil (ej: #ffffff). Por defecto blanco. */
+    @Column(length = 7)
+    private String fotoBackgroundColor = "#ffffff";
+
     /** Universidad del usuario. */
     private String universidad;
 

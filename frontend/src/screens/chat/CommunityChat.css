@@ -69,8 +69,8 @@
 }
 
 .chat-header-avatar {
-    width: 3rem;
-    height: 3rem;
+    width: 4rem;
+    height: 4rem;
     border-radius: 50%;
     object-fit: cover;
     border: 1px solid #D9DDE8;
@@ -208,11 +208,15 @@
 }
 
 .usuario-foto {
-    width: 2rem;
-    height: 2rem;
+    width: 3rem;
+    height: 3rem;
     border-radius: 50%;
     object-fit: cover;
     border: 1px solid #D9DDE8;
+    padding: 1px;
+    box-sizing: border-box;
+    image-rendering: -webkit-optimize-contrast;
+    transform: translateZ(0);
     flex-shrink: 0;
 }
 
