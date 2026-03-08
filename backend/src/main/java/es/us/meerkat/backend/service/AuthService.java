@@ -77,7 +77,7 @@ public class AuthService {
         usuario.setEsTutor(false);
         usuario.setVisibleEnListados(true);
         usuario.setIntereses(new ArrayList<>());
-
+        usuario.setEsTutor(Boolean.TRUE.equals(requestParam.getEsTutor()));
         usuarioRepository.save(usuario);
 
         final String token = jwtService.generateToken(usuario.getEmail());

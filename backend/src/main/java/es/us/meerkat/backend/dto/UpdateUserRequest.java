@@ -33,4 +33,6 @@ public class UpdateUserRequest {
 
     /** Nueva lista de intereses. */
     private List<String> intereses;
+
+    private Boolean esTutor;
 }

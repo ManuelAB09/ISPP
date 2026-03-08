@@ -83,7 +83,9 @@ public class UsuarioService {
         if (requestParam.getIntereses() != null) {
             usuario.setIntereses(requestParam.getIntereses());
         }
-
+        if (requestParam.getEsTutor() != null) {
+            usuario.setEsTutor(requestParam.getEsTutor());
+        }
         if (requestParam.getUniversidad() != null) {
             usuario.setUniversidad(requestParam.getUniversidad());
         }
