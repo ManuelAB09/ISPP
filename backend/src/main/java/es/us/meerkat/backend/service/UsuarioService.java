@@ -1,8 +1,20 @@
 package es.us.meerkat.backend.service;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.ResourcePatternResolver;
+import org.springframework.web.multipart.MultipartFile;
 
 import es.us.meerkat.backend.dto.ChangePasswordRequest;
 import es.us.meerkat.backend.dto.UpdateUserRequest;
@@ -16,21 +28,38 @@ import lombok.RequiredArgsConstructor;
 /**
  * Servicio para gestionar la lógica de negocio de usuarios.
  *
- * <p>Cubre los endpoints de /api/v1/users del OpenAPI: obtener perfil propio, actualizar, cambiar
+ * <p>
+ * Cubre los endpoints de /api/v1/users del OpenAPI: obtener perfil propio,
+ * actualizar, cambiar
  * contraseña, eliminar cuenta, visibilidad y ver perfiles públicos.
  */
 @Service
 @RequiredArgsConstructor
 public class UsuarioService {
 
+    /** Prefijo público de los avatares predefinidos de Renata. */
+    private static final String RENATA_AVATAR_PUBLIC_PREFIX = "/static/images/renata/";
+
+    /** Patrón classpath para leer avatares predefinidos empaquetados en backend. */
+    private static final String RENATA_AVATAR_CLASSPATH_PATTERN = "classpath:/static/static/images/renata/*.*";
+
     /** Longitud mínima requerida para las contraseñas. */
     private static final int MIN_PASSWORD_LENGTH = 8;
+
+    /** Tamaño máximo de foto de perfil en bytes (5MB). */
+    private static final long MAX_PROFILE_PHOTO_SIZE_BYTES = 5L * 1024L * 1024L;
+
+    /** MIME types permitidos para foto de perfil. */
+    private static final Set<String> ALLOWED_PROFILE_PHOTO_MIME_TYPES = Set.of("image/jpeg", "image/png", "image/webp");
 
     /** Repositorio para acceder a la información de usuarios. */
     private final UsuarioRepository usuarioRepository;
 
     /** Codificador de contraseñas BCrypt. */
     private final BCryptPasswordEncoder passwordEncoder;
+
+    /** Resolver para localizar recursos estáticos en classpath. */
+    private final ResourcePatternResolver resourcePatternResolver;
 
     // ===============================
     // GET /api/v1/users/me
@@ -44,10 +73,9 @@ public class UsuarioService {
      */
     @Transactional
     public UserDetailResponse obtenerPerfilPropio(final Usuario usuario) {
-        Usuario usuarioActualizado =
-                usuarioRepository
-                        .findByEmail(usuario.getEmail())
-                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        Usuario usuarioActualizado = usuarioRepository
+                .findByEmail(usuario.getEmail())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         if (usuarioActualizado.getTutores() != null) {
             usuarioActualizado.getTutores().size();
         }
@@ -61,9 +89,10 @@ public class UsuarioService {
     /**
      * Actualiza la información personal del usuario autenticado.
      *
-     * <p>Solo modifica los campos que no sean nulos en el request.
+     * <p>
+     * Solo modifica los campos que no sean nulos en el request.
      *
-     * @param usuario Usuario autenticado.
+     * @param usuario      Usuario autenticado.
      * @param requestParam Datos a actualizar.
      * @return Perfil actualizado.
      */
@@ -75,7 +104,7 @@ public class UsuarioService {
             usuario.setNombre(requestParam.getNombre());
         }
         if (requestParam.getFoto() != null) {
-            usuario.setFoto(requestParam.getFoto());
+            usuario.setFoto(normalizarFotoPerfil(requestParam.getFoto()));
         }
         if (requestParam.getBio() != null) {
             usuario.setBio(requestParam.getBio());
@@ -98,6 +127,39 @@ public class UsuarioService {
         return mapToDetailResponse(usuario);
     }
 
+    /**
+     * Actualiza la foto de perfil del usuario autenticado a partir de un archivo.
+     *
+     * @param usuario Usuario autenticado.
+     * @param file    Archivo de imagen recibido en multipart.
+     * @return Perfil actualizado.
+     */
+    @Transactional
+    public UserDetailResponse actualizarFotoPerfil(final Usuario usuario, final MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Archivo de imagen requerido");
+        }
+
+        if (file.getSize() > MAX_PROFILE_PHOTO_SIZE_BYTES) {
+            throw new IllegalArgumentException("La foto supera el límite de 5MB");
+        }
+
+        String mimeType = file.getContentType();
+        if (mimeType == null || !ALLOWED_PROFILE_PHOTO_MIME_TYPES.contains(mimeType)) {
+            throw new IllegalArgumentException("Formato no permitido. Solo JPG, PNG o WEBP");
+        }
+
+        try {
+            String base64 = Base64.getEncoder().encodeToString(file.getBytes());
+            String dataUri = "data:" + mimeType + ";base64," + base64;
+            usuario.setFoto(dataUri);
+            usuarioRepository.save(usuario);
+            return mapToDetailResponse(usuario);
+        } catch (IOException e) {
+            throw new IllegalStateException("No se pudo procesar la imagen", e);
+        }
+    }
+
     // ===============================
     // DELETE /api/v1/users/me
     // ===============================
@@ -105,7 +167,9 @@ public class UsuarioService {
     /**
      * Elimina permanentemente la cuenta del usuario autenticado.
      *
-     * <p>Esta acción es irreversible. El frontend debe mostrar confirmación antes de llamar a este
+     * <p>
+     * Esta acción es irreversible. El frontend debe mostrar confirmación antes de
+     * llamar a este
      * endpoint.
      *
      * @param usuario Usuario autenticado a eliminar.
@@ -122,12 +186,14 @@ public class UsuarioService {
     /**
      * Cambia la contraseña del usuario autenticado.
      *
-     * <p>Verifica la contraseña actual antes de aplicar el cambio.
+     * <p>
+     * Verifica la contraseña actual antes de aplicar el cambio.
      *
-     * @param usuario Usuario autenticado.
+     * @param usuario      Usuario autenticado.
      * @param requestParam Contraseña actual y nueva.
-     * @throws RuntimeException si la contraseña actual es incorrecta o la nueva no cumple los
-     *     requisitos.
+     * @throws RuntimeException si la contraseña actual es incorrecta o la nueva no
+     *                          cumple los
+     *                          requisitos.
      */
     @Transactional
     public void cambiarPassword(final Usuario usuario, final ChangePasswordRequest requestParam) {
@@ -152,7 +218,7 @@ public class UsuarioService {
     /**
      * Actualiza la visibilidad del perfil en listados públicos.
      *
-     * @param usuario Usuario autenticado.
+     * @param usuario      Usuario autenticado.
      * @param requestParam Nueva configuración de visibilidad.
      * @return Perfil actualizado.
      */
@@ -175,7 +241,8 @@ public class UsuarioService {
     /**
      * Devuelve el perfil público de un usuario por su ID.
      *
-     * <p>Solo expone datos que el usuario ha hecho públicos.
+     * <p>
+     * Solo expone datos que el usuario ha hecho públicos.
      *
      * @param usuarioId Identificador del usuario.
      * @return Perfil público del usuario.
@@ -183,12 +250,28 @@ public class UsuarioService {
      */
     public UserPublicResponse obtenerPerfilPublico(final Long usuarioId) {
 
-        final Usuario usuario =
-                usuarioRepository
-                        .findById(usuarioId)
-                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        final Usuario usuario = usuarioRepository
+                .findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         return mapToPublicResponse(usuario);
+    }
+
+    /**
+     * Devuelve la lista de avatares predefinidos disponibles para foto de perfil.
+     *
+     * @return Lista de rutas públicas de avatares de Renata.
+     */
+    public List<String> obtenerAvataresPerfilDisponibles() {
+        Set<String> fileNames = obtenerNombresAvataresRenata();
+        if (fileNames.isEmpty()) {
+            return List.of();
+        }
+
+        return fileNames.stream()
+                .sorted()
+                .map(fileName -> RENATA_AVATAR_PUBLIC_PREFIX + fileName)
+                .toList();
     }
 
     // ===============================
@@ -230,5 +313,74 @@ public class UsuarioService {
                 .intereses(usuario.getIntereses())
                 .esTutor(usuario.getEsTutor())
                 .build();
+    }
+
+    /**
+     * Normaliza la foto de perfil recibida desde API.
+     *
+     * <p>
+     * Si llega un nombre de archivo (p.ej. Feliz.png) o una ruta de Renata, la
+     * transforma a
+     * ruta pública estable. Si llega vacío, deja la foto sin valor (null).
+     * Cualquier otra
+     * URL/ruta se
+     * respeta para no romper compatibilidad con clientes existentes.
+     *
+     * @param fotoOriginal Valor recibido en UpdateUserRequest.foto.
+     * @return Ruta/URL normalizada a persistir.
+     */
+    private String normalizarFotoPerfil(final String fotoOriginal) {
+        if (!StringUtils.hasText(fotoOriginal)) {
+            return null;
+        }
+
+        String fotoLimpia = fotoOriginal.trim();
+        String marker = RENATA_AVATAR_PUBLIC_PREFIX;
+
+        if (fotoLimpia.startsWith(marker)) {
+            String fileName = fotoLimpia.substring(marker.length());
+            return construirRutaRenataSiExiste(fileName, fotoLimpia);
+        }
+
+        int markerIndex = fotoLimpia.indexOf(marker);
+        if (markerIndex >= 0) {
+            String fileName = fotoLimpia.substring(markerIndex + marker.length());
+            return construirRutaRenataSiExiste(fileName, fotoLimpia);
+        }
+
+        if (!fotoLimpia.contains("/")) {
+            return construirRutaRenataSiExiste(fotoLimpia, fotoLimpia);
+        }
+
+        return fotoLimpia;
+    }
+
+    /**
+     * Construye ruta pública de Renata si el archivo existe en recursos estáticos.
+     */
+    private String construirRutaRenataSiExiste(final String fileName, final String fallbackValue) {
+        if (!StringUtils.hasText(fileName)) {
+            return null;
+        }
+
+        Set<String> availableNames = obtenerNombresAvataresRenata();
+        if (availableNames.contains(fileName)) {
+            return RENATA_AVATAR_PUBLIC_PREFIX + fileName;
+        }
+        return fallbackValue;
+    }
+
+    /** Lee nombres de archivos de avatares Renata desde classpath. */
+    private Set<String> obtenerNombresAvataresRenata() {
+        try {
+            Resource[] resources = resourcePatternResolver.getResources(RENATA_AVATAR_CLASSPATH_PATTERN);
+
+            return Arrays.stream(resources)
+                    .map(Resource::getFilename)
+                    .filter(StringUtils::hasText)
+                    .collect(Collectors.toSet());
+        } catch (IOException ignored) {
+            return Collections.emptySet();
+        }
     }
 }

@@ -1,5 +1,8 @@
 package es.us.meerkat.backend.controller;
 
+import java.util.List;
+
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -9,6 +12,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
 import es.us.meerkat.backend.dto.ChangePasswordRequest;
 import es.us.meerkat.backend.dto.MessageResponse;
@@ -23,8 +29,11 @@ import lombok.RequiredArgsConstructor;
 /**
  * Controlador de usuarios.
  *
- * <p>Implementa los endpoints del tag Usuarios del OpenAPI. Usa {@link AuthenticationPrincipal}
- * para obtener el usuario autenticado directamente del contexto de seguridad. Base URL:
+ * <p>
+ * Implementa los endpoints del tag Usuarios del OpenAPI. Usa
+ * {@link AuthenticationPrincipal}
+ * para obtener el usuario autenticado directamente del contexto de seguridad.
+ * Base URL:
  * /api/v1/users
  */
 @RestController
@@ -38,7 +47,8 @@ public final class UsuarioController {
     /**
      * Devuelve el perfil completo del usuario autenticado.
      *
-     * <p>GET /api/v1/users/me
+     * <p>
+     * GET /api/v1/users/me
      *
      * @param usuario Usuario autenticado (del token JWT).
      * @return Perfil completo del usuario.
@@ -55,7 +65,8 @@ public final class UsuarioController {
     /**
      * Actualiza el perfil del usuario autenticado.
      *
-     * <p>PUT /api/v1/users/me
+     * <p>
+     * PUT /api/v1/users/me
      *
      * @param usuario Usuario autenticado.
      * @param request Datos a actualizar.
@@ -69,9 +80,34 @@ public final class UsuarioController {
     }
 
     /**
+     * Sube una foto de perfil personalizada para el usuario autenticado.
+     *
+     * <p>
+     * POST /api/v1/users/me/photo (multipart/form-data)
+     *
+     * @param usuario Usuario autenticado.
+     * @param file    Archivo de imagen a usar como foto de perfil.
+     * @return Perfil actualizado.
+     */
+    @PostMapping(value = "/me/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UserDetailResponse> uploadProfilePhoto(
+            @AuthenticationPrincipal final Usuario usuario,
+            @RequestParam("file") final MultipartFile file) {
+        if (usuario == null) {
+            return ResponseEntity.status(401).build();
+        }
+        try {
+            return ResponseEntity.ok(usuarioService.actualizarFotoPerfil(usuario, file));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
      * Elimina permanentemente la cuenta del usuario autenticado.
      *
-     * <p>DELETE /api/v1/users/me Devuelve 204 sin contenido tras la eliminación.
+     * <p>
+     * DELETE /api/v1/users/me Devuelve 204 sin contenido tras la eliminación.
      *
      * @param usuario Usuario autenticado a eliminar.
      * @return Respuesta vacía con código 204.
@@ -85,7 +121,8 @@ public final class UsuarioController {
     /**
      * Cambia la contraseña del usuario autenticado.
      *
-     * <p>PUT /api/v1/users/me/password
+     * <p>
+     * PUT /api/v1/users/me/password
      *
      * @param usuario Usuario autenticado.
      * @param request Contraseña actual y nueva.
@@ -103,7 +140,8 @@ public final class UsuarioController {
     /**
      * Actualiza la visibilidad del perfil en listados públicos.
      *
-     * <p>PUT /api/v1/users/me/visibility
+     * <p>
+     * PUT /api/v1/users/me/visibility
      *
      * @param usuario Usuario autenticado.
      * @param request Nueva configuración de visibilidad.
@@ -119,7 +157,9 @@ public final class UsuarioController {
     /**
      * Devuelve el perfil público de un usuario por su ID.
      *
-     * <p>GET /api/v1/users/{userId} Accesible sin autenticación si el perfil es visible.
+     * <p>
+     * GET /api/v1/users/{userId} Accesible sin autenticación si el perfil es
+     * visible.
      *
      * @param userId ID del usuario cuyo perfil se quiere ver.
      * @return Perfil público del usuario.
@@ -127,5 +167,18 @@ public final class UsuarioController {
     @GetMapping("/{userId}")
     public ResponseEntity<UserPublicResponse> getUserById(@PathVariable final Long userId) {
         return ResponseEntity.ok(usuarioService.obtenerPerfilPublico(userId));
+    }
+
+    /**
+     * Devuelve los avatares predefinidos disponibles para foto de perfil.
+     *
+     * <p>
+     * GET /api/v1/users/profile-avatars
+     *
+     * @return Lista de rutas públicas de avatares.
+     */
+    @GetMapping("/profile-avatars")
+    public ResponseEntity<List<String>> getProfileAvatars() {
+        return ResponseEntity.ok(usuarioService.obtenerAvataresPerfilDisponibles());
     }
 }

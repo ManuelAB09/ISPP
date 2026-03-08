@@ -134,7 +134,7 @@
     background: transparent;
     width: 100%;
     display: grid;
-    grid-template-columns: 58px 1fr;
+    grid-template-columns: 72px 1fr;
     align-items: center;
     gap: 0.65rem;
     padding: 0.6rem;
@@ -152,8 +152,8 @@
 }
 
 .chat-list-image {
-    width: 58px;
-    height: 58px;
+    width: 72px;
+    height: 72px;
     border-radius: 0.8rem;
     object-fit: cover;
     background: var(--silver);

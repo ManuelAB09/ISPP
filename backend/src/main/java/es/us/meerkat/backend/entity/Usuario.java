@@ -26,11 +26,12 @@ import lombok.ToString;
 /**
  * Entidad que representa un usuario en la plataforma.
  *
- * <p>Contiene información de login, rol de tutor y relación con tutores.
+ * <p>
+ * Contiene información de login, rol de tutor y relación con tutores.
  */
 @Entity
 @Data
-@ToString(exclude = {"tutores", "intereses"})
+@ToString(exclude = { "tutores", "intereses" })
 @NoArgsConstructor
 @AllArgsConstructor
 public class Usuario {
@@ -51,7 +52,10 @@ public class Usuario {
     /** Nombre completo del usuario. */
     private String nombre;
 
-    /** URL de la foto de perfil del usuario. */
+    /**
+     * URL/ruta de la foto de perfil del usuario. Puede ser nula si no tiene foto.
+     */
+    @Column(columnDefinition = "TEXT")
     private String foto;
 
     /** Universidad del usuario. */
@@ -76,7 +80,8 @@ public class Usuario {
     private String googleId;
 
     /**
-     * Indica si el perfil del usuario es visible en listados públicos y resultados de búsqueda. Por
+     * Indica si el perfil del usuario es visible en listados públicos y resultados
+     * de búsqueda. Por
      * defecto es visible.
      */
     @Column(nullable = false)

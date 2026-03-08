@@ -10,6 +10,8 @@ import PrivateChat from './PrivateChat';
 import { obtenerConversaciones } from '../../api/mensajeService';
 
 const DEFAULT_COMMUNITY_IMAGE = 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
+const DEFAULT_PROFILE_AVATAR =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='60' fill='%23E6EAF3'/%3E%3Ccircle cx='60' cy='46' r='22' fill='%2395A1BB'/%3E%3Cpath d='M20 106c6-20 22-32 40-32s34 12 40 32' fill='%2395A1BB'/%3E%3C/svg%3E";
 
 const resolveCommunityImage = (community) => {
     const raw = community?.imagen || community?.imagenUrl || community?.foto;
@@ -19,6 +21,25 @@ const resolveCommunityImage = (community) => {
     }
 
     const value = String(raw).trim();
+    if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
+        return value;
+    }
+
+    const base = getApiBaseUrl();
+    if (value.startsWith('/')) {
+        return `${base}${value}`;
+    }
+
+    return `${base}/${value}`;
+};
+
+const resolveUserImage = (rawPhoto) => {
+    const fallback = DEFAULT_PROFILE_AVATAR;
+    if (!rawPhoto || !String(rawPhoto).trim()) {
+        return fallback;
+    }
+
+    const value = String(rawPhoto).trim();
     if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
         return value;
     }
@@ -332,7 +353,7 @@ export default function Chats() {
                                                     }
                                                 >
                                                     <img
-                                                        src={conv.usuarioFoto || '/MeerKatters_logo.png'}
+                                                        src={resolveUserImage(conv.usuarioFoto)}
                                                         alt={conv.usuarioNombre}
                                                         className="chat-list-image"
                                                     />

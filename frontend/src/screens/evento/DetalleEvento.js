@@ -15,6 +15,20 @@ import {
   getConfirmedAttendees, getMyAttendance
 } from '../../api/eventEndpoints';
 import { communitiesApi } from '../../api/communities.api';
+import { getApiBaseUrl } from '../../api/baseUrl';
+
+const toAbsoluteImageUrl = (imageUrl, fallback = '') => {
+  const raw = String(imageUrl || '').trim();
+  if (!raw) {
+    return fallback;
+  }
+  if (/^https?:\/\//i.test(raw) || raw.startsWith('data:') || raw.startsWith('blob:')) {
+    return raw;
+  }
+
+  const base = getApiBaseUrl();
+  return raw.startsWith('/') ? `${base}${raw}` : `${base}/${raw}`;
+};
 
 const eventIconRed = L.icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
@@ -460,7 +474,7 @@ const DetalleEvento = () => {
                       <li key={att.id || user.id} className="ed-participant">
                         <div className="ed-participant-avatar">
                           {user.fotoPerfil || user.avatar ? (
-                            <img src={user.fotoPerfil || user.avatar} alt={user.nombre || user.username} />
+                            <img src={toAbsoluteImageUrl(user.fotoPerfil || user.avatar)} alt={user.nombre || user.username} />
                           ) : (
                             <LuUser />
                           )}
