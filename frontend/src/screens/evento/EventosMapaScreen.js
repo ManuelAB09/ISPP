@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, LayersControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { listMapEvents } from '../../api/eventEndpoints';
@@ -106,6 +106,8 @@ const EventosMapaScreen = () => {
 
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+
+  const [tipoEvento, setTipoEvento] = useState('all'); // 'all', 'virtual', 'presencial'
 
   const navigate = useNavigate();
 
@@ -229,9 +231,15 @@ const EventosMapaScreen = () => {
       const eventStart = getEventStartDate(ev);
       if (!isWithinDateRange(eventStart, dateFrom, dateTo)) return false;
 
+      // Filtro por tipo de evento
+      if (tipoEvento !== 'all') {
+        if (tipoEvento === 'virtual' && !ev.esVirtual) return false;
+        if (tipoEvento === 'presencial' && ev.esVirtual) return false;
+      }
+
       return true;
     });
-  }, [eventos, cityByCoords, selectedCity, dateFrom, dateTo, hasInvalidDateRange]);
+  }, [eventos, cityByCoords, selectedCity, dateFrom, dateTo, hasInvalidDateRange, tipoEvento]);
 
   const ubicacionEventos = {};
   eventosFiltrados.forEach((ev) => {
@@ -277,6 +285,28 @@ const EventosMapaScreen = () => {
           </select>
 
           {cityLoading && <span style={{ fontSize: 13, color: '#666' }}>Resolviendo ciudades…</span>}
+        </div>
+
+        <div style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <label htmlFor="tipoFilter" style={{ fontWeight: 600, color: '#2E3559' }}>
+            Tipo:
+          </label>
+          <select
+            id="tipoFilter"
+            value={tipoEvento}
+            onChange={(e) => setTipoEvento(e.target.value)}
+            style={{
+              minWidth: 180,
+              padding: '8px 10px',
+              borderRadius: 8,
+              border: '1px solid #d1d5db',
+              background: 'white',
+            }}
+          >
+            <option value="all">Todos</option>
+            <option value="presencial">Presencial</option>
+            <option value="virtual">Virtual</option>
+          </select>
         </div>
 
         <div style={{ marginBottom: 14, display: 'flex', alignItems: 'end', gap: 10, flexWrap: 'wrap' }}>
@@ -352,10 +382,21 @@ const EventosMapaScreen = () => {
           }}
         >
           <MapContainer center={defaultPosition} zoom={13} style={{ height: '100%', width: '100%' }}>
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
+            <LayersControl position="topright">
+              <LayersControl.BaseLayer checked name="Mapa estándar">
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+              </LayersControl.BaseLayer>
+
+              <LayersControl.BaseLayer name="Vista satélite">
+                <TileLayer
+                  attribution='&copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                  url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                />
+              </LayersControl.BaseLayer>
+            </LayersControl>
 
             <AutoFitMapToEvents eventos={eventosFiltrados} defaultCenter={defaultPosition} defaultZoom={13} />
 
