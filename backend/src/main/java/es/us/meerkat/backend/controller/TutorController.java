@@ -1,6 +1,7 @@
 package es.us.meerkat.backend.controller;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -327,5 +328,96 @@ public class TutorController {
                 .classroomConectado(tutor.getClassroomConectado())
                 .createdAt(tutor.getCreatedAt() != null ? tutor.getCreatedAt().toString() : null)
                 .build();
+    }
+
+    @PostMapping("/me/verify-verification-session")
+    @Operation(
+            summary = "Verificar sesión de pago de verificación",
+            description =
+                    "Confirma el pago de verificación del tutor usando el sessionId de Stripe")
+    public ResponseEntity<?> verificarSesionVerificacion(
+            @AuthenticationPrincipal final Usuario usuario, @RequestBody Map<String, String> body) {
+
+        String sessionId = body.get("sessionId");
+
+        if (sessionId == null || sessionId.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "sessionId requerido"));
+        }
+
+        try {
+            // 1. Recuperar la sesión de Stripe y verificar que está completada
+            com.stripe.model.checkout.Session session =
+                    com.stripe.model.checkout.Session.retrieve(sessionId);
+
+            if (!"complete".equals(session.getStatus())) {
+                return ResponseEntity.badRequest()
+                        .body(
+                                Map.of(
+                                        "error",
+                                        "El pago no está completado: " + session.getStatus()));
+            }
+
+            // 2. Verificar que la sesión pertenece al usuario autenticado
+            String usuarioIdEnSession = session.getMetadata().get("usuarioId");
+            if (!usuario.getId().toString().equals(usuarioIdEnSession)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Sesión no válida para este usuario"));
+            }
+
+            // 3. Verificar que es una sesión de verificación de tutor
+            String tipo = session.getMetadata().get("tipo");
+            if (!es.us.meerkat.backend.entity.TipoTransaccion.PAGO_VERIFICACION
+                    .name()
+                    .equals(tipo)) {
+                return ResponseEntity.badRequest()
+                        .body(
+                                Map.of(
+                                        "error",
+                                        "La sesión no corresponde a una verificación de tutor"));
+            }
+
+            // 4. Obtener el tutorId de la metadata
+            String tutorIdStr = session.getMetadata().get("tutorId");
+            if (tutorIdStr == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Session sin tutorId en metadata"));
+            }
+            Long tutorId = Long.parseLong(tutorIdStr);
+
+            // 5. Activar verificación del tutor
+            tutorService.activarVerificacion(tutorId);
+
+            // 6. Registrar transacción
+            BigDecimal monto =
+                    session.getAmountTotal() != null
+                            ? BigDecimal.valueOf(session.getAmountTotal())
+                                    .divide(BigDecimal.valueOf(100))
+                            : new BigDecimal("19.99");
+
+            Tutor tutor = tutorService.obtenerTutorPorId(tutorId).orElse(null);
+            paymentService.procesarPagoExitoso(
+                    usuario.getId(),
+                    es.us.meerkat.backend.entity.TipoTransaccion.PAGO_VERIFICACION,
+                    monto,
+                    "Verificación de tutor completada",
+                    tutor);
+
+            // 7. Devolver el perfil actualizado
+            Tutor tutorActualizado = tutorService.obtenerTutorPorId(tutorId).orElseThrow();
+            return ResponseEntity.ok(
+                    Map.of(
+                            "mensaje",
+                            "Verificación activada correctamente",
+                            "verificado",
+                            tutorActualizado.getVerificado()));
+
+        } catch (com.stripe.exception.StripeException e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Error Stripe: " + e.getMessage()));
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", e.getClass().getSimpleName() + ": " + e.getMessage()));
+        }
     }
 }
