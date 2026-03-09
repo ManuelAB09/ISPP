@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import EditProfileModal from './EditProfileModal';
 import * as tutorEndpoints from '../../api/tutorEndpoints';
+import { AuthProvider } from '../../contexts/AuthContext';
 
 // Mock de la API de tutores
 jest.mock('../../api/tutorEndpoints');
@@ -32,11 +33,13 @@ describe('EditProfileModal', () => {
 
   const renderModal = (tutor = mockTutor) => {
     return render(
-      <EditProfileModal
-        tutor={tutor}
-        onClose={mockOnClose}
-        onGuardar={mockOnGuardar}
-      />
+      <AuthProvider>
+        <EditProfileModal
+          tutor={tutor}
+          onClose={mockOnClose}
+          onGuardar={mockOnGuardar}
+        />
+      </AuthProvider>
     );
   };
 

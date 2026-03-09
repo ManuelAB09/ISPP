@@ -3,6 +3,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import EventosMapaScreen from './EventosMapaScreen';
 import { listMapEvents } from '../../api/eventEndpoints';
+import { AuthProvider } from '../../contexts/AuthContext';
 
 // Mocks
 jest.mock('../../api/eventEndpoints');
@@ -28,11 +29,17 @@ jest.mock('react-leaflet', () => ({
   TileLayer: () => <div data-testid="mock-tile-layer" />,
   Marker: ({ children }) => <div data-testid="mock-marker">{children}</div>,
   Popup: ({ children }) => <div data-testid="mock-popup">{children}</div>,
+  LayersControl: ({ children }) => <div data-testid="mock-layers-control">{children}</div>,
   useMap: () => ({
     setView: jest.fn(),
     fitBounds: jest.fn(),
   }),
 }));
+
+// Add LayersControl.BaseLayer and LayersControl.Overlay as static properties
+const LayersControl = require('react-leaflet').LayersControl;
+LayersControl.BaseLayer = ({ children }) => <div data-testid="mock-base-layer">{children}</div>;
+LayersControl.Overlay = ({ children }) => <div data-testid="mock-overlay">{children}</div>;
 
 // Mock leaflet (clave para L.latLngBounds)
 jest.mock('leaflet', () => ({
@@ -69,9 +76,11 @@ describe('EventosMapaScreen', () => {
 
   const renderComponent = async () => {
     render(
-      <MemoryRouter>
-        <EventosMapaScreen />
-      </MemoryRouter>
+      <AuthProvider>
+        <MemoryRouter>
+          <EventosMapaScreen />
+        </MemoryRouter>
+      </AuthProvider>
     );
 
     await waitFor(() => {
@@ -120,9 +129,11 @@ test('muestra mensaje de error si falla la API', async () => {
   listMapEvents.mockRejectedValueOnce(new Error('network'));
 
   render(
-    <MemoryRouter>
-      <EventosMapaScreen />
-    </MemoryRouter>
+    <AuthProvider>
+      <MemoryRouter>
+        <EventosMapaScreen />
+      </MemoryRouter>
+    </AuthProvider>
   );
 
   expect(await screen.findByText(/Error cargando eventos/i)).toBeInTheDocument();
@@ -130,7 +141,7 @@ test('muestra mensaje de error si falla la API', async () => {
   consoleSpy.mockRestore();
 });
 
-  test('limpia fechas al pulsar "Limpiar fechas"', async () => {
+test('limpia fechas al pulsar "Limpiar fechas"', async () => {
     await renderComponent();
 
     const fromInput = screen.getByLabelText(/Desde/i);
