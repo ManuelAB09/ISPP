@@ -62,6 +62,8 @@ public class UpdateUserRequest {
     private Boolean notificacionesPush;
 
     /** Nueva lista de intereses. */
+    private Boolean esTutor;
+
     @Size(max = 10, message = "No se permiten más de 10 intereses")
     private List<@Size(max = 50, message = "Cada interés no puede exceder 50 caracteres") String>
             intereses;

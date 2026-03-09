@@ -81,8 +81,8 @@ public class UsuarioService {
                 usuarioRepository
                         .findByEmail(usuario.getEmail())
                         .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        if (usuarioActualizado.getTutores() != null) {
-            usuarioActualizado.getTutores().size();
+        if (usuarioActualizado.getTutor() != null) {
+            usuarioActualizado.getTutor();
         }
         return mapToDetailResponse(usuarioActualizado);
     }
@@ -119,7 +119,9 @@ public class UsuarioService {
         if (requestParam.getIntereses() != null) {
             usuario.setIntereses(requestParam.getIntereses());
         }
-
+        if (requestParam.getEsTutor() != null) {
+            usuario.setEsTutor(requestParam.getEsTutor());
+        }
         if (requestParam.getUniversidad() != null) {
             usuario.setUniversidad(requestParam.getUniversidad());
         }

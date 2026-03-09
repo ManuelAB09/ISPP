@@ -127,10 +127,10 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const register = useCallback(async (email, password, nombre) => {
+  const register = useCallback(async (email, password, nombre, esTutor = false) => {
     setError(null);
     try {
-      const response = await authApi.register({ email, password, nombre });
+      const response = await authApi.register({ email, password, nombre, esTutor });
       const { accessToken, user: userData } = response;
 
       localStorage.setItem('accessToken', accessToken);

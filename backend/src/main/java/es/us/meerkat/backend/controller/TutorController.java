@@ -1,12 +1,9 @@
 package es.us.meerkat.backend.controller;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -61,32 +58,16 @@ public class TutorController {
      * @return Lista paginada de tutores
      */
     @GetMapping
-    @Operation(
-            summary = "Listar tutores",
-            description =
-                    "Devuelve la lista de tutores. Por defecto solo muestra verificados en"
-                            + " posiciones destacadas")
     public ResponseEntity<TutorListResponse> listTutors(
-            @Parameter(description = "Filtrar por especialidad") @RequestParam(required = false)
-                    String especialidad,
-            @Parameter(description = "Filtrar solo verificados") @RequestParam(required = false)
-                    Boolean verificado,
-            @Parameter(description = "Tarifa mínima por hora") @RequestParam(required = false)
-                    BigDecimal tarifaMin,
-            @Parameter(description = "Tarifa máxima por hora") @RequestParam(required = false)
-                    BigDecimal tarifaMax,
-            @Parameter(description = "Página (0-indexed)") @RequestParam(defaultValue = "0")
-                    int page,
-            @Parameter(description = "Elementos por página") @RequestParam(defaultValue = "20")
-                    int size) {
+            @RequestParam(required = false) String especialidad,
+            @RequestParam(required = false) BigDecimal tarifaMin,
+            @RequestParam(required = false) BigDecimal tarifaMax,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
 
-        Pageable pageable = PageRequest.of(page, size);
         Page<TutorProfileResponse> tutores =
                 tutorService.obtenerTutoresVerificados(
                         especialidad, tarifaMin, tarifaMax, page, size);
-
-        List<TutorProfileResponse> content =
-                tutores.getContent().stream().collect(Collectors.toList());
 
         var pageInfo =
                 PageInfo.builder()
@@ -99,7 +80,7 @@ public class TutorController {
                         .build();
 
         return ResponseEntity.ok(
-                TutorListResponse.builder().content(content).page(pageInfo).build());
+                TutorListResponse.builder().content(tutores.getContent()).page(pageInfo).build());
     }
 
     /**
@@ -252,17 +233,19 @@ public class TutorController {
             // Devolver URL de pago + resumen del coste y beneficio
             return ResponseEntity.ok(
                     java.util.Map.of(
-                            "paymentUrl", paymentUrl.paymentUrl(),
-                            "sessionId", paymentUrl.sessionId(),
+                            "paymentUrl",
+                            paymentUrl.paymentUrl(),
+                            "sessionId",
+                            paymentUrl.sessionId(),
                             "resumen",
-                                    java.util.Map.of(
-                                            "coste",
-                                            "19.99€",
-                                            "beneficio",
-                                            "Insignia 'Verificado' en tu perfil",
-                                            "descripcion",
-                                            "Tu perfil aparecerá destacado en los listados de"
-                                                    + " tutores")));
+                            java.util.Map.of(
+                                    "coste",
+                                    "19.99€",
+                                    "beneficio",
+                                    "Insignia 'Verificado' en tu perfil",
+                                    "descripcion",
+                                    "Tu perfil aparecerá destacado en los listados de"
+                                            + " tutores")));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body(
@@ -330,11 +313,11 @@ public class TutorController {
         return TutorResponse.builder()
                 .id(tutor.getId())
                 .usuario(
-                        tutor.getUs() != null
+                        tutor.getUsuario() != null
                                 ? TutorResponse.UsuarioDto.builder()
-                                        .id(tutor.getUs().getId())
-                                        .nombre(tutor.getUs().getNombre())
-                                        .foto(tutor.getUs().getFoto())
+                                        .id(tutor.getUsuario().getId())
+                                        .nombre(tutor.getUsuario().getNombre())
+                                        .foto(tutor.getUsuario().getFoto())
                                         .build()
                                 : null)
                 .biografia(tutor.getBio())
@@ -345,5 +328,96 @@ public class TutorController {
                 .classroomConectado(tutor.getClassroomConectado())
                 .createdAt(tutor.getCreatedAt() != null ? tutor.getCreatedAt().toString() : null)
                 .build();
+    }
+
+    @PostMapping("/me/verify-verification-session")
+    @Operation(
+            summary = "Verificar sesión de pago de verificación",
+            description =
+                    "Confirma el pago de verificación del tutor usando el sessionId de Stripe")
+    public ResponseEntity<?> verificarSesionVerificacion(
+            @AuthenticationPrincipal final Usuario usuario, @RequestBody Map<String, String> body) {
+
+        String sessionId = body.get("sessionId");
+
+        if (sessionId == null || sessionId.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "sessionId requerido"));
+        }
+
+        try {
+            // 1. Recuperar la sesión de Stripe y verificar que está completada
+            com.stripe.model.checkout.Session session =
+                    com.stripe.model.checkout.Session.retrieve(sessionId);
+
+            if (!"complete".equals(session.getStatus())) {
+                return ResponseEntity.badRequest()
+                        .body(
+                                Map.of(
+                                        "error",
+                                        "El pago no está completado: " + session.getStatus()));
+            }
+
+            // 2. Verificar que la sesión pertenece al usuario autenticado
+            String usuarioIdEnSession = session.getMetadata().get("usuarioId");
+            if (!usuario.getId().toString().equals(usuarioIdEnSession)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Sesión no válida para este usuario"));
+            }
+
+            // 3. Verificar que es una sesión de verificación de tutor
+            String tipo = session.getMetadata().get("tipo");
+            if (!es.us.meerkat.backend.entity.TipoTransaccion.PAGO_VERIFICACION
+                    .name()
+                    .equals(tipo)) {
+                return ResponseEntity.badRequest()
+                        .body(
+                                Map.of(
+                                        "error",
+                                        "La sesión no corresponde a una verificación de tutor"));
+            }
+
+            // 4. Obtener el tutorId de la metadata
+            String tutorIdStr = session.getMetadata().get("tutorId");
+            if (tutorIdStr == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Session sin tutorId en metadata"));
+            }
+            Long tutorId = Long.parseLong(tutorIdStr);
+
+            // 5. Activar verificación del tutor
+            tutorService.activarVerificacion(tutorId);
+
+            // 6. Registrar transacción
+            BigDecimal monto =
+                    session.getAmountTotal() != null
+                            ? BigDecimal.valueOf(session.getAmountTotal())
+                                    .divide(BigDecimal.valueOf(100))
+                            : new BigDecimal("19.99");
+
+            Tutor tutor = tutorService.obtenerTutorPorId(tutorId).orElse(null);
+            paymentService.procesarPagoExitoso(
+                    usuario.getId(),
+                    es.us.meerkat.backend.entity.TipoTransaccion.PAGO_VERIFICACION,
+                    monto,
+                    "Verificación de tutor completada",
+                    tutor);
+
+            // 7. Devolver el perfil actualizado
+            Tutor tutorActualizado = tutorService.obtenerTutorPorId(tutorId).orElseThrow();
+            return ResponseEntity.ok(
+                    Map.of(
+                            "mensaje",
+                            "Verificación activada correctamente",
+                            "verificado",
+                            tutorActualizado.getVerificado()));
+
+        } catch (com.stripe.exception.StripeException e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Error Stripe: " + e.getMessage()));
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", e.getClass().getSimpleName() + ": " + e.getMessage()));
+        }
     }
 }

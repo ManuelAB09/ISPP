@@ -62,12 +62,12 @@ public class TutorService {
             throw new RuntimeException("El usuario no tiene rol de profesor");
         }
 
-        if (tutorRepository.findByUs(usuario).isPresent()) {
+        if (tutorRepository.findByUsuario(usuario).isPresent()) {
             throw new RuntimeException("El perfil ya existe");
         }
 
         final Tutor tutor = new Tutor();
-        tutor.setUs(usuario);
+        tutor.setUsuario(usuario);
         tutor.setEspecialidades(requestParam.getEspecialidades());
         tutor.setTarifaHora(requestParam.getTarifaHora());
         tutor.setDisponibilidad(requestParam.getDisponibilidad());
@@ -105,11 +105,11 @@ public class TutorService {
 
         final Tutor tutor =
                 tutorRepository
-                        .findByIdAndUsId(tutorIdParam, usuarioIdParam)
+                        .findByIdAndUsuarioId(tutorIdParam, usuarioIdParam)
                         .orElseThrow(
                                 () -> new RuntimeException("Tutor no encontrado o sin permisos"));
         // 🔐 Verificación de seguridad MUY IMPORTANTE
-        if (!tutor.getUs().getId().equals(usuario.getId())) {
+        if (!tutor.getUsuario().getId().equals(usuario.getId())) {
             throw new RuntimeException("No tienes permiso para editar este tutor");
         }
 
@@ -151,7 +151,7 @@ public class TutorService {
                         .findById(usuarioIdParam)
                         .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        final List<Tutor> tutores = tutorRepository.findAllByUsId(usuario.getId());
+        final List<Tutor> tutores = tutorRepository.findAllByUsuarioId(usuario.getId());
 
         // Devolver lista vacía si no hay perfiles; el controlador y el cliente
         // saben cómo manejarlo.
@@ -164,7 +164,7 @@ public class TutorService {
 
         final Tutor tutor =
                 tutorRepository
-                        .findByIdAndUsId(tutorIdParam, usuarioIdParam)
+                        .findByIdAndUsuarioId(tutorIdParam, usuarioIdParam)
                         .orElseThrow(
                                 () -> new RuntimeException("Tutor no encontrado o sin permisos"));
 
@@ -180,15 +180,15 @@ public class TutorService {
     private TutorProfileResponse mapToResponse(final Tutor tutor) {
         return TutorProfileResponse.builder()
                 .id(tutor.getId())
-                .userId(tutor.getUs().getId())
+                .userId(tutor.getUsuario().getId())
                 .usuario(
                         TutorProfileResponse.UsuarioDto.builder()
-                                .id(tutor.getUs().getId())
-                                .nombre(tutor.getUs().getNombre())
-                                // .foto(tutor.getUs().)
-                                // .bio(tutor.getUs().getBio())
-                                // .intereses(tutor.getUs().getIntereses())
-                                .esTutor(tutor.getUs().getEsTutor())
+                                .id(tutor.getUsuario().getId())
+                                .nombre(tutor.getUsuario().getNombre())
+                                .foto(tutor.getUsuario().getFoto())
+                                .bio(tutor.getUsuario().getBio())
+                                .intereses(tutor.getUsuario().getIntereses())
+                                .esTutor(tutor.getUsuario().getEsTutor())
                                 .build())
                 .especialidades(tutor.getEspecialidades())
                 .tarifaHora(tutor.getTarifaHora())
@@ -196,7 +196,7 @@ public class TutorService {
                 .bio(tutor.getBio())
                 .verificado(tutor.getVerificado())
                 .classroomConectado(tutor.getClassroomConectado())
-                .createdAt(tutor.getCreatedAt().toString())
+                .createdAt(tutor.getCreatedAt() != null ? tutor.getCreatedAt().toString() : null)
                 .build();
     }
 
@@ -215,22 +215,10 @@ public class TutorService {
 
         PageRequest pageable = PageRequest.of(page, size);
 
-        Page<Tutor> pageResult;
-        // Sin filtros: devolver todos los verificados paginados
-        if (especialidad == null && tarifaMin == null && tarifaMax == null) {
-            pageResult = tutorRepository.findByVerificadoTrue(pageable);
-        } else {
-            // Con filtros: usar JPQL con JOIN sobre especialidades
-            BigDecimal min = (tarifaMin != null) ? tarifaMin : BigDecimal.ZERO;
-            BigDecimal max = (tarifaMax != null) ? tarifaMax : new BigDecimal("999999");
-            String espec = (especialidad != null) ? especialidad : "";
+        Page<Tutor> pageResult =
+                tutorRepository.findVerificadosFiltrados(
+                        especialidad, tarifaMin, tarifaMax, pageable);
 
-            pageResult =
-                    tutorRepository.findVerificadosByEspecialidadAndTarifa(
-                            espec, min, max, pageable);
-        }
-
-        // Convertir cada entidad a DTO para evitar ciclos de serialización
         return pageResult.map(this::mapToResponse);
     }
 
@@ -250,7 +238,7 @@ public class TutorService {
 
         final Tutor tutor =
                 tutorRepository
-                        .findByIdAndUsId(tutorIdParam, usuarioIdParam)
+                        .findByIdAndUsuarioId(tutorIdParam, usuarioIdParam)
                         .orElseThrow(
                                 () -> new RuntimeException("Tutor no encontrado o sin permisos"));
 
@@ -274,7 +262,7 @@ public class TutorService {
                         .monto(new BigDecimal("19.99"))
                         .moneda("EUR")
                         .estado(EstadoTransaccion.PENDIENTE)
-                        .usuario(tutor.getUs())
+                        .usuario(tutor.getUsuario())
                         .tutor(tutor)
                         .build();
 
@@ -292,7 +280,7 @@ public class TutorService {
 
         final Tutor tutor =
                 tutorRepository
-                        .findByIdAndUsId(tutorIdParam, usuarioIdParam)
+                        .findByIdAndUsuarioId(tutorIdParam, usuarioIdParam)
                         .orElseThrow(
                                 () -> new RuntimeException("Tutor no encontrado o sin permisos"));
 
@@ -322,7 +310,7 @@ public class TutorService {
                 usuarioRepository
                         .findById(usuarioId)
                         .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
-        return tutorRepository.findByUs(usuario);
+        return tutorRepository.findByUsuario(usuario);
     }
 
     /**
@@ -349,12 +337,12 @@ public class TutorService {
                         .findById(usuarioId)
                         .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
-        if (tutorRepository.findByUs(usuario).isPresent()) {
+        if (tutorRepository.findByUsuario(usuario).isPresent()) {
             throw new IllegalArgumentException("El usuario ya tiene un perfil de tutor");
         }
 
         Tutor tutor = new Tutor();
-        tutor.setUs(usuario);
+        tutor.setUsuario(usuario);
         tutor.setEspecialidades(request.getEspecialidades());
         tutor.setTarifaHora(request.getTarifaPorHora());
         tutor.setBio(request.getBiografia());
@@ -383,7 +371,7 @@ public class TutorService {
 
         Tutor tutor =
                 tutorRepository
-                        .findByUs(usuario)
+                        .findByUsuario(usuario)
                         .orElseThrow(
                                 () -> new IllegalArgumentException("No tienes perfil de tutor"));
 
@@ -419,7 +407,7 @@ public class TutorService {
 
         Tutor tutor =
                 tutorRepository
-                        .findByUs(usuario)
+                        .findByUsuario(usuario)
                         .orElseThrow(
                                 () -> new IllegalArgumentException("No tienes perfil de tutor"));
 
@@ -443,7 +431,7 @@ public class TutorService {
 
         Tutor tutor =
                 tutorRepository
-                        .findByUs(usuario)
+                        .findByUsuario(usuario)
                         .orElseThrow(
                                 () -> new IllegalArgumentException("No tienes perfil de tutor"));
 

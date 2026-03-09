@@ -80,7 +80,7 @@ public class AuthService {
         usuario.setNotificacionesEmail(true);
         usuario.setNotificacionesPush(true);
         usuario.setIntereses(new ArrayList<>());
-
+        usuario.setEsTutor(Boolean.TRUE.equals(requestParam.getEsTutor()));
         usuarioRepository.save(usuario);
 
         final String token = jwtService.generateToken(usuario.getEmail());

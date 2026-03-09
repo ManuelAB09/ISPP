@@ -179,6 +179,15 @@
   margin-bottom: 0.2rem;
 }
 
+.vt-card__avatar-img {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  margin-bottom: 0.2rem;
+}
+
 .vt-card__nombre {
   font-size: 1.05rem;
   font-weight: 700;

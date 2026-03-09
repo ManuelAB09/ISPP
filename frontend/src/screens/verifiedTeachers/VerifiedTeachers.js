@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getMyTutorProfiles, getVerifiedTutors } from "../../api/tutorEndpoints";
+import { getVerifiedTutors } from "../../api/tutorEndpoints";
 import Header from "../../components/Header/Header";
 import PageHeader from "../../components/PageHeader";
 import { useAuth } from "../../contexts/AuthContext";
-import CreateProfileModal from "../teacherProfile/CreateProfileModal";
 import "./VerifiedTeachers.css";
 
 /**
@@ -15,23 +14,11 @@ import "./VerifiedTeachers.css";
 const VerifiedTeachers = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [miPerfilTutor, setMiPerfilTutor] = useState(null);
   const [profesores, setProfesores] = useState([]);
   const [total, setTotal] = useState(0);
   const [pagina, setPagina] = useState(0);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
-
-  // Comprobar si el usuario autenticado ya tiene perfil de tutor
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    getMyTutorProfiles()
-      .then((perfil) => {
-        if (perfil && perfil.id) setMiPerfilTutor(perfil);
-      })
-      .catch(() => {});
-  }, [isAuthenticated]);
 
   // Filtros
   const [filtros, setFiltros] = useState({
@@ -116,41 +103,16 @@ const VerifiedTeachers = () => {
   return (
     <div className="vt-page">
       <Header page={'profesores'} />
-      {showCreateModal && (
-        <CreateProfileModal
-          onClose={() => setShowCreateModal(false)}
-          onCreado={(newTutor) => {
-            setMiPerfilTutor(newTutor);
-            navigate(`/profesores/${newTutor.id}`);
-          }}
-        />
-      )}
       {/* ── Header ──────────────────────────────────────────── */}
       <div className="vt-header">
         <div className="vt-header__inner">
-          <PageHeader 
-            title="Profesores Verificados"
-            subtitle="Profesionales con identidad confirmada, calidad contrastada y acceso directo al contacto"
-          />
-          {isAuthenticated && user?.esTutor && (
-            miPerfilTutor ? (
-              <button
-                className="vt-btn vt-btn--primary"
-                style={{ marginTop: '24px' }}
-                onClick={() => navigate(`/profesores/${miPerfilTutor.id}`)}
-              >
-                Ver mi perfil de profesor
-              </button>
-            ) : (
-              <button
-                className="vt-btn vt-btn--primary"
-                style={{ marginTop: '24px' }}
-                onClick={() => setShowCreateModal(true)}
-              >
-                + Crear Perfil de Profesor
-              </button>
-            )
-          )}
+
+          <div className="headerTitle">
+            <p>Profesionales con identidad confirmada, calidad contrastada y acceso directo al contacto</p>
+            <span className="line"></span>
+            <h1>Profesores Verificados</h1>
+          </div>
+
         </div>
       </div>
 
@@ -236,12 +198,20 @@ const VerifiedTeachers = () => {
                   <span className="vt-card__badge">Verificado</span>
 
                   {/* Avatar */}
-                  <div
-                    className="vt-card__avatar"
-                    style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
-                  >
-                    {getIniciales(nombre)}
-                  </div>
+                  {tutor.usuario?.foto ? (
+                    <img
+                      className="vt-card__avatar-img"
+                      src={tutor.usuario.foto}
+                      alt={nombre}
+                    />
+                  ) : (
+                    <div
+                      className="vt-card__avatar"
+                      style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
+                    >
+                      {getIniciales(nombre)}
+                    </div>
+                  )}
 
                   {/* Info */}
                   <h3 className="vt-card__nombre">{nombre}</h3>
@@ -277,13 +247,12 @@ const VerifiedTeachers = () => {
                     >
                       Ver perfil
                     </Link>
-                    {/* Contactar — pendiente de tarea "Contratación y Pagos" */}
-                    <Link
-                      to={`/profesores/${tutor.id}`}
+                    {/* Contactar */}
+                    <button
                       className="vt-btn vt-btn--primary"
                     >
                       Contactar
-                    </Link>
+                    </button>
                   </div>
                 </div>
               );
