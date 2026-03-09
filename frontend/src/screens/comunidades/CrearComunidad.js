@@ -75,27 +75,34 @@ export default function CrearComunidad() {
         setSuccess(null);
 
         try {
-            // Preparar datos para el API (sin categorías, se crean después)
+            // Preparar datos para el API (no enviar imagen como base64)
             const data = {
                 nombre: nombre.trim(),
                 descripcion: descripcion.trim(),
                 tipoGrupo: tipoComunidad,
-                imagenUrl: imagenPreview // URL en base64 o null
+                imagenUrl: 'empty'
             };
 
             // Llamar API para crear comunidad
             const response = await communitiesApi.create(data);
             console.log("✅ Comunidad creada:", response);
 
-            setSuccess("¡Comunidad creada con éxito!");
+            // Si seleccionaron imagen, subirla como multipart/form-data
+            if (imagenPortada) {
+                const formData = new FormData();
+                formData.append('file', imagenPortada);
+                await communitiesApi.uploadPhoto(response.id, formData);
+            }
 
-            // Navegar a la comunidad creada después de 2 segundos
+            setSuccess('¡Comunidad creada con éxito!');
+            // Navegar a la comunidad creada
             setTimeout(() => {
                 navigate(`/comunidades/${response.id}`);
-            }, 2000);
+            }, 1000);
+
         } catch (err) {
             console.error("❌ Error al crear comunidad:", err);
-            setError(err.response?.data?.message || "No se pudo crear la comunidad. Intenta de nuevo.");
+            setError(err.details?.message || "No se pudo crear la comunidad. Intenta de nuevo.");
         } finally {
             setLoading(false);
         }
