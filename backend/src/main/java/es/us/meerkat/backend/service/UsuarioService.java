@@ -6,6 +6,8 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.springframework.core.io.Resource;
@@ -32,7 +34,9 @@ import lombok.RequiredArgsConstructor;
 /**
  * Servicio para gestionar la lógica de negocio de usuarios.
  *
- * <p>Cubre los endpoints de /api/v1/users del OpenAPI: obtener perfil propio, actualizar, cambiar
+ * <p>
+ * Cubre los endpoints de /api/v1/users del OpenAPI: obtener perfil propio,
+ * actualizar, cambiar
  * contraseña, eliminar cuenta, visibilidad y ver perfiles públicos.
  */
 @Service
@@ -43,8 +47,7 @@ public class UsuarioService {
     private static final String RENATA_AVATAR_PUBLIC_PREFIX = "/static/images/renata/";
 
     /** Patrón classpath para leer avatares predefinidos empaquetados en backend. */
-    private static final String RENATA_AVATAR_CLASSPATH_PATTERN =
-            "classpath:/static/static/images/renata/*.*";
+    private static final String RENATA_AVATAR_CLASSPATH_PATTERN = "classpath:/static/static/images/renata/*.*";
 
     /** Longitud mínima requerida para las contraseñas. */
     private static final int MIN_PASSWORD_LENGTH = 8;
@@ -53,8 +56,11 @@ public class UsuarioService {
     private static final long MAX_PROFILE_PHOTO_SIZE_BYTES = 5L * 1024L * 1024L;
 
     /** MIME types permitidos para foto de perfil. */
-    private static final Set<String> ALLOWED_PROFILE_PHOTO_MIME_TYPES =
-            Set.of("image/jpeg", "image/png", "image/webp");
+    private static final Set<String> ALLOWED_PROFILE_PHOTO_MIME_TYPES = Set.of("image/jpeg", "image/png", "image/webp");
+
+    /** Patrón para parsear coordenadas en formato "latitud,longitud". */
+    private static final Pattern COORDINATE_PAIR_PATTERN = Pattern
+            .compile("^\\s*([-+]?\\d+(?:\\.\\d+)?)\\s*,\\s*([-+]?\\d+(?:\\.\\d+)?)\\s*$");
 
     /** Repositorio para acceder a la información de usuarios. */
     private final UsuarioRepository usuarioRepository;
@@ -82,10 +88,9 @@ public class UsuarioService {
      */
     @Transactional
     public UserDetailResponse obtenerPerfilPropio(final Usuario usuario) {
-        Usuario usuarioActualizado =
-                usuarioRepository
-                        .findByEmail(usuario.getEmail())
-                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        Usuario usuarioActualizado = usuarioRepository
+                .findByEmail(usuario.getEmail())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         if (usuarioActualizado.getTutor() != null) {
             usuarioActualizado.getTutor();
         }
@@ -99,9 +104,10 @@ public class UsuarioService {
     /**
      * Actualiza la información personal del usuario autenticado.
      *
-     * <p>Solo modifica los campos que no sean nulos en el request.
+     * <p>
+     * Solo modifica los campos que no sean nulos en el request.
      *
-     * @param usuario Usuario autenticado.
+     * @param usuario      Usuario autenticado.
      * @param requestParam Datos a actualizar.
      * @return Perfil actualizado.
      */
@@ -144,20 +150,19 @@ public class UsuarioService {
             if (nombreUbicacion.isEmpty()) {
                 usuario.setUbicacion(null);
             } else {
-                Ubicacion ubicacion =
-                        ubicacionRepository
-                                .findByNombre(nombreUbicacion)
-                                .orElseGet(
-                                        () ->
-                                                ubicacionRepository.save(
-                                                        Ubicacion.builder()
-                                                                .nombre(nombreUbicacion)
-                                                                .direccion(nombreUbicacion)
-                                                                .latitud(0.0)
-                                                                .longitud(0.0)
-                                                                .tipo("general")
-                                                                .coste("desconocido")
-                                                                .build()));
+                Double[] coords = parseCoordinatePair(nombreUbicacion);
+                Ubicacion ubicacion = ubicacionRepository
+                        .findByNombre(nombreUbicacion)
+                        .orElseGet(
+                                () -> ubicacionRepository.save(
+                                        Ubicacion.builder()
+                                                .nombre(nombreUbicacion)
+                                                .direccion(nombreUbicacion)
+                                                .latitud(coords != null ? coords[0] : 0.0)
+                                                .longitud(coords != null ? coords[1] : 0.0)
+                                                .tipo("general")
+                                                .coste("desconocido")
+                                                .build()));
                 usuario.setUbicacion(ubicacion);
             }
         }
@@ -182,7 +187,7 @@ public class UsuarioService {
      * Actualiza la foto de perfil del usuario autenticado a partir de un archivo.
      *
      * @param usuario Usuario autenticado.
-     * @param file Archivo de imagen recibido en multipart.
+     * @param file    Archivo de imagen recibido en multipart.
      * @return Perfil actualizado.
      */
     @Transactional
@@ -219,7 +224,9 @@ public class UsuarioService {
     /**
      * Elimina permanentemente la cuenta del usuario autenticado.
      *
-     * <p>Esta acción es irreversible. El frontend debe mostrar confirmación antes de llamar a este
+     * <p>
+     * Esta acción es irreversible. El frontend debe mostrar confirmación antes de
+     * llamar a este
      * endpoint.
      *
      * @param usuario Usuario autenticado a eliminar.
@@ -242,12 +249,14 @@ public class UsuarioService {
     /**
      * Cambia la contraseña del usuario autenticado.
      *
-     * <p>Verifica la contraseña actual antes de aplicar el cambio.
+     * <p>
+     * Verifica la contraseña actual antes de aplicar el cambio.
      *
-     * @param usuario Usuario autenticado.
+     * @param usuario      Usuario autenticado.
      * @param requestParam Contraseña actual y nueva.
-     * @throws RuntimeException si la contraseña actual es incorrecta o la nueva no cumple los
-     *     requisitos.
+     * @throws RuntimeException si la contraseña actual es incorrecta o la nueva no
+     *                          cumple los
+     *                          requisitos.
      */
     @Transactional
     public void cambiarPassword(final Usuario usuario, final ChangePasswordRequest requestParam) {
@@ -272,7 +281,7 @@ public class UsuarioService {
     /**
      * Actualiza la visibilidad del perfil en listados públicos.
      *
-     * @param usuario Usuario autenticado.
+     * @param usuario      Usuario autenticado.
      * @param requestParam Nueva configuración de visibilidad.
      * @return Perfil actualizado.
      */
@@ -295,7 +304,8 @@ public class UsuarioService {
     /**
      * Devuelve el perfil público de un usuario por su ID.
      *
-     * <p>Solo expone datos que el usuario ha hecho públicos.
+     * <p>
+     * Solo expone datos que el usuario ha hecho públicos.
      *
      * @param usuarioId Identificador del usuario.
      * @return Perfil público del usuario.
@@ -303,10 +313,9 @@ public class UsuarioService {
      */
     public UserPublicResponse obtenerPerfilPublico(final Long usuarioId) {
 
-        final Usuario usuario =
-                usuarioRepository
-                        .findById(usuarioId)
-                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        final Usuario usuario = usuarioRepository
+                .findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         return mapToPublicResponse(usuario);
     }
@@ -406,8 +415,11 @@ public class UsuarioService {
     /**
      * Normaliza la foto de perfil recibida desde API.
      *
-     * <p>Si llega un nombre de archivo (p.ej. Feliz.png) o una ruta de Renata, la transforma a ruta
-     * pública estable. Si llega vacío, deja la foto sin valor (null). Cualquier otra URL/ruta se
+     * <p>
+     * Si llega un nombre de archivo (p.ej. Feliz.png) o una ruta de Renata, la
+     * transforma a ruta
+     * pública estable. Si llega vacío, deja la foto sin valor (null). Cualquier
+     * otra URL/ruta se
      * respeta para no romper compatibilidad con clientes existentes.
      *
      * @param fotoOriginal Valor recibido en UpdateUserRequest.foto.
@@ -439,7 +451,33 @@ public class UsuarioService {
         return fotoLimpia;
     }
 
-    /** Construye ruta pública de Renata si el archivo existe en recursos estáticos. */
+    /**
+     * Intenta parsear coordenadas desde un texto con formato "latitud,longitud".
+     */
+    private Double[] parseCoordinatePair(final String value) {
+        Matcher matcher = COORDINATE_PAIR_PATTERN.matcher(value);
+        if (!matcher.matches()) {
+            return null;
+        }
+
+        try {
+            double lat = Double.parseDouble(matcher.group(1));
+            double lon = Double.parseDouble(matcher.group(2));
+            if (!Double.isFinite(lat) || !Double.isFinite(lon)) {
+                return null;
+            }
+            if (lat < -90.0 || lat > 90.0 || lon < -180.0 || lon > 180.0) {
+                return null;
+            }
+            return new Double[] { lat, lon };
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    /**
+     * Construye ruta pública de Renata si el archivo existe en recursos estáticos.
+     */
     private String construirRutaRenataSiExiste(final String fileName, final String fallbackValue) {
         if (!StringUtils.hasText(fileName)) {
             return null;
@@ -455,8 +493,7 @@ public class UsuarioService {
     /** Lee nombres de archivos de avatares Renata desde classpath. */
     private Set<String> obtenerNombresAvataresRenata() {
         try {
-            Resource[] resources =
-                    resourcePatternResolver.getResources(RENATA_AVATAR_CLASSPATH_PATTERN);
+            Resource[] resources = resourcePatternResolver.getResources(RENATA_AVATAR_CLASSPATH_PATTERN);
 
             return Arrays.stream(resources)
                     .map(Resource::getFilename)

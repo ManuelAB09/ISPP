@@ -57,7 +57,6 @@ const TeacherProfile = () => {
   const [showVerificacion, setShowVerificacion] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showHireModal, setShowHireModal] = useState(false);
-  const [avatarError, setAvatarError] = useState(false);
 
   // Callback: actualiza estado local tras editar
   const handlePerfilGuardado = (updatedTutor) => {
@@ -212,7 +211,7 @@ const TeacherProfile = () => {
             <div className="tp-header__left">
               <img
                 className="tp-header__photo"
-                src={tutor.usuario?.foto}
+                src={toAbsoluteImageUrl(tutor.usuario?.foto, '/MeerKatters_logo.png')}
                 alt={tutor.usuario?.nombre}
               />
               <div className="tp-header__info">

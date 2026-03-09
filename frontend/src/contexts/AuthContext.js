@@ -214,12 +214,48 @@ export const AuthProvider = ({ children }) => {
         universidad: combinedUser.universidad,
         grado: combinedUser.grado,
         ubicacion: combinedUser.ubicacion,
+        nivelEstudios: combinedUser.nivelEstudios,
+        baseFormativa: combinedUser.baseFormativa,
+        fotoBackgroundColor: combinedUser.fotoBackgroundColor,
       });
       return { success: true, user: combinedUser };
     } catch (err) {
       const message = err.message || 'Error al actualizar el perfil';
       setError(message);
       return { success: false, error: message, validationErrors: err.errors || {} };
+    }
+  }, [user]);
+
+  const refreshUser = useCallback(async () => {
+    try {
+      const storedData = getStoredUserData();
+      const userData = await authApi.getMe();
+      const combinedUser = {
+        ...userData,
+        universidad: storedData?.universidad ?? userData.universidad ?? '',
+        grado: storedData?.grado ?? userData.grado ?? '',
+        ubicacion: userData.ubicacion ?? storedData?.ubicacion ?? null,
+        nivelEstudios: storedData?.nivelEstudios ?? '',
+        baseFormativa: storedData?.baseFormativa ?? '',
+        fotoBackgroundColor: storedData?.fotoBackgroundColor ?? userData?.fotoBackgroundColor ?? '#ffffff',
+        autenticacionDosFactores:
+          storedData?.autenticacionDosFactores ?? userData?.autenticacionDosFactores ?? false,
+        notificacionesEmail:
+          storedData?.notificacionesEmail ?? userData?.notificacionesEmail ?? true,
+        notificacionesPush:
+          storedData?.notificacionesPush ?? userData?.notificacionesPush ?? false,
+      };
+      setUser(combinedUser);
+      saveUserToStorage(userData, {
+        ...(storedData || {}),
+        universidad: combinedUser.universidad,
+        grado: combinedUser.grado,
+        ubicacion: combinedUser.ubicacion,
+      });
+      return combinedUser;
+    } catch (err) {
+      console.error('Error al refrescar usuario:', err);
+      return null;
     }
   }, []);
 
@@ -232,6 +268,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateProfile,
+    refreshUser,
     clearError: () => setError(null),
   };
 

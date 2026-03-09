@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getVerifiedTutors } from "../../api/tutorEndpoints";
+import { getApiBaseUrl } from "../../api/baseUrl";
 import Header from "../../components/Header/Header";
 import PageHeader from "../../components/PageHeader";
 import { useAuth } from "../../contexts/AuthContext";
@@ -14,8 +15,25 @@ import "./VerifiedTeachers.css";
  */
 
 const VerifiedTeachers = () => {
+  const hasValidCoords = (ubicacion) => {
+    if (!ubicacion || typeof ubicacion !== 'object') return false;
+    const lat = Number(ubicacion.latitud);
+    const lon = Number(ubicacion.longitud);
+    return Number.isFinite(lat) && Number.isFinite(lon);
+  };
+
+  const toAbsoluteImageUrl = (imageUrl) => {
+    const raw = String(imageUrl || "").trim();
+    if (!raw) return "";
+    if (/^https?:\/\//i.test(raw) || raw.startsWith("data:") || raw.startsWith("blob:")) {
+      return raw;
+    }
+    const base = getApiBaseUrl();
+    return raw.startsWith("/") ? `${base}${raw}` : `${base}/${raw}`;
+  };
+
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, refreshUser } = useAuth();
   const [profesores, setProfesores] = useState([]);
   const [profesoresOriginales, setProfesoresOriginales] = useState([]);
   const [total, setTotal] = useState(0);
@@ -53,18 +71,27 @@ const VerifiedTeachers = () => {
         // La respuesta es Page<TutorProfileResponse>: { content, totalElements, number, ... }
         let contenido = resp?.content ?? (Array.isArray(resp) ? resp : []);
         const totalElem = resp?.totalElements ?? contenido.length;
+        const userHasCoords = hasValidCoords(user?.ubicacion);
         
         // Calcular distancias si el usuario tiene ubicación
-        if (user?.ubicacion && typeof user.ubicacion === 'object' && user.ubicacion.latitud && user.ubicacion.longitud) {
+        if (userHasCoords) {
+          const userLat = Number(user.ubicacion.latitud);
+          const userLon = Number(user.ubicacion.longitud);
           contenido = contenido.map(tutor => {
-            if (tutor.ubicacion && tutor.ubicacion.latitud && tutor.ubicacion.longitud) {
+            if (user?.id != null && tutor?.userId === user.id) {
+              return {
+                ...tutor,
+                distanciaKm: 0,
+              };
+            }
+            if (hasValidCoords(tutor.ubicacion)) {
               return {
                 ...tutor,
                 distanciaKm: calculateDistance(
-                  user.ubicacion.latitud,
-                  user.ubicacion.longitud,
-                  tutor.ubicacion.latitud,
-                  tutor.ubicacion.longitud
+                  userLat,
+                  userLon,
+                  Number(tutor.ubicacion.latitud),
+                  Number(tutor.ubicacion.longitud)
                 )
               };
             }
@@ -91,9 +118,29 @@ const VerifiedTeachers = () => {
   );
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+    refreshUser();
+  }, [isAuthenticated, refreshUser]);
+
+  useEffect(() => {
     cargarProfesores(0, filtrosActivos);
     // eslint-disable-next-line
   }, [filtrosActivos]);
+
+  // Recargar profesores cuando cambie la ubicación o foto del usuario
+  // para reflejar cambios en el perfil del usuario si es tutor
+  useEffect(() => {
+    if (user?.esTutor) {
+      cargarProfesores(0, filtrosActivos);
+    }
+    // eslint-disable-next-line
+  }, [
+    user?.foto, 
+    user?.nombre,
+    JSON.stringify(user?.ubicacion)
+  ]);
 
   const handleFiltroChange = (e) => {
     const { name, value } = e.target;
@@ -119,7 +166,7 @@ const VerifiedTeachers = () => {
       return;
     }
 
-    if (typeof user.ubicacion !== 'object' || !user.ubicacion.latitud || !user.ubicacion.longitud) {
+    if (!hasValidCoords(user.ubicacion)) {
       alert('Tu ubicación no tiene coordenadas válidas. Por favor, actualiza tu ubicación en el perfil.');
       return;
     }
@@ -130,14 +177,14 @@ const VerifiedTeachers = () => {
   const aplicarBusquedaCercania = () => {
     // Filtrar solo tutores con ubicación válida
     const tutoresConUbicacion = profesoresOriginales.filter(
-      (t) => t.ubicacion && t.ubicacion.latitud && t.ubicacion.longitud
+      (t) => hasValidCoords(t.ubicacion)
     );
 
     // Filtrar y calcular distancia para los que tienen ubicación dentro del radio
     const tutoresFiltrados = filterTutorsByDistance(
       tutoresConUbicacion,
-      user.ubicacion.latitud,
-      user.ubicacion.longitud,
+      Number(user.ubicacion.latitud),
+      Number(user.ubicacion.longitud),
       radioKm
     );
 
@@ -163,6 +210,7 @@ const VerifiedTeachers = () => {
       .join("");
 
   const AVATAR_COLORS = ["#676F9D", "#F2C18E", "#2D3250", "#9CA3AF", "#22c55e"];
+  const userHasCoords = hasValidCoords(user?.ubicacion);
 
   return (
     <div className="vt-page">
@@ -274,7 +322,7 @@ const VerifiedTeachers = () => {
                   <span className="vt-card__badge">Verificado</span>
 
                   {/* Etiqueta de distancia */}
-                  {user?.ubicacion && typeof user.ubicacion === 'object' && user.ubicacion.latitud && user.ubicacion.longitud && (
+                  {userHasCoords && (
                     <span className={`vt-card__badge-distancia ${tutor.distanciaKm == null ? 'vt-card__badge-distancia--sin' : ''}`}>
                       {tutor.distanciaKm != null ? (
                         <>📍 {formatDistance(tutor.distanciaKm)}</>
@@ -288,7 +336,7 @@ const VerifiedTeachers = () => {
                   {tutor.usuario?.foto ? (
                     <img
                       className="vt-card__avatar-img"
-                      src={tutor.usuario.foto}
+                      src={toAbsoluteImageUrl(tutor.usuario.foto)}
                       alt={nombre}
                     />
                   ) : (

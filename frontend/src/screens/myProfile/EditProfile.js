@@ -41,7 +41,6 @@ function MapClickSelector({ onMapClick }) {
     return null
 }
 
-const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
 const RENATA_PATH_PREFIX = '/static/images/renata/'
 
 const DEFAULT_PROFILE_AVATAR =
@@ -79,8 +78,8 @@ const extractRenataAvatarPath = (imageUrl) => {
     return ''
 }
 
-const EditProfile = ({ onClose, onSave }) => {
-    const { user, updateProfile } = useAuth()
+const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
+    const { user, updateProfile, refreshUser } = useAuth()
     
     // Estados para los campos del formulario
     const [formData, setFormData] = useState({
@@ -128,6 +127,8 @@ const EditProfile = ({ onClose, onSave }) => {
                 grado: user.grado || "",
                 ubicacion: ubicacionTexto,
                 intereses: user.intereses || [],
+                nivelEstudios: user.nivelEstudios || "",
+                baseFormativa: user.baseFormativa || "",
             })
             
             if (user.foto) {
@@ -143,8 +144,6 @@ const EditProfile = ({ onClose, onSave }) => {
                     longitud: Number(user.ubicacion.longitud),
                 })
             }
-                nivelEstudios: user.nivelEstudios || "",
-            })
 
             const userAvatarPath = extractRenataAvatarPath(user.foto)
             setSelectedAvatar(userAvatarPath)
@@ -182,6 +181,8 @@ const EditProfile = ({ onClose, onSave }) => {
             }
         }
     }, [ubicacionPreseleccionada])
+    
+    useEffect(() => {
         const loadAvatars = async () => {
             setLoadingAvatars(true)
             try {
@@ -212,7 +213,7 @@ const EditProfile = ({ onClose, onSave }) => {
             ...prev,
             [name]: type === 'checkbox' ? checked : value,
         }))
-        if (name === 'ubicacion') {
+        if (name === 'ubicacion' && value) {
             if (ubicacionSeleccionada && value.trim() !== (ubicacionSeleccionada.nombre || '').trim()) {
                 setUbicacionSeleccionada(null)
             }

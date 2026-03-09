@@ -60,23 +60,13 @@ const MyProfile = () => {
     const [unauthorizedMessage, setUnauthorizedMessage] = useState("")
     const { logout } = useAuth()
 
-    // Si el usuario tiene perfil de tutor, guardarlo para acceso rápido
-    useEffect(() => {
-        if (!isAuthenticated || loading) {
-            return;
-    const handleBecomeTutor = async () => {
-        setBecomingTutor(true)
-        setBecomeTutorError('')
-        const result = await updateProfile({ esTutor: true })
-        if (!result.success) {
-            setBecomeTutorError(result.error || 'Error al actualizar el rol')
-        }
-        setBecomingTutor(false)
-    }
-
     // Cargar perfil de tutor cuando el usuario es tutor
     useEffect(() => {
-        if (!isAuthenticated || loading || !user?.esTutor) return;
+        if (!isAuthenticated || loading || !user?.esTutor) {
+            setMiPerfilTutor(null);
+            return;
+        }
+
         setLoadingTutorProfile(true);
         getMyTutorProfiles()
             .then((perfiles) => {
@@ -85,8 +75,9 @@ const MyProfile = () => {
             })
             .catch(() => {
                 setMiPerfilTutor(null);
-            });
-    }, [isAuthenticated, loading]);
+            })
+            .finally(() => setLoadingTutorProfile(false));
+    }, [isAuthenticated, loading, user]);
 
     // Abrir modal de edición cuando se navega con estado desde otras pantallas.
     useEffect(() => {
@@ -104,12 +95,16 @@ const MyProfile = () => {
 
         navigate(location.pathname, { replace: true, state: {} });
     }, [location.pathname, location.state, navigate]);
-            .then((perfil) => {
-                if (perfil && perfil.id) setMiPerfilTutor(perfil);
-            })
-            .catch(() => { })
-            .finally(() => setLoadingTutorProfile(false));
-    }, [isAuthenticated, loading, user]);
+
+    const handleBecomeTutor = async () => {
+        setBecomingTutor(true)
+        setBecomeTutorError('')
+        const result = await updateProfile({ esTutor: true })
+        if (!result.success) {
+            setBecomeTutorError(result.error || 'Error al actualizar el rol')
+        }
+        setBecomingTutor(false)
+    }
 
     // Cargar comunidades del usuario
     useEffect(() => {
