@@ -76,6 +76,17 @@
     gap: 8px;
 }
 
+.settings-preferences-error {
+    background-color: #fee2e2;
+    border: 1px solid #fca5a5;
+    color: #b91c1c;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-family: 'inter', sans-serif;
+    font-size: 13px;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    Secciones
    ═══════════════════════════════════════════════════════════════ */
@@ -160,6 +171,11 @@
     position: relative;
     transition: background-color 0.2s;
     padding: 0;
+}
+
+.settings-toggle:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .settings-toggle--active {

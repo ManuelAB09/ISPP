@@ -3026,6 +3026,12 @@ components:
           nullable: true
         visibleEnListados:
           type: boolean
+        autenticacionDosFactores:
+          type: boolean
+        notificacionesEmail:
+          type: boolean
+        notificacionesPush:
+          type: boolean
         plan:
           $ref: '#/components/schemas/TipoPlan'
         esTutor:
@@ -3085,6 +3091,14 @@ components:
         ubicacion:
           type: string
           maxLength: 100
+        visibleEnListados:
+          type: boolean
+        autenticacionDosFactores:
+          type: boolean
+        notificacionesEmail:
+          type: boolean
+        notificacionesPush:
+          type: boolean
         intereses:
           type: array
           items:

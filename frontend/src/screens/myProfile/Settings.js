@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { apiClient } from "../../api/client"
 import { useAuth } from "../../contexts/AuthContext"
@@ -6,13 +6,15 @@ import "./Settings.css"
 
 const Settings = ({ onClose, isOwner = true }) => {
     const navigate = useNavigate()
-    const { logout } = useAuth()
+    const { logout, user, updateProfile } = useAuth()
     
     // Estados para los toggles y configuraciones
     const [profileVisibility, setProfileVisibility] = useState(true)
     const [emailNotifications, setEmailNotifications] = useState(true)
     const [pushNotifications, setPushNotifications] = useState(false)
     const [twoFactorAuth, setTwoFactorAuth] = useState(false)
+    const [isSavingPreferences, setIsSavingPreferences] = useState(false)
+    const [preferencesError, setPreferencesError] = useState("")
 
     // Estados para modales de confirmación
     const [showDeleteAccount, setShowDeleteAccount] = useState(false)
@@ -30,6 +32,35 @@ const Settings = ({ onClose, isOwner = true }) => {
 
     // Estado para mensajes de acceso no autorizado
     const [unauthorizedMessage, setUnauthorizedMessage] = useState("")
+
+    useEffect(() => {
+        if (!user) {
+            return
+        }
+
+        setProfileVisibility(user.visibleEnListados ?? true)
+        setEmailNotifications(user.notificacionesEmail ?? true)
+        setPushNotifications(user.notificacionesPush ?? false)
+        setTwoFactorAuth(user.autenticacionDosFactores ?? false)
+    }, [user])
+
+    const savePreferences = async (partial) => {
+        setPreferencesError("")
+        setIsSavingPreferences(true)
+
+        try {
+            const result = await updateProfile(partial)
+            if (!result.success) {
+                throw new Error(result.error || 'No se pudo guardar la preferencia')
+            }
+            return true
+        } catch (error) {
+            setPreferencesError(error.message || "Error al guardar la configuración")
+            return false
+        } finally {
+            setIsSavingPreferences(false)
+        }
+    }
 
     const handleLogout = async () => {
         // Validar que sea el propietario
@@ -124,39 +155,59 @@ const Settings = ({ onClose, isOwner = true }) => {
     }
 
     const handleToggleProfileVisibility = async () => {
+        if (isSavingPreferences) {
+            return
+        }
+
         const newValue = !profileVisibility
         setProfileVisibility(newValue)
-        
-        try {
-            await apiClient.put('/api/v1/users/me/visibility', {
-                visibleEnListados: newValue
-            })
-        } catch (error) {
-            // Revertir el cambio si falla
+
+        const ok = await savePreferences({ visibleEnListados: newValue })
+        if (!ok) {
             setProfileVisibility(!newValue)
-            console.error("Error al actualizar visibilidad:", error)
         }
     }
 
-    const handleToggleEmailNotifications = () => {
+    const handleToggleEmailNotifications = async () => {
+        if (isSavingPreferences) {
+            return
+        }
+
         const newValue = !emailNotifications
         setEmailNotifications(newValue)
-        // TODO: Guardar preferencia de notificaciones por email en la API
-        console.log("Notificaciones por email:", newValue)
+
+        const ok = await savePreferences({ notificacionesEmail: newValue })
+        if (!ok) {
+            setEmailNotifications(!newValue)
+        }
     }
 
-    const handleTogglePushNotifications = () => {
+    const handleTogglePushNotifications = async () => {
+        if (isSavingPreferences) {
+            return
+        }
+
         const newValue = !pushNotifications
         setPushNotifications(newValue)
-        // TODO: Guardar preferencia de notificaciones push en la API
-        console.log("Notificaciones push:", newValue)
+
+        const ok = await savePreferences({ notificacionesPush: newValue })
+        if (!ok) {
+            setPushNotifications(!newValue)
+        }
     }
 
-    const handleToggleTwoFactorAuth = () => {
+    const handleToggleTwoFactorAuth = async () => {
+        if (isSavingPreferences) {
+            return
+        }
+
         const newValue = !twoFactorAuth
         setTwoFactorAuth(newValue)
-        // TODO: Activar/desactivar autenticación de dos factores en la API
-        console.log("Autenticación de dos factores:", newValue)
+
+        const ok = await savePreferences({ autenticacionDosFactores: newValue })
+        if (!ok) {
+            setTwoFactorAuth(!newValue)
+        }
     }
 
     return (
@@ -175,6 +226,9 @@ const Settings = ({ onClose, isOwner = true }) => {
                         ⚠️ {unauthorizedMessage}
                     </div>
                 )}
+                {preferencesError && (
+                    <div className="settings-preferences-error">{preferencesError}</div>
+                )}
 
                 {/* Sección: Visibilidad del perfil */}
                 <section className="settings-section">
@@ -189,6 +243,7 @@ const Settings = ({ onClose, isOwner = true }) => {
                         <button 
                             className={`settings-toggle ${profileVisibility ? 'settings-toggle--active' : ''}`}
                             onClick={handleToggleProfileVisibility}
+                            disabled={isSavingPreferences}
                         >
                             <span className="settings-toggle__slider"></span>
                         </button>
@@ -209,6 +264,7 @@ const Settings = ({ onClose, isOwner = true }) => {
                             <button 
                                 className={`settings-toggle ${twoFactorAuth ? 'settings-toggle--active' : ''}`}
                                 onClick={handleToggleTwoFactorAuth}
+                                disabled={isSavingPreferences}
                             >
                                 <span className="settings-toggle__slider"></span>
                             </button>
@@ -225,6 +281,7 @@ const Settings = ({ onClose, isOwner = true }) => {
                             <button 
                                 className={`settings-toggle ${emailNotifications ? 'settings-toggle--active' : ''}`}
                                 onClick={handleToggleEmailNotifications}
+                                disabled={isSavingPreferences}
                             >
                                 <span className="settings-toggle__slider"></span>
                             </button>
@@ -236,6 +293,7 @@ const Settings = ({ onClose, isOwner = true }) => {
                             <button 
                                 className={`settings-toggle ${pushNotifications ? 'settings-toggle--active' : ''}`}
                                 onClick={handleTogglePushNotifications}
+                                disabled={isSavingPreferences}
                             >
                                 <span className="settings-toggle__slider"></span>
                             </button>

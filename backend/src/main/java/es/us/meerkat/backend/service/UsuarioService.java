@@ -135,6 +135,18 @@ public class UsuarioService {
         if (requestParam.getUbicacion() != null) {
             usuario.setUbicacion(requestParam.getUbicacion());
         }
+        if (requestParam.getAutenticacionDosFactores() != null) {
+            usuario.setAutenticacionDosFactores(requestParam.getAutenticacionDosFactores());
+        }
+        if (requestParam.getVisibleEnListados() != null) {
+            usuario.setVisibleEnListados(requestParam.getVisibleEnListados());
+        }
+        if (requestParam.getNotificacionesEmail() != null) {
+            usuario.setNotificacionesEmail(requestParam.getNotificacionesEmail());
+        }
+        if (requestParam.getNotificacionesPush() != null) {
+            usuario.setNotificacionesPush(requestParam.getNotificacionesPush());
+        }
 
         usuarioRepository.save(usuario);
         return mapToDetailResponse(usuario);
@@ -316,6 +328,9 @@ public class UsuarioService {
                 .intereses(usuario.getIntereses())
                 .visibleEnListados(usuario.getVisibleEnListados())
                 .esTutor(usuario.getEsTutor())
+                .autenticacionDosFactores(usuario.getAutenticacionDosFactores())
+                .notificacionesEmail(usuario.getNotificacionesEmail())
+                .notificacionesPush(usuario.getNotificacionesPush())
                 .createdAt(usuario.getCreatedAt())
                 .build();
     }
