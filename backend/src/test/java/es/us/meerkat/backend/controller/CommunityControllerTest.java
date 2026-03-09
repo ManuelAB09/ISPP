@@ -59,7 +59,8 @@ class CommunityControllerTest {
                         "Comunidad Java", "Descripción", "COMUNIDAD_PUBLICA", null);
 
         ResponseEntity<CommunityDetailResponse> response =
-                communityController.createCommunity(request, null);
+                (ResponseEntity<CommunityDetailResponse>)
+                        communityController.createCommunity(request, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
@@ -86,7 +87,8 @@ class CommunityControllerTest {
                 .thenReturn("ADMIN");
 
         ResponseEntity<CommunityDetailResponse> response =
-                communityController.createCommunity(request, usuario);
+                (ResponseEntity<CommunityDetailResponse>)
+                        communityController.createCommunity(request, usuario);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isNotNull();
@@ -109,8 +111,7 @@ class CommunityControllerTest {
                         request.imagenUrl()))
                 .thenThrow(new IllegalArgumentException("límite alcanzado"));
 
-        ResponseEntity<CommunityDetailResponse> response =
-                communityController.createCommunity(request, usuario);
+        ResponseEntity<?> response = communityController.createCommunity(request, usuario);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
