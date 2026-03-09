@@ -28,7 +28,7 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
      *
      * @return Lista de eventos visibles en mapa.
      */
-    @Query("SELECT e FROM Evento e WHERE e.visibleMapa = true AND e.cancelado = false")
+    @Query("SELECT e FROM Evento e WHERE e.visibleMapa = true AND e.cancelado = false AND e.privado = false")
     List<Evento> findVisibleOnMap();
 
     /**

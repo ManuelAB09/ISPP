@@ -1,7 +1,12 @@
 package es.us.meerkat.backend.exception;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -17,6 +22,38 @@ import jakarta.servlet.http.HttpServletRequest;
 @RestControllerAdvice()
 @Hidden
 public class GlobalExceptionHandler {
+
+    /**
+     * Maneja errores de validación de DTOs anotados con @Valid (400 Bad Request).
+     *
+     * @param ex Excepción con los errores de validación por campo.
+     * @param request Solicitud HTTP que causó el error.
+     * @return ResponseEntity con estado 400 y detalle de campos inválidos.
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(
+            final MethodArgumentNotValidException ex, final HttpServletRequest request) {
+        final Map<String, String> fieldErrors = new LinkedHashMap<>();
+        ex.getBindingResult()
+                .getFieldErrors()
+                .forEach(
+                        error ->
+                                fieldErrors.putIfAbsent(
+                                        error.getField(), error.getDefaultMessage()));
+
+        final String validationDetails =
+                fieldErrors.values().stream().collect(Collectors.joining("; "));
+
+        final String message =
+                validationDetails.isBlank()
+                        ? "Datos de entrada inválidos"
+                        : "Datos de entrada inválidos: " + validationDetails;
+
+        final ErrorResponse errorResponse =
+                new ErrorResponse(HttpStatus.BAD_REQUEST.value(), message, request.getRequestURI());
+        errorResponse.setErrors(fieldErrors);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
 
     /**
      * Maneja excepciones de validación (400 Bad Request).
@@ -69,5 +106,11 @@ public class GlobalExceptionHandler {
                         "Error interno del servidor",
                         request.getRequestURI());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
+    private ResponseEntity<ErrorResponse> buildErrorResponse(
+            final HttpStatus status, final String message, final String path) {
+        final ErrorResponse errorResponse = new ErrorResponse(status.value(), message, path);
+        return ResponseEntity.status(status).body(errorResponse);
     }
 }

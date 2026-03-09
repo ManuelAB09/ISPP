@@ -25,21 +25,28 @@ export const AuthProvider = ({ children }) => {
       return ub;
     };
 
-    // Combinar datos de la API con datos extra (como universidad, grado, ubicacion que la API no devuelve)
+    // Combinar datos de la API con datos extra del formulario de perfil.
     const fullUserData = {
       id: userData.id,
       email: userData.email,
       nombre: userData.nombre,
       foto: userData.foto,
+      fotoBackgroundColor: extraData.fotoBackgroundColor ?? userData.fotoBackgroundColor ?? '#ffffff',
       bio: userData.bio,
       intereses: userData.intereses,
       visibleEnListados: userData.visibleEnListados,
       esTutor: userData.esTutor,
+      autenticacionDosFactores:
+        extraData.autenticacionDosFactores ?? userData.autenticacionDosFactores ?? false,
+      notificacionesEmail: extraData.notificacionesEmail ?? userData.notificacionesEmail ?? true,
+      notificacionesPush: extraData.notificacionesPush ?? userData.notificacionesPush ?? true,
       createdAt: userData.createdAt,
       // Campos que la API acepta en PUT pero no devuelve en GET
       universidad: extraData.universidad ?? userData.universidad ?? '',
       grado: extraData.grado ?? userData.grado ?? '',
       ubicacion: normalizeUbicacion(extraData.ubicacion ?? userData.ubicacion),
+      nivelEstudios: extraData.nivelEstudios ?? userData.nivelEstudios ?? '',
+      baseFormativa: extraData.baseFormativa ?? userData.baseFormativa ?? '',
     };
     localStorage.setItem('userId', String(userData.id));
     localStorage.setItem('userProfile', JSON.stringify(fullUserData));
@@ -78,6 +85,15 @@ export const AuthProvider = ({ children }) => {
             universidad: storedData?.universidad ?? userData.universidad ?? '',
             grado: storedData?.grado ?? userData.grado ?? '',
             ubicacion: userData.ubicacion ?? storedData?.ubicacion ?? null,
+            nivelEstudios: storedData?.nivelEstudios ?? '',
+            baseFormativa: storedData?.baseFormativa ?? '',
+            fotoBackgroundColor: storedData?.fotoBackgroundColor ?? userData?.fotoBackgroundColor ?? '#ffffff',
+            autenticacionDosFactores:
+              storedData?.autenticacionDosFactores ?? userData?.autenticacionDosFactores ?? false,
+            notificacionesEmail:
+              storedData?.notificacionesEmail ?? userData?.notificacionesEmail ?? true,
+            notificacionesPush:
+              storedData?.notificacionesPush ?? userData?.notificacionesPush ?? false,
           };
           setUser(combinedUser);
           saveUserToStorage(userData, {
@@ -122,10 +138,10 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const register = useCallback(async (email, password, nombre) => {
+  const register = useCallback(async (email, password, nombre, esTutor = false) => {
     setError(null);
     try {
-      const response = await authApi.register({ email, password, nombre });
+      const response = await authApi.register({ email, password, nombre, esTutor });
       const { accessToken, user: userData } = response;
 
       localStorage.setItem('accessToken', accessToken);
@@ -161,10 +177,37 @@ export const AuthProvider = ({ children }) => {
       const updatedUser = await authApi.updateMe(requestPayload);
       // La API no devuelve universidad, grado, ubicacion, así que los mantenemos del profileData enviado
       const combinedUser = {
+        ...(user || {}),
         ...updatedUser,
-        universidad: requestPayload.universidad ?? '',
-        grado: requestPayload.grado ?? '',
         ubicacion: ubicacionSeleccionada ?? updatedUser.ubicacion ?? requestPayload.ubicacion ?? null,
+        universidad:
+          profileData.universidad ?? updatedUser.universidad ?? user?.universidad ?? '',
+        grado: profileData.grado ?? updatedUser.grado ?? user?.grado ?? '',
+        nivelEstudios:
+          profileData.nivelEstudios ?? updatedUser.nivelEstudios ?? user?.nivelEstudios ?? '',
+        baseFormativa:
+          profileData.baseFormativa ?? updatedUser.baseFormativa ?? user?.baseFormativa ?? '',
+        fotoBackgroundColor: profileData.fotoBackgroundColor ?? updatedUser.fotoBackgroundColor ?? '#ffffff',
+        visibleEnListados:
+          profileData.visibleEnListados
+          ?? updatedUser.visibleEnListados
+          ?? user?.visibleEnListados
+          ?? true,
+        autenticacionDosFactores:
+          profileData.autenticacionDosFactores
+          ?? updatedUser.autenticacionDosFactores
+          ?? user?.autenticacionDosFactores
+          ?? false,
+        notificacionesEmail:
+          profileData.notificacionesEmail
+          ?? updatedUser.notificacionesEmail
+          ?? user?.notificacionesEmail
+          ?? true,
+        notificacionesPush:
+          profileData.notificacionesPush
+          ?? updatedUser.notificacionesPush
+          ?? user?.notificacionesPush
+          ?? false,
       };
       setUser(combinedUser);
       saveUserToStorage(updatedUser, {
@@ -176,7 +219,7 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       const message = err.message || 'Error al actualizar el perfil';
       setError(message);
-      return { success: false, error: message };
+      return { success: false, error: message, validationErrors: err.errors || {} };
     }
   }, []);
 

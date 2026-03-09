@@ -10,10 +10,27 @@ import {
     obtenerPreviewEnlace,
     obtenerArchivoChatBlob,
 } from '../../api/mensajeService';
+import { getApiBaseUrl } from '../../api/baseUrl';
 import { extractFirstUrl } from '../../utils/linkPreview';
 import LinkPreviewCard from './LinkPreviewCard';
-import { LuMessageCircle, LuX } from 'react-icons/lu';
+import { LuExpand, LuMessageCircle, LuX } from 'react-icons/lu';
 import './CommunityChat.css';
+
+const DEFAULT_PROFILE_AVATAR =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='60' fill='%23E6EAF3'/%3E%3Ccircle cx='60' cy='46' r='22' fill='%2395A1BB'/%3E%3Cpath d='M20 106c6-20 22-32 40-32s34 12 40 32' fill='%2395A1BB'/%3E%3C/svg%3E";
+
+const toAbsoluteImageUrl = (imageUrl, fallback = DEFAULT_PROFILE_AVATAR) => {
+    const raw = String(imageUrl || '').trim();
+    if (!raw) {
+        return fallback;
+    }
+    if (/^https?:\/\//i.test(raw) || raw.startsWith('data:') || raw.startsWith('blob:')) {
+        return raw;
+    }
+
+    const base = getApiBaseUrl();
+    return raw.startsWith('/') ? `${base}${raw}` : `${base}/${raw}`;
+};
 
 /**
  * Componente de chat en tiempo real para comunidades.
@@ -57,6 +74,16 @@ const CommunityChat = ({
     const pendingAttachmentPreviewRef = useRef(new Set());
 
     const isOwnMessage = (msg) => Number(msg?.usuarioId) === Number(usuarioActual?.id);
+
+    const resolveAvatarBackgroundColor = (msg) => {
+        if (msg?.usuarioFotoBackgroundColor) {
+            return msg.usuarioFotoBackgroundColor;
+        }
+        if (isOwnMessage(msg) && usuarioActual?.fotoBackgroundColor) {
+            return usuarioActual.fotoBackgroundColor;
+        }
+        return '#ffffff';
+    };
 
     /**
      * Carga el historial de mensajes al montar el componente.
@@ -633,6 +660,7 @@ const CommunityChat = ({
             userId: targetId,
             userName: msg?.usuarioNombre || `Usuario ${targetId}`,
             userPhoto: msg?.usuarioFoto || '',
+            userPhotoBg: msg?.usuarioFotoBackgroundColor || '#ffffff',
         };
 
         if (onOpenPrivateChat) {
@@ -647,6 +675,9 @@ const CommunityChat = ({
         });
         if (payload.userPhoto) {
             params.set('userPhoto', payload.userPhoto);
+        }
+        if (payload.userPhotoBg) {
+            params.set('userPhotoBg', payload.userPhotoBg);
         }
         navigate(`/chats?${params.toString()}`);
     };
@@ -672,7 +703,7 @@ const CommunityChat = ({
                         <div className="chat-header-left">
                             <img
                                 className="chat-header-avatar"
-                                src={comunidadImagen || '/MeerKatters_logo.png'}
+                                src={toAbsoluteImageUrl(comunidadImagen, '/MeerKatters_logo.png')}
                                 alt={comunidadNombre || `Comunidad ${comunidadId}`}
                             />
                             <div>
@@ -689,8 +720,10 @@ const CommunityChat = ({
                                     type="button"
                                     className="chat-open-large-button"
                                     onClick={handleOpenLargeChat}
+                                    aria-label="Abrir chat en vista grande"
+                                    title="Abrir chat en vista grande"
                                 >
-                                    Abrir grande
+                                    <LuExpand size={16} />
                                 </button>
                             )}
                             {!isEmbedded && (
@@ -729,8 +762,9 @@ const CommunityChat = ({
                                         >
                                             <img
                                                 className="usuario-foto"
-                                                src={msg.usuarioFoto || '/MeerKatters_logo.png'}
+                                                src={toAbsoluteImageUrl(msg.usuarioFoto, DEFAULT_PROFILE_AVATAR)}
                                                 alt={msg.usuarioNombre || 'Usuario'}
+                                                style={{ backgroundColor: resolveAvatarBackgroundColor(msg) }}
                                             />
                                             <span className="usuario-nombre">{msg.usuarioNombre}</span>
                                         </button>

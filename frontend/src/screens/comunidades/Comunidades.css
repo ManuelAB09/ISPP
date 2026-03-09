@@ -4,41 +4,9 @@
     justify-content: space-between;
     gap: 10px;
     align-items: center;
-    padding: 20px;
-    padding-bottom: 60px;
+    padding: 20px 40px 60px;
     width: 100%;
-    padding-inline: 40px;
     max-width: 2000px;
-}
-
-.headerTitle {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    gap: 20px;
-    align-items: center;
-    width: 100%;
-
-    & .line {
-        border: 2px solid #2d3250a6;
-        width: 100%;
-    }
-
-    & p {
-        min-width: 330px;
-        max-width: 500px;
-        font-family: 'inter', sans-serif;
-        font-size: 14px;
-        font-weight: 500;
-    }
-
-    & h1 {
-        font-family: 'spacegrotesk', sans-serif;
-        font-size: 70px;
-        font-weight: 700;
-        color: var(--spaceIndigo);
-        text-align: end;
-    }
 }
 
 .search {
@@ -49,6 +17,37 @@
     gap: 20px;
     width: 100%;
     padding-right: 10px;
+}
+
+.search svg {
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    flex-shrink: 0;
+}
+
+.search svg:hover {
+    opacity: 0.7;
+}
+
+.create-community-btn {
+    font-family: 'inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 24px;
+    background-color: var(--spaceIndigo);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.create-community-btn:hover {
+    background-color: var(--spaceIndigoDark, #1a237e);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .pagination {
@@ -67,11 +66,24 @@
         color: white;
         border: none;
         border-radius: 5px;
+        transition: all 0.2s ease;
+
+        &:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
 
         &:disabled {
             background-color: #ccc;
             cursor: not-allowed;
         }
+    }
+
+    & span {
+        font-family: 'inter', sans-serif;
+        font-size: 14px;
+        color: var(--spaceIndigo);
+        font-weight: 500;
     }
 }
 
@@ -80,6 +92,21 @@
     width: 100%;
     padding: 60px;
     align-items: center;
+
+    & .error {
+        text-align: center;
+        color: var(--error, #d32f2f);
+        font-family: 'inter', sans-serif;
+        font-size: 16px;
+        padding: 20px;
+    }
+
+    & > p {
+        text-align: center;
+        font-family: 'inter', sans-serif;
+        font-size: 16px;
+        color: #666;
+    }
 }
 
 .comunidades-list {
@@ -88,4 +115,118 @@
     gap: 20px;
     max-width: 950px;
     margin: auto;
+}
+
+/* Responsive - Tablet grande */
+@media (max-width: 1200px) {
+}
+
+/* Responsive - Tablet */
+@media (max-width: 1024px) {
+    .header {
+        padding: 20px 30px 50px;
+    }
+
+    .search {
+        gap: 16px;
+        padding-right: 0;
+    }
+
+    .body {
+        padding: 50px 30px;
+    }
+}
+
+/* Responsive - Tablet pequeño */
+@media (max-width: 900px) {
+}
+
+/* Responsive - Móvil */
+@media (max-width: 768px) {
+    .header {
+        padding: 20px 20px 40px;
+    }
+
+    .search {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 12px;
+        width: 100%;
+        padding-right: 0;
+    }
+
+    .search > div:first-child {
+        flex: 1 1 100%;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .create-community-btn {
+        flex: 1 1 100%;
+        width: 100%;
+        order: 3;
+    }
+
+    .search svg {
+        width: 28px;
+        height: 28px;
+    }
+
+    .body {
+        padding: 40px 20px;
+    }
+
+    .pagination {
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 40px;
+    }
+
+    .pagination button {
+        width: 100%;
+        padding: 12px 24px;
+    }
+
+    .pagination span {
+        order: -1;
+    }
+}
+
+/* Responsive - Móvil pequeño */
+@media (max-width: 480px) {
+    .header {
+        padding: 15px 15px 30px;
+    }
+
+    .search {
+        gap: 10px;
+    }
+
+    .create-community-btn {
+        font-size: 13px;
+        padding: 10px 20px;
+    }
+
+    .search svg {
+        width: 26px;
+        height: 26px;
+    }
+
+    .body {
+        padding: 30px 15px;
+    }
+
+    .pagination {
+        margin-top: 30px;
+    }
+
+    .pagination button {
+        font-size: 13px;
+        padding: 10px 20px;
+    }
+
+    .pagination span {
+        font-size: 13px;
+    }
 }
