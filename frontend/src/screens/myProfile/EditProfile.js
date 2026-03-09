@@ -60,6 +60,8 @@ const EditProfile = ({ onClose, onSave }) => {
         descripcion: "",
         universidad: "",
         grado: "",
+        nivelEstudios: "",
+        baseFormativa: "",
         ubicacion: "",
         intereses: [],
     })
@@ -90,6 +92,8 @@ const EditProfile = ({ onClose, onSave }) => {
                 descripcion: user.bio || "",
                 universidad: user.universidad || "",
                 grado: user.grado || "",
+                nivelEstudios: user.nivelEstudios || "",
+                baseFormativa: user.baseFormativa || "",
                 ubicacion: user.ubicacion || "",
                 intereses: user.intereses || [],
             })
@@ -223,6 +227,8 @@ const EditProfile = ({ onClose, onSave }) => {
                 bio: formData.descripcion.trim(),
                 universidad: formData.universidad.trim(),
                 grado: formData.grado.trim(),
+                nivelEstudios: formData.nivelEstudios.trim(),
+                baseFormativa: formData.baseFormativa.trim(),
                 ubicacion: formData.ubicacion.trim(),
                 intereses: formData.intereses,
                 fotoBackgroundColor: fotoBackgroundColor,
@@ -422,12 +428,46 @@ const EditProfile = ({ onClose, onSave }) => {
                                 name="grado"
                                 value={formData.grado}
                                 onChange={handleInputChange}
-                                placeholder="Tu grado o carrera"
+                                placeholder="El nombre de tu grado o carrera"
                                 className={fieldErrors.grado ? 'edit-profile-input-error' : ''}
                                 aria-invalid={Boolean(fieldErrors.grado)}
                             />
                             {fieldErrors.grado && (
                                 <span className="edit-profile-field-error">{fieldErrors.grado}</span>
+                            )}
+                        </div>
+
+                        <div className="edit-profile-form-group">
+                            <label htmlFor="nivelEstudios">Nivel de estudios</label>
+                            <input
+                                type="text"
+                                id="nivelEstudios"
+                                name="nivelEstudios"
+                                value={formData.nivelEstudios}
+                                onChange={handleInputChange}
+                                placeholder="Ej: Grado, Máster, Doctorado"
+                                className={fieldErrors.nivelEstudios ? 'edit-profile-input-error' : ''}
+                                aria-invalid={Boolean(fieldErrors.nivelEstudios)}
+                            />
+                            {fieldErrors.nivelEstudios && (
+                                <span className="edit-profile-field-error">{fieldErrors.nivelEstudios}</span>
+                            )}
+                        </div>
+
+                        <div className="edit-profile-form-group">
+                            <label htmlFor="baseFormativa">Base formativa</label>
+                            <input
+                                type="text"
+                                id="baseFormativa"
+                                name="baseFormativa"
+                                value={formData.baseFormativa}
+                                onChange={handleInputChange}
+                                placeholder="Ej: Científico-tecnológica"
+                                className={fieldErrors.baseFormativa ? 'edit-profile-input-error' : ''}
+                                aria-invalid={Boolean(fieldErrors.baseFormativa)}
+                            />
+                            {fieldErrors.baseFormativa && (
+                                <span className="edit-profile-field-error">{fieldErrors.baseFormativa}</span>
                             )}
                         </div>
 

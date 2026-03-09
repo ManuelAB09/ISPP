@@ -40,6 +40,12 @@ public class UserDetailResponse {
     /** Grado del usuario. */
     private String grado;
 
+    /** Nivel de estudios del usuario. */
+    private String nivelEstudios;
+
+    /** Base formativa del usuario. */
+    private String baseFormativa;
+
     /** Ubicación del usuario. */
     private String ubicacion;
 

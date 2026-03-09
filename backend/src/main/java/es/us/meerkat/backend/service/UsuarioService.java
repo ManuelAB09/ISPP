@@ -126,6 +126,12 @@ public class UsuarioService {
         if (requestParam.getGrado() != null) {
             usuario.setGrado(requestParam.getGrado());
         }
+        if (requestParam.getNivelEstudios() != null) {
+            usuario.setNivelEstudios(requestParam.getNivelEstudios());
+        }
+        if (requestParam.getBaseFormativa() != null) {
+            usuario.setBaseFormativa(requestParam.getBaseFormativa());
+        }
         if (requestParam.getUbicacion() != null) {
             usuario.setUbicacion(requestParam.getUbicacion());
         }
@@ -302,6 +308,11 @@ public class UsuarioService {
                 .foto(usuario.getFoto())
                 .fotoBackgroundColor(usuario.getFotoBackgroundColor())
                 .bio(usuario.getBio())
+                .universidad(usuario.getUniversidad())
+                .grado(usuario.getGrado())
+                .nivelEstudios(usuario.getNivelEstudios())
+                .baseFormativa(usuario.getBaseFormativa())
+                .ubicacion(usuario.getUbicacion())
                 .intereses(usuario.getIntereses())
                 .visibleEnListados(usuario.getVisibleEnListados())
                 .esTutor(usuario.getEsTutor())

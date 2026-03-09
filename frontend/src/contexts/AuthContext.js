@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
 
   // Función auxiliar para guardar datos del usuario en localStorage
   const saveUserToStorage = (userData, extraData = {}) => {
-    // Combinar datos de la API con datos extra (como universidad, grado, ubicacion que la API no devuelve)
+    // Combinar datos de la API con datos extra del formulario de perfil.
     const fullUserData = {
       id: userData.id,
       email: userData.email,
@@ -34,6 +34,8 @@ export const AuthProvider = ({ children }) => {
       // Campos que la API acepta en PUT pero no devuelve en GET
       universidad: extraData.universidad ?? userData.universidad ?? '',
       grado: extraData.grado ?? userData.grado ?? '',
+      nivelEstudios: extraData.nivelEstudios ?? userData.nivelEstudios ?? '',
+      baseFormativa: extraData.baseFormativa ?? userData.baseFormativa ?? '',
       ubicacion: extraData.ubicacion ?? userData.ubicacion ?? '',
     };
     localStorage.setItem('userId', String(userData.id));
@@ -72,6 +74,8 @@ export const AuthProvider = ({ children }) => {
             ...userData,
             universidad: storedData?.universidad ?? '',
             grado: storedData?.grado ?? '',
+            nivelEstudios: storedData?.nivelEstudios ?? '',
+            baseFormativa: storedData?.baseFormativa ?? '',
             ubicacion: storedData?.ubicacion ?? '',
             fotoBackgroundColor: storedData?.fotoBackgroundColor ?? userData?.fotoBackgroundColor ?? '#ffffff',
           };
@@ -142,11 +146,13 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       const updatedUser = await authApi.updateMe(profileData);
-      // La API no devuelve universidad, grado, ubicacion, así que los mantenemos del profileData enviado
+      // Mantenemos los campos de perfil desde el payload enviado para consistencia del estado local.
       const combinedUser = {
         ...updatedUser,
         universidad: profileData.universidad ?? '',
         grado: profileData.grado ?? '',
+        nivelEstudios: profileData.nivelEstudios ?? '',
+        baseFormativa: profileData.baseFormativa ?? '',
         ubicacion: profileData.ubicacion ?? '',
         fotoBackgroundColor: profileData.fotoBackgroundColor ?? updatedUser.fotoBackgroundColor ?? '#ffffff',
       };

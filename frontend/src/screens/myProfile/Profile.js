@@ -147,6 +147,8 @@ const MyProfile = () => {
         email: user?.email || "Sin email",
         universidad: user?.universidad || "",
         grado: user?.grado || "",
+        nivelEstudios: user?.nivelEstudios || "",
+        baseFormativa: user?.baseFormativa || "",
         ubicacion: user?.ubicacion || "",
         foto: user?.foto || null,
         fotoBackgroundColor: user?.fotoBackgroundColor || '#ffffff',
@@ -243,6 +245,14 @@ const MyProfile = () => {
                             <div className="data-field">
                                 <span className="data-field__label">GRADO</span>
                                 <span className="data-field__value">{displayValue(userData.grado)}</span>
+                            </div>
+                            <div className="data-field">
+                                <span className="data-field__label">NIVEL DE ESTUDIOS</span>
+                                <span className="data-field__value">{displayValue(userData.nivelEstudios)}</span>
+                            </div>
+                            <div className="data-field">
+                                <span className="data-field__label">BASE FORMATIVA</span>
+                                <span className="data-field__value">{displayValue(userData.baseFormativa)}</span>
                             </div>
                             <div className="data-field">
                                 <span className="data-field__label">UBICACIÓN</span>

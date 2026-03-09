@@ -37,6 +37,14 @@ public class UpdateUserRequest {
     @Size(max = 100, message = "El grado no puede exceder 100 caracteres")
     private String grado;
 
+    /** Nivel de estudios del usuario. */
+    @Size(max = 100, message = "El nivel de estudios no puede exceder 100 caracteres")
+    private String nivelEstudios;
+
+    /** Base formativa del usuario. */
+    @Size(max = 100, message = "La base formativa no puede exceder 100 caracteres")
+    private String baseFormativa;
+
     /** Ubicación del usuario. */
     @Size(max = 100, message = "La ubicación no puede exceder 100 caracteres")
     private String ubicacion;
