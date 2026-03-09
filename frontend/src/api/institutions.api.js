@@ -49,4 +49,8 @@ export const institutionsApi = {
   getPlanStatus(id) {
     return apiClient.get(`/api/v1/institutions/${id}/plan/status`);
   },
+
+  verifySession(sessionId) {
+    return apiClient.post('/api/v1/institutions/verify-session', { sessionId });
+  },
 };

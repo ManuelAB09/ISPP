@@ -1,10 +1,10 @@
 package es.us.meerkat.backend.controller;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import java.time.LocalDate;
-import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -127,11 +127,16 @@ class SuscripcionControllerTest {
     void testSuscribirse_Exito() throws Exception {
         // Given
         SubscribeRequest request =
-                SubscribeRequest.builder().planId("PREMIUM").aceptarTerminos(true).build();
+                SubscribeRequest.builder()
+                        .planId("PREMIUM")
+                        .aceptarTerminos(true)
+                        .periodo("mensual")
+                        .build();
         PaymentUrlResponse paymentUrlResponse =
                 new PaymentUrlResponse("https://pay.test", "sess_123");
-        when(suscripcionService.obtenerMiSuscripcion(1L)).thenReturn(Optional.empty());
-        when(paymentService.generarPagoSuscripcion(usuario, TipoPlan.PREMIUM))
+
+        when(paymentService.generarPagoSuscripcion(
+                        eq(usuario), eq(TipoPlan.PREMIUM), eq("mensual")))
                 .thenReturn(paymentUrlResponse);
 
         // When
@@ -142,31 +147,35 @@ class SuscripcionControllerTest {
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(paymentUrlResponse, response.getBody());
-        verify(suscripcionService).obtenerMiSuscripcion(1L);
-        verify(paymentService).generarPagoSuscripcion(usuario, TipoPlan.PREMIUM);
+        verify(paymentService)
+                .generarPagoSuscripcion(eq(usuario), eq(TipoPlan.PREMIUM), eq("mensual"));
     }
 
     @Test
-    @DisplayName("POST /me - Debe devolver 400 si el usuario ya tiene suscripción")
-    void testSuscribirse_YaTieneSuscripcion() {
+    @DisplayName("POST /me - Debe devolver 500 si Stripe falla")
+    void testSuscribirse_StripeFalla() throws Exception {
         // Given
         SubscribeRequest request =
-                SubscribeRequest.builder().planId("PREMIUM").aceptarTerminos(true).build();
-        when(suscripcionService.obtenerMiSuscripcion(1L)).thenReturn(Optional.of(suscripcion));
+                SubscribeRequest.builder()
+                        .planId("PREMIUM")
+                        .aceptarTerminos(true)
+                        .periodo("mensual")
+                        .build();
+
+        when(paymentService.generarPagoSuscripcion(
+                        eq(usuario), eq(TipoPlan.PREMIUM), eq("mensual")))
+                .thenThrow(
+                        new com.stripe.exception.ApiException(
+                                "Stripe error", null, null, 500, null));
 
         // When
         ResponseEntity<?> response = suscripcionController.suscribirse(usuario, request);
 
         // Then
         assertNotNull(response);
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertTrue(response.getBody() instanceof Map);
-        @SuppressWarnings("unchecked")
-        Map<String, String> body = (Map<String, String>) response.getBody();
-        assertEquals("Ya tienes una suscripción activa", body.get("error"));
-        verify(suscripcionService).obtenerMiSuscripcion(1L);
-        verifyNoInteractions(paymentService);
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        verify(paymentService)
+                .generarPagoSuscripcion(eq(usuario), eq(TipoPlan.PREMIUM), eq("mensual"));
     }
 
     @Test

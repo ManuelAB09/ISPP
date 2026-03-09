@@ -19,9 +19,12 @@ class ApiClient {
   }
 
   async request(method, path, body = null) {
-    const headers = {
-      'Content-Type': 'application/json',
-    };
+    const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+    const headers = {};
+
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json';
+    }
 
     // Always read the freshest token available
     const currentToken = this.token || localStorage.getItem('accessToken');
@@ -35,7 +38,7 @@ class ApiClient {
     };
 
     if (body) {
-      options.body = JSON.stringify(body);
+      options.body = isFormData ? body : JSON.stringify(body);
     }
 
     const response = await fetch(`${this.baseUrl}${path}`, options);

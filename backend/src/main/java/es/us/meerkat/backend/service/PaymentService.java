@@ -80,39 +80,36 @@ public class PaymentService {
         return new PaymentUrlResponse(session.getUrl(), session.getId());
     }
 
-    /** Suscripción PREMIUM → TipoTransaccion.SUSCRIPCION, modo SUBSCRIPTION (recurrente) */
-    @Transactional
-    public PaymentUrlResponse generarPagoSuscripcion(Usuario usuario, TipoPlan plan)
+    /** ID del precio Premium mensual en Stripe */
+    private static final String PRICE_PREMIUM_MENSUAL = "price_1T5p9zIti4eEH8Y0Sr09PRkj";
+
+    /** ID del precio Premium anual en Stripe */
+    private static final String PRICE_PREMIUM_ANUAL = "price_1T8hTmIti4eEH8Y01iZAD8gY";
+
+    public PaymentUrlResponse generarPagoSuscripcion(Usuario usuario, TipoPlan plan, String periodo)
             throws StripeException {
 
-        if (plan == TipoPlan.FREE) {
-            throw new IllegalArgumentException("El plan FREE no requiere pago");
-        }
-
-        Map<String, String> metadata = new HashMap<>();
-        metadata.put("tipo", TipoTransaccion.SUSCRIPCION.name());
-        metadata.put("usuarioId", usuario.getId().toString());
-        metadata.put("plan", plan.name());
+        String priceId =
+                periodo.equalsIgnoreCase("anual") ? PRICE_PREMIUM_ANUAL : PRICE_PREMIUM_MENSUAL;
 
         SessionCreateParams params =
                 SessionCreateParams.builder()
                         .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
-                        .setSuccessUrl(successUrl + "?session_id={CHECKOUT_SESSION_ID}")
-                        .setCancelUrl(cancelUrl)
+                        .setSuccessUrl(
+                                "http://localhost:3000/planes/success?session_id={CHECKOUT_SESSION_ID}")
+                        .setCancelUrl("http://localhost:3000/planes")
                         .setCustomerEmail(usuario.getEmail())
                         .addLineItem(
                                 SessionCreateParams.LineItem.builder()
+                                        .setPrice(priceId)
                                         .setQuantity(1L)
-                                        .setPrice(pricePremium)
                                         .build())
-                        .putAllMetadata(metadata)
+                        .putMetadata("usuarioId", usuario.getId().toString())
+                        .putMetadata("plan", plan.name())
+                        .putMetadata("periodo", periodo)
                         .build();
 
         Session session = Session.create(params);
-        log.info(
-                "Sesión Stripe suscripción PREMIUM creada para usuario {}: {}",
-                usuario.getId(),
-                session.getId());
         return new PaymentUrlResponse(session.getUrl(), session.getId());
     }
 
@@ -133,27 +130,74 @@ public class PaymentService {
         return new PaymentUrlResponse(session.getUrl(), session.getId());
     }
 
-    /**
-     * Plan corporativo → TipoTransaccion.COMISION (no hay un tipo específico, se registra como
-     * comisión de plataforma)
-     */
+    // Institucional Básico
+    private static final String PRICE_INST_BASICO_MENSUAL = "price_1T8ifYIti4eEH8Y0uN8Ng7pW";
+    private static final String PRICE_INST_BASICO_ANUAL = "price_1T8ih9Iti4eEH8Y0UyiUb3xX";
+
+    // Institucional Estándar
+    private static final String PRICE_INST_ESTANDAR_MENSUAL = "price_1T8iiKIti4eEH8Y0zPrrFGOg";
+    private static final String PRICE_INST_ESTANDAR_ANUAL = "price_1T8iibIti4eEH8Y0CLxEtyR4";
+
+    // Institucional Premium
+    private static final String PRICE_INST_PREMIUM_MENSUAL = "price_1T8ijJIti4eEH8Y01fl4z9hj";
+    private static final String PRICE_INST_PREMIUM_ANUAL = "price_1T8ijaIti4eEH8Y0Isb1PqIF";
+
     @Transactional
     public PaymentUrlResponse generarPagoPlanCorporativo(
-            Long institucionId, TipoPlanCorporativo tipoPlan, BigDecimal monto)
+            Long institucionId,
+            TipoPlanCorporativo tipoPlan,
+            BigDecimal monto,
+            String periodo,
+            String emailContacto)
             throws StripeException {
 
-        Map<String, String> metadata = new HashMap<>();
-        metadata.put("tipo", TipoTransaccion.COMISION.name());
-        metadata.put("institucionId", institucionId.toString());
-        metadata.put("tipoPlanCorporativo", tipoPlan.name());
+        // Seleccionar price ID según plan y periodo
+        boolean esAnual =
+                periodo != null && periodo.equalsIgnoreCase("anual")
+                        || (monto != null && monto.compareTo(new BigDecimal("100")) > 0);
 
-        Session session =
-                crearSesionPagoUnico("Plan corporativo - " + tipoPlan.name(), monto, metadata);
+        String priceId =
+                switch (tipoPlan) {
+                    case BASICO -> esAnual ? PRICE_INST_BASICO_ANUAL : PRICE_INST_BASICO_MENSUAL;
+                    case ESTANDAR ->
+                            esAnual ? PRICE_INST_ESTANDAR_ANUAL : PRICE_INST_ESTANDAR_MENSUAL;
+                    case PREMIUM -> esAnual ? PRICE_INST_PREMIUM_ANUAL : PRICE_INST_PREMIUM_MENSUAL;
+                    default -> PRICE_INST_BASICO_MENSUAL;
+                };
+
+        SessionCreateParams.Builder paramsBuilder =
+                SessionCreateParams.builder()
+                        .setMode(
+                                SessionCreateParams.Mode
+                                        .SUBSCRIPTION) // En generarPagoPlanCorporativo
+                        .setSuccessUrl(
+                                successUrl + "?session_id={CHECKOUT_SESSION_ID}&tipo=institucional")
+                        .setCancelUrl(cancelUrl)
+                        .addLineItem(
+                                SessionCreateParams.LineItem.builder()
+                                        .setPrice(priceId)
+                                        .setQuantity(1L)
+                                        .build())
+                        .putMetadata("tipo", TipoTransaccion.COMISION.name())
+                        .putMetadata("institucionId", institucionId.toString())
+                        .putMetadata("tipoPlanCorporativo", tipoPlan.name())
+                        .putMetadata("periodo", esAnual ? "anual" : "mensual")
+                        .putMetadata("duracionMeses", esAnual ? "12" : "1"); // ← añadir esto
+
+        // Prerellenar email si está disponible
+        if (emailContacto != null && !emailContacto.isBlank()) {
+            paramsBuilder.setCustomerEmail(emailContacto);
+        }
+
+        Session session = Session.create(paramsBuilder.build());
+
         log.info(
-                "Sesión Stripe plan corporativo {} creada para institución {}: {}",
+                "Sesión Stripe plan corporativo {} ({}) creada para institución {}: {}",
                 tipoPlan,
+                esAnual ? "anual" : "mensual",
                 institucionId,
                 session.getId());
+
         return new PaymentUrlResponse(session.getUrl(), session.getId());
     }
 

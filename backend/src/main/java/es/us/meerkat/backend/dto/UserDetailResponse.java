@@ -28,6 +28,9 @@ public class UserDetailResponse {
     /** URL de la foto de perfil. */
     private String foto;
 
+    /** Color de fondo de la foto de perfil. */
+    private String fotoBackgroundColor;
+
     /** Breve biografía del usuario. */
     private String bio;
 

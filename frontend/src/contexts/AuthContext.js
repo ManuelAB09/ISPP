@@ -25,6 +25,7 @@ export const AuthProvider = ({ children }) => {
       email: userData.email,
       nombre: userData.nombre,
       foto: userData.foto,
+      fotoBackgroundColor: extraData.fotoBackgroundColor ?? userData.fotoBackgroundColor ?? '#ffffff',
       bio: userData.bio,
       intereses: userData.intereses,
       visibleEnListados: userData.visibleEnListados,
@@ -72,6 +73,7 @@ export const AuthProvider = ({ children }) => {
             universidad: storedData?.universidad ?? '',
             grado: storedData?.grado ?? '',
             ubicacion: storedData?.ubicacion ?? '',
+            fotoBackgroundColor: storedData?.fotoBackgroundColor ?? userData?.fotoBackgroundColor ?? '#ffffff',
           };
           setUser(combinedUser);
           saveUserToStorage(userData, storedData || {});
@@ -146,6 +148,7 @@ export const AuthProvider = ({ children }) => {
         universidad: profileData.universidad ?? '',
         grado: profileData.grado ?? '',
         ubicacion: profileData.ubicacion ?? '',
+        fotoBackgroundColor: profileData.fotoBackgroundColor ?? updatedUser.fotoBackgroundColor ?? '#ffffff',
       };
       setUser(combinedUser);
       saveUserToStorage(updatedUser, profileData);

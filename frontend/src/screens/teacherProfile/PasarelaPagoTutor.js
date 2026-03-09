@@ -1,7 +1,21 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Header from "../../components/Header/Header";
+import { getApiBaseUrl } from "../../api/baseUrl";
 import "./PasarelaPagoTutor.css";
+
+const toAbsoluteImageUrl = (imageUrl, fallback = '/MeerKatters_logo.png') => {
+  const raw = String(imageUrl || '').trim();
+  if (!raw) {
+    return fallback;
+  }
+  if (/^https?:\/\//i.test(raw) || raw.startsWith('data:') || raw.startsWith('blob:')) {
+    return raw;
+  }
+
+  const base = getApiBaseUrl();
+  return raw.startsWith('/') ? `${base}${raw}` : `${base}/${raw}`;
+};
 
 /**
  * PasarelaPagoTutor - Pantalla de pago para contratar un tutor
@@ -178,7 +192,7 @@ export default function PasarelaPagoTutor() {
             <div className="ppt-tutor-card">
               {tutor.usuario?.foto && (
                 <img
-                  src={tutor.usuario.foto}
+                  src={toAbsoluteImageUrl(tutor.usuario.foto)}
                   alt={nombreTutor}
                   className="ppt-tutor-avatar"
                 />

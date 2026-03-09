@@ -22,6 +22,9 @@ public class UpdateUserRequest {
     @Size(max = 2048, message = "La URL de foto no puede exceder 2048 caracteres")
     private String foto;
 
+    /** Nuevo color de fondo para la foto de perfil. */
+    private String fotoBackgroundColor;
+
     /** Nueva biografía. */
     @Size(max = 500, message = "La bio no puede exceder 500 caracteres")
     private String bio;
