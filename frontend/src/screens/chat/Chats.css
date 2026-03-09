@@ -9,38 +9,6 @@
     padding-bottom: 40px;
 }
 
-.chats-header .headerTitle {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    gap: 20px;
-    align-items: center;
-    width: 100%;
-}
-
-.chats-header .headerTitle .line {
-    border: 2px solid #2d3250a6;
-    width: 100%;
-}
-
-.chats-header .headerTitle p {
-    min-width: 330px;
-    max-width: 500px;
-    font-family: 'inter', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    margin: 0;
-}
-
-.chats-header .headerTitle h1 {
-    font-family: 'spacegrotesk', sans-serif;
-    font-size: 70px;
-    font-weight: 700;
-    color: var(--spaceIndigo);
-    text-align: end;
-    margin: 0;
-}
-
 /* Tabs styling */
 .chats-tabs {
     display: flex;

@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getApiBaseUrl } from '../../api/baseUrl';
 import { communitiesApi } from '../../api/communities.api';
+import { obtenerConversaciones } from '../../api/mensajeService';
 import Header from '../../components/Header/Header';
+import PageHeader from '../../components/PageHeader';
 import { useAuth } from '../../contexts/AuthContext';
 import './Chats.css';
 import CommunityChat from './CommunityChat';
 import PrivateChat from './PrivateChat';
-import { obtenerConversaciones } from '../../api/mensajeService';
 
 const DEFAULT_COMMUNITY_IMAGE = 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
 const DEFAULT_PROFILE_AVATAR =
@@ -239,11 +240,10 @@ export default function Chats() {
             <Header page={'chats'} user={user} />
             <div className="chats-container">
                 <div className="chats-header">
-                    <div className="headerTitle">
-                        <p>Accede a los chats de todas las comunidades donde eres miembro</p>
-                        <span className="line"></span>
-                        <h1>Chats</h1>
-                    </div>
+                    <PageHeader 
+                        title="Chats"
+                        subtitle="Accede a los chats de todas las comunidades donde eres miembro"
+                    />
                 </div>
 
                 {loading && <p className="chats-loading">Cargando chats...</p>}

@@ -1,0 +1,123 @@
+/**
+ * Estilos para el componente PageHeader
+ * Componente común usado en múltiples páginas (Comunidades, Planes, Pagos, etc.)
+ */
+
+.page-header-title {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 20px;
+    align-items: center;
+    width: 100%;
+}
+
+.page-header-line {
+    border: 2px solid #2d3250a6;
+    width: 100%;
+    flex-shrink: 1;
+}
+
+.page-header-title p {
+    min-width: 330px;
+    max-width: 500px;
+    font-family: 'inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.page-header-title h1 {
+    font-family: 'spacegrotesk', sans-serif;
+    font-size: 70px;
+    font-weight: 700;
+    color: var(--spaceIndigo);
+    text-align: end;
+    flex-shrink: 0;
+}
+
+/* ========== Responsive ========== */
+
+/* Tablet grande (< 1200px) */
+@media (max-width: 1200px) {
+    .page-header-title h1 {
+        font-size: 64px;
+    }
+
+    .page-header-title p {
+        font-size: 13px;
+        max-width: 450px;
+    }
+}
+
+/* Tablet (< 1024px) */
+@media (max-width: 1024px) {
+    .page-header-title {
+        gap: 16px;
+    }
+
+    .page-header-title p {
+        min-width: 250px;
+        max-width: 380px;
+        font-size: 13px;
+    }
+
+    .page-header-title h1 {
+        font-size: 56px;
+    }
+}
+
+/* Tablet pequeño (< 900px) - Cambio a layout vertical */
+@media (max-width: 900px) {
+    .page-header-title {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .page-header-line {
+        display: none;
+    }
+
+    .page-header-title p {
+        min-width: unset;
+        max-width: 100%;
+        font-size: 14px;
+        text-align: center;
+        order: 2;
+        padding: 0 20px;
+    }
+
+    .page-header-title h1 {
+        font-size: 52px;
+        text-align: center;
+        order: 1;
+    }
+}
+
+/* Móvil (< 768px) */
+@media (max-width: 768px) {
+    .page-header-title {
+        gap: 16px;
+    }
+
+    .page-header-title p {
+        font-size: 13px;
+        padding: 0 10px;
+    }
+
+    .page-header-title h1 {
+        font-size: 44px;
+    }
+}
+
+/* Móvil pequeño (< 480px) */
+@media (max-width: 480px) {
+    .page-header-title p {
+        font-size: 12px;
+        padding: 0 5px;
+    }
+
+    .page-header-title h1 {
+        font-size: 32px;
+    }
+}
