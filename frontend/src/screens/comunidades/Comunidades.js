@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { communitiesApi } from '../../api/communities.api';
 import ComunidadCard from '../../components/Comunidad/ComunidadCard';
 import Header from '../../components/Header/Header';
@@ -7,6 +8,7 @@ import PageHeader from '../../components/PageHeader';
 import './Comunidades.css';
 
 export default function Comunidades() {
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [comunidades, setComunidades] = useState([])
@@ -47,6 +49,12 @@ export default function Comunidades() {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
+                    <button 
+                        className="create-community-btn"
+                        onClick={() => navigate('/crear-comunidad')}
+                    >
+                        Crear comunidad
+                    </button>
                 </div>
             </div>
             <div className="body">

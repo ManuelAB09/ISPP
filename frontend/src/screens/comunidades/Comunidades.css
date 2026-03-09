@@ -29,6 +29,27 @@
     opacity: 0.7;
 }
 
+.create-community-btn {
+    font-family: 'inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 24px;
+    background-color: var(--spaceIndigo);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.create-community-btn:hover {
+    background-color: var(--spaceIndigoDark, #1a237e);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
 .pagination {
     display: flex;
     flex-direction: row;
@@ -141,6 +162,12 @@
         width: 100%;
     }
 
+    .create-community-btn {
+        flex: 1 1 100%;
+        width: 100%;
+        order: 3;
+    }
+
     .search svg {
         width: 28px;
         height: 28px;
@@ -174,6 +201,11 @@
 
     .search {
         gap: 10px;
+    }
+
+    .create-community-btn {
+        font-size: 13px;
+        padding: 10px 20px;
     }
 
     .search svg {
