@@ -1,9 +1,8 @@
-import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import Comunidades from './Comunidades';
 import { communitiesApi } from '../../api/communities.api';
+import Comunidades from './Comunidades';
 
 // Mocks
 jest.mock('../../api/communities.api');
@@ -29,14 +28,14 @@ jest.mock('../../components/InputSearch/InputSearch', () => {
     );
   };
 });
-jest.mock('../../components/icons/Create', () => {
-  return function MockCreateIcon() {
-    return <span data-testid="create-icon">+</span>;
-  };
-});
-jest.mock('../../components/icons/Filter', () => {
-  return function MockFilterIcon() {
-    return <span data-testid="filter-icon">Filter</span>;
+jest.mock('../../components/PageHeader', () => {
+  return function MockPageHeader({ title, subtitle }) {
+    return (
+      <div data-testid="page-header">
+        <h1>{title}</h1>
+        <p>{subtitle}</p>
+      </div>
+    );
   };
 });
 
@@ -167,10 +166,10 @@ describe('Comunidades', () => {
     });
   });
 
-  test('renderiza los iconos de crear y filtrar', async () => {
+  test('renderiza el botón de crear comunidad', async () => {
     await renderComponent();
-    expect(screen.getByTestId('create-icon')).toBeInTheDocument();
-    expect(screen.getByTestId('filter-icon')).toBeInTheDocument();
+    const createButton = screen.getByRole('button', { name: /Crear comunidad/i });
+    expect(createButton).toBeInTheDocument();
   });
 
   test('renderiza el texto descriptivo del encabezado', async () => {

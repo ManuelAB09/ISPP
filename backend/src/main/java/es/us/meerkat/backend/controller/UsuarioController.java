@@ -95,6 +95,8 @@ public final class UsuarioController {
             return ResponseEntity.ok(usuarioService.actualizarFotoPerfil(usuario, file));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
         }
     }
 
