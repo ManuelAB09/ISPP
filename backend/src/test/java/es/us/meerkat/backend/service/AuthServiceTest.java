@@ -143,7 +143,7 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> authService.iniciarSesion(request))
                 .isInstanceOf(ValidationException.class)
-                .hasMessage("Credenciales incorrectas");
+                .hasMessage("Este email no está registrado");
     }
 
     @Test

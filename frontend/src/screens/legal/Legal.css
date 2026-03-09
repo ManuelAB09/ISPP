@@ -1,0 +1,153 @@
+/* Legal Pages Styles */
+.legal-container {
+  min-height: 100vh;
+  background: #f8f9fa;
+  padding: 20px;
+  font-family: 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+}
+
+.legal-content {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.legal-header {
+  background: linear-gradient(135deg, #1e3a5f 0%, #2d4a6f 100%);
+  color: white;
+  padding: 40px;
+  text-align: center;
+}
+
+.legal-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  color: white;
+  text-decoration: none;
+}
+
+.legal-logo-img {
+  width: 60px;
+  height: auto;
+  object-fit: contain;
+}
+
+.logo-text {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.legal-header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 20px 0 10px 0;
+}
+
+.legal-subtitle {
+  font-size: 14px;
+  opacity: 0.8;
+  margin: 0;
+}
+
+.legal-body {
+  padding: 40px;
+}
+
+.legal-section {
+  margin-bottom: 32px;
+}
+
+.legal-section h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1e3a5f;
+  margin: 0 0 16px 0;
+  border-bottom: 2px solid #f5a623;
+  padding-bottom: 8px;
+}
+
+.legal-section p {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #374151;
+  margin: 0 0 16px 0;
+}
+
+.legal-section ul {
+  margin: 16px 0;
+  padding-left: 24px;
+}
+
+.legal-section li {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.legal-section a {
+  color: #1e3a5f;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.legal-section a:hover {
+  color: #f5a623;
+  text-decoration: underline;
+}
+
+.legal-footer {
+  background: #f8f9fa;
+  padding: 24px 40px;
+  border-top: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.legal-back-link {
+  color: #1e3a5f;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.2s ease;
+}
+
+.legal-back-link:hover {
+  color: #f5a623;
+  text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .legal-container {
+    padding: 10px;
+  }
+
+  .legal-header {
+    padding: 30px 20px;
+  }
+
+  .legal-header h1 {
+    font-size: 28px;
+  }
+
+  .legal-body {
+    padding: 30px 20px;
+  }
+
+  .legal-section h2 {
+    font-size: 20px;
+  }
+
+  .legal-footer {
+    padding: 20px;
+  }
+}
