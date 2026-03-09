@@ -18,6 +18,7 @@ import es.us.meerkat.backend.dto.UserPublicResponse;
 import es.us.meerkat.backend.dto.VisibilityRequest;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.UsuarioService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -64,7 +65,7 @@ public final class UsuarioController {
     @PutMapping("/me")
     public ResponseEntity<UserDetailResponse> updateMe(
             @AuthenticationPrincipal final Usuario usuario,
-            @RequestBody final UpdateUserRequest request) {
+            @Valid @RequestBody final UpdateUserRequest request) {
         return ResponseEntity.ok(usuarioService.actualizarPerfil(usuario, request));
     }
 

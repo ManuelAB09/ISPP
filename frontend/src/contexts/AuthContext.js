@@ -153,7 +153,7 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       const message = err.message || 'Error al actualizar el perfil';
       setError(message);
-      return { success: false, error: message };
+      return { success: false, error: message, validationErrors: err.errors || {} };
     }
   }, []);
 

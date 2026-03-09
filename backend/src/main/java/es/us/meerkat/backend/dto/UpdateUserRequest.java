@@ -2,6 +2,7 @@ package es.us.meerkat.backend.dto;
 
 import java.util.List;
 
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
@@ -14,23 +15,31 @@ import lombok.Data;
 public class UpdateUserRequest {
 
     /** Nuevo nombre del usuario. */
+    @Size(min = 2, max = 100, message = "El nombre debe tener entre 2 y 100 caracteres")
     private String nombre;
 
     /** Nueva URL de foto de perfil. */
+    @Size(max = 2048, message = "La URL de foto no puede exceder 2048 caracteres")
     private String foto;
 
     /** Nueva biografía. */
+    @Size(max = 500, message = "La bio no puede exceder 500 caracteres")
     private String bio;
 
     /** Universidad del usuario. */
+    @Size(max = 100, message = "La universidad no puede exceder 100 caracteres")
     private String universidad;
 
     /** Grado del usuario. */
+    @Size(max = 100, message = "El grado no puede exceder 100 caracteres")
     private String grado;
 
     /** Ubicación del usuario. */
+    @Size(max = 100, message = "La ubicación no puede exceder 100 caracteres")
     private String ubicacion;
 
     /** Nueva lista de intereses. */
-    private List<String> intereses;
+    @Size(max = 10, message = "No se permiten más de 10 intereses")
+    private List<@Size(max = 50, message = "Cada interés no puede exceder 50 caracteres") String>
+            intereses;
 }
