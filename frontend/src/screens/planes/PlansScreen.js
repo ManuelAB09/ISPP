@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { subscriptionsApi } from "../../api/subscriptions.api";
 import Header from "../../components/Header/Header";
+import PageHeader from "../../components/PageHeader";
 import CheckoutModal from "../../components/plans/CheckoutModal";
 import "./PlansScreen.css";
 
@@ -189,11 +190,10 @@ export default function PlansScreen() {
       <Header page={'planes'} />
       <div className="plansPage">
         <div className="header">
-          <div className="headerTitle">
-            <p>Elige el plan perfecto para desbloquear todas las funcionalidades y sacar el máximo provecho de MeerKatters</p>
-            <span className="line"></span>
-            <h1>Planes de Suscripción</h1>
-          </div>
+          <PageHeader 
+            title="Planes de Suscripción"
+            subtitle="Elige el plan perfecto para desbloquear todas las funcionalidades y sacar el máximo provecho de MeerKatters"
+          />
         </div>
 
         <main className="plansContent">

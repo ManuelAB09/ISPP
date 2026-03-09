@@ -1,12 +1,37 @@
+import { useEffect, useState } from 'react';
 import SearchIcon from '../icons/Search';
 import './InputSearch.css';
 
-export default function InputSearch({ placeholder = "Buscar elemento", onChange, value }) {
+export default function InputSearch({ 
+    placeholder = "Buscar elemento", 
+    mobilePlaceholder, 
+    onChange, 
+    value 
+}) {
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const displayPlaceholder = isMobile && mobilePlaceholder ? mobilePlaceholder : placeholder;
+    const iconSize = isMobile ? 16 : 20;
+
     return (
         <div className="inputSearch">
-            <input type="text" placeholder={placeholder} onChange={onChange} value={value}/>
+            <input 
+                type="text" 
+                placeholder={displayPlaceholder} 
+                onChange={onChange} 
+                value={value}
+            />
             <div className='searchbutton'>
-                <SearchIcon width={20} height={20}/>
+                <SearchIcon width={iconSize} height={iconSize}/>
             </div>
         </div>
     );

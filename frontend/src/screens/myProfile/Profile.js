@@ -10,23 +10,26 @@ import EditProfile from "./EditProfile"
 import "./MyProfile.css"
 import Settings from "./Settings"
 
-const toAbsoluteImageUrl = (imageUrl) => {
+const DEFAULT_PROFILE_AVATAR =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='60' fill='%23E6EAF3'/%3E%3Ccircle cx='60' cy='46' r='22' fill='%2395A1BB'/%3E%3Cpath d='M20 106c6-20 22-32 40-32s34 12 40 32' fill='%2395A1BB'/%3E%3C/svg%3E";
+
+const toAbsoluteImageUrl = (imageUrl, fallback = DEFAULT_PROFILE_AVATAR) => {
     if (!imageUrl || !String(imageUrl).trim()) {
-        return ''
+        return fallback;
     }
 
-    const value = String(imageUrl).trim()
+    const value = String(imageUrl).trim();
     if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
-        return value
+        return value;
     }
 
-    const base = getApiBaseUrl()
+    const base = getApiBaseUrl();
     if (value.startsWith('/')) {
-        return `${base}${value}`
+        return `${base}${value}`;
     }
 
-    return `${base}/${value}`
-}
+    return `${base}/${value}`;
+};
 
 const MyProfile = () => {
     const { isAuthenticated, loading, user } = useAuth()
@@ -215,11 +218,12 @@ const MyProfile = () => {
                 <section className="profile-header">
                     <div className="profile-header__left">
                         <div className="profile-avatar" style={{ backgroundColor: userData.fotoBackgroundColor }}>
-                            {userData.foto ? (
-                                <img src={toAbsoluteImageUrl(userData.foto)} alt={userData.nombre} className="profile-avatar-img" />
-                            ) : (
-                                <span className="profile-avatar-placeholder">👤</span>
-                            )}
+                            <img
+                                src={toAbsoluteImageUrl(userData.foto, DEFAULT_PROFILE_AVATAR)}
+                                alt={userData.nombre}
+                                className="profile-avatar-img"
+                                onError={e => { e.target.onerror = null; e.target.src = DEFAULT_PROFILE_AVATAR; }}
+                            />
                         </div>
                         <div className="profile-info">
                             <h1 className="profile-info__name">{userData.nombre}</h1>
@@ -244,11 +248,9 @@ const MyProfile = () => {
                         {isOwner && (
                             <>
                                 <button className="btn-edit-profile" onClick={() => setShowEditProfile(true)}>
-                                    <span className="btn-icon">✏️</span>
                                     Editar Perfil
                                 </button>
                                 <button className="btn-settings" onClick={() => setShowSettings(true)}>
-                                    <span className="btn-icon">⚙️</span>
                                     Configuración
                                 </button>
                                 <button className="btn-settings settings-btn--danger" onClick={handleLogout}>
@@ -399,13 +401,12 @@ const MyProfile = () => {
                                         </div>
                                         <div className="created-community-card__bottom">
                                             <div className="created-community-card__members">
-                                                <span className="members-icon">👥</span>
                                                 <span className="members-text">Inscritos: <strong>{comunidad.miembrosActuales || 0}</strong>/{comunidad.maxMiembros || 0}</span>
                                             </div>
                                             {isOwner && (
                                                 <div className="created-community-card__actions">
-                                                    <Link to={`/comunidades/${comunidad.id}/editar`} className="action-link" onClick={(e) => e.stopPropagation()}>✏️ Editar</Link>
-                                                    <Link to={`/comunidades/${comunidad.id}/apuntes`} className="action-link" onClick={(e) => e.stopPropagation()}>📄 Subir apuntes</Link>
+                                                    <Link to={`/comunidades/${comunidad.id}/editar`} className="action-link" onClick={(e) => e.stopPropagation()}> Editar</Link>
+                                                    <Link to={`/comunidades/${comunidad.id}/apuntes`} className="action-link" onClick={(e) => e.stopPropagation()}> Subir apuntes</Link>
                                                 </div>
                                             )}
                                         </div>

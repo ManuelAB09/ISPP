@@ -324,10 +324,6 @@
         width: 100%;
     }
 
-    .headerTitle h1 {
-        font-size: 1.8rem;
-    }
-
     .radio-group {
         flex-direction: column;
         gap: 15px;
