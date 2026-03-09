@@ -15,6 +15,7 @@ const ACADEMIC_INTERESTS = [
     'Literatura',
     'Química',
     'Derecho',
+    'Otros',
 ]
 
 const RENATA_PATH_PREFIX = '/static/images/renata/'
@@ -215,6 +216,18 @@ const EditProfile = ({ onClose, onSave }) => {
         // Validaciones básicas
         if (!formData.nombre.trim()) {
             setFieldErrors({ nombre: 'El nombre es obligatorio' })
+            setIsSaving(false)
+            return
+        }
+
+        if (!formData.universidad.trim()) {
+            setFieldErrors({ universidad: 'La universidad donde estudias es obligatorio' })
+            setIsSaving(false)
+            return
+        }
+
+        if (!formData.grado.trim()) {
+            setFieldErrors({ nombre: 'El grado que estas estudiando es obligatorio' })
             setIsSaving(false)
             return
         }

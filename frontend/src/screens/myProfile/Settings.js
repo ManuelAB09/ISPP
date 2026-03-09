@@ -73,14 +73,20 @@ const Settings = ({ onClose, isOwner = true }) => {
             return
         }
 
+        // Validar que la nueva contraseña no sea la misma que la anterior
+        if (newPassword.trim() !== currentPassword.trim()) {
+            setPasswordError("La contraseña nueva coincide con la anterior")
+            return
+        }
+
         // Validar que las contraseñas nuevas coincidan
-        if (newPassword !== confirmPassword) {
+        if (newPassword.trim() !== confirmPassword.trim()) {
             setPasswordError("Las contraseñas nuevas no coinciden")
             return
         }
 
         // Validar longitud mínima
-        if (newPassword.length < 6) {
+        if (newPassword.trim().length < 6) {
             setPasswordError("La nueva contraseña debe tener al menos 6 caracteres")
             return
         }
