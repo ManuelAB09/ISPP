@@ -35,4 +35,7 @@ public interface MensajeComunidadRepository extends JpaRepository<MensajeComunid
      * @return lista de hasta 'limit' mensajes ordenados descendentemente.
      */
     List<MensajeComunidad> findTopByOrderByCreatedAtDesc(Long limit);
+
+    /** Elimina todos los mensajes de comunidad enviados por un usuario. */
+    void deleteByUsuarioId(Long usuarioId);
 }

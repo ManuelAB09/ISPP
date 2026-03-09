@@ -21,8 +21,18 @@ import es.us.meerkat.backend.dto.UpdateUserRequest;
 import es.us.meerkat.backend.dto.UserDetailResponse;
 import es.us.meerkat.backend.dto.UserPublicResponse;
 import es.us.meerkat.backend.dto.VisibilityRequest;
+import es.us.meerkat.backend.entity.Comunidad;
+import es.us.meerkat.backend.entity.TipoPlanComunidad;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.exception.ValidationException;
+import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
+import es.us.meerkat.backend.repository.ComunidadRepository;
+import es.us.meerkat.backend.repository.EventoRepository;
+import es.us.meerkat.backend.repository.GoogleClassroomConnectionRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.SolicitudComunidadRepository;
+import es.us.meerkat.backend.repository.SuscripcionRepository;
+import es.us.meerkat.backend.repository.TransaccionPagoRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -64,6 +74,29 @@ public class UsuarioService {
 
     /** Resolver para localizar recursos estáticos en classpath. */
     private final ResourcePatternResolver resourcePatternResolver;
+
+    /** Repositorio para acceder a la información de las comunidades. */
+    private final ComunidadRepository comunidadRepository;
+
+    /** Repositorio para gestionar suscripciones. */
+    private final SuscripcionRepository suscripcionRepository;
+
+    /** Repositorio para gestionar transacciones de pago. */
+    private final TransaccionPagoRepository transaccionPagoRepository;
+
+    /** Repositorio para gestionar asistencias a eventos. */
+    private final AsistenciaEventoRepository asistenciaEventoRepository;
+
+    /** Repositorio para gestionar eventos. */
+    private final EventoRepository eventoRepository;
+
+    /** Repositorio para gestionar solicitudes de comunidad. */
+    private final SolicitudComunidadRepository solicitudComunidadRepository;
+
+    /** Repositorio para gestionar conexiones con Google Classroom. */
+    private final GoogleClassroomConnectionRepository googleClassroomConnectionRepository;
+
+    private static final int MAX_FREE_COMMUNITIES = 3;
 
     // ===============================
     // GET /api/v1/users/me
@@ -201,10 +234,51 @@ public class UsuarioService {
     @Transactional
     public void eliminarCuenta(final Usuario usuario) {
         if (usuario == null || usuario.getId() == null) {
-            throw new RuntimeException("Usuario no autenticado");
+            throw new ValidationException("Usuario no autenticado");
+        }
+
+        // Comunidades donde el usuario es creador
+        List<Comunidad> comunidadesUsuario = comunidadRepository.findByCreadorId(usuario.getId());
+        for (Comunidad comunidad : comunidadesUsuario) {
+            List<Usuario> miembrosMasAntiguos =
+                    miembroComunidadRepository.findMiembrosMasAntiguosEnComunidad(
+                            comunidad.getId(), usuario.getId());
+
+            if (miembrosMasAntiguos.isEmpty()) {
+                // No hay miembros, eliminar la comunidad
+                comunidadRepository.delete(comunidad);
+            } else {
+                // Intentar encontrar un miembro que pueda asumir la propiedad
+                Usuario miembroMasAntiguo =
+                        miembrosMasAntiguos.stream()
+                                .filter(
+                                        m ->
+                                                comunidadRepository.countByCreadorIdAndTipoPlan(
+                                                                m.getId(), TipoPlanComunidad.FREE)
+                                                        < MAX_FREE_COMMUNITIES)
+                                .findFirst()
+                                .orElse(null);
+
+                if (miembroMasAntiguo != null) {
+                    // Transferir propiedad
+                    comunidad.setCreador(miembroMasAntiguo);
+                    comunidadRepository.save(comunidad);
+                } else {
+                    // Ningún miembro puede asumir la comunidad, eliminarla
+                    comunidadRepository.delete(comunidad);
+                }
+            }
         }
 
         // Eliminar primero relaciones que referencian al usuario.
+        // Orden importante: eliminar primero dependencias más profundas
+        asistenciaEventoRepository.deleteByUsuarioId(usuario.getId());
+        eventoRepository.deleteByUsuarioId(usuario.getId());
+        solicitudComunidadRepository.deleteBySolicitanteId(usuario.getId());
+        solicitudComunidadRepository.deleteByRespondidaPorId(usuario.getId());
+        googleClassroomConnectionRepository.deleteByUsuarioId(usuario.getId());
+        transaccionPagoRepository.deleteByUsuarioId(usuario.getId());
+        suscripcionRepository.deleteByUsuarioId(usuario.getId());
         miembroComunidadRepository.deleteByUsuarioId(usuario.getId());
         usuarioRepository.delete(usuario);
     }

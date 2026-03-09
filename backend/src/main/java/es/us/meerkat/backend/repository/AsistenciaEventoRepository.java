@@ -59,4 +59,7 @@ public interface AsistenciaEventoRepository extends JpaRepository<AsistenciaEven
             "SELECT COUNT(a) FROM AsistenciaEvento a WHERE a.evento.id = :eventoId AND a.estado ="
                     + " es.us.meerkat.backend.entity.EstadoAsistencia.CONFIRMADA")
     long countConfirmedByEvent(@Param("eventoId") Long eventoId);
+
+    /** Elimina todas las asistencias de un usuario. */
+    void deleteByUsuarioId(Long usuarioId);
 }

@@ -22,7 +22,14 @@ import es.us.meerkat.backend.dto.UserDetailResponse;
 import es.us.meerkat.backend.dto.UserPublicResponse;
 import es.us.meerkat.backend.dto.VisibilityRequest;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
+import es.us.meerkat.backend.repository.ComunidadRepository;
+import es.us.meerkat.backend.repository.EventoRepository;
+import es.us.meerkat.backend.repository.GoogleClassroomConnectionRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.SolicitudComunidadRepository;
+import es.us.meerkat.backend.repository.SuscripcionRepository;
+import es.us.meerkat.backend.repository.TransaccionPagoRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,6 +38,20 @@ class UsuarioServiceTest {
     @Mock private UsuarioRepository usuarioRepository;
 
     @Mock private MiembroComunidadRepository miembroComunidadRepository;
+
+    @Mock private ComunidadRepository comunidadRepository;
+
+    @Mock private SuscripcionRepository suscripcionRepository;
+
+    @Mock private TransaccionPagoRepository transaccionPagoRepository;
+
+    @Mock private AsistenciaEventoRepository asistenciaEventoRepository;
+
+    @Mock private EventoRepository eventoRepository;
+
+    @Mock private SolicitudComunidadRepository solicitudComunidadRepository;
+
+    @Mock private GoogleClassroomConnectionRepository googleClassroomConnectionRepository;
 
     @Mock private BCryptPasswordEncoder passwordEncoder;
 
@@ -107,8 +128,19 @@ class UsuarioServiceTest {
         Usuario usuario = new Usuario();
         usuario.setId(12L);
 
+        // Mock comunidades (no hay comunidades del usuario)
+        when(comunidadRepository.findByCreadorId(12L)).thenReturn(List.of());
+
         usuarioService.eliminarCuenta(usuario);
 
+        // Verificar que todas las dependencias fueron eliminadas en orden
+        verify(asistenciaEventoRepository).deleteByUsuarioId(12L);
+        verify(eventoRepository).deleteByUsuarioId(12L);
+        verify(solicitudComunidadRepository).deleteBySolicitanteId(12L);
+        verify(solicitudComunidadRepository).deleteByRespondidaPorId(12L);
+        verify(googleClassroomConnectionRepository).deleteByUsuarioId(12L);
+        verify(transaccionPagoRepository).deleteByUsuarioId(12L);
+        verify(suscripcionRepository).deleteByUsuarioId(12L);
         verify(miembroComunidadRepository).deleteByUsuarioId(12L);
         verify(usuarioRepository).delete(usuario);
     }
