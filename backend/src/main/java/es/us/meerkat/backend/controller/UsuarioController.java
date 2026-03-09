@@ -79,6 +79,9 @@ public final class UsuarioController {
      */
     @DeleteMapping("/me")
     public ResponseEntity<Void> deleteMe(@AuthenticationPrincipal final Usuario usuario) {
+        if (usuario == null) {
+            return ResponseEntity.status(401).build();
+        }
         usuarioService.eliminarCuenta(usuario);
         return ResponseEntity.noContent().build();
     }
