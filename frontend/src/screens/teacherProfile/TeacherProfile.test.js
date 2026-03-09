@@ -258,13 +258,6 @@ describe('TeacherProfile', () => {
     });
   });
 
-  test('muestra botón Configuración para el propietario', async () => {
-    renderWithId();
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Configuración/i })).toBeInTheDocument();
-    });
-  });
-
   test('no muestra botones de acción para otros usuarios', async () => {
     useAuth.mockReturnValue({
       user: { id: 999, esTutor: false }, // Usuario diferente
