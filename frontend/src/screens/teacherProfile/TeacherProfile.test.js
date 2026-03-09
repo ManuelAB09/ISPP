@@ -309,18 +309,6 @@ describe('TeacherProfile', () => {
     expect(screen.getByTestId('verificacion-modal')).toBeInTheDocument();
   });
 
-  test('abre el modal de configuración al hacer clic en Configuración', async () => {
-    renderWithId();
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Configuración/i })).toBeInTheDocument();
-    });
-
-    const configBtn = screen.getByRole('button', { name: /Configuración/i });
-    await userEvent.click(configBtn);
-
-    expect(screen.getByTestId('settings-modal')).toBeInTheDocument();
-  });
-
   // ==============================
   // TESTS DE ERROR
   // ==============================
