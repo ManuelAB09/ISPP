@@ -215,11 +215,9 @@ const MyProfile = () => {
                         {isOwner && (
                             <>
                                 <button className="btn-edit-profile" onClick={() => setShowEditProfile(true)}>
-                                    <span className="btn-icon">✏️</span>
                                     Editar Perfil
                                 </button>
                                 <button className="btn-settings" onClick={() => setShowSettings(true)}>
-                                    <span className="btn-icon">⚙️</span>
                                     Configuración
                                 </button>
                             </>
@@ -358,13 +356,12 @@ const MyProfile = () => {
                                         </div>
                                         <div className="created-community-card__bottom">
                                             <div className="created-community-card__members">
-                                                <span className="members-icon">👥</span>
                                                 <span className="members-text">Inscritos: <strong>{comunidad.miembrosActuales || 0}</strong>/{comunidad.maxMiembros || 0}</span>
                                             </div>
                                             {isOwner && (
                                                 <div className="created-community-card__actions">
-                                                    <Link to={`/comunidades/${comunidad.id}/editar`} className="action-link" onClick={(e) => e.stopPropagation()}>✏️ Editar</Link>
-                                                    <Link to={`/comunidades/${comunidad.id}/apuntes`} className="action-link" onClick={(e) => e.stopPropagation()}>📄 Subir apuntes</Link>
+                                                    <Link to={`/comunidades/${comunidad.id}/editar`} className="action-link" onClick={(e) => e.stopPropagation()}> Editar</Link>
+                                                    <Link to={`/comunidades/${comunidad.id}/apuntes`} className="action-link" onClick={(e) => e.stopPropagation()}> Subir apuntes</Link>
                                                 </div>
                                             )}
                                         </div>

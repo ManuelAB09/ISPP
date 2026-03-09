@@ -64,6 +64,7 @@ export default function Chats() {
     const [selectedCommunityId, setSelectedCommunityId] = useState(null);
     const [privateTarget, setPrivateTarget] = useState(null);
     const [activeTab, setActiveTab] = useState('communities'); // 'communities' o 'private'
+    const [isMobileDropdownOpen, setIsMobileDropdownOpen] = useState(false);
 
     // lista que se mostrará en la barra lateral de privados; incluye el target cuando
     // no hay conversaciones serializadas para que siempre aparezca al menos ese usuario.
@@ -262,6 +263,61 @@ export default function Chats() {
 
                         {!loading && !error && communities.length > 0 && (
                             <div className="chats-layout">
+                                {/* Selector móvil */}
+                                <div className="chats-mobile-selector">
+                                    {isMobileDropdownOpen && (
+                                        <div 
+                                            className="mobile-selector-overlay"
+                                            onClick={() => setIsMobileDropdownOpen(false)}
+                                        />
+                                    )}
+                                    <button 
+                                        className="mobile-selector-button"
+                                        onClick={() => setIsMobileDropdownOpen(!isMobileDropdownOpen)}
+                                    >
+                                        <img
+                                            src={resolveCommunityImage(communities.find((c) => c.id === selectedCommunityId))}
+                                            alt="Comunidad actual"
+                                            className="mobile-selector-image"
+                                        />
+                                        <span className="mobile-selector-text">
+                                            {communities.find((c) => c.id === selectedCommunityId)?.nombre || 'Selecciona una comunidad'}
+                                        </span>
+                                        <svg 
+                                            width="20" 
+                                            height="20" 
+                                            viewBox="0 0 20 20" 
+                                            fill="none" 
+                                            className={`mobile-selector-arrow ${isMobileDropdownOpen ? 'open' : ''}`}
+                                        >
+                                            <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
+                                    </button>
+                                    {isMobileDropdownOpen && (
+                                        <div className="mobile-selector-dropdown">
+                                            {communities.map((community) => (
+                                                <button
+                                                    key={community.id}
+                                                    type="button"
+                                                    className={`mobile-dropdown-item ${community.id === selectedCommunityId ? 'active' : ''}`}
+                                                    onClick={() => {
+                                                        setSelectedCommunityId(community.id);
+                                                        setPrivateTarget(null);
+                                                        setIsMobileDropdownOpen(false);
+                                                    }}
+                                                >
+                                                    <img
+                                                        src={resolveCommunityImage(community)}
+                                                        alt={community.nombre}
+                                                        className="mobile-dropdown-image"
+                                                    />
+                                                    <span>{community.nombre}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
                                 <aside className="chats-sidebar">
                                     {communities.map((community) => {
                                         const isSelected = community.id === selectedCommunityId;
@@ -346,6 +402,75 @@ export default function Chats() {
                     <>
                         {!loading && (privateTarget || conversaciones.length > 0) && (
                             <div className={`chats-layout ${hasSidebar ? '' : 'no-sidebar'}`}>
+                                {/* Selector móvil para privados */}
+                                {hasSidebar && (
+                                    <div className="chats-mobile-selector">
+                                        {isMobileDropdownOpen && (
+                                            <div 
+                                                className="mobile-selector-overlay"
+                                                onClick={() => setIsMobileDropdownOpen(false)}
+                                            />
+                                        )}
+                                        <button 
+                                            className="mobile-selector-button"
+                                            onClick={() => setIsMobileDropdownOpen(!isMobileDropdownOpen)}
+                                        >
+                                            {privateTarget ? (
+                                                <>
+                                                    <img
+                                                        src={resolveUserImage(privateTarget.foto)}
+                                                        alt={privateTarget.nombre}
+                                                        className="mobile-selector-image"
+                                                        style={{ backgroundColor: privateTarget.fotoBackgroundColor || '#ffffff' }}
+                                                    />
+                                                    <span className="mobile-selector-text">
+                                                        {privateTarget.nombre}
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <span className="mobile-selector-text">Selecciona una conversación</span>
+                                            )}
+                                            <svg 
+                                                width="20" 
+                                                height="20" 
+                                                viewBox="0 0 20 20" 
+                                                fill="none" 
+                                                className={`mobile-selector-arrow ${isMobileDropdownOpen ? 'open' : ''}`}
+                                            >
+                                                <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                            </svg>
+                                        </button>
+                                        {isMobileDropdownOpen && (
+                                            <div className="mobile-selector-dropdown">
+                                                {sidebarConversations.map((conv, idx) => (
+                                                    <button
+                                                        key={idx}
+                                                        type="button"
+                                                        className={`mobile-dropdown-item ${privateTarget?.id === conv.usuarioId ? 'active' : ''}`}
+                                                        onClick={() => {
+                                                            setPrivateTarget({
+                                                                id: conv.usuarioId,
+                                                                nombre: conv.usuarioNombre,
+                                                                foto: conv.usuarioFoto || null,
+                                                                fotoBackgroundColor: conv.usuarioFotoBackgroundColor || '#ffffff',
+                                                            });
+                                                            setIsMobileDropdownOpen(false);
+                                                        }}
+                                                    >
+                                                        <img
+                                                            src={resolveUserImage(conv.usuarioFoto)}
+                                                            alt={conv.usuarioNombre}
+                                                            className="mobile-dropdown-image"
+                                                            style={{ backgroundColor: conv.usuarioFotoBackgroundColor || '#ffffff' }}
+                                                        />
+                                                        <span>{conv.usuarioNombre}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
                                 {hasSidebar && (
                                     <aside className="chats-sidebar">
                                         {sidebarConversations.map((conv, idx) => {
