@@ -8,12 +8,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.web.multipart.MultipartFile;
 
 import es.us.meerkat.backend.dto.ChangePasswordRequest;
@@ -22,15 +22,14 @@ import es.us.meerkat.backend.dto.UserDetailResponse;
 import es.us.meerkat.backend.dto.UserPublicResponse;
 import es.us.meerkat.backend.dto.VisibilityRequest;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
 /**
  * Servicio para gestionar la lógica de negocio de usuarios.
  *
- * <p>
- * Cubre los endpoints de /api/v1/users del OpenAPI: obtener perfil propio,
- * actualizar, cambiar
+ * <p>Cubre los endpoints de /api/v1/users del OpenAPI: obtener perfil propio, actualizar, cambiar
  * contraseña, eliminar cuenta, visibilidad y ver perfiles públicos.
  */
 @Service
@@ -41,7 +40,8 @@ public class UsuarioService {
     private static final String RENATA_AVATAR_PUBLIC_PREFIX = "/static/images/renata/";
 
     /** Patrón classpath para leer avatares predefinidos empaquetados en backend. */
-    private static final String RENATA_AVATAR_CLASSPATH_PATTERN = "classpath:/static/static/images/renata/*.*";
+    private static final String RENATA_AVATAR_CLASSPATH_PATTERN =
+            "classpath:/static/static/images/renata/*.*";
 
     /** Longitud mínima requerida para las contraseñas. */
     private static final int MIN_PASSWORD_LENGTH = 8;
@@ -50,10 +50,14 @@ public class UsuarioService {
     private static final long MAX_PROFILE_PHOTO_SIZE_BYTES = 5L * 1024L * 1024L;
 
     /** MIME types permitidos para foto de perfil. */
-    private static final Set<String> ALLOWED_PROFILE_PHOTO_MIME_TYPES = Set.of("image/jpeg", "image/png", "image/webp");
+    private static final Set<String> ALLOWED_PROFILE_PHOTO_MIME_TYPES =
+            Set.of("image/jpeg", "image/png", "image/webp");
 
     /** Repositorio para acceder a la información de usuarios. */
     private final UsuarioRepository usuarioRepository;
+
+    /** Repositorio para gestionar membresías de comunidades. */
+    private final MiembroComunidadRepository miembroComunidadRepository;
 
     /** Codificador de contraseñas BCrypt. */
     private final BCryptPasswordEncoder passwordEncoder;
@@ -73,9 +77,10 @@ public class UsuarioService {
      */
     @Transactional
     public UserDetailResponse obtenerPerfilPropio(final Usuario usuario) {
-        Usuario usuarioActualizado = usuarioRepository
-                .findByEmail(usuario.getEmail())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        Usuario usuarioActualizado =
+                usuarioRepository
+                        .findByEmail(usuario.getEmail())
+                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         if (usuarioActualizado.getTutores() != null) {
             usuarioActualizado.getTutores().size();
         }
@@ -89,10 +94,9 @@ public class UsuarioService {
     /**
      * Actualiza la información personal del usuario autenticado.
      *
-     * <p>
-     * Solo modifica los campos que no sean nulos en el request.
+     * <p>Solo modifica los campos que no sean nulos en el request.
      *
-     * @param usuario      Usuario autenticado.
+     * @param usuario Usuario autenticado.
      * @param requestParam Datos a actualizar.
      * @return Perfil actualizado.
      */
@@ -122,8 +126,26 @@ public class UsuarioService {
         if (requestParam.getGrado() != null) {
             usuario.setGrado(requestParam.getGrado());
         }
+        if (requestParam.getNivelEstudios() != null) {
+            usuario.setNivelEstudios(requestParam.getNivelEstudios());
+        }
+        if (requestParam.getBaseFormativa() != null) {
+            usuario.setBaseFormativa(requestParam.getBaseFormativa());
+        }
         if (requestParam.getUbicacion() != null) {
             usuario.setUbicacion(requestParam.getUbicacion());
+        }
+        if (requestParam.getAutenticacionDosFactores() != null) {
+            usuario.setAutenticacionDosFactores(requestParam.getAutenticacionDosFactores());
+        }
+        if (requestParam.getVisibleEnListados() != null) {
+            usuario.setVisibleEnListados(requestParam.getVisibleEnListados());
+        }
+        if (requestParam.getNotificacionesEmail() != null) {
+            usuario.setNotificacionesEmail(requestParam.getNotificacionesEmail());
+        }
+        if (requestParam.getNotificacionesPush() != null) {
+            usuario.setNotificacionesPush(requestParam.getNotificacionesPush());
         }
 
         usuarioRepository.save(usuario);
@@ -134,11 +156,12 @@ public class UsuarioService {
      * Actualiza la foto de perfil del usuario autenticado a partir de un archivo.
      *
      * @param usuario Usuario autenticado.
-     * @param file    Archivo de imagen recibido en multipart.
+     * @param file Archivo de imagen recibido en multipart.
      * @return Perfil actualizado.
      */
     @Transactional
-    public UserDetailResponse actualizarFotoPerfil(final Usuario usuario, final MultipartFile file) {
+    public UserDetailResponse actualizarFotoPerfil(
+            final Usuario usuario, final MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Archivo de imagen requerido");
         }
@@ -170,15 +193,19 @@ public class UsuarioService {
     /**
      * Elimina permanentemente la cuenta del usuario autenticado.
      *
-     * <p>
-     * Esta acción es irreversible. El frontend debe mostrar confirmación antes de
-     * llamar a este
+     * <p>Esta acción es irreversible. El frontend debe mostrar confirmación antes de llamar a este
      * endpoint.
      *
      * @param usuario Usuario autenticado a eliminar.
      */
     @Transactional
     public void eliminarCuenta(final Usuario usuario) {
+        if (usuario == null || usuario.getId() == null) {
+            throw new RuntimeException("Usuario no autenticado");
+        }
+
+        // Eliminar primero relaciones que referencian al usuario.
+        miembroComunidadRepository.deleteByUsuarioId(usuario.getId());
         usuarioRepository.delete(usuario);
     }
 
@@ -189,14 +216,12 @@ public class UsuarioService {
     /**
      * Cambia la contraseña del usuario autenticado.
      *
-     * <p>
-     * Verifica la contraseña actual antes de aplicar el cambio.
+     * <p>Verifica la contraseña actual antes de aplicar el cambio.
      *
-     * @param usuario      Usuario autenticado.
+     * @param usuario Usuario autenticado.
      * @param requestParam Contraseña actual y nueva.
-     * @throws RuntimeException si la contraseña actual es incorrecta o la nueva no
-     *                          cumple los
-     *                          requisitos.
+     * @throws RuntimeException si la contraseña actual es incorrecta o la nueva no cumple los
+     *     requisitos.
      */
     @Transactional
     public void cambiarPassword(final Usuario usuario, final ChangePasswordRequest requestParam) {
@@ -221,7 +246,7 @@ public class UsuarioService {
     /**
      * Actualiza la visibilidad del perfil en listados públicos.
      *
-     * @param usuario      Usuario autenticado.
+     * @param usuario Usuario autenticado.
      * @param requestParam Nueva configuración de visibilidad.
      * @return Perfil actualizado.
      */
@@ -244,8 +269,7 @@ public class UsuarioService {
     /**
      * Devuelve el perfil público de un usuario por su ID.
      *
-     * <p>
-     * Solo expone datos que el usuario ha hecho públicos.
+     * <p>Solo expone datos que el usuario ha hecho públicos.
      *
      * @param usuarioId Identificador del usuario.
      * @return Perfil público del usuario.
@@ -253,9 +277,10 @@ public class UsuarioService {
      */
     public UserPublicResponse obtenerPerfilPublico(final Long usuarioId) {
 
-        final Usuario usuario = usuarioRepository
-                .findById(usuarioId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        final Usuario usuario =
+                usuarioRepository
+                        .findById(usuarioId)
+                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         return mapToPublicResponse(usuario);
     }
@@ -295,9 +320,17 @@ public class UsuarioService {
                 .foto(usuario.getFoto())
                 .fotoBackgroundColor(usuario.getFotoBackgroundColor())
                 .bio(usuario.getBio())
+                .universidad(usuario.getUniversidad())
+                .grado(usuario.getGrado())
+                .nivelEstudios(usuario.getNivelEstudios())
+                .baseFormativa(usuario.getBaseFormativa())
+                .ubicacion(usuario.getUbicacion())
                 .intereses(usuario.getIntereses())
                 .visibleEnListados(usuario.getVisibleEnListados())
                 .esTutor(usuario.getEsTutor())
+                .autenticacionDosFactores(usuario.getAutenticacionDosFactores())
+                .notificacionesEmail(usuario.getNotificacionesEmail())
+                .notificacionesPush(usuario.getNotificacionesPush())
                 .createdAt(usuario.getCreatedAt())
                 .build();
     }
@@ -322,12 +355,8 @@ public class UsuarioService {
     /**
      * Normaliza la foto de perfil recibida desde API.
      *
-     * <p>
-     * Si llega un nombre de archivo (p.ej. Feliz.png) o una ruta de Renata, la
-     * transforma a
-     * ruta pública estable. Si llega vacío, deja la foto sin valor (null).
-     * Cualquier otra
-     * URL/ruta se
+     * <p>Si llega un nombre de archivo (p.ej. Feliz.png) o una ruta de Renata, la transforma a ruta
+     * pública estable. Si llega vacío, deja la foto sin valor (null). Cualquier otra URL/ruta se
      * respeta para no romper compatibilidad con clientes existentes.
      *
      * @param fotoOriginal Valor recibido en UpdateUserRequest.foto.
@@ -359,9 +388,7 @@ public class UsuarioService {
         return fotoLimpia;
     }
 
-    /**
-     * Construye ruta pública de Renata si el archivo existe en recursos estáticos.
-     */
+    /** Construye ruta pública de Renata si el archivo existe en recursos estáticos. */
     private String construirRutaRenataSiExiste(final String fileName, final String fallbackValue) {
         if (!StringUtils.hasText(fileName)) {
             return null;
@@ -377,7 +404,8 @@ public class UsuarioService {
     /** Lee nombres de archivos de avatares Renata desde classpath. */
     private Set<String> obtenerNombresAvataresRenata() {
         try {
-            Resource[] resources = resourcePatternResolver.getResources(RENATA_AVATAR_CLASSPATH_PATTERN);
+            Resource[] resources =
+                    resourcePatternResolver.getResources(RENATA_AVATAR_CLASSPATH_PATTERN);
 
             return Arrays.stream(resources)
                     .map(Resource::getFilename)

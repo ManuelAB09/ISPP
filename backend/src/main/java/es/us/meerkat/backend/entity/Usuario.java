@@ -26,12 +26,11 @@ import lombok.ToString;
 /**
  * Entidad que representa un usuario en la plataforma.
  *
- * <p>
- * Contiene información de login, rol de tutor y relación con tutores.
+ * <p>Contiene información de login, rol de tutor y relación con tutores.
  */
 @Entity
 @Data
-@ToString(exclude = { "tutores", "intereses" })
+@ToString(exclude = {"tutores", "intereses"})
 @NoArgsConstructor
 @AllArgsConstructor
 public class Usuario {
@@ -52,9 +51,7 @@ public class Usuario {
     /** Nombre completo del usuario. */
     private String nombre;
 
-    /**
-     * URL/ruta de la foto de perfil del usuario. Puede ser nula si no tiene foto.
-     */
+    /** URL/ruta de la foto de perfil del usuario. Puede ser nula si no tiene foto. */
     @Column(columnDefinition = "TEXT")
     private String foto;
 
@@ -67,6 +64,12 @@ public class Usuario {
 
     /** Grado del usuario. */
     private String grado;
+
+    /** Nivel de estudios del usuario. */
+    private String nivelEstudios;
+
+    /** Base formativa del usuario. */
+    private String baseFormativa;
 
     /** Ubicación del usuario. */
     private String ubicacion;
@@ -84,8 +87,7 @@ public class Usuario {
     private String googleId;
 
     /**
-     * Indica si el perfil del usuario es visible en listados públicos y resultados
-     * de búsqueda. Por
+     * Indica si el perfil del usuario es visible en listados públicos y resultados de búsqueda. Por
      * defecto es visible.
      */
     @Column(nullable = false)
@@ -94,6 +96,18 @@ public class Usuario {
     /** Indica si el usuario tiene rol de tutor. */
     @Column(nullable = false)
     private Boolean esTutor = false;
+
+    /** Indica si la autenticación de dos factores está habilitada para el usuario. */
+    @Column(nullable = false)
+    private Boolean autenticacionDosFactores = false;
+
+    /** Indica si el usuario quiere recibir notificaciones por email. */
+    @Column(nullable = false)
+    private Boolean notificacionesEmail = true;
+
+    /** Indica si el usuario quiere recibir notificaciones push. */
+    @Column(nullable = false)
+    private Boolean notificacionesPush = false;
 
     // AÑADIR tipo plan cuando se cree la clase
     @Enumerated(EnumType.STRING)
@@ -117,6 +131,15 @@ public class Usuario {
         }
         if (this.esTutor == null) {
             this.esTutor = false;
+        }
+        if (this.autenticacionDosFactores == null) {
+            this.autenticacionDosFactores = false;
+        }
+        if (this.notificacionesEmail == null) {
+            this.notificacionesEmail = true;
+        }
+        if (this.notificacionesPush == null) {
+            this.notificacionesPush = true;
         }
     }
 }

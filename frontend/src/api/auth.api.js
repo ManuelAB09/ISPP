@@ -44,7 +44,7 @@ export const authApi = {
   /**
    * PUT /api/v1/users/me
    * Actualizar perfil del usuario autenticado
-   * @param {Object} data - { nombre, foto, bio, universidad, grado, ubicacion, intereses }
+    * @param {Object} data - { nombre, foto, bio, universidad, grado, nivelEstudios, baseFormativa, ubicacion, intereses }
    * @returns {Promise<Object>} - UserResponse actualizado
    */
   updateMe(data) {

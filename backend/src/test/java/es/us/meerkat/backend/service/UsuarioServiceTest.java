@@ -22,12 +22,15 @@ import es.us.meerkat.backend.dto.UserDetailResponse;
 import es.us.meerkat.backend.dto.UserPublicResponse;
 import es.us.meerkat.backend.dto.VisibilityRequest;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 
 @ExtendWith(MockitoExtension.class)
 class UsuarioServiceTest {
 
     @Mock private UsuarioRepository usuarioRepository;
+
+    @Mock private MiembroComunidadRepository miembroComunidadRepository;
 
     @Mock private BCryptPasswordEncoder passwordEncoder;
 
@@ -102,9 +105,11 @@ class UsuarioServiceTest {
     @Test
     void eliminarCuentaShouldDeleteUsuario() {
         Usuario usuario = new Usuario();
+        usuario.setId(12L);
 
         usuarioService.eliminarCuenta(usuario);
 
+        verify(miembroComunidadRepository).deleteByUsuarioId(12L);
         verify(usuarioRepository).delete(usuario);
     }
 

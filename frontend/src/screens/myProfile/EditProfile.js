@@ -60,6 +60,8 @@ const EditProfile = ({ onClose, onSave }) => {
         descripcion: "",
         universidad: "",
         grado: "",
+        nivelEstudios: "",
+        baseFormativa: "",
         ubicacion: "",
         intereses: [],
     })
@@ -75,6 +77,12 @@ const EditProfile = ({ onClose, onSave }) => {
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
     const [fotoBackgroundColor, setFotoBackgroundColor] = useState('#ffffff')
+    const [fieldErrors, setFieldErrors] = useState({})
+
+    const toFormFieldName = (backendField) => {
+        if (backendField === 'bio') return 'descripcion'
+        return backendField
+    }
 
     // Cargar datos del usuario al montar el componente
     useEffect(() => {
@@ -84,6 +92,8 @@ const EditProfile = ({ onClose, onSave }) => {
                 descripcion: user.bio || "",
                 universidad: user.universidad || "",
                 grado: user.grado || "",
+                nivelEstudios: user.nivelEstudios || "",
+                baseFormativa: user.baseFormativa || "",
                 ubicacion: user.ubicacion || "",
                 intereses: user.intereses || [],
             })
@@ -127,6 +137,12 @@ const EditProfile = ({ onClose, onSave }) => {
             ...prev,
             [name]: type === 'checkbox' ? checked : value,
         }))
+        setFieldErrors((prev) => {
+            if (!prev[name]) return prev
+            const next = { ...prev }
+            delete next[name]
+            return next
+        })
         if (error) setError('')
     }
 
@@ -137,6 +153,12 @@ const EditProfile = ({ onClose, onSave }) => {
                 ? prev.intereses.filter((i) => i !== interest)
                 : [...prev.intereses, interest],
         }))
+        setFieldErrors((prev) => {
+            if (!prev.intereses) return prev
+            const next = { ...prev }
+            delete next.intereses
+            return next
+        })
     }
 
     const handleSelectAvatar = (avatarPath) => {
@@ -184,11 +206,12 @@ const EditProfile = ({ onClose, onSave }) => {
         e.preventDefault()
         setError('')
         setSuccess('')
+        setFieldErrors({})
         setIsSaving(true)
 
         // Validaciones básicas
         if (!formData.nombre.trim()) {
-            setError('El nombre es obligatorio')
+            setFieldErrors({ nombre: 'El nombre es obligatorio' })
             setIsSaving(false)
             return
         }
@@ -204,6 +227,8 @@ const EditProfile = ({ onClose, onSave }) => {
                 bio: formData.descripcion.trim(),
                 universidad: formData.universidad.trim(),
                 grado: formData.grado.trim(),
+                nivelEstudios: formData.nivelEstudios.trim(),
+                baseFormativa: formData.baseFormativa.trim(),
                 ubicacion: formData.ubicacion.trim(),
                 intereses: formData.intereses,
                 fotoBackgroundColor: fotoBackgroundColor,
@@ -230,7 +255,18 @@ const EditProfile = ({ onClose, onSave }) => {
                     onClose()
                 }, 1500)
             } else {
-                setError(result.error || 'Error al guardar los cambios')
+                const backendErrors = result.validationErrors || {}
+                const mappedErrors = Object.entries(backendErrors).reduce((acc, [key, value]) => {
+                    acc[toFormFieldName(key)] = value
+                    return acc
+                }, {})
+
+                if (Object.keys(mappedErrors).length > 0) {
+                    setFieldErrors(mappedErrors)
+                    setError('Revisa los campos marcados')
+                } else {
+                    setError(result.error || 'Error al guardar los cambios')
+                }
             }
         } catch (err) {
             setError(err.message || 'Error al guardar los cambios')
@@ -336,8 +372,13 @@ const EditProfile = ({ onClose, onSave }) => {
                                 value={formData.nombre}
                                 onChange={handleInputChange}
                                 placeholder="Tu nombre completo"
+                                className={fieldErrors.nombre ? 'edit-profile-input-error' : ''}
+                                aria-invalid={Boolean(fieldErrors.nombre)}
                                 required
                             />
+                            {fieldErrors.nombre && (
+                                <span className="edit-profile-field-error">{fieldErrors.nombre}</span>
+                            )}
                         </div>
 
                         <div className="edit-profile-form-group">
@@ -348,8 +389,13 @@ const EditProfile = ({ onClose, onSave }) => {
                                 value={formData.descripcion}
                                 onChange={handleInputChange}
                                 placeholder="Cuéntanos sobre ti..."
+                                className={fieldErrors.descripcion ? 'edit-profile-input-error' : ''}
+                                aria-invalid={Boolean(fieldErrors.descripcion)}
                                 rows={4}
                             />
+                            {fieldErrors.descripcion && (
+                                <span className="edit-profile-field-error">{fieldErrors.descripcion}</span>
+                            )}
                         </div>
                     </section>
 
@@ -366,7 +412,12 @@ const EditProfile = ({ onClose, onSave }) => {
                                 value={formData.universidad}
                                 onChange={handleInputChange}
                                 placeholder="Tu universidad"
+                                className={fieldErrors.universidad ? 'edit-profile-input-error' : ''}
+                                aria-invalid={Boolean(fieldErrors.universidad)}
                             />
+                            {fieldErrors.universidad && (
+                                <span className="edit-profile-field-error">{fieldErrors.universidad}</span>
+                            )}
                         </div>
 
                         <div className="edit-profile-form-group">
@@ -377,8 +428,47 @@ const EditProfile = ({ onClose, onSave }) => {
                                 name="grado"
                                 value={formData.grado}
                                 onChange={handleInputChange}
-                                placeholder="Tu grado o carrera"
+                                placeholder="El nombre de tu grado o carrera"
+                                className={fieldErrors.grado ? 'edit-profile-input-error' : ''}
+                                aria-invalid={Boolean(fieldErrors.grado)}
                             />
+                            {fieldErrors.grado && (
+                                <span className="edit-profile-field-error">{fieldErrors.grado}</span>
+                            )}
+                        </div>
+
+                        <div className="edit-profile-form-group">
+                            <label htmlFor="nivelEstudios">Nivel de estudios</label>
+                            <input
+                                type="text"
+                                id="nivelEstudios"
+                                name="nivelEstudios"
+                                value={formData.nivelEstudios}
+                                onChange={handleInputChange}
+                                placeholder="Ej: Grado, Máster, Doctorado"
+                                className={fieldErrors.nivelEstudios ? 'edit-profile-input-error' : ''}
+                                aria-invalid={Boolean(fieldErrors.nivelEstudios)}
+                            />
+                            {fieldErrors.nivelEstudios && (
+                                <span className="edit-profile-field-error">{fieldErrors.nivelEstudios}</span>
+                            )}
+                        </div>
+
+                        <div className="edit-profile-form-group">
+                            <label htmlFor="baseFormativa">Base formativa</label>
+                            <input
+                                type="text"
+                                id="baseFormativa"
+                                name="baseFormativa"
+                                value={formData.baseFormativa}
+                                onChange={handleInputChange}
+                                placeholder="Ej: Científico-tecnológica"
+                                className={fieldErrors.baseFormativa ? 'edit-profile-input-error' : ''}
+                                aria-invalid={Boolean(fieldErrors.baseFormativa)}
+                            />
+                            {fieldErrors.baseFormativa && (
+                                <span className="edit-profile-field-error">{fieldErrors.baseFormativa}</span>
+                            )}
                         </div>
 
                         <div className="edit-profile-form-group">
@@ -390,7 +480,12 @@ const EditProfile = ({ onClose, onSave }) => {
                                 value={formData.ubicacion}
                                 onChange={handleInputChange}
                                 placeholder="Ciudad, País"
+                                className={fieldErrors.ubicacion ? 'edit-profile-input-error' : ''}
+                                aria-invalid={Boolean(fieldErrors.ubicacion)}
                             />
+                            {fieldErrors.ubicacion && (
+                                <span className="edit-profile-field-error">{fieldErrors.ubicacion}</span>
+                            )}
                         </div>
                     </section>
 
@@ -414,6 +509,9 @@ const EditProfile = ({ onClose, onSave }) => {
                                 </button>
                             ))}
                         </div>
+                        {fieldErrors.intereses && (
+                            <span className="edit-profile-field-error">{fieldErrors.intereses}</span>
+                        )}
                     </section>
 
                     {/* Mensajes de error y éxito */}
