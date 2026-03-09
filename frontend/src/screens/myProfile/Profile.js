@@ -5,6 +5,7 @@ import { communitiesApi } from "../../api/communities.api"
 import { getMyTutorProfiles } from "../../api/tutorEndpoints"
 import Header from "../../components/Header/Header"
 import { useAuth } from "../../contexts/AuthContext"
+import { apiClient } from "../../api/client"
 import EditProfile from "./EditProfile"
 import "./MyProfile.css"
 import Settings from "./Settings"
@@ -43,6 +44,8 @@ const MyProfile = () => {
         descargas: 0
     })
     const isOwner = true // Siempre es el propietario en esta pantalla
+    const [unauthorizedMessage, setUnauthorizedMessage] = useState("")
+    const { logout } = useAuth()
 
     // Si el usuario tiene perfil de tutor, redirigir a su perfil de profesor
     useEffect(() => {
@@ -181,6 +184,28 @@ const MyProfile = () => {
         return `${base}/${value}`;
     }
 
+    // Función para manejar cierre de sesión
+    const handleLogout = async () => {
+        // Validar que sea el propietario
+        if (!isOwner) {
+            setUnauthorizedMessage("No puedes cerrar sesión de una cuenta que no es tuya.")
+            setTimeout(() => setUnauthorizedMessage(""), 3000)
+            return
+        }
+
+        try {
+            await apiClient.post('/api/v1/auth/logout')
+        } catch (error) {
+            // Aunque falle la llamada, cerramos sesión localmente
+            console.error('Error al cerrar sesión:', error)
+        } finally {
+            // Usar logout del contexto para limpiar estado correctamente
+            logout()
+            // Redirigir a home
+            navigate('/')
+        }
+    }
+
     return (
         <>
             <Header page={'inicio'} />
@@ -209,6 +234,12 @@ const MyProfile = () => {
                             )}
                         </div>
                     </div>
+                    {/* Mensaje de acceso no autorizado */}
+                    {unauthorizedMessage && (
+                        <div className="settings-unauthorized-message">
+                            ⚠️ {unauthorizedMessage}
+                        </div>
+                    )}
                     <div className="profile-header__right">
                         {isOwner && (
                             <>
@@ -219,6 +250,9 @@ const MyProfile = () => {
                                 <button className="btn-settings" onClick={() => setShowSettings(true)}>
                                     <span className="btn-icon">⚙️</span>
                                     Configuración
+                                </button>
+                                <button className="settings-btn settings-btn--outline" onClick={handleLogout}>
+                                    Cerrar sesión
                                 </button>
                             </>
                         )}

@@ -31,27 +31,6 @@ const Settings = ({ onClose, isOwner = true }) => {
     // Estado para mensajes de acceso no autorizado
     const [unauthorizedMessage, setUnauthorizedMessage] = useState("")
 
-    const handleLogout = async () => {
-        // Validar que sea el propietario
-        if (!isOwner) {
-            setUnauthorizedMessage("No puedes cerrar sesión de una cuenta que no es tuya.")
-            setTimeout(() => setUnauthorizedMessage(""), 3000)
-            return
-        }
-
-        try {
-            await apiClient.post('/api/v1/auth/logout')
-        } catch (error) {
-            // Aunque falle la llamada, cerramos sesión localmente
-            console.error('Error al cerrar sesión:', error)
-        } finally {
-            // Usar logout del contexto para limpiar estado correctamente
-            logout()
-            // Redirigir a home
-            navigate('/')
-        }
-    }
-
     const handleChangePassword = async (e) => {
         e.preventDefault()
         setPasswordError("")
@@ -307,24 +286,9 @@ const Settings = ({ onClose, isOwner = true }) => {
                     </form>
                 </section>
 
-                {/* Sección: Acciones de cuenta */}
+                {/* Sección: Eliminación de cuenta */}
                 <section className="settings-section settings-section--danger">
                     <h2 className="settings-section__title">Zona de peligro</h2>
-                    
-                    <div className="settings-action-row">
-                        <div>
-                            <h3 className="settings-action-title">Cerrar sesión</h3>
-                            <p className="settings-action-description">
-                                Cierra tu sesión en este dispositivo.
-                            </p>
-                        </div>
-                        <button 
-                            className="settings-btn settings-btn--outline"
-                            onClick={handleLogout}
-                        >
-                            Cerrar sesión
-                        </button>
-                    </div>
 
                     <div className="settings-action-row">
                         <div>
