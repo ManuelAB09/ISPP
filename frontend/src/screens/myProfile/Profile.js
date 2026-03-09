@@ -251,7 +251,7 @@ const MyProfile = () => {
                                     <span className="btn-icon">⚙️</span>
                                     Configuración
                                 </button>
-                                <button className="logout-btn" onClick={handleLogout}>
+                                <button className="btn-settings settings-btn--danger" onClick={handleLogout}>
                                     <span className="btn-icon">🚪</span>
                                     Cerrar sesión
                                 </button>

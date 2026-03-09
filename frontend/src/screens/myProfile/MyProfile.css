@@ -143,27 +143,18 @@
     transition: all 0.2s;
 }
 
-.logout-btn {
-    background-color: transparent;
-    color: red;
-    font-family: 'inter', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    padding: 12px 24px;
-    border: 2px solid var(--spaceIndigo);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
 .btn-settings:hover {
     background-color: var(--spaceIndigo);
     color: white;
 }
 
-.logout-btn:hover {
-    background-color: var(--spaceIndigo);
+.settings-btn--danger {
+    background-color: #dc2626;
     color: white;
+}
+
+.settings-btn--danger:hover {
+    background-color: #b91c1c;
 }
 
 /* ═══════════════════════════════════════════════════════════════
