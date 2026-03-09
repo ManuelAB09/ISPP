@@ -2996,7 +2996,25 @@ components:
           type: string
           format: uri
           nullable: true
+        fotoBackgroundColor:
+          type: string
+          nullable: true
         bio:
+          type: string
+          nullable: true
+        universidad:
+          type: string
+          nullable: true
+        grado:
+          type: string
+          nullable: true
+        nivelEstudios:
+          type: string
+          nullable: true
+        baseFormativa:
+          type: string
+          nullable: true
+        ubicacion:
           type: string
           nullable: true
         intereses:
@@ -3007,6 +3025,12 @@ components:
           type: string
           nullable: true
         visibleEnListados:
+          type: boolean
+        autenticacionDosFactores:
+          type: boolean
+        notificacionesEmail:
+          type: boolean
+        notificacionesPush:
           type: boolean
         plan:
           $ref: '#/components/schemas/TipoPlan'
@@ -3052,6 +3076,29 @@ components:
         bio:
           type: string
           maxLength: 500
+        universidad:
+          type: string
+          maxLength: 100
+        grado:
+          type: string
+          maxLength: 100
+        nivelEstudios:
+          type: string
+          maxLength: 100
+        baseFormativa:
+          type: string
+          maxLength: 100
+        ubicacion:
+          type: string
+          maxLength: 100
+        visibleEnListados:
+          type: boolean
+        autenticacionDosFactores:
+          type: boolean
+        notificacionesEmail:
+          type: boolean
+        notificacionesPush:
+          type: boolean
         intereses:
           type: array
           items:

@@ -5,28 +5,35 @@ import { communitiesApi } from "../../api/communities.api"
 import { getMyTutorProfiles } from "../../api/tutorEndpoints"
 import Header from "../../components/Header/Header"
 import { useAuth } from "../../contexts/AuthContext"
+
 import CreateProfileModal from "../teacherProfile/CreateProfileModal"
+
+import { apiClient } from "../../api/client"
+
 import EditProfile from "./EditProfile"
 import "./MyProfile.css"
 import Settings from "./Settings"
 
-const toAbsoluteImageUrl = (imageUrl) => {
+const DEFAULT_PROFILE_AVATAR =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='60' fill='%23E6EAF3'/%3E%3Ccircle cx='60' cy='46' r='22' fill='%2395A1BB'/%3E%3Cpath d='M20 106c6-20 22-32 40-32s34 12 40 32' fill='%2395A1BB'/%3E%3C/svg%3E";
+
+const toAbsoluteImageUrl = (imageUrl, fallback = DEFAULT_PROFILE_AVATAR) => {
     if (!imageUrl || !String(imageUrl).trim()) {
-        return ''
+        return fallback;
     }
 
-    const value = String(imageUrl).trim()
+    const value = String(imageUrl).trim();
     if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
-        return value
+        return value;
     }
 
-    const base = getApiBaseUrl()
+    const base = getApiBaseUrl();
     if (value.startsWith('/')) {
-        return `${base}${value}`
+        return `${base}${value}`;
     }
 
-    return `${base}/${value}`
-}
+    return `${base}/${value}`;
+};
 
 const MyProfile = () => {
     const { isAuthenticated, loading, user, updateProfile } = useAuth()
@@ -48,6 +55,8 @@ const MyProfile = () => {
         descargas: 0
     })
     const isOwner = true // Siempre es el propietario en esta pantalla
+    const [unauthorizedMessage, setUnauthorizedMessage] = useState("")
+    const { logout } = useAuth()
 
     const handleBecomeTutor = async () => {
         setBecomingTutor(true)
@@ -67,7 +76,7 @@ const MyProfile = () => {
             .then((perfil) => {
                 if (perfil && perfil.id) setMiPerfilTutor(perfil);
             })
-            .catch(() => {})
+            .catch(() => { })
             .finally(() => setLoadingTutorProfile(false));
     }, [isAuthenticated, loading, user]);
 
@@ -83,22 +92,22 @@ const MyProfile = () => {
             try {
                 const response = await communitiesApi.listMine({ page: 0, size: 100 });
                 const comunidades = response.content || [];
-                
+
                 // Filtrar comunidades donde soy admin/creador
-                const creadas = comunidades.filter(c => 
-                    c.miRol === 'ADMIN' || c.miRol === 'ADMINISTRADOR' || 
+                const creadas = comunidades.filter(c =>
+                    c.miRol === 'ADMIN' || c.miRol === 'ADMINISTRADOR' ||
                     c.creador?.id === user?.id || parseInt(localStorage.getItem('userId')) === c.creador?.id
                 );
-                
+
                 // Filtrar comunidades donde solo soy miembro
-                const miembro = comunidades.filter(c => 
-                    c.miRol !== 'ADMIN' && c.miRol !== 'ADMINISTRADOR' && 
+                const miembro = comunidades.filter(c =>
+                    c.miRol !== 'ADMIN' && c.miRol !== 'ADMINISTRADOR' &&
                     c.creador?.id !== user?.id && parseInt(localStorage.getItem('userId')) !== c.creador?.id
                 );
-                
+
                 setComunidadesCreadas(creadas);
                 setMisComunidades(miembro);
-                
+
                 // Actualizar estadísticas
                 setStats(prev => ({
                     ...prev,
@@ -155,6 +164,8 @@ const MyProfile = () => {
         email: user?.email || "Sin email",
         universidad: user?.universidad || "",
         grado: user?.grado || "",
+        nivelEstudios: user?.nivelEstudios || "",
+        baseFormativa: user?.baseFormativa || "",
         ubicacion: user?.ubicacion || "",
         foto: user?.foto || null,
         fotoBackgroundColor: user?.fotoBackgroundColor || '#ffffff',
@@ -169,7 +180,7 @@ const MyProfile = () => {
     // Función para formatear URL de imagen de comunidad
     const getCommunityImageUrl = (comunidad) => {
         const communityImageRaw = comunidad.imagen || comunidad.imagenUrl || comunidad.foto;
-        
+
         if (!communityImageRaw || !String(communityImageRaw).trim()) {
             return 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
         }
@@ -187,6 +198,28 @@ const MyProfile = () => {
         return `${base}/${value}`;
     }
 
+    // Función para manejar cierre de sesión
+    const handleLogout = async () => {
+        // Validar que sea el propietario
+        if (!isOwner) {
+            setUnauthorizedMessage("No puedes cerrar sesión de una cuenta que no es tuya.")
+            setTimeout(() => setUnauthorizedMessage(""), 3000)
+            return
+        }
+
+        try {
+            await apiClient.post('/api/v1/auth/logout')
+        } catch (error) {
+            // Aunque falle la llamada, cerramos sesión localmente
+            console.error('Error al cerrar sesión:', error)
+        } finally {
+            // Usar logout del contexto para limpiar estado correctamente
+            logout()
+            // Redirigir a home
+            navigate('/')
+        }
+    }
+
     return (
         <>
             <Header page={'inicio'} />
@@ -196,11 +229,12 @@ const MyProfile = () => {
                 <section className="profile-header">
                     <div className="profile-header__left">
                         <div className="profile-avatar" style={{ backgroundColor: userData.fotoBackgroundColor }}>
-                            {userData.foto ? (
-                                <img src={toAbsoluteImageUrl(userData.foto)} alt={userData.nombre} className="profile-avatar-img" />
-                            ) : (
-                                <span className="profile-avatar-placeholder">👤</span>
-                            )}
+                            <img
+                                src={toAbsoluteImageUrl(userData.foto, DEFAULT_PROFILE_AVATAR)}
+                                alt={userData.nombre}
+                                className="profile-avatar-img"
+                                onError={e => { e.target.onerror = null; e.target.src = DEFAULT_PROFILE_AVATAR; }}
+                            />
                         </div>
                         <div className="profile-info">
                             <h1 className="profile-info__name">{userData.nombre}</h1>
@@ -215,39 +249,47 @@ const MyProfile = () => {
                             )}
                         </div>
                     </div>
+                    {/* Mensaje de acceso no autorizado */}
+                    {unauthorizedMessage && (
+                        <div className="settings-unauthorized-message">
+                            ⚠️ {unauthorizedMessage}
+                        </div>
+                    )}
                     <div className="profile-header__right">
                         {isOwner && (
                             <>
                                 <button className="btn-edit-profile" onClick={() => setShowEditProfile(true)}>
-                                    <span className="btn-icon">✏️</span>
                                     Editar Perfil
                                 </button>
                                 <button className="btn-settings" onClick={() => setShowSettings(true)}>
-                                    <span className="btn-icon">⚙️</span>
                                     Configuración
                                 </button>
-                                {!user?.esTutor && (
-                                    <>
-                                        <button
-                                            className="btn-become-tutor"
-                                            onClick={handleBecomeTutor}
-                                            disabled={becomingTutor}
-                                        >
-                                            <span className="btn-icon">🎓</span>
-                                            {becomingTutor ? 'Actualizando...' : 'Convertirme en tutor'}
-                                        </button>
-                                        {becomeTutorError && (
-                                            <span className="become-tutor-error">{becomeTutorError}</span>
-                                        )}
-                                    </>
-                                )}
+
+                                {
+                                    !user?.esTutor && (
+                                        <>
+                                            <button
+                                                className="btn-become-tutor"
+                                                onClick={handleBecomeTutor}
+                                                disabled={becomingTutor}
+                                            >
+                                                <span className="btn-icon">🎓</span>
+                                                {becomingTutor ? 'Actualizando...' : 'Convertirme en tutor'}
+                                            </button>
+                                            {becomeTutorError && (
+                                                <span className="become-tutor-error">{becomeTutorError}</span>
+                                            )}
+                                        </>
+                                    )
+                                }
+
                             </>
                         )}
-                    </div>
-                </section>
+                    </div >
+                </section >
 
                 {/* Sección Mis datos y Tu Actividad */}
-                <section className="profile-data-section">
+                < section className="profile-data-section" >
                     <div className="profile-data">
                         <h2 className="section-title">{isOwner ? 'Mis datos' : 'Datos del perfil'}</h2>
                         <div className="profile-data__content">
@@ -266,6 +308,14 @@ const MyProfile = () => {
                             <div className="data-field">
                                 <span className="data-field__label">GRADO</span>
                                 <span className="data-field__value">{displayValue(userData.grado)}</span>
+                            </div>
+                            <div className="data-field">
+                                <span className="data-field__label">NIVEL DE ESTUDIOS</span>
+                                <span className="data-field__value">{displayValue(userData.nivelEstudios)}</span>
+                            </div>
+                            <div className="data-field">
+                                <span className="data-field__label">BASE FORMATIVA</span>
+                                <span className="data-field__value">{displayValue(userData.baseFormativa)}</span>
                             </div>
                             <div className="data-field">
                                 <span className="data-field__label">UBICACIÓN</span>
@@ -295,112 +345,116 @@ const MyProfile = () => {
                             </div>
                         </div>
                     </div>
-                </section>
+                </section >
 
                 {/* Sección Mis comunidades */}
-                <section className="my-communities-section">
+                < section className="my-communities-section" >
                     <h2 className="section-title">Mis comunidades</h2>
-                    {loadingCommunities ? (
-                        <div className="loading-communities">Cargando comunidades...</div>
-                    ) : misComunidades.length > 0 ? (
-                        <div className="communities-list">
-                            {misComunidades.map((comunidad) => (
-                                <div key={comunidad.id} className="community-card" onClick={() => navigate(`/comunidades/${comunidad.id}`)} style={{ cursor: 'pointer' }}>
-                                    <img 
-                                        src={getCommunityImageUrl(comunidad)} 
-                                        alt={comunidad.nombre} 
-                                        className="community-card__image" 
-                                    />
-                                    <div className="community-card__info">
-                                        <div className="community-card__top">
-                                            <h3 className="community-card__name">{comunidad.nombre}</h3>
-                                            {comunidad.categoria && comunidad.categoria.length > 0 && (
-                                                <div className="community-card__tags">
-                                                    {comunidad.categoria.slice(0, 2).map(cat => (
-                                                        <span key={cat} className="community-tag">{cat}</span>
-                                                    ))}
+                    {
+                        loadingCommunities ? (
+                            <div className="loading-communities">Cargando comunidades...</div>
+                        ) : misComunidades.length > 0 ? (
+                            <div className="communities-list">
+                                {misComunidades.map((comunidad) => (
+                                    <div key={comunidad.id} className="community-card" onClick={() => navigate(`/comunidades/${comunidad.id}`)} style={{ cursor: 'pointer' }}>
+                                        <img
+                                            src={getCommunityImageUrl(comunidad)}
+                                            alt={comunidad.nombre}
+                                            className="community-card__image"
+                                        />
+                                        <div className="community-card__info">
+                                            <div className="community-card__top">
+                                                <h3 className="community-card__name">{comunidad.nombre}</h3>
+                                                {comunidad.categoria && comunidad.categoria.length > 0 && (
+                                                    <div className="community-card__tags">
+                                                        {comunidad.categoria.slice(0, 2).map(cat => (
+                                                            <span key={cat} className="community-tag">{cat}</span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                <p className="community-card__description">{comunidad.descripcion || 'Sin descripción disponible'}</p>
+                                            </div>
+                                            <div className="community-card__bottom">
+                                                <div className="community-card__members">
+                                                    <span className="members-icon">👥</span>
+                                                    <span className="members-count">{comunidad.miembrosActuales || 0}/ <span className="members-max">{comunidad.maxMiembros || 0}</span></span>
                                                 </div>
-                                            )}
-                                            <p className="community-card__description">{comunidad.descripcion || 'Sin descripción disponible'}</p>
-                                        </div>
-                                        <div className="community-card__bottom">
-                                            <div className="community-card__members">
-                                                <span className="members-icon">👥</span>
-                                                <span className="members-count">{comunidad.miembrosActuales || 0}/ <span className="members-max">{comunidad.maxMiembros || 0}</span></span>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
-                            <div className="view-all-container">
-                                <Link to="/comunidades" className="view-all-link">Ver todas mis comunidades →</Link>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="no-communities">
-                            <p>No formas parte de ninguna comunidad todavía.</p>
-                            <button className="btn-explore" onClick={() => navigate('/comunidades')}>Explorar comunidades</button>
-                        </div>
-                    )}
-                </section>
-
-                {/* Sección Perfil de Profesor */}
-                {user?.esTutor && (
-                    <section className="tutor-profile-section">
-                        <div className="created-header">
-                            <div>
-                                <h2 className="section-title">Mi perfil de profesor</h2>
-                                <p className="section-subtitle">Gestiona tu perfil como tutor y consigue alumnos.</p>
-                            </div>
-                            {!miPerfilTutor && (
-                                <button className="btn-create-new" onClick={() => setShowCreateTutorModal(true)}>
-                                    + Crear nuevo perfil de profesor
-                                </button>
-                            )}
-                        </div>
-                        {loadingTutorProfile ? (
-                            <div className="loading-communities">Cargando perfil de tutor...</div>
-                        ) : miPerfilTutor ? (
-                            <div className="tutor-profile-card">
-                                <div className="tutor-profile-card__info">
-                                    <div className="tutor-profile-card__header">
-                                        <h3 className="tutor-profile-card__name">{userData.nombre}</h3>
-                                        {miPerfilTutor.verificado && (
-                                            <span className="tutor-profile-card__badge">✓ Verificado</span>
-                                        )}
-                                    </div>
-                                    {miPerfilTutor.especialidades && miPerfilTutor.especialidades.length > 0 && (
-                                        <div className="tutor-profile-card__tags">
-                                            {miPerfilTutor.especialidades.slice(0, 4).map((esp, i) => (
-                                                <span key={i} className="tutor-profile-card__tag">{esp}</span>
-                                            ))}
-                                        </div>
-                                    )}
-                                    {miPerfilTutor.tarifaPorHora != null && (
-                                        <p className="tutor-profile-card__tarifa">
-                                            <strong>{Number(miPerfilTutor.tarifaPorHora).toFixed(2)} €</strong> / hora
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="tutor-profile-card__actions">
-                                    <button
-                                        className="btn-create-new"
-                                        onClick={() => navigate(`/profesores/${miPerfilTutor.id}`)}
-                                    >
-                                        Ver mi perfil
-                                    </button>
+                                ))}
+                                <div className="view-all-container">
+                                    <Link to="/comunidades" className="view-all-link">Ver todas mis comunidades →</Link>
                                 </div>
                             </div>
                         ) : (
-                            <div className="no-communities-created">
-                                <p>Aún no tienes perfil de profesor.</p>
-                                <button className="btn-create-first" onClick={() => setShowCreateTutorModal(true)}>
-                                    + Crear nuevo perfil de profesor
-                                </button>
+                            <div className="no-communities">
+                                <p>No formas parte de ninguna comunidad todavía.</p>
+                                <button className="btn-explore" onClick={() => navigate('/comunidades')}>Explorar comunidades</button>
                             </div>
-                        )}
-                    </section>
-                )}
+                        )
+                    }
+                </section >
+
+                {/* Sección Perfil de Profesor */}
+                {
+                    user?.esTutor && (
+                        <section className="tutor-profile-section">
+                            <div className="created-header">
+                                <div>
+                                    <h2 className="section-title">Mi perfil de profesor</h2>
+                                    <p className="section-subtitle">Gestiona tu perfil como tutor y consigue alumnos.</p>
+                                </div>
+                                {!miPerfilTutor && (
+                                    <button className="btn-create-new" onClick={() => setShowCreateTutorModal(true)}>
+                                        + Crear nuevo perfil de profesor
+                                    </button>
+                                )}
+                            </div>
+                            {loadingTutorProfile ? (
+                                <div className="loading-communities">Cargando perfil de tutor...</div>
+                            ) : miPerfilTutor ? (
+                                <div className="tutor-profile-card">
+                                    <div className="tutor-profile-card__info">
+                                        <div className="tutor-profile-card__header">
+                                            <h3 className="tutor-profile-card__name">{userData.nombre}</h3>
+                                            {miPerfilTutor.verificado && (
+                                                <span className="tutor-profile-card__badge">✓ Verificado</span>
+                                            )}
+                                        </div>
+                                        {miPerfilTutor.especialidades && miPerfilTutor.especialidades.length > 0 && (
+                                            <div className="tutor-profile-card__tags">
+                                                {miPerfilTutor.especialidades.slice(0, 4).map((esp, i) => (
+                                                    <span key={i} className="tutor-profile-card__tag">{esp}</span>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {miPerfilTutor.tarifaPorHora != null && (
+                                            <p className="tutor-profile-card__tarifa">
+                                                <strong>{Number(miPerfilTutor.tarifaPorHora).toFixed(2)} €</strong> / hora
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className="tutor-profile-card__actions">
+                                        <button
+                                            className="btn-create-new"
+                                            onClick={() => navigate(`/profesores/${miPerfilTutor.id}`)}
+                                        >
+                                            Ver mi perfil
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="no-communities-created">
+                                    <p>Aún no tienes perfil de profesor.</p>
+                                    <button className="btn-create-first" onClick={() => setShowCreateTutorModal(true)}>
+                                        + Crear nuevo perfil de profesor
+                                    </button>
+                                </div>
+                            )}
+                        </section>
+                    )
+                }
 
                 {/* Sección Comunidades creadas */}
                 <section className="created-communities-section">
@@ -417,10 +471,10 @@ const MyProfile = () => {
                         <div className="created-communities-list">
                             {comunidadesCreadas.map((comunidad) => (
                                 <div key={comunidad.id} className="created-community-card" onClick={() => navigate(`/comunidades/${comunidad.id}`)} style={{ cursor: 'pointer' }}>
-                                    <img 
-                                        src={getCommunityImageUrl(comunidad)} 
-                                        alt={comunidad.nombre} 
-                                        className="created-community-card__image" 
+                                    <img
+                                        src={getCommunityImageUrl(comunidad)}
+                                        alt={comunidad.nombre}
+                                        className="created-community-card__image"
                                     />
                                     <div className="created-community-card__info">
                                         <div className="created-community-card__top">
@@ -435,13 +489,12 @@ const MyProfile = () => {
                                         </div>
                                         <div className="created-community-card__bottom">
                                             <div className="created-community-card__members">
-                                                <span className="members-icon">👥</span>
                                                 <span className="members-text">Inscritos: <strong>{comunidad.miembrosActuales || 0}</strong>/{comunidad.maxMiembros || 0}</span>
                                             </div>
                                             {isOwner && (
                                                 <div className="created-community-card__actions">
-                                                    <Link to={`/comunidades/${comunidad.id}/editar`} className="action-link" onClick={(e) => e.stopPropagation()}>✏️ Editar</Link>
-                                                    <Link to={`/comunidades/${comunidad.id}/apuntes`} className="action-link" onClick={(e) => e.stopPropagation()}>📄 Subir apuntes</Link>
+                                                    <Link to={`/comunidades/${comunidad.id}/editar`} className="action-link" onClick={(e) => e.stopPropagation()}> Editar</Link>
+                                                    <Link to={`/comunidades/${comunidad.id}/apuntes`} className="action-link" onClick={(e) => e.stopPropagation()}> Subir apuntes</Link>
                                                 </div>
                                             )}
                                         </div>
@@ -456,35 +509,41 @@ const MyProfile = () => {
                         </div>
                     )}
                 </section>
-            </main>
+            </main >
 
             {/* Modal de crear perfil de profesor */}
-            {showCreateTutorModal && (
-                <CreateProfileModal
-                    onClose={() => setShowCreateTutorModal(false)}
-                    onCreado={(newTutor) => {
-                        setMiPerfilTutor(newTutor);
-                        setShowCreateTutorModal(false);
-                        navigate(`/profesores/${newTutor.id}`);
-                    }}
-                />
-            )}
+            {
+                showCreateTutorModal && (
+                    <CreateProfileModal
+                        onClose={() => setShowCreateTutorModal(false)}
+                        onCreado={(newTutor) => {
+                            setMiPerfilTutor(newTutor);
+                            setShowCreateTutorModal(false);
+                            navigate(`/profesores/${newTutor.id}`);
+                        }}
+                    />
+                )
+            }
 
             {/* Modal de configuración */}
-            {showSettings && (
-                <Settings onClose={() => setShowSettings(false)} isOwner={isOwner} />
-            )}
+            {
+                showSettings && (
+                    <Settings onClose={() => setShowSettings(false)} isOwner={isOwner} />
+                )
+            }
 
             {/* Modal de editar perfil */}
-            {showEditProfile && (
-                <EditProfile 
-                    onClose={() => setShowEditProfile(false)} 
-                    onSave={(updatedUser) => {
-                        // Los datos se actualizan automáticamente en el contexto
-                        setShowEditProfile(false)
-                    }}
-                />
-            )}
+            {
+                showEditProfile && (
+                    <EditProfile
+                        onClose={() => setShowEditProfile(false)}
+                        onSave={(updatedUser) => {
+                            // Los datos se actualizan automáticamente en el contexto
+                            setShowEditProfile(false)
+                        }}
+                    />
+                )
+            }
         </>
     )
 }

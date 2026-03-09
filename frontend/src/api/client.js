@@ -45,7 +45,7 @@ class ApiClient {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
-      throw new ApiError(response.status, error.message || 'Error desconocido');
+      throw new ApiError(response.status, error.message || 'Error desconocido', error);
     }
 
     // Si la respuesta es 204 No Content, no hay body
@@ -78,9 +78,11 @@ class ApiClient {
 }
 
 export class ApiError extends Error {
-  constructor(status, message) {
+  constructor(status, message, details = {}) {
     super(message);
     this.status = status;
+    this.details = details;
+    this.errors = details?.errors || null;
     this.name = 'ApiError';
   }
 }

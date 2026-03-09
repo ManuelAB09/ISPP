@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getVerifiedTutors } from "../../api/tutorEndpoints";
 import Header from "../../components/Header/Header";
+import PageHeader from "../../components/PageHeader";
 import { useAuth } from "../../contexts/AuthContext";
 import "./VerifiedTeachers.css";
 
@@ -105,11 +106,13 @@ const VerifiedTeachers = () => {
       {/* ── Header ──────────────────────────────────────────── */}
       <div className="vt-header">
         <div className="vt-header__inner">
+
           <div className="headerTitle">
             <p>Profesionales con identidad confirmada, calidad contrastada y acceso directo al contacto</p>
             <span className="line"></span>
             <h1>Profesores Verificados</h1>
           </div>
+
         </div>
       </div>
 

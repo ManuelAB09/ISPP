@@ -22,6 +22,7 @@ import es.us.meerkat.backend.dto.UserDetailResponse;
 import es.us.meerkat.backend.dto.UserPublicResponse;
 import es.us.meerkat.backend.dto.VisibilityRequest;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -55,6 +56,9 @@ public class UsuarioService {
     /** Repositorio para acceder a la información de usuarios. */
     private final UsuarioRepository usuarioRepository;
 
+    /** Repositorio para gestionar membresías de comunidades. */
+    private final MiembroComunidadRepository miembroComunidadRepository;
+
     /** Codificador de contraseñas BCrypt. */
     private final BCryptPasswordEncoder passwordEncoder;
 
@@ -73,7 +77,6 @@ public class UsuarioService {
      */
     @Transactional
     public UserDetailResponse obtenerPerfilPropio(final Usuario usuario) {
-
         Usuario usuarioActualizado =
                 usuarioRepository
                         .findByEmail(usuario.getEmail())
@@ -125,8 +128,26 @@ public class UsuarioService {
         if (requestParam.getGrado() != null) {
             usuario.setGrado(requestParam.getGrado());
         }
+        if (requestParam.getNivelEstudios() != null) {
+            usuario.setNivelEstudios(requestParam.getNivelEstudios());
+        }
+        if (requestParam.getBaseFormativa() != null) {
+            usuario.setBaseFormativa(requestParam.getBaseFormativa());
+        }
         if (requestParam.getUbicacion() != null) {
             usuario.setUbicacion(requestParam.getUbicacion());
+        }
+        if (requestParam.getAutenticacionDosFactores() != null) {
+            usuario.setAutenticacionDosFactores(requestParam.getAutenticacionDosFactores());
+        }
+        if (requestParam.getVisibleEnListados() != null) {
+            usuario.setVisibleEnListados(requestParam.getVisibleEnListados());
+        }
+        if (requestParam.getNotificacionesEmail() != null) {
+            usuario.setNotificacionesEmail(requestParam.getNotificacionesEmail());
+        }
+        if (requestParam.getNotificacionesPush() != null) {
+            usuario.setNotificacionesPush(requestParam.getNotificacionesPush());
         }
 
         usuarioRepository.save(usuario);
@@ -181,6 +202,12 @@ public class UsuarioService {
      */
     @Transactional
     public void eliminarCuenta(final Usuario usuario) {
+        if (usuario == null || usuario.getId() == null) {
+            throw new RuntimeException("Usuario no autenticado");
+        }
+
+        // Eliminar primero relaciones que referencian al usuario.
+        miembroComunidadRepository.deleteByUsuarioId(usuario.getId());
         usuarioRepository.delete(usuario);
     }
 
@@ -295,9 +322,17 @@ public class UsuarioService {
                 .foto(usuario.getFoto())
                 .fotoBackgroundColor(usuario.getFotoBackgroundColor())
                 .bio(usuario.getBio())
+                .universidad(usuario.getUniversidad())
+                .grado(usuario.getGrado())
+                .nivelEstudios(usuario.getNivelEstudios())
+                .baseFormativa(usuario.getBaseFormativa())
+                .ubicacion(usuario.getUbicacion())
                 .intereses(usuario.getIntereses())
                 .visibleEnListados(usuario.getVisibleEnListados())
                 .esTutor(usuario.getEsTutor())
+                .autenticacionDosFactores(usuario.getAutenticacionDosFactores())
+                .notificacionesEmail(usuario.getNotificacionesEmail())
+                .notificacionesPush(usuario.getNotificacionesPush())
                 .createdAt(usuario.getCreatedAt())
                 .build();
     }

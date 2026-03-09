@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { authApi } from "../../api/auth.api"
 import { getApiBaseUrl } from "../../api/baseUrl"
 import { useAuth } from "../../contexts/AuthContext"
@@ -19,23 +19,26 @@ const ACADEMIC_INTERESTS = [
 
 const RENATA_PATH_PREFIX = '/static/images/renata/'
 
-const toAbsoluteImageUrl = (imageUrl) => {
+const DEFAULT_PROFILE_AVATAR =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='60' fill='%23E6EAF3'/%3E%3Ccircle cx='60' cy='46' r='22' fill='%2395A1BB'/%3E%3Cpath d='M20 106c6-20 22-32 40-32s34 12 40 32' fill='%2395A1BB'/%3E%3C/svg%3E";
+
+const toAbsoluteImageUrl = (imageUrl, fallback = DEFAULT_PROFILE_AVATAR) => {
     if (!imageUrl || !String(imageUrl).trim()) {
-        return ''
+        return fallback;
     }
 
-    const value = String(imageUrl).trim()
+    const value = String(imageUrl).trim();
     if (/^https?:\/\//i.test(value) || value.startsWith('data:image/') || value.startsWith('blob:')) {
-        return value
+        return value;
     }
 
-    const base = getApiBaseUrl()
+    const base = getApiBaseUrl();
     if (value.startsWith('/')) {
-        return `${base}${value}`
+        return `${base}${value}`;
     }
 
-    return `${base}/${value}`
-}
+    return `${base}/${value}`;
+};
 
 const extractRenataAvatarPath = (imageUrl) => {
     if (!imageUrl || !String(imageUrl).trim()) {
@@ -60,6 +63,8 @@ const EditProfile = ({ onClose, onSave }) => {
         descripcion: "",
         universidad: "",
         grado: "",
+        nivelEstudios: "",
+        baseFormativa: "",
         ubicacion: "",
         intereses: [],
     })
@@ -75,6 +80,12 @@ const EditProfile = ({ onClose, onSave }) => {
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
     const [fotoBackgroundColor, setFotoBackgroundColor] = useState('#ffffff')
+    const [fieldErrors, setFieldErrors] = useState({})
+
+    const toFormFieldName = (backendField) => {
+        if (backendField === 'bio') return 'descripcion'
+        return backendField
+    }
 
     // Cargar datos del usuario al montar el componente
     useEffect(() => {
@@ -84,6 +95,8 @@ const EditProfile = ({ onClose, onSave }) => {
                 descripcion: user.bio || "",
                 universidad: user.universidad || "",
                 grado: user.grado || "",
+                nivelEstudios: user.nivelEstudios || "",
+                baseFormativa: user.baseFormativa || "",
                 ubicacion: user.ubicacion || "",
                 intereses: user.intereses || [],
             })
@@ -91,7 +104,7 @@ const EditProfile = ({ onClose, onSave }) => {
             const userAvatarPath = extractRenataAvatarPath(user.foto)
             setSelectedAvatar(userAvatarPath)
             setFotoToSave(userAvatarPath || user.foto || '')
-            setProfileImagePreview(toAbsoluteImageUrl(user.foto))
+            setProfileImagePreview(toAbsoluteImageUrl(user.foto, DEFAULT_PROFILE_AVATAR))
             setFotoBackgroundColor(user.fotoBackgroundColor || '#ffffff')
         }
     }, [user])
@@ -127,6 +140,12 @@ const EditProfile = ({ onClose, onSave }) => {
             ...prev,
             [name]: type === 'checkbox' ? checked : value,
         }))
+        setFieldErrors((prev) => {
+            if (!prev[name]) return prev
+            const next = { ...prev }
+            delete next[name]
+            return next
+        })
         if (error) setError('')
     }
 
@@ -137,6 +156,12 @@ const EditProfile = ({ onClose, onSave }) => {
                 ? prev.intereses.filter((i) => i !== interest)
                 : [...prev.intereses, interest],
         }))
+        setFieldErrors((prev) => {
+            if (!prev.intereses) return prev
+            const next = { ...prev }
+            delete next.intereses
+            return next
+        })
     }
 
     const handleSelectAvatar = (avatarPath) => {
@@ -184,11 +209,12 @@ const EditProfile = ({ onClose, onSave }) => {
         e.preventDefault()
         setError('')
         setSuccess('')
+        setFieldErrors({})
         setIsSaving(true)
 
         // Validaciones básicas
         if (!formData.nombre.trim()) {
-            setError('El nombre es obligatorio')
+            setFieldErrors({ nombre: 'El nombre es obligatorio' })
             setIsSaving(false)
             return
         }
@@ -204,6 +230,8 @@ const EditProfile = ({ onClose, onSave }) => {
                 bio: formData.descripcion.trim(),
                 universidad: formData.universidad.trim(),
                 grado: formData.grado.trim(),
+                nivelEstudios: formData.nivelEstudios.trim(),
+                baseFormativa: formData.baseFormativa.trim(),
                 ubicacion: formData.ubicacion.trim(),
                 intereses: formData.intereses,
                 fotoBackgroundColor: fotoBackgroundColor,
@@ -230,7 +258,18 @@ const EditProfile = ({ onClose, onSave }) => {
                     onClose()
                 }, 1500)
             } else {
-                setError(result.error || 'Error al guardar los cambios')
+                const backendErrors = result.validationErrors || {}
+                const mappedErrors = Object.entries(backendErrors).reduce((acc, [key, value]) => {
+                    acc[toFormFieldName(key)] = value
+                    return acc
+                }, {})
+
+                if (Object.keys(mappedErrors).length > 0) {
+                    setFieldErrors(mappedErrors)
+                    setError('Revisa los campos marcados')
+                } else {
+                    setError(result.error || 'Error al guardar los cambios')
+                }
             }
         } catch (err) {
             setError(err.message || 'Error al guardar los cambios')
@@ -254,9 +293,13 @@ const EditProfile = ({ onClose, onSave }) => {
                     <section className="edit-profile-section">
                         <h2 className="edit-profile-section__title">Foto de perfil</h2>
                         <div className="edit-profile-image-container">
-                            {profileImagePreview ? (
-                                <div className="edit-profile-image-preview" style={{ backgroundColor: fotoBackgroundColor }}>
-                                    <img src={profileImagePreview} alt="Vista previa" />
+                            <div className="edit-profile-image-preview" style={{ backgroundColor: fotoBackgroundColor }}>
+                                <img
+                                    src={profileImagePreview || DEFAULT_PROFILE_AVATAR}
+                                    alt="Vista previa"
+                                    onError={e => { e.target.onerror = null; e.target.src = DEFAULT_PROFILE_AVATAR; }}
+                                />
+                                {(profileImagePreview && profileImagePreview !== DEFAULT_PROFILE_AVATAR) && (
                                     <button
                                         type="button"
                                         className="edit-profile-remove-image"
@@ -268,12 +311,8 @@ const EditProfile = ({ onClose, onSave }) => {
                                             <line x1="6" y1="6" x2="18" y2="18"/>
                                         </svg>
                                     </button>
-                                </div>
-                            ) : (
-                                <div className="edit-profile-image-placeholder" style={{ backgroundColor: fotoBackgroundColor }}>
-                                    <span className="placeholder-icon">👤</span>
-                                </div>
-                            )}
+                                )}
+                            </div>
                             <div className="edit-profile-image-actions">
                                 <label className="edit-profile-upload-btn" htmlFor="profile-photo-input">
                                     Subir foto
@@ -336,8 +375,13 @@ const EditProfile = ({ onClose, onSave }) => {
                                 value={formData.nombre}
                                 onChange={handleInputChange}
                                 placeholder="Tu nombre completo"
+                                className={fieldErrors.nombre ? 'edit-profile-input-error' : ''}
+                                aria-invalid={Boolean(fieldErrors.nombre)}
                                 required
                             />
+                            {fieldErrors.nombre && (
+                                <span className="edit-profile-field-error">{fieldErrors.nombre}</span>
+                            )}
                         </div>
 
                         <div className="edit-profile-form-group">
@@ -348,8 +392,13 @@ const EditProfile = ({ onClose, onSave }) => {
                                 value={formData.descripcion}
                                 onChange={handleInputChange}
                                 placeholder="Cuéntanos sobre ti..."
+                                className={fieldErrors.descripcion ? 'edit-profile-input-error' : ''}
+                                aria-invalid={Boolean(fieldErrors.descripcion)}
                                 rows={4}
                             />
+                            {fieldErrors.descripcion && (
+                                <span className="edit-profile-field-error">{fieldErrors.descripcion}</span>
+                            )}
                         </div>
                     </section>
 
@@ -366,7 +415,12 @@ const EditProfile = ({ onClose, onSave }) => {
                                 value={formData.universidad}
                                 onChange={handleInputChange}
                                 placeholder="Tu universidad"
+                                className={fieldErrors.universidad ? 'edit-profile-input-error' : ''}
+                                aria-invalid={Boolean(fieldErrors.universidad)}
                             />
+                            {fieldErrors.universidad && (
+                                <span className="edit-profile-field-error">{fieldErrors.universidad}</span>
+                            )}
                         </div>
 
                         <div className="edit-profile-form-group">
@@ -377,8 +431,47 @@ const EditProfile = ({ onClose, onSave }) => {
                                 name="grado"
                                 value={formData.grado}
                                 onChange={handleInputChange}
-                                placeholder="Tu grado o carrera"
+                                placeholder="El nombre de tu grado o carrera"
+                                className={fieldErrors.grado ? 'edit-profile-input-error' : ''}
+                                aria-invalid={Boolean(fieldErrors.grado)}
                             />
+                            {fieldErrors.grado && (
+                                <span className="edit-profile-field-error">{fieldErrors.grado}</span>
+                            )}
+                        </div>
+
+                        <div className="edit-profile-form-group">
+                            <label htmlFor="nivelEstudios">Nivel de estudios</label>
+                            <input
+                                type="text"
+                                id="nivelEstudios"
+                                name="nivelEstudios"
+                                value={formData.nivelEstudios}
+                                onChange={handleInputChange}
+                                placeholder="Ej: Grado, Máster, Doctorado"
+                                className={fieldErrors.nivelEstudios ? 'edit-profile-input-error' : ''}
+                                aria-invalid={Boolean(fieldErrors.nivelEstudios)}
+                            />
+                            {fieldErrors.nivelEstudios && (
+                                <span className="edit-profile-field-error">{fieldErrors.nivelEstudios}</span>
+                            )}
+                        </div>
+
+                        <div className="edit-profile-form-group">
+                            <label htmlFor="baseFormativa">Base formativa</label>
+                            <input
+                                type="text"
+                                id="baseFormativa"
+                                name="baseFormativa"
+                                value={formData.baseFormativa}
+                                onChange={handleInputChange}
+                                placeholder="Ej: Científico-tecnológica"
+                                className={fieldErrors.baseFormativa ? 'edit-profile-input-error' : ''}
+                                aria-invalid={Boolean(fieldErrors.baseFormativa)}
+                            />
+                            {fieldErrors.baseFormativa && (
+                                <span className="edit-profile-field-error">{fieldErrors.baseFormativa}</span>
+                            )}
                         </div>
 
                         <div className="edit-profile-form-group">
@@ -390,7 +483,12 @@ const EditProfile = ({ onClose, onSave }) => {
                                 value={formData.ubicacion}
                                 onChange={handleInputChange}
                                 placeholder="Ciudad, País"
+                                className={fieldErrors.ubicacion ? 'edit-profile-input-error' : ''}
+                                aria-invalid={Boolean(fieldErrors.ubicacion)}
                             />
+                            {fieldErrors.ubicacion && (
+                                <span className="edit-profile-field-error">{fieldErrors.ubicacion}</span>
+                            )}
                         </div>
                     </section>
 
@@ -414,6 +512,9 @@ const EditProfile = ({ onClose, onSave }) => {
                                 </button>
                             ))}
                         </div>
+                        {fieldErrors.intereses && (
+                            <span className="edit-profile-field-error">{fieldErrors.intereses}</span>
+                        )}
                     </section>
 
                     {/* Mensajes de error y éxito */}
