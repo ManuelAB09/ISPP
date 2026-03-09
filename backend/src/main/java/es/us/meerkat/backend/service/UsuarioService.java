@@ -5,8 +5,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.dto.ChangePasswordRequest;
-import es.us.meerkat.backend.dto.UpdateUserRequest;
 import es.us.meerkat.backend.dto.UbicacionResponse;
+import es.us.meerkat.backend.dto.UpdateUserRequest;
 import es.us.meerkat.backend.dto.UserDetailResponse;
 import es.us.meerkat.backend.dto.UserPublicResponse;
 import es.us.meerkat.backend.dto.VisibilityRequest;
@@ -19,9 +19,7 @@ import lombok.RequiredArgsConstructor;
 /**
  * Servicio para gestionar la lógica de negocio de usuarios.
  *
- * <p>
- * Cubre los endpoints de /api/v1/users del OpenAPI: obtener perfil propio,
- * actualizar, cambiar
+ * <p>Cubre los endpoints de /api/v1/users del OpenAPI: obtener perfil propio, actualizar, cambiar
  * contraseña, eliminar cuenta, visibilidad y ver perfiles públicos.
  */
 @Service
@@ -52,9 +50,10 @@ public class UsuarioService {
      */
     @Transactional
     public UserDetailResponse obtenerPerfilPropio(final Usuario usuario) {
-        Usuario usuarioActualizado = usuarioRepository
-                .findByEmail(usuario.getEmail())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        Usuario usuarioActualizado =
+                usuarioRepository
+                        .findByEmail(usuario.getEmail())
+                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         if (usuarioActualizado.getTutores() != null) {
             usuarioActualizado.getTutores().size();
         }
@@ -68,10 +67,9 @@ public class UsuarioService {
     /**
      * Actualiza la información personal del usuario autenticado.
      *
-     * <p>
-     * Solo modifica los campos que no sean nulos en el request.
+     * <p>Solo modifica los campos que no sean nulos en el request.
      *
-     * @param usuario      Usuario autenticado.
+     * @param usuario Usuario autenticado.
      * @param requestParam Datos a actualizar.
      * @return Perfil actualizado.
      */
@@ -103,18 +101,20 @@ public class UsuarioService {
             if (nombreUbicacion.isEmpty()) {
                 usuario.setUbicacion(null);
             } else {
-                Ubicacion ubicacion = ubicacionRepository
-                        .findByNombre(nombreUbicacion)
-                        .orElseGet(
-                                () -> ubicacionRepository.save(
-                                        Ubicacion.builder()
-                                                .nombre(nombreUbicacion)
-                                                .direccion(nombreUbicacion)
-                                                .latitud(0.0)
-                                                .longitud(0.0)
-                                                .tipo("general")
-                                                .coste("desconocido")
-                                                .build()));
+                Ubicacion ubicacion =
+                        ubicacionRepository
+                                .findByNombre(nombreUbicacion)
+                                .orElseGet(
+                                        () ->
+                                                ubicacionRepository.save(
+                                                        Ubicacion.builder()
+                                                                .nombre(nombreUbicacion)
+                                                                .direccion(nombreUbicacion)
+                                                                .latitud(0.0)
+                                                                .longitud(0.0)
+                                                                .tipo("general")
+                                                                .coste("desconocido")
+                                                                .build()));
                 usuario.setUbicacion(ubicacion);
             }
         }
@@ -130,9 +130,7 @@ public class UsuarioService {
     /**
      * Elimina permanentemente la cuenta del usuario autenticado.
      *
-     * <p>
-     * Esta acción es irreversible. El frontend debe mostrar confirmación antes de
-     * llamar a este
+     * <p>Esta acción es irreversible. El frontend debe mostrar confirmación antes de llamar a este
      * endpoint.
      *
      * @param usuario Usuario autenticado a eliminar.
@@ -149,14 +147,12 @@ public class UsuarioService {
     /**
      * Cambia la contraseña del usuario autenticado.
      *
-     * <p>
-     * Verifica la contraseña actual antes de aplicar el cambio.
+     * <p>Verifica la contraseña actual antes de aplicar el cambio.
      *
-     * @param usuario      Usuario autenticado.
+     * @param usuario Usuario autenticado.
      * @param requestParam Contraseña actual y nueva.
-     * @throws RuntimeException si la contraseña actual es incorrecta o la nueva no
-     *                          cumple los
-     *                          requisitos.
+     * @throws RuntimeException si la contraseña actual es incorrecta o la nueva no cumple los
+     *     requisitos.
      */
     @Transactional
     public void cambiarPassword(final Usuario usuario, final ChangePasswordRequest requestParam) {
@@ -181,7 +177,7 @@ public class UsuarioService {
     /**
      * Actualiza la visibilidad del perfil en listados públicos.
      *
-     * @param usuario      Usuario autenticado.
+     * @param usuario Usuario autenticado.
      * @param requestParam Nueva configuración de visibilidad.
      * @return Perfil actualizado.
      */
@@ -204,8 +200,7 @@ public class UsuarioService {
     /**
      * Devuelve el perfil público de un usuario por su ID.
      *
-     * <p>
-     * Solo expone datos que el usuario ha hecho públicos.
+     * <p>Solo expone datos que el usuario ha hecho públicos.
      *
      * @param usuarioId Identificador del usuario.
      * @return Perfil público del usuario.
@@ -213,9 +208,10 @@ public class UsuarioService {
      */
     public UserPublicResponse obtenerPerfilPublico(final Long usuarioId) {
 
-        final Usuario usuario = usuarioRepository
-                .findById(usuarioId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        final Usuario usuario =
+                usuarioRepository
+                        .findById(usuarioId)
+                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         return mapToPublicResponse(usuario);
     }

@@ -7,9 +7,7 @@ import lombok.Data;
 /**
  * DTO para actualizar el perfil del usuario autenticado.
  *
- * <p>
- * Corresponde al schema UpdateUserRequest del OpenAPI. Todos los campos son
- * opcionales: solo se
+ * <p>Corresponde al schema UpdateUserRequest del OpenAPI. Todos los campos son opcionales: solo se
  * actualizan los que no sean nulos.
  */
 @Data

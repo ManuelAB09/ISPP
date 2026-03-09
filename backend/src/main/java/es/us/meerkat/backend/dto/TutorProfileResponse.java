@@ -7,8 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 
 /**
- * DTO que representa la información completa de un tutor, incluyendo datos del
- * usuario asociado.
+ * DTO que representa la información completa de un tutor, incluyendo datos del usuario asociado.
  */
 @Data
 @Builder
