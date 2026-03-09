@@ -97,6 +97,18 @@ public class Usuario {
     @Column(nullable = false)
     private Boolean esTutor = false;
 
+    /** Indica si la autenticación de dos factores está habilitada para el usuario. */
+    @Column(nullable = false)
+    private Boolean autenticacionDosFactores = false;
+
+    /** Indica si el usuario quiere recibir notificaciones por email. */
+    @Column(nullable = false)
+    private Boolean notificacionesEmail = true;
+
+    /** Indica si el usuario quiere recibir notificaciones push. */
+    @Column(nullable = false)
+    private Boolean notificacionesPush = false;
+
     // AÑADIR tipo plan cuando se cree la clase
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -119,6 +131,15 @@ public class Usuario {
         }
         if (this.esTutor == null) {
             this.esTutor = false;
+        }
+        if (this.autenticacionDosFactores == null) {
+            this.autenticacionDosFactores = false;
+        }
+        if (this.notificacionesEmail == null) {
+            this.notificacionesEmail = true;
+        }
+        if (this.notificacionesPush == null) {
+            this.notificacionesPush = true;
         }
     }
 }

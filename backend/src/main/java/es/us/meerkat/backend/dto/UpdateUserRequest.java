@@ -49,6 +49,18 @@ public class UpdateUserRequest {
     @Size(max = 100, message = "La ubicación no puede exceder 100 caracteres")
     private String ubicacion;
 
+    /** Estado de autenticación de dos factores del usuario. */
+    private Boolean autenticacionDosFactores;
+
+    /** Visibilidad del perfil en listados públicos. */
+    private Boolean visibleEnListados;
+
+    /** Preferencia de notificaciones por email. */
+    private Boolean notificacionesEmail;
+
+    /** Preferencia de notificaciones push. */
+    private Boolean notificacionesPush;
+
     /** Nueva lista de intereses. */
     @Size(max = 10, message = "No se permiten más de 10 intereses")
     private List<@Size(max = 50, message = "Cada interés no puede exceder 50 caracteres") String>

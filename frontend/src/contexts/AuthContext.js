@@ -30,6 +30,10 @@ export const AuthProvider = ({ children }) => {
       intereses: userData.intereses,
       visibleEnListados: userData.visibleEnListados,
       esTutor: userData.esTutor,
+      autenticacionDosFactores:
+        extraData.autenticacionDosFactores ?? userData.autenticacionDosFactores ?? false,
+      notificacionesEmail: extraData.notificacionesEmail ?? userData.notificacionesEmail ?? true,
+      notificacionesPush: extraData.notificacionesPush ?? userData.notificacionesPush ?? true,
       createdAt: userData.createdAt,
       // Campos que la API acepta en PUT pero no devuelve en GET
       universidad: extraData.universidad ?? userData.universidad ?? '',
@@ -78,6 +82,12 @@ export const AuthProvider = ({ children }) => {
             baseFormativa: storedData?.baseFormativa ?? '',
             ubicacion: storedData?.ubicacion ?? '',
             fotoBackgroundColor: storedData?.fotoBackgroundColor ?? userData?.fotoBackgroundColor ?? '#ffffff',
+            autenticacionDosFactores:
+              storedData?.autenticacionDosFactores ?? userData?.autenticacionDosFactores ?? false,
+            notificacionesEmail:
+              storedData?.notificacionesEmail ?? userData?.notificacionesEmail ?? true,
+            notificacionesPush:
+              storedData?.notificacionesPush ?? userData?.notificacionesPush ?? false,
           };
           setUser(combinedUser);
           saveUserToStorage(userData, storedData || {});
@@ -105,9 +115,9 @@ export const AuthProvider = ({ children }) => {
       const { accessToken, user: userData } = response;
 
       localStorage.setItem('accessToken', accessToken);
-      saveUserToStorage(userData);
+      const fullUser = saveUserToStorage(userData);
       apiClient.setToken(accessToken);
-      setUser(userData);
+      setUser(fullUser);
 
       return { success: true };
     } catch (err) {
@@ -124,9 +134,9 @@ export const AuthProvider = ({ children }) => {
       const { accessToken, user: userData } = response;
 
       localStorage.setItem('accessToken', accessToken);
-      saveUserToStorage(userData);
+      const fullUser = saveUserToStorage(userData);
       apiClient.setToken(accessToken);
-      setUser(userData);
+      setUser(fullUser);
 
       return { success: true };
     } catch (err) {
@@ -146,15 +156,39 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       const updatedUser = await authApi.updateMe(profileData);
-      // Mantenemos los campos de perfil desde el payload enviado para consistencia del estado local.
+      // Combinamos payload parcial + respuesta + estado previo para no perder campos no enviados.
       const combinedUser = {
+        ...(user || {}),
         ...updatedUser,
-        universidad: profileData.universidad ?? '',
-        grado: profileData.grado ?? '',
-        nivelEstudios: profileData.nivelEstudios ?? '',
-        baseFormativa: profileData.baseFormativa ?? '',
-        ubicacion: profileData.ubicacion ?? '',
+        universidad:
+          profileData.universidad ?? updatedUser.universidad ?? user?.universidad ?? '',
+        grado: profileData.grado ?? updatedUser.grado ?? user?.grado ?? '',
+        nivelEstudios:
+          profileData.nivelEstudios ?? updatedUser.nivelEstudios ?? user?.nivelEstudios ?? '',
+        baseFormativa:
+          profileData.baseFormativa ?? updatedUser.baseFormativa ?? user?.baseFormativa ?? '',
+        ubicacion: profileData.ubicacion ?? updatedUser.ubicacion ?? user?.ubicacion ?? '',
         fotoBackgroundColor: profileData.fotoBackgroundColor ?? updatedUser.fotoBackgroundColor ?? '#ffffff',
+        visibleEnListados:
+          profileData.visibleEnListados
+          ?? updatedUser.visibleEnListados
+          ?? user?.visibleEnListados
+          ?? true,
+        autenticacionDosFactores:
+          profileData.autenticacionDosFactores
+          ?? updatedUser.autenticacionDosFactores
+          ?? user?.autenticacionDosFactores
+          ?? false,
+        notificacionesEmail:
+          profileData.notificacionesEmail
+          ?? updatedUser.notificacionesEmail
+          ?? user?.notificacionesEmail
+          ?? true,
+        notificacionesPush:
+          profileData.notificacionesPush
+          ?? updatedUser.notificacionesPush
+          ?? user?.notificacionesPush
+          ?? false,
       };
       setUser(combinedUser);
       saveUserToStorage(updatedUser, profileData);
