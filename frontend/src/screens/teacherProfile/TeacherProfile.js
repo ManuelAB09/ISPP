@@ -268,12 +268,6 @@ const TeacherProfile = () => {
                 >
                   {tutor.verificado ? "🏅 Verificado" : "Promocionarse"}
                 </button>
-                <button
-                  className="tp-btn tp-btn--public"
-                  onClick={() => setShowSettings(true)}
-                >
-                  ⚙️ Configuración
-                </button>
               </div>
             )}
 
