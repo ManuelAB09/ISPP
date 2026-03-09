@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { getApiBaseUrl } from '../../api/baseUrl';
-import './Header.css';
 import GoogleClassroomButton from '../GoogleClassroomButton/GoogleClassroomButton.jsx';
+import './Header.css';
 
 const DEFAULT_PROFILE_AVATAR =
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='60' fill='%23E6EAF3'/%3E%3Ccircle cx='60' cy='46' r='22' fill='%2395A1BB'/%3E%3Cpath d='M20 106c6-20 22-32 40-32s34 12 40 32' fill='%2395A1BB'/%3E%3C/svg%3E";
@@ -28,13 +28,13 @@ export default function Header({ user, page }) {
         }
     })();
 
-    const profileImage = toAbsoluteImageUrl(
+    let profileImage =
         user?.avatar ||
         user?.foto ||
         storedUser?.avatar ||
         storedUser?.foto ||
-        DEFAULT_PROFILE_AVATAR
-    );
+        '';
+    profileImage = toAbsoluteImageUrl(profileImage, DEFAULT_PROFILE_AVATAR);
 
     const profileBackgroundColor =
         user?.fotoBackgroundColor ||
@@ -46,9 +46,10 @@ export default function Header({ user, page }) {
             <Link to="/perfil">
                 <img
                     className="header-profile-image"
-                    src={profileImage}
+                    src={profileImage || DEFAULT_PROFILE_AVATAR}
                     alt="Perfil"
                     style={{ backgroundColor: profileBackgroundColor }}
+                    onError={e => { e.target.onerror = null; e.target.src = DEFAULT_PROFILE_AVATAR; }}
                 />
             </Link>
                         <div className="header-actions">

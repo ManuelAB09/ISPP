@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { authApi } from "../../api/auth.api"
 import { getApiBaseUrl } from "../../api/baseUrl"
 import { useAuth } from "../../contexts/AuthContext"
@@ -19,23 +19,26 @@ const ACADEMIC_INTERESTS = [
 
 const RENATA_PATH_PREFIX = '/static/images/renata/'
 
-const toAbsoluteImageUrl = (imageUrl) => {
+const DEFAULT_PROFILE_AVATAR =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='60' fill='%23E6EAF3'/%3E%3Ccircle cx='60' cy='46' r='22' fill='%2395A1BB'/%3E%3Cpath d='M20 106c6-20 22-32 40-32s34 12 40 32' fill='%2395A1BB'/%3E%3C/svg%3E";
+
+const toAbsoluteImageUrl = (imageUrl, fallback = DEFAULT_PROFILE_AVATAR) => {
     if (!imageUrl || !String(imageUrl).trim()) {
-        return ''
+        return fallback;
     }
 
-    const value = String(imageUrl).trim()
+    const value = String(imageUrl).trim();
     if (/^https?:\/\//i.test(value) || value.startsWith('data:image/') || value.startsWith('blob:')) {
-        return value
+        return value;
     }
 
-    const base = getApiBaseUrl()
+    const base = getApiBaseUrl();
     if (value.startsWith('/')) {
-        return `${base}${value}`
+        return `${base}${value}`;
     }
 
-    return `${base}/${value}`
-}
+    return `${base}/${value}`;
+};
 
 const extractRenataAvatarPath = (imageUrl) => {
     if (!imageUrl || !String(imageUrl).trim()) {
@@ -91,7 +94,7 @@ const EditProfile = ({ onClose, onSave }) => {
             const userAvatarPath = extractRenataAvatarPath(user.foto)
             setSelectedAvatar(userAvatarPath)
             setFotoToSave(userAvatarPath || user.foto || '')
-            setProfileImagePreview(toAbsoluteImageUrl(user.foto))
+            setProfileImagePreview(toAbsoluteImageUrl(user.foto, DEFAULT_PROFILE_AVATAR))
             setFotoBackgroundColor(user.fotoBackgroundColor || '#ffffff')
         }
     }, [user])
@@ -254,9 +257,13 @@ const EditProfile = ({ onClose, onSave }) => {
                     <section className="edit-profile-section">
                         <h2 className="edit-profile-section__title">Foto de perfil</h2>
                         <div className="edit-profile-image-container">
-                            {profileImagePreview ? (
-                                <div className="edit-profile-image-preview" style={{ backgroundColor: fotoBackgroundColor }}>
-                                    <img src={profileImagePreview} alt="Vista previa" />
+                            <div className="edit-profile-image-preview" style={{ backgroundColor: fotoBackgroundColor }}>
+                                <img
+                                    src={profileImagePreview || DEFAULT_PROFILE_AVATAR}
+                                    alt="Vista previa"
+                                    onError={e => { e.target.onerror = null; e.target.src = DEFAULT_PROFILE_AVATAR; }}
+                                />
+                                {(profileImagePreview && profileImagePreview !== DEFAULT_PROFILE_AVATAR) && (
                                     <button
                                         type="button"
                                         className="edit-profile-remove-image"
@@ -268,12 +275,8 @@ const EditProfile = ({ onClose, onSave }) => {
                                             <line x1="6" y1="6" x2="18" y2="18"/>
                                         </svg>
                                     </button>
-                                </div>
-                            ) : (
-                                <div className="edit-profile-image-placeholder" style={{ backgroundColor: fotoBackgroundColor }}>
-                                    <span className="placeholder-icon">👤</span>
-                                </div>
-                            )}
+                                )}
+                            </div>
                             <div className="edit-profile-image-actions">
                                 <label className="edit-profile-upload-btn" htmlFor="profile-photo-input">
                                     Subir foto
