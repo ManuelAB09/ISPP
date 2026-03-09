@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { communitiesApi } from "../../api/communities.api";
 import Header from "../../components/Header/Header";
+import PageHeader from "../../components/PageHeader";
 import "./CrearComunidad.css";
 
 export default function CrearComunidad() {
@@ -104,11 +105,10 @@ export default function CrearComunidad() {
         <div className="crear-comunidad-container">
             <Header page={'comunidades'} />
             <div className="header">
-                <div className="headerTitle">
-                    <p>Explora las comunidades que mejor se adaptan a tus necesidades y ganas de aprender </p>
-                    <span className="line"></span>
-                    <h1>Crear Comunidad</h1>
-                </div>
+                <PageHeader 
+                    title="Crear Comunidad"
+                    subtitle="Explora las comunidades que mejor se adaptan a tus necesidades y ganas de aprender"
+                />
             </div>
             <div className="body">
                <div className="first-section">

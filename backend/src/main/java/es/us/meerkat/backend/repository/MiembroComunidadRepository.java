@@ -31,6 +31,8 @@ public interface MiembroComunidadRepository extends JpaRepository<MiembroComunid
 
     List<MiembroComunidad> findByUsuarioIdAndRol(Long usuarioId, RolComunidad rol);
 
+    void deleteByUsuarioId(Long usuarioId);
+
     long countByComunidadIdAndRol(Long comunidadId, RolComunidad rol);
 
     /**

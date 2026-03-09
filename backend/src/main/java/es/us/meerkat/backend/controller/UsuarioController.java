@@ -24,6 +24,7 @@ import es.us.meerkat.backend.dto.UserPublicResponse;
 import es.us.meerkat.backend.dto.VisibilityRequest;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.UsuarioService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -70,7 +71,7 @@ public final class UsuarioController {
     @PutMapping("/me")
     public ResponseEntity<UserDetailResponse> updateMe(
             @AuthenticationPrincipal final Usuario usuario,
-            @RequestBody final UpdateUserRequest request) {
+            @Valid @RequestBody final UpdateUserRequest request) {
         return ResponseEntity.ok(usuarioService.actualizarPerfil(usuario, request));
     }
 
@@ -94,6 +95,8 @@ public final class UsuarioController {
             return ResponseEntity.ok(usuarioService.actualizarFotoPerfil(usuario, file));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
         }
     }
 
@@ -107,6 +110,9 @@ public final class UsuarioController {
      */
     @DeleteMapping("/me")
     public ResponseEntity<Void> deleteMe(@AuthenticationPrincipal final Usuario usuario) {
+        if (usuario == null) {
+            return ResponseEntity.status(401).build();
+        }
         usuarioService.eliminarCuenta(usuario);
         return ResponseEntity.noContent().build();
     }

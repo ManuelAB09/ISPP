@@ -148,6 +148,15 @@
     color: white;
 }
 
+.settings-btn--danger {
+    background-color: #dc2626;
+    color: white;
+}
+
+.settings-btn--danger:hover {
+    background-color: #b91c1c;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    Sección Mis Datos + Tu Actividad
    ═══════════════════════════════════════════════════════════════ */

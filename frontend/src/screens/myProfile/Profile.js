@@ -5,27 +5,31 @@ import { communitiesApi } from "../../api/communities.api"
 import { getMyTutorProfiles } from "../../api/tutorEndpoints"
 import Header from "../../components/Header/Header"
 import { useAuth } from "../../contexts/AuthContext"
+import { apiClient } from "../../api/client"
 import EditProfile from "./EditProfile"
 import "./MyProfile.css"
 import Settings from "./Settings"
 
-const toAbsoluteImageUrl = (imageUrl) => {
+const DEFAULT_PROFILE_AVATAR =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='60' fill='%23E6EAF3'/%3E%3Ccircle cx='60' cy='46' r='22' fill='%2395A1BB'/%3E%3Cpath d='M20 106c6-20 22-32 40-32s34 12 40 32' fill='%2395A1BB'/%3E%3C/svg%3E";
+
+const toAbsoluteImageUrl = (imageUrl, fallback = DEFAULT_PROFILE_AVATAR) => {
     if (!imageUrl || !String(imageUrl).trim()) {
-        return ''
+        return fallback;
     }
 
-    const value = String(imageUrl).trim()
+    const value = String(imageUrl).trim();
     if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
-        return value
+        return value;
     }
 
-    const base = getApiBaseUrl()
+    const base = getApiBaseUrl();
     if (value.startsWith('/')) {
-        return `${base}${value}`
+        return `${base}${value}`;
     }
 
-    return `${base}/${value}`
-}
+    return `${base}/${value}`;
+};
 
 const MyProfile = () => {
     const { isAuthenticated, loading, user } = useAuth()
@@ -43,6 +47,8 @@ const MyProfile = () => {
         descargas: 0
     })
     const isOwner = true // Siempre es el propietario en esta pantalla
+    const [unauthorizedMessage, setUnauthorizedMessage] = useState("")
+    const { logout } = useAuth()
 
     // Si el usuario tiene perfil de tutor, redirigir a su perfil de profesor
     useEffect(() => {
@@ -147,6 +153,8 @@ const MyProfile = () => {
         email: user?.email || "Sin email",
         universidad: user?.universidad || "",
         grado: user?.grado || "",
+        nivelEstudios: user?.nivelEstudios || "",
+        baseFormativa: user?.baseFormativa || "",
         ubicacion: user?.ubicacion || "",
         foto: user?.foto || null,
         fotoBackgroundColor: user?.fotoBackgroundColor || '#ffffff',
@@ -179,6 +187,28 @@ const MyProfile = () => {
         return `${base}/${value}`;
     }
 
+    // Función para manejar cierre de sesión
+    const handleLogout = async () => {
+        // Validar que sea el propietario
+        if (!isOwner) {
+            setUnauthorizedMessage("No puedes cerrar sesión de una cuenta que no es tuya.")
+            setTimeout(() => setUnauthorizedMessage(""), 3000)
+            return
+        }
+
+        try {
+            await apiClient.post('/api/v1/auth/logout')
+        } catch (error) {
+            // Aunque falle la llamada, cerramos sesión localmente
+            console.error('Error al cerrar sesión:', error)
+        } finally {
+            // Usar logout del contexto para limpiar estado correctamente
+            logout()
+            // Redirigir a home
+            navigate('/')
+        }
+    }
+
     return (
         <>
             <Header page={'inicio'} />
@@ -188,11 +218,12 @@ const MyProfile = () => {
                 <section className="profile-header">
                     <div className="profile-header__left">
                         <div className="profile-avatar" style={{ backgroundColor: userData.fotoBackgroundColor }}>
-                            {userData.foto ? (
-                                <img src={toAbsoluteImageUrl(userData.foto)} alt={userData.nombre} className="profile-avatar-img" />
-                            ) : (
-                                <span className="profile-avatar-placeholder">👤</span>
-                            )}
+                            <img
+                                src={toAbsoluteImageUrl(userData.foto, DEFAULT_PROFILE_AVATAR)}
+                                alt={userData.nombre}
+                                className="profile-avatar-img"
+                                onError={e => { e.target.onerror = null; e.target.src = DEFAULT_PROFILE_AVATAR; }}
+                            />
                         </div>
                         <div className="profile-info">
                             <h1 className="profile-info__name">{userData.nombre}</h1>
@@ -207,16 +238,24 @@ const MyProfile = () => {
                             )}
                         </div>
                     </div>
+                    {/* Mensaje de acceso no autorizado */}
+                    {unauthorizedMessage && (
+                        <div className="settings-unauthorized-message">
+                            ⚠️ {unauthorizedMessage}
+                        </div>
+                    )}
                     <div className="profile-header__right">
                         {isOwner && (
                             <>
                                 <button className="btn-edit-profile" onClick={() => setShowEditProfile(true)}>
-                                    <span className="btn-icon">✏️</span>
                                     Editar Perfil
                                 </button>
                                 <button className="btn-settings" onClick={() => setShowSettings(true)}>
-                                    <span className="btn-icon">⚙️</span>
                                     Configuración
+                                </button>
+                                <button className="btn-settings settings-btn--danger" onClick={handleLogout}>
+                                    <span className="btn-icon">🚪</span>
+                                    Cerrar sesión
                                 </button>
                             </>
                         )}
@@ -243,6 +282,14 @@ const MyProfile = () => {
                             <div className="data-field">
                                 <span className="data-field__label">GRADO</span>
                                 <span className="data-field__value">{displayValue(userData.grado)}</span>
+                            </div>
+                            <div className="data-field">
+                                <span className="data-field__label">NIVEL DE ESTUDIOS</span>
+                                <span className="data-field__value">{displayValue(userData.nivelEstudios)}</span>
+                            </div>
+                            <div className="data-field">
+                                <span className="data-field__label">BASE FORMATIVA</span>
+                                <span className="data-field__value">{displayValue(userData.baseFormativa)}</span>
                             </div>
                             <div className="data-field">
                                 <span className="data-field__label">UBICACIÓN</span>
@@ -354,13 +401,12 @@ const MyProfile = () => {
                                         </div>
                                         <div className="created-community-card__bottom">
                                             <div className="created-community-card__members">
-                                                <span className="members-icon">👥</span>
                                                 <span className="members-text">Inscritos: <strong>{comunidad.miembrosActuales || 0}</strong>/{comunidad.maxMiembros || 0}</span>
                                             </div>
                                             {isOwner && (
                                                 <div className="created-community-card__actions">
-                                                    <Link to={`/comunidades/${comunidad.id}/editar`} className="action-link" onClick={(e) => e.stopPropagation()}>✏️ Editar</Link>
-                                                    <Link to={`/comunidades/${comunidad.id}/apuntes`} className="action-link" onClick={(e) => e.stopPropagation()}>📄 Subir apuntes</Link>
+                                                    <Link to={`/comunidades/${comunidad.id}/editar`} className="action-link" onClick={(e) => e.stopPropagation()}> Editar</Link>
+                                                    <Link to={`/comunidades/${comunidad.id}/apuntes`} className="action-link" onClick={(e) => e.stopPropagation()}> Subir apuntes</Link>
                                                 </div>
                                             )}
                                         </div>
