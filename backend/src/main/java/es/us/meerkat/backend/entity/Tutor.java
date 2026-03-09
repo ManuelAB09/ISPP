@@ -13,6 +13,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
@@ -56,6 +57,11 @@ public class Tutor {
 
     /** Breve biografía del tutor. */
     private String bio;
+
+    /** Ubicación del tutor (opcional). */
+    @ManyToOne
+    @JoinColumn(name = "ubicacion_id", nullable = true)
+    private Ubicacion ubicacion;
 
     /** Estado de verificación del tutor. */
     private Boolean verificado = false;

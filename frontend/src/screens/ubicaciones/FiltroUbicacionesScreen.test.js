@@ -115,7 +115,8 @@ describe('FiltroUbicacionesScreen', () => {
       },
     ]);
 
-    global.fetch.mockResolvedValueOnce({
+    global.fetch.mockResolvedValue({
+      ok: true,
       json: async () => ({ display_name: 'Dirección calculada por geocoding' }),
     });
 
@@ -127,11 +128,16 @@ describe('FiltroUbicacionesScreen', () => {
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining(
           'https://nominatim.openstreetmap.org/reverse?format=json&lat=37.41&lon=-5.99'
-        )
+        ),
+        expect.anything()
       );
-    });
+    }, { timeout: 3000 });
 
-    expect(await screen.findByText(/Dirección calculada por geocoding/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText('Dirección calculada por geocoding', {
+        timeout: 3000,
+      })
+    ).toBeInTheDocument();
   });
 
   test('ejecuta onClose al pulsar botón cerrar', () => {

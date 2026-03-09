@@ -237,6 +237,13 @@ public class DataSeeder {
 
             List<Ubicacion> ubicaciones = ubicacionRepo.saveAll(List.of(ub1, ub2, ub3, ub4, ub5));
 
+            // Asignar ubicaciones a los usuarios que son tutores
+            u3.setUbicacion(ub1); // Carlos - Biblioteca ETSII
+            u4.setUbicacion(ub2); // Laura - Aula A0.10
+            u5.setUbicacion(ub3); // Pedro - Salón de Actos
+            u6.setUbicacion(ub5); // Ana - Biblioteca General US
+            usuarioRepo.saveAll(List.of(u3, u4, u5, u6));
+
             // ============================
             // 3. COMUNIDADES
             // ============================

@@ -40,6 +40,9 @@ public class TutorResponse {
     @Schema(description = "Fecha de creación del perfil")
     private String createdAt;
 
+    @Schema(description = "Ubicación del tutor")
+    private UbicacionResponse ubicacion;
+
     @Data
     @Builder
     public static class UsuarioDto {
