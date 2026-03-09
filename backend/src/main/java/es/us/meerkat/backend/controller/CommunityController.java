@@ -857,7 +857,8 @@ public class CommunityController {
         }
 
         Long usuarioId = usuario != null ? usuario.getId() : null;
-        List<Evento> eventos = eventoService.obtenerEventosPorComunidad(communityId, cancelados, usuarioId);
+        List<Evento> eventos =
+                eventoService.obtenerEventosPorComunidad(communityId, cancelados, usuarioId);
         List<EventSummaryResponse> response =
                 eventos.stream().map(Evento::toSummaryDTO).collect(Collectors.toList());
 

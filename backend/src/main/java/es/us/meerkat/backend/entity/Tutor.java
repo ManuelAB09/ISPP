@@ -24,9 +24,7 @@ import lombok.NoArgsConstructor;
 /**
  * Entidad que representa a un tutor dentro de la plataforma.
  *
- * <p>
- * Contiene información de perfil, estado de verificación, conexión a classroom,
- * historial de
+ * <p>Contiene información de perfil, estado de verificación, conexión a classroom, historial de
  * transacciones y especialidades.
  */
 @Entity
@@ -100,9 +98,9 @@ public class Tutor {
     /**
      * Crea o establece el perfil del tutor.
      *
-     * @param tarifaHoraParam     Tarifa por hora.
+     * @param tarifaHoraParam Tarifa por hora.
      * @param disponibilidadParam Disponibilidad en texto.
-     * @param bioParam            Biografía del tutor.
+     * @param bioParam Biografía del tutor.
      * @param especialidadesParam Lista de especialidades.
      */
     public void crearPerfil(
@@ -119,9 +117,9 @@ public class Tutor {
     /**
      * Edita el perfil existente del tutor.
      *
-     * @param tarifaHoraParam     Tarifa por hora.
+     * @param tarifaHoraParam Tarifa por hora.
      * @param disponibilidadParam Disponibilidad en texto.
-     * @param bioParam            Biografía del tutor.
+     * @param bioParam Biografía del tutor.
      * @param especialidadesParam Lista de especialidades.
      */
     public void editarPerfil(
