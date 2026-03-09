@@ -2,6 +2,7 @@ package es.us.meerkat.backend.dto;
 
 import java.util.List;
 
+import es.us.meerkat.backend.entity.Ubicacion;
 import lombok.Data;
 
 /**
@@ -29,7 +30,7 @@ public class UpdateUserRequest {
     private String grado;
 
     /** Ubicación del usuario. */
-    private String ubicacion;
+    private Ubicacion ubicacion;
 
     /** Nueva lista de intereses. */
     private List<String> intereses;

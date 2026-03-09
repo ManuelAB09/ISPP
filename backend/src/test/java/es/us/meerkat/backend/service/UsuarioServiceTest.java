@@ -21,6 +21,7 @@ import es.us.meerkat.backend.dto.UpdateUserRequest;
 import es.us.meerkat.backend.dto.UserDetailResponse;
 import es.us.meerkat.backend.dto.UserPublicResponse;
 import es.us.meerkat.backend.dto.VisibilityRequest;
+import es.us.meerkat.backend.entity.Ubicacion;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 
@@ -72,6 +73,13 @@ class UsuarioServiceTest {
     @Test
     void actualizarPerfilShouldUpdateProvidedFieldsAndSave() {
         Usuario usuario = new Usuario();
+        Ubicacion ubicacion = new Ubicacion();
+        ubicacion.setNombre("Sevilla");
+        ubicacion.setCoste("100");
+        ubicacion.setLatitud(24.0);
+        ubicacion.setLongitud(42.0);
+        ubicacion.setDireccion("Casa");
+
         usuario.setEmail("user@meerkat.es");
         usuario.setNombre("Nombre anterior");
 
@@ -81,7 +89,7 @@ class UsuarioServiceTest {
         request.setBio("Nueva bio");
         request.setUniversidad("US");
         request.setGrado("Ingeniería");
-        request.setUbicacion("Sevilla");
+        request.setUbicacion(ubicacion);
         request.setIntereses(List.of("backend", "arquitectura"));
 
         UserDetailResponse response = usuarioService.actualizarPerfil(usuario, request);
@@ -92,7 +100,7 @@ class UsuarioServiceTest {
         assertThat(usuario.getBio()).isEqualTo("Nueva bio");
         assertThat(usuario.getUniversidad()).isEqualTo("US");
         assertThat(usuario.getGrado()).isEqualTo("Ingeniería");
-        assertThat(usuario.getUbicacion()).isEqualTo("Sevilla");
+        assertThat(usuario.getUbicacion().getNombre()).isEqualTo("Sevilla");
         assertThat(usuario.getIntereses()).containsExactly("backend", "arquitectura");
 
         assertThat(response.getNombre()).isEqualTo("Nombre nuevo");

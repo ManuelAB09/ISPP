@@ -3,6 +3,7 @@ package es.us.meerkat.backend.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import es.us.meerkat.backend.entity.Ubicacion;
 import lombok.Builder;
 import lombok.Data;
 
@@ -38,7 +39,7 @@ public class UserDetailResponse {
     private String grado;
 
     /** Ubicación del usuario. */
-    private String ubicacion;
+    private Ubicacion ubicacion;
 
     /** Lista de intereses del usuario. */
     private List<String> intereses;

@@ -9,7 +9,9 @@ import es.us.meerkat.backend.dto.UpdateUserRequest;
 import es.us.meerkat.backend.dto.UserDetailResponse;
 import es.us.meerkat.backend.dto.UserPublicResponse;
 import es.us.meerkat.backend.dto.VisibilityRequest;
+import es.us.meerkat.backend.entity.Ubicacion;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.UbicacionRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -28,6 +30,9 @@ public class UsuarioService {
 
     /** Repositorio para acceder a la información de usuarios. */
     private final UsuarioRepository usuarioRepository;
+
+    /** Repositorio para acceder a la información de ubicaciones. */
+    private final UbicacionRepository ubicacionRepository;
 
     /** Codificador de contraseñas BCrypt. */
     private final BCryptPasswordEncoder passwordEncoder;
@@ -91,7 +96,12 @@ public class UsuarioService {
             usuario.setGrado(requestParam.getGrado());
         }
         if (requestParam.getUbicacion() != null) {
-            usuario.setUbicacion(requestParam.getUbicacion());
+            Ubicacion ubicacion = requestParam.getUbicacion();
+            if (ubicacion.getId() != null && ubicacion.getId() == 0) {
+                ubicacion.setId(null);
+            }
+            ubicacion = ubicacionRepository.save(ubicacion);
+            usuario.setUbicacion(ubicacion);
         }
 
         usuarioRepository.save(usuario);
@@ -208,6 +218,9 @@ public class UsuarioService {
                 .nombre(usuario.getNombre())
                 .foto(usuario.getFoto())
                 .bio(usuario.getBio())
+                .universidad(usuario.getUniversidad())
+                .grado(usuario.getGrado())
+                .ubicacion(usuario.getUbicacion())
                 .intereses(usuario.getIntereses())
                 .visibleEnListados(usuario.getVisibleEnListados())
                 .esTutor(usuario.getEsTutor())
