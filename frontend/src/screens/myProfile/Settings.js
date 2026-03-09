@@ -62,27 +62,6 @@ const Settings = ({ onClose, isOwner = true }) => {
         }
     }
 
-    const handleLogout = async () => {
-        // Validar que sea el propietario
-        if (!isOwner) {
-            setUnauthorizedMessage("No puedes cerrar sesión de una cuenta que no es tuya.")
-            setTimeout(() => setUnauthorizedMessage(""), 3000)
-            return
-        }
-
-        try {
-            await apiClient.post('/api/v1/auth/logout')
-        } catch (error) {
-            // Aunque falle la llamada, cerramos sesión localmente
-            console.error('Error al cerrar sesión:', error)
-        } finally {
-            // Usar logout del contexto para limpiar estado correctamente
-            logout()
-            // Redirigir a home
-            navigate('/')
-        }
-    }
-
     const handleChangePassword = async (e) => {
         e.preventDefault()
         setPasswordError("")
