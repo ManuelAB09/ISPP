@@ -21,7 +21,9 @@ import lombok.RequiredArgsConstructor;
 /**
  * Servicio para gestionar la lógica de negocio relacionada con las ubicaciones.
  *
- * <p>Permite crear, editar y consultar ubicaciones geográficas asociadas a eventos.
+ * <p>
+ * Permite crear, editar y consultar ubicaciones geográficas asociadas a
+ * eventos.
  */
 @Service
 @RequiredArgsConstructor
@@ -49,25 +51,25 @@ public class UbicacionService {
     @Transactional
     public UbicacionResponse crearUbicacion(final UbicacionRequest requestParam) {
         // Primero, buscamos si ya existe una ubicación con la misma latitud y longitud
-        Optional<Ubicacion> existente =
-                ubicacionRepository.findByLatitudAndLongitud(
-                        requestParam.getLatitud(), requestParam.getLongitud());
+        Optional<Ubicacion> existente = ubicacionRepository.findByLatitudAndLongitud(
+                requestParam.getLatitud(), requestParam.getLongitud());
 
         if (existente.isPresent()) {
             // Si existe, devolvemos la que ya está en la base de datos
             return mapToResponse(existente.get());
         }
 
+        final String nombreNormalizado = normalizarNombreUbicacion(requestParam);
+
         // Si no existe, creamos una nueva
-        final Ubicacion nuevaUbicacion =
-                Ubicacion.builder()
-                        .nombre(requestParam.getNombre())
-                        .direccion(requestParam.getDireccion())
-                        .latitud(requestParam.getLatitud())
-                        .longitud(requestParam.getLongitud())
-                        .tipo(requestParam.getTipo())
-                        .coste(requestParam.getCoste())
-                        .build();
+        final Ubicacion nuevaUbicacion = Ubicacion.builder()
+                .nombre(nombreNormalizado)
+                .direccion(requestParam.getDireccion())
+                .latitud(requestParam.getLatitud())
+                .longitud(requestParam.getLongitud())
+                .tipo(requestParam.getTipo())
+                .coste(requestParam.getCoste())
+                .build();
 
         ubicacionRepository.save(nuevaUbicacion);
 
@@ -82,17 +84,16 @@ public class UbicacionService {
      * Edita una ubicación existente.
      *
      * @param ubicacionIdParam Identificador de la ubicación.
-     * @param requestParam Nuevos datos.
+     * @param requestParam     Nuevos datos.
      * @return DTO actualizado.
      */
     @Transactional
     public UbicacionResponse editarUbicacion(
             final Long ubicacionIdParam, final UbicacionRequest requestParam) {
 
-        final Ubicacion ubicacion =
-                ubicacionRepository
-                        .findById(ubicacionIdParam)
-                        .orElseThrow(() -> new RuntimeException("Ubicación no encontrada"));
+        final Ubicacion ubicacion = ubicacionRepository
+                .findById(ubicacionIdParam)
+                .orElseThrow(() -> new RuntimeException("Ubicación no encontrada"));
 
         ubicacion.setNombre(requestParam.getNombre());
         ubicacion.setDireccion(requestParam.getDireccion());
@@ -119,10 +120,9 @@ public class UbicacionService {
     @Transactional(readOnly = true)
     public UbicacionResponse obtenerUbicacion(final Long ubicacionIdParam) {
 
-        final Ubicacion ubicacion =
-                ubicacionRepository
-                        .findById(ubicacionIdParam)
-                        .orElseThrow(() -> new RuntimeException("Ubicación no encontrada"));
+        final Ubicacion ubicacion = ubicacionRepository
+                .findById(ubicacionIdParam)
+                .orElseThrow(() -> new RuntimeException("Ubicación no encontrada"));
 
         return mapToResponse(ubicacion);
     }
@@ -168,20 +168,20 @@ public class UbicacionService {
         return String.format(
                 Locale.US,
                 """
-                [out:json];
-                (
-                  node["amenity"="library"](around:%d,%.6f,%.6f);
-                  node["amenity"="community_centre"](around:%d,%.6f,%.6f);
-                  node["amenity"="training"](around:%d,%.6f,%.6f);
-                  node["amenity"="university"](around:%d,%.6f,%.6f);
-                  node["amenity"="hackerspace"](around:%d,%.6f,%.6f);
-                  node["amenity"="coworking_space"](around:%d,%.6f,%.6f);
-                  node["amenity"="studio"](around:%d,%.6f,%.6f);
-                  node["leisure"="park"](around:%d,%.6f,%.6f);
-                  node["leisure"="playground"](around:%d,%.6f,%.6f);
-                );
-                out body center;
-                """,
+                        [out:json];
+                        (
+                          node["amenity"="library"](around:%d,%.6f,%.6f);
+                          node["amenity"="community_centre"](around:%d,%.6f,%.6f);
+                          node["amenity"="training"](around:%d,%.6f,%.6f);
+                          node["amenity"="university"](around:%d,%.6f,%.6f);
+                          node["amenity"="hackerspace"](around:%d,%.6f,%.6f);
+                          node["amenity"="coworking_space"](around:%d,%.6f,%.6f);
+                          node["amenity"="studio"](around:%d,%.6f,%.6f);
+                          node["leisure"="park"](around:%d,%.6f,%.6f);
+                          node["leisure"="playground"](around:%d,%.6f,%.6f);
+                        );
+                        out body center;
+                        """,
                 radio,
                 lat,
                 lon,
@@ -226,12 +226,11 @@ public class UbicacionService {
                     continue;
                 }
 
-                String tipo =
-                        tags.has("amenity")
-                                ? tags.get("amenity").asText()
-                                : tags.has("leisure")
-                                        ? tags.get("leisure").asText()
-                                        : "desconocido";
+                String tipo = tags.has("amenity")
+                        ? tags.get("amenity").asText()
+                        : tags.has("leisure")
+                                ? tags.get("leisure").asText()
+                                : "desconocido";
 
                 String coste = clasificarCoste(tags, tipo);
                 String direccion = construirDireccion(tags);
@@ -335,5 +334,25 @@ public class UbicacionService {
                 .latitud(ubicacionParam.getLatitud())
                 .longitud(ubicacionParam.getLongitud())
                 .build();
+    }
+
+    private String normalizarNombreUbicacion(final UbicacionRequest requestParam) {
+        final String nombre = requestParam.getNombre() != null ? requestParam.getNombre().trim() : "";
+        if (!nombre.isEmpty()) {
+            return nombre;
+        }
+
+        final String direccion = requestParam.getDireccion() != null ? requestParam.getDireccion().trim() : "";
+        if (!direccion.isEmpty()) {
+            return direccion.length() > 80 ? direccion.substring(0, 80) : direccion;
+        }
+
+        final Double latitud = requestParam.getLatitud();
+        final Double longitud = requestParam.getLongitud();
+        if (latitud != null && longitud != null) {
+            return String.format(Locale.US, "Ubicación %.5f, %.5f", latitud, longitud);
+        }
+
+        return "Ubicación sin nombre";
     }
 }

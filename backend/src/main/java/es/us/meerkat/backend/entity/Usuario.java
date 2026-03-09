@@ -27,11 +27,12 @@ import lombok.ToString;
 /**
  * Entidad que representa un usuario en la plataforma.
  *
- * <p>Contiene información de login, rol de tutor y relación con tutores.
+ * <p>
+ * Contiene información de login, rol de tutor y relación con tutores.
  */
 @Entity
 @Data
-@ToString(exclude = {"tutores", "intereses"})
+@ToString(exclude = { "tutores", "intereses" })
 @NoArgsConstructor
 @AllArgsConstructor
 public class Usuario {
@@ -61,9 +62,9 @@ public class Usuario {
     /** Grado del usuario. */
     private String grado;
 
-    /** Ubicación del usuario. */
+    /** Ubicación del usuario (opcional). */
     @ManyToOne
-    @JoinColumn(name = "ubicacion_id")
+    @JoinColumn(name = "ubicacion_id", nullable = true)
     private Ubicacion ubicacion;
 
     /** Breve biografía del usuario. */
@@ -79,7 +80,8 @@ public class Usuario {
     private String googleId;
 
     /**
-     * Indica si el perfil del usuario es visible en listados públicos y resultados de búsqueda. Por
+     * Indica si el perfil del usuario es visible en listados públicos y resultados
+     * de búsqueda. Por
      * defecto es visible.
      */
     @Column(nullable = false)

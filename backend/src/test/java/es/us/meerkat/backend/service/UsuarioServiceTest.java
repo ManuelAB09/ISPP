@@ -29,13 +29,17 @@ import es.us.meerkat.backend.repository.UsuarioRepository;
 @ExtendWith(MockitoExtension.class)
 class UsuarioServiceTest {
 
-    @Mock private UsuarioRepository usuarioRepository;
+    @Mock
+    private UsuarioRepository usuarioRepository;
 
-    @Mock private UbicacionRepository ubicacionRepository;
+    @Mock
+    private UbicacionRepository ubicacionRepository;
 
-    @Mock private BCryptPasswordEncoder passwordEncoder;
+    @Mock
+    private BCryptPasswordEncoder passwordEncoder;
 
-    @InjectMocks private UsuarioService usuarioService;
+    @InjectMocks
+    private UsuarioService usuarioService;
 
     @Test
     void obtenerPerfilPropioShouldReturnPersistedUserProfile() {
@@ -94,7 +98,7 @@ class UsuarioServiceTest {
         request.setBio("Nueva bio");
         request.setUniversidad("US");
         request.setGrado("Ingeniería");
-        request.setUbicacion(ubicacion);
+        request.setUbicacion(ubicacion.getNombre());
         request.setIntereses(List.of("backend", "arquitectura"));
 
         UserDetailResponse response = usuarioService.actualizarPerfil(usuario, request);

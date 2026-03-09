@@ -11,6 +11,13 @@ export const ubicacionesApi = {
         return apiClient.post('/api/ubicaciones', data);
     },
     /**
+     * GET /api/ubicaciones
+     * Listar ubicaciones disponibles
+     */
+    listAll() {
+        return apiClient.get('/api/ubicaciones');
+    },
+    /**
      * GET /api/ubicaciones/buscar-estudio
      * Buscar ubicaciones por lat, lon, radio, tipo
      * @param {Object} params - { lat, lon, radio, tipo }

@@ -8,7 +8,9 @@ import lombok.Data;
 /**
  * DTO con los datos públicos del perfil de un usuario.
  *
- * <p>Corresponde al schema UserPublicResponse del OpenAPI. No expone email ni datos sensibles.
+ * <p>
+ * Corresponde al schema UserPublicResponse del OpenAPI. No expone email ni
+ * datos sensibles.
  */
 @Data
 @Builder
@@ -33,7 +35,7 @@ public class UserPublicResponse {
     private String grado;
 
     /** Ubicación del usuario. */
-    private String ubicacion;
+    private UbicacionResponse ubicacion;
 
     /** Lista de intereses del usuario. */
     private List<String> intereses;

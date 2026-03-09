@@ -10,7 +10,9 @@ import lombok.Data;
 /**
  * DTO con los datos completos del usuario autenticado.
  *
- * <p>Corresponde al schema UserDetailResponse del OpenAPI. Se usa en respuestas de /users/me y
+ * <p>
+ * Corresponde al schema UserDetailResponse del OpenAPI. Se usa en respuestas de
+ * /users/me y
  * dentro de AuthResponse.
  */
 @Data
@@ -39,12 +41,14 @@ public class UserDetailResponse {
     private String grado;
 
     /** Ubicación del usuario. */
-    private Ubicacion ubicacion;
+    private UbicacionResponse ubicacion;
 
     /** Lista de intereses del usuario. */
     private List<String> intereses;
 
-    /** Indica si el perfil es visible en listados públicos y resultados de búsqueda. */
+    /**
+     * Indica si el perfil es visible en listados públicos y resultados de búsqueda.
+     */
     private Boolean visibleEnListados;
 
     /** Indica si el usuario tiene perfil de tutor. */

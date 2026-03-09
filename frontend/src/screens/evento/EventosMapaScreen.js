@@ -6,7 +6,6 @@ import { listMapEvents } from '../../api/eventEndpoints';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header/Header';
 import { useAuth } from '../../contexts/AuthContext';
-import { getCurrentPosition } from '../../utils/geoUtils';
 
 const defaultPosition = [37.3891, -5.9845];
 
@@ -21,15 +20,6 @@ const eventIconRed = L.icon({
 
 const profileUserIcon = L.icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
-  shadowSize: [41, 41],
-});
-
-const liveUserIcon = L.icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
@@ -139,19 +129,17 @@ const EventosMapaScreen = () => {
   const [tipoEvento, setTipoEvento] = useState('all'); // 'all', 'virtual', 'presencial'
 
   const [ubicacionUsuario, setUbicacionUsuario] = useState(null); // { lat, lng, direccion }
-  const [origenUbicacion, setOrigenUbicacion] = useState(''); // 'perfil' | 'gps'
-  const [radioKm, setRadioKm] = useState(5); // Radio de búsqueda en kilómetros
+  const [radioKm, setRadioKm] = useState(5); 
 
   const navigate = useNavigate();
 
-  // Prioriza la ubicación del perfil del usuario; si no existe, usa geolocalización actual.
+  // Usa solo la ubicación elegida por el usuario en su perfil. Si no existe, se deja sin ubicación.
   useEffect(() => {
     let isMounted = true;
 
-    const setUserLocation = (lat, lng, direccion, origen) => {
+    const setUserLocation = (lat, lng, direccion) => {
       if (!isMounted) return;
       setUbicacionUsuario({ lat, lng, direccion });
-      setOrigenUbicacion(origen);
     };
 
     const resolverUbicacionUsuario = async () => {
@@ -167,8 +155,7 @@ const EventosMapaScreen = () => {
         setUserLocation(
           Number(ubicacionPerfil.latitud),
           Number(ubicacionPerfil.longitud),
-          ubicacionPerfil.direccion || ubicacionPerfil.nombre || 'Ubicación de tu perfil',
-          'perfil'
+          ubicacionPerfil.direccion || ubicacionPerfil.nombre || 'Ubicación de tu perfil'
         );
         return;
       }
@@ -182,41 +169,31 @@ const EventosMapaScreen = () => {
       if (textoUbicacionPerfil) {
         try {
           const searchResp = await fetch(
-            `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(textoUbicacionPerfil)}&limit=1&accept-language=es`
+            `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(textoUbicacionPerfil)}&limit=1&accept-language=es`,
+            {
+              headers: {
+                'User-Agent': 'Meerkat-App/1.0'
+              }
+            }
           );
-          const searchData = await searchResp.json();
-          if (Array.isArray(searchData) && searchData.length > 0) {
-            setUserLocation(
-              Number(searchData[0].lat),
-              Number(searchData[0].lon),
-              searchData[0].display_name || textoUbicacionPerfil,
-              'perfil'
-            );
-            return;
+          if (searchResp.ok) {
+            const searchData = await searchResp.json();
+            if (Array.isArray(searchData) && searchData.length > 0) {
+              setUserLocation(
+                Number(searchData[0].lat),
+                Number(searchData[0].lon),
+                searchData[0].display_name || textoUbicacionPerfil
+              );
+              return;
+            }
           }
         } catch {
-          // Si falla la geocodificación, intentamos GPS como respaldo.
+          // Si falla la geocodificación, se deja sin ubicación.
         }
       }
 
-      // Caso 3: fallback a ubicación actual por GPS
-      try {
-        const posicion = await getCurrentPosition();
-
-        // Obtener dirección desde Nominatim
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${posicion.latitude}&lon=${posicion.longitude}&accept-language=es`
-        );
-        const data = await response.json();
-        const direccion = data.display_name || 'Tu ubicación';
-
-        setUserLocation(posicion.latitude, posicion.longitude, direccion, 'gps');
-      } catch (error) {
-        console.error('No se pudo obtener la ubicación del usuario:', error);
-        if (isMounted) {
-          setUbicacionUsuario(null);
-          setOrigenUbicacion('');
-        }
+      if (isMounted) {
+        setUbicacionUsuario(null);
       }
     };
 
@@ -289,11 +266,23 @@ const EventosMapaScreen = () => {
       for (const [key] of pending) {
         const [lat, lon] = key.split(',');
         try {
+          // Delay para evitar sobrecarga de Nominatim
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
           const resp = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&accept-language=es`
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&accept-language=es`,
+            {
+              headers: {
+                'User-Agent': 'Meerkat-App/1.0'
+              }
+            }
           );
-          const data = await resp.json();
-          resolved[key] = getCityFromAddress(data?.address || {});
+          if (resp.ok) {
+            const data = await resp.json();
+            resolved[key] = getCityFromAddress(data?.address || {});
+          } else {
+            resolved[key] = '';
+          }
         } catch {
           resolved[key] = '';
         }
@@ -377,6 +366,35 @@ const EventosMapaScreen = () => {
         <h2 style={{ color: '#1a237e', fontWeight: 700, fontSize: 26, marginBottom: 18 }}>
           Eventos en el mapa
         </h2>
+
+        {!authLoading && !ubicacionUsuario && (
+          <div
+            style={{
+              marginBottom: 14,
+              padding: '12px 14px',
+              borderRadius: 10,
+              border: '1px solid #dbeafe',
+              background: '#eff6ff',
+              color: '#1e3a8a',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 10,
+              flexWrap: 'wrap',
+            }}
+          >
+            <span>
+              No tienes ubicación en tu perfil. Es opcional, pero si la añades podrás ver un radio de eventos cercanos.
+            </span>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => navigate('/perfil', { state: { openEditProfile: true } })}
+            >
+              Añadir ubicación
+            </button>
+          </div>
+        )}
 
         <div style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <label htmlFor="cityFilter" style={{ fontWeight: 600, color: '#2E3559' }}>
@@ -550,12 +568,12 @@ const EventosMapaScreen = () => {
               <>
                 <Marker 
                   position={[ubicacionUsuario.lat, ubicacionUsuario.lng]} 
-                  icon={origenUbicacion === 'perfil' ? profileUserIcon : liveUserIcon}
+                  icon={profileUserIcon}
                 >
                   <Popup>
                     <div style={{ minWidth: 180 }}>
                       <div style={{ fontWeight: 700, color: '#1976d2', fontSize: 17 }}>
-                        {origenUbicacion === 'perfil' ? 'Tu ubicación de perfil' : 'Tu ubicación actual'}
+                        Tu ubicación de perfil
                       </div>
                       <div style={{ fontSize: 13, color: '#555', marginTop: 4 }}>
                         {ubicacionUsuario.direccion}

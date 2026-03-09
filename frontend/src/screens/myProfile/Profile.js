@@ -43,14 +43,18 @@ const MyProfile = () => {
             });
     }, [isAuthenticated, loading]);
 
-    // Volver desde el mapa con una ubicación ya elegida para abrir el modal y precargarla.
+    // Abrir modal de edición cuando se navega con estado desde otras pantallas.
     useEffect(() => {
         const ubicacion = location.state?.ubicacion;
-        if (!ubicacion) {
+        const openEditProfile = Boolean(location.state?.openEditProfile);
+
+        if (!ubicacion && !openEditProfile) {
             return;
         }
 
-        setUbicacionPreseleccionada(ubicacion);
+        if (ubicacion) {
+            setUbicacionPreseleccionada(ubicacion);
+        }
         setShowEditProfile(true);
 
         navigate(location.pathname, { replace: true, state: {} });

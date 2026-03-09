@@ -23,8 +23,11 @@ import lombok.RequiredArgsConstructor;
 /**
  * Controlador de usuarios.
  *
- * <p>Implementa los endpoints del tag Usuarios del OpenAPI. Usa {@link AuthenticationPrincipal}
- * para obtener el usuario autenticado directamente del contexto de seguridad. Base URL:
+ * <p>
+ * Implementa los endpoints del tag Usuarios del OpenAPI. Usa
+ * {@link AuthenticationPrincipal}
+ * para obtener el usuario autenticado directamente del contexto de seguridad.
+ * Base URL:
  * /api/v1/users
  */
 @RestController
@@ -38,7 +41,8 @@ public final class UsuarioController {
     /**
      * Devuelve el perfil completo del usuario autenticado.
      *
-     * <p>GET /api/v1/users/me
+     * <p>
+     * GET /api/v1/users/me
      *
      * @param usuario Usuario autenticado (del token JWT).
      * @return Perfil completo del usuario.
@@ -55,7 +59,8 @@ public final class UsuarioController {
     /**
      * Actualiza el perfil del usuario autenticado.
      *
-     * <p>PUT /api/v1/users/me
+     * <p>
+     * PUT /api/v1/users/me
      *
      * @param usuario Usuario autenticado.
      * @param request Datos a actualizar.
@@ -65,13 +70,17 @@ public final class UsuarioController {
     public ResponseEntity<UserDetailResponse> updateMe(
             @AuthenticationPrincipal final Usuario usuario,
             @RequestBody final UpdateUserRequest request) {
+        if (usuario == null) {
+            return ResponseEntity.status(401).build();
+        }
         return ResponseEntity.ok(usuarioService.actualizarPerfil(usuario, request));
     }
 
     /**
      * Elimina permanentemente la cuenta del usuario autenticado.
      *
-     * <p>DELETE /api/v1/users/me Devuelve 204 sin contenido tras la eliminación.
+     * <p>
+     * DELETE /api/v1/users/me Devuelve 204 sin contenido tras la eliminación.
      *
      * @param usuario Usuario autenticado a eliminar.
      * @return Respuesta vacía con código 204.
@@ -85,7 +94,8 @@ public final class UsuarioController {
     /**
      * Cambia la contraseña del usuario autenticado.
      *
-     * <p>PUT /api/v1/users/me/password
+     * <p>
+     * PUT /api/v1/users/me/password
      *
      * @param usuario Usuario autenticado.
      * @param request Contraseña actual y nueva.
@@ -103,7 +113,8 @@ public final class UsuarioController {
     /**
      * Actualiza la visibilidad del perfil en listados públicos.
      *
-     * <p>PUT /api/v1/users/me/visibility
+     * <p>
+     * PUT /api/v1/users/me/visibility
      *
      * @param usuario Usuario autenticado.
      * @param request Nueva configuración de visibilidad.
@@ -119,7 +130,9 @@ public final class UsuarioController {
     /**
      * Devuelve el perfil público de un usuario por su ID.
      *
-     * <p>GET /api/v1/users/{userId} Accesible sin autenticación si el perfil es visible.
+     * <p>
+     * GET /api/v1/users/{userId} Accesible sin autenticación si el perfil es
+     * visible.
      *
      * @param userId ID del usuario cuyo perfil se quiere ver.
      * @return Perfil público del usuario.

@@ -29,18 +29,41 @@ const getFriendlyErrorMessage = (err) => {
 };
 
 
+// Variable para throttling de geocodificación
+let lastGeocodingCallCrear = 0;
+const GEOCODING_THROTTLE_CREAR = 1500; // 1.5 segundos entre llamadas
+
 function LocationMarker({ latitud, longitud, setLatitud, setLongitud, setDireccion }) {
     useMapEvents({
         click: async (e) => {
             setLatitud(e.latlng.lat);
             setLongitud(e.latlng.lng);
+            
+            // Intentar geocodificación con throttling
+            const now = Date.now();
+            if (now - lastGeocodingCallCrear < GEOCODING_THROTTLE_CREAR) {
+                return; // Skip geocoding si es muy pronto
+            }
+            lastGeocodingCallCrear = now;
+            
             try {
-                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`);
-                const data = await response.json();
-                if (data && data.display_name) {
-                    setDireccion(data.display_name);
+                const response = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`,
+                    {
+                        headers: {
+                            'User-Agent': 'Meerkat-App/1.0'
+                        }
+                    }
+                );
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.display_name) {
+                        setDireccion(data.display_name);
+                    }
                 }
-            } catch { }
+            } catch (err) {
+                console.warn('Geocodificación inversa no disponible:', err.message);
+            }
         },
     });
     return latitud && longitud ? (
@@ -73,7 +96,17 @@ const CrearUbicacionScreen = () => {
         if (!search) return;
         setError(null);
         try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(search)}`);
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(search)}`,
+                {
+                    headers: {
+                        'User-Agent': 'Meerkat-App/1.0'
+                    }
+                }
+            );
+            if (!response.ok) {
+                throw new Error('Error en la búsqueda');
+            }
             const data = await response.json();
             if (data && data.length > 0) {
                 setLatitud(parseFloat(data[0].lat));
@@ -83,7 +116,7 @@ const CrearUbicacionScreen = () => {
                 setError('No se encontró la dirección.');
             }
         } catch (err) {
-            setError('Error buscando la dirección.');
+            setError('Error buscando la dirección. Intenta de nuevo en unos segundos.');
         }
     };
 
@@ -91,12 +124,23 @@ const CrearUbicacionScreen = () => {
         setLatitud(lat);
         setLongitud(lng);
         try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
-            const data = await response.json();
-            if (data && data.display_name) {
-                setDireccion(data.display_name);
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+                {
+                    headers: {
+                        'User-Agent': 'Meerkat-App/1.0'
+                    }
+                }
+            );
+            if (response.ok) {
+                const data = await response.json();
+                if (data && data.display_name) {
+                    setDireccion(data.display_name);
+                }
             }
-        } catch { }
+        } catch (err) {
+            console.warn('No se pudo obtener la dirección:', err.message);
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -188,9 +232,18 @@ const CrearUbicacionScreen = () => {
                             let dir = u.direccion;
                             if (!dir || dir === 'Dirección no disponible') {
                                 try {
-                                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${u.latitud}&lon=${u.longitud}`);
-                                    const data = await response.json();
-                                    dir = data && data.display_name ? data.display_name : '';
+                                    const response = await fetch(
+                                        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${u.latitud}&lon=${u.longitud}`,
+                                        {
+                                            headers: {
+                                                'User-Agent': 'Meerkat-App/1.0'
+                                            }
+                                        }
+                                    );
+                                    if (response.ok) {
+                                        const data = await response.json();
+                                        dir = data && data.display_name ? data.display_name : '';
+                                    }
                                 } catch { }
                             }
                             setDireccion(dir);

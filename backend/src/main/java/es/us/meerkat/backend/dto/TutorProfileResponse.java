@@ -7,7 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 
 /**
- * DTO que representa la información completa de un tutor, incluyendo datos del usuario asociado.
+ * DTO que representa la información completa de un tutor, incluyendo datos del
+ * usuario asociado.
  */
 @Data
 @Builder
@@ -42,6 +43,9 @@ public class TutorProfileResponse {
 
     /** Fecha de creación del tutor. */
     private String createdAt;
+
+    /** Ubicación del tutor. */
+    private UbicacionResponse ubicacion;
 
     /** DTO interno para representar al usuario. */
     @Data

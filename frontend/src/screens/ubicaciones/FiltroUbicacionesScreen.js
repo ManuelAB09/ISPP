@@ -96,9 +96,22 @@ const FiltroUbicacionesScreen = ({ onSeleccionar, onClose }) => {
             const geocodeAll = await Promise.all(filtrados.map(async u => {
                 if (!u.direccion || u.direccion === 'Dirección no disponible') {
                     try {
-                        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${u.latitud}&lon=${u.longitud}`);
-                        const data = await response.json();
-                        return { ...u, direccion: data && data.display_name ? data.display_name : '' };
+                        // Delay para evitar sobrecarga de Nominatim
+                        await new Promise(resolve => setTimeout(resolve, Math.random() * 1000));
+                        
+                        const response = await fetch(
+                            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${u.latitud}&lon=${u.longitud}`,
+                            {
+                                headers: {
+                                    'User-Agent': 'Meerkat-App/1.0'
+                                }
+                            }
+                        );
+                        if (response.ok) {
+                            const data = await response.json();
+                            return { ...u, direccion: data && data.display_name ? data.display_name : '' };
+                        }
+                        return { ...u, direccion: '' };
                     } catch {
                         return { ...u, direccion: '' };
                     }

@@ -19,6 +19,12 @@ export const AuthProvider = ({ children }) => {
 
   // Función auxiliar para guardar datos del usuario en localStorage
   const saveUserToStorage = (userData, extraData = {}) => {
+    // Normalizar ubicación: si es string vacío, convertir a null
+    const normalizeUbicacion = (ub) => {
+      if (!ub || (typeof ub === 'string' && !ub.trim())) return null;
+      return ub;
+    };
+
     // Combinar datos de la API con datos extra (como universidad, grado, ubicacion que la API no devuelve)
     const fullUserData = {
       id: userData.id,
@@ -33,7 +39,7 @@ export const AuthProvider = ({ children }) => {
       // Campos que la API acepta en PUT pero no devuelve en GET
       universidad: extraData.universidad ?? userData.universidad ?? '',
       grado: extraData.grado ?? userData.grado ?? '',
-      ubicacion: extraData.ubicacion ?? userData.ubicacion ?? '',
+      ubicacion: normalizeUbicacion(extraData.ubicacion ?? userData.ubicacion),
     };
     localStorage.setItem('userId', String(userData.id));
     localStorage.setItem('userProfile', JSON.stringify(fullUserData));
@@ -71,7 +77,7 @@ export const AuthProvider = ({ children }) => {
             ...userData,
             universidad: storedData?.universidad ?? userData.universidad ?? '',
             grado: storedData?.grado ?? userData.grado ?? '',
-            ubicacion: userData.ubicacion ?? storedData?.ubicacion ?? '',
+            ubicacion: userData.ubicacion ?? storedData?.ubicacion ?? null,
           };
           setUser(combinedUser);
           saveUserToStorage(userData, {
@@ -104,9 +110,9 @@ export const AuthProvider = ({ children }) => {
       const { accessToken, user: userData } = response;
 
       localStorage.setItem('accessToken', accessToken);
-      saveUserToStorage(userData);
+      const savedUser = saveUserToStorage(userData);
       apiClient.setToken(accessToken);
-      setUser(userData);
+      setUser(savedUser);
 
       return { success: true };
     } catch (err) {
@@ -123,9 +129,9 @@ export const AuthProvider = ({ children }) => {
       const { accessToken, user: userData } = response;
 
       localStorage.setItem('accessToken', accessToken);
-      saveUserToStorage(userData);
+      const savedUser = saveUserToStorage(userData);
       apiClient.setToken(accessToken);
-      setUser(userData);
+      setUser(savedUser);
 
       return { success: true };
     } catch (err) {
@@ -158,7 +164,7 @@ export const AuthProvider = ({ children }) => {
         ...updatedUser,
         universidad: requestPayload.universidad ?? '',
         grado: requestPayload.grado ?? '',
-        ubicacion: ubicacionSeleccionada ?? updatedUser.ubicacion ?? requestPayload.ubicacion ?? '',
+        ubicacion: ubicacionSeleccionada ?? updatedUser.ubicacion ?? requestPayload.ubicacion ?? null,
       };
       setUser(combinedUser);
       saveUserToStorage(updatedUser, {

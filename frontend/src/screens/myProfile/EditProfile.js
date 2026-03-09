@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
 import { useAuth } from "../../contexts/AuthContext"
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet'
+import 'leaflet/dist/leaflet.css'
+import L from 'leaflet'
 import "./EditProfile.css"
 
 const ACADEMIC_INTERESTS = [
@@ -16,9 +18,29 @@ const ACADEMIC_INTERESTS = [
     'Derecho',
 ]
 
+const defaultPosition = [37.3891, -5.9845]
+
+const selectedLocationIcon = L.icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+    shadowSize: [41, 41],
+})
+
+function MapClickSelector({ onMapClick }) {
+    useMapEvents({
+        click: (e) => {
+            onMapClick(e.latlng.lat, e.latlng.lng)
+        },
+    })
+
+    return null
+}
+
 const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
     const { user, updateProfile } = useAuth()
-    const navigate = useNavigate()
     
     // Estados para los campos del formulario
     const [formData, setFormData] = useState({
@@ -33,6 +55,7 @@ const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
     const [profileImage, setProfileImage] = useState(null)
     const [profileImagePreview, setProfileImagePreview] = useState('')
     const [ubicacionSeleccionada, setUbicacionSeleccionada] = useState(null)
+    const [markerPosition, setMarkerPosition] = useState(null)
     const [isSaving, setIsSaving] = useState(false)
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
@@ -40,19 +63,31 @@ const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
     // Cargar datos del usuario al montar el componente
     useEffect(() => {
         if (user) {
+            const ubicacionTexto = typeof user.ubicacion === 'string'
+                ? user.ubicacion
+                : user.ubicacion?.nombre || "";
+            
             setFormData({
                 nombre: user.nombre || "",
                 descripcion: user.bio || "",
                 universidad: user.universidad || "",
                 grado: user.grado || "",
-                ubicacion:
-                    typeof user.ubicacion === 'string'
-                        ? user.ubicacion
-                        : user.ubicacion?.nombre || "",
+                ubicacion: ubicacionTexto,
                 intereses: user.intereses || [],
             })
+            
             if (user.foto) {
                 setProfileImagePreview(user.foto)
+            }
+            
+            // Si el usuario tiene ubicación con coordenadas, cargarla
+            if (user.ubicacion && typeof user.ubicacion === 'object' && 
+                user.ubicacion.latitud != null && user.ubicacion.longitud != null) {
+                setUbicacionSeleccionada(user.ubicacion)
+                setMarkerPosition({
+                    latitud: Number(user.ubicacion.latitud),
+                    longitud: Number(user.ubicacion.longitud),
+                })
             }
         }
     }, [user])
@@ -74,6 +109,15 @@ const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
 
         if (typeof ubicacionPreseleccionada === 'object') {
             setUbicacionSeleccionada(ubicacionPreseleccionada)
+            if (
+                ubicacionPreseleccionada.latitud != null
+                && ubicacionPreseleccionada.longitud != null
+            ) {
+                setMarkerPosition({
+                    latitud: Number(ubicacionPreseleccionada.latitud),
+                    longitud: Number(ubicacionPreseleccionada.longitud),
+                })
+            }
         }
     }, [ubicacionPreseleccionada])
 
@@ -84,7 +128,9 @@ const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
             [name]: type === 'checkbox' ? checked : value,
         }))
         if (name === 'ubicacion') {
-            setUbicacionSeleccionada(null)
+            if (ubicacionSeleccionada && value.trim() !== (ubicacionSeleccionada.nombre || '').trim()) {
+                setUbicacionSeleccionada(null)
+            }
         }
         if (error) setError('')
     }
@@ -138,6 +184,22 @@ const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
             return
         }
 
+        const ubicacionTexto = formData.ubicacion.trim()
+        const ubicacionActualNombre = (
+            typeof user?.ubicacion === 'string'
+                ? user.ubicacion
+                : user?.ubicacion?.nombre || ''
+        ).trim()
+
+        let ubicacionFinal = null
+        if (
+            ubicacionTexto
+            && ubicacionSeleccionada
+            && (ubicacionSeleccionada.nombre || '').trim().toLowerCase() === ubicacionTexto.toLowerCase()
+        ) {
+            ubicacionFinal = ubicacionSeleccionada
+        }
+
         try {
             // Preparar datos para el endpoint
             const profileData = {
@@ -145,14 +207,14 @@ const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
                 bio: formData.descripcion.trim(),
                 universidad: formData.universidad.trim(),
                 grado: formData.grado.trim(),
-                ubicacion: formData.ubicacion.trim(),
+                ubicacion: ubicacionFinal?.nombre || ubicacionTexto,
                 intereses: formData.intereses,
                 foto: profileImage ? profileImagePreview : (user?.foto || ''),
             }
 
             const ubicacionParaGuardar =
-                ubicacionSeleccionada && ubicacionSeleccionada.nombre === profileData.ubicacion
-                    ? ubicacionSeleccionada
+                ubicacionFinal && ubicacionFinal.nombre === profileData.ubicacion
+                    ? ubicacionFinal
                     : null
 
             const result = await updateProfile(profileData, ubicacionParaGuardar)
@@ -179,8 +241,46 @@ const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
         }
     }
 
-    const handleElegirUbicacionEnMapa = () => {
-        navigate('/crear-ubicacion?returnTo=/perfil')
+    const handleSeleccionUbicacion = (location) => {
+        setUbicacionSeleccionada(location)
+        if (location?.latitud != null && location?.longitud != null) {
+            setMarkerPosition({
+                latitud: Number(location.latitud),
+                longitud: Number(location.longitud),
+            })
+        }
+        setFormData(prev => ({
+            ...prev,
+            ubicacion: location?.nombre || ''
+        }))
+    }
+
+    const handleMapClick = (lat, lng) => {
+        const latNum = Number(lat)
+        const lngNum = Number(lng)
+        const nombreCoords = `${latNum.toFixed(6)}, ${lngNum.toFixed(6)}`
+
+        setMarkerPosition({ latitud: latNum, longitud: lngNum })
+        setUbicacionSeleccionada({
+            nombre: nombreCoords,
+            direccion: '',
+            latitud: latNum,
+            longitud: lngNum,
+        })
+        setFormData((prev) => ({
+            ...prev,
+            ubicacion: nombreCoords,
+        }))
+        if (error) setError('')
+    }
+
+    const handleBorrarUbicacion = () => {
+        setUbicacionSeleccionada(null)
+        setMarkerPosition(null)
+        setFormData(prev => ({
+            ...prev,
+            ubicacion: ''
+        }))
     }
 
     return (
@@ -309,16 +409,54 @@ const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
                                 placeholder="Ciudad, País"
                             />
                             <p className="edit-profile-field-hint">
-                                Selecciona tu ubicación exacta en el mapa.
+                                Haz click en el mapa para mover el marcador. No se cargan ubicaciones existentes automáticamente.
                             </p>
-                            <button
-                                type="button"
-                                className="edit-profile-btn edit-profile-btn--secondary"
-                                onClick={handleElegirUbicacionEnMapa}
-                                style={{ marginTop: 10 }}
-                            >
-                                Elegir ubicación en el mapa
-                            </button>
+                            
+                            {/* Mapa de ubicación */}
+                            <div style={{ marginTop: '10px', marginBottom: '10px' }}>
+                                <div style={{ height: '300px', borderRadius: '8px', overflow: 'hidden' }}>
+                                    <MapContainer
+                                        center={
+                                            markerPosition
+                                                ? [markerPosition.latitud, markerPosition.longitud]
+                                                : defaultPosition
+                                        }
+                                        zoom={markerPosition ? 13 : 12}
+                                        style={{ height: '100%', width: '100%' }}
+                                    >
+                                        <TileLayer
+                                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                        />
+                                        <MapClickSelector
+                                            onMapClick={handleMapClick}
+                                        />
+                                        {markerPosition && (
+                                            <Marker
+                                                position={[Number(markerPosition.latitud), Number(markerPosition.longitud)]}
+                                                icon={selectedLocationIcon}
+                                            >
+                                                <Popup>
+                                                    <strong>{formData.ubicacion || 'Ubicación seleccionada'}</strong>
+                                                    <br />
+                                                    Marcador movible (no vinculado a catálogo de ubicaciones)
+                                                </Popup>
+                                            </Marker>
+                                        )}
+                                    </MapContainer>
+                                </div>
+                            </div>
+                            
+                            <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+                                <button
+                                    type="button"
+                                    className="edit-profile-btn edit-profile-btn--secondary"
+                                    onClick={handleBorrarUbicacion}
+                                    style={{ backgroundColor: '#ff4444', color: 'white' }}
+                                >
+                                    Borrar ubicación
+                                </button>
+                            </div>
                         </div>
                     </section>
 
