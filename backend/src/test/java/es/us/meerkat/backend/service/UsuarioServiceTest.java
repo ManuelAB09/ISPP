@@ -23,12 +23,15 @@ import es.us.meerkat.backend.dto.UserPublicResponse;
 import es.us.meerkat.backend.dto.VisibilityRequest;
 import es.us.meerkat.backend.entity.Ubicacion;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.UbicacionRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 
 @ExtendWith(MockitoExtension.class)
 class UsuarioServiceTest {
 
     @Mock private UsuarioRepository usuarioRepository;
+
+    @Mock private UbicacionRepository ubicacionRepository;
 
     @Mock private BCryptPasswordEncoder passwordEncoder;
 
@@ -82,6 +85,8 @@ class UsuarioServiceTest {
 
         usuario.setEmail("user@meerkat.es");
         usuario.setNombre("Nombre anterior");
+
+        when(ubicacionRepository.save(ubicacion)).thenReturn(ubicacion);
 
         UpdateUserRequest request = new UpdateUserRequest();
         request.setNombre("Nombre nuevo");
