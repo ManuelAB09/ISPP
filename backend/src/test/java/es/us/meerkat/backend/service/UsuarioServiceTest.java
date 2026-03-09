@@ -135,6 +135,7 @@ class UsuarioServiceTest {
 
         // Verificar que todas las dependencias fueron eliminadas en orden
         verify(asistenciaEventoRepository).deleteByUsuarioId(12L);
+        verify(asistenciaEventoRepository).deleteByEventoCreadorId(12L);
         verify(eventoRepository).deleteByUsuarioId(12L);
         verify(solicitudComunidadRepository).deleteBySolicitanteId(12L);
         verify(solicitudComunidadRepository).deleteByRespondidaPorId(12L);

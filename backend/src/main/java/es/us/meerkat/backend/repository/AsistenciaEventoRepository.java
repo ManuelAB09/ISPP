@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -62,4 +63,9 @@ public interface AsistenciaEventoRepository extends JpaRepository<AsistenciaEven
 
     /** Elimina todas las asistencias de un usuario. */
     void deleteByUsuarioId(Long usuarioId);
+
+    /** Elimina todas las asistencias de eventos creados por un usuario. */
+    @Modifying
+    @Query("DELETE FROM AsistenciaEvento a WHERE a.evento.creador.id = :usuarioId")
+    void deleteByEventoCreadorId(@Param("usuarioId") Long usuarioId);
 }

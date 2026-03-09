@@ -269,10 +269,10 @@ public class UsuarioService {
                 }
             }
         }
-
         // Eliminar primero relaciones que referencian al usuario.
         // Orden importante: eliminar primero dependencias más profundas
         asistenciaEventoRepository.deleteByUsuarioId(usuario.getId());
+        asistenciaEventoRepository.deleteByEventoCreadorId(usuario.getId());
         eventoRepository.deleteByUsuarioId(usuario.getId());
         solicitudComunidadRepository.deleteBySolicitanteId(usuario.getId());
         solicitudComunidadRepository.deleteByRespondidaPorId(usuario.getId());
