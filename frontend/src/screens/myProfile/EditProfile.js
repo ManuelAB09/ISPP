@@ -18,6 +18,7 @@ const ACADEMIC_INTERESTS = [
     'Literatura',
     'Química',
     'Derecho',
+    'Otros',
 ]
 
 const defaultPosition = [37.3891, -5.9845]
@@ -293,6 +294,18 @@ const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
         // Validaciones básicas
         if (!formData.nombre.trim()) {
             setFieldErrors({ nombre: 'El nombre es obligatorio' })
+            setIsSaving(false)
+            return
+        }
+
+        if (!formData.universidad.trim()) {
+            setFieldErrors({ universidad: 'La universidad donde estudias es obligatorio' })
+            setIsSaving(false)
+            return
+        }
+
+        if (!formData.grado.trim()) {
+            setFieldErrors({ nombre: 'El grado que estas estudiando es obligatorio' })
             setIsSaving(false)
             return
         }
