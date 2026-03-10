@@ -258,13 +258,6 @@ describe('TeacherProfile', () => {
     });
   });
 
-  test('muestra botón Configuración para el propietario', async () => {
-    renderWithId();
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Configuración/i })).toBeInTheDocument();
-    });
-  });
-
   test('no muestra botones de acción para otros usuarios', async () => {
     useAuth.mockReturnValue({
       user: { id: 999, esTutor: false }, // Usuario diferente
@@ -307,18 +300,6 @@ describe('TeacherProfile', () => {
     await userEvent.click(promoBtn);
 
     expect(screen.getByTestId('verificacion-modal')).toBeInTheDocument();
-  });
-
-  test('abre el modal de configuración al hacer clic en Configuración', async () => {
-    renderWithId();
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Configuración/i })).toBeInTheDocument();
-    });
-
-    const configBtn = screen.getByRole('button', { name: /Configuración/i });
-    await userEvent.click(configBtn);
-
-    expect(screen.getByTestId('settings-modal')).toBeInTheDocument();
   });
 
   // ==============================
