@@ -141,7 +141,7 @@ public class RequestService {
                     MiembroComunidad.builder()
                             .usuario(solicitud.getSolicitante())
                             .comunidad(solicitud.getComunidad())
-                            .rol(RolComunidad.MIEMBRO)
+                            .rol(RolComunidad.ALUMNO)
                             .build();
 
             miembroComunidadRepository.save(miembro);
