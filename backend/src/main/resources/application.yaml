@@ -45,6 +45,15 @@ google:
     client-secret: ${GOOGLE_CLASSROOM_CLIENT_SECRET}
     redirect-uri: ${GOOGLE_CLASSROOM_REDIRECT_URI:http://localhost:8080/oauth2/callback/google-classroom}
 
+zoom:
+  client-id: ${ZOOM_CLIENT_ID:}
+  client-secret: ${ZOOM_CLIENT_SECRET:}
+  account-id: ${ZOOM_ACCOUNT_ID:}
+  webhook-secret-token: ${ZOOM_WEBHOOK_SECRET_TOKEN:}
+  api-base-url: ${ZOOM_API_BASE_URL:https://api.zoom.us/v2}
+  recordings:
+    storage-path: ${ZOOM_RECORDINGS_STORAGE_PATH:storage/zoom-recordings}
+
 
 # perfil especial para arrancar con H2 cuando se quiera
 ---
