@@ -12,7 +12,7 @@ export const getVerifiedTutors = (params = {}) => {
   if (params.tarifaMax) query.set('tarifaMax', String(params.tarifaMax));
   if (params.page !== undefined) query.set('page', String(params.page));
   if (params.size !== undefined) query.set('size', String(params.size));
-  
+
   const queryString = query.toString();
   return apiClient.get(`/api/v1/tutors${queryString ? '?' + queryString : ''}`);
 };
@@ -101,7 +101,7 @@ export const getMyHiringRequests = (params = {}) => {
   const query = new URLSearchParams();
   if (params.page !== undefined) query.set('page', String(params.page));
   if (params.size !== undefined) query.set('size', String(params.size));
-  
+
   const queryString = query.toString();
   return apiClient.get(`/api/v1/tutors/me/hiring-requests${queryString ? '?' + queryString : ''}`);
 };
@@ -124,3 +124,19 @@ export const acceptHiringRequest = (requestId) => {
 export const rejectHiringRequest = (requestId, motivo) => {
   return apiClient.post(`/api/v1/tutors/me/hiring-requests/${requestId}/reject`, { motivo });
 };
+/**
+ * POST /api/v1/tutors/me/verification
+ * Solicitar verificación de tutor (genera URL de pago Stripe)
+ */
+export const requestVerification = () => {
+  return apiClient.post('/api/v1/tutors/me/verification', {});
+};
+
+/**
+ * POST /api/v1/tutors/me/verify-verification-session
+ * Confirmar pago de verificación con sessionId de Stripe
+ */
+export const verifyVerificationSession = (sessionId) => {
+  return apiClient.post('/api/v1/tutors/me/verify-verification-session', { sessionId });
+};
+

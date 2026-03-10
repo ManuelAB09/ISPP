@@ -380,8 +380,7 @@ public class TutorController {
                     org.springframework.data.domain.PageRequest.of(page, size);
 
             var contrataciones =
-                    tutorContratacionService.obtenerSolicitudesPendientes(
-                            tutor.getId(), pageable);
+                    tutorContratacionService.obtenerSolicitudesPendientes(tutor.getId(), pageable);
 
             Page<HiringRequestResponse> response =
                     contrataciones.map(
@@ -439,8 +438,7 @@ public class TutorController {
                     "El tutor acepta una solicitud de contratación. Se genera URL de pago para"
                             + " la comunidad.")
     public ResponseEntity<?> acceptHiringRequest(
-            @AuthenticationPrincipal final Usuario usuario,
-            @PathVariable Long requestId) {
+            @AuthenticationPrincipal final Usuario usuario, @PathVariable Long requestId) {
         try {
             var tutorOpt = tutorService.obtenerTutorPorUsuarioId(usuario.getId());
             if (tutorOpt.isEmpty()) {
@@ -494,9 +492,7 @@ public class TutorController {
                     requestId, tutor.getId(), request.getMotivo());
 
             return ResponseEntity.ok(
-                    MessageResponse.builder()
-                            .message("Solicitud rechazada correctamente")
-                            .build());
+                    MessageResponse.builder().message("Solicitud rechazada correctamente").build());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { subscriptionsApi } from "../../api/subscriptions.api";
 import { institutionsApi } from "../../api/institutions.api";
+import { verifyVerificationSession } from "../../api/tutorEndpoints";
 import Header from "../../components/Header/Header";
 import "./PagoExitoso.css";
 
@@ -13,7 +14,12 @@ export default function PagoExitoso() {
   const [countdown, setCountdown] = useState(5);
   const [confirmStatus, setConfirmStatus] = useState("loading");
 
-  const destino = tipo === "institucional" ? "/planes/instituciones" : "/pagos";
+  const destino =
+    tipo === "institucional"
+      ? "/planes/instituciones"
+      : tipo === "verificacion"
+        ? "/profesores"
+        : "/pagos";
 
   useEffect(() => {
     const activar = async () => {
@@ -21,6 +27,8 @@ export default function PagoExitoso() {
         if (sessionId) {
           if (tipo === "institucional") {
             await institutionsApi.verifySession(sessionId);
+          } else if (tipo === "verificacion") {
+            await verifyVerificationSession(sessionId);
           } else {
             await subscriptionsApi.verifySession(sessionId);
           }
@@ -41,7 +49,6 @@ export default function PagoExitoso() {
     activar();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ✅ navigate fuera del updater de setCountdown
   useEffect(() => {
     if (confirmStatus !== "ok") return;
 
@@ -51,12 +58,28 @@ export default function PagoExitoso() {
       setCountdown(current);
       if (current <= 0) {
         clearInterval(timer);
-        navigate(destino);
+        window.location.href = destino;
       }
     }, 1000);
 
     return () => clearInterval(timer);
   }, [confirmStatus]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const getDescripcionExito = () => {
+    if (tipo === "institucional") {
+      return "Tu plan institucional ha sido activado correctamente. Ya puedes gestionar tu institución.";
+    }
+    if (tipo === "verificacion") {
+      return "¡Tu perfil de tutor ha sido verificado! Ya apareces como tutor verificado en el listado de profesores.";
+    }
+    return "Tu suscripción Premium ha sido activada correctamente. Ya puedes disfrutar de todas las funcionalidades.";
+  };
+
+  const getBotonSecundario = () => {
+    if (tipo === "institucional") return "Ver mi institución";
+    if (tipo === "verificacion") return "Ver listado ";
+    return "Ver mis planes";
+  };
 
   return (
     <>
@@ -67,7 +90,11 @@ export default function PagoExitoso() {
           {confirmStatus === "loading" && (
             <>
               <div className="pago-exitoso-icon">⏳</div>
-              <h1 className="pago-exitoso-title">Activando tu suscripción…</h1>
+              <h1 className="pago-exitoso-title">
+                {tipo === "verificacion"
+                  ? "Activando tu verificación…"
+                  : "Activando tu suscripción…"}
+              </h1>
               <p className="pago-exitoso-desc">Por favor espera un momento.</p>
             </>
           )}
@@ -76,11 +103,7 @@ export default function PagoExitoso() {
             <>
               <div className="pago-exitoso-icon">✅</div>
               <h1 className="pago-exitoso-title">¡Pago realizado con éxito!</h1>
-              <p className="pago-exitoso-desc">
-                {tipo === "institucional"
-                  ? "Tu plan institucional ha sido activado correctamente. Ya puedes gestionar tu institución."
-                  : "Tu suscripción Premium ha sido activada correctamente. Ya puedes disfrutar de todas las funcionalidades."}
-              </p>
+              <p className="pago-exitoso-desc">{getDescripcionExito()}</p>
               {sessionId && (
                 <p className="pago-exitoso-session">
                   Referencia: <code>{sessionId}</code>
@@ -99,7 +122,7 @@ export default function PagoExitoso() {
               <h1 className="pago-exitoso-title">Pago recibido</h1>
               <p className="pago-exitoso-desc">
                 El pago se procesó correctamente, pero no se pudo activar
-                la suscripción automáticamente. Contacta con soporte si el problema persiste.
+                automáticamente. Contacta con soporte si el problema persiste.
               </p>
             </>
           )}
@@ -107,15 +130,15 @@ export default function PagoExitoso() {
           <div className="pago-exitoso-actions">
             <button
               className="pago-exitoso-btn pago-exitoso-btn--primary"
-              onClick={() => navigate("/")}
+              onClick={() => { window.location.href = "/"; }}
             >
               Ir al inicio
             </button>
             <button
               className="pago-exitoso-btn pago-exitoso-btn--secondary"
-              onClick={() => navigate(destino)}
+              onClick={() => { window.location.href = destino; }}
             >
-              {tipo === "institucional" ? "Ver mi institución" : "Ver mis planes"}
+              {getBotonSecundario()}
             </button>
           </div>
 

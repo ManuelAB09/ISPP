@@ -43,9 +43,12 @@ public interface TutorContratacionRepository extends JpaRepository<TutorContrata
      * @param comunidadId el ID de la comunidad
      * @return Optional con la contratación activa si la encuentra
      */
-    @Query("SELECT tc FROM TutorContratacion tc WHERE tc.comunidad.id = :comunidadId AND tc.estado = :estado")
-    Optional<TutorContratacion> findByComunidadIdAndEstado(@Param("comunidadId") Long comunidadId, @Param("estado") EstadoContratacion estado);
-    
+    @Query(
+            "SELECT tc FROM TutorContratacion tc WHERE tc.comunidad.id = :comunidadId AND tc.estado"
+                    + " = :estado")
+    Optional<TutorContratacion> findByComunidadIdAndEstado(
+            @Param("comunidadId") Long comunidadId, @Param("estado") EstadoContratacion estado);
+
     default Optional<TutorContratacion> findActivaByComunidadId(Long comunidadId) {
         return findByComunidadIdAndEstado(comunidadId, EstadoContratacion.ACTIVA);
     }
@@ -74,7 +77,7 @@ public interface TutorContratacionRepository extends JpaRepository<TutorContrata
      * @return lista de contrataciones
      */
     List<TutorContratacion> findByComunidadId(Long comunidadId);
-    
+
     /**
      * Busca las solicitudes pendientes de aprobación para un tutor.
      *
@@ -83,8 +86,9 @@ public interface TutorContratacionRepository extends JpaRepository<TutorContrata
      * @param pageable información de paginación
      * @return página con las solicitudes
      */
-    Page<TutorContratacion> findByTutorIdAndEstado(Long tutorId, EstadoContratacion estado, Pageable pageable);
-    
+    Page<TutorContratacion> findByTutorIdAndEstado(
+            Long tutorId, EstadoContratacion estado, Pageable pageable);
+
     /**
      * Busca las solicitudes pendientes con todas las relaciones cargadas (usando EntityGraph).
      *
@@ -94,12 +98,14 @@ public interface TutorContratacionRepository extends JpaRepository<TutorContrata
      * @return página con las solicitudes y sus relaciones cargadas
      */
     @EntityGraph(attributePaths = {"comunidad", "comunidad.creador", "tutor", "tutor.usuario"})
-    @Query("SELECT tc FROM TutorContratacion tc WHERE tc.tutor.id = :tutorId AND tc.estado = :estado")
+    @Query(
+            "SELECT tc FROM TutorContratacion tc WHERE tc.tutor.id = :tutorId AND tc.estado ="
+                    + " :estado")
     Page<TutorContratacion> findByTutorIdAndEstadoWithRelations(
-            @Param("tutorId") Long tutorId, 
-            @Param("estado") EstadoContratacion estado, 
+            @Param("tutorId") Long tutorId,
+            @Param("estado") EstadoContratacion estado,
             Pageable pageable);
-    
+
     /**
      * Busca una contratación específica de un tutor por ID y valida que pertenece al tutor.
      *

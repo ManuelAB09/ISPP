@@ -68,7 +68,9 @@ public class PaymentService {
                                         .setPriceData(
                                                 SessionCreateParams.LineItem.PriceData.builder()
                                                         .setCurrency("eur")
-                                                        .setUnitAmount(1999L) // 19.99€ en centavos
+                                                        .setUnitAmount(1999L) // 19.99€
+                                                        // en
+                                                        // centavos
                                                         .setProductData(
                                                                 SessionCreateParams.LineItem
                                                                         .PriceData.ProductData
@@ -120,10 +122,10 @@ public class PaymentService {
     }
 
     /** ID del precio Premium mensual en Stripe */
-    private static final String PRICE_PREMIUM_MENSUAL = "price_1T5p9zIti4eEH8Y0Sr09PRkj";
+    private static final String PRICE_PREMIUM_MENSUAL = "price_1T9SPXIti4eEH8Y0ElUN2cxt";
 
     /** ID del precio Premium anual en Stripe */
-    private static final String PRICE_PREMIUM_ANUAL = "price_1T8hTmIti4eEH8Y01iZAD8gY";
+    private static final String PRICE_PREMIUM_ANUAL = "price_1T9SQ4Iti4eEH8Y0vT8h39gU";
 
     public PaymentUrlResponse generarPagoSuscripcion(Usuario usuario, TipoPlan plan, String periodo)
             throws StripeException {

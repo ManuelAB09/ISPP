@@ -35,9 +35,9 @@ public class TutorContratacionService {
     @Autowired private PaymentService paymentService;
 
     @Autowired private ClassroomLinkRequestService classroomLinkRequestService;
-    
+
     @Autowired private AuthorizationService authorizationService;
-    
+
     @Autowired private MiembroComunidadRepository miembroComunidadRepository;
 
     // ===============================
@@ -45,8 +45,8 @@ public class TutorContratacionService {
     // ===============================
 
     /**
-     * Crea una nueva solicitud de contratación de tutor para una comunidad. 
-     * La solicitud queda en estado PENDIENTE_APROBACION hasta que el tutor la acepte.
+     * Crea una nueva solicitud de contratación de tutor para una comunidad. La solicitud queda en
+     * estado PENDIENTE_APROBACION hasta que el tutor la acepte.
      *
      * @param comunidadId ID de la comunidad
      * @param tutorId ID del tutor a contratar
@@ -97,10 +97,10 @@ public class TutorContratacionService {
 
         return contratacion;
     }
-    
+
     /**
-     * El tutor acepta una solicitud de contratación. 
-     * Cambia el estado a APROBADA y genera la URL de pago para la comunidad.
+     * El tutor acepta una solicitud de contratación. Cambia el estado a APROBADA y genera la URL de
+     * pago para la comunidad.
      *
      * @param contratacionId ID de la contratación
      * @param tutorId ID del tutor que acepta
@@ -111,8 +111,11 @@ public class TutorContratacionService {
         TutorContratacion contratacion =
                 tutorContratacionRepository
                         .findByIdAndTutorId(contratacionId, tutorId)
-                        .orElseThrow(() -> new IllegalArgumentException(
-                            "Solicitud no encontrada o no pertenece a este tutor"));
+                        .orElseThrow(
+                                () ->
+                                        new IllegalArgumentException(
+                                                "Solicitud no encontrada o no pertenece a este"
+                                                        + " tutor"));
 
         if (!contratacion.getEstado().equals(EstadoContratacion.PENDIENTE_APROBACION)) {
             throw new IllegalArgumentException(
@@ -129,7 +132,7 @@ public class TutorContratacionService {
             if (comunidad == null) {
                 throw new IllegalStateException("La comunidad no está cargada");
             }
-            
+
             // Obtener el ID del usuario responsable del pago (creador o primer admin)
             Long usuarioIdPago;
             Usuario creador = comunidad.getCreador();
@@ -137,24 +140,23 @@ public class TutorContratacionService {
                 usuarioIdPago = creador.getId();
             } else {
                 // Si no hay creador, buscar el primer administrador de la comunidad
-                var administradores = miembroComunidadRepository
-                    .findByComunidadIdAndRol(comunidad.getId(), RolComunidad.ADMIN);
-                
+                var administradores =
+                        miembroComunidadRepository.findByComunidadIdAndRol(
+                                comunidad.getId(), RolComunidad.ADMIN);
+
                 if (administradores.isEmpty()) {
                     throw new IllegalStateException(
-                        "La comunidad ID " + comunidad.getId() + 
-                        " no tiene creador ni administradores asignados");
+                            "La comunidad ID "
+                                    + comunidad.getId()
+                                    + " no tiene creador ni administradores asignados");
                 }
-                
+
                 usuarioIdPago = administradores.get(0).getUsuario().getId();
             }
-            
+
             // Generar URL de pago
             return paymentService.generarPagoContratacionTutor(
-                    tutorId, 
-                    comunidad.getId(), 
-                    contratacion.getTarifaAcordada(), 
-                    usuarioIdPago);
+                    tutorId, comunidad.getId(), contratacion.getTarifaAcordada(), usuarioIdPago);
         } catch (com.stripe.exception.StripeException e) {
             // Si Stripe falla revertimos el estado
             contratacion.setEstado(EstadoContratacion.PENDIENTE_APROBACION);
@@ -163,7 +165,7 @@ public class TutorContratacionService {
             throw new RuntimeException("Error al conectar con la pasarela de pago", e);
         }
     }
-    
+
     /**
      * El tutor rechaza una solicitud de contratación.
      *
@@ -176,8 +178,11 @@ public class TutorContratacionService {
         TutorContratacion contratacion =
                 tutorContratacionRepository
                         .findByIdAndTutorId(contratacionId, tutorId)
-                        .orElseThrow(() -> new IllegalArgumentException(
-                            "Solicitud no encontrada o no pertenece a este tutor"));
+                        .orElseThrow(
+                                () ->
+                                        new IllegalArgumentException(
+                                                "Solicitud no encontrada o no pertenece a este"
+                                                        + " tutor"));
 
         if (!contratacion.getEstado().equals(EstadoContratacion.PENDIENTE_APROBACION)) {
             throw new IllegalArgumentException(
@@ -189,7 +194,7 @@ public class TutorContratacionService {
         contratacion.setUpdatedAt(LocalDateTime.now());
         tutorContratacionRepository.save(contratacion);
     }
-    
+
     /**
      * Procesa el pago de una contratación aprobada y cambia su estado a PENDIENTE_PAGO.
      *
@@ -198,26 +203,29 @@ public class TutorContratacionService {
      * @return PaymentUrlResponse con URL de pago
      */
     @Transactional
-    public PaymentUrlResponse generarPagoContratacion(Long comunidadId, Long tutorId, Long usuarioId) {
+    public PaymentUrlResponse generarPagoContratacion(
+            Long comunidadId, Long tutorId, Long usuarioId) {
         // Buscar contratación aprobada
-        TutorContratacion contratacion = tutorContratacionRepository
-                .findByTutorIdAndComunidadId(tutorId, comunidadId)
-                .orElseThrow(() -> new IllegalArgumentException(
-                    "No se encontró solicitud de contratación"));
+        TutorContratacion contratacion =
+                tutorContratacionRepository
+                        .findByTutorIdAndComunidadId(tutorId, comunidadId)
+                        .orElseThrow(
+                                () ->
+                                        new IllegalArgumentException(
+                                                "No se encontró solicitud de contratación"));
 
         if (!contratacion.getEstado().equals(EstadoContratacion.APROBADA)) {
             throw new IllegalArgumentException(
                     "La solicitud debe estar en estado APROBADA para proceder al pago");
         }
-        
+
         if (!authorizationService.isAdminOf(usuarioId, comunidadId)) {
-            throw new IllegalArgumentException(
-                    "No tienes permisos para pagar esta contratación");
+            throw new IllegalArgumentException("No tienes permisos para pagar esta contratación");
         }
 
         contratacion.setEstado(EstadoContratacion.PENDIENTE_PAGO);
         tutorContratacionRepository.save(contratacion);
-        
+
         try {
             return paymentService.generarPagoContratacionTutor(
                     tutorId, comunidadId, contratacion.getTarifaAcordada(), usuarioId);
