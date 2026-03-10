@@ -79,7 +79,7 @@ const extractRenataAvatarPath = (imageUrl) => {
 }
 
 const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
-    const { user, updateProfile, refreshUser } = useAuth()
+    const { user, updateProfile } = useAuth()
     
     // Estados para los campos del formulario
     const [formData, setFormData] = useState({
@@ -298,11 +298,6 @@ const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
         }
 
         const ubicacionTexto = formData.ubicacion.trim()
-        const ubicacionActualNombre = (
-            typeof user?.ubicacion === 'string'
-                ? user.ubicacion
-                : user?.ubicacion?.nombre || ''
-        ).trim()
 
         let ubicacionFinal = null
         if (
@@ -375,20 +370,6 @@ const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
         } finally {
             setIsSaving(false)
         }
-    }
-
-    const handleSeleccionUbicacion = (location) => {
-        setUbicacionSeleccionada(location)
-        if (location?.latitud != null && location?.longitud != null) {
-            setMarkerPosition({
-                latitud: Number(location.latitud),
-                longitud: Number(location.longitud),
-            })
-        }
-        setFormData(prev => ({
-            ...prev,
-            ubicacion: location?.nombre || ''
-        }))
     }
 
     const handleMapClick = (lat, lng) => {

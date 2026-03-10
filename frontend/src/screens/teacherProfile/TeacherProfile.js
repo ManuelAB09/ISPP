@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { getTutorById, getMyTutorProfiles } from "../../api/tutorEndpoints";
 import Header from "../../components/Header/Header";
-import PersonIcon from "../../components/icons/Person";
 import EditProfileModal from "./EditProfileModal";
 import CreateProfileModal from "./CreateProfileModal";
 import VerificacionModal from "./VerificacionModal";
@@ -11,7 +10,6 @@ import Settings from "../myProfile/Settings";
 import HireTutorModal from "./HireTutorModal";
 import { getApiBaseUrl } from "../../api/baseUrl";
 import "./TeacherProfile.css";
-import ClassroomLinkRequests from "../../components/GoogleClassroomButton/ClassroomLinkRequests";
 
 const toAbsoluteImageUrl = (imageUrl, fallback = '/MeerKatters_logo.png') => {
   const raw = String(imageUrl || '').trim();
@@ -44,7 +42,6 @@ const Estrellas = ({ valor }) => (
 const TeacherProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, loading } = useAuth();
   const esNuevo = id === "nuevo";
 
@@ -57,6 +54,7 @@ const TeacherProfile = () => {
   const [showVerificacion, setShowVerificacion] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showHireModal, setShowHireModal] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   // Callback: actualiza estado local tras editar
   const handlePerfilGuardado = (updatedTutor) => {
@@ -211,8 +209,9 @@ const TeacherProfile = () => {
             <div className="tp-header__left">
               <img
                 className="tp-header__photo"
-                src={toAbsoluteImageUrl(tutor.usuario?.foto, '/MeerKatters_logo.png')}
+                src={avatarError ? '/MeerKatters_logo.png' : toAbsoluteImageUrl(tutor.usuario?.foto)}
                 alt={tutor.usuario?.nombre}
+                onError={() => setAvatarError(true)}
               />
               <div className="tp-header__info">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -267,12 +266,6 @@ const TeacherProfile = () => {
                   onClick={() => setShowVerificacion(true)}
                 >
                   {tutor.verificado ? "🏅 Verificado" : "Promocionarse"}
-                </button>
-                <button
-                  className="tp-btn tp-btn--public"
-                  onClick={() => setShowSettings(true)}
-                >
-                  ⚙️ Configuración
                 </button>
               </div>
             )}

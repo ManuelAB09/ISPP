@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { getVerifiedTutors } from "../../api/tutorEndpoints";
 import { getApiBaseUrl } from "../../api/baseUrl";
 import Header from "../../components/Header/Header";
-import PageHeader from "../../components/PageHeader";
 import { useAuth } from "../../contexts/AuthContext";
 import { filterTutorsByDistance, formatDistance, calculateDistance } from "../../utils/geoUtils";
-import CreateProfileModal from "../teacherProfile/CreateProfileModal";
 import "./VerifiedTeachers.css";
 
 /**
@@ -32,7 +30,6 @@ const VerifiedTeachers = () => {
     return raw.startsWith("/") ? `${base}${raw}` : `${base}/${raw}`;
   };
 
-  const navigate = useNavigate();
   const { isAuthenticated, user, refreshUser } = useAuth();
   const [profesores, setProfesores] = useState([]);
   const [profesoresOriginales, setProfesoresOriginales] = useState([]);
@@ -131,6 +128,7 @@ const VerifiedTeachers = () => {
 
   // Recargar profesores cuando cambie la ubicación o foto del usuario
   // para reflejar cambios en el perfil del usuario si es tutor
+  const ubicacionStr = JSON.stringify(user?.ubicacion);
   useEffect(() => {
     if (user?.esTutor) {
       cargarProfesores(0, filtrosActivos);
@@ -139,7 +137,7 @@ const VerifiedTeachers = () => {
   }, [
     user?.foto, 
     user?.nombre,
-    JSON.stringify(user?.ubicacion)
+    ubicacionStr
   ]);
 
   const handleFiltroChange = (e) => {
