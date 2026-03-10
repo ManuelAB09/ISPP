@@ -85,7 +85,7 @@ class EventoControllerTest {
 
         Evento evento = buildEvento(1L, true);
         evento.setCreador(creador);
-        when(eventoService.obtenerEvento(1L)).thenReturn(evento);
+        when(eventoService.obtenerEventoInterno(1L)).thenReturn(evento);
 
         assertThatThrownBy(
                         () ->

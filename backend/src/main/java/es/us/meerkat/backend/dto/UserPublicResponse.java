@@ -33,7 +33,7 @@ public class UserPublicResponse {
     private String grado;
 
     /** Ubicación del usuario. */
-    private String ubicacion;
+    private UbicacionResponse ubicacion;
 
     /** Lista de intereses del usuario. */
     private List<String> intereses;

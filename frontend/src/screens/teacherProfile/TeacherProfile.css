@@ -236,6 +236,13 @@
   flex-shrink: 0;
 }
 
+.tp-header__photo--placeholder {
+  background-color: #E5E7EB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .tp-header__info {
   display: flex;
   flex-direction: column;

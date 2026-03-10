@@ -56,6 +56,10 @@ tags:
     description: Gestión de asistencia a eventos
   - name: Invitaciones
     description: Invitaciones a eventos privados
+  - name: Anuncios
+    description: Anuncios en comunidades
+  - name: Recomendaciones
+    description: Recomendaciones personalizadas de comunidades
   - name: Archivos
     description: Gestión de archivos adjuntos
   - name: Categorías
@@ -2640,11 +2644,433 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  # =====================================================
+  # ANUNCIOS
+  # =====================================================
+  /communities/{communityId}/announcements:
+    get:
+      tags:
+        - Anuncios
+      summary: Listar anuncios de la comunidad
+      description: Devuelve los anuncios de la comunidad, ordenados por fecha descendente
+      operationId: listAnnouncements
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+      responses:
+        '200':
+          description: Lista de anuncios obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnuncioListResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags:
+        - Anuncios
+      summary: Crear anuncio
+      description: Crea un nuevo anuncio en la comunidad. Solo administradores pueden crear anuncios.
+      operationId: createAnnouncement
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAnuncioRequest'
+      responses:
+        '201':
+          description: Anuncio creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnuncioResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Solo administradores pueden crear anuncios
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /communities/{communityId}/announcements/{anuncioId}:
+    get:
+      tags:
+        - Anuncios
+      summary: Obtener anuncio
+      description: Devuelve los detalles de un anuncio específico
+      operationId: getAnnouncement
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+        - name: anuncioId
+          in: path
+          required: true
+          description: ID del anuncio
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Anuncio encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnuncioResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Anuncios
+      summary: Actualizar anuncio
+      description: Actualiza un anuncio existente. Solo el creador o un administrador puede actualizar.
+      operationId: updateAnnouncement
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+        - name: anuncioId
+          in: path
+          required: true
+          description: ID del anuncio
+          schema:
+            type: integer
+            format: int64
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAnuncioRequest'
+      responses:
+        '200':
+          description: Anuncio actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnuncioResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Anuncios
+      summary: Eliminar anuncio
+      description: Elimina un anuncio. Solo el creador o un administrador puede eliminar.
+      operationId: deleteAnnouncement
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+        - name: anuncioId
+          in: path
+          required: true
+          description: ID del anuncio
+          schema:
+            type: integer
+            format: int64
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Anuncio eliminado exitosamente
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # =====================================================
+  # INVITACIONES
+  # =====================================================
+  /communities/{communityId}/invitations:
+    get:
+      tags:
+        - Invitaciones
+      summary: Listar invitaciones de la comunidad
+      description: Devuelve las invitaciones pendientes y procesadas de una comunidad. Solo administradores.
+      operationId: listInvitations
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de invitaciones obtenida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitacionListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Solo administradores pueden ver invitaciones
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags:
+        - Invitaciones
+      summary: Crear invitación
+      description: Crea una nueva invitación a un miembro mediante email. Solo administradores pueden invitar.
+      operationId: createInvitation
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvitacionRequest'
+      responses:
+        '201':
+          description: Invitación creada y email enviado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitacionResponse'
+        '400':
+          description: Email inválido o ya existe invitación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Solo administradores pueden invitar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /communities/{communityId}/invitations/codigo/{codigo}:
+    get:
+      tags:
+        - Invitaciones
+      summary: Obtener invitación por código
+      description: Obtiene los detalles de una invitación usando su código único
+      operationId: getInvitationByCodigo
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+        - name: codigo
+          in: path
+          required: true
+          description: Código único de la invitación
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Invitación encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitacionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /communities/{communityId}/invitations/codigo/{codigo}/aceptar:
+    post:
+      tags:
+        - Invitaciones
+      summary: Aceptar invitación
+      description: El usuario acepta la invitación y se añade automáticamente a la comunidad con el rol asignado.
+      operationId: acceptInvitation
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+        - name: codigo
+          in: path
+          required: true
+          description: Código único de la invitación
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Invitación aceptada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Invitación expirada o email no coincide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /communities/{communityId}/invitations/codigo/{codigo}/rechazar:
+    post:
+      tags:
+        - Invitaciones
+      summary: Rechazar invitación
+      description: El usuario rechaza la invitación
+      operationId: rejectInvitation
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+        - name: codigo
+          in: path
+          required: true
+          description: Código único de la invitación
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Invitación rechazada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Invitación ya fue procesada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # =====================================================
+  # RECOMENDACIONES
+  # =====================================================
+  /recommendations:
+    get:
+      tags:
+        - Recomendaciones
+      summary: Obtener recomendaciones personalizadas
+      description: Devuelve comunidades recomendadas basadas en intereses, perfil y actividad del usuario.
+      operationId: getRecommendations
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de recomendaciones obtenida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecomendacionListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /recommendations/unseen:
+    get:
+      tags:
+        - Recomendaciones
+      summary: Obtener recomendaciones no vistas
+      description: Devuelve solo las recomendaciones que el usuario aún no ha visto.
+      operationId: getUnseenRecommendations
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de recomendaciones no vistas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecomendacionListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /recommendations/{recomendacionId}/marcar-vista:
+    post:
+      tags:
+        - Recomendaciones
+      summary: Marcar recomendación como vista
+      description: Marca una recomendación como vista para ofrecer nuevas sugerencias.
+      operationId: markRecommendationAsSeen
+      parameters:
+        - name: recomendacionId
+          in: path
+          required: true
+          description: ID de la recomendación
+          schema:
+            type: integer
+            format: int64
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Recomendación marcada como vista
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /recommendations/{recomendacionId}:
+    delete:
+      tags:
+        - Recomendaciones
+      summary: Descartar recomendación
+      description: Elimina una recomendación que no es de interés para el usuario.
+      operationId: discardRecommendation
+      parameters:
+        - name: recomendacionId
+          in: path
+          required: true
+          description: ID de la recomendación
+          schema:
+            type: integer
+            format: int64
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Recomendación descartada
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
 # =====================================================
 # COMPONENTES
 # =====================================================
 components:
-  # securitySchemes removed to hide Swagger UI authorize button
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT obtenido en /auth/login
+
   parameters:
     userId:
       name: userId
@@ -4063,6 +4489,219 @@ components:
         sessionId:
           type: string
           description: ID de la sesión de pago
+
+    # =====================================================
+    # ANUNCIOS (Announcements)
+    # =====================================================
+    CreateAnuncioRequest:
+      type: object
+      required:
+        - titulo
+        - contenido
+      properties:
+        titulo:
+          type: string
+          minLength: 5
+          maxLength: 200
+          example: Cambio de horario de clase
+        contenido:
+          type: string
+          minLength: 10
+          maxLength: 5000
+          example: La clase del miércoles se trasladará al jueves a las 16:00
+        permitirComentarios:
+          type: boolean
+          default: true
+          description: Indica si se permite comentarios en el anuncio
+
+    UpdateAnuncioRequest:
+      type: object
+      properties:
+        titulo:
+          type: string
+          minLength: 5
+          maxLength: 200
+        contenido:
+          type: string
+          minLength: 10
+          maxLength: 5000
+        permitirComentarios:
+          type: boolean
+
+    AnuncioResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        titulo:
+          type: string
+        contenido:
+          type: string
+        usuario:
+          $ref: '#/components/schemas/UserSimpleResponse'
+        permitirComentarios:
+          type: boolean
+        editado:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AnuncioListResponse:
+      type: object
+      properties:
+        anuncios:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnuncioResponse'
+        total:
+          type: integer
+        pagina:
+          type: integer
+        tamaño:
+          type: integer
+
+    # =====================================================
+    # INVITACIONES (Invitations)
+    # =====================================================
+    CreateInvitacionRequest:
+      type: object
+      required:
+        - email
+        - rol
+      properties:
+        email:
+          type: string
+          format: email
+          example: usuario@example.com
+        rol:
+          $ref: '#/components/schemas/RolComunidad'
+          description: Rol a asignar al usuario invitado
+
+    InvitacionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        email:
+          type: string
+        codigo:
+          type: string
+          description: Código único de la invitación
+        rol:
+          $ref: '#/components/schemas/RolComunidad'
+        estado:
+          $ref: '#/components/schemas/EstadoInvitacion'
+        createdAt:
+          type: string
+          format: date-time
+        fechaExpiracion:
+          type: string
+          format: date-time
+        fechaAceptacion:
+          type: string
+          format: date-time
+          nullable: true
+        usuarioInvitador:
+          $ref: '#/components/schemas/UserSimpleResponse'
+        usuarioAceptador:
+          $ref: '#/components/schemas/UserSimpleResponse'
+          nullable: true
+
+    InvitacionListResponse:
+      type: object
+      properties:
+        invitaciones:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvitacionResponse'
+        total:
+          type: integer
+        pagina:
+          type: integer
+        tamaño:
+          type: integer
+
+    EstadoInvitacion:
+      type: string
+      enum:
+        - PENDIENTE
+        - ACEPTADA
+        - RECHAZADA
+        - EXPIRADA
+      description: Estado de la invitación
+
+    # =====================================================
+    # RECOMENDACIONES (Recommendations)
+    # =====================================================
+    RecomendacionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        communityId:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+          description: Nombre de la comunidad recomendada
+        descripcion:
+          type: string
+        imagenUrl:
+          type: string
+          format: uri
+          nullable: true
+        factor:
+          $ref: '#/components/schemas/FactorRecomendacion'
+        relevancia:
+          type: number
+          format: double
+          description: Puntuación de relevancia de 0 a 100
+        motivo:
+          type: string
+          description: Descripción del motivo de la recomendación
+
+    RecomendacionListResponse:
+      type: object
+      properties:
+        recomendaciones:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecomendacionResponse'
+        total:
+          type: integer
+        pagina:
+          type: integer
+        tamaño:
+          type: integer
+
+    FactorRecomendacion:
+      type: string
+      enum:
+        - INTERES_SIMILAR
+        - UBICACION
+        - NIVEL_EDUCATIVO
+        - COMUNIDAD_SIMILAR
+        - POPULARIDAD
+        - ACTIVIDAD_SIMILAR
+      description: Factor por el cual se recomienda la comunidad
+
+    # =====================================================
+    # ENUMERACIONES
+    # =====================================================
+    RolComunidad:
+      type: string
+      enum:
+        - ADMIN
+        - PROFESOR
+        - ALUMNO
+      description: Rol de un usuario dentro de una comunidad
 
     # =====================================================
     # INSTITUTION DTOs

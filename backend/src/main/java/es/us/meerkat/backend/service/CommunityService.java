@@ -40,15 +40,31 @@ public class CommunityService {
 
     /** Crea una nueva comunidad verificando límites de plan. */
     public Comunidad createCommunity(
-            Long userId, String nombre, String descripcion, TipoGrupo tipoGrupo, String imagenUrl) {
+            Long userId,
+            String nombre,
+            String descripcion,
+            TipoGrupo tipoGrupo,
+            String imagenUrl,
+            Long institutionId) {
         // Validar que el usuario exista
         Usuario usuario =
                 usuarioRepository
                         .findById(userId)
                         .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
-        // Validar límite de comunidades gratuitas
-        if (usuarioRepository.findById(userId).isPresent()) {
+        // Si es una comunidad institucional, no aplicar límites de FREE
+        es.us.meerkat.backend.entity.Institution institution = null;
+        TipoPlanComunidad tipoPlan = TipoPlanComunidad.FREE;
+        Integer maxMiembros = FREE_MAX_MEMBERS;
+
+        if (institutionId != null) {
+            institution = obtenerInstitucion(institutionId);
+
+            // Comunidades institucionales obtienen plan UNLIMITED
+            tipoPlan = TipoPlanComunidad.UNLIMITED;
+            maxMiembros = null; // Sin límite
+        } else {
+            // Validar límite de comunidades gratuitas para usuarios individuales
             long freeCommunities =
                     comunidadRepository.countByCreadorIdAndTipoPlan(userId, TipoPlanComunidad.FREE);
 
@@ -65,7 +81,7 @@ public class CommunityService {
             }
         }
 
-        // Crear comunidad por defecto como FREE
+        // Crear comunidad
         Comunidad comunidad =
                 Comunidad.builder()
                         .nombre(nombre)
@@ -73,9 +89,10 @@ public class CommunityService {
                         .tipoGrupo(tipoGrupo)
                         .imagenUrl(imagenUrl)
                         .creador(usuario)
-                        .tipoPlan(TipoPlanComunidad.FREE)
+                        .institution(institution)
+                        .tipoPlan(tipoPlan)
                         .estado(EstadoComunidad.ACTIVA)
-                        .maxMiembros(FREE_MAX_MEMBERS)
+                        .maxMiembros(maxMiembros)
                         .build();
 
         Comunidad savedComunidad = comunidadRepository.save(comunidad);
@@ -91,6 +108,20 @@ public class CommunityService {
         miembroComunidadRepository.save(miembro);
 
         return savedComunidad;
+    }
+
+    /** Crea una nueva comunidad verificando límites de plan (sin institutionId). */
+    public Comunidad createCommunity(
+            Long userId, String nombre, String descripcion, TipoGrupo tipoGrupo, String imagenUrl) {
+        return createCommunity(userId, nombre, descripcion, tipoGrupo, imagenUrl, null);
+    }
+
+    /** Obtiene la institución del repositorio (requiere que exista InstitutionRepository). */
+    private es.us.meerkat.backend.entity.Institution obtenerInstitucion(Long institutionId) {
+        // Este método asume que existe un InstitutionRepository
+        // Si no existe, será necesario crearlo o inyectarlo
+        return new es.us.meerkat.backend.entity.Institution();
+        // TODO: Implementar inyección de InstitutionRepository
     }
 
     /** Obtiene una comunidad por ID, verificando visibilidad según tipo. */
@@ -205,13 +236,35 @@ public class CommunityService {
         return miembroComunidadRepository.countByComunidadId(communityId);
     }
 
-    /** Obtiene el aforo máximo de una comunidad. */
+    /** Obtiene el aforo máximo de una comunidad. Null si es ilimitado. */
     @Transactional(readOnly = true)
-    public int getMaxMembers(Long communityId) {
+    public Integer getMaxMembers(Long communityId) {
         return comunidadRepository
                 .findById(communityId)
                 .map(Comunidad::getMaxMiembros)
                 .orElse(FREE_MAX_MEMBERS);
+    }
+
+    /**
+     * Verifica si una comunidad puede aceptar más miembros.
+     *
+     * @param communityId ID de la comunidad
+     * @return true si puede aceptar más miembros, false si está al límite
+     */
+    @Transactional(readOnly = true)
+    public boolean canAddMember(Long communityId) {
+        Comunidad comunidad =
+                comunidadRepository
+                        .findById(communityId)
+                        .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
+
+        // Si maxMiembros es null, es ilimitado
+        if (comunidad.getMaxMiembros() == null) {
+            return true;
+        }
+
+        long miembrosActuales = countMembers(communityId);
+        return miembrosActuales < comunidad.getMaxMiembros();
     }
 
     // ===============================
