@@ -134,7 +134,7 @@ class CommunityControllerTest {
                 MiembroComunidad.builder()
                         .id(50L)
                         .usuario(usuario)
-                        .rol(RolComunidad.MIEMBRO)
+                        .rol(RolComunidad.ALUMNO)
                         .build();
 
         when(memberService.joinPublicCommunity(usuario.getId(), 100L)).thenReturn(miembro);
