@@ -6,8 +6,6 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import { SocketProvider } from './contexts/SocketContext';
 import Login from './screens/auth/Login';
 import Register from './screens/auth/Register';
-import Terms from './screens/legal/Terms';
-import Privacy from './screens/legal/Privacy';
 import CommunityDetail from './screens/comunidades/CommunityDetail';
 import Comunidades from './screens/comunidades/Comunidades';
 import CrearComunidad from './screens/comunidades/CrearComunidad';
@@ -15,13 +13,15 @@ import CrearEvento from './screens/evento/CrearEvento';
 import DetalleEvento from './screens/evento/DetalleEvento';
 import EventosMapaScreen from './screens/evento/EventosMapaScreen';
 import Home from './screens/home/Home';
+import Privacy from './screens/legal/Privacy';
+import Terms from './screens/legal/Terms';
 import Profile from './screens/myProfile/Profile';
 import MisPagos from './screens/pagos/MisPagos';
 import PagoExitoso from './screens/pagos/PagoExitoso';
 import InstitutionPlansScreen from './screens/planes/InstitutionPlansScreen';
 import PasarelaPago from './screens/planes/PasarelaPago';
-import PlansScreen from './screens/planes/PlansScreen';
 import PlanesSuccess from './screens/planes/PlanesSuccess';
+import PlansScreen from './screens/planes/PlansScreen';
 import PasarelaPagoTutor from './screens/teacherProfile/PasarelaPagoTutor';
 import TeacherProfile from './screens/teacherProfile/TeacherProfile';
 import CrearUbicacionScreen from './screens/ubicaciones/CrearUbicacionScreen';
@@ -29,6 +29,8 @@ import VerifiedTeachers from './screens/verifiedTeachers/VerifiedTeachers';
 
 
 import Chats from './screens/chat/Chats';
+import CommunityHiringRequests from './screens/solicitudes/CommunityHiringRequests';
+import TutorHiringRequests from './screens/solicitudes/TutorHiringRequests';
 
 function AppRoutes() {
   const { isAuthenticated, loading } = useAuth();
@@ -54,6 +56,8 @@ function AppRoutes() {
         <Route path="/crear-comunidad" element={<CrearComunidad />} />
         <Route path="/crear-ubicacion" element={<CrearUbicacionScreen />} />
         <Route path="/chats" element={<Chats />} />
+        <Route path="/solicitudes/tutor" element={<TutorHiringRequests />} />
+        <Route path="/solicitudes/comunidad" element={<CommunityHiringRequests />} />
         <Route path="/success" element={<PagoExitoso />} />
         <Route path="/profesores" element={<VerifiedTeachers />} />
         <Route path="/profesores/:id" element={<TeacherProfile />} />

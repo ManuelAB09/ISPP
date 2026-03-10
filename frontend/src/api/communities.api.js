@@ -94,6 +94,31 @@ export const communitiesApi = {
   },
 
   /**
+   * POST /api/v1/communities/{communityId}/tutor/{tutorId}/payment
+   * Proceder al pago de una solicitud de contratación aprobada
+   * @param {number} communityId
+   * @param {number} tutorId
+   */
+  proceedToPayment(communityId, tutorId) {
+    return apiClient.post(`/api/v1/communities/${communityId}/tutor/${tutorId}/payment`, {});
+  },
+
+  /**
+   * GET /api/v1/communities/{communityId}/hiring-requests
+   * Obtener todas las solicitudes/contrataciones de una comunidad (historial)
+   * @param {number} communityId
+   * @param {Object} params - { page?, size? }
+   */
+  getHiringRequests(communityId, params = {}) {
+    const query = new URLSearchParams();
+    if (params.page !== undefined) query.set('page', String(params.page));
+    if (params.size !== undefined) query.set('size', String(params.size));
+
+    const queryString = query.toString();
+    return apiClient.get(`/api/v1/communities/${communityId}/hiring-requests${queryString ? '?' + queryString : ''}`);
+  },
+
+  /**
    * GET /api/v1/communities/{communityId}/tutor
    * Obtener tutor actualmente contratado por la comunidad
    * @param {number} communityId

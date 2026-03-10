@@ -306,6 +306,24 @@ const MyProfile = () => {
                                     </button>
                                 )}
 
+                                {user?.esTutor && (
+                                    <button
+                                        className="btn-settings"
+                                        onClick={() => navigate('/solicitudes/tutor')}
+                                    >
+                                        <span className="btn-icon">📋</span>
+                                        Solicitudes Tutor
+                                    </button>
+                                )}
+
+                                <button
+                                    className="btn-settings"
+                                    onClick={() => navigate('/solicitudes/comunidad')}
+                                >
+                                    <span className="btn-icon">📬</span>
+                                    Solicitudes Comunidad
+                                </button>
+
                                 {
                                     !user?.esTutor && (
                                         <>

@@ -38,13 +38,21 @@ const HireTutorModal = ({ tutor, onClose }) => {
   const buscarComunidades = useCallback(async (query) => {
     setCargandoComunidades(true);
     try {
-      const res = await communitiesApi.list({ search: query, size: 50 });
+      const res = await communitiesApi.listMine({ page: 0, size: 100 });
       const lista = res?.content ?? (Array.isArray(res) ? res : []);
-      // Only show communities where the current user is the creator
-      const propias = lista.filter(
-        (c) => c.creador?.id != null && String(c.creador.id) === String(user?.id)
+      // Show communities where the user is admin (creator or has ADMIN role)
+      const administradas = lista.filter(
+        (c) => c.miRol === 'ADMIN' || c.miRol === 'ADMINISTRADOR' ||
+               (c.creador?.id != null && String(c.creador.id) === String(user?.id))
       );
-      setComunidades(propias);
+      // Filter by search query locally
+      const filtradas = query.trim()
+        ? administradas.filter(c => 
+            c.nombre?.toLowerCase().includes(query.toLowerCase()) ||
+            c.descripcion?.toLowerCase().includes(query.toLowerCase())
+          )
+        : administradas;
+      setComunidades(filtradas);
     } catch {
       setComunidades([]);
     } finally {
