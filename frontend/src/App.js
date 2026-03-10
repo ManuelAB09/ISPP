@@ -8,6 +8,7 @@ import Login from './screens/auth/Login';
 import Register from './screens/auth/Register';
 import Terms from './screens/legal/Terms';
 import Privacy from './screens/legal/Privacy';
+import LandingPage from './screens/landing/LandingPage';
 import CommunityDetail from './screens/comunidades/CommunityDetail';
 import Comunidades from './screens/comunidades/Comunidades';
 import CrearComunidad from './screens/comunidades/CrearComunidad';
@@ -74,7 +75,7 @@ function AppRoutes() {
   return (
     <SocketProvider token={socketToken}>
       <Routes>
-        {/* Ruta principal - redirige a login si no está autenticado */}
+        {/* Ruta principal - muestra landing page si no está autenticado */}
         <Route path="/" element={
           loading ? (
             <div style={{
@@ -91,9 +92,12 @@ function AppRoutes() {
           ) : isAuthenticated ? (
             <Home />
           ) : (
-            <Navigate to="/login" replace />
+            <LandingPage />
           )
         } />
+
+        {/* Landing page - siempre accesible */}
+        <Route path="/landing" element={<LandingPage />} />
 
         {/* Rutas públicas */}
         <Route path="/login" element={<Login />} />
