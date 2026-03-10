@@ -74,7 +74,7 @@ public class MensajeService {
                 throw new RuntimeException("No puedes contactar un tutor no verificado");
             }
 
-            receptor = tutor.getUs();
+            receptor = tutor.getUsuario();
         } else {
             throw new IllegalArgumentException("Debes indicar userId o tutorId");
         }
@@ -134,7 +134,7 @@ public class MensajeService {
                 throw new RuntimeException("No puedes contactar un tutor no verificado");
             }
 
-            receptor = tutor.getUs();
+            receptor = tutor.getUsuario();
         } else {
             throw new IllegalArgumentException("Debes indicar userId o tutorId");
         }
@@ -196,7 +196,7 @@ public class MensajeService {
                         .findById(tutorId)
                         .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
 
-        Long tutorUserId = tutor.getUs().getId();
+        Long tutorUserId = tutor.getUsuario().getId();
 
         List<Mensaje> mensajes =
                 mensajeRepository.findConversationWithTutor(tutorId, usuarioId, tutorUserId);

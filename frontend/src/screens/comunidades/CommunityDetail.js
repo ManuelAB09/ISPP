@@ -35,7 +35,7 @@ export default function CommunityDetail() {
     foto: user?.foto || null,
     fotoBackgroundColor: user?.fotoBackgroundColor || '#ffffff',
   };
-  const communityImage = community?.imagen || community?.imagenUrl || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
+  const communityImage = community?.imagenUrl !== 'empty' ? community?.imagenUrl : 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
 
   const fetchCommunity = useCallback(async () => {
     try {

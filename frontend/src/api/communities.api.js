@@ -168,4 +168,14 @@ export const communitiesApi = {
   unlinkClassroom(communityId) {
     return apiClient.delete(`/api/v1/communities/${communityId}/classroom`);
   },
+
+  /**
+   * POST /api/v1/communities/{communityId}/photo (multipart/form-data)
+   * Subir imagen de portada de comunidad
+   * @param {number} communityId
+   * @param {FormData} formData - debe contener campo 'file'
+   */
+  uploadPhoto(communityId, formData) {
+    return apiClient.post(`/api/v1/communities/${communityId}/photo`, formData);
+  },
 };

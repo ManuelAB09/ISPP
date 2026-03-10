@@ -10,19 +10,60 @@ import './CrearUbicacionScreen.css';
 
 const defaultPosition = [37.3891, -5.9845]; // Sevilla por defecto
 
+const getFriendlyErrorMessage = (err) => {
+    if (!err) return 'No se pudo completar la operación.';
+
+    if (err.status === 401 || err.status === 403) {
+        return 'Tu sesión ha expirado o no tienes permisos. Vuelve a iniciar sesión.';
+    }
+
+    if (err.status >= 500) {
+        return 'Ha ocurrido un error en el servidor. Inténtalo de nuevo en unos segundos.';
+    }
+
+    if (typeof err.message === 'string' && err.message.trim()) {
+        return err.message;
+    }
+
+    return 'Error al crear la ubicación.';
+};
+
+
+// Variable para throttling de geocodificación
+let lastGeocodingCallCrear = 0;
+const GEOCODING_THROTTLE_CREAR = 1500; // 1.5 segundos entre llamadas
 
 function LocationMarker({ latitud, longitud, setLatitud, setLongitud, setDireccion }) {
     useMapEvents({
         click: async (e) => {
             setLatitud(e.latlng.lat);
             setLongitud(e.latlng.lng);
+            
+            // Intentar geocodificación con throttling
+            const now = Date.now();
+            if (now - lastGeocodingCallCrear < GEOCODING_THROTTLE_CREAR) {
+                return; // Skip geocoding si es muy pronto
+            }
+            lastGeocodingCallCrear = now;
+            
             try {
-                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`);
-                const data = await response.json();
-                if (data && data.display_name) {
-                    setDireccion(data.display_name);
+                const response = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`,
+                    {
+                        headers: {
+                            'User-Agent': 'Meerkat-App/1.0'
+                        }
+                    }
+                );
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.display_name) {
+                        setDireccion(data.display_name);
+                    }
                 }
-            } catch { }
+            } catch (err) {
+                console.warn('Geocodificación inversa no disponible:', err.message);
+            }
         },
     });
     return latitud && longitud ? (
@@ -36,6 +77,7 @@ const CrearUbicacionScreen = () => {
     const location = useLocation();
     const returnTo = searchParams.get('returnTo');
     const eventFormDraft = location.state?.eventFormDraft || null;
+    const fromSource = location.state?.from || null;
 
     const [nombre, setNombre] = useState('');
     const [direccion, setDireccion] = useState('');
@@ -54,7 +96,17 @@ const CrearUbicacionScreen = () => {
         if (!search) return;
         setError(null);
         try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(search)}`);
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(search)}`,
+                {
+                    headers: {
+                        'User-Agent': 'Meerkat-App/1.0'
+                    }
+                }
+            );
+            if (!response.ok) {
+                throw new Error('Error en la búsqueda');
+            }
             const data = await response.json();
             if (data && data.length > 0) {
                 setLatitud(parseFloat(data[0].lat));
@@ -64,7 +116,7 @@ const CrearUbicacionScreen = () => {
                 setError('No se encontró la dirección.');
             }
         } catch (err) {
-            setError('Error buscando la dirección.');
+            setError('Error buscando la dirección. Intenta de nuevo en unos segundos.');
         }
     };
 
@@ -72,12 +124,23 @@ const CrearUbicacionScreen = () => {
         setLatitud(lat);
         setLongitud(lng);
         try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
-            const data = await response.json();
-            if (data && data.display_name) {
-                setDireccion(data.display_name);
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+                {
+                    headers: {
+                        'User-Agent': 'Meerkat-App/1.0'
+                    }
+                }
+            );
+            if (response.ok) {
+                const data = await response.json();
+                if (data && data.display_name) {
+                    setDireccion(data.display_name);
+                }
             }
-        } catch { }
+        } catch (err) {
+            console.warn('No se pudo obtener la dirección:', err.message);
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -86,8 +149,14 @@ const CrearUbicacionScreen = () => {
         setError(null);
         setSuccess(false);
         try {
+            if (!direccion.trim()) {
+                setError('Debes indicar una dirección o seleccionar un punto en el mapa.');
+                setLoading(false);
+                return;
+            }
+
             const payload = {
-                nombre,
+                nombre: nombre.trim(),
                 direccion,
                 latitud,
                 longitud,
@@ -99,16 +168,23 @@ const CrearUbicacionScreen = () => {
 
             // Si venimos desde crear/editar evento, volver con la ubicación creada
             if (returnTo) {
+                const nombreFinal =
+                    (createdUbicacion?.nombre && String(createdUbicacion.nombre).trim())
+                    || nombre.trim()
+                    || direccion.split(',')[0]?.trim()
+                    || 'Ubicación';
+
                 navigate(returnTo, {
                     state: {
                         ubicacion: {
                             id: createdUbicacion?.id || createdUbicacion?.ubicacionId,
-                            nombre: nombre,
+                            nombre: nombreFinal,
                             direccion: direccion,
                             latitud: latitud,
                             longitud: longitud
                         },
-                        eventFormDraft: eventFormDraft
+                        eventFormDraft: eventFormDraft,
+                        from: fromSource
                     }
                 });
                 return;
@@ -121,7 +197,7 @@ const CrearUbicacionScreen = () => {
             setLongitud(defaultPosition[1]);
             setSearch('');
         } catch (err) {
-            setError(err.message || 'Error al crear la ubicación');
+            setError(getFriendlyErrorMessage(err));
         } finally {
             setLoading(false);
         }
@@ -137,7 +213,7 @@ const CrearUbicacionScreen = () => {
                 {success && <div style={{ color: 'green', marginBottom: 16 }}>Ubicación creada correctamente.</div>}
                 {returnTo && (
                     <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 8, padding: '12px 16px', marginBottom: 16 }}>
-                        <strong>Selecciona o crea una ubicación</strong> para vincularla a tu evento presencial.
+                        <strong>Selecciona o crea una ubicación</strong> para vincular
                         <button type="button" className="btn btn-outline" style={{ marginLeft: 12, fontSize: '0.85rem', padding: '4px 12px' }} onClick={() => navigate(returnTo, { state: { eventFormDraft: eventFormDraft } })}>
                             Volver sin seleccionar
                         </button>
@@ -156,9 +232,18 @@ const CrearUbicacionScreen = () => {
                             let dir = u.direccion;
                             if (!dir || dir === 'Dirección no disponible') {
                                 try {
-                                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${u.latitud}&lon=${u.longitud}`);
-                                    const data = await response.json();
-                                    dir = data && data.display_name ? data.display_name : '';
+                                    const response = await fetch(
+                                        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${u.latitud}&lon=${u.longitud}`,
+                                        {
+                                            headers: {
+                                                'User-Agent': 'Meerkat-App/1.0'
+                                            }
+                                        }
+                                    );
+                                    if (response.ok) {
+                                        const data = await response.json();
+                                        dir = data && data.display_name ? data.display_name : '';
+                                    }
                                 } catch { }
                             }
                             setDireccion(dir);
@@ -176,7 +261,8 @@ const CrearUbicacionScreen = () => {
                                             latitud: u.latitud,
                                             longitud: u.longitud
                                         },
-                                        eventFormDraft: eventFormDraft
+                                        eventFormDraft: eventFormDraft,
+                                        from: fromSource
                                     }
                                 });
                             }
@@ -195,8 +281,8 @@ const CrearUbicacionScreen = () => {
                 )}
                 <form onSubmit={handleSubmit} style={{ maxWidth: 500, margin: '0 auto', background: '#fff', borderRadius: 8, padding: 24, boxShadow: '0 2px 8px #0001' }}>
                     <div className="input-group">
-                        <label>Nombre</label>
-                        <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} required className="input-box input-large" />
+                        <label>Nombre (opcional)</label>
+                        <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} className="input-box input-large" placeholder="Ej: Biblioteca Central" />
                     </div>
                     <div className="input-group">
                         <label>Buscar dirección</label>
@@ -231,7 +317,7 @@ const CrearUbicacionScreen = () => {
                         </div>
                     </div>
                     <button type="submit" className="btn btn-primary" disabled={loading} style={{ marginTop: 24 }}>
-                        {loading ? 'Creando...' : (returnTo ? 'Crear y vincular al evento' : 'Crear Ubicación')}
+                        {loading ? 'Creando...' : (returnTo ? 'Crear y vincular' : 'Crear Ubicación')}
                     </button>
                 </form>
             </div>
