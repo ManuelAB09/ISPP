@@ -211,8 +211,9 @@ const TeacherProfile = () => {
             <div className="tp-header__left">
               <img
                 className="tp-header__photo"
-                src={tutor.usuario?.foto}
+                src={avatarError ? '/MeerKatters_logo.png' : toAbsoluteImageUrl(tutor.usuario?.foto)}
                 alt={tutor.usuario?.nombre}
+                onError={() => setAvatarError(true)}
               />
               <div className="tp-header__info">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

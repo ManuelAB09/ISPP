@@ -264,6 +264,9 @@ const MyProfile = () => {
                                 <button className="btn-settings" onClick={() => setShowSettings(true)}>
                                     Configuración
                                 </button>
+                                <button className="btn-settings" onClick={handleLogout}>
+                                    Cerrar Sesión
+                                </button>
                             </>
                         )}
                     </div >
