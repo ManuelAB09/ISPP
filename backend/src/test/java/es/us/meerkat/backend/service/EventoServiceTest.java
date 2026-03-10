@@ -36,6 +36,7 @@ class EventoServiceTest {
     @Mock private ComunidadRepository comunidadRepository;
     @Mock private MiembroComunidadRepository miembroComunidadRepository;
     @Mock private UbicacionRepository ubicacionRepository;
+    @Mock private AuthorizationService authorizationService;
 
     @InjectMocks private EventoService eventoService;
 

@@ -237,6 +237,13 @@ public class DataSeeder {
 
             List<Ubicacion> ubicaciones = ubicacionRepo.saveAll(List.of(ub1, ub2, ub3, ub4, ub5));
 
+            // Asignar ubicaciones a los usuarios que son tutores
+            u3.setUbicacion(ub1); // Carlos - Biblioteca ETSII
+            u4.setUbicacion(ub2); // Laura - Aula A0.10
+            u5.setUbicacion(ub3); // Pedro - Salón de Actos
+            u6.setUbicacion(ub5); // Ana - Biblioteca General US
+            usuarioRepo.saveAll(List.of(u3, u4, u5, u6));
+
             // ============================
             // 3. COMUNIDADES
             // ============================
@@ -383,19 +390,19 @@ public class DataSeeder {
                     MiembroComunidad.builder()
                             .usuario(u3)
                             .comunidad(c1)
-                            .rol(RolComunidad.MIEMBRO)
+                            .rol(RolComunidad.ALUMNO)
                             .build();
             MiembroComunidad m3 =
                     MiembroComunidad.builder()
                             .usuario(u7)
                             .comunidad(c1)
-                            .rol(RolComunidad.MIEMBRO)
+                            .rol(RolComunidad.ALUMNO)
                             .build();
             MiembroComunidad m4 =
                     MiembroComunidad.builder()
                             .usuario(u8)
                             .comunidad(c1)
-                            .rol(RolComunidad.MIEMBRO)
+                            .rol(RolComunidad.ALUMNO)
                             .build();
 
             // c2 - Full Stack (creador: u3=Carlos)
@@ -409,13 +416,13 @@ public class DataSeeder {
                     MiembroComunidad.builder()
                             .usuario(u2)
                             .comunidad(c2)
-                            .rol(RolComunidad.MIEMBRO)
+                            .rol(RolComunidad.ALUMNO)
                             .build();
             MiembroComunidad m7 =
                     MiembroComunidad.builder()
                             .usuario(u7)
                             .comunidad(c2)
-                            .rol(RolComunidad.MIEMBRO)
+                            .rol(RolComunidad.ALUMNO)
                             .build();
 
             // c3 - IA (creador: u4=Laura)
@@ -429,13 +436,13 @@ public class DataSeeder {
                     MiembroComunidad.builder()
                             .usuario(u6)
                             .comunidad(c3)
-                            .rol(RolComunidad.MIEMBRO)
+                            .rol(RolComunidad.ALUMNO)
                             .build();
             MiembroComunidad m10 =
                     MiembroComunidad.builder()
                             .usuario(u3)
                             .comunidad(c3)
-                            .rol(RolComunidad.MIEMBRO)
+                            .rol(RolComunidad.ALUMNO)
                             .build();
 
             // c4 - Ciberseguridad (creador: u5=Pedro)
@@ -449,7 +456,7 @@ public class DataSeeder {
                     MiembroComunidad.builder()
                             .usuario(u3)
                             .comunidad(c4)
-                            .rol(RolComunidad.MIEMBRO)
+                            .rol(RolComunidad.ALUMNO)
                             .build();
 
             // c5 - Matemáticas (creador: u6=Ana)
@@ -463,13 +470,13 @@ public class DataSeeder {
                     MiembroComunidad.builder()
                             .usuario(u4)
                             .comunidad(c5)
-                            .rol(RolComunidad.MIEMBRO)
+                            .rol(RolComunidad.ALUMNO)
                             .build();
             MiembroComunidad m15 =
                     MiembroComunidad.builder()
                             .usuario(u8)
                             .comunidad(c5)
-                            .rol(RolComunidad.MIEMBRO)
+                            .rol(RolComunidad.ALUMNO)
                             .build();
 
             miembroRepo.saveAll(

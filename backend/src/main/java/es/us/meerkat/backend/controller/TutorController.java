@@ -25,6 +25,7 @@ import es.us.meerkat.backend.dto.PaymentUrlResponse;
 import es.us.meerkat.backend.dto.TutorListResponse;
 import es.us.meerkat.backend.dto.TutorProfileResponse;
 import es.us.meerkat.backend.dto.TutorResponse;
+import es.us.meerkat.backend.dto.UbicacionResponse;
 import es.us.meerkat.backend.dto.UpdateTutorRequest;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
@@ -327,6 +328,18 @@ public class TutorController {
                 .verificado(tutor.getVerificado())
                 .classroomConectado(tutor.getClassroomConectado())
                 .createdAt(tutor.getCreatedAt() != null ? tutor.getCreatedAt().toString() : null)
+                .ubicacion(
+                        tutor.getUsuario() != null && tutor.getUsuario().getUbicacion() != null
+                                ? UbicacionResponse.builder()
+                                        .id(tutor.getUsuario().getUbicacion().getId())
+                                        .nombre(tutor.getUsuario().getUbicacion().getNombre())
+                                        .direccion(tutor.getUsuario().getUbicacion().getDireccion())
+                                        .latitud(tutor.getUsuario().getUbicacion().getLatitud())
+                                        .longitud(tutor.getUsuario().getUbicacion().getLongitud())
+                                        .tipo(tutor.getUsuario().getUbicacion().getTipo())
+                                        .coste(tutor.getUsuario().getUbicacion().getCoste())
+                                        .build()
+                                : null)
                 .build();
     }
 

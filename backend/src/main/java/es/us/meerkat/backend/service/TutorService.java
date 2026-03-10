@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.dto.TutorProfileRequest;
 import es.us.meerkat.backend.dto.TutorProfileResponse;
+import es.us.meerkat.backend.dto.UbicacionResponse;
 import es.us.meerkat.backend.entity.EstadoTransaccion;
 import es.us.meerkat.backend.entity.TipoTransaccion;
 import es.us.meerkat.backend.entity.TransaccionPago;
@@ -196,6 +197,18 @@ public class TutorService {
                 .bio(tutor.getBio())
                 .verificado(tutor.getVerificado())
                 .classroomConectado(tutor.getClassroomConectado())
+                .ubicacion(
+                        tutor.getUsuario().getUbicacion() != null
+                                ? UbicacionResponse.builder()
+                                        .id(tutor.getUsuario().getUbicacion().getId())
+                                        .nombre(tutor.getUsuario().getUbicacion().getNombre())
+                                        .direccion(tutor.getUsuario().getUbicacion().getDireccion())
+                                        .latitud(tutor.getUsuario().getUbicacion().getLatitud())
+                                        .longitud(tutor.getUsuario().getUbicacion().getLongitud())
+                                        .tipo(tutor.getUsuario().getUbicacion().getTipo())
+                                        .coste(tutor.getUsuario().getUbicacion().getCoste())
+                                        .build()
+                                : null)
                 .createdAt(tutor.getCreatedAt() != null ? tutor.getCreatedAt().toString() : null)
                 .build();
     }

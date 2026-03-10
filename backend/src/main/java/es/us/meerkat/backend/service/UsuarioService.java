@@ -6,6 +6,8 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.springframework.core.io.Resource;
@@ -17,12 +19,15 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import es.us.meerkat.backend.dto.ChangePasswordRequest;
+import es.us.meerkat.backend.dto.UbicacionResponse;
 import es.us.meerkat.backend.dto.UpdateUserRequest;
 import es.us.meerkat.backend.dto.UserDetailResponse;
 import es.us.meerkat.backend.dto.UserPublicResponse;
 import es.us.meerkat.backend.dto.VisibilityRequest;
+import es.us.meerkat.backend.entity.Ubicacion;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.UbicacionRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -53,8 +58,15 @@ public class UsuarioService {
     private static final Set<String> ALLOWED_PROFILE_PHOTO_MIME_TYPES =
             Set.of("image/jpeg", "image/png", "image/webp");
 
+    /** Patrón para parsear coordenadas en formato "latitud,longitud". */
+    private static final Pattern COORDINATE_PAIR_PATTERN =
+            Pattern.compile("^\\s*([-+]?\\d+(?:\\.\\d+)?)\\s*,\\s*([-+]?\\d+(?:\\.\\d+)?)\\s*$");
+
     /** Repositorio para acceder a la información de usuarios. */
     private final UsuarioRepository usuarioRepository;
+
+    /** Repositorio para resolver ubicaciones por nombre. */
+    private final UbicacionRepository ubicacionRepository;
 
     /** Repositorio para gestionar membresías de comunidades. */
     private final MiembroComunidadRepository miembroComunidadRepository;
@@ -135,7 +147,33 @@ public class UsuarioService {
             usuario.setBaseFormativa(requestParam.getBaseFormativa());
         }
         if (requestParam.getUbicacion() != null) {
-            usuario.setUbicacion(requestParam.getUbicacion());
+            String nombreUbicacion = requestParam.getUbicacion().trim();
+            if (nombreUbicacion.isEmpty()) {
+                usuario.setUbicacion(null);
+            } else {
+                Double[] coords = parseCoordinatePair(nombreUbicacion);
+                Ubicacion ubicacion =
+                        ubicacionRepository
+                                .findByNombre(nombreUbicacion)
+                                .orElseGet(
+                                        () ->
+                                                ubicacionRepository.save(
+                                                        Ubicacion.builder()
+                                                                .nombre(nombreUbicacion)
+                                                                .direccion(nombreUbicacion)
+                                                                .latitud(
+                                                                        coords != null
+                                                                                ? coords[0]
+                                                                                : 0.0)
+                                                                .longitud(
+                                                                        coords != null
+                                                                                ? coords[1]
+                                                                                : 0.0)
+                                                                .tipo("general")
+                                                                .coste("desconocido")
+                                                                .build()));
+                usuario.setUbicacion(ubicacion);
+            }
         }
         if (requestParam.getAutenticacionDosFactores() != null) {
             usuario.setAutenticacionDosFactores(requestParam.getAutenticacionDosFactores());
@@ -324,9 +362,20 @@ public class UsuarioService {
                 .bio(usuario.getBio())
                 .universidad(usuario.getUniversidad())
                 .grado(usuario.getGrado())
+                .ubicacion(
+                        usuario.getUbicacion() != null
+                                ? UbicacionResponse.builder()
+                                        .id(usuario.getUbicacion().getId())
+                                        .nombre(usuario.getUbicacion().getNombre())
+                                        .direccion(usuario.getUbicacion().getDireccion())
+                                        .latitud(usuario.getUbicacion().getLatitud())
+                                        .longitud(usuario.getUbicacion().getLongitud())
+                                        .tipo(usuario.getUbicacion().getTipo())
+                                        .coste(usuario.getUbicacion().getCoste())
+                                        .build()
+                                : null)
                 .nivelEstudios(usuario.getNivelEstudios())
                 .baseFormativa(usuario.getBaseFormativa())
-                .ubicacion(usuario.getUbicacion())
                 .intereses(usuario.getIntereses())
                 .visibleEnListados(usuario.getVisibleEnListados())
                 .esTutor(usuario.getEsTutor())
@@ -349,6 +398,20 @@ public class UsuarioService {
                 .nombre(usuario.getNombre())
                 .foto(usuario.getFoto())
                 .bio(usuario.getBio())
+                .universidad(usuario.getUniversidad())
+                .grado(usuario.getGrado())
+                .ubicacion(
+                        usuario.getUbicacion() != null
+                                ? UbicacionResponse.builder()
+                                        .id(usuario.getUbicacion().getId())
+                                        .nombre(usuario.getUbicacion().getNombre())
+                                        .direccion(usuario.getUbicacion().getDireccion())
+                                        .latitud(usuario.getUbicacion().getLatitud())
+                                        .longitud(usuario.getUbicacion().getLongitud())
+                                        .tipo(usuario.getUbicacion().getTipo())
+                                        .coste(usuario.getUbicacion().getCoste())
+                                        .build()
+                                : null)
                 .intereses(usuario.getIntereses())
                 .esTutor(usuario.getEsTutor())
                 .build();
@@ -388,6 +451,28 @@ public class UsuarioService {
         }
 
         return fotoLimpia;
+    }
+
+    /** Intenta parsear coordenadas desde un texto con formato "latitud,longitud". */
+    private Double[] parseCoordinatePair(final String value) {
+        Matcher matcher = COORDINATE_PAIR_PATTERN.matcher(value);
+        if (!matcher.matches()) {
+            return null;
+        }
+
+        try {
+            double lat = Double.parseDouble(matcher.group(1));
+            double lon = Double.parseDouble(matcher.group(2));
+            if (!Double.isFinite(lat) || !Double.isFinite(lon)) {
+                return null;
+            }
+            if (lat < -90.0 || lat > 90.0 || lon < -180.0 || lon > 180.0) {
+                return null;
+            }
+            return new Double[] {lat, lon};
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 
     /** Construye ruta pública de Renata si el archivo existe en recursos estáticos. */

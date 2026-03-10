@@ -90,6 +90,7 @@ public class EventoController {
      * Obtiene un evento por su ID.
      *
      * @param eventId Identificador del evento.
+     * @param usuario Usuario autenticado (puede ser null).
      * @return El evento encontrado.
      */
     @GetMapping("/{eventId}")
@@ -97,8 +98,10 @@ public class EventoController {
             summary = "Obtener evento por ID",
             description = "Devuelve los detalles completos de un evento")
     public ResponseEntity<EventDetailResponse> obtenerEvento(
-            @PathVariable @Parameter(description = "ID del evento") final Long eventId) {
-        return ResponseEntity.ok(eventoService.obtenerEvento(eventId).toDTO());
+            @PathVariable @Parameter(description = "ID del evento") final Long eventId,
+            @AuthenticationPrincipal Usuario usuario) {
+        Long usuarioId = usuario != null ? usuario.getId() : null;
+        return ResponseEntity.ok(eventoService.obtenerEvento(eventId, usuarioId).toDTO());
     }
 
     /**
@@ -189,7 +192,7 @@ public class EventoController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado");
         }
 
-        final Evento evento = eventoService.obtenerEvento(eventId);
+        final Evento evento = eventoService.obtenerEventoInterno(eventId);
         if (!evento.getCreador().getId().equals(usuario.getId())) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN, "Solo el creador del evento puede editarlo");
@@ -235,7 +238,7 @@ public class EventoController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado");
         }
 
-        final Evento evento = eventoService.obtenerEvento(eventId);
+        final Evento evento = eventoService.obtenerEventoInterno(eventId);
         if (!evento.getCreador().getId().equals(usuario.getId())) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN, "Solo el creador del evento puede cancelarlo");

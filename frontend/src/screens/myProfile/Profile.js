@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { getApiBaseUrl } from "../../api/baseUrl"
 import { communitiesApi } from "../../api/communities.api"
 import { getMyTutorProfiles } from "../../api/tutorEndpoints"
@@ -38,8 +38,10 @@ const toAbsoluteImageUrl = (imageUrl, fallback = DEFAULT_PROFILE_AVATAR) => {
 const MyProfile = () => {
     const { isAuthenticated, loading, user, updateProfile } = useAuth()
     const navigate = useNavigate()
+    const location = useLocation()
     const [showSettings, setShowSettings] = useState(false)
     const [showEditProfile, setShowEditProfile] = useState(false)
+    const [ubicacionPreseleccionada, setUbicacionPreseleccionada] = useState(null)
     const [becomingTutor, setBecomingTutor] = useState(false)
     const [becomeTutorError, setBecomeTutorError] = useState('')
     const [miPerfilTutor, setMiPerfilTutor] = useState(null)
@@ -58,6 +60,42 @@ const MyProfile = () => {
     const [unauthorizedMessage, setUnauthorizedMessage] = useState("")
     const { logout } = useAuth()
 
+    // Cargar perfil de tutor cuando el usuario es tutor
+    useEffect(() => {
+        if (!isAuthenticated || loading || !user?.esTutor) {
+            setMiPerfilTutor(null);
+            return;
+        }
+
+        setLoadingTutorProfile(true);
+        getMyTutorProfiles()
+            .then((perfiles) => {
+                const primerPerfil = Array.isArray(perfiles) ? perfiles[0] : perfiles;
+                setMiPerfilTutor(primerPerfil?.id ? primerPerfil : null);
+            })
+            .catch(() => {
+                setMiPerfilTutor(null);
+            })
+            .finally(() => setLoadingTutorProfile(false));
+    }, [isAuthenticated, loading, user]);
+
+    // Abrir modal de edición cuando se navega con estado desde otras pantallas.
+    useEffect(() => {
+        const ubicacion = location.state?.ubicacion;
+        const openEditProfile = Boolean(location.state?.openEditProfile);
+
+        if (!ubicacion && !openEditProfile) {
+            return;
+        }
+
+        if (ubicacion) {
+            setUbicacionPreseleccionada(ubicacion);
+        }
+        setShowEditProfile(true);
+
+        navigate(location.pathname, { replace: true, state: {} });
+    }, [location.pathname, location.state, navigate]);
+
     const handleBecomeTutor = async () => {
         setBecomingTutor(true)
         setBecomeTutorError('')
@@ -67,18 +105,6 @@ const MyProfile = () => {
         }
         setBecomingTutor(false)
     }
-
-    // Cargar perfil de tutor cuando el usuario es tutor
-    useEffect(() => {
-        if (!isAuthenticated || loading || !user?.esTutor) return;
-        setLoadingTutorProfile(true);
-        getMyTutorProfiles()
-            .then((perfil) => {
-                if (perfil && perfil.id) setMiPerfilTutor(perfil);
-            })
-            .catch(() => { })
-            .finally(() => setLoadingTutorProfile(false));
-    }, [isAuthenticated, loading, user]);
 
     // Cargar comunidades del usuario
     useEffect(() => {
@@ -164,9 +190,12 @@ const MyProfile = () => {
         email: user?.email || "Sin email",
         universidad: user?.universidad || "",
         grado: user?.grado || "",
+        ubicacion:
+            typeof user?.ubicacion === 'string'
+                ? user.ubicacion
+                : user?.ubicacion?.nombre || '',
         nivelEstudios: user?.nivelEstudios || "",
         baseFormativa: user?.baseFormativa || "",
-        ubicacion: user?.ubicacion || "",
         foto: user?.foto || null,
         fotoBackgroundColor: user?.fotoBackgroundColor || '#ffffff',
         intereses: user?.intereses || []
@@ -174,7 +203,10 @@ const MyProfile = () => {
 
     // Función para mostrar valor o texto de "sin información"
     const displayValue = (value) => {
-        return value && value.trim() !== '' ? value : <span className="no-info">Sin información</span>
+        if (typeof value !== 'string') {
+            return value ? String(value) : <span className="no-info">Sin información</span>;
+        }
+        return value.trim() !== '' ? value : <span className="no-info">Sin información</span>
     }
 
     // Función para formatear URL de imagen de comunidad
@@ -540,17 +572,17 @@ const MyProfile = () => {
             }
 
             {/* Modal de editar perfil */}
-            {
-                showEditProfile && (
-                    <EditProfile
-                        onClose={() => setShowEditProfile(false)}
-                        onSave={(updatedUser) => {
-                            // Los datos se actualizan automáticamente en el contexto
-                            setShowEditProfile(false)
-                        }}
-                    />
-                )
-            }
+            {showEditProfile && (
+                <EditProfile 
+                    onClose={() => setShowEditProfile(false)} 
+                    ubicacionPreseleccionada={ubicacionPreseleccionada}
+                    onSave={(updatedUser) => {
+                        // Los datos se actualizan automáticamente en el contexto
+                        setShowEditProfile(false)
+                        setUbicacionPreseleccionada(null)
+                    }}
+                />
+            )}
         </>
     )
 }

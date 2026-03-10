@@ -65,7 +65,7 @@ public class MemberService {
                 MiembroComunidad.builder()
                         .usuario(usuario)
                         .comunidad(comunidad)
-                        .rol(RolComunidad.MIEMBRO)
+                        .rol(RolComunidad.ALUMNO)
                         .build();
 
         MiembroComunidad miembroGuardado = miembroComunidadRepository.save(miembro);
@@ -193,7 +193,7 @@ public class MemberService {
                                                 "No eres miembro de esta comunidad"));
 
         // Cambiar roles
-        usuarioActual.setRol(RolComunidad.MIEMBRO);
+        usuarioActual.setRol(RolComunidad.ALUMNO);
         nuevoAdmin.setRol(RolComunidad.ADMIN);
 
         miembroComunidadRepository.save(usuarioActual);

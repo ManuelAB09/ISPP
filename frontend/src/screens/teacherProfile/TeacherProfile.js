@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { getTutorById, getMyTutorProfiles } from "../../api/tutorEndpoints";
 import Header from "../../components/Header/Header";
-import PersonIcon from "../../components/icons/Person";
 import EditProfileModal from "./EditProfileModal";
 import CreateProfileModal from "./CreateProfileModal";
 import VerificacionModal from "./VerificacionModal";
@@ -11,7 +10,6 @@ import Settings from "../myProfile/Settings";
 import HireTutorModal from "./HireTutorModal";
 import { getApiBaseUrl } from "../../api/baseUrl";
 import "./TeacherProfile.css";
-import ClassroomLinkRequests from "../../components/GoogleClassroomButton/ClassroomLinkRequests";
 
 const toAbsoluteImageUrl = (imageUrl, fallback = '/MeerKatters_logo.png') => {
   const raw = String(imageUrl || '').trim();
