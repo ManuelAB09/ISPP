@@ -448,8 +448,8 @@ public class ZoomIntegrationService {
         body.put("password", password);
 
         Map<String, Object> settings = new HashMap<>();
-        settings.put("join_before_host", false);
-        settings.put("waiting_room", true);
+        settings.put("join_before_host", true);
+        settings.put("waiting_room", false);
         settings.put("auto_recording", "cloud");
         settings.put("mute_upon_entry", true);
         body.put("settings", settings);

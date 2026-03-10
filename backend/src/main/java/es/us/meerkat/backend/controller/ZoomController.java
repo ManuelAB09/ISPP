@@ -21,6 +21,8 @@ import es.us.meerkat.backend.entity.ZoomMeeting;
 import es.us.meerkat.backend.service.AuthorizationService;
 import es.us.meerkat.backend.service.ZoomIntegrationService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -44,9 +46,18 @@ public class ZoomController {
                             + " sala")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Llamada creada u obtenida"),
-        @ApiResponse(responseCode = "401", description = "No autenticado"),
-        @ApiResponse(responseCode = "403", description = "No pertenece a la comunidad"),
-        @ApiResponse(responseCode = "503", description = "Zoom no configurado en backend")
+        @ApiResponse(
+                responseCode = "401",
+                description = "No autenticado",
+                content = @Content(schema = @Schema(implementation = MessageResponse.class))),
+        @ApiResponse(
+                responseCode = "403",
+                description = "No pertenece a la comunidad",
+                content = @Content(schema = @Schema(implementation = MessageResponse.class))),
+        @ApiResponse(
+                responseCode = "503",
+                description = "Zoom no configurado en backend",
+                content = @Content(schema = @Schema(implementation = MessageResponse.class)))
     })
     public ResponseEntity<?> createOrGetMeeting(
             @PathVariable Long communityId,
