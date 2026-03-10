@@ -306,7 +306,17 @@ const MyProfile = () => {
                                     </button>
                                 )}
 
-                                {user?.esTutor && (
+                                {user?.esTutor && !loadingTutorProfile && !miPerfilTutor && (
+                                    <button
+                                        className="btn-settings"
+                                        onClick={() => setShowCreateTutorModal(true)}
+                                    >
+                                        <span className="btn-icon">✨</span>
+                                        Crear Perfil de Tutor
+                                    </button>
+                                )}
+
+                                {user?.esTutor && miPerfilTutor && (
                                     <button
                                         className="btn-settings"
                                         onClick={() => navigate('/solicitudes/tutor')}
