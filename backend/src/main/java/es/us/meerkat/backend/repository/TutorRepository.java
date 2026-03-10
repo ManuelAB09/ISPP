@@ -27,7 +27,7 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
      * @param us Usuario asociado al tutor.
      * @return Optional que contiene el tutor si existe.
      */
-    Optional<Tutor> findByUs(Usuario us);
+    Optional<Tutor> findByUsuario(Usuario us);
 
     /**
      * Devuelve todos los tutores que estén verificados.
@@ -43,7 +43,7 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
      * @param usuarioId id del user logueado.
      * @return Optional que contiene el tutor si existe.
      */
-    Optional<Tutor> findByIdAndUsId(Long tutorId, Long usuarioId);
+    Optional<Tutor> findByIdAndUsuarioId(Long tutorId, Long usuarioId);
 
     /**
      * Busca un todos los tutores asociado a un usuario específico.
@@ -51,7 +51,7 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
      * @param usuarioId id del user logueado.
      * @return Optional que contiene el tutor si existe.
      */
-    List<Tutor> findAllByUsId(Long usuarioId);
+    List<Tutor> findAllByUsuarioId(Long usuarioId);
 
     /**
      * Devuelve todos los tutores verificados con paginación. Utiliza @EntityGraph para cargar la
@@ -60,7 +60,7 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
      * @param pageable Información de paginación.
      * @return Página de tutores verificados.
      */
-    @EntityGraph(attributePaths = {"us"})
+    @EntityGraph(attributePaths = {"usuario"})
     Page<Tutor> findByVerificadoTrue(Pageable pageable);
 
     /**
@@ -73,13 +73,30 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
      * @param pageable Información de paginación
      * @return Página de tutores filtrados
      */
-    @EntityGraph(attributePaths = {"us"})
+    @EntityGraph(attributePaths = {"usuario"})
     @Query(
             "SELECT DISTINCT t FROM Tutor t JOIN t.especialidades e "
                     + "WHERE t.verificado = true "
                     + "AND LOWER(e) LIKE LOWER(CONCAT('%', :especialidad, '%')) "
                     + "AND t.tarifaHora BETWEEN :tarifaMin AND :tarifaMax")
     Page<Tutor> findVerificadosByEspecialidadAndTarifa(
+            @Param("especialidad") String especialidad,
+            @Param("tarifaMin") BigDecimal tarifaMin,
+            @Param("tarifaMax") BigDecimal tarifaMax,
+            Pageable pageable);
+
+    @EntityGraph(attributePaths = {"usuario"})
+    @Query(
+            """
+    SELECT DISTINCT t
+    FROM Tutor t
+    LEFT JOIN t.especialidades e
+    WHERE t.verificado = true
+    AND (:especialidad IS NULL OR LOWER(e) LIKE LOWER(CONCAT('%', CAST(:especialidad AS string), '%')))
+    AND (:tarifaMin IS NULL OR t.tarifaHora >= :tarifaMin)
+    AND (:tarifaMax IS NULL OR t.tarifaHora <= :tarifaMax)
+""")
+    Page<Tutor> findVerificadosFiltrados(
             @Param("especialidad") String especialidad,
             @Param("tarifaMin") BigDecimal tarifaMin,
             @Param("tarifaMax") BigDecimal tarifaMax,
