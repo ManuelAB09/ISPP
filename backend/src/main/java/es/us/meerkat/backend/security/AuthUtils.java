@@ -38,10 +38,10 @@ public class AuthUtils {
         if (usuario == null) {
             throw new IllegalArgumentException("Usuario no autenticado");
         }
-        if (usuario.getTutores() == null || usuario.getTutores().isEmpty()) {
+        if (usuario.getTutor() == null) {
             throw new IllegalArgumentException("Usuario no tiene rol de tutor asignado");
         }
-        Tutor tutor = usuario.getTutores().get(0);
+        Tutor tutor = usuario.getTutor();
         return tutor.getId();
     }
 
@@ -56,10 +56,10 @@ public class AuthUtils {
         if (usuario == null) {
             throw new IllegalArgumentException("Usuario no autenticado");
         }
-        if (usuario.getTutores() == null || usuario.getTutores().isEmpty()) {
+        if (usuario.getTutor() == null) {
             throw new IllegalArgumentException("Usuario no tiene rol de tutor asignado");
         }
-        return usuario.getTutores().get(0);
+        return usuario.getTutor();
     }
 
     /**
@@ -72,8 +72,6 @@ public class AuthUtils {
         if (usuario == null) {
             return false;
         }
-        return usuario.getEsTutor()
-                && usuario.getTutores() != null
-                && !usuario.getTutores().isEmpty();
+        return usuario.getEsTutor() && usuario.getTutor() != null;
     }
 }

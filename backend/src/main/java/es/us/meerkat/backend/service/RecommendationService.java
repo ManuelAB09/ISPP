@@ -209,8 +209,8 @@ public class RecommendationService {
                                     usuario,
                                     TipoRecomendacion.PROFESOR,
                                     tutor.getId(),
-                                    tutor.getUs().getNombre(),
-                                    tutor.getUs().getBio(),
+                                    tutor.getUsuario().getNombre(),
+                                    tutor.getUsuario().getBio(),
                                     null,
                                     significancia * 100,
                                     "Tutor en " + String.join(", ", tutor.getEspecialidades()));

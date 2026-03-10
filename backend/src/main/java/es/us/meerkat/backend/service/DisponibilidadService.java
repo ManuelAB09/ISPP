@@ -39,7 +39,7 @@ public class DisponibilidadService {
                         .orElseThrow(() -> new IllegalArgumentException("Tutor no encontrado"));
 
         // Verificar que el usuario sea el dueño del perfil de tutor
-        if (!tutor.getUs().getId().equals(usuarioId)) {
+        if (!tutor.getUsuario().getId().equals(usuarioId)) {
             throw new IllegalArgumentException(
                     "No tienes permisos para modificar disponibilidades de otro tutor");
         }
@@ -121,7 +121,7 @@ public class DisponibilidadService {
                         .orElseThrow(
                                 () -> new IllegalArgumentException("Disponibilidad no encontrada"));
 
-        if (!disponibilidad.getTutor().getUs().getId().equals(usuarioId)) {
+        if (!disponibilidad.getTutor().getUsuario().getId().equals(usuarioId)) {
             throw new IllegalArgumentException(
                     "No tienes permisos para modificar esta disponibilidad");
         }
@@ -141,7 +141,7 @@ public class DisponibilidadService {
                         .orElseThrow(
                                 () -> new IllegalArgumentException("Disponibilidad no encontrada"));
 
-        if (!disponibilidad.getTutor().getUs().getId().equals(usuarioId)) {
+        if (!disponibilidad.getTutor().getUsuario().getId().equals(usuarioId)) {
             throw new IllegalArgumentException(
                     "No tienes permisos para modificar esta disponibilidad");
         }

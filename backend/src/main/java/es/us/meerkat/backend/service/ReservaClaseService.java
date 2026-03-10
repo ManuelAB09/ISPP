@@ -69,7 +69,7 @@ public class ReservaClaseService {
                         .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
         // Validar que no sea reserva consigo mismo
-        if (tutor.getUs().getId().equals(alumnoId)) {
+        if (tutor.getUsuario().getId().equals(alumnoId)) {
             throw new IllegalArgumentException("No puedes reservar una clase contigo mismo");
         }
 
@@ -116,7 +116,7 @@ public class ReservaClaseService {
 
         // Enviar email de notificación al tutor
         try {
-            enviarEmailNuevaReserva(tutor.getUs(), alumno, reserva);
+            enviarEmailNuevaReserva(tutor.getUsuario(), alumno, reserva);
         } catch (Exception e) {
             log.warn("Error al enviar email de nueva reserva: {}", e.getMessage());
         }
@@ -165,7 +165,7 @@ public class ReservaClaseService {
 
         // Verificar que sea el dueño (alumno o tutor)
         boolean esAlumno = reserva.getAlumno().getId().equals(usuarioId);
-        boolean esTutor = reserva.getTutor().getId().equals(usuarioId);
+        boolean esTutor = reserva.getTutor().getUsuario().getId().equals(usuarioId);
 
         if (!esAlumno && !esTutor) {
             throw new IllegalArgumentException("No tienes permisos para cancelar esta reserva");
@@ -204,7 +204,7 @@ public class ReservaClaseService {
 
         // Notificar por email
         if (esAlumno) {
-            enviarEmailCancelacionReserva(reserva.getTutor().getUs(), reserva, "alumno");
+            enviarEmailCancelacionReserva(reserva.getTutor().getUsuario(), reserva, "alumno");
         } else {
             enviarEmailCancelacionReserva(reserva.getAlumno(), reserva, "tutor");
         }
@@ -260,7 +260,7 @@ public class ReservaClaseService {
 
         // Verificar que el usuario sea parte de la reserva
         if (!reserva.getAlumno().getId().equals(usuarioId)
-                && !reserva.getTutor().getUs().getId().equals(usuarioId)) {
+                && !reserva.getTutor().getUsuario().getId().equals(usuarioId)) {
             throw new IllegalArgumentException("No tienes permisos para ver esta reserva");
         }
 
@@ -286,7 +286,7 @@ public class ReservaClaseService {
                 .alumnoId(reserva.getAlumno().getId())
                 .alumnoNombre(reserva.getAlumno().getNombre())
                 .tutorId(reserva.getTutor().getId())
-                .tutorNombre(reserva.getTutor().getUs().getNombre())
+                .tutorNombre(reserva.getTutor().getUsuario().getNombre())
                 .fechaHora(reserva.getFechaHora())
                 .duracionMinutos(reserva.getDuracionMinutos())
                 .modalidad(reserva.getModalidad())
@@ -356,7 +356,7 @@ public class ReservaClaseService {
                             + alumno.getNombre()
                             + ",\n\n"
                             + "Tu clase con "
-                            + reserva.getTutor().getUs().getNombre()
+                            + reserva.getTutor().getUsuario().getNombre()
                             + " sobre "
                             + reserva.getTema()
                             + " ha sido confirmada para el "
