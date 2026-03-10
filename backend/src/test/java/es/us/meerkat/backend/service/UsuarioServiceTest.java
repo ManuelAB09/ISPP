@@ -21,22 +21,27 @@ import es.us.meerkat.backend.dto.UpdateUserRequest;
 import es.us.meerkat.backend.dto.UserDetailResponse;
 import es.us.meerkat.backend.dto.UserPublicResponse;
 import es.us.meerkat.backend.dto.VisibilityRequest;
+import es.us.meerkat.backend.entity.Ubicacion;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.EventoRepository;
 import es.us.meerkat.backend.repository.GoogleClassroomConnectionRepository;
+import es.us.meerkat.backend.repository.MensajeComunidadRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.SolicitudComunidadRepository;
 import es.us.meerkat.backend.repository.SuscripcionRepository;
 import es.us.meerkat.backend.repository.TransaccionPagoRepository;
+import es.us.meerkat.backend.repository.UbicacionRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
+import jakarta.persistence.EntityManager;
 
 @ExtendWith(MockitoExtension.class)
 class UsuarioServiceTest {
 
     @Mock private UsuarioRepository usuarioRepository;
 
+    @Mock private UbicacionRepository ubicacionRepository;
     @Mock private MiembroComunidadRepository miembroComunidadRepository;
 
     @Mock private ComunidadRepository comunidadRepository;
@@ -51,7 +56,11 @@ class UsuarioServiceTest {
 
     @Mock private SolicitudComunidadRepository solicitudComunidadRepository;
 
+    @Mock private MensajeComunidadRepository mensajeComunidadRepository;
+
     @Mock private GoogleClassroomConnectionRepository googleClassroomConnectionRepository;
+
+    @Mock private EntityManager entityManager;
 
     @Mock private BCryptPasswordEncoder passwordEncoder;
 
@@ -96,8 +105,17 @@ class UsuarioServiceTest {
     @Test
     void actualizarPerfilShouldUpdateProvidedFieldsAndSave() {
         Usuario usuario = new Usuario();
+        Ubicacion ubicacion = new Ubicacion();
+        ubicacion.setNombre("Sevilla");
+        ubicacion.setCoste("100");
+        ubicacion.setLatitud(24.0);
+        ubicacion.setLongitud(42.0);
+        ubicacion.setDireccion("Casa");
+
         usuario.setEmail("user@meerkat.es");
         usuario.setNombre("Nombre anterior");
+
+        when(ubicacionRepository.findByNombre("Sevilla")).thenReturn(Optional.of(ubicacion));
 
         UpdateUserRequest request = new UpdateUserRequest();
         request.setNombre("Nombre nuevo");
@@ -105,7 +123,7 @@ class UsuarioServiceTest {
         request.setBio("Nueva bio");
         request.setUniversidad("US");
         request.setGrado("Ingeniería");
-        request.setUbicacion("Sevilla");
+        request.setUbicacion(ubicacion.getNombre());
         request.setIntereses(List.of("backend", "arquitectura"));
 
         UserDetailResponse response = usuarioService.actualizarPerfil(usuario, request);
@@ -116,7 +134,7 @@ class UsuarioServiceTest {
         assertThat(usuario.getBio()).isEqualTo("Nueva bio");
         assertThat(usuario.getUniversidad()).isEqualTo("US");
         assertThat(usuario.getGrado()).isEqualTo("Ingeniería");
-        assertThat(usuario.getUbicacion()).isEqualTo("Sevilla");
+        assertThat(usuario.getUbicacion().getNombre()).isEqualTo("Sevilla");
         assertThat(usuario.getIntereses()).containsExactly("backend", "arquitectura");
 
         assertThat(response.getNombre()).isEqualTo("Nombre nuevo");
@@ -137,6 +155,8 @@ class UsuarioServiceTest {
         verify(asistenciaEventoRepository).deleteByUsuarioId(12L);
         verify(asistenciaEventoRepository).deleteByEventoCreadorId(12L);
         verify(eventoRepository).deleteByUsuarioId(12L);
+        verify(mensajeComunidadRepository).deleteByUsuarioId(12L);
+        verify(entityManager).clear();
         verify(solicitudComunidadRepository).deleteBySolicitanteId(12L);
         verify(solicitudComunidadRepository).deleteByRespondidaPorId(12L);
         verify(googleClassroomConnectionRepository).deleteByUsuarioId(12L);

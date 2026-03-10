@@ -37,6 +37,7 @@ public class UpdateUserRequest {
     @Size(max = 100, message = "El grado no puede exceder 100 caracteres")
     private String grado;
 
+    /** Ubicación del usuario (nombre de la ubicación). */
     /** Nivel de estudios del usuario. */
     @Size(max = 100, message = "El nivel de estudios no puede exceder 100 caracteres")
     private String nivelEstudios;
@@ -62,6 +63,8 @@ public class UpdateUserRequest {
     private Boolean notificacionesPush;
 
     /** Nueva lista de intereses. */
+    private Boolean esTutor;
+
     @Size(max = 10, message = "No se permiten más de 10 intereses")
     private List<@Size(max = 50, message = "Cada interés no puede exceder 50 caracteres") String>
             intereses;

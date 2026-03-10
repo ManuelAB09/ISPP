@@ -15,6 +15,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -38,9 +39,9 @@ public class Tutor {
     private Long id;
 
     /** Usuario asociado al tutor. */
-    @ManyToOne
-    @JoinColumn(name = "usuario_id", nullable = false)
-    private Usuario us;
+    @OneToOne
+    @JoinColumn(name = "usuario_id", nullable = false, unique = true)
+    private Usuario usuario;
 
     /** Lista de especialidades del tutor. */
     @ElementCollection
@@ -56,6 +57,11 @@ public class Tutor {
 
     /** Breve biografía del tutor. */
     private String bio;
+
+    /** Ubicación del tutor (opcional). */
+    @ManyToOne
+    @JoinColumn(name = "ubicacion_id", nullable = true)
+    private Ubicacion ubicacion;
 
     /** Estado de verificación del tutor. */
     private Boolean verificado = false;

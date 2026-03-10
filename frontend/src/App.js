@@ -56,7 +56,6 @@ function AppRoutes() {
         <Route path="/chats" element={<Chats />} />
         <Route path="/success" element={<PagoExitoso />} />
         <Route path="/profesores" element={<VerifiedTeachers />} />
-        <Route path="/profesores/nuevo" element={<TeacherProfile />} />
         <Route path="/profesores/:id" element={<TeacherProfile />} />
         <Route path="/profesores/contratar/pago" element={<PasarelaPagoTutor />} />
         <Route path="/crear-evento/new" element={<CrearEvento />} />

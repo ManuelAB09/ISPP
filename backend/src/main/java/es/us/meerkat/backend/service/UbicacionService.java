@@ -58,10 +58,12 @@ public class UbicacionService {
             return mapToResponse(existente.get());
         }
 
+        final String nombreNormalizado = normalizarNombreUbicacion(requestParam);
+
         // Si no existe, creamos una nueva
         final Ubicacion nuevaUbicacion =
                 Ubicacion.builder()
-                        .nombre(requestParam.getNombre())
+                        .nombre(nombreNormalizado)
                         .direccion(requestParam.getDireccion())
                         .latitud(requestParam.getLatitud())
                         .longitud(requestParam.getLongitud())
@@ -335,5 +337,27 @@ public class UbicacionService {
                 .latitud(ubicacionParam.getLatitud())
                 .longitud(ubicacionParam.getLongitud())
                 .build();
+    }
+
+    private String normalizarNombreUbicacion(final UbicacionRequest requestParam) {
+        final String nombre =
+                requestParam.getNombre() != null ? requestParam.getNombre().trim() : "";
+        if (!nombre.isEmpty()) {
+            return nombre;
+        }
+
+        final String direccion =
+                requestParam.getDireccion() != null ? requestParam.getDireccion().trim() : "";
+        if (!direccion.isEmpty()) {
+            return direccion.length() > 80 ? direccion.substring(0, 80) : direccion;
+        }
+
+        final Double latitud = requestParam.getLatitud();
+        final Double longitud = requestParam.getLongitud();
+        if (latitud != null && longitud != null) {
+            return String.format(Locale.US, "Ubicación %.5f, %.5f", latitud, longitud);
+        }
+
+        return "Ubicación sin nombre";
     }
 }

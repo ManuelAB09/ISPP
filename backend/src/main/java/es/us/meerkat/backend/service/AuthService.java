@@ -13,7 +13,9 @@ import es.us.meerkat.backend.dto.ForgotPasswordRequest;
 import es.us.meerkat.backend.dto.LoginRequest;
 import es.us.meerkat.backend.dto.MessageResponse;
 import es.us.meerkat.backend.dto.RegisterRequest;
+import es.us.meerkat.backend.dto.UbicacionResponse;
 import es.us.meerkat.backend.dto.UserDetailResponse;
+import es.us.meerkat.backend.entity.Ubicacion;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.exception.ConflictException;
 import es.us.meerkat.backend.exception.ValidationException;
@@ -80,7 +82,7 @@ public class AuthService {
         usuario.setNotificacionesEmail(true);
         usuario.setNotificacionesPush(true);
         usuario.setIntereses(new ArrayList<>());
-
+        usuario.setEsTutor(Boolean.TRUE.equals(requestParam.getEsTutor()));
         usuarioRepository.save(usuario);
 
         final String token = jwtService.generateToken(usuario.getEmail());
@@ -215,7 +217,7 @@ public class AuthService {
                         .grado(usuario.getGrado())
                         .nivelEstudios(usuario.getNivelEstudios())
                         .baseFormativa(usuario.getBaseFormativa())
-                        .ubicacion(usuario.getUbicacion())
+                        .ubicacion(convertToUbicacionResponse(usuario.getUbicacion()))
                         .intereses(usuario.getIntereses())
                         .visibleEnListados(usuario.getVisibleEnListados())
                         .esTutor(usuario.getEsTutor())
@@ -226,6 +228,27 @@ public class AuthService {
                         .build();
 
         return AuthResponse.builder().accessToken(token).user(userDetail).build();
+    }
+
+    /**
+     * Convierte una entidad Ubicacion a su DTO correspondiente.
+     *
+     * @param ubicacion Entidad de ubicación.
+     * @return UbicacionResponse DTO o null si la entrada es null.
+     */
+    private UbicacionResponse convertToUbicacionResponse(final Ubicacion ubicacion) {
+        if (ubicacion == null) {
+            return null;
+        }
+        return UbicacionResponse.builder()
+                .id(ubicacion.getId())
+                .nombre(ubicacion.getNombre())
+                .direccion(ubicacion.getDireccion())
+                .latitud(ubicacion.getLatitud())
+                .longitud(ubicacion.getLongitud())
+                .tipo(ubicacion.getTipo())
+                .coste(ubicacion.getCoste())
+                .build();
     }
 
     /**

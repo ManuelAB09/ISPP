@@ -114,34 +114,54 @@ const FiltroUbicacionesScreen = ({ onSeleccionar, onClose }) => {
         setError(null);
         setNoResultados(false);
         setSeleccionPrevia(null);
+
         try {
             const res = await ubicacionesApi.buscarEstudio({ lat, lon, radio });
             let filtrados = res;
+
             if (tipo && tipo.trim() !== '') {
                 filtrados = filtrados.filter(u => (u.tipo || '').toLowerCase() === tipo.trim().toLowerCase());
             }
             if (coste && coste.trim() !== '') {
                 filtrados = filtrados.filter(u => (u.coste || '').toUpperCase() === coste.trim().toUpperCase());
             }
+
             if (filtrados.length === 0) {
                 setNoResultados(true);
                 setResultados([]);
-            } else {
-                const geocodeAll = await Promise.all(filtrados.map(async u => {
-                    if (!u.direccion || u.direccion === 'Dirección no disponible') {
-                        try {
-                            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${u.latitud}&lon=${u.longitud}`);
+                return;
+            }
+
+            const geocodeAll = await Promise.all(filtrados.map(async u => {
+                if (!u.direccion || u.direccion === 'Dirección no disponible') {
+                    try {
+                        // Delay para evitar sobrecarga de Nominatim
+                        await new Promise(resolve => setTimeout(resolve, Math.random() * 1000));
+
+                        const response = await fetch(
+                            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${u.latitud}&lon=${u.longitud}`,
+                            {
+                                headers: {
+                                    'User-Agent': 'Meerkat-App/1.0'
+                                }
+                            }
+                        );
+
+                        if (response.ok) {
                             const data = await response.json();
                             return { ...u, direccion: data && data.display_name ? data.display_name : '' };
-                        } catch {
-                            return { ...u, direccion: '' };
                         }
-                    } else {
-                        return u;
+
+                        return { ...u, direccion: '' };
+                    } catch {
+                        return { ...u, direccion: '' };
                     }
-                }));
-                setResultados(geocodeAll);
-            }
+                }
+
+                return u;
+            }));
+
+            setResultados(geocodeAll);
         } catch (err) {
             setError('Error buscando ubicaciones');
         } finally {

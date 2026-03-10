@@ -15,6 +15,7 @@ const Register = () => {
     password: '',
     confirmPassword: '',
     acceptTerms: false,
+    esTutor: false,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -75,7 +76,7 @@ const Register = () => {
     setIsLoading(true);
     setError('');
 
-    const result = await register(formData.email, formData.password, formData.fullName);
+    const result = await register(formData.email, formData.password, formData.fullName, formData.esTutor);
     
     if (result.success) {
       navigate('/');
@@ -243,6 +244,19 @@ const Register = () => {
                   Acepto los <Link to="/terms">Términos de servicio</Link> y{' '}
                   <Link to="/privacy">Política de privacidad</Link>.
                 </span>
+              </label>
+            </div>
+
+            <div className="form-group tutor-toggle-group">
+              <span className="tutor-toggle-label">Quiero registrarme como tutor</span>
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  name="esTutor"
+                  checked={formData.esTutor}
+                  onChange={handleInputChange}
+                />
+                <span className="toggle-slider"></span>
               </label>
             </div>
 
