@@ -140,3 +140,39 @@ export const verifyVerificationSession = (sessionId) => {
   return apiClient.post('/api/v1/tutors/me/verify-verification-session', { sessionId });
 };
 
+/**
+ * POST /api/v1/tutors/me/connect
+ * Inicia onboarding Stripe Connect
+ */
+export const connectStripeAccount = () => {
+  return apiClient.post('/api/v1/tutors/me/connect', {});
+};
+
+/**
+ * POST /api/v1/tutors/me/connect/confirm
+ * Confirma que el onboarding se completó
+ */
+export const confirmStripeConnect = () => {
+  return apiClient.post('/api/v1/tutors/me/connect/confirm', {});
+};
+
+/**
+ * GET /api/v1/tutors/me/payments
+ * Historial de pagos del tutor
+ */
+export const getMyTutorPayments = (params = {}) => {
+  const query = new URLSearchParams();
+  if (params.page !== undefined) query.set('page', String(params.page));
+  if (params.size !== undefined) query.set('size', String(params.size));
+  const qs = query.toString();
+  return apiClient.get(`/api/v1/tutors/me/payments${qs ? '?' + qs : ''}`);
+};
+
+
+
+
+// Apunta al nuevo controlador
+export const verifyHiringSession = (sessionId) => {
+  return apiClient.post('/api/v1/contrataciones/verify-hiring-session', { sessionId });
+};
+

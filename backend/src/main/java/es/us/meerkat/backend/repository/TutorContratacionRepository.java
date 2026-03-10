@@ -70,6 +70,20 @@ public interface TutorContratacionRepository extends JpaRepository<TutorContrata
      */
     List<TutorContratacion> findByTutorId(Long tutorId);
 
+    @Query(
+            """
+                SELECT tc FROM TutorContratacion tc
+                JOIN FETCH tc.tutor t
+                JOIN FETCH t.usuario tu
+                JOIN FETCH tc.comunidad c
+                LEFT JOIN MiembroComunidad m ON m.comunidad.id = c.id AND m.usuario.id = :usuarioId
+                WHERE c.creador.id = :usuarioId
+                   OR (m.usuario.id = :usuarioId AND m.rol = 'ADMIN')
+                ORDER BY tc.createdAt DESC
+            """)
+    Page<TutorContratacion> findByUsuarioAdminOrCreador(
+            @Param("usuarioId") Long usuarioId, Pageable pageable);
+
     /**
      * Busca todas las contrataciones de una comunidad.
      *

@@ -116,7 +116,38 @@ public class PaymentService {
         metadata.put("tutorId", tutorId.toString());
         metadata.put("comunidadId", comunidadId.toString());
 
-        Session session = crearSesionPagoUnico("Contratación de tutor", monto, metadata);
+        long montoEnCentavos =
+                monto.multiply(new BigDecimal("100")).setScale(0, RoundingMode.HALF_UP).longValue();
+
+        SessionCreateParams params =
+                SessionCreateParams.builder()
+                        .setMode(SessionCreateParams.Mode.PAYMENT)
+                        // ← igual que verificacion: tipo en la URL para que el frontend sepa qué
+                        // endpoint llamar
+                        .setSuccessUrl(
+                                successUrl + "?session_id={CHECKOUT_SESSION_ID}&tipo=contratacion")
+                        .setCancelUrl(cancelUrl)
+                        .addLineItem(
+                                SessionCreateParams.LineItem.builder()
+                                        .setQuantity(1L)
+                                        .setPriceData(
+                                                SessionCreateParams.LineItem.PriceData.builder()
+                                                        .setCurrency("eur")
+                                                        .setUnitAmount(montoEnCentavos)
+                                                        .setProductData(
+                                                                SessionCreateParams.LineItem
+                                                                        .PriceData.ProductData
+                                                                        .builder()
+                                                                        .setName(
+                                                                                "Contratación de"
+                                                                                        + " tutor")
+                                                                        .build())
+                                                        .build())
+                                        .build())
+                        .putAllMetadata(metadata)
+                        .build();
+
+        Session session = Session.create(params);
         log.info("Sesión Stripe contratación tutor creada: {}", session.getId());
         return new PaymentUrlResponse(session.getUrl(), session.getId());
     }

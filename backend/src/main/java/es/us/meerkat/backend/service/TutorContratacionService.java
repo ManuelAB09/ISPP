@@ -14,11 +14,13 @@ import es.us.meerkat.backend.dto.PaymentUrlResponse;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.EstadoContratacion;
 import es.us.meerkat.backend.entity.RolComunidad;
+import es.us.meerkat.backend.entity.TransaccionPago;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.TutorContratacion;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.TransaccionPagoRepository;
 import es.us.meerkat.backend.repository.TutorContratacionRepository;
 import es.us.meerkat.backend.repository.TutorRepository;
 
@@ -26,6 +28,7 @@ import es.us.meerkat.backend.repository.TutorRepository;
 @Service
 public class TutorContratacionService {
 
+    @Autowired private TransaccionPagoRepository transaccionRepository;
     @Autowired private TutorContratacionRepository tutorContratacionRepository;
 
     @Autowired private TutorRepository tutorRepository;
@@ -127,38 +130,42 @@ public class TutorContratacionService {
         tutorContratacionRepository.save(contratacion);
 
         try {
-            // Verificar que la comunidad esté cargada
             Comunidad comunidad = contratacion.getComunidad();
             if (comunidad == null) {
                 throw new IllegalStateException("La comunidad no está cargada");
             }
 
-            // Obtener el ID del usuario responsable del pago (creador o primer admin)
             Long usuarioIdPago;
             Usuario creador = comunidad.getCreador();
             if (creador != null) {
                 usuarioIdPago = creador.getId();
             } else {
-                // Si no hay creador, buscar el primer administrador de la comunidad
                 var administradores =
                         miembroComunidadRepository.findByComunidadIdAndRol(
                                 comunidad.getId(), RolComunidad.ADMIN);
-
                 if (administradores.isEmpty()) {
                     throw new IllegalStateException(
-                            "La comunidad ID "
-                                    + comunidad.getId()
-                                    + " no tiene creador ni administradores asignados");
+                            "La comunidad no tiene creador ni administradores");
                 }
 
                 usuarioIdPago = administradores.get(0).getUsuario().getId();
             }
 
-            // Generar URL de pago
-            return paymentService.generarPagoContratacionTutor(
-                    tutorId, comunidad.getId(), contratacion.getTarifaAcordada(), usuarioIdPago);
+            PaymentUrlResponse paymentUrl =
+                    paymentService.generarPagoContratacionTutor(
+                            tutorId,
+                            comunidad.getId(),
+                            contratacion.getTarifaAcordada(),
+                            usuarioIdPago);
+
+            // Guardar URL para que el usuario la recupere desde mis-contrataciones
+            contratacion.setPaymentUrl(paymentUrl.paymentUrl());
+            contratacion.setStripeSessionId(paymentUrl.sessionId());
+            tutorContratacionRepository.save(contratacion);
+
+            return paymentUrl;
+
         } catch (com.stripe.exception.StripeException e) {
-            // Si Stripe falla revertimos el estado
             contratacion.setEstado(EstadoContratacion.PENDIENTE_APROBACION);
             contratacion.setMotivoCancelacion("Error al generar pago: " + e.getMessage());
             tutorContratacionRepository.save(contratacion);
@@ -404,5 +411,51 @@ public class TutorContratacionService {
         return tutorContratacionRepository
                 .findActivaByComunidadId(comunidadId)
                 .map(TutorContratacion::getTutor);
+    }
+
+    /**
+     * Devuelve el historial de pagos recibidos por un tutor.
+     *
+     * @param tutorId ID del tutor
+     * @param pageable Información de paginación
+     * @return Página de transacciones del tutor
+     */
+    @Transactional(readOnly = true)
+    public Page<TransaccionPago> obtenerHistorialPagosTutor(Long tutorId, Pageable pageable) {
+        return transaccionRepository.findByTutorIdOrderByIniciadoAtDesc(tutorId, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<TutorContratacion> obtenerMisContrataciones(Long usuarioId, Pageable pageable) {
+        return tutorContratacionRepository.findByUsuarioAdminOrCreador(usuarioId, pageable);
+    }
+
+    @Transactional
+    public void activarContratacionTrasConfirmacionPago(Long comunidadId, Long tutorId) {
+        TutorContratacion contratacion =
+                tutorContratacionRepository
+                        .findByTutorIdAndComunidadId(tutorId, comunidadId)
+                        .orElseThrow(
+                                () ->
+                                        new IllegalArgumentException(
+                                                "Contratación no encontrada para tutor="
+                                                        + tutorId
+                                                        + " comunidad="
+                                                        + comunidadId));
+
+        if (!contratacion.getEstado().equals(EstadoContratacion.APROBADA)) {
+            throw new IllegalArgumentException(
+                    "La contratación debe estar en estado APROBADA. Estado actual: "
+                            + contratacion.getEstado());
+        }
+
+        contratacion.setEstado(EstadoContratacion.ACTIVA);
+        contratacion.setFechaInicio(java.time.LocalDate.now());
+        contratacion.setPaymentUrl(null); // limpiar URL ya usada
+        contratacion.setUpdatedAt(LocalDateTime.now());
+        tutorContratacionRepository.save(contratacion);
+
+        Long tutorUsuarioId = contratacion.getTutor().getUsuario().getId();
+        classroomLinkRequestService.crearSolicitud(comunidadId, tutorUsuarioId);
     }
 }

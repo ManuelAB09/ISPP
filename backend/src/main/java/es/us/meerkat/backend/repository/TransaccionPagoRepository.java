@@ -29,4 +29,6 @@ public interface TransaccionPagoRepository extends JpaRepository<TransaccionPago
 
     /** Obtiene una transacción específica del usuario. */
     Optional<TransaccionPago> findByIdAndUsuarioId(Long id, Long usuarioId);
+
+    Page<TransaccionPago> findByTutorIdOrderByIniciadoAtDesc(Long tutorId, Pageable pageable);
 }

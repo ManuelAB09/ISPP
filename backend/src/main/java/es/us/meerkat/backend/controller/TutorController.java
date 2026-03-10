@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.Map;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,6 +23,7 @@ import es.us.meerkat.backend.dto.CreateTutorRequest;
 import es.us.meerkat.backend.dto.HiringRequestListResponse;
 import es.us.meerkat.backend.dto.HiringRequestResponse;
 import es.us.meerkat.backend.dto.MessageResponse;
+import es.us.meerkat.backend.dto.MisContratacionesResponse;
 import es.us.meerkat.backend.dto.PageInfo;
 import es.us.meerkat.backend.dto.PaymentUrlResponse;
 import es.us.meerkat.backend.dto.RejectHiringRequest;
@@ -31,7 +33,9 @@ import es.us.meerkat.backend.dto.TutorResponse;
 import es.us.meerkat.backend.dto.UbicacionResponse;
 import es.us.meerkat.backend.dto.UpdateTutorRequest;
 import es.us.meerkat.backend.dto.UserSimpleResponse;
+import es.us.meerkat.backend.entity.TipoTransaccion;
 import es.us.meerkat.backend.entity.Tutor;
+import es.us.meerkat.backend.entity.TutorContratacion;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.PaymentService;
 import es.us.meerkat.backend.service.TutorContratacionService;
@@ -586,6 +590,175 @@ public class TutorController {
             return ResponseEntity.internalServerError()
                     .body(Map.of("error", "Error Stripe: " + e.getMessage()));
 
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", e.getClass().getSimpleName() + ": " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Devuelve las contrataciones del usuario autenticado (comunidades donde es creador o admin).
+     */
+    @GetMapping("/mis-contrataciones")
+    @Operation(
+            summary = "Mis contrataciones",
+            description =
+                    "Lista las contrataciones de tutores en comunidades donde el usuario es admin")
+    public ResponseEntity<?> getMisContrataciones(
+            @AuthenticationPrincipal Usuario usuario,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        try {
+            PageRequest pageable = PageRequest.of(page, size);
+            Page<TutorContratacion> contrataciones =
+                    tutorContratacionService.obtenerMisContrataciones(usuario.getId(), pageable);
+
+            Page<MisContratacionesResponse> response =
+                    contrataciones.map(
+                            c -> {
+                                Tutor tutor = c.getTutor();
+                                return MisContratacionesResponse.builder()
+                                        .id(c.getId())
+                                        .estado(c.getEstado().name())
+                                        .modalidad(c.getModalidad())
+                                        .duracion(c.getDuracion())
+                                        .tarifaAcordada(c.getTarifaAcordada())
+                                        .fechaInicio(c.getFechaInicio())
+                                        .fechaFin(c.getFechaFin())
+                                        .motivoCancelacion(c.getMotivoCancelacion())
+                                        .paymentUrl(c.getPaymentUrl())
+                                        .stripeSessionId(c.getStripeSessionId())
+                                        .tutor(
+                                                tutor != null
+                                                        ? MisContratacionesResponse.TutorDto
+                                                                .builder()
+                                                                .id(tutor.getId())
+                                                                .usuario(
+                                                                        tutor.getUsuario() != null
+                                                                                ? MisContratacionesResponse
+                                                                                        .UsuarioDto
+                                                                                        .builder()
+                                                                                        .id(
+                                                                                                tutor.getUsuario()
+                                                                                                        .getId())
+                                                                                        .nombre(
+                                                                                                tutor.getUsuario()
+                                                                                                        .getNombre())
+                                                                                        .foto(
+                                                                                                tutor.getUsuario()
+                                                                                                        .getFoto())
+                                                                                        .build()
+                                                                                : null)
+                                                                .build()
+                                                        : null)
+                                        .comunidad(
+                                                c.getComunidad() != null
+                                                        ? MisContratacionesResponse.ComunidadDto
+                                                                .builder()
+                                                                .id(c.getComunidad().getId())
+                                                                .nombre(
+                                                                        c.getComunidad()
+                                                                                .getNombre())
+                                                                .descripcion(
+                                                                        c.getComunidad()
+                                                                                .getDescripcion())
+                                                                .imagenUrl(
+                                                                        c.getComunidad()
+                                                                                .getImagenUrl())
+                                                                .build()
+                                                        : null)
+                                        .build();
+                            });
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/verify-hiring-session")
+    @Operation(
+            summary = "Verificar sesión de pago de contratación",
+            description = "Confirma el pago y activa la contratación")
+    public ResponseEntity<?> verificarSesionContratacion(
+            @AuthenticationPrincipal Usuario usuario, @RequestBody Map<String, String> body) {
+
+        String sessionId = body.get("sessionId");
+
+        if (sessionId == null || sessionId.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "sessionId requerido"));
+        }
+
+        try {
+            // 1. Recuperar sesión Stripe
+            com.stripe.model.checkout.Session session =
+                    com.stripe.model.checkout.Session.retrieve(sessionId);
+
+            if (!"complete".equals(session.getStatus())) {
+                return ResponseEntity.badRequest()
+                        .body(
+                                Map.of(
+                                        "error",
+                                        "El pago no está completado: " + session.getStatus()));
+            }
+
+            // 2. Verificar que pertenece al usuario autenticado
+            String usuarioIdEnSession = session.getMetadata().get("usuarioId");
+            if (!usuario.getId().toString().equals(usuarioIdEnSession)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Sesión no válida para este usuario"));
+            }
+
+            // 3. Verificar tipo
+            String tipo = session.getMetadata().get("tipo");
+            if (!TipoTransaccion.PAGO_TUTOR.name().equals(tipo)) {
+                return ResponseEntity.badRequest()
+                        .body(
+                                Map.of(
+                                        "error",
+                                        "La sesión no corresponde a una contratación de tutor"));
+            }
+
+            // 4. Extraer metadata
+            Long tutorId = Long.parseLong(session.getMetadata().get("tutorId"));
+            Long comunidadId = Long.parseLong(session.getMetadata().get("comunidadId"));
+
+            BigDecimal monto =
+                    session.getAmountTotal() != null
+                            ? BigDecimal.valueOf(session.getAmountTotal())
+                                    .divide(BigDecimal.valueOf(100))
+                            : BigDecimal.ZERO;
+
+            // 5. Activar contratación
+            tutorContratacionService.activarContratacionTrasConfirmacionPago(comunidadId, tutorId);
+
+            // 6. Registrar pago en historial del tutor
+            Tutor tutor =
+                    tutorService
+                            .obtenerTutorPorId(tutorId)
+                            .orElseThrow(() -> new IllegalArgumentException("Tutor no encontrado"));
+
+            paymentService.procesarPagoExitoso(
+                    usuario.getId(),
+                    TipoTransaccion.PAGO_TUTOR,
+                    monto,
+                    "Contratación de tutor para comunidad " + comunidadId,
+                    tutor);
+
+            return ResponseEntity.ok(
+                    Map.of(
+                            "mensaje",
+                            "Contratación activada y pago registrado correctamente",
+                            "tutorId",
+                            tutorId,
+                            "comunidadId",
+                            comunidadId));
+
+        } catch (com.stripe.exception.StripeException e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Error Stripe: " + e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body(Map.of("error", e.getClass().getSimpleName() + ": " + e.getMessage()));
