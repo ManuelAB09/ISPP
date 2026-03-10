@@ -32,23 +32,27 @@ public class TutorContratacionService {
     @Autowired private PaymentService paymentService;
 
     @Autowired private ClassroomLinkRequestService classroomLinkRequestService;
+    
+    @Autowired private EmailService emailService;
+    
+    @Autowired private AuthorizationService authorizationService;
 
     // ===============================
     // OPERACIONES DE CONTRATACIÓN
     // ===============================
 
     /**
-     * Crea una nueva contratación de tutor para una comunidad. Inicializa el pago y retorna la URL
-     * de pago para que la comunidad procese el pago.
+     * Crea una nueva solicitud de contratación de tutor para una comunidad. 
+     * La solicitud queda en estado PENDIENTE_APROBACION hasta que el tutor la acepte.
      *
      * @param comunidadId ID de la comunidad
      * @param tutorId ID del tutor a contratar
      * @param request Datos de la contratación
      * @param usuarioId ID del usuario que solicita (debe ser admin de comunidad)
-     * @return PaymentUrlResponse con URL de pago
+     * @return TutorContratacion creada con estado PENDIENTE_APROBACION
      */
     @Transactional
-    public PaymentUrlResponse crearContratacion(
+    public TutorContratacion crearSolicitudContratacion(
             Long comunidadId, Long tutorId, HireTutorRequest request, Long usuarioId) {
 
         Comunidad comunidad =
@@ -56,7 +60,7 @@ public class TutorContratacionService {
                         .findById(comunidadId)
                         .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
 
-        if (!comunidad.getCreador().getId().equals(usuarioId)) {
+        if (!authorizationService.isAdminOf(usuarioId, comunidadId)) {
             throw new IllegalArgumentException(
                     "No tienes permisos para contratar tutores en esta comunidad");
         }
@@ -81,23 +85,209 @@ public class TutorContratacionService {
         contratacion.setModalidad(request.getModalidad());
         contratacion.setDuracion(request.getDuracion());
         contratacion.setTarifaAcordada(request.getTarifaAcordada());
-        contratacion.setEstado(EstadoContratacion.PENDIENTE_PAGO);
-        contratacion.setFechaInicio(LocalDate.now());
+        contratacion.setEstado(EstadoContratacion.PENDIENTE_APROBACION);
+        contratacion.setFechaInicio(LocalDate.now().plusWeeks(1)); // Estimado
         contratacion.setFechaFin(LocalDate.now().plusMonths(3));
         contratacion.setCreatedAt(LocalDateTime.now());
 
         tutorContratacionRepository.save(contratacion);
+        
+        // Enviar notificación por email al tutor
+        try {
+            String tutorEmail = tutor.getUsuario().getEmail();
+            String tutorNombre = tutor.getUsuario().getNombre();
+            String comunidadNombre = comunidad.getNombre();
+            
+            emailService.sendSimpleEmail(
+                tutorEmail,
+                "Nueva solicitud de contratación en MeerKatters",
+                String.format(
+                    "Hola %s,\n\n" +
+                    "La comunidad '%s' te ha enviado una solicitud de contratación.\n\n" +
+                    "Detalles:\n" +
+                    "- Modalidad: %s\n" +
+                    "- Duración: %s\n" +
+                    "- Tarifa acordada: %.2f€\n\n" +
+                    "Puedes revisar y responder a esta solicitud desde tu panel de tutor en MeerKatters.\n\n" +
+                    "Saludos,\n" +
+                    "El equipo de MeerKatters",
+                    tutorNombre, comunidadNombre, 
+                    request.getModalidad(), request.getDuracion(), request.getTarifaAcordada()
+                )
+            );
+        } catch (Exception e) {
+            // Log del error pero no fallar la operación
+            System.err.println("Error al enviar email de notificación: " + e.getMessage());
+        }
+
+        return contratacion;
+    }
+    
+    /**
+     * El tutor acepta una solicitud de contratación. 
+     * Cambia el estado a APROBADA y genera la URL de pago para la comunidad.
+     *
+     * @param contratacionId ID de la contratación
+     * @param tutorId ID del tutor que acepta
+     * @return PaymentUrlResponse con URL de pago
+     */
+    @Transactional
+    public PaymentUrlResponse aceptarSolicitud(Long contratacionId, Long tutorId) {
+        TutorContratacion contratacion =
+                tutorContratacionRepository
+                        .findByIdAndTutorId(contratacionId, tutorId)
+                        .orElseThrow(() -> new IllegalArgumentException(
+                            "Solicitud no encontrada o no pertenece a este tutor"));
+
+        if (!contratacion.getEstado().equals(EstadoContratacion.PENDIENTE_APROBACION)) {
+            throw new IllegalArgumentException(
+                    "Solo se pueden aceptar solicitudes en estado PENDIENTE_APROBACION");
+        }
+
+        contratacion.setEstado(EstadoContratacion.APROBADA);
+        contratacion.setUpdatedAt(LocalDateTime.now());
+        tutorContratacionRepository.save(contratacion);
+        
+        // Notificar a la comunidad
+        try {
+            String adminEmail = contratacion.getComunidad().getCreador().getEmail();
+            String adminNombre = contratacion.getComunidad().getCreador().getNombre();
+            String tutorNombre = contratacion.getTutor().getUsuario().getNombre();
+            String comunidadNombre = contratacion.getComunidad().getNombre();
+            
+            emailService.sendSimpleEmail(
+                adminEmail,
+                "¡Solicitud de tutor aceptada! - MeerKatters",
+                String.format(
+                    "Hola %s,\n\n" +
+                    "¡Buenas noticias! El tutor %s ha aceptado tu solicitud para la comunidad '%s'.\n\n" +
+                    "El siguiente paso es proceder con el pago. Inicia sesión en MeerKatters para completar el proceso.\n\n" +
+                    "Saludos,\n" +
+                    "El equipo de MeerKatters",
+                    adminNombre, tutorNombre, comunidadNombre
+                )
+            );
+        } catch (Exception e) {
+            System.err.println("Error al enviar email de notificación: " + e.getMessage());
+        }
 
         try {
+            // Generar URL de pago
             return paymentService.generarPagoContratacionTutor(
-                    tutorId, comunidadId, request.getTarifaAcordada(), usuarioId);
+                    tutorId, 
+                    contratacion.getComunidad().getId(), 
+                    contratacion.getTarifaAcordada(), 
+                    contratacion.getComunidad().getCreador().getId());
         } catch (com.stripe.exception.StripeException e) {
-            // Si Stripe falla revertimos el estado de la contratación
-            contratacion.setEstado(EstadoContratacion.CANCELADA);
+            // Si Stripe falla revertimos el estado
+            contratacion.setEstado(EstadoContratacion.PENDIENTE_APROBACION);
             contratacion.setMotivoCancelacion("Error al generar pago: " + e.getMessage());
             tutorContratacionRepository.save(contratacion);
             throw new RuntimeException("Error al conectar con la pasarela de pago", e);
         }
+    }
+    
+    /**
+     * El tutor rechaza una solicitud de contratación.
+     *
+     * @param contratacionId ID de la contratación
+     * @param tutorId ID del tutor que rechaza
+     * @param motivo Motivo del rechazo
+     */
+    @Transactional
+    public void rechazarSolicitud(Long contratacionId, Long tutorId, String motivo) {
+        TutorContratacion contratacion =
+                tutorContratacionRepository
+                        .findByIdAndTutorId(contratacionId, tutorId)
+                        .orElseThrow(() -> new IllegalArgumentException(
+                            "Solicitud no encontrada o no pertenece a este tutor"));
+
+        if (!contratacion.getEstado().equals(EstadoContratacion.PENDIENTE_APROBACION)) {
+            throw new IllegalArgumentException(
+                    "Solo se pueden rechazar solicitudes en estado PENDIENTE_APROBACION");
+        }
+
+        contratacion.setEstado(EstadoContratacion.RECHAZADA);
+        contratacion.setMotivoCancelacion(motivo);
+        contratacion.setUpdatedAt(LocalDateTime.now());
+        tutorContratacionRepository.save(contratacion);
+        
+        // Notificar a la comunidad
+        try {
+            String adminEmail = contratacion.getComunidad().getCreador().getEmail();
+            String adminNombre = contratacion.getComunidad().getCreador().getNombre();
+            String tutorNombre = contratacion.getTutor().getUsuario().getNombre();
+            String comunidadNombre = contratacion.getComunidad().getNombre();
+            
+            emailService.sendSimpleEmail(
+                adminEmail,
+                "Solicitud de tutor rechazada - MeerKatters",
+                String.format(
+                    "Hola %s,\n\n" +
+                    "El tutor %s ha rechazado tu solicitud para la comunidad '%s'.\n\n" +
+                    "Motivo: %s\n\n" +
+                    "Puedes buscar otros tutores disponibles en MeerKatters.\n\n" +
+                    "Saludos,\n" +
+                    "El equipo de MeerKatters",
+                    adminNombre, tutorNombre, comunidadNombre, motivo
+                )
+            );
+        } catch (Exception e) {
+            System.err.println("Error al enviar email de notificación: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Procesa el pago de una contratación aprobada y cambia su estado a PENDIENTE_PAGO.
+     *
+     * @param comunidadId ID de la comunidad
+     * @param tutorId ID del tutor
+     * @return PaymentUrlResponse con URL de pago
+     */
+    @Transactional
+    public PaymentUrlResponse generarPagoContratacion(Long comunidadId, Long tutorId, Long usuarioId) {
+        // Buscar contratación aprobada
+        TutorContratacion contratacion = tutorContratacionRepository
+                .findByTutorIdAndComunidadId(tutorId, comunidadId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                    "No se encontró solicitud de contratación"));
+
+        if (!contratacion.getEstado().equals(EstadoContratacion.APROBADA)) {
+            throw new IllegalArgumentException(
+                    "La solicitud debe estar en estado APROBADA para proceder al pago");
+        }
+        
+        if (!authorizationService.isAdminOf(usuarioId, comunidadId)) {
+            throw new IllegalArgumentException(
+                    "No tienes permisos para pagar esta contratación");
+        }
+
+        contratacion.setEstado(EstadoContratacion.PENDIENTE_PAGO);
+        tutorContratacionRepository.save(contratacion);
+        
+        try {
+            return paymentService.generarPagoContratacionTutor(
+                    tutorId, comunidadId, contratacion.getTarifaAcordada(), usuarioId);
+        } catch (com.stripe.exception.StripeException e) {
+            // Si Stripe falla revertimos el estado
+            contratacion.setEstado(EstadoContratacion.APROBADA);
+            contratacion.setMotivoCancelacion("Error al generar pago: " + e.getMessage());
+            tutorContratacionRepository.save(contratacion);
+            throw new RuntimeException("Error al conectar con la pasarela de pago", e);
+        }
+    }
+
+    /**
+     * Obtiene las solicitudes pendientes de aprobación para un tutor.
+     *
+     * @param tutorId ID del tutor
+     * @param pageable Información de paginación
+     * @return Página de solicitudes pendientes
+     */
+    @Transactional(readOnly = true)
+    public Page<TutorContratacion> obtenerSolicitudesPendientes(Long tutorId, Pageable pageable) {
+        return tutorContratacionRepository.findByTutorIdAndEstadoWithRelations(
+                tutorId, EstadoContratacion.PENDIENTE_APROBACION, pageable);
     }
 
     /**
@@ -196,7 +386,7 @@ public class TutorContratacionService {
                                 () -> new IllegalArgumentException("Contratación no encontrada"));
 
         // Validar que el usuario es admin de la comunidad
-        if (!contratacion.getComunidad().getCreador().getId().equals(usuarioId)) {
+        if (!authorizationService.isAdminOf(usuarioId, contratacion.getComunidad().getId())) {
             throw new IllegalArgumentException(
                     "No tienes permisos para cancelar esta contratación");
         }

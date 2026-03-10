@@ -19,17 +19,22 @@ import org.springframework.web.bind.annotation.RestController;
 
 import es.us.meerkat.backend.dto.ConnectClassroomRequest;
 import es.us.meerkat.backend.dto.CreateTutorRequest;
+import es.us.meerkat.backend.dto.HiringRequestListResponse;
+import es.us.meerkat.backend.dto.HiringRequestResponse;
 import es.us.meerkat.backend.dto.MessageResponse;
 import es.us.meerkat.backend.dto.PageInfo;
 import es.us.meerkat.backend.dto.PaymentUrlResponse;
+import es.us.meerkat.backend.dto.RejectHiringRequest;
 import es.us.meerkat.backend.dto.TutorListResponse;
 import es.us.meerkat.backend.dto.TutorProfileResponse;
 import es.us.meerkat.backend.dto.TutorResponse;
 import es.us.meerkat.backend.dto.UbicacionResponse;
 import es.us.meerkat.backend.dto.UpdateTutorRequest;
+import es.us.meerkat.backend.dto.UserSimpleResponse;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.PaymentService;
+import es.us.meerkat.backend.service.TutorContratacionService;
 import es.us.meerkat.backend.service.TutorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -46,6 +51,7 @@ public class TutorController {
 
     private final TutorService tutorService;
     private final PaymentService paymentService;
+    private final TutorContratacionService tutorContratacionService;
 
     /**
      * Lista tutores disponibles con filtros opcionales.
@@ -341,6 +347,162 @@ public class TutorController {
                                         .build()
                                 : null)
                 .build();
+    }
+
+    // =====================================================
+    // GESTIÓN DE SOLICITUDES DE CONTRATACIÓN
+    // =====================================================
+
+    /**
+     * Obtiene las solicitudes de contratación pendientes para el tutor autenticado.
+     *
+     * @param usuario Usuario autenticado (tutor)
+     * @param page Número de página
+     * @param size Tamaño de página
+     * @return Lista paginada de solicitudes pendientes
+     */
+    @GetMapping("/me/hiring-requests")
+    @Operation(
+            summary = "Obtener solicitudes de contratación",
+            description = "Lista las solicitudes pendientes de aprobación para el tutor")
+    public ResponseEntity<HiringRequestListResponse> getMyHiringRequests(
+            @AuthenticationPrincipal final Usuario usuario,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        try {
+            var tutorOpt = tutorService.obtenerTutorPorUsuarioId(usuario.getId());
+            if (tutorOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Tutor tutor = tutorOpt.get();
+            org.springframework.data.domain.Pageable pageable =
+                    org.springframework.data.domain.PageRequest.of(page, size);
+
+            var contrataciones =
+                    tutorContratacionService.obtenerSolicitudesPendientes(
+                            tutor.getId(), pageable);
+
+            Page<HiringRequestResponse> response =
+                    contrataciones.map(
+                            c ->
+                                    HiringRequestResponse.builder()
+                                            .id(c.getId())
+                                            .comunidad(
+                                                    HiringRequestResponse.ComunidadSimpleDto
+                                                            .builder()
+                                                            .id(c.getComunidad().getId())
+                                                            .nombre(c.getComunidad().getNombre())
+                                                            .descripcion(
+                                                                    c.getComunidad()
+                                                                            .getDescripcion())
+                                                            .foto(c.getComunidad().getImagenUrl())
+                                                            .creador(
+                                                                    new UserSimpleResponse(
+                                                                            c.getComunidad()
+                                                                                    .getCreador()
+                                                                                    .getId(),
+                                                                            c.getComunidad()
+                                                                                    .getCreador()
+                                                                                    .getNombre(),
+                                                                            c.getComunidad()
+                                                                                    .getCreador()
+                                                                                    .getEmail(),
+                                                                            c.getComunidad()
+                                                                                    .getCreador()
+                                                                                    .getFoto()))
+                                                            .build())
+                                            .modalidad(c.getModalidad())
+                                            .duracion(c.getDuracion())
+                                            .tarifaAcordada(c.getTarifaAcordada())
+                                            .estado(c.getEstado().name())
+                                            .createdAt(c.getCreatedAt())
+                                            .build());
+
+            return ResponseEntity.ok(new HiringRequestListResponse(response));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Acepta una solicitud de contratación.
+     *
+     * @param usuario Usuario autenticado (tutor)
+     * @param requestId ID de la solicitud
+     * @return URL de pago para la comunidad
+     */
+    @PostMapping("/me/hiring-requests/{requestId}/accept")
+    @Operation(
+            summary = "Aceptar solicitud de contratación",
+            description =
+                    "El tutor acepta una solicitud de contratación. Se genera URL de pago para"
+                            + " la comunidad.")
+    public ResponseEntity<?> acceptHiringRequest(
+            @AuthenticationPrincipal final Usuario usuario,
+            @PathVariable Long requestId) {
+        try {
+            var tutorOpt = tutorService.obtenerTutorPorUsuarioId(usuario.getId());
+            if (tutorOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Tutor tutor = tutorOpt.get();
+            PaymentUrlResponse paymentUrl =
+                    tutorContratacionService.aceptarSolicitud(requestId, tutor.getId());
+
+            return ResponseEntity.ok(
+                    Map.of(
+                            "mensaje",
+                            "Solicitud aceptada correctamente",
+                            "paymentUrl",
+                            paymentUrl.paymentUrl(),
+                            "sessionId",
+                            paymentUrl.sessionId()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Error al aceptar la solicitud: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Rechaza una solicitud de contratación.
+     *
+     * @param usuario Usuario autenticado (tutor)
+     * @param requestId ID de la solicitud
+     * @param request Motivo del rechazo
+     * @return Mensaje de confirmación
+     */
+    @PostMapping("/me/hiring-requests/{requestId}/reject")
+    @Operation(
+            summary = "Rechazar solicitud de contratación",
+            description = "El tutor rechaza una solicitud de contratación")
+    public ResponseEntity<?> rejectHiringRequest(
+            @AuthenticationPrincipal final Usuario usuario,
+            @PathVariable Long requestId,
+            @Valid @RequestBody RejectHiringRequest request) {
+        try {
+            var tutorOpt = tutorService.obtenerTutorPorUsuarioId(usuario.getId());
+            if (tutorOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Tutor tutor = tutorOpt.get();
+            tutorContratacionService.rechazarSolicitud(
+                    requestId, tutor.getId(), request.getMotivo());
+
+            return ResponseEntity.ok(
+                    MessageResponse.builder()
+                            .message("Solicitud rechazada correctamente")
+                            .build());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Error al rechazar la solicitud: " + e.getMessage()));
+        }
     }
 
     @PostMapping("/me/verify-verification-session")
