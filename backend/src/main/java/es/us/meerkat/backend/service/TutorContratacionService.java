@@ -176,7 +176,7 @@ public class TutorContratacionService {
         tutorContratacionRepository.save(contratacion);
 
         Long comunidadId = contratacion.getComunidad().getId();
-        Long tutorId = contratacion.getTutor().getUs().getId();
+        Long tutorId = contratacion.getTutor().getUsuario().getId();
         classroomLinkRequestService.crearSolicitud(comunidadId, tutorId);
     }
 

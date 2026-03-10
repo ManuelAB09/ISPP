@@ -847,7 +847,8 @@ public class CommunityController {
     })
     public ResponseEntity<List<EventSummaryResponse>> listCommunityEvents(
             @PathVariable Long communityId,
-            @RequestParam(name = "cancelados", defaultValue = "false") boolean cancelados) {
+            @RequestParam(name = "cancelados", defaultValue = "false") boolean cancelados,
+            @AuthenticationPrincipal Usuario usuario) {
 
         try {
             communityService.getCommunityById(communityId, null);
@@ -855,7 +856,9 @@ public class CommunityController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
-        List<Evento> eventos = eventoService.obtenerEventosPorComunidad(communityId, cancelados);
+        Long usuarioId = usuario != null ? usuario.getId() : null;
+        List<Evento> eventos =
+                eventoService.obtenerEventosPorComunidad(communityId, cancelados, usuarioId);
         List<EventSummaryResponse> response =
                 eventos.stream().map(Evento::toSummaryDTO).collect(Collectors.toList());
 

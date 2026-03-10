@@ -48,18 +48,57 @@ public class PaymentService {
     // -------------------------------------------------------------------------
 
     /** Verificación de tutor → TipoTransaccion.PAGO_VERIFICACION */
+    /** ID del precio de verificación de tutor en Stripe (pago único) */
+    private static final String PRICE_VERIFICACION_TUTOR = "price_1T8no6Iti4eEH8Y0mb6IAwMc";
+
+    /** Verificación de tutor → TipoTransaccion.PAGO_VERIFICACION */
     @Transactional
     public PaymentUrlResponse generarPagoVerificacionTutor(Long tutorId, Long usuarioId)
             throws StripeException {
 
-        Map<String, String> metadata = new HashMap<>();
-        metadata.put("tipo", TipoTransaccion.PAGO_VERIFICACION.name());
-        metadata.put("usuarioId", usuarioId.toString());
-        metadata.put("tutorId", tutorId.toString());
+        SessionCreateParams params =
+                SessionCreateParams.builder()
+                        .setMode(SessionCreateParams.Mode.PAYMENT)
+                        .setSuccessUrl(
+                                successUrl + "?session_id={CHECKOUT_SESSION_ID}&tipo=verificacion")
+                        .setCancelUrl(cancelUrl)
+                        .addLineItem(
+                                SessionCreateParams.LineItem.builder()
+                                        .setQuantity(1L)
+                                        .setPriceData(
+                                                SessionCreateParams.LineItem.PriceData.builder()
+                                                        .setCurrency("eur")
+                                                        .setUnitAmount(1999L) // 19.99€ en centavos
+                                                        .setProductData(
+                                                                SessionCreateParams.LineItem
+                                                                        .PriceData.ProductData
+                                                                        .builder()
+                                                                        .setName(
+                                                                                "Verificación de"
+                                                                                        + " tutor")
+                                                                        .setDescription(
+                                                                                "Insignia"
+                                                                                    + " 'Verificado'"
+                                                                                    + " en tu"
+                                                                                    + " perfil. Tu"
+                                                                                    + " perfil"
+                                                                                    + " aparecerá"
+                                                                                    + " destacado"
+                                                                                    + " en los"
+                                                                                    + " listados.")
+                                                                        .build())
+                                                        .build())
+                                        .build())
+                        .putMetadata("tipo", TipoTransaccion.PAGO_VERIFICACION.name())
+                        .putMetadata("usuarioId", usuarioId.toString())
+                        .putMetadata("tutorId", tutorId.toString())
+                        .build();
 
-        Session session =
-                crearSesionPagoUnico("Verificación de tutor", new BigDecimal("9.99"), metadata);
-        log.info("Sesión Stripe verificación tutor creada: {}", session.getId());
+        Session session = Session.create(params);
+        log.info(
+                "Sesión Stripe verificación tutor creada para tutor {}: {}",
+                tutorId,
+                session.getId());
         return new PaymentUrlResponse(session.getUrl(), session.getId());
     }
 

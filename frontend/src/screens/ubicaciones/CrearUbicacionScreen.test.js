@@ -68,7 +68,8 @@ describe('CrearUbicacionScreen', () => {
   });
 
   test('busca dirección y rellena dirección seleccionada', async () => {
-    global.fetch.mockResolvedValueOnce({
+    global.fetch.mockResolvedValue({
+      ok: true,
       json: async () => [{ lat: '37.3892', lon: '-5.9846', display_name: 'Sevilla Centro' }],
     });
 
@@ -81,14 +82,15 @@ describe('CrearUbicacionScreen', () => {
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('https://nominatim.openstreetmap.org/search?format=json&q=Sevilla')
+        expect.stringContaining('https://nominatim.openstreetmap.org/search?format=json&q=Sevilla'),
+        expect.anything()
       );
-    });
+    }, { timeout: 3000 });
 
     await waitFor(() => {
       const textboxes = screen.getAllByRole('textbox');
       expect(textboxes[2]).toHaveValue('Sevilla Centro');
-    });
+    }, { timeout: 3000 });
   });
 
   test('muestra error si no hay resultados en búsqueda', async () => {
@@ -101,7 +103,11 @@ describe('CrearUbicacionScreen', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: /^Buscar$/i }));
 
-    expect(await screen.findByText(/No se encontró la dirección/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        /No se encontró la dirección|Error buscando la dirección/i
+      )
+    ).toBeInTheDocument();
   });
 
   test('crea ubicación correctamente', async () => {

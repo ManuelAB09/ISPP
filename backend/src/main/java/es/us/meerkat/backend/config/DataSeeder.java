@@ -237,6 +237,13 @@ public class DataSeeder {
 
             List<Ubicacion> ubicaciones = ubicacionRepo.saveAll(List.of(ub1, ub2, ub3, ub4, ub5));
 
+            // Asignar ubicaciones a los usuarios que son tutores
+            u3.setUbicacion(ub1); // Carlos - Biblioteca ETSII
+            u4.setUbicacion(ub2); // Laura - Aula A0.10
+            u5.setUbicacion(ub3); // Pedro - Salón de Actos
+            u6.setUbicacion(ub5); // Ana - Biblioteca General US
+            usuarioRepo.saveAll(List.of(u3, u4, u5, u6));
+
             // ============================
             // 3. COMUNIDADES
             // ============================
@@ -725,7 +732,7 @@ public class DataSeeder {
             // 8. PERFILES DE TUTOR
             // ============================
             Tutor t1 = new Tutor();
-            t1.setUs(u3);
+            t1.setUsuario(u3);
             t1.setEspecialidades(List.of("Java", "Spring Boot", "Microservicios"));
             t1.setTarifaHora(new java.math.BigDecimal("20.00"));
             t1.setDisponibilidad("Tardes de lunes a viernes");
@@ -736,7 +743,7 @@ public class DataSeeder {
             t1.setClassroomConectado(false);
 
             Tutor t2 = new Tutor();
-            t2.setUs(u6);
+            t2.setUsuario(u6);
             t2.setEspecialidades(List.of("Estadística", "R", "Python", "Machine Learning"));
             t2.setTarifaHora(new java.math.BigDecimal("18.50"));
             t2.setDisponibilidad("Fines de semana y lunes por la tarde");
@@ -747,7 +754,7 @@ public class DataSeeder {
             t2.setClassroomConectado(false);
 
             Tutor t3 = new Tutor();
-            t3.setUs(u4);
+            t3.setUsuario(u4);
             t3.setEspecialidades(
                     List.of(
                             "Inteligencia Artificial",
@@ -763,7 +770,7 @@ public class DataSeeder {
             t3.setClassroomConectado(false);
 
             Tutor t4 = new Tutor();
-            t4.setUs(u5);
+            t4.setUsuario(u5);
             t4.setEspecialidades(List.of("Ciberseguridad", "Hacking Ético", "Redes", "Linux"));
             t4.setTarifaHora(new java.math.BigDecimal("25.00"));
             t4.setDisponibilidad("Noches de entre semana y fines de semana");
