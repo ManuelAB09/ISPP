@@ -27,6 +27,7 @@ import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.EventoRepository;
 import es.us.meerkat.backend.repository.GoogleClassroomConnectionRepository;
+import es.us.meerkat.backend.repository.InstitutionRepository;
 import es.us.meerkat.backend.repository.MensajeComunidadRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.SolicitudComunidadRepository;
@@ -59,6 +60,8 @@ class UsuarioServiceTest {
     @Mock private MensajeComunidadRepository mensajeComunidadRepository;
 
     @Mock private GoogleClassroomConnectionRepository googleClassroomConnectionRepository;
+
+    @Mock private InstitutionRepository institutionRepository;
 
     @Mock private EntityManager entityManager;
 
@@ -160,6 +163,7 @@ class UsuarioServiceTest {
         verify(solicitudComunidadRepository).deleteBySolicitanteId(12L);
         verify(solicitudComunidadRepository).deleteByRespondidaPorId(12L);
         verify(googleClassroomConnectionRepository).deleteByUsuarioId(12L);
+        verify(institutionRepository).deleteByUsuarioAdminId(12L);
         verify(transaccionPagoRepository).deleteByUsuarioId(12L);
         verify(suscripcionRepository).deleteByUsuarioId(12L);
         verify(miembroComunidadRepository).deleteByUsuarioId(12L);

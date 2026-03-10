@@ -29,6 +29,9 @@ public interface InstitutionRepository extends JpaRepository<Institution, Long> 
      */
     Optional<Institution> findByVerificada(Boolean verificada);
 
+    /** Elimina instituciones cuyo administrador sea el usuario indicado. */
+    void deleteByUsuarioAdminId(Long usuarioId);
+
     // Comunidades que pertenecen directamente a la institución
     @Query("SELECT COUNT(c) FROM Comunidad c WHERE c.institution.id = :institutionId")
     long countComunidadesByInstitutionId(@Param("institutionId") Long institutionId);

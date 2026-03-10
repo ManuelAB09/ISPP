@@ -33,6 +33,7 @@ import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.EventoRepository;
 import es.us.meerkat.backend.repository.GoogleClassroomConnectionRepository;
+import es.us.meerkat.backend.repository.InstitutionRepository;
 import es.us.meerkat.backend.repository.MensajeComunidadRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.SolicitudComunidadRepository;
@@ -112,6 +113,9 @@ public class UsuarioService {
 
     /** Repositorio para gestionar conexiones con Google Classroom. */
     private final GoogleClassroomConnectionRepository googleClassroomConnectionRepository;
+
+    /** Repositorio para gestionar instituciones. */
+    private final InstitutionRepository institutionRepository;
 
     /** EntityManager para operaciones de limpieza de sesión. */
     private final EntityManager entityManager;
@@ -336,6 +340,7 @@ public class UsuarioService {
         solicitudComunidadRepository.deleteBySolicitanteId(usuarioId);
         solicitudComunidadRepository.deleteByRespondidaPorId(usuarioId);
         googleClassroomConnectionRepository.deleteByUsuarioId(usuarioId);
+        institutionRepository.deleteByUsuarioAdminId(usuarioId);
         transaccionPagoRepository.deleteByUsuarioId(usuarioId);
         suscripcionRepository.deleteByUsuarioId(usuarioId);
         miembroComunidadRepository.deleteByUsuarioId(usuarioId);
