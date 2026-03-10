@@ -1,6 +1,6 @@
-# Informe de Conocimiento Común
+# Plan de Pruebas
 
-## Sprint S1
+## Sprint S2
 
 ### Grupo 9 – Turno de tarde
 
@@ -12,7 +12,7 @@
 **Documento:** Entrega  
 **Sprint:** Sprint S2  
 **Semana:** Semana 1  
-**Estado:** Aprobado
+**Estado:** Aprobado  
 **Fecha:** 10/03/2026  
 **Autor(es):** Alejandro Soult Toscano
 
