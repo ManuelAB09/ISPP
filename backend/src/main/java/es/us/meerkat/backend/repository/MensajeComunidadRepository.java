@@ -3,6 +3,9 @@ package es.us.meerkat.backend.repository;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import es.us.meerkat.backend.entity.MensajeComunidad;
@@ -37,5 +40,7 @@ public interface MensajeComunidadRepository extends JpaRepository<MensajeComunid
     List<MensajeComunidad> findTopByOrderByCreatedAtDesc(Long limit);
 
     /** Elimina todos los mensajes de comunidad enviados por un usuario. */
-    void deleteByUsuarioId(Long usuarioId);
+    @Modifying
+    @Query("DELETE FROM MensajeComunidad m WHERE m.usuario.id = :usuarioId")
+    void deleteByUsuarioId(@Param("usuarioId") Long usuarioId);
 }

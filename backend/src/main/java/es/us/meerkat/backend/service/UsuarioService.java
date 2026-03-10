@@ -29,11 +29,13 @@ import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.EventoRepository;
 import es.us.meerkat.backend.repository.GoogleClassroomConnectionRepository;
+import es.us.meerkat.backend.repository.MensajeComunidadRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.SolicitudComunidadRepository;
 import es.us.meerkat.backend.repository.SuscripcionRepository;
 import es.us.meerkat.backend.repository.TransaccionPagoRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -93,8 +95,14 @@ public class UsuarioService {
     /** Repositorio para gestionar solicitudes de comunidad. */
     private final SolicitudComunidadRepository solicitudComunidadRepository;
 
+    /** Repositorio para gestionar mensajes de comunidad. */
+    private final MensajeComunidadRepository mensajeComunidadRepository;
+
     /** Repositorio para gestionar conexiones con Google Classroom. */
     private final GoogleClassroomConnectionRepository googleClassroomConnectionRepository;
+
+    /** EntityManager para operaciones de limpieza de sesión. */
+    private final EntityManager entityManager;
 
     private static final int MAX_FREE_COMMUNITIES = 3;
 
@@ -237,12 +245,26 @@ public class UsuarioService {
             throw new ValidationException("Usuario no autenticado");
         }
 
-        // Comunidades donde el usuario es creador
-        List<Comunidad> comunidadesUsuario = comunidadRepository.findByCreadorId(usuario.getId());
+        final Long usuarioId = usuario.getId();
+
+        // PASO 1: Eliminar eventos y asistencias PRIMERO
+        asistenciaEventoRepository.deleteByUsuarioId(usuarioId);
+        asistenciaEventoRepository.deleteByEventoCreadorId(usuarioId);
+        eventoRepository.deleteByUsuarioId(usuarioId);
+
+        // PASO 1b: Eliminar mensajes de comunidad del usuario
+        mensajeComunidadRepository.deleteByUsuarioId(usuarioId);
+
+        // PASO 2: Limpiar la sesión de Hibernate para eliminar cualquier
+        // referencia en memoria a entidades que ya hemos eliminado
+        entityManager.clear();
+
+        // PASO 3: Ahora manipular comunidades sin riesgo de referencias transitorias
+        List<Comunidad> comunidadesUsuario = comunidadRepository.findByCreadorId(usuarioId);
         for (Comunidad comunidad : comunidadesUsuario) {
             List<Usuario> miembrosMasAntiguos =
                     miembroComunidadRepository.findMiembrosMasAntiguosEnComunidad(
-                            comunidad.getId(), usuario.getId());
+                            comunidad.getId(), usuarioId);
 
             if (miembrosMasAntiguos.isEmpty()) {
                 // No hay miembros, eliminar la comunidad
@@ -269,17 +291,16 @@ public class UsuarioService {
                 }
             }
         }
-        // Eliminar primero relaciones que referencian al usuario.
-        // Orden importante: eliminar primero dependencias más profundas
-        asistenciaEventoRepository.deleteByUsuarioId(usuario.getId());
-        asistenciaEventoRepository.deleteByEventoCreadorId(usuario.getId());
-        eventoRepository.deleteByUsuarioId(usuario.getId());
-        solicitudComunidadRepository.deleteBySolicitanteId(usuario.getId());
-        solicitudComunidadRepository.deleteByRespondidaPorId(usuario.getId());
-        googleClassroomConnectionRepository.deleteByUsuarioId(usuario.getId());
-        transaccionPagoRepository.deleteByUsuarioId(usuario.getId());
-        suscripcionRepository.deleteByUsuarioId(usuario.getId());
-        miembroComunidadRepository.deleteByUsuarioId(usuario.getId());
+
+        // PASO 4: Eliminar otras relaciones que referencian al usuario
+        solicitudComunidadRepository.deleteBySolicitanteId(usuarioId);
+        solicitudComunidadRepository.deleteByRespondidaPorId(usuarioId);
+        googleClassroomConnectionRepository.deleteByUsuarioId(usuarioId);
+        transaccionPagoRepository.deleteByUsuarioId(usuarioId);
+        suscripcionRepository.deleteByUsuarioId(usuarioId);
+        miembroComunidadRepository.deleteByUsuarioId(usuarioId);
+
+        // PASO 5: Eliminar el usuario
         usuarioRepository.delete(usuario);
     }
 
