@@ -13,9 +13,12 @@ import es.us.meerkat.backend.dto.HireTutorRequest;
 import es.us.meerkat.backend.dto.PaymentUrlResponse;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.EstadoContratacion;
+import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.TutorContratacion;
+import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.ComunidadRepository;
+import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.TutorContratacionRepository;
 import es.us.meerkat.backend.repository.TutorRepository;
 
@@ -33,9 +36,9 @@ public class TutorContratacionService {
 
     @Autowired private ClassroomLinkRequestService classroomLinkRequestService;
     
-    @Autowired private EmailService emailService;
-    
     @Autowired private AuthorizationService authorizationService;
+    
+    @Autowired private MiembroComunidadRepository miembroComunidadRepository;
 
     // ===============================
     // OPERACIONES DE CONTRATACIÓN
@@ -57,7 +60,7 @@ public class TutorContratacionService {
 
         Comunidad comunidad =
                 comunidadRepository
-                        .findById(comunidadId)
+                        .findWithCreadorById(comunidadId)
                         .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
 
         if (!authorizationService.isAdminOf(usuarioId, comunidadId)) {
@@ -91,34 +94,6 @@ public class TutorContratacionService {
         contratacion.setCreatedAt(LocalDateTime.now());
 
         tutorContratacionRepository.save(contratacion);
-        
-        // Enviar notificación por email al tutor
-        try {
-            String tutorEmail = tutor.getUsuario().getEmail();
-            String tutorNombre = tutor.getUsuario().getNombre();
-            String comunidadNombre = comunidad.getNombre();
-            
-            emailService.sendSimpleEmail(
-                tutorEmail,
-                "Nueva solicitud de contratación en MeerKatters",
-                String.format(
-                    "Hola %s,\n\n" +
-                    "La comunidad '%s' te ha enviado una solicitud de contratación.\n\n" +
-                    "Detalles:\n" +
-                    "- Modalidad: %s\n" +
-                    "- Duración: %s\n" +
-                    "- Tarifa acordada: %.2f€\n\n" +
-                    "Puedes revisar y responder a esta solicitud desde tu panel de tutor en MeerKatters.\n\n" +
-                    "Saludos,\n" +
-                    "El equipo de MeerKatters",
-                    tutorNombre, comunidadNombre, 
-                    request.getModalidad(), request.getDuracion(), request.getTarifaAcordada()
-                )
-            );
-        } catch (Exception e) {
-            // Log del error pero no fallar la operación
-            System.err.println("Error al enviar email de notificación: " + e.getMessage());
-        }
 
         return contratacion;
     }
@@ -147,37 +122,39 @@ public class TutorContratacionService {
         contratacion.setEstado(EstadoContratacion.APROBADA);
         contratacion.setUpdatedAt(LocalDateTime.now());
         tutorContratacionRepository.save(contratacion);
-        
-        // Notificar a la comunidad
-        try {
-            String adminEmail = contratacion.getComunidad().getCreador().getEmail();
-            String adminNombre = contratacion.getComunidad().getCreador().getNombre();
-            String tutorNombre = contratacion.getTutor().getUsuario().getNombre();
-            String comunidadNombre = contratacion.getComunidad().getNombre();
-            
-            emailService.sendSimpleEmail(
-                adminEmail,
-                "¡Solicitud de tutor aceptada! - MeerKatters",
-                String.format(
-                    "Hola %s,\n\n" +
-                    "¡Buenas noticias! El tutor %s ha aceptado tu solicitud para la comunidad '%s'.\n\n" +
-                    "El siguiente paso es proceder con el pago. Inicia sesión en MeerKatters para completar el proceso.\n\n" +
-                    "Saludos,\n" +
-                    "El equipo de MeerKatters",
-                    adminNombre, tutorNombre, comunidadNombre
-                )
-            );
-        } catch (Exception e) {
-            System.err.println("Error al enviar email de notificación: " + e.getMessage());
-        }
 
         try {
+            // Verificar que la comunidad esté cargada
+            Comunidad comunidad = contratacion.getComunidad();
+            if (comunidad == null) {
+                throw new IllegalStateException("La comunidad no está cargada");
+            }
+            
+            // Obtener el ID del usuario responsable del pago (creador o primer admin)
+            Long usuarioIdPago;
+            Usuario creador = comunidad.getCreador();
+            if (creador != null) {
+                usuarioIdPago = creador.getId();
+            } else {
+                // Si no hay creador, buscar el primer administrador de la comunidad
+                var administradores = miembroComunidadRepository
+                    .findByComunidadIdAndRol(comunidad.getId(), RolComunidad.ADMIN);
+                
+                if (administradores.isEmpty()) {
+                    throw new IllegalStateException(
+                        "La comunidad ID " + comunidad.getId() + 
+                        " no tiene creador ni administradores asignados");
+                }
+                
+                usuarioIdPago = administradores.get(0).getUsuario().getId();
+            }
+            
             // Generar URL de pago
             return paymentService.generarPagoContratacionTutor(
                     tutorId, 
-                    contratacion.getComunidad().getId(), 
+                    comunidad.getId(), 
                     contratacion.getTarifaAcordada(), 
-                    contratacion.getComunidad().getCreador().getId());
+                    usuarioIdPago);
         } catch (com.stripe.exception.StripeException e) {
             // Si Stripe falla revertimos el estado
             contratacion.setEstado(EstadoContratacion.PENDIENTE_APROBACION);
@@ -211,30 +188,6 @@ public class TutorContratacionService {
         contratacion.setMotivoCancelacion(motivo);
         contratacion.setUpdatedAt(LocalDateTime.now());
         tutorContratacionRepository.save(contratacion);
-        
-        // Notificar a la comunidad
-        try {
-            String adminEmail = contratacion.getComunidad().getCreador().getEmail();
-            String adminNombre = contratacion.getComunidad().getCreador().getNombre();
-            String tutorNombre = contratacion.getTutor().getUsuario().getNombre();
-            String comunidadNombre = contratacion.getComunidad().getNombre();
-            
-            emailService.sendSimpleEmail(
-                adminEmail,
-                "Solicitud de tutor rechazada - MeerKatters",
-                String.format(
-                    "Hola %s,\n\n" +
-                    "El tutor %s ha rechazado tu solicitud para la comunidad '%s'.\n\n" +
-                    "Motivo: %s\n\n" +
-                    "Puedes buscar otros tutores disponibles en MeerKatters.\n\n" +
-                    "Saludos,\n" +
-                    "El equipo de MeerKatters",
-                    adminNombre, tutorNombre, comunidadNombre, motivo
-                )
-            );
-        } catch (Exception e) {
-            System.err.println("Error al enviar email de notificación: " + e.getMessage());
-        }
     }
     
     /**

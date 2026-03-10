@@ -1,10 +1,8 @@
 package es.us.meerkat.backend.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -24,7 +22,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import es.us.meerkat.backend.dto.HireTutorRequest;
-import es.us.meerkat.backend.dto.PaymentUrlResponse;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.EstadoContratacion;
 import es.us.meerkat.backend.entity.TipoGrupo;
@@ -44,6 +41,7 @@ class TutorContratacionServiceTest {
     @Mock private ComunidadRepository comunidadRepository;
     @Mock private PaymentService paymentService;
     @Mock private ClassroomLinkRequestService classroomLinkRequestService;
+    @Mock private AuthorizationService authorizationService;
 
     @InjectMocks private TutorContratacionService tutorContratacionService;
 
@@ -62,6 +60,7 @@ class TutorContratacionServiceTest {
         HireTutorRequest request = buildHireTutorRequest();
 
         when(comunidadRepository.findById(comunidadId)).thenReturn(Optional.of(comunidad));
+        when(authorizationService.isAdminOf(usuarioId, comunidadId)).thenReturn(true);
         when(tutorRepository.findById(tutorId)).thenReturn(Optional.of(tutor));
         when(tutorContratacionRepository.findActivaByComunidadId(comunidadId))
                 .thenReturn(Optional.empty());
@@ -72,20 +71,14 @@ class TutorContratacionServiceTest {
                             tc.setId(100L);
                             return tc;
                         });
-        when(paymentService.generarPagoContratacionTutor(
-                        tutorId, comunidadId, request.getTarifaAcordada(), usuarioId))
-                .thenReturn(new PaymentUrlResponse("https://stripe.com/pay/123", "sess_123"));
-
-        PaymentUrlResponse response =
-                tutorContratacionService.crearContratacion(
+        TutorContratacion response =
+                tutorContratacionService.crearSolicitudContratacion(
                         comunidadId, tutorId, request, usuarioId);
-
-        assertThat(response.paymentUrl()).contains("stripe.com");
 
         ArgumentCaptor<TutorContratacion> captor = ArgumentCaptor.forClass(TutorContratacion.class);
         verify(tutorContratacionRepository).save(captor.capture());
         TutorContratacion saved = captor.getValue();
-        assertThat(saved.getEstado()).isEqualTo(EstadoContratacion.PENDIENTE_PAGO);
+        assertThat(saved.getEstado()).isEqualTo(EstadoContratacion.PENDIENTE_APROBACION);
         assertThat(saved.getTutor()).isEqualTo(tutor);
         assertThat(saved.getComunidad()).isEqualTo(comunidad);
         assertThat(saved.getModalidad()).isEqualTo("horaria");
@@ -97,7 +90,7 @@ class TutorContratacionServiceTest {
 
         assertThatThrownBy(
                         () ->
-                                tutorContratacionService.crearContratacion(
+                                tutorContratacionService.crearSolicitudContratacion(
                                         99L, 10L, buildHireTutorRequest(), 5L))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Comunidad no encontrada");
@@ -110,10 +103,11 @@ class TutorContratacionServiceTest {
         Comunidad comunidad = buildComunidad(comunidadId, buildUsuario(5L));
 
         when(comunidadRepository.findById(comunidadId)).thenReturn(Optional.of(comunidad));
+        when(authorizationService.isAdminOf(otroUsuarioId, comunidadId)).thenReturn(false);
 
         assertThatThrownBy(
                         () ->
-                                tutorContratacionService.crearContratacion(
+                                tutorContratacionService.crearSolicitudContratacion(
                                         comunidadId, 10L, buildHireTutorRequest(), otroUsuarioId))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("No tienes permisos");
@@ -128,13 +122,14 @@ class TutorContratacionServiceTest {
         Tutor tutor = buildTutorVerificado(10L, buildUsuario(20L));
 
         when(comunidadRepository.findById(comunidadId)).thenReturn(Optional.of(comunidad));
+        when(authorizationService.isAdminOf(usuarioId, comunidadId)).thenReturn(true);
         when(tutorRepository.findById(10L)).thenReturn(Optional.of(tutor));
         when(tutorContratacionRepository.findActivaByComunidadId(comunidadId))
                 .thenReturn(Optional.of(new TutorContratacion()));
 
         assertThatThrownBy(
                         () ->
-                                tutorContratacionService.crearContratacion(
+                                tutorContratacionService.crearSolicitudContratacion(
                                         comunidadId, 10L, buildHireTutorRequest(), usuarioId))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("ya tiene un tutor activo");
@@ -150,13 +145,14 @@ class TutorContratacionServiceTest {
         tutorNoVerificado.setVerificado(false);
 
         when(comunidadRepository.findById(comunidadId)).thenReturn(Optional.of(comunidad));
+        when(authorizationService.isAdminOf(usuarioId, comunidadId)).thenReturn(true);
         when(tutorRepository.findById(10L)).thenReturn(Optional.of(tutorNoVerificado));
         when(tutorContratacionRepository.findActivaByComunidadId(comunidadId))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(
                         () ->
-                                tutorContratacionService.crearContratacion(
+                                tutorContratacionService.crearSolicitudContratacion(
                                         comunidadId, 10L, buildHireTutorRequest(), usuarioId))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("verificado");

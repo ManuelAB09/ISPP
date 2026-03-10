@@ -43,6 +43,7 @@ import es.us.meerkat.backend.dto.RequestListResponse;
 import es.us.meerkat.backend.dto.RequestResponse;
 import es.us.meerkat.backend.dto.RespondRequestBody;
 import es.us.meerkat.backend.dto.TransferAdminRequest;
+import es.us.meerkat.backend.dto.TutorResponse;
 import es.us.meerkat.backend.dto.UpdateCategoryRequest;
 import es.us.meerkat.backend.dto.UpdateCommunityRequest;
 import es.us.meerkat.backend.dto.UpgradeCommunityRequest;
@@ -1314,10 +1315,7 @@ public class CommunityController {
 
         try {
             // Verificar que el usuario es admin de la comunidad
-            Comunidad comunidad =
-                    communityService.getCommunityById(communityId, usuario.getId());
-
-            if (!comunidad.getCreador().getId().equals(usuario.getId())) {
+            if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(MessageResponse.builder()
                                 .message("No tienes permisos para ver las solicitudes de esta comunidad")
@@ -1328,18 +1326,37 @@ public class CommunityController {
             Page<TutorContratacion> contrataciones =
                     tutorContratacionService.obtenerContratacionesDeLaComunidad(communityId, pageable);
 
-            // Convertir a DTO
-            var response = contrataciones.map(c ->
-                    es.us.meerkat.backend.dto.TutorContratacionResponse.builder()
-                            .id(c.getId())
-                            .modalidad(c.getModalidad())
-                            .duracion(c.getDuracion())
-                            .tarifaAcordada(c.getTarifaAcordada())
-                            .estado(c.getEstado().name())
-                            .fechaInicio(c.getFechaInicio())
-                            .fechaFin(c.getFechaFin())
-                            .build()
-            );
+            // Convertir a DTO con información del tutor
+            var response = contrataciones.map(c -> {
+                var builder = es.us.meerkat.backend.dto.TutorContratacionResponse.builder()
+                        .id(c.getId())
+                        .modalidad(c.getModalidad())
+                        .duracion(c.getDuracion())
+                        .tarifaAcordada(c.getTarifaAcordada())
+                        .estado(c.getEstado().name())
+                        .fechaInicio(c.getFechaInicio())
+                        .fechaFin(c.getFechaFin())
+                        .motivoCancelacion(c.getMotivoCancelacion());
+                
+                // Agregar información del tutor si está disponible
+                if (c.getTutor() != null) {
+                    var tutorResponse = TutorResponse.builder()
+                            .id(c.getTutor().getId())
+                            .verificado(c.getTutor().getVerificado());
+                    
+                    if (c.getTutor().getUsuario() != null) {
+                        tutorResponse.usuario(TutorResponse.UsuarioDto.builder()
+                                .id(c.getTutor().getUsuario().getId())
+                                .nombre(c.getTutor().getUsuario().getNombre())
+                                .foto(c.getTutor().getUsuario().getFoto())
+                                .build());
+                    }
+                    
+                    builder.tutor(tutorResponse.build());
+                }
+                
+                return builder.build();
+            });
 
             return ResponseEntity.ok(new PageInfo(response));
         } catch (IllegalArgumentException e) {

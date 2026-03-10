@@ -34,6 +34,7 @@ public interface TutorContratacionRepository extends JpaRepository<TutorContrata
      * @param pageable información de paginación
      * @return página con las contrataciones
      */
+    @EntityGraph(attributePaths = {"tutor", "tutor.usuario", "comunidad"})
     Page<TutorContratacion> findByComunidadId(Long comunidadId, Pageable pageable);
 
     /**
@@ -106,5 +107,6 @@ public interface TutorContratacionRepository extends JpaRepository<TutorContrata
      * @param tutorId el ID del tutor
      * @return Optional con la contratación si existe y pertenece al tutor
      */
+    @EntityGraph(attributePaths = {"comunidad", "comunidad.creador", "tutor"})
     Optional<TutorContratacion> findByIdAndTutorId(Long id, Long tutorId);
 }
