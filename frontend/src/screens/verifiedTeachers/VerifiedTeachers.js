@@ -385,6 +385,7 @@ const VerifiedTeachers = () => {
                     {/* Contactar */}
                     <button
                       className="vt-btn vt-btn--primary"
+                      onClick={() => navigate(`/chats?userId=${tutor.userId}&userName=${encodeURIComponent(nombre)}&userPhoto=${encodeURIComponent(tutor.usuario?.foto || '')}`)}
                     >
                       Contactar
                     </button>

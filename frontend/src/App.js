@@ -6,6 +6,7 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import { SocketProvider } from './contexts/SocketContext';
 import Login from './screens/auth/Login';
 import Register from './screens/auth/Register';
+import VerifyEmail from './screens/auth/VerifyEmail';
 import Terms from './screens/legal/Terms';
 import Privacy from './screens/legal/Privacy';
 import LandingPage from './screens/landing/LandingPage';
@@ -102,6 +103,7 @@ function AppRoutes() {
         {/* Rutas públicas */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/comunidades" element={<Comunidades />} />

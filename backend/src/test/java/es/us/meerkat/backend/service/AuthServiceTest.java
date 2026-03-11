@@ -43,7 +43,7 @@ class AuthServiceTest {
     @InjectMocks private AuthService authService;
 
     @Test
-    void registrarShouldCreateUserAndReturnAuthResponse() {
+    void registrarShouldCreateUserAndReturnMessageResponse() {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("new.user@meerkat.es");
         request.setPassword("password123");
@@ -51,9 +51,8 @@ class AuthServiceTest {
 
         when(usuarioRepository.existsByEmail(request.getEmail())).thenReturn(false);
         when(passwordEncoder.encode(request.getPassword())).thenReturn("encoded-password");
-        when(jwtService.generateToken(request.getEmail())).thenReturn("jwt-token");
 
-        AuthResponse response = authService.registrar(request);
+        MessageResponse response = authService.registrar(request);
 
         ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
         verify(usuarioRepository).save(captor.capture());
@@ -64,10 +63,10 @@ class AuthServiceTest {
         assertThat(savedUser.getVisibleEnListados()).isTrue();
         assertThat(savedUser.getEsTutor()).isFalse();
         assertThat(savedUser.getIntereses()).isInstanceOf(ArrayList.class);
+        assertThat(savedUser.getEmailVerificado()).isFalse();
+        assertThat(savedUser.getVerificationToken()).isNotNull();
 
-        assertThat(response.getAccessToken()).isEqualTo("jwt-token");
-        assertThat(response.getUser()).isNotNull();
-        assertThat(response.getUser().getEmail()).isEqualTo(request.getEmail());
+        assertThat(response.getMessage()).contains("verificación");
     }
 
     @Test

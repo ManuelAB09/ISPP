@@ -282,6 +282,7 @@ const TeacherProfile = () => {
               <div className="tp-header__actions">
                 <button
                   className="tp-btn tp-btn--contact"
+                  onClick={() => navigate(`/chats?userId=${tutor.usuario?.id}&userName=${encodeURIComponent(tutor.usuario?.nombre || '')}&userPhoto=${encodeURIComponent(tutor.usuario?.foto || '')}`)}
                 >
                   💬 Contactar
                 </button>
@@ -391,14 +392,22 @@ const TeacherProfile = () => {
                 </div>
               ))}
               {/* Placeholder "Explorar más comunidades" */}
-              <div className="tp-comunidades__card tp-comunidades__card--explore tp-comunidades__card--xl">
+              <div 
+                className="tp-comunidades__card tp-comunidades__card--explore tp-comunidades__card--xl"
+                onClick={() => navigate('/comunidades')}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="tp-comunidades__explore-icon tp-comunidades__explore-icon--xl">+</div>
                 <span className="tp-comunidades__explore-title tp-comunidades__explore-title--xl">Explorar más comunidades</span>
                 <span className="tp-comunidades__explore-text tp-comunidades__explore-text--xl">
                   Busca entre miles de comunidades de estudio adaptadas a tus necesidades
                 </span>
               </div>
-              <span className="tp-comunidades__ver-todas tp-comunidades__ver-todas--xl">Ver todas</span>
+              <span 
+                className="tp-comunidades__ver-todas tp-comunidades__ver-todas--xl"
+                onClick={() => navigate('/comunidades')}
+                style={{ cursor: 'pointer' }}
+              >Ver todas</span>
             </div>
           </section>
 
@@ -413,7 +422,10 @@ const TeacherProfile = () => {
                 Crea comunidades, une a estudiantes y enseña sobre lo que sabes.
               </p>
               {user?.id === tutor.usuario?.id && (
-                <button className="tp-btn tp-btn--crear tp-btn--crear-xl">+ Crear Nueva</button>
+                <button 
+                  className="tp-btn tp-btn--crear tp-btn--crear-xl"
+                  onClick={() => navigate('/crear-comunidad')}
+                >+ Crear Nueva</button>
               )}
             </div>
             <div className="tp-creadas__list tp-creadas__list--xl">
