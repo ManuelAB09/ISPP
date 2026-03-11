@@ -2,14 +2,17 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getApiBaseUrl } from '../../api/baseUrl';
 import { communitiesApi } from '../../api/communities.api';
+import { obtenerConversaciones } from '../../api/mensajeService';
 import Header from '../../components/Header/Header';
+import PageHeader from '../../components/PageHeader';
 import { useAuth } from '../../contexts/AuthContext';
 import './Chats.css';
 import CommunityChat from './CommunityChat';
 import PrivateChat from './PrivateChat';
-import { obtenerConversaciones } from '../../api/mensajeService';
 
 const DEFAULT_COMMUNITY_IMAGE = 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
+const DEFAULT_PROFILE_AVATAR =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='60' fill='%23E6EAF3'/%3E%3Ccircle cx='60' cy='46' r='22' fill='%2395A1BB'/%3E%3Cpath d='M20 106c6-20 22-32 40-32s34 12 40 32' fill='%2395A1BB'/%3E%3C/svg%3E";
 
 const resolveCommunityImage = (community) => {
     const raw = community?.imagen || community?.imagenUrl || community?.foto;
@@ -19,6 +22,25 @@ const resolveCommunityImage = (community) => {
     }
 
     const value = String(raw).trim();
+    if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
+        return value;
+    }
+
+    const base = getApiBaseUrl();
+    if (value.startsWith('/')) {
+        return `${base}${value}`;
+    }
+
+    return `${base}/${value}`;
+};
+
+const resolveUserImage = (rawPhoto) => {
+    const fallback = DEFAULT_PROFILE_AVATAR;
+    if (!rawPhoto || !String(rawPhoto).trim()) {
+        return fallback;
+    }
+
+    const value = String(rawPhoto).trim();
     if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
         return value;
     }
@@ -42,6 +64,7 @@ export default function Chats() {
     const [selectedCommunityId, setSelectedCommunityId] = useState(null);
     const [privateTarget, setPrivateTarget] = useState(null);
     const [activeTab, setActiveTab] = useState('communities'); // 'communities' o 'private'
+    const [isMobileDropdownOpen, setIsMobileDropdownOpen] = useState(false);
 
     // lista que se mostrará en la barra lateral de privados; incluye el target cuando
     // no hay conversaciones serializadas para que siempre aparezca al menos ese usuario.
@@ -54,6 +77,7 @@ export default function Chats() {
                       usuarioId: privateTarget.id,
                       usuarioNombre: privateTarget.nombre,
                       usuarioFoto: privateTarget.foto || null,
+                      usuarioFotoBackgroundColor: privateTarget.fotoBackgroundColor || '#ffffff',
                       ultimoMensaje: '',
                   },
               ]
@@ -63,11 +87,13 @@ export default function Chats() {
     const privateUserIdFromQuery = Number(searchParams.get('userId'));
     const privateUserNameFromQuery = searchParams.get('userName');
     const privateUserPhotoFromQuery = searchParams.get('userPhoto');
+    const privateUserPhotoBgFromQuery = searchParams.get('userPhotoBg');
 
     const currentUser = {
         id: Number(localStorage.getItem('userId')),
         nombre: user?.nombre || 'Usuario',
         foto: user?.foto || null,
+        fotoBackgroundColor: user?.fotoBackgroundColor || '#ffffff',
     };
 
     useEffect(() => {
@@ -108,6 +134,7 @@ export default function Chats() {
                         id: privateUserIdFromQuery,
                         nombre: privateUserNameFromQuery || `Usuario ${privateUserIdFromQuery}`,
                         foto: privateUserPhotoFromQuery || null,
+                        fotoBackgroundColor: privateUserPhotoBgFromQuery || '#ffffff',
                     };
                     setPrivateTarget(targetObj);
                     setActiveTab('private');
@@ -121,6 +148,7 @@ export default function Chats() {
                                 usuarioId: privateUserIdFromQuery,
                                 usuarioNombre: targetObj.nombre,
                                 usuarioFoto: targetObj.foto,
+                                usuarioFotoBackgroundColor: targetObj.fotoBackgroundColor,
                                 ultimoMensaje: '',
                             },
                         ];
@@ -151,6 +179,7 @@ export default function Chats() {
         privateUserIdFromQuery,
         privateUserNameFromQuery,
         privateUserPhotoFromQuery,
+        privateUserPhotoBgFromQuery,
     ]);
 
     // Recargar conversaciones cuando se abre la pestaña de privados
@@ -173,6 +202,7 @@ export default function Chats() {
                                     usuarioId: privateTarget.id,
                                     usuarioNombre: privateTarget.nombre,
                                     usuarioFoto: privateTarget.foto || null,
+                                    usuarioFotoBackgroundColor: privateTarget.fotoBackgroundColor || '#ffffff',
                                     ultimoMensaje: '',
                                 },
                             ];
@@ -193,6 +223,7 @@ export default function Chats() {
                                     usuarioId: privateTarget.id,
                                     usuarioNombre: privateTarget.nombre,
                                     usuarioFoto: privateTarget.foto || null,
+                                    usuarioFotoBackgroundColor: privateTarget.fotoBackgroundColor || '#ffffff',
                                     ultimoMensaje: '',
                                 },
                             ];
@@ -210,11 +241,10 @@ export default function Chats() {
             <Header page={'chats'} user={user} />
             <div className="chats-container">
                 <div className="chats-header">
-                    <div className="headerTitle">
-                        <p>Accede a los chats de todas las comunidades donde eres miembro</p>
-                        <span className="line"></span>
-                        <h1>Chats</h1>
-                    </div>
+                    <PageHeader 
+                        title="Chats"
+                        subtitle="Accede a los chats de todas las comunidades donde eres miembro"
+                    />
                 </div>
 
                 {loading && <p className="chats-loading">Cargando chats...</p>}
@@ -233,6 +263,61 @@ export default function Chats() {
 
                         {!loading && !error && communities.length > 0 && (
                             <div className="chats-layout">
+                                {/* Selector móvil */}
+                                <div className="chats-mobile-selector">
+                                    {isMobileDropdownOpen && (
+                                        <div 
+                                            className="mobile-selector-overlay"
+                                            onClick={() => setIsMobileDropdownOpen(false)}
+                                        />
+                                    )}
+                                    <button 
+                                        className="mobile-selector-button"
+                                        onClick={() => setIsMobileDropdownOpen(!isMobileDropdownOpen)}
+                                    >
+                                        <img
+                                            src={resolveCommunityImage(communities.find((c) => c.id === selectedCommunityId))}
+                                            alt="Comunidad actual"
+                                            className="mobile-selector-image"
+                                        />
+                                        <span className="mobile-selector-text">
+                                            {communities.find((c) => c.id === selectedCommunityId)?.nombre || 'Selecciona una comunidad'}
+                                        </span>
+                                        <svg 
+                                            width="20" 
+                                            height="20" 
+                                            viewBox="0 0 20 20" 
+                                            fill="none" 
+                                            className={`mobile-selector-arrow ${isMobileDropdownOpen ? 'open' : ''}`}
+                                        >
+                                            <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
+                                    </button>
+                                    {isMobileDropdownOpen && (
+                                        <div className="mobile-selector-dropdown">
+                                            {communities.map((community) => (
+                                                <button
+                                                    key={community.id}
+                                                    type="button"
+                                                    className={`mobile-dropdown-item ${community.id === selectedCommunityId ? 'active' : ''}`}
+                                                    onClick={() => {
+                                                        setSelectedCommunityId(community.id);
+                                                        setPrivateTarget(null);
+                                                        setIsMobileDropdownOpen(false);
+                                                    }}
+                                                >
+                                                    <img
+                                                        src={resolveCommunityImage(community)}
+                                                        alt={community.nombre}
+                                                        className="mobile-dropdown-image"
+                                                    />
+                                                    <span>{community.nombre}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
                                 <aside className="chats-sidebar">
                                     {communities.map((community) => {
                                         const isSelected = community.id === selectedCommunityId;
@@ -275,10 +360,12 @@ export default function Chats() {
                                                 const id = Number(target.userId);
                                                 const nombre = target.userName;
                                                 const foto = target.userPhoto || null;
+                                                const fotoBackgroundColor = target.userPhotoBg || '#ffffff';
                                                 setPrivateTarget({
                                                     id,
                                                     nombre,
                                                     foto,
+                                                    fotoBackgroundColor,
                                                 });
                                                 setActiveTab('private');
                                                 setConversaciones((prev) => {
@@ -291,6 +378,7 @@ export default function Chats() {
                                                             usuarioId: id,
                                                             usuarioNombre: nombre,
                                                             usuarioFoto: foto,
+                                                            usuarioFotoBackgroundColor: fotoBackgroundColor,
                                                             ultimoMensaje: '',
                                                         },
                                                     ];
@@ -314,6 +402,75 @@ export default function Chats() {
                     <>
                         {!loading && (privateTarget || conversaciones.length > 0) && (
                             <div className={`chats-layout ${hasSidebar ? '' : 'no-sidebar'}`}>
+                                {/* Selector móvil para privados */}
+                                {hasSidebar && (
+                                    <div className="chats-mobile-selector">
+                                        {isMobileDropdownOpen && (
+                                            <div 
+                                                className="mobile-selector-overlay"
+                                                onClick={() => setIsMobileDropdownOpen(false)}
+                                            />
+                                        )}
+                                        <button 
+                                            className="mobile-selector-button"
+                                            onClick={() => setIsMobileDropdownOpen(!isMobileDropdownOpen)}
+                                        >
+                                            {privateTarget ? (
+                                                <>
+                                                    <img
+                                                        src={resolveUserImage(privateTarget.foto)}
+                                                        alt={privateTarget.nombre}
+                                                        className="mobile-selector-image"
+                                                        style={{ backgroundColor: privateTarget.fotoBackgroundColor || '#ffffff' }}
+                                                    />
+                                                    <span className="mobile-selector-text">
+                                                        {privateTarget.nombre}
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <span className="mobile-selector-text">Selecciona una conversación</span>
+                                            )}
+                                            <svg 
+                                                width="20" 
+                                                height="20" 
+                                                viewBox="0 0 20 20" 
+                                                fill="none" 
+                                                className={`mobile-selector-arrow ${isMobileDropdownOpen ? 'open' : ''}`}
+                                            >
+                                                <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                            </svg>
+                                        </button>
+                                        {isMobileDropdownOpen && (
+                                            <div className="mobile-selector-dropdown">
+                                                {sidebarConversations.map((conv, idx) => (
+                                                    <button
+                                                        key={idx}
+                                                        type="button"
+                                                        className={`mobile-dropdown-item ${privateTarget?.id === conv.usuarioId ? 'active' : ''}`}
+                                                        onClick={() => {
+                                                            setPrivateTarget({
+                                                                id: conv.usuarioId,
+                                                                nombre: conv.usuarioNombre,
+                                                                foto: conv.usuarioFoto || null,
+                                                                fotoBackgroundColor: conv.usuarioFotoBackgroundColor || '#ffffff',
+                                                            });
+                                                            setIsMobileDropdownOpen(false);
+                                                        }}
+                                                    >
+                                                        <img
+                                                            src={resolveUserImage(conv.usuarioFoto)}
+                                                            alt={conv.usuarioNombre}
+                                                            className="mobile-dropdown-image"
+                                                            style={{ backgroundColor: conv.usuarioFotoBackgroundColor || '#ffffff' }}
+                                                        />
+                                                        <span>{conv.usuarioNombre}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
                                 {hasSidebar && (
                                     <aside className="chats-sidebar">
                                         {sidebarConversations.map((conv, idx) => {
@@ -328,13 +485,21 @@ export default function Chats() {
                                                             id: conv.usuarioId,
                                                             nombre: conv.usuarioNombre,
                                                             foto: conv.usuarioFoto || null,
+                                                            fotoBackgroundColor: conv.usuarioFotoBackgroundColor || '#ffffff',
                                                         })
                                                     }
                                                 >
                                                     <img
-                                                        src={conv.usuarioFoto || '/MeerKatters_logo.png'}
+                                                        src={resolveUserImage(conv.usuarioFoto)}
                                                         alt={conv.usuarioNombre}
                                                         className="chat-list-image"
+                                                        style={{
+                                                            backgroundColor:
+                                                                conv.usuarioFotoBackgroundColor ||
+                                                                (privateTarget?.id === conv.usuarioId
+                                                                    ? privateTarget.fotoBackgroundColor
+                                                                    : '#ffffff'),
+                                                        }}
                                                     />
                                                     <div className="chat-list-content">
                                                         <h3>{conv.usuarioNombre}</h3>

@@ -4,7 +4,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import es.us.meerkat.backend.entity.Evento;
 
@@ -28,7 +30,9 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
      *
      * @return Lista de eventos visibles en mapa.
      */
-    @Query("SELECT e FROM Evento e WHERE e.visibleMapa = true AND e.cancelado = false")
+    @Query(
+            "SELECT e FROM Evento e WHERE e.visibleMapa = true AND e.cancelado = false AND"
+                    + " e.privado = false")
     List<Evento> findVisibleOnMap();
 
     /**
@@ -73,4 +77,12 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
      * @return Lista de eventos activos de la comunidad.
      */
     List<Evento> findByComunidadIdAndCanceladoFalse(Long comunidadId);
+
+    /** Obtiene todos los eventos creados por un usuario. */
+    List<Evento> findByCreadorId(Long usuarioId);
+
+    /** Elimina todos los eventos creados por un usuario. */
+    @Modifying
+    @Query("DELETE FROM Evento e WHERE e.creador.id = :usuarioId")
+    void deleteByUsuarioId(@Param("usuarioId") Long usuarioId);
 }

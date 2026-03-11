@@ -16,7 +16,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -30,7 +31,7 @@ import lombok.ToString;
  */
 @Entity
 @Data
-@ToString(exclude = {"tutores", "intereses"})
+@ToString(exclude = {"intereses", "tutor"})
 @NoArgsConstructor
 @AllArgsConstructor
 public class Usuario {
@@ -51,8 +52,13 @@ public class Usuario {
     /** Nombre completo del usuario. */
     private String nombre;
 
-    /** URL de la foto de perfil del usuario. */
+    /** URL/ruta de la foto de perfil del usuario. Puede ser nula si no tiene foto. */
+    @Column(columnDefinition = "TEXT")
     private String foto;
+
+    /** Color de fondo para la foto de perfil (ej: #ffffff). Por defecto blanco. */
+    @Column(length = 7)
+    private String fotoBackgroundColor = "#ffffff";
 
     /** Universidad del usuario. */
     private String universidad;
@@ -60,8 +66,16 @@ public class Usuario {
     /** Grado del usuario. */
     private String grado;
 
-    /** Ubicación del usuario. */
-    private String ubicacion;
+    /** Ubicación del usuario (opcional). */
+    @ManyToOne
+    @JoinColumn(name = "ubicacion_id", nullable = true)
+    private Ubicacion ubicacion;
+
+    /** Nivel de estudios del usuario. */
+    private String nivelEstudios;
+
+    /** Base formativa del usuario. */
+    private String baseFormativa;
 
     /** Breve biografía del usuario. */
     private String bio;
@@ -86,6 +100,18 @@ public class Usuario {
     @Column(nullable = false)
     private Boolean esTutor = false;
 
+    /** Indica si la autenticación de dos factores está habilitada para el usuario. */
+    @Column(nullable = false)
+    private Boolean autenticacionDosFactores = false;
+
+    /** Indica si el usuario quiere recibir notificaciones por email. */
+    @Column(nullable = false)
+    private Boolean notificacionesEmail = true;
+
+    /** Indica si el usuario quiere recibir notificaciones push. */
+    @Column(nullable = false)
+    private Boolean notificacionesPush = false;
+
     // AÑADIR tipo plan cuando se cree la clase
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -95,9 +121,13 @@ public class Usuario {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    /** Lista de tutores asociados al usuario (si es tutor). */
-    @OneToMany(mappedBy = "us", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Tutor> tutores = new ArrayList<>();
+    /** Perfil de tutor del usuario (null si no es tutor). */
+    @OneToOne(
+            mappedBy = "usuario",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY)
+    private Tutor tutor;
 
     /** Inicializa campos antes de persistir la entidad. */
     @PrePersist
@@ -108,6 +138,15 @@ public class Usuario {
         }
         if (this.esTutor == null) {
             this.esTutor = false;
+        }
+        if (this.autenticacionDosFactores == null) {
+            this.autenticacionDosFactores = false;
+        }
+        if (this.notificacionesEmail == null) {
+            this.notificacionesEmail = true;
+        }
+        if (this.notificacionesPush == null) {
+            this.notificacionesPush = true;
         }
     }
 }

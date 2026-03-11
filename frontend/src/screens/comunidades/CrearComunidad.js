@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { communitiesApi } from "../../api/communities.api";
 import Header from "../../components/Header/Header";
+import PageHeader from "../../components/PageHeader";
 import "./CrearComunidad.css";
 
 export default function CrearComunidad() {
@@ -41,16 +42,42 @@ export default function CrearComunidad() {
     };
 
     const handleGuardarBorrador = () => {
-        console.log("Guardando borrador...", {
-            nombre,
-            descripcion,
-            imagenPortada,
+        const draft = {
+            nombre: nombre.trim(),
+            descripcion: descripcion.trim(),
+            tipoComunidad,
             categorias,
-            tipoComunidad
-        });
-        // Aquí iría la lógica para guardar borrador en localStorage
-        alert("Funcionalidad de borrador próximamente disponible.");
+            imagenPreview // store preview data URL, file cannot be stored
+        };
+
+        try {
+            localStorage.setItem('crearComunidadDraft', JSON.stringify(draft));
+            setSuccess('Borrador guardado');
+            setTimeout(() => {
+                navigate(`/comunidades`);
+            }, 1000);
+        } catch (err) {
+            console.error('Error guardando borrador:', err);
+            setError('No se pudo guardar el borrador en el navegador.');
+        }
     };
+
+    // Load draft from localStorage on mount
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem('crearComunidadDraft');
+            if (saved) {
+                const draft = JSON.parse(saved);
+                if (draft.nombre) setNombre(draft.nombre);
+                if (draft.descripcion) setDescripcion(draft.descripcion);
+                if (draft.tipoComunidad) setTipoComunidad(draft.tipoComunidad);
+                if (Array.isArray(draft.categorias)) setCategorias(draft.categorias);
+                if (draft.imagenPreview) setImagenPreview(draft.imagenPreview);
+            }
+        } catch (err) {
+            console.error('Error cargando borrador:', err);
+        }
+    }, []);
 
     const handleCrearComunidad = async () => {
         // Validación básica
@@ -74,27 +101,36 @@ export default function CrearComunidad() {
         setSuccess(null);
 
         try {
-            // Preparar datos para el API (sin categorías, se crean después)
+            // Preparar datos para el API (no enviar imagen como base64)
             const data = {
                 nombre: nombre.trim(),
                 descripcion: descripcion.trim(),
                 tipoGrupo: tipoComunidad,
-                imagenUrl: imagenPreview // URL en base64 o null
+                imagenUrl: 'empty'
             };
 
             // Llamar API para crear comunidad
             const response = await communitiesApi.create(data);
             console.log("✅ Comunidad creada:", response);
 
-            setSuccess("¡Comunidad creada con éxito!");
-
-            // Navegar a la comunidad creada después de 2 segundos
+            // Si seleccionaron imagen, subirla como multipart/form-data
+            if (imagenPortada) {
+                const formData = new FormData();
+                formData.append('file', imagenPortada);
+                await communitiesApi.uploadPhoto(response.id, formData);
+            }
+            
+            setSuccess('¡Comunidad creada con éxito!');
+            // Clear saved draft on successful creation
+            try { localStorage.removeItem('crearComunidadDraft'); } catch (e) { console.warn(e); }
+            // Navegar a la comunidad creada
             setTimeout(() => {
                 navigate(`/comunidades/${response.id}`);
-            }, 2000);
+            }, 1000);
+
         } catch (err) {
             console.error("❌ Error al crear comunidad:", err);
-            setError(err.response?.data?.message || "No se pudo crear la comunidad. Intenta de nuevo.");
+            setError(err.details?.message || "No se pudo crear la comunidad. Intenta de nuevo.");
         } finally {
             setLoading(false);
         }
@@ -104,11 +140,10 @@ export default function CrearComunidad() {
         <div className="crear-comunidad-container">
             <Header page={'comunidades'} />
             <div className="header">
-                <div className="headerTitle">
-                    <p>Explora las comunidades que mejor se adaptan a tus necesidades y ganas de aprender </p>
-                    <span className="line"></span>
-                    <h1>Crear Comunidad</h1>
-                </div>
+                <PageHeader 
+                    title="Crear Comunidad"
+                    subtitle="Explora las comunidades que mejor se adaptan a tus necesidades y ganas de aprender"
+                />
             </div>
             <div className="body">
                <div className="first-section">
@@ -214,32 +249,38 @@ export default function CrearComunidad() {
                         </p>
                     </div>
                </div>
-               <div className="buttons-container">
-                    {error && (
-                        <div style={{ width: '100%', padding: '10px', backgroundColor: '#f8d7da', color: '#721c24', borderRadius: '4px', marginBottom: '15px' }}>
-                            ❌ {error}
-                        </div>
-                    )}
-                    {success && (
-                        <div style={{ width: '100%', padding: '10px', backgroundColor: '#d4edda', color: '#155724', borderRadius: '4px', marginBottom: '15px' }}>
-                            ✅ {success}
-                        </div>
-                    )}
-                    <button 
-                        onClick={handleGuardarBorrador} 
-                        className="btn btn-secondary"
-                        disabled={loading}
-                    >
-                        Guardar Borrador
-                    </button>
-                    <button 
-                        onClick={handleCrearComunidad} 
-                        className="btn btn-primary"
-                        disabled={loading || !nombre.trim()}
-                    >
-                        {loading ? "Creando..." : "Crear Comunidad"}
-                    </button>
+               <div>
+                    <div>
+                        {error && (
+                            <div style={{ width: '100%', padding: '10px', backgroundColor: '#f8d7da', color: '#721c24', borderRadius: '4px', marginBottom: '15px' }}>
+                                {error}
+                            </div>
+                        )}
+                        {success && (
+                            <div style={{ width: '100%', padding: '10px', backgroundColor: '#d4edda', color: '#155724', borderRadius: '4px', marginBottom: '15px' }}>
+                                {success}
+                            </div>
+                        )}
+                    </div>
+                    <div className="buttons-container">
+                    
+                        <button 
+                            onClick={handleGuardarBorrador} 
+                            className="btn btn-secondary"
+                            disabled={loading}
+                        >
+                            Guardar Borrador
+                        </button>
+                        <button 
+                            onClick={handleCrearComunidad} 
+                            className="btn btn-primary"
+                            disabled={loading || !nombre.trim()}
+                        >
+                            {loading ? "Creando..." : "Crear Comunidad"}
+                        </button>
+                </div>
                </div>
+               
             </div>
         </div>
     );

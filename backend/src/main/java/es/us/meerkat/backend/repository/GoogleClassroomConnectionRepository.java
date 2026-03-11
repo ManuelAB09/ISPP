@@ -17,4 +17,7 @@ public interface GoogleClassroomConnectionRepository
         extends JpaRepository<GoogleClassroomConnection, Long> {
 
     Optional<GoogleClassroomConnection> findByUsuario(Usuario usuario);
+
+    /** Elimina la conexión de Google Classroom de un usuario. */
+    void deleteByUsuarioId(Long usuarioId);
 }

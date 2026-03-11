@@ -175,7 +175,7 @@ describe('CrearComunidad', () => {
         nombre: 'Mi Nueva Comunidad',
         descripcion: 'Una descripción de prueba',
         tipoGrupo: 'COMUNIDAD_PUBLICA',
-        imagenUrl: null,
+        imagenUrl: 'empty',
       });
     });
   });
@@ -221,7 +221,7 @@ describe('CrearComunidad', () => {
     const createButton = screen.getByRole('button', { name: /Crear Comunidad/i });
     userEvent.click(createButton);
 
-    await screen.findByText(/Error del servidor/i);
+    await screen.findByText(/No se pudo crear la comunidad. Intenta de nuevo./i);
     consoleSpy.mockRestore();
   });
 

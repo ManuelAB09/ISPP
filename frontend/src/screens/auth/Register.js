@@ -13,9 +13,12 @@ const Register = () => {
     fullName: '',
     email: '',
     password: '',
+    confirmPassword: '',
     acceptTerms: false,
+    esTutor: false,
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -52,6 +55,25 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Validación de términos y condiciones
+    if (!formData.acceptTerms) {
+      setError('Debes aceptar los términos y condiciones para continuar');
+      return;
+    }
+
+    // Validación de formato de correo (solo letras minúsculas antes y después de @)
+    const emailRegex = /^[a-z]+@[a-z]+\.[a-z.]+$/;
+    if (!formData.email.match(emailRegex)) {
+      setError('El correo debe tener el formato usuario@dominio.ext y usar sólo letras minúsculas');
+      return;
+    }
+
+    // Validación de contraseñas coinciden
+    if (formData.password !== formData.confirmPassword) {
+      setError('Las contraseñas no coinciden');
+      return;
+    }
+
     // Validación de contraseña
     if (formData.password.length < 8) {
       setError('La contraseña debe tener al menos 8 caracteres');
@@ -61,7 +83,7 @@ const Register = () => {
     setIsLoading(true);
     setError('');
 
-    const result = await register(formData.email, formData.password, formData.fullName);
+    const result = await register(formData.email, formData.password, formData.fullName, formData.esTutor);
     
     if (result.success) {
       navigate('/');
@@ -130,7 +152,7 @@ const Register = () => {
                 type="text"
                 id="fullName"
                 name="fullName"
-                placeholder="Universidad de Sevilla"
+                placeholder="Nombre Apellidos"
                 value={formData.fullName}
                 onChange={handleInputChange}
                 required
@@ -138,12 +160,12 @@ const Register = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="email">University Email</label>
+              <label htmlFor="email">Correo electrónico</label>
               <input
                 type="email"
                 id="email"
                 name="email"
-                placeholder="us@universidadDeSevilla.mola"
+                placeholder="correo@org.es"
                 value={formData.email}
                 onChange={handleInputChange}
                 required
@@ -151,13 +173,13 @@ const Register = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="password">Password</label>
+              <label htmlFor="password">Contraseña</label>
               <div className="password-input-container">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   id="password"
                   name="password"
-                  placeholder="••••••••"
+                  placeholder="(Al menos 8 caracteres)"
                   value={formData.password}
                   onChange={handleInputChange}
                   required
@@ -183,6 +205,39 @@ const Register = () => {
               </div>
             </div>
 
+            <div className="form-group">
+              <label htmlFor="confirmPassword">Repetir contraseña</label>
+              <div className="password-input-container">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  placeholder="(Al menos 8 caracteres)"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  required
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  aria-label={showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                >
+                  {showConfirmPassword ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                      <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </div>
+
             <div className="form-group checkbox-group">
               <label className="checkbox-label">
                 <input
@@ -190,13 +245,25 @@ const Register = () => {
                   name="acceptTerms"
                   checked={formData.acceptTerms}
                   onChange={handleInputChange}
-                  required
                 />
                 <span className="checkbox-custom"></span>
                 <span className="checkbox-text">
                   Acepto los <Link to="/terms">Términos de servicio</Link> y{' '}
                   <Link to="/privacy">Política de privacidad</Link>.
                 </span>
+              </label>
+            </div>
+
+            <div className="form-group tutor-toggle-group">
+              <span className="tutor-toggle-label">Quiero registrarme como tutor</span>
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  name="esTutor"
+                  checked={formData.esTutor}
+                  onChange={handleInputChange}
+                />
+                <span className="toggle-slider"></span>
               </label>
             </div>
 

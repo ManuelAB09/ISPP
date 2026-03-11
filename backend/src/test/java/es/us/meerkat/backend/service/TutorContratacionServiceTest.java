@@ -411,7 +411,7 @@ class TutorContratacionServiceTest {
     private Tutor buildTutorVerificado(Long id, Usuario usuario) {
         Tutor t = new Tutor();
         t.setId(id);
-        t.setUs(usuario);
+        t.setUsuario(usuario);
         t.setEspecialidades(List.of("Matemáticas"));
         t.setTarifaHora(new BigDecimal("25.00"));
         t.setDisponibilidad("Tardes");

@@ -15,6 +15,27 @@ import {
   getConfirmedAttendees, getMyAttendance
 } from '../../api/eventEndpoints';
 import { communitiesApi } from '../../api/communities.api';
+import { getApiBaseUrl } from '../../api/baseUrl';
+
+const toAbsoluteImageUrl = (imageUrl, fallback = '') => {
+  const raw = String(imageUrl || '').trim();
+  if (!raw) {
+    return fallback;
+  }
+  if (/^https?:\/\//i.test(raw) || raw.startsWith('data:') || raw.startsWith('blob:')) {
+    return raw;
+  }
+
+  const base = getApiBaseUrl();
+  return raw.startsWith('/') ? `${base}${raw}` : `${base}/${raw}`;
+};
+
+const getUserPhoto = (user) => {
+  if (!user || typeof user !== 'object') {
+    return '';
+  }
+  return user.foto || user.fotoPerfil || user.avatar || user.imagen || user.image || '';
+};
 
 const eventIconRed = L.icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
@@ -205,9 +226,21 @@ const DetalleEvento = () => {
             </div>
             <h1 className="ed-title">{event.titulo}</h1>
             {event.creador && (
-              <p className="ed-organizer">
-                Organizado por <strong>{event.creador.nombre || event.creador.username || 'Usuario'}</strong>
-              </p>
+              <div className="ed-organizer-row">
+                <div className="ed-participant-avatar ed-organizer-avatar">
+                  {getUserPhoto(event.creador) ? (
+                    <img
+                      src={toAbsoluteImageUrl(getUserPhoto(event.creador))}
+                      alt={event.creador.nombre || event.creador.username || 'Organizador'}
+                    />
+                  ) : (
+                    <LuUser />
+                  )}
+                </div>
+                <p className="ed-organizer">
+                  Organizado por <strong>{event.creador.nombre || event.creador.username || 'Usuario'}</strong>
+                </p>
+              </div>
             )}
           </div>
 
@@ -366,7 +399,7 @@ const DetalleEvento = () => {
                   <LuPackage className="ed-section-icon" /> Materiales necesarios
                 </h2>
                 <div className="ed-materials">
-                  {event.queLlevar.split(',').map((material, index) => (
+                  {event.queLlevar.split(',').filter(m => m.trim() !== '').map((material, index) => (
                     <span key={index} className="ed-material-tag">
                       {material.trim()}
                     </span>
@@ -456,11 +489,12 @@ const DetalleEvento = () => {
                 <ul className="ed-participants-list">
                   {attendees.map((att) => {
                     const user = att.usuario || att;
+                    const participantPhoto = getUserPhoto(user);
                     return (
                       <li key={att.id || user.id} className="ed-participant">
                         <div className="ed-participant-avatar">
-                          {user.fotoPerfil || user.avatar ? (
-                            <img src={user.fotoPerfil || user.avatar} alt={user.nombre || user.username} />
+                          {participantPhoto ? (
+                            <img src={toAbsoluteImageUrl(participantPhoto)} alt={user.nombre || user.username} />
                           ) : (
                             <LuUser />
                           )}

@@ -22,4 +22,8 @@ public class SubscribeRequest {
     @Schema(description = "Acepta los términos de servicio")
     @NotNull(message = "Debe aceptar los términos de servicio")
     private Boolean aceptarTerminos;
+
+    @Schema(description = "Periodo de la suscripción", example = "mensual")
+    @NotNull(message = "Debe seleccionar un periodo")
+    private String periodo; // puede ser "mensual" o "anual"
 }

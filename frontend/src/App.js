@@ -6,6 +6,8 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import { SocketProvider } from './contexts/SocketContext';
 import Login from './screens/auth/Login';
 import Register from './screens/auth/Register';
+import Terms from './screens/legal/Terms';
+import Privacy from './screens/legal/Privacy';
 import CommunityDetail from './screens/comunidades/CommunityDetail';
 import Comunidades from './screens/comunidades/Comunidades';
 import CrearComunidad from './screens/comunidades/CrearComunidad';
@@ -19,6 +21,7 @@ import PagoExitoso from './screens/pagos/PagoExitoso';
 import InstitutionPlansScreen from './screens/planes/InstitutionPlansScreen';
 import PasarelaPago from './screens/planes/PasarelaPago';
 import PlansScreen from './screens/planes/PlansScreen';
+import PlanesSuccess from './screens/planes/PlanesSuccess';
 import PasarelaPagoTutor from './screens/teacherProfile/PasarelaPagoTutor';
 import TeacherProfile from './screens/teacherProfile/TeacherProfile';
 import CrearUbicacionScreen from './screens/ubicaciones/CrearUbicacionScreen';
@@ -53,7 +56,6 @@ function AppRoutes() {
         <Route path="/chats" element={<Chats />} />
         <Route path="/success" element={<PagoExitoso />} />
         <Route path="/profesores" element={<VerifiedTeachers />} />
-        <Route path="/profesores/nuevo" element={<TeacherProfile />} />
         <Route path="/profesores/:id" element={<TeacherProfile />} />
         <Route path="/profesores/contratar/pago" element={<PasarelaPagoTutor />} />
         <Route path="/crear-evento/new" element={<CrearEvento />} />
@@ -64,6 +66,7 @@ function AppRoutes() {
         <Route path="/pagos" element={<MisPagos />} />
         <Route path="/eventos/:eventId" element={<DetalleEvento />} />
         <Route path="/eventos-mapa" element={<EventosMapaScreen />} />
+        <Route path="/planes/success" element={<PlanesSuccess />} />
       </>
     )
   }
@@ -95,6 +98,8 @@ function AppRoutes() {
         {/* Rutas públicas */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
         <Route path="/comunidades" element={<Comunidades />} />
         <Route path="/comunidades/:communityId" element={<CommunityDetail />} />
 

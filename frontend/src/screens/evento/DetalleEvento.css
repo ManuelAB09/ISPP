@@ -124,6 +124,18 @@
   margin: 0;
 }
 
+.ed-organizer-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.ed-organizer-avatar {
+  width: 30px;
+  height: 30px;
+  font-size: 0.95rem;
+}
+
 .ed-organizer strong {
   color: #6B73A1;
 }

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { apiClient } from "../../api/client"
 import { useAuth } from "../../contexts/AuthContext"
@@ -6,13 +6,15 @@ import "./Settings.css"
 
 const Settings = ({ onClose, isOwner = true }) => {
     const navigate = useNavigate()
-    const { logout } = useAuth()
+    const { logout, user, updateProfile } = useAuth()
     
     // Estados para los toggles y configuraciones
     const [profileVisibility, setProfileVisibility] = useState(true)
     const [emailNotifications, setEmailNotifications] = useState(true)
     const [pushNotifications, setPushNotifications] = useState(false)
     const [twoFactorAuth, setTwoFactorAuth] = useState(false)
+    const [isSavingPreferences, setIsSavingPreferences] = useState(false)
+    const [preferencesError, setPreferencesError] = useState("")
 
     // Estados para modales de confirmación
     const [showDeleteAccount, setShowDeleteAccount] = useState(false)
@@ -31,24 +33,32 @@ const Settings = ({ onClose, isOwner = true }) => {
     // Estado para mensajes de acceso no autorizado
     const [unauthorizedMessage, setUnauthorizedMessage] = useState("")
 
-    const handleLogout = async () => {
-        // Validar que sea el propietario
-        if (!isOwner) {
-            setUnauthorizedMessage("No puedes cerrar sesión de una cuenta que no es tuya.")
-            setTimeout(() => setUnauthorizedMessage(""), 3000)
+    useEffect(() => {
+        if (!user) {
             return
         }
 
+        setProfileVisibility(user.visibleEnListados ?? true)
+        setEmailNotifications(user.notificacionesEmail ?? true)
+        setPushNotifications(user.notificacionesPush ?? false)
+        setTwoFactorAuth(user.autenticacionDosFactores ?? false)
+    }, [user])
+
+    const savePreferences = async (partial) => {
+        setPreferencesError("")
+        setIsSavingPreferences(true)
+
         try {
-            await apiClient.post('/api/v1/auth/logout')
+            const result = await updateProfile(partial)
+            if (!result.success) {
+                throw new Error(result.error || 'No se pudo guardar la preferencia')
+            }
+            return true
         } catch (error) {
-            // Aunque falle la llamada, cerramos sesión localmente
-            console.error('Error al cerrar sesión:', error)
+            setPreferencesError(error.message || "Error al guardar la configuración")
+            return false
         } finally {
-            // Usar logout del contexto para limpiar estado correctamente
-            logout()
-            // Redirigir a home
-            navigate('/')
+            setIsSavingPreferences(false)
         }
     }
 
@@ -63,14 +73,20 @@ const Settings = ({ onClose, isOwner = true }) => {
             return
         }
 
+        // Validar que la nueva contraseña no sea la misma que la anterior
+        if (newPassword.trim() !== currentPassword.trim()) {
+            setPasswordError("La contraseña nueva coincide con la anterior")
+            return
+        }
+
         // Validar que las contraseñas nuevas coincidan
-        if (newPassword !== confirmPassword) {
+        if (newPassword.trim() !== confirmPassword.trim()) {
             setPasswordError("Las contraseñas nuevas no coinciden")
             return
         }
 
         // Validar longitud mínima
-        if (newPassword.length < 6) {
+        if (newPassword.trim().length < 6) {
             setPasswordError("La nueva contraseña debe tener al menos 6 caracteres")
             return
         }
@@ -124,39 +140,59 @@ const Settings = ({ onClose, isOwner = true }) => {
     }
 
     const handleToggleProfileVisibility = async () => {
+        if (isSavingPreferences) {
+            return
+        }
+
         const newValue = !profileVisibility
         setProfileVisibility(newValue)
-        
-        try {
-            await apiClient.put('/api/v1/users/me/visibility', {
-                visibleEnListados: newValue
-            })
-        } catch (error) {
-            // Revertir el cambio si falla
+
+        const ok = await savePreferences({ visibleEnListados: newValue })
+        if (!ok) {
             setProfileVisibility(!newValue)
-            console.error("Error al actualizar visibilidad:", error)
         }
     }
 
-    const handleToggleEmailNotifications = () => {
+    const handleToggleEmailNotifications = async () => {
+        if (isSavingPreferences) {
+            return
+        }
+
         const newValue = !emailNotifications
         setEmailNotifications(newValue)
-        // TODO: Guardar preferencia de notificaciones por email en la API
-        console.log("Notificaciones por email:", newValue)
+
+        const ok = await savePreferences({ notificacionesEmail: newValue })
+        if (!ok) {
+            setEmailNotifications(!newValue)
+        }
     }
 
-    const handleTogglePushNotifications = () => {
+    const handleTogglePushNotifications = async () => {
+        if (isSavingPreferences) {
+            return
+        }
+
         const newValue = !pushNotifications
         setPushNotifications(newValue)
-        // TODO: Guardar preferencia de notificaciones push en la API
-        console.log("Notificaciones push:", newValue)
+
+        const ok = await savePreferences({ notificacionesPush: newValue })
+        if (!ok) {
+            setPushNotifications(!newValue)
+        }
     }
 
-    const handleToggleTwoFactorAuth = () => {
+    const handleToggleTwoFactorAuth = async () => {
+        if (isSavingPreferences) {
+            return
+        }
+
         const newValue = !twoFactorAuth
         setTwoFactorAuth(newValue)
-        // TODO: Activar/desactivar autenticación de dos factores en la API
-        console.log("Autenticación de dos factores:", newValue)
+
+        const ok = await savePreferences({ autenticacionDosFactores: newValue })
+        if (!ok) {
+            setTwoFactorAuth(!newValue)
+        }
     }
 
     return (
@@ -175,6 +211,9 @@ const Settings = ({ onClose, isOwner = true }) => {
                         ⚠️ {unauthorizedMessage}
                     </div>
                 )}
+                {preferencesError && (
+                    <div className="settings-preferences-error">{preferencesError}</div>
+                )}
 
                 {/* Sección: Visibilidad del perfil */}
                 <section className="settings-section">
@@ -189,6 +228,7 @@ const Settings = ({ onClose, isOwner = true }) => {
                         <button 
                             className={`settings-toggle ${profileVisibility ? 'settings-toggle--active' : ''}`}
                             onClick={handleToggleProfileVisibility}
+                            disabled={isSavingPreferences}
                         >
                             <span className="settings-toggle__slider"></span>
                         </button>
@@ -209,6 +249,7 @@ const Settings = ({ onClose, isOwner = true }) => {
                             <button 
                                 className={`settings-toggle ${twoFactorAuth ? 'settings-toggle--active' : ''}`}
                                 onClick={handleToggleTwoFactorAuth}
+                                disabled={isSavingPreferences}
                             >
                                 <span className="settings-toggle__slider"></span>
                             </button>
@@ -225,6 +266,7 @@ const Settings = ({ onClose, isOwner = true }) => {
                             <button 
                                 className={`settings-toggle ${emailNotifications ? 'settings-toggle--active' : ''}`}
                                 onClick={handleToggleEmailNotifications}
+                                disabled={isSavingPreferences}
                             >
                                 <span className="settings-toggle__slider"></span>
                             </button>
@@ -236,6 +278,7 @@ const Settings = ({ onClose, isOwner = true }) => {
                             <button 
                                 className={`settings-toggle ${pushNotifications ? 'settings-toggle--active' : ''}`}
                                 onClick={handleTogglePushNotifications}
+                                disabled={isSavingPreferences}
                             >
                                 <span className="settings-toggle__slider"></span>
                             </button>
@@ -307,24 +350,9 @@ const Settings = ({ onClose, isOwner = true }) => {
                     </form>
                 </section>
 
-                {/* Sección: Acciones de cuenta */}
+                {/* Sección: Eliminación de cuenta */}
                 <section className="settings-section settings-section--danger">
                     <h2 className="settings-section__title">Zona de peligro</h2>
-                    
-                    <div className="settings-action-row">
-                        <div>
-                            <h3 className="settings-action-title">Cerrar sesión</h3>
-                            <p className="settings-action-description">
-                                Cierra tu sesión en este dispositivo.
-                            </p>
-                        </div>
-                        <button 
-                            className="settings-btn settings-btn--outline"
-                            onClick={handleLogout}
-                        >
-                            Cerrar sesión
-                        </button>
-                    </div>
 
                     <div className="settings-action-row">
                         <div>
@@ -349,9 +377,18 @@ const Settings = ({ onClose, isOwner = true }) => {
                     <div className="settings-confirm-modal">
                         <h2 className="settings-confirm-title">¿Eliminar cuenta?</h2>
                         <p className="settings-confirm-text">
-                            Esta acción no se puede deshacer. Se eliminarán todos tus datos, 
-                            comunidades creadas y contenido subido de forma permanente.
+                            Esta acción no se puede deshacer. 
+                            ¿Qué pasará si elimino mi cuenta?
                         </p>
+                        <ul className="settings-confirm-list">
+                            <li>Se eliminará tu perfil y toda tu información personal.</li>
+                            <li>Si has creado alguna comunidad, esta permanecerá pero se le asignará otro creador en caso de que haya miembros o se eliminará permanentemente.</li>
+                            <li>Tu asistencia a eventos será cancelada.</li>
+                            <li>Si has creado algún evento, será eliminado.</li>
+                            <li>Tus solicitudes para unirte a una comunidad serán eliminados.</li>
+                            <li>Tus suscripciones serán canceladas.</li>
+                            <li>Tus membresías a comunidades serán canceladas.</li>
+                        </ul>
                         {deleteError && (
                             <p className="settings-password-error">{deleteError}</p>
                         )}

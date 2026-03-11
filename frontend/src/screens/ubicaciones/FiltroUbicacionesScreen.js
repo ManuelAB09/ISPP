@@ -68,6 +68,35 @@ const FiltroUbicacionesScreen = ({ onSeleccionar, onClose }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [seleccionPrevia, setSeleccionPrevia] = useState(null);
+    const [noResultados, setNoResultados] = useState(false);
+
+    // Mapeo de tipos a español
+    const tiposTraduccion = {
+        '': 'Todos los tipos',
+        'library': 'Biblioteca',
+        'community_centre': 'Centro comunitario',
+        'training': 'Formación',
+        'university': 'Universidad',
+        'hackerspace': 'Espacio de hackers',
+        'coworking_space': 'Espacio de coworking',
+        'studio': 'Estudio',
+        'park': 'Parque',
+        'playground': 'Área de juegos',
+    };
+
+    // Mapeo de costes a español
+    const costesTraduccion = {
+        '': 'Todos los costes',
+        'GRATIS': 'Gratis',
+        'DE_PAGO': 'De pago',
+        'PROBABLEMENTE_GRATIS': 'Probablemente gratis',
+        'PROBABLEMENTE_DE_PAGO': 'Probablemente de pago',
+        'PARCIALMENTE_GRATIS': 'Parcialmente gratis',
+        'DESCONOCIDO': 'Desconocido',
+    };
+
+    const traducirTipo = (tipo) => tiposTraduccion[tipo] || tipo;
+    const traducirCoste = (coste) => costesTraduccion[coste] || coste;
 
     function ReferenceMarker() {
         useMapEvents({
@@ -83,29 +112,55 @@ const FiltroUbicacionesScreen = ({ onSeleccionar, onClose }) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
+        setNoResultados(false);
         setSeleccionPrevia(null);
+
         try {
             const res = await ubicacionesApi.buscarEstudio({ lat, lon, radio });
             let filtrados = res;
+
             if (tipo && tipo.trim() !== '') {
                 filtrados = filtrados.filter(u => (u.tipo || '').toLowerCase() === tipo.trim().toLowerCase());
             }
             if (coste && coste.trim() !== '') {
                 filtrados = filtrados.filter(u => (u.coste || '').toUpperCase() === coste.trim().toUpperCase());
             }
+
+            if (filtrados.length === 0) {
+                setNoResultados(true);
+                setResultados([]);
+                return;
+            }
+
             const geocodeAll = await Promise.all(filtrados.map(async u => {
                 if (!u.direccion || u.direccion === 'Dirección no disponible') {
                     try {
-                        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${u.latitud}&lon=${u.longitud}`);
-                        const data = await response.json();
-                        return { ...u, direccion: data && data.display_name ? data.display_name : '' };
+                        // Delay para evitar sobrecarga de Nominatim
+                        await new Promise(resolve => setTimeout(resolve, Math.random() * 1000));
+
+                        const response = await fetch(
+                            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${u.latitud}&lon=${u.longitud}`,
+                            {
+                                headers: {
+                                    'User-Agent': 'Meerkat-App/1.0'
+                                }
+                            }
+                        );
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            return { ...u, direccion: data && data.display_name ? data.display_name : '' };
+                        }
+
+                        return { ...u, direccion: '' };
                     } catch {
                         return { ...u, direccion: '' };
                     }
-                } else {
-                    return u;
                 }
+
+                return u;
             }));
+
             setResultados(geocodeAll);
         } catch (err) {
             setError('Error buscando ubicaciones');
@@ -164,7 +219,7 @@ const FiltroUbicacionesScreen = ({ onSeleccionar, onClose }) => {
                         <label style={{ fontWeight: 500 }}>Tipo</label>
                         <select value={tipo} onChange={e => setTipo(e.target.value)} className="input-box input-large">
                             {tiposDisponibles.map(t => (
-                                <option key={t} value={t}>{t === '' ? 'Todos los tipos' : t}</option>
+                                <option key={t} value={t}>{traducirTipo(t)}</option>
                             ))}
                         </select>
                     </div>
@@ -172,13 +227,14 @@ const FiltroUbicacionesScreen = ({ onSeleccionar, onClose }) => {
                         <label style={{ fontWeight: 500 }}>Coste</label>
                         <select value={coste} onChange={e => setCoste(e.target.value)} className="input-box input-large">
                             {costesDisponibles.map(c => (
-                                <option key={c} value={c}>{c === '' ? 'Todos los costes' : c}</option>
+                                <option key={c} value={c}>{traducirCoste(c)}</option>
                             ))}
                         </select>
                     </div>
                     <button type="submit" disabled={loading} className="btn btn-primary" style={{ height: 40, marginTop: 20 }}>{loading ? 'Buscando...' : 'Buscar'}</button>
                 </form>
                 {error && <div style={{ color: 'red', marginBottom: 8 }}>{error}</div>}
+                {noResultados && <div style={{ color: '#ff9800', marginBottom: 8, fontWeight: 500 }}>No hay ubicaciones disponibles con estos filtros</div>}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         {/* Icono SVG personalizado para referencia en azul #6B73A1 */}
@@ -198,7 +254,7 @@ const FiltroUbicacionesScreen = ({ onSeleccionar, onClose }) => {
                         <div style={{ fontWeight: 600, color: '#1976d2', marginBottom: 4 }}>Ubicación seleccionada:</div>
                         <div style={{ fontSize: 17, fontWeight: 600 }}>{seleccionPrevia.nombre}</div>
                         <div style={{ fontSize: 15, color: '#333', marginBottom: 2 }}>{seleccionPrevia.direccion}</div>
-                        <div style={{ fontSize: 14, color: '#555' }}>Tipo: <b>{seleccionPrevia.tipo}</b> | Coste: <b>{seleccionPrevia.coste}</b></div>
+                        <div style={{ fontSize: 14, color: '#555' }}>Tipo: <b>{traducirTipo(seleccionPrevia.tipo)}</b> | Coste: <b>{traducirCoste(seleccionPrevia.coste)}</b></div>
                         <div style={{ marginTop: 10 }}>
                             <button className="btn btn-primary" onClick={handleConfirmar}>Usar esta ubicación</button>
                             <button className="btn btn-outline" style={{ marginLeft: 10 }} onClick={() => setSeleccionPrevia(null)}>Cancelar</button>
@@ -279,8 +335,8 @@ const FiltroUbicacionesScreen = ({ onSeleccionar, onClose }) => {
                                 <Popup>
                                     <div style={{ fontWeight: 600, color: '#388e3c' }}>{u.nombre}</div>
                                     <div style={{ fontSize: 13 }}>{u.direccion}</div>
-                                    <div style={{ fontSize: 13 }}>Tipo: <b>{u.tipo}</b></div>
-                                    <div style={{ fontSize: 13 }}>Coste: <b>{u.coste}</b></div>
+                                    <div style={{ fontSize: 13 }}>Tipo: <b>{traducirTipo(u.tipo)}</b></div>
+                                    <div style={{ fontSize: 13 }}>Coste: <b>{traducirCoste(u.coste)}</b></div>
                                     <button className="btn btn-outline" style={{ marginTop: 6 }} onClick={() => handleSeleccionar(u)}>Ver detalles</button>
                                 </Popup>
                             </Marker>

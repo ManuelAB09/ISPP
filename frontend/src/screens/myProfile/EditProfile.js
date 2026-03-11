@@ -1,5 +1,10 @@
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
+import { authApi } from "../../api/auth.api"
+import { getApiBaseUrl } from "../../api/baseUrl"
 import { useAuth } from "../../contexts/AuthContext"
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet'
+import 'leaflet/dist/leaflet.css'
+import L from 'leaflet'
 import "./EditProfile.css"
 
 const ACADEMIC_INTERESTS = [
@@ -13,9 +18,68 @@ const ACADEMIC_INTERESTS = [
     'Literatura',
     'Química',
     'Derecho',
+    'Otros',
 ]
 
-const EditProfile = ({ onClose, onSave }) => {
+const defaultPosition = [37.3891, -5.9845]
+
+const selectedLocationIcon = L.icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+    shadowSize: [41, 41],
+})
+
+function MapClickSelector({ onMapClick }) {
+    useMapEvents({
+        click: (e) => {
+            onMapClick(e.latlng.lat, e.latlng.lng)
+        },
+    })
+
+    return null
+}
+
+const RENATA_PATH_PREFIX = '/static/images/renata/'
+
+const DEFAULT_PROFILE_AVATAR =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='60' fill='%23E6EAF3'/%3E%3Ccircle cx='60' cy='46' r='22' fill='%2395A1BB'/%3E%3Cpath d='M20 106c6-20 22-32 40-32s34 12 40 32' fill='%2395A1BB'/%3E%3C/svg%3E";
+
+const toAbsoluteImageUrl = (imageUrl, fallback = DEFAULT_PROFILE_AVATAR) => {
+    if (!imageUrl || !String(imageUrl).trim()) {
+        return fallback;
+    }
+
+    const value = String(imageUrl).trim();
+    if (/^https?:\/\//i.test(value) || value.startsWith('data:image/') || value.startsWith('blob:')) {
+        return value;
+    }
+
+    const base = getApiBaseUrl();
+    if (value.startsWith('/')) {
+        return `${base}${value}`;
+    }
+
+    return `${base}/${value}`;
+};
+
+const extractRenataAvatarPath = (imageUrl) => {
+    if (!imageUrl || !String(imageUrl).trim()) {
+        return ''
+    }
+
+    const value = String(imageUrl).trim()
+    const markerIndex = value.indexOf(RENATA_PATH_PREFIX)
+    if (markerIndex >= 0) {
+        return value.slice(markerIndex)
+    }
+
+    return ''
+}
+
+const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
     const { user, updateProfile } = useAuth()
     
     // Estados para los campos del formulario
@@ -24,32 +88,125 @@ const EditProfile = ({ onClose, onSave }) => {
         descripcion: "",
         universidad: "",
         grado: "",
+        nivelEstudios: "",
+        baseFormativa: "",
         ubicacion: "",
         intereses: [],
     })
     
-    const [profileImage, setProfileImage] = useState(null)
+    const [selectedAvatar, setSelectedAvatar] = useState('')
+    const [fotoToSave, setFotoToSave] = useState('')
+    const [avatarOptions, setAvatarOptions] = useState([])
+    const [loadingAvatars, setLoadingAvatars] = useState(false)
     const [profileImagePreview, setProfileImagePreview] = useState('')
+    const [ubicacionSeleccionada, setUbicacionSeleccionada] = useState(null)
+    const [markerPosition, setMarkerPosition] = useState(null)
+    const [selectedPhotoFile, setSelectedPhotoFile] = useState(null)
+    const [fileInputKey, setFileInputKey] = useState(0)
     const [isSaving, setIsSaving] = useState(false)
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
+    const [fotoBackgroundColor, setFotoBackgroundColor] = useState('#ffffff')
+    const [fieldErrors, setFieldErrors] = useState({})
+
+    const toFormFieldName = (backendField) => {
+        if (backendField === 'bio') return 'descripcion'
+        return backendField
+    }
 
     // Cargar datos del usuario al montar el componente
     useEffect(() => {
         if (user) {
+            const ubicacionTexto = typeof user.ubicacion === 'string'
+                ? user.ubicacion
+                : user.ubicacion?.nombre || "";
+            
             setFormData({
                 nombre: user.nombre || "",
                 descripcion: user.bio || "",
                 universidad: user.universidad || "",
                 grado: user.grado || "",
-                ubicacion: user.ubicacion || "",
+                ubicacion: ubicacionTexto,
                 intereses: user.intereses || [],
+                nivelEstudios: user.nivelEstudios || "",
+                baseFormativa: user.baseFormativa || "",
             })
+            
             if (user.foto) {
                 setProfileImagePreview(user.foto)
             }
+            
+            // Si el usuario tiene ubicación con coordenadas, cargarla
+            if (user.ubicacion && typeof user.ubicacion === 'object' && 
+                user.ubicacion.latitud != null && user.ubicacion.longitud != null) {
+                setUbicacionSeleccionada(user.ubicacion)
+                setMarkerPosition({
+                    latitud: Number(user.ubicacion.latitud),
+                    longitud: Number(user.ubicacion.longitud),
+                })
+            }
+
+            const userAvatarPath = extractRenataAvatarPath(user.foto)
+            setSelectedAvatar(userAvatarPath)
+            setFotoToSave(userAvatarPath || user.foto || '')
+            setProfileImagePreview(toAbsoluteImageUrl(user.foto, DEFAULT_PROFILE_AVATAR))
+            setFotoBackgroundColor(user.fotoBackgroundColor || '#ffffff')
         }
     }, [user])
+
+    useEffect(() => {
+        if (!ubicacionPreseleccionada) {
+            return
+        }
+
+        const nombreUbicacion =
+            typeof ubicacionPreseleccionada === 'string'
+                ? ubicacionPreseleccionada
+                : (ubicacionPreseleccionada.nombre || '')
+
+        setFormData((prev) => ({
+            ...prev,
+            ubicacion: nombreUbicacion,
+        }))
+
+        if (typeof ubicacionPreseleccionada === 'object') {
+            setUbicacionSeleccionada(ubicacionPreseleccionada)
+            if (
+                ubicacionPreseleccionada.latitud != null
+                && ubicacionPreseleccionada.longitud != null
+            ) {
+                setMarkerPosition({
+                    latitud: Number(ubicacionPreseleccionada.latitud),
+                    longitud: Number(ubicacionPreseleccionada.longitud),
+                })
+            }
+        }
+    }, [ubicacionPreseleccionada])
+    
+    useEffect(() => {
+        const loadAvatars = async () => {
+            setLoadingAvatars(true)
+            try {
+                const data = await authApi.getProfileAvatars()
+                const options = Array.isArray(data) ? data : []
+                setAvatarOptions(options)
+            } catch {
+                setAvatarOptions([])
+            } finally {
+                setLoadingAvatars(false)
+            }
+        }
+
+        loadAvatars()
+    }, [])
+
+    useEffect(() => {
+        return () => {
+            if (profileImagePreview.startsWith('blob:')) {
+                URL.revokeObjectURL(profileImagePreview)
+            }
+        }
+    }, [profileImagePreview])
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target
@@ -57,6 +214,17 @@ const EditProfile = ({ onClose, onSave }) => {
             ...prev,
             [name]: type === 'checkbox' ? checked : value,
         }))
+        if (name === 'ubicacion' && value) {
+            if (ubicacionSeleccionada && value.trim() !== (ubicacionSeleccionada.nombre || '').trim()) {
+                setUbicacionSeleccionada(null)
+            }
+        }
+        setFieldErrors((prev) => {
+            if (!prev[name]) return prev
+            const next = { ...prev }
+            delete next[name]
+            return next
+        })
         if (error) setError('')
     }
 
@@ -67,61 +235,122 @@ const EditProfile = ({ onClose, onSave }) => {
                 ? prev.intereses.filter((i) => i !== interest)
                 : [...prev.intereses, interest],
         }))
+        setFieldErrors((prev) => {
+            if (!prev.intereses) return prev
+            const next = { ...prev }
+            delete next.intereses
+            return next
+        })
     }
 
-    const handleImageChange = (e) => {
-        const file = e.target.files[0]
-        if (file) {
-            // Validar tipo de archivo
-            if (!file.type.startsWith('image/')) {
-                setError('Por favor, selecciona un archivo de imagen válido')
-                return
-            }
-            // Validar tamaño (máx 5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                setError('La imagen no debe superar los 5MB')
-                return
-            }
-            setProfileImage(file)
-            setProfileImagePreview(URL.createObjectURL(file))
-            if (error) setError('')
+    const handleSelectAvatar = (avatarPath) => {
+        setSelectedAvatar(avatarPath)
+        setSelectedPhotoFile(null)
+        setFotoToSave(avatarPath)
+        setProfileImagePreview(toAbsoluteImageUrl(avatarPath))
+        if (error) setError('')
+    }
+
+    const handleFileSelection = (e) => {
+        const file = e.target.files?.[0]
+        if (!file) {
+            return
         }
+
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+        if (!allowedTypes.includes(file.type)) {
+            setError('Formato no permitido. Usa JPG, PNG o WEBP.')
+            return
+        }
+
+        const maxBytes = 5 * 1024 * 1024
+        if (file.size > maxBytes) {
+            setError('La imagen supera el límite de 5MB.')
+            return
+        }
+
+        const blobUrl = URL.createObjectURL(file)
+        setSelectedAvatar('')
+        setSelectedPhotoFile(file)
+        setProfileImagePreview(blobUrl)
+        if (error) setError('')
     }
 
     const removeProfileImage = () => {
-        setProfileImage(null)
-        if (profileImagePreview) {
-            URL.revokeObjectURL(profileImagePreview)
-        }
+        setSelectedAvatar('')
+        setSelectedPhotoFile(null)
+        setFotoToSave('')
         setProfileImagePreview('')
+        setFileInputKey((prev) => prev + 1)
     }
 
     const handleSubmit = async (e) => {
         e.preventDefault()
         setError('')
         setSuccess('')
+        setFieldErrors({})
         setIsSaving(true)
 
         // Validaciones básicas
         if (!formData.nombre.trim()) {
-            setError('El nombre es obligatorio')
+            setFieldErrors({ nombre: 'El nombre es obligatorio' })
             setIsSaving(false)
             return
         }
 
+        if (!formData.universidad.trim()) {
+            setFieldErrors({ universidad: 'La universidad donde estudias es obligatorio' })
+            setIsSaving(false)
+            return
+        }
+
+        if (!formData.grado.trim()) {
+            setFieldErrors({ nombre: 'El grado que estas estudiando es obligatorio' })
+            setIsSaving(false)
+            return
+        }
+
+        const ubicacionTexto = formData.ubicacion.trim()
+
+        let ubicacionFinal = null
+        if (
+            ubicacionTexto
+            && ubicacionSeleccionada
+            && (ubicacionSeleccionada.nombre || '').trim().toLowerCase() === ubicacionTexto.toLowerCase()
+        ) {
+            ubicacionFinal = ubicacionSeleccionada
+        }
+
         try {
+            if (selectedPhotoFile) {
+                await authApi.uploadProfilePhoto(selectedPhotoFile)
+            }
+
             // Preparar datos para el endpoint
             const profileData = {
                 nombre: formData.nombre.trim(),
                 bio: formData.descripcion.trim(),
                 universidad: formData.universidad.trim(),
                 grado: formData.grado.trim(),
-                ubicacion: formData.ubicacion.trim(),
+                ubicacion: ubicacionFinal?.nombre || ubicacionTexto,
+                nivelEstudios: formData.nivelEstudios.trim(),
+                baseFormativa: formData.baseFormativa.trim(),
                 intereses: formData.intereses,
-                foto: profileImage ? profileImagePreview : (user?.foto || ''),
+                fotoBackgroundColor: fotoBackgroundColor,
             }
 
-            const result = await updateProfile(profileData)
+            // Solo enviamos foto cuando no se subió archivo en esta misma acción.
+            // Si hubo upload, el backend ya guardó la imagen y evitamos reenviar un payload grande.
+            if (!selectedPhotoFile) {
+                profileData.foto = fotoToSave
+            }
+
+            const ubicacionParaGuardar =
+                ubicacionFinal && ubicacionFinal.nombre === profileData.ubicacion
+                    ? ubicacionFinal
+                    : null
+
+            const result = await updateProfile(profileData, ubicacionParaGuardar)
             
             if (result.success) {
                 setSuccess('Perfil actualizado correctamente')
@@ -136,13 +365,52 @@ const EditProfile = ({ onClose, onSave }) => {
                     onClose()
                 }, 1500)
             } else {
-                setError(result.error || 'Error al guardar los cambios')
+                const backendErrors = result.validationErrors || {}
+                const mappedErrors = Object.entries(backendErrors).reduce((acc, [key, value]) => {
+                    acc[toFormFieldName(key)] = value
+                    return acc
+                }, {})
+
+                if (Object.keys(mappedErrors).length > 0) {
+                    setFieldErrors(mappedErrors)
+                    setError('Revisa los campos marcados')
+                } else {
+                    setError(result.error || 'Error al guardar los cambios')
+                }
             }
         } catch (err) {
             setError(err.message || 'Error al guardar los cambios')
         } finally {
             setIsSaving(false)
         }
+    }
+
+    const handleMapClick = (lat, lng) => {
+        const latNum = Number(lat)
+        const lngNum = Number(lng)
+        const nombreCoords = `${latNum.toFixed(6)}, ${lngNum.toFixed(6)}`
+
+        setMarkerPosition({ latitud: latNum, longitud: lngNum })
+        setUbicacionSeleccionada({
+            nombre: nombreCoords,
+            direccion: '',
+            latitud: latNum,
+            longitud: lngNum,
+        })
+        setFormData((prev) => ({
+            ...prev,
+            ubicacion: nombreCoords,
+        }))
+        if (error) setError('')
+    }
+
+    const handleBorrarUbicacion = () => {
+        setUbicacionSeleccionada(null)
+        setMarkerPosition(null)
+        setFormData(prev => ({
+            ...prev,
+            ubicacion: ''
+        }))
     }
 
     return (
@@ -160,9 +428,13 @@ const EditProfile = ({ onClose, onSave }) => {
                     <section className="edit-profile-section">
                         <h2 className="edit-profile-section__title">Foto de perfil</h2>
                         <div className="edit-profile-image-container">
-                            {profileImagePreview ? (
-                                <div className="edit-profile-image-preview">
-                                    <img src={profileImagePreview} alt="Vista previa" />
+                            <div className="edit-profile-image-preview" style={{ backgroundColor: fotoBackgroundColor }}>
+                                <img
+                                    src={profileImagePreview || DEFAULT_PROFILE_AVATAR}
+                                    alt="Vista previa"
+                                    onError={e => { e.target.onerror = null; e.target.src = DEFAULT_PROFILE_AVATAR; }}
+                                />
+                                {(profileImagePreview && profileImagePreview !== DEFAULT_PROFILE_AVATAR) && (
                                     <button
                                         type="button"
                                         className="edit-profile-remove-image"
@@ -174,31 +446,54 @@ const EditProfile = ({ onClose, onSave }) => {
                                             <line x1="6" y1="6" x2="18" y2="18"/>
                                         </svg>
                                     </button>
-                                </div>
-                            ) : (
-                                <div className="edit-profile-image-placeholder">
-                                    <span className="placeholder-icon">👤</span>
-                                </div>
-                            )}
+                                )}
+                            </div>
                             <div className="edit-profile-image-actions">
-                                <label htmlFor="profileImageEdit" className="edit-profile-upload-btn">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                        <polyline points="17 8 12 3 7 8"/>
-                                        <line x1="12" y1="3" x2="12" y2="15"/>
-                                    </svg>
-                                    Subir imagen
+                                <label className="edit-profile-upload-btn" htmlFor="profile-photo-input">
+                                    Subir foto
                                 </label>
                                 <input
+                                    key={fileInputKey}
+                                    id="profile-photo-input"
                                     type="file"
-                                    id="profileImageEdit"
-                                    name="profileImage"
-                                    accept="image/*"
-                                    onChange={handleImageChange}
                                     className="edit-profile-image-input"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    onChange={handleFileSelection}
                                 />
-                                <p className="edit-profile-image-hint">JPG, PNG o GIF. Máx 5MB.</p>
+                                <p className="edit-profile-image-hint">
+                                    Sube una imagen (JPG, PNG o WEBP, máx. 5MB) o elige un avatar.
+                                </p>
                             </div>
+                        </div>
+                        <div className="edit-profile-color-picker">
+                            <label htmlFor="foto-background-color">Color de fondo:</label>
+                            <input
+                                type="color"
+                                id="foto-background-color"
+                                value={fotoBackgroundColor}
+                                onChange={(e) => setFotoBackgroundColor(e.target.value)}
+                                title="Selecciona el color de fondo"
+                            />
+                        </div>
+                        <div className="edit-profile-avatar-gallery">
+                            {loadingAvatars ? (
+                                <p className="edit-profile-image-hint">Cargando avatares...</p>
+                            ) : avatarOptions.length === 0 ? (
+                                <p className="edit-profile-image-hint">No hay avatares disponibles ahora mismo.</p>
+                            ) : (
+                                avatarOptions.map((avatarPath) => (
+                                    <button
+                                        type="button"
+                                        key={avatarPath}
+                                        className={`edit-profile-avatar-option ${selectedAvatar === avatarPath ? 'selected' : ''}`}
+                                        onClick={() => handleSelectAvatar(avatarPath)}
+                                        aria-label={`Seleccionar avatar ${avatarPath}`}
+                                        title={avatarPath.split('/').pop() || 'Avatar'}
+                                    >
+                                        <img src={toAbsoluteImageUrl(avatarPath)} alt={avatarPath} />
+                                    </button>
+                                ))
+                            )}
                         </div>
                     </section>
 
@@ -215,8 +510,13 @@ const EditProfile = ({ onClose, onSave }) => {
                                 value={formData.nombre}
                                 onChange={handleInputChange}
                                 placeholder="Tu nombre completo"
+                                className={fieldErrors.nombre ? 'edit-profile-input-error' : ''}
+                                aria-invalid={Boolean(fieldErrors.nombre)}
                                 required
                             />
+                            {fieldErrors.nombre && (
+                                <span className="edit-profile-field-error">{fieldErrors.nombre}</span>
+                            )}
                         </div>
 
                         <div className="edit-profile-form-group">
@@ -227,8 +527,13 @@ const EditProfile = ({ onClose, onSave }) => {
                                 value={formData.descripcion}
                                 onChange={handleInputChange}
                                 placeholder="Cuéntanos sobre ti..."
+                                className={fieldErrors.descripcion ? 'edit-profile-input-error' : ''}
+                                aria-invalid={Boolean(fieldErrors.descripcion)}
                                 rows={4}
                             />
+                            {fieldErrors.descripcion && (
+                                <span className="edit-profile-field-error">{fieldErrors.descripcion}</span>
+                            )}
                         </div>
                     </section>
 
@@ -245,7 +550,12 @@ const EditProfile = ({ onClose, onSave }) => {
                                 value={formData.universidad}
                                 onChange={handleInputChange}
                                 placeholder="Tu universidad"
+                                className={fieldErrors.universidad ? 'edit-profile-input-error' : ''}
+                                aria-invalid={Boolean(fieldErrors.universidad)}
                             />
+                            {fieldErrors.universidad && (
+                                <span className="edit-profile-field-error">{fieldErrors.universidad}</span>
+                            )}
                         </div>
 
                         <div className="edit-profile-form-group">
@@ -256,8 +566,47 @@ const EditProfile = ({ onClose, onSave }) => {
                                 name="grado"
                                 value={formData.grado}
                                 onChange={handleInputChange}
-                                placeholder="Tu grado o carrera"
+                                placeholder="El nombre de tu grado o carrera"
+                                className={fieldErrors.grado ? 'edit-profile-input-error' : ''}
+                                aria-invalid={Boolean(fieldErrors.grado)}
                             />
+                            {fieldErrors.grado && (
+                                <span className="edit-profile-field-error">{fieldErrors.grado}</span>
+                            )}
+                        </div>
+
+                        <div className="edit-profile-form-group">
+                            <label htmlFor="nivelEstudios">Nivel de estudios</label>
+                            <input
+                                type="text"
+                                id="nivelEstudios"
+                                name="nivelEstudios"
+                                value={formData.nivelEstudios}
+                                onChange={handleInputChange}
+                                placeholder="Ej: Grado, Máster, Doctorado"
+                                className={fieldErrors.nivelEstudios ? 'edit-profile-input-error' : ''}
+                                aria-invalid={Boolean(fieldErrors.nivelEstudios)}
+                            />
+                            {fieldErrors.nivelEstudios && (
+                                <span className="edit-profile-field-error">{fieldErrors.nivelEstudios}</span>
+                            )}
+                        </div>
+
+                        <div className="edit-profile-form-group">
+                            <label htmlFor="baseFormativa">Base formativa</label>
+                            <input
+                                type="text"
+                                id="baseFormativa"
+                                name="baseFormativa"
+                                value={formData.baseFormativa}
+                                onChange={handleInputChange}
+                                placeholder="Ej: Científico-tecnológica"
+                                className={fieldErrors.baseFormativa ? 'edit-profile-input-error' : ''}
+                                aria-invalid={Boolean(fieldErrors.baseFormativa)}
+                            />
+                            {fieldErrors.baseFormativa && (
+                                <span className="edit-profile-field-error">{fieldErrors.baseFormativa}</span>
+                            )}
                         </div>
 
                         <div className="edit-profile-form-group">
@@ -269,7 +618,61 @@ const EditProfile = ({ onClose, onSave }) => {
                                 value={formData.ubicacion}
                                 onChange={handleInputChange}
                                 placeholder="Ciudad, País"
+                                className={fieldErrors.ubicacion ? 'edit-profile-input-error' : ''}
+                                aria-invalid={Boolean(fieldErrors.ubicacion)}
                             />
+                            <p className="edit-profile-field-hint">
+                                Haz click en el mapa para mover el marcador. No se cargan ubicaciones existentes automáticamente.
+                            </p>
+                            
+                            {/* Mapa de ubicación */}
+                            <div style={{ marginTop: '10px', marginBottom: '10px' }}>
+                                <div style={{ height: '300px', borderRadius: '8px', overflow: 'hidden' }}>
+                                    <MapContainer
+                                        center={
+                                            markerPosition
+                                                ? [markerPosition.latitud, markerPosition.longitud]
+                                                : defaultPosition
+                                        }
+                                        zoom={markerPosition ? 13 : 12}
+                                        style={{ height: '100%', width: '100%' }}
+                                    >
+                                        <TileLayer
+                                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                        />
+                                        <MapClickSelector
+                                            onMapClick={handleMapClick}
+                                        />
+                                        {markerPosition && (
+                                            <Marker
+                                                position={[Number(markerPosition.latitud), Number(markerPosition.longitud)]}
+                                                icon={selectedLocationIcon}
+                                            >
+                                                <Popup>
+                                                    <strong>{formData.ubicacion || 'Ubicación seleccionada'}</strong>
+                                                    <br />
+                                                    Marcador movible (no vinculado a catálogo de ubicaciones)
+                                                </Popup>
+                                            </Marker>
+                                        )}
+                                    </MapContainer>
+                                </div>
+                            </div>
+                            
+                            <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+                                <button
+                                    type="button"
+                                    className="edit-profile-btn edit-profile-btn--secondary"
+                                    onClick={handleBorrarUbicacion}
+                                    style={{ backgroundColor: '#ff4444', color: 'white' }}
+                                >
+                                    Borrar ubicación
+                                </button>
+                            </div>
+                            {fieldErrors.ubicacion && (
+                                <span className="edit-profile-field-error">{fieldErrors.ubicacion}</span>
+                            )}
                         </div>
                     </section>
 
@@ -293,6 +696,9 @@ const EditProfile = ({ onClose, onSave }) => {
                                 </button>
                             ))}
                         </div>
+                        {fieldErrors.intereses && (
+                            <span className="edit-profile-field-error">{fieldErrors.intereses}</span>
+                        )}
                     </section>
 
                     {/* Mensajes de error y éxito */}

@@ -97,14 +97,12 @@ const Home = () => {
                 <section className="communities-section">
                   <div className="section-header">
                     <h2>Mis comunidades creadas</h2>
-                    {comunidadesCreadas.length === 0 && (
-                      <button 
-                        onClick={() => navigate('/crear-comunidad')} 
-                        className="create-community-btn"
-                      >
-                        Crear comunidad
-                      </button>
-                    )}
+                    <button 
+                      onClick={() => navigate('/crear-comunidad')} 
+                      className="create-community-btn"
+                    >
+                      Crear comunidad
+                    </button>
                   </div>
                   
                   {comunidadesCreadas.length > 0 ? (

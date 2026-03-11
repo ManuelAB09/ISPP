@@ -80,6 +80,8 @@
 
 .login-feature-btn {
   flex: 1;
+  position: relative;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -91,7 +93,6 @@
   color: white;
   font-size: 13px;
   font-weight: 500;
-  cursor: pointer;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
 }
@@ -103,6 +104,44 @@
 
 .login-feature-icon {
   font-size: 24px;
+}
+
+/* Tooltip for feature buttons */
+.login-feature-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translate(-50%, 8px);
+  background: rgba(226, 230, 235, 0.95);
+  color: #000;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 150ms ease, transform 150ms ease, visibility 150ms;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.login-feature-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: rgba(195, 206, 219, 0.95) transparent transparent transparent;
+}
+
+.login-feature-btn:hover .login-feature-tooltip,
+.login-feature-btn:focus .login-feature-tooltip,
+.login-feature-btn:focus-within .login-feature-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
 }
 
 /* Panel Derecho - Formulario */
@@ -196,7 +235,7 @@
 .input-with-icon input[type="password"],
 .input-with-icon input[type="text"] {
   width: 100%;
-  padding: 14px 16px 14px 44px;
+  padding: 14px 16px 14px 50px;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   font-size: 15px;
@@ -217,7 +256,7 @@
 
 /* Password Input Container */
 .login-form .password-input-container input {
-  padding-right: 50px;
+  padding-right: 60px;
 }
 
 .login-form .password-toggle {

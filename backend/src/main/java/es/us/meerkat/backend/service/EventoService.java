@@ -2,6 +2,7 @@ package es.us.meerkat.backend.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +41,9 @@ public class EventoService {
 
     /** Repositorio para acceder a la información de ubicaciones. */
     private final UbicacionRepository ubicacionRepository;
+
+    /** Servicio de autorización para verificar roles en comunidades. */
+    private final AuthorizationService authorizationService;
 
     // ===============================
     // CREAR EVENTO
@@ -225,12 +229,34 @@ public class EventoService {
     // ===============================
 
     /**
-     * Obtiene un evento por su ID.
+     * Obtiene un evento por su ID, verificando permisos de visibilidad.
+     *
+     * @param eventoIdParam Identificador del evento.
+     * @param usuarioId Identificador del usuario que solicita (puede ser null).
+     * @return El evento encontrado.
+     */
+    public Evento obtenerEvento(final Long eventoIdParam, final Long usuarioId) {
+        final Evento evento =
+                eventoRepository
+                        .findById(eventoIdParam)
+                        .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
+
+        if (Boolean.TRUE.equals(evento.getPrivado())) {
+            if (!puedeVerEventoPrivado(evento, usuarioId)) {
+                throw new RuntimeException("No tienes permiso para ver este evento privado");
+            }
+        }
+
+        return evento;
+    }
+
+    /**
+     * Obtiene un evento por su ID sin verificar visibilidad (uso interno).
      *
      * @param eventoIdParam Identificador del evento.
      * @return El evento encontrado.
      */
-    public Evento obtenerEvento(final Long eventoIdParam) {
+    public Evento obtenerEventoInterno(final Long eventoIdParam) {
         return eventoRepository
                 .findById(eventoIdParam)
                 .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
@@ -285,17 +311,45 @@ public class EventoService {
     // ===============================
 
     /**
-     * Obtiene los eventos de una comunidad.
+     * Obtiene los eventos de una comunidad, filtrando eventos privados según permisos.
      *
      * @param comunidadId Identificador de la comunidad.
      * @param incluirCancelados Si se deben incluir los eventos cancelados.
-     * @return Lista de eventos de la comunidad.
+     * @param usuarioId Identificador del usuario que solicita (puede ser null).
+     * @return Lista de eventos de la comunidad visibles para el usuario.
      */
     public List<Evento> obtenerEventosPorComunidad(
-            final Long comunidadId, final boolean incluirCancelados) {
+            final Long comunidadId, final boolean incluirCancelados, final Long usuarioId) {
+        List<Evento> eventos;
         if (incluirCancelados) {
-            return eventoRepository.findByComunidadId(comunidadId);
+            eventos = eventoRepository.findByComunidadId(comunidadId);
+        } else {
+            eventos = eventoRepository.findByComunidadIdAndCanceladoFalse(comunidadId);
         }
-        return eventoRepository.findByComunidadIdAndCanceladoFalse(comunidadId);
+        return filtrarEventosPrivados(eventos, usuarioId);
+    }
+
+    /**
+     * Verifica si un usuario puede ver un evento privado. Solo los miembros de la comunidad pueden
+     * verlo.
+     */
+    private boolean puedeVerEventoPrivado(final Evento evento, final Long usuarioId) {
+        if (usuarioId == null) {
+            return false;
+        }
+        if (evento.getComunidad() != null) {
+            return authorizationService.isMemberOf(usuarioId, evento.getComunidad().getId());
+        }
+        return false;
+    }
+
+    /** Filtra una lista de eventos eliminando los privados que el usuario no puede ver. */
+    private List<Evento> filtrarEventosPrivados(final List<Evento> eventos, final Long usuarioId) {
+        return eventos.stream()
+                .filter(
+                        evento ->
+                                !Boolean.TRUE.equals(evento.getPrivado())
+                                        || puedeVerEventoPrivado(evento, usuarioId))
+                .collect(Collectors.toList());
     }
 }

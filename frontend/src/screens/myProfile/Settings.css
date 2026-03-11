@@ -76,6 +76,17 @@
     gap: 8px;
 }
 
+.settings-preferences-error {
+    background-color: #fee2e2;
+    border: 1px solid #fca5a5;
+    color: #b91c1c;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-family: 'inter', sans-serif;
+    font-size: 13px;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    Secciones
    ═══════════════════════════════════════════════════════════════ */
@@ -160,6 +171,11 @@
     position: relative;
     transition: background-color 0.2s;
     padding: 0;
+}
+
+.settings-toggle:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .settings-toggle--active {
@@ -306,6 +322,33 @@
     color: var(--graphite);
     line-height: 1.6;
     margin: 0 0 24px 0;
+}
+
+.settings-confirm-list {
+    list-style: none;
+    margin: 0 0 24px 0;
+    padding: 0;
+    font-family: 'inter', sans-serif;
+    font-size: 14px;
+    color: var(--graphite);
+    line-height: 1.6;
+}
+
+.settings-confirm-list li {
+    position: relative;
+    padding-left: 14px;
+    margin-bottom: 8px;
+}
+
+.settings-confirm-list li::before {
+    content: "-";
+    position: absolute;
+    left: 0;
+    color: var(--graphite);
+}
+
+.settings-confirm-list li:last-child {
+    margin-bottom: 0;
 }
 
 .settings-confirm-actions {
