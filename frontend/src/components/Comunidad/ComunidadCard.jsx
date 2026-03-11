@@ -13,7 +13,7 @@ export default function ComunidadCard({ comunidad, onJoined }) {
     const currentUserId = localStorage.getItem('userId');
     const communityImageRaw = comunidad.imagen || comunidad.imagenUrl || comunidad.foto;
     const communityImage = (() => {
-        if (!communityImageRaw || !String(communityImageRaw).trim()) {
+        if (!communityImageRaw || !String(communityImageRaw).trim() || String(communityImageRaw).trim().toLowerCase() === 'empty') {
             return 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
         }
 

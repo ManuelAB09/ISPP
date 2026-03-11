@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { updateTutorProfile } from "../../api/tutorEndpoints";
-import { useAuth } from "../../contexts/AuthContext";
 import "./TutorModals.css";
 
 /**
@@ -14,7 +13,6 @@ import "./TutorModals.css";
   *   - onGuardar: callback(updatedTutor) cuando se guarda correctamente
   */
  const EditProfileModal = ({ tutor, onClose, onGuardar }) => {
-   const { updateProfile } = useAuth();
    const [form, setForm] = useState({
      especialidades: (tutor.especialidades || []).join(", "),
      tarifaHora: tutor.tarifaPorHora ?? "",
