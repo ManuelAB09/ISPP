@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import es.us.meerkat.backend.entity.Usuario;
 
@@ -38,4 +40,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
      * @return Lista de usuarios con visibleEnListados a true.
      */
     List<Usuario> findByVisibleEnListadosTrue();
+
+    @Query("SELECT mc.usuario FROM MiembroComunidad mc WHERE mc.comunidad.id = :comunidadId")
+    List<Usuario> findMiembrosByComunidadId(@Param("comunidadId") Long comunidadId);
 }

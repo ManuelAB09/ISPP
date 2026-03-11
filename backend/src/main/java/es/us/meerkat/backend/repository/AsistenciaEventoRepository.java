@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import es.us.meerkat.backend.entity.AsistenciaEvento;
+import es.us.meerkat.backend.entity.EstadoAsistencia;
 
 /**
  * Repositorio JPA para la entidad {@link AsistenciaEvento}.
@@ -59,4 +60,45 @@ public interface AsistenciaEventoRepository extends JpaRepository<AsistenciaEven
             "SELECT COUNT(a) FROM AsistenciaEvento a WHERE a.evento.id = :eventoId AND a.estado ="
                     + " es.us.meerkat.backend.entity.EstadoAsistencia.CONFIRMADA")
     long countConfirmedByEvent(@Param("eventoId") Long eventoId);
+
+    /**
+     * Busca la asistencia de un usuario a un evento específico.
+     *
+     * @param eventoId Identificador del evento.
+     * @param usuarioId Identificador del usuario.
+     * @return Optional con la asistencia si existe.
+     */
+    Optional<AsistenciaEvento> findByEventoIdAndUsuarioId(Long eventoId, Long usuarioId);
+
+    /**
+     * Obtiene todas las asistencias de un evento filtradas por estado.
+     *
+     * @param eventoId Identificador del evento.
+     * @param estado Estado de la asistencia.
+     * @return Lista de asistencias con el estado especificado.
+     */
+    List<AsistenciaEvento> findByEventoIdAndEstado(Long eventoId, EstadoAsistencia estado);
+
+    /**
+     * Obtiene todas las asistencias confirmadas de un usuario.
+     *
+     * @param usuarioId Identificador del usuario.
+     * @return Lista de asistencias confirmadas.
+     */
+    @Query(
+            "SELECT ae FROM AsistenciaEvento ae WHERE ae.usuario.id = :usuarioId "
+                    + "AND ae.estado = 'CONFIRMADA' "
+                    + "ORDER BY ae.evento.fechaHora ASC")
+    List<AsistenciaEvento> findConfirmadasByUsuarioId(@Param("usuarioId") Long usuarioId);
+
+    /**
+     * Cuenta las asistencias confirmadas a un evento.
+     *
+     * @param eventoId Identificador del evento.
+     * @return Número de asistencias confirmadas.
+     */
+    @Query(
+            "SELECT COUNT(ae) FROM AsistenciaEvento ae WHERE ae.evento.id = :eventoId "
+                    + "AND ae.estado = 'CONFIRMADA'")
+    Integer countConfirmadasByEventoId(@Param("eventoId") Long eventoId);
 }
