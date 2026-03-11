@@ -275,6 +275,19 @@ const TeacherProfile = () => {
               <div className="tp-header__actions">
                 <button
                   className="tp-btn tp-btn--contact"
+                  onClick={() => {
+                    const targetUserId = tutor.userId ?? tutor.usuario?.id;
+                    const nombre = tutor.usuario?.nombre || 'Profesor';
+                    if (!targetUserId) return;
+                    const params = new URLSearchParams({
+                      userId: String(targetUserId),
+                      userName: nombre,
+                    });
+                    if (tutor.usuario?.foto) {
+                      params.set('userPhoto', toAbsoluteImageUrl(tutor.usuario.foto));
+                    }
+                    navigate(`/chats?${params.toString()}`);
+                  }}
                 >
                   💬 Contactar
                 </button>
