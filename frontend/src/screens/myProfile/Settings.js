@@ -73,14 +73,20 @@ const Settings = ({ onClose, isOwner = true }) => {
             return
         }
 
+        // Validar que la nueva contraseña no sea la misma que la anterior
+        if (newPassword.trim() !== currentPassword.trim()) {
+            setPasswordError("La contraseña nueva coincide con la anterior")
+            return
+        }
+
         // Validar que las contraseñas nuevas coincidan
-        if (newPassword !== confirmPassword) {
+        if (newPassword.trim() !== confirmPassword.trim()) {
             setPasswordError("Las contraseñas nuevas no coinciden")
             return
         }
 
         // Validar longitud mínima
-        if (newPassword.length < 6) {
+        if (newPassword.trim().length < 6) {
             setPasswordError("La nueva contraseña debe tener al menos 6 caracteres")
             return
         }
@@ -371,9 +377,18 @@ const Settings = ({ onClose, isOwner = true }) => {
                     <div className="settings-confirm-modal">
                         <h2 className="settings-confirm-title">¿Eliminar cuenta?</h2>
                         <p className="settings-confirm-text">
-                            Esta acción no se puede deshacer. Se eliminarán todos tus datos, 
-                            comunidades creadas y contenido subido de forma permanente.
+                            Esta acción no se puede deshacer. 
+                            ¿Qué pasará si elimino mi cuenta?
                         </p>
+                        <ul className="settings-confirm-list">
+                            <li>Se eliminará tu perfil y toda tu información personal.</li>
+                            <li>Si has creado alguna comunidad, esta permanecerá pero se le asignará otro creador en caso de que haya miembros o se eliminará permanentemente.</li>
+                            <li>Tu asistencia a eventos será cancelada.</li>
+                            <li>Si has creado algún evento, será eliminado.</li>
+                            <li>Tus solicitudes para unirte a una comunidad serán eliminados.</li>
+                            <li>Tus suscripciones serán canceladas.</li>
+                            <li>Tus membresías a comunidades serán canceladas.</li>
+                        </ul>
                         {deleteError && (
                             <p className="settings-password-error">{deleteError}</p>
                         )}

@@ -296,34 +296,9 @@ const MyProfile = () => {
                                 <button className="btn-settings" onClick={() => setShowSettings(true)}>
                                     Configuración
                                 </button>
-                                {miPerfilTutor?.id && (
-                                    <button
-                                        className="btn-settings"
-                                        onClick={() => navigate(`/profesores/${miPerfilTutor.id}`)}
-                                    >
-                                        <span className="btn-icon">🎓</span>
-                                        Mi perfil de profesor
-                                    </button>
-                                )}
-
-                                {
-                                    !user?.esTutor && (
-                                        <>
-                                            <button
-                                                className="btn-become-tutor"
-                                                onClick={handleBecomeTutor}
-                                                disabled={becomingTutor}
-                                            >
-                                                <span className="btn-icon">🎓</span>
-                                                {becomingTutor ? 'Actualizando...' : 'Convertirme en tutor'}
-                                            </button>
-                                            {becomeTutorError && (
-                                                <span className="become-tutor-error">{becomeTutorError}</span>
-                                            )}
-                                        </>
-                                    )
-                                }
-
+                                <button className="btn-logout" onClick={handleLogout}>
+                                    Cerrar Sesión
+                                </button>
                             </>
                         )}
                     </div >
@@ -437,7 +412,30 @@ const MyProfile = () => {
                     }
                 </section >
 
-                {/* Sección Perfil de Profesor */}
+                {/* Sección Perfil de Profesor / Convertirse en tutor */}
+                {
+                    !user?.esTutor && (
+                        <section className="tutor-profile-section">
+                            <div className="created-header">
+                                <div>
+                                    <h2 className="section-title">¿Quieres ser profesor?</h2>
+                                    <p className="section-subtitle">Conviértete en tutor y empieza a enseñar a otros estudiantes.</p>
+                                </div>
+                                <button
+                                    className="btn-become-tutor"
+                                    onClick={handleBecomeTutor}
+                                    disabled={becomingTutor}
+                                >
+                                    <span className="btn-icon">🎓</span>
+                                    {becomingTutor ? 'Actualizando...' : 'Convertirme en tutor'}
+                                </button>
+                            </div>
+                            {becomeTutorError && (
+                                <span className="become-tutor-error">{becomeTutorError}</span>
+                            )}
+                        </section>
+                    )
+                }
                 {
                     user?.esTutor && (
                         <section className="tutor-profile-section">

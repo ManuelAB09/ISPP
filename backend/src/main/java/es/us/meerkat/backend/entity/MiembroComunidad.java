@@ -36,7 +36,7 @@ public class MiembroComunidad {
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
-    private RolComunidad rol = RolComunidad.MIEMBRO;
+    private RolComunidad rol = RolComunidad.ALUMNO;
 
     @Builder.Default private LocalDateTime fechaIngreso = LocalDateTime.now();
 }

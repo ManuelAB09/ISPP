@@ -42,4 +42,10 @@ public interface MensajeRepository extends JpaRepository<Mensaje, Long> {
             ORDER BY m.createdAt DESC
             """)
     List<Mensaje> findAllConversations(@Param("usuarioId") Long usuarioId);
+
+    /** Elimina todos los mensajes enviados por un usuario. */
+    void deleteByEmisorId(Long usuarioId);
+
+    /** Elimina todos los mensajes recibidos por un usuario. */
+    void deleteByReceptorId(Long usuarioId);
 }

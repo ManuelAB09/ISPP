@@ -105,13 +105,15 @@ const Login = () => {
           </p>
 
           <div className="login-feature-buttons">
-            <button type="button" className="login-feature-btn">
+            <button type="button" className="login-feature-btn" aria-describedby="tooltip-notas">
               <span className="login-feature-icon">📚</span>
               <span>Notas compartidas</span>
+              <span id="tooltip-notas" className="login-feature-tooltip">Comparte y descarga apuntes organizados por asignatura.</span>
             </button>
-            <button type="button" className="login-feature-btn">
+            <button type="button" className="login-feature-btn" aria-describedby="tooltip-grupos">
               <span className="login-feature-icon">👥</span>
               <span>Grupos de estudio</span>
+              <span id="tooltip-grupos" className="login-feature-tooltip">Crea o únete a grupos para estudiar con compañeros.</span>
             </button>
           </div>
         </div>
