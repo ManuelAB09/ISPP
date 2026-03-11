@@ -29,6 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import es.us.meerkat.backend.dto.ZoomJoinResponse;
 import es.us.meerkat.backend.dto.ZoomParticipantResponse;
 import es.us.meerkat.backend.dto.ZoomRecordingResponse;
@@ -92,7 +94,22 @@ public class ZoomIntegrationService {
                 zoomMeetingRepository.findFirstByComunidadIdAndStatusOrderByCreatedAtDesc(
                         comunidadId, ZoomMeetingStatus.ACTIVE);
         if (existing.isPresent()) {
-            return existing.get();
+            ZoomMeeting activeMeeting = existing.get();
+            LocalDateTime scheduledEnd =
+                    activeMeeting.getCreatedAt().plusMinutes(activeMeeting.getDurationMinutes());
+            if (LocalDateTime.now().isAfter(scheduledEnd)) {
+                participantRepository
+                        .findByZoomMeetingIdAndInCallTrueOrderByJoinedAtAsc(activeMeeting.getId())
+                        .forEach(
+                                p -> {
+                                    p.markLeft();
+                                    participantRepository.save(p);
+                                });
+                activeMeeting.endMeeting();
+                zoomMeetingRepository.save(activeMeeting);
+            } else {
+                return activeMeeting;
+            }
         }
 
         Comunidad comunidad =
@@ -126,9 +143,31 @@ public class ZoomIntegrationService {
                         .startUrl((String) zoomMeeting.get("start_url"))
                         .password((String) zoomMeeting.get("password"))
                         .status(ZoomMeetingStatus.ACTIVE)
+                        .durationMinutes(durationMinutes)
                         .build();
 
         return zoomMeetingRepository.save(meeting);
+    }
+
+    /** Finaliza manualmente la llamada activa de una comunidad. */
+    @Transactional
+    public void endActiveMeeting(final Long comunidadId, final Long userId) {
+        ZoomMeeting meeting = getActiveMeeting(comunidadId, userId);
+
+        if (!meeting.getCreador().getId().equals(userId)) {
+            throw new RuntimeException("Solo el creador puede finalizar la llamada");
+        }
+
+        participantRepository
+                .findByZoomMeetingIdAndInCallTrueOrderByJoinedAtAsc(meeting.getId())
+                .forEach(
+                        p -> {
+                            p.markLeft();
+                            participantRepository.save(p);
+                        });
+
+        meeting.endMeeting();
+        zoomMeetingRepository.save(meeting);
     }
 
     /** Obtiene la reunion activa de una comunidad si el usuario pertenece a ella. */
@@ -151,25 +190,25 @@ public class ZoomIntegrationService {
                         .findById(userId)
                         .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        participantRepository
-                .findFirstByZoomMeetingIdAndUsuarioIdAndInCallTrueOrderByJoinedAtDesc(
-                        meeting.getId(), userId)
-                .orElseGet(
-                        () ->
-                                participantRepository.save(
-                                        ZoomMeetingParticipant.builder()
-                                                .zoomMeeting(meeting)
-                                                .usuario(user)
-                                                .zoomParticipantId(
-                                                        "app-"
-                                                                + user.getId()
-                                                                + "-"
-                                                                + System.currentTimeMillis())
-                                                .displayName(user.getNombre())
-                                                .email(user.getEmail())
-                                                .joinedAt(LocalDateTime.now())
-                                                .inCall(true)
-                                                .build()));
+        boolean alreadyTracked =
+                participantRepository
+                        .findFirstByZoomMeetingIdAndUsuarioIdOrderByJoinedAtDesc(
+                                meeting.getId(), userId)
+                        .isPresent();
+
+        if (!alreadyTracked) {
+            participantRepository.save(
+                    ZoomMeetingParticipant.builder()
+                            .zoomMeeting(meeting)
+                            .usuario(user)
+                            .zoomParticipantId(
+                                    "app-" + user.getId() + "-" + System.currentTimeMillis())
+                            .displayName(user.getNombre())
+                            .email(user.getEmail())
+                            .joinedAt(LocalDateTime.now())
+                            .inCall(false)
+                            .build());
+        }
 
         return new ZoomJoinResponse(
                 meeting.getZoomMeetingId(),
@@ -244,14 +283,17 @@ public class ZoomIntegrationService {
     /** Procesa webhooks de Zoom para participantes, fin de llamada y grabaciones. */
     @Transactional
     public Map<String, Object> processWebhook(
-            final Map<String, Object> payload, final String authorizationHeader) {
-
-        validateWebhookAuthorization(authorizationHeader);
+            final Map<String, Object> payload, final String zmSignature, final String zmTimestamp) {
 
         String event = (String) payload.get("event");
+        // La validacion de URL debe responderse antes de cualquier comprobacion de auth,
+        // porque Zoom la envia sin cabecera de firma y necesita una respuesta 200 para activar
+        // el endpoint.
         if ("endpoint.url_validation".equals(event)) {
             return buildValidationResponse(payload);
         }
+
+        validateWebhookSignature(zmSignature, zmTimestamp, payload);
 
         Map<String, Object> eventPayload = getMap(payload, "payload");
         Map<String, Object> object = getMap(eventPayload, "object");
@@ -285,16 +327,35 @@ public class ZoomIntegrationService {
 
         Usuario user = email != null ? usuarioRepository.findByEmail(email).orElse(null) : null;
 
-        participantRepository.save(
-                ZoomMeetingParticipant.builder()
-                        .zoomMeeting(meeting)
-                        .usuario(user)
-                        .zoomParticipantId(participantId)
-                        .displayName(displayName)
-                        .email(email)
-                        .joinedAt(LocalDateTime.now())
-                        .inCall(true)
-                        .build());
+        Optional<ZoomMeetingParticipant> pending =
+                email != null
+                        ? participantRepository
+                                .findFirstByZoomMeetingIdAndEmailAndInCallFalseOrderByJoinedAtDesc(
+                                        meeting.getId(), email)
+                        : Optional.empty();
+
+        if (pending.isPresent()) {
+            ZoomMeetingParticipant p = pending.get();
+            p.setZoomParticipantId(participantId);
+            p.setDisplayName(displayName);
+            p.setJoinedAt(LocalDateTime.now());
+            p.setInCall(true);
+            if (user != null) {
+                p.setUsuario(user);
+            }
+            participantRepository.save(p);
+        } else {
+            participantRepository.save(
+                    ZoomMeetingParticipant.builder()
+                            .zoomMeeting(meeting)
+                            .usuario(user)
+                            .zoomParticipantId(participantId)
+                            .displayName(displayName)
+                            .email(email)
+                            .joinedAt(LocalDateTime.now())
+                            .inCall(true)
+                            .build());
+        }
     }
 
     private void handleParticipantLeft(
@@ -319,6 +380,14 @@ public class ZoomIntegrationService {
                         meeting -> {
                             meeting.endMeeting();
                             zoomMeetingRepository.save(meeting);
+                            participantRepository
+                                    .findByZoomMeetingIdAndInCallTrueOrderByJoinedAtAsc(
+                                            meeting.getId())
+                                    .forEach(
+                                            p -> {
+                                                p.markLeft();
+                                                participantRepository.save(p);
+                                            });
                         });
     }
 
@@ -508,15 +577,30 @@ public class ZoomIntegrationService {
         return String.valueOf(token);
     }
 
-    private void validateWebhookAuthorization(final String authorizationHeader) {
+    private void validateWebhookSignature(
+            final String zmSignature, final String zmTimestamp, final Map<String, Object> payload) {
         if (isBlank(zoomWebhookSecretToken)) {
             return;
         }
-        if (authorizationHeader == null
-                || !MessageDigest.isEqual(
-                        authorizationHeader.getBytes(StandardCharsets.UTF_8),
-                        zoomWebhookSecretToken.getBytes(StandardCharsets.UTF_8))) {
+        if (zmSignature == null || zmTimestamp == null) {
             throw new RuntimeException("Webhook no autorizado");
+        }
+        // Zoom firma con: HMAC-SHA256("v0:{timestamp}:{bodyJson}", secretToken)
+        // y envía "v0={hash}" en x-zm-signature.
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            String bodyJson = mapper.writeValueAsString(payload);
+            String message = "v0:" + zmTimestamp + ":" + bodyJson;
+            String expectedHash = "v0=" + hmacSha256Hex(message, zoomWebhookSecretToken);
+            if (!MessageDigest.isEqual(
+                    expectedHash.getBytes(StandardCharsets.UTF_8),
+                    zmSignature.getBytes(StandardCharsets.UTF_8))) {
+                throw new RuntimeException("Webhook no autorizado");
+            }
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("No se pudo validar la firma del webhook de Zoom", e);
         }
     }
 

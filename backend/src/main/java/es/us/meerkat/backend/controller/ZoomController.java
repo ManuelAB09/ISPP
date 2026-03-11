@@ -246,6 +246,63 @@ public class ZoomController {
                 zoomIntegrationService.getRecordingsForCommunity(communityId, usuario.getId()));
     }
 
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(required = false)
+    @org.springframework.web.bind.annotation.DeleteMapping("/communities/{communityId}/meeting")
+    @Operation(
+            summary = "Finalizar llamada activa",
+            description = "Solo el creador de la llamada puede finalizarla")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Llamada finalizada"),
+        @ApiResponse(
+                responseCode = "401",
+                description = "No autenticado",
+                content = @Content(schema = @Schema(implementation = MessageResponse.class))),
+        @ApiResponse(
+                responseCode = "403",
+                description = "No eres el creador de la llamada",
+                content = @Content(schema = @Schema(implementation = MessageResponse.class))),
+        @ApiResponse(
+                responseCode = "404",
+                description = "No hay llamada activa",
+                content = @Content(schema = @Schema(implementation = MessageResponse.class)))
+    })
+    public ResponseEntity<?> endMeeting(
+            @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(MessageResponse.builder().message("Usuario no autenticado").build());
+        }
+        if (!authorizationService.isMemberOf(usuario.getId(), communityId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(
+                            MessageResponse.builder()
+                                    .message("No perteneces a esta comunidad")
+                                    .build());
+        }
+
+        try {
+            zoomIntegrationService.endActiveMeeting(communityId, usuario.getId());
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            if ("No hay llamada activa en esta comunidad".equals(e.getMessage())) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(
+                                MessageResponse.builder()
+                                        .message("No hay llamada activa en esta comunidad")
+                                        .build());
+            }
+            if ("Solo el creador puede finalizar la llamada".equals(e.getMessage())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(
+                                MessageResponse.builder()
+                                        .message("Solo el creador puede finalizar la llamada")
+                                        .build());
+            }
+            throw e;
+        }
+    }
+
     @GetMapping("/me/calls")
     @Operation(summary = "Saber en que llamada esta el usuario")
     @ApiResponses({
@@ -274,10 +331,12 @@ public class ZoomController {
     })
     public ResponseEntity<Map<String, Object>> zoomWebhook(
             @RequestBody Map<String, Object> payload,
-            @RequestHeader(value = "authorization", required = false) String authorization) {
+            @RequestHeader(value = "x-zm-signature", required = false) String zmSignature,
+            @RequestHeader(value = "x-zm-request-timestamp", required = false) String zmTimestamp) {
 
         try {
-            return ResponseEntity.ok(zoomIntegrationService.processWebhook(payload, authorization));
+            return ResponseEntity.ok(
+                    zoomIntegrationService.processWebhook(payload, zmSignature, zmTimestamp));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", e.getMessage()));

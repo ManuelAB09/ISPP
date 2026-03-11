@@ -62,6 +62,10 @@ public class ZoomMeeting {
 
     private LocalDateTime endedAt;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private Integer durationMinutes = 60;
+
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();

@@ -23,4 +23,11 @@ public interface ZoomMeetingParticipantRepository
     Optional<ZoomMeetingParticipant>
             findFirstByZoomMeetingIdAndUsuarioIdAndInCallTrueOrderByJoinedAtDesc(
                     Long zoomMeetingId, Long usuarioId);
+
+    Optional<ZoomMeetingParticipant> findFirstByZoomMeetingIdAndUsuarioIdOrderByJoinedAtDesc(
+            Long zoomMeetingId, Long usuarioId);
+
+    Optional<ZoomMeetingParticipant>
+            findFirstByZoomMeetingIdAndEmailAndInCallFalseOrderByJoinedAtDesc(
+                    Long zoomMeetingId, String email);
 }
