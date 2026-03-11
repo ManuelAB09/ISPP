@@ -76,6 +76,9 @@ public class DataSeeder {
             u1.setIntereses(List.of("Gestión", "Tecnología", "Educación"));
             u1.setVisibleEnListados(true);
             u1.setEsTutor(false);
+            u1.setAutenticacionDosFactores(false);
+            u1.setNotificacionesEmail(true);
+            u1.setNotificacionesPush(false);
             u1.setPlan(TipoPlan.FREE);
 
             Usuario u2 = new Usuario();
@@ -87,6 +90,9 @@ public class DataSeeder {
             u2.setIntereses(List.of("Programación", "Diseño Web", "Bases de Datos"));
             u2.setVisibleEnListados(true);
             u2.setEsTutor(false);
+            u2.setAutenticacionDosFactores(false);
+            u2.setNotificacionesEmail(true);
+            u2.setNotificacionesPush(false);
             u2.setPlan(TipoPlan.FREE);
 
             Usuario u3 = new Usuario();
@@ -98,6 +104,9 @@ public class DataSeeder {
             u3.setIntereses(List.of("Java", "Spring Boot", "Microservicios"));
             u3.setVisibleEnListados(true);
             u3.setEsTutor(true);
+            u3.setAutenticacionDosFactores(false);
+            u3.setNotificacionesEmail(true);
+            u3.setNotificacionesPush(false);
             u3.setPlan(TipoPlan.FREE);
 
             Usuario u4 = new Usuario();
@@ -109,6 +118,9 @@ public class DataSeeder {
             u4.setIntereses(List.of("IA", "Machine Learning", "Python"));
             u4.setVisibleEnListados(true);
             u4.setEsTutor(true);
+            u4.setAutenticacionDosFactores(false);
+            u4.setNotificacionesEmail(true);
+            u4.setNotificacionesPush(false);
             u4.setPlan(TipoPlan.FREE);
 
             Usuario u5 = new Usuario();
@@ -120,6 +132,9 @@ public class DataSeeder {
             u5.setIntereses(List.of("Ciberseguridad", "Redes", "Linux"));
             u5.setVisibleEnListados(true);
             u5.setEsTutor(true);
+            u5.setAutenticacionDosFactores(false);
+            u5.setNotificacionesEmail(true);
+            u5.setNotificacionesPush(false);
             u5.setPlan(TipoPlan.FREE);
 
             Usuario u6 = new Usuario();
@@ -131,6 +146,9 @@ public class DataSeeder {
             u6.setIntereses(List.of("Estadística", "R", "Visualización de Datos"));
             u6.setVisibleEnListados(true);
             u6.setEsTutor(true);
+            u6.setAutenticacionDosFactores(false);
+            u6.setNotificacionesEmail(true);
+            u6.setNotificacionesPush(false);
             u6.setPlan(TipoPlan.FREE);
 
             Usuario u7 = new Usuario();
@@ -142,6 +160,9 @@ public class DataSeeder {
             u7.setIntereses(List.of("React", "TypeScript", "UX/UI"));
             u7.setVisibleEnListados(true);
             u7.setEsTutor(false);
+            u7.setAutenticacionDosFactores(false);
+            u7.setNotificacionesEmail(true);
+            u7.setNotificacionesPush(false);
             u7.setPlan(TipoPlan.FREE);
 
             Usuario u8 = new Usuario();
@@ -153,6 +174,9 @@ public class DataSeeder {
             u8.setIntereses(List.of("SQL", "NoSQL", "Arquitectura"));
             u8.setVisibleEnListados(false);
             u8.setEsTutor(false);
+            u8.setAutenticacionDosFactores(false);
+            u8.setNotificacionesEmail(true);
+            u8.setNotificacionesPush(false);
             u8.setPlan(TipoPlan.FREE);
 
             List<Usuario> usuarios = usuarioRepo.saveAll(List.of(u1, u2, u3, u4, u5, u6, u7, u8));
@@ -212,6 +236,13 @@ public class DataSeeder {
                             .build();
 
             List<Ubicacion> ubicaciones = ubicacionRepo.saveAll(List.of(ub1, ub2, ub3, ub4, ub5));
+
+            // Asignar ubicaciones a los usuarios que son tutores
+            u3.setUbicacion(ub1); // Carlos - Biblioteca ETSII
+            u4.setUbicacion(ub2); // Laura - Aula A0.10
+            u5.setUbicacion(ub3); // Pedro - Salón de Actos
+            u6.setUbicacion(ub5); // Ana - Biblioteca General US
+            usuarioRepo.saveAll(List.of(u3, u4, u5, u6));
 
             // ============================
             // 3. COMUNIDADES
@@ -359,19 +390,19 @@ public class DataSeeder {
                     MiembroComunidad.builder()
                             .usuario(u3)
                             .comunidad(c1)
-                            .rol(RolComunidad.MIEMBRO)
+                            .rol(RolComunidad.ALUMNO)
                             .build();
             MiembroComunidad m3 =
                     MiembroComunidad.builder()
                             .usuario(u7)
                             .comunidad(c1)
-                            .rol(RolComunidad.MIEMBRO)
+                            .rol(RolComunidad.ALUMNO)
                             .build();
             MiembroComunidad m4 =
                     MiembroComunidad.builder()
                             .usuario(u8)
                             .comunidad(c1)
-                            .rol(RolComunidad.MIEMBRO)
+                            .rol(RolComunidad.ALUMNO)
                             .build();
 
             // c2 - Full Stack (creador: u3=Carlos)
@@ -385,13 +416,13 @@ public class DataSeeder {
                     MiembroComunidad.builder()
                             .usuario(u2)
                             .comunidad(c2)
-                            .rol(RolComunidad.MIEMBRO)
+                            .rol(RolComunidad.ALUMNO)
                             .build();
             MiembroComunidad m7 =
                     MiembroComunidad.builder()
                             .usuario(u7)
                             .comunidad(c2)
-                            .rol(RolComunidad.MIEMBRO)
+                            .rol(RolComunidad.ALUMNO)
                             .build();
 
             // c3 - IA (creador: u4=Laura)
@@ -405,13 +436,13 @@ public class DataSeeder {
                     MiembroComunidad.builder()
                             .usuario(u6)
                             .comunidad(c3)
-                            .rol(RolComunidad.MIEMBRO)
+                            .rol(RolComunidad.ALUMNO)
                             .build();
             MiembroComunidad m10 =
                     MiembroComunidad.builder()
                             .usuario(u3)
                             .comunidad(c3)
-                            .rol(RolComunidad.MIEMBRO)
+                            .rol(RolComunidad.ALUMNO)
                             .build();
 
             // c4 - Ciberseguridad (creador: u5=Pedro)
@@ -425,7 +456,7 @@ public class DataSeeder {
                     MiembroComunidad.builder()
                             .usuario(u3)
                             .comunidad(c4)
-                            .rol(RolComunidad.MIEMBRO)
+                            .rol(RolComunidad.ALUMNO)
                             .build();
 
             // c5 - Matemáticas (creador: u6=Ana)
@@ -439,13 +470,13 @@ public class DataSeeder {
                     MiembroComunidad.builder()
                             .usuario(u4)
                             .comunidad(c5)
-                            .rol(RolComunidad.MIEMBRO)
+                            .rol(RolComunidad.ALUMNO)
                             .build();
             MiembroComunidad m15 =
                     MiembroComunidad.builder()
                             .usuario(u8)
                             .comunidad(c5)
-                            .rol(RolComunidad.MIEMBRO)
+                            .rol(RolComunidad.ALUMNO)
                             .build();
 
             miembroRepo.saveAll(
@@ -701,7 +732,7 @@ public class DataSeeder {
             // 8. PERFILES DE TUTOR
             // ============================
             Tutor t1 = new Tutor();
-            t1.setUs(u3);
+            t1.setUsuario(u3);
             t1.setEspecialidades(List.of("Java", "Spring Boot", "Microservicios"));
             t1.setTarifaHora(new java.math.BigDecimal("20.00"));
             t1.setDisponibilidad("Tardes de lunes a viernes");
@@ -712,7 +743,7 @@ public class DataSeeder {
             t1.setClassroomConectado(false);
 
             Tutor t2 = new Tutor();
-            t2.setUs(u6);
+            t2.setUsuario(u6);
             t2.setEspecialidades(List.of("Estadística", "R", "Python", "Machine Learning"));
             t2.setTarifaHora(new java.math.BigDecimal("18.50"));
             t2.setDisponibilidad("Fines de semana y lunes por la tarde");
@@ -723,7 +754,7 @@ public class DataSeeder {
             t2.setClassroomConectado(false);
 
             Tutor t3 = new Tutor();
-            t3.setUs(u4);
+            t3.setUsuario(u4);
             t3.setEspecialidades(
                     List.of(
                             "Inteligencia Artificial",
@@ -739,7 +770,7 @@ public class DataSeeder {
             t3.setClassroomConectado(false);
 
             Tutor t4 = new Tutor();
-            t4.setUs(u5);
+            t4.setUsuario(u5);
             t4.setEspecialidades(List.of("Ciberseguridad", "Hacking Ético", "Redes", "Linux"));
             t4.setTarifaHora(new java.math.BigDecimal("25.00"));
             t4.setDisponibilidad("Noches de entre semana y fines de semana");

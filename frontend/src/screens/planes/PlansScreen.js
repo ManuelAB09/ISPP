@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { subscriptionsApi } from "../../api/subscriptions.api";
 import Header from "../../components/Header/Header";
+import PageHeader from "../../components/PageHeader";
 import CheckoutModal from "../../components/plans/CheckoutModal";
 import "./PlansScreen.css";
 
@@ -16,7 +17,7 @@ const DEFAULT_PLANS = [
     id: 2,
     nombre: "PREMIUM",
     descripcion: "Funciones avanzadas desbloqueadas",
-    caracteristicas: ["Más límites y herramientas", "Mejor experiencia de uso", "Acceso a funcionalidades avanzadas"]
+    caracteristicas: ["Más límites y herramientas", "Mejor experiencia de uso", "Acceso a funcionalidades avanzadas", "Soporte prioritario", "Sin publicidad"]
   }
 ];
 
@@ -36,7 +37,7 @@ export default function PlansScreen() {
     const loadData = async () => {
       try {
         setLoading(true);
-        
+
         // Intentar cargar planes del backend
         try {
           const plansResponse = await subscriptionsApi.listPlans();
@@ -82,8 +83,8 @@ export default function PlansScreen() {
     } catch (e) {
       if (e?.status === 403) {
         setError("Por favor, inicia sesión para continuar");
-      }else { 
-      setError(e?.message || "No se pudo iniciar la suscripción");
+      } else {
+        setError(e?.message || "No se pudo iniciar la suscripción");
       }
     } finally {
       setSubmitting(false);
@@ -91,46 +92,46 @@ export default function PlansScreen() {
   };
 
   //MOCK: simular suscripción exitosa 
-/*
-  const handleSubscribe = async (period) => {
-  setSubmitting(true);
-  setError("");
-  setSuccessMessage("");
+  /*
+    const handleSubscribe = async (period) => {
+    setSubmitting(true);
+    setError("");
+    setSuccessMessage("");
+  
+      try {
+        const isYearly = period === "anual";
+        const days = isYearly ? 365 : 30;
+  
+        // Mock: simular suscripción exitosa
+        const mockPlan = {
+          plan: "PREMIUM",
+          activa: true,
+          periodo: isYearly ? "ANUAL" : "MENSUAL",
+          fechaFin: new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        };
+        
+        // Simular delay de red
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        setMyPlan(mockPlan);
+        setShowCheckout(false);
+        setSuccessMessage(
+          isYearly
+            ? "¡Suscripción Premium anual activada exitosamente!"
+            : "¡Suscripción Premium mensual activada exitosamente!"
+        );
+        
+        // Desaparecer mensaje después de 3 segundos
+        setTimeout(() => setSuccessMessage(""), 5000);
+      } catch (e) {
+        setError(e?.message || "No se pudo iniciar la suscripción");
+      } finally {
+        setSubmitting(false);
+      }
+    };
+  */
 
-    try {
-      const isYearly = period === "anual";
-      const days = isYearly ? 365 : 30;
-
-      // Mock: simular suscripción exitosa
-      const mockPlan = {
-        plan: "PREMIUM",
-        activa: true,
-        periodo: isYearly ? "ANUAL" : "MENSUAL",
-        fechaFin: new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-      };
-      
-      // Simular delay de red
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setMyPlan(mockPlan);
-      setShowCheckout(false);
-      setSuccessMessage(
-        isYearly
-          ? "¡Suscripción Premium anual activada exitosamente!"
-          : "¡Suscripción Premium mensual activada exitosamente!"
-      );
-      
-      // Desaparecer mensaje después de 3 segundos
-      setTimeout(() => setSuccessMessage(""), 5000);
-    } catch (e) {
-      setError(e?.message || "No se pudo iniciar la suscripción");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-*/  
-
-   const handleCancel = async () => {
+  const handleCancel = async () => {
     setSubmitting(true);
     setError("");
     setSuccessMessage("");
@@ -140,7 +141,7 @@ export default function PlansScreen() {
       setMyPlan(res || null);
       setShowCheckout(false);
       setSuccessMessage("Suscripción cancelada exitosamente");
-      
+
       setTimeout(() => setSuccessMessage(""), 5000);
     } catch (e) {
       setError(e?.message || "No se pudo cancelar la suscripción");
@@ -150,50 +151,49 @@ export default function PlansScreen() {
   };
 
   //MOCK: simular cancelación exitosa
-/*  
-  const handleCancel = async () => {
-    setSubmitting(true);
-    setError("");
-    setSuccessMessage("");
-
-    try {
-      // Mock: simular cancelación exitosa
-      // Simular delay de red
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setMyPlan(null);
-      setSuccessMessage("Suscripción cancelada exitosamente");
-      
-      // Desaparecer mensaje después de 5 segundos
-      setTimeout(() => setSuccessMessage(""), 5000);
-    } catch (e) {
-      setError(e?.message || "No se pudo cancelar la suscripción");
-    } finally {
-      setSubmitting(false);
+  /*  
+    const handleCancel = async () => {
+      setSubmitting(true);
+      setError("");
+      setSuccessMessage("");
+  
+      try {
+        // Mock: simular cancelación exitosa
+        // Simular delay de red
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        setMyPlan(null);
+        setSuccessMessage("Suscripción cancelada exitosamente");
+        
+        // Desaparecer mensaje después de 5 segundos
+        setTimeout(() => setSuccessMessage(""), 5000);
+      } catch (e) {
+        setError(e?.message || "No se pudo cancelar la suscripción");
+      } finally {
+        setSubmitting(false);
+      }
+    };
+  
+    if (loading) {
+      return (
+        <>
+          <Header page={'planes'} />
+          <div className="plansPage">
+            <p style={{ textAlign: 'center', padding: '40px' }}>Cargando...</p>
+          </div>
+        </>
+      );
     }
-  };
-
-  if (loading) {
-    return (
-      <>
-        <Header page={'planes'} />
-        <div className="plansPage">
-          <p style={{ textAlign: 'center', padding: '40px' }}>Cargando...</p>
-        </div>
-      </>
-    );
-  }
-*/
+  */
   return (
     <>
       <Header page={'planes'} />
       <div className="plansPage">
         <div className="header">
-          <div className="headerTitle">
-            <p>Elige el plan perfecto para desbloquear todas las funcionalidades y sacar el máximo provecho de MeerKatters</p>
-            <span className="line"></span>
-            <h1>Planes de Suscripción</h1>
-          </div>
+          <PageHeader 
+            title="Planes de Suscripción"
+            subtitle="Elige el plan perfecto para desbloquear todas las funcionalidades y sacar el máximo provecho de MeerKatters"
+          />
         </div>
 
         <main className="plansContent">
@@ -232,8 +232,9 @@ export default function PlansScreen() {
                             `$${plan.precio}`
                           ) : isPremiumPlan ? (
                             <span className="planPriceStack">
-                              <span className="planPriceMain">2.99€/mes</span>
-                              <span className="planPriceSub">25.99€/año</span>
+                              <span className="planPriceMain">
+                                2.99€/mes + IVA: {(parseFloat(2.99) * 1.21).toFixed(2)}€
+                              </span> <span className="planPriceSub">25.99€/año + IVA: {(parseFloat(25.99) * 1.21).toFixed(2)}€</span>
                             </span>
                           ) : (
                             "GRATIS"
@@ -317,7 +318,7 @@ export default function PlansScreen() {
                     <b>Plan:</b> {myPlan?.plan} {myPlan?.periodo === "ANUAL" ? "(anual)" : "(mensual)"}
                   </div>
                   <div>
-                    <b>Activa:</b> {String(myPlan?.activa)? "Sí" : "No"}
+                    <b>Activa:</b> {String(myPlan?.activa) ? "Sí" : "No"}
                   </div>
                   {myPlan?.fechaFin && (
                     <div>

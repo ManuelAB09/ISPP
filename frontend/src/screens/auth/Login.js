@@ -78,13 +78,15 @@ const Login = () => {
           </p>
 
           <div className="login-feature-buttons">
-            <button type="button" className="login-feature-btn">
+            <button type="button" className="login-feature-btn" aria-describedby="tooltip-notas">
               <span className="login-feature-icon">📚</span>
               <span>Notas compartidas</span>
+              <span id="tooltip-notas" className="login-feature-tooltip">Comparte y descarga apuntes organizados por asignatura.</span>
             </button>
-            <button type="button" className="login-feature-btn">
+            <button type="button" className="login-feature-btn" aria-describedby="tooltip-grupos">
               <span className="login-feature-icon">👥</span>
               <span>Grupos de estudio</span>
+              <span id="tooltip-grupos" className="login-feature-tooltip">Crea o únete a grupos para estudiar con compañeros.</span>
             </button>
           </div>
         </div>
@@ -99,36 +101,17 @@ const Login = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="login-form">
-            {error && (
-              <div className="login-error" style={{
-                background: '#fef2f2',
-                color: '#dc2626',
-                padding: '10px 14px',
-                borderRadius: '8px',
-                marginBottom: '16px',
-                fontSize: '14px',
-                border: '1px solid #fecaca'
-              }}>
-                {error}
-              </div>
-            )}
             <div className="form-group">
               <label htmlFor="email">Correo electrónico</label>
-              <div className="input-with-icon">
-                <svg className="input-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" >
-                  <rect x="2" y="4" width="20" height="16" rx="2" />
-                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                </svg>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  placeholder="nombre@universidadDeSevilla.mola"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                placeholder="nombre@universidadDeSevilla.mola"
+                value={formData.email}
+                onChange={handleInputChange}
+                required
+              />
             </div>
 
             <div className="form-group">
@@ -138,11 +121,7 @@ const Login = () => {
                   Olvidaste la contraseña?
                 </Link>
               </div>
-              <div className="input-with-icon password-input-container">
-                <svg className="input-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
+              <div className="password-input-container">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   id="password"

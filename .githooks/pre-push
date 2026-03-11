@@ -26,17 +26,18 @@ fi
 #   main | trunk | hotfix | bugfix | develop
 #
 # Ramas de tarea:
-#   (feature|doc|test)/#<ID>_<NombreEnUpperCamelCase>
+#   (feature|doc|test|fix)/#<ID>_<NombreEnUpperCamelCase>
 #   El nombre descriptivo debe empezar por mayúscula y no
 #   contener espacios. No se valida estrictamente cada palabra
 #   en UpperCamelCase porque los IDEs lo garantizan.
 #
-# Ramas de bugfix con issue:
+# Ramas de bugfix/fix con issue:
 #   bugfix/#<ID>_<NombreEnUpperCamelCase>
+#   fix/#<ID>_<NombreEnUpperCamelCase>
 
 main_re='^(main|trunk|hotfix|bugfix|develop|sprint1)$'
-task_re='^(feature|doc|test)/#[0-9]+_[A-Z][^ ]*$'
-bugfix_re='^bugfix/#[0-9]+_[A-Z][^ ]*$'
+task_re='^(feature|doc|test|fix)/#[0-9]+_[A-Z][^ ]*$'
+bugfix_re='^(bugfix|fix)/#[0-9]+_[A-Z][^ ]*$'
 
 # ── Excepciones temporales ───────────────────────────────────
 # TODO: eliminar cuando la rama se migre a la convención
@@ -71,10 +72,12 @@ echo "    feature/#<ID>_<NombreEnUpperCamelCase>   → nueva funcionalidad"
 echo "    doc/#<ID>_<NombreEnUpperCamelCase>        → documentación"
 echo "    test/#<ID>_<NombreEnUpperCamelCase>       → tests"
 echo "    bugfix/#<ID>_<NombreEnUpperCamelCase>     → corrección de bug"
+echo "    fix/#<ID>_<NombreEnUpperCamelCase>        → corrección rápida"
 echo ""
 echo "  Ejemplos válidos:"
 echo "    feature/#123_AñadirLocalizaciónDeEvento"
 echo "    bugfix/#210_ArreglarLoginTimeout"
+echo "    fix/#210_ArreglarLoginTimeout"
 echo "    doc/#45_ActualizarGuiaDespliegue"
 echo "    test/#88_VerificarLoginConGoogleOAuth"
 echo ""

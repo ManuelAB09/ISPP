@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../components/Header/Header";
+import PageHeader from "../../components/PageHeader";
 import InstitutionPlanModal from "./InstitutionPlanModal";
 import "./InstitutionPlansScreen.css";
 
@@ -125,11 +126,10 @@ export default function InstitutionPlansScreen() {
       <div className="instPlansPage">
         {/* ── Hero Header ─────────────────────────────── */}
         <div className="instPlansHeader">
-          <div className="headerTitle">
-            <p>Soluciones adaptadas para academias, universidades y centros educativos con gestión avanzada</p>
-            <span className="line"></span>
-            <h1>Planes para Instituciones</h1>
-          </div>
+          <PageHeader 
+            title="Planes para Instituciones"
+            subtitle="Soluciones adaptadas para academias, universidades y centros educativos con gestión avanzada"
+          />
           <button
             className="instBtnBack"
             onClick={() => navigate("/planes")}

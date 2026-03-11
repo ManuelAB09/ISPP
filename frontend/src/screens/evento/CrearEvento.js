@@ -373,7 +373,7 @@ const CrearEvento = () => {
             <div className="input-group">
               <label className="input-label">Materiales necesarios</label>
               <input type="text" name="comentario" placeholder="Ej. Libro de texto, ordenador portátil, calculadora científica" value={formData.comentario} onChange={handleChange} className="input-box input-large" />
-              <span className="field-hint">Indica los materiales que los asistentes deben llevar al evento</span>
+              <span className="field-hint">Separa cada material con una coma (,). Ej: Libro de texto, ordenador portátil, calculadora</span>
             </div>
 
             <div className="input-group">

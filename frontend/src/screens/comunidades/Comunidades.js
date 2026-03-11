@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { communitiesApi } from '../../api/communities.api';
 import ComunidadCard from '../../components/Comunidad/ComunidadCard';
 import Header from '../../components/Header/Header';
-import CreateIcon from '../../components/icons/Create';
-import FilterIcon from '../../components/icons/Filter';
 import InputSearch from '../../components/InputSearch/InputSearch';
+import PageHeader from '../../components/PageHeader';
 import './Comunidades.css';
 
 export default function Comunidades() {
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [comunidades, setComunidades] = useState([])
@@ -36,19 +37,24 @@ export default function Comunidades() {
         <>
             <Header page={'comunidades'}/>
             <div className="header">
-                <div className="headerTitle">
-                    <p>Explora las comunidades que mejor se adaptan a tus necesidades y ganas de aprender </p>
-                    <span className="line"></span>
-                    <h1>Comunidades</h1>
-                </div>
+                <PageHeader 
+                    title="Comunidades"
+                    subtitle="Explora las comunidades que mejor se adaptan a tus necesidades y ganas de aprender"
+                    className="comunidad"
+                />
                 <div className="search">
                     <InputSearch 
                         placeholder='Buscar una comunidad por nombre, etiqueta o palabra clave' 
+                        mobilePlaceholder='Buscar comunidad'
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        />
-                    <FilterIcon />
-                    <CreateIcon />
+                    />
+                    <button 
+                        className="create-community-btn"
+                        onClick={() => navigate('/crear-comunidad')}
+                    >
+                        Crear comunidad
+                    </button>
                 </div>
             </div>
             <div className="body">

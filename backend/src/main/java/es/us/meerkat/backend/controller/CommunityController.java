@@ -7,9 +7,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import es.us.meerkat.backend.dto.*;
 import es.us.meerkat.backend.entity.Categoria;
@@ -125,7 +127,7 @@ public class CommunityController {
                 description = "Datos inválidos o límite de comunidades gratuitas" + " alcanzado"),
         @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
     })
-    public ResponseEntity<CommunityDetailResponse> createCommunity(
+    public ResponseEntity<?> createCommunity(
             @Valid @RequestBody CreateCommunityRequest request,
             @AuthenticationPrincipal Usuario usuario) {
 
@@ -147,7 +149,8 @@ public class CommunityController {
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(entityToDetailResponse(comunidad, usuario.getId()));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest()
+                    .body(MessageResponse.builder().message(e.getMessage()).build());
         }
     }
 
@@ -325,6 +328,39 @@ public class CommunityController {
                 MessageResponse.builder()
                         .message("Funcionalidad de contratación de tutores en implementación")
                         .build());
+    }
+
+    /**
+     * Sube/actualiza la imagen de portada de la comunidad. POST
+     * /api/v1/communities/{communityId}/photo
+     */
+    @PostMapping(value = "/{communityId}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "Subir foto de comunidad",
+            description = "Sube una imagen para la portada de la comunidad (solo admin)",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<CommunityDetailResponse> uploadCommunityPhoto(
+            @PathVariable Long communityId,
+            @AuthenticationPrincipal Usuario usuario,
+            @RequestParam("file") MultipartFile file) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        try {
+            Comunidad comunidad =
+                    communityService.actualizarFotoComunidad(usuario.getId(), communityId, file);
+            return ResponseEntity.ok(entityToDetailResponse(comunidad, usuario.getId()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     // =====================================================
@@ -847,7 +883,8 @@ public class CommunityController {
     })
     public ResponseEntity<List<EventSummaryResponse>> listCommunityEvents(
             @PathVariable Long communityId,
-            @RequestParam(name = "cancelados", defaultValue = "false") boolean cancelados) {
+            @RequestParam(name = "cancelados", defaultValue = "false") boolean cancelados,
+            @AuthenticationPrincipal Usuario usuario) {
 
         try {
             communityService.getCommunityById(communityId, null);
@@ -855,7 +892,9 @@ public class CommunityController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
-        List<Evento> eventos = eventoService.obtenerEventosPorComunidad(communityId, cancelados);
+        Long usuarioId = usuario != null ? usuario.getId() : null;
+        List<Evento> eventos =
+                eventoService.obtenerEventosPorComunidad(communityId, cancelados, usuarioId);
         List<EventSummaryResponse> response =
                 eventos.stream().map(Evento::toSummaryDTO).collect(Collectors.toList());
 

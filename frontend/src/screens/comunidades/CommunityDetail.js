@@ -33,8 +33,9 @@ export default function CommunityDetail() {
     id: Number(currentUserId),
     nombre: user?.nombre || 'Usuario',
     foto: user?.foto || null,
+    fotoBackgroundColor: user?.fotoBackgroundColor || '#ffffff',
   };
-  const communityImage = community?.imagen || community?.imagenUrl || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
+  const communityImage = community?.imagenUrl !== 'empty' ? community?.imagenUrl : 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
 
   const fetchCommunity = useCallback(async () => {
     try {
@@ -150,6 +151,7 @@ export default function CommunityDetail() {
       await communitiesApi.join(communityId);
       setIsMember(true);
       await fetchCommunity(); // Refresh member count
+      await fetchEvents(); // Refresh events to show private events
     } catch (err) {
       console.error('Error al unirse a la comunidad:', err);
       if (err.status === 401 || err.message?.includes('401')) {
@@ -171,6 +173,7 @@ export default function CommunityDetail() {
       await communitiesApi.leave(communityId);
       setIsMember(false);
       await fetchCommunity(); // Refresh member count
+      await fetchEvents(); // Refresh events to hide private events
     } catch (err) {
       console.error('Error al abandonar la comunidad:', err);
       const status = err.status || err.response?.status;
@@ -300,13 +303,15 @@ export default function CommunityDetail() {
                 />
                 Mostrar cancelados
               </label>
-              {isMember && (
+              {isMember ? (
                 <button
                   className="cd-btn cd-btn-create"
                   onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
                 >
                   <LuPlus /> Crear evento
                 </button>
+              ) : (
+                <span className="cd-member-hint">Únete a la comunidad para crear eventos</span>
               )}
             </div>
           </div>
@@ -329,14 +334,18 @@ export default function CommunityDetail() {
             <div className="cd-empty-events">
               <LuCalendar className="cd-empty-icon" />
               <h3>No hay eventos</h3>
-              <p>Sé el primero en crear un evento para esta comunidad.</p>
-              {isMember && (
-                <button
-                  className="cd-btn cd-btn-create"
-                  onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
-                >
-                  <LuPlus /> Crear evento
-                </button>
+              {isMember ? (
+                <>
+                  <p>Sé el primero en crear un evento para esta comunidad.</p>
+                  <button
+                    className="cd-btn cd-btn-create"
+                    onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
+                  >
+                    <LuPlus /> Crear evento
+                  </button>
+                </>
+              ) : (
+                <p>Únete a la comunidad para poder crear eventos.</p>
               )}
             </div>
           )}

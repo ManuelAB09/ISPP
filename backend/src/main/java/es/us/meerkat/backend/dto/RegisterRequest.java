@@ -18,4 +18,6 @@ public class RegisterRequest {
 
     /** Nombre completo del nuevo usuario. */
     private String nombre;
+
+    private Boolean esTutor;
 }

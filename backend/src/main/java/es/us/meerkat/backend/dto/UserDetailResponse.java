@@ -28,6 +28,9 @@ public class UserDetailResponse {
     /** URL de la foto de perfil. */
     private String foto;
 
+    /** Color de fondo de la foto de perfil. */
+    private String fotoBackgroundColor;
+
     /** Breve biografía del usuario. */
     private String bio;
 
@@ -37,8 +40,14 @@ public class UserDetailResponse {
     /** Grado del usuario. */
     private String grado;
 
+    /** Nivel de estudios del usuario. */
+    private String nivelEstudios;
+
+    /** Base formativa del usuario. */
+    private String baseFormativa;
+
     /** Ubicación del usuario. */
-    private String ubicacion;
+    private UbicacionResponse ubicacion;
 
     /** Lista de intereses del usuario. */
     private List<String> intereses;
@@ -48,6 +57,15 @@ public class UserDetailResponse {
 
     /** Indica si el usuario tiene perfil de tutor. */
     private Boolean esTutor;
+
+    /** Indica si el usuario tiene activada la autenticación de dos factores. */
+    private Boolean autenticacionDosFactores;
+
+    /** Indica si el usuario recibe notificaciones por email. */
+    private Boolean notificacionesEmail;
+
+    /** Indica si el usuario recibe notificaciones push. */
+    private Boolean notificacionesPush;
 
     /** Fecha de creación de la cuenta. */
     private LocalDateTime createdAt;

@@ -13,7 +13,9 @@ import es.us.meerkat.backend.dto.ForgotPasswordRequest;
 import es.us.meerkat.backend.dto.LoginRequest;
 import es.us.meerkat.backend.dto.MessageResponse;
 import es.us.meerkat.backend.dto.RegisterRequest;
+import es.us.meerkat.backend.dto.UbicacionResponse;
 import es.us.meerkat.backend.dto.UserDetailResponse;
+import es.us.meerkat.backend.entity.Ubicacion;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.exception.ConflictException;
 import es.us.meerkat.backend.exception.ValidationException;
@@ -76,8 +78,11 @@ public class AuthService {
         usuario.setNombre(requestParam.getNombre());
         usuario.setEsTutor(false);
         usuario.setVisibleEnListados(true);
+        usuario.setAutenticacionDosFactores(false);
+        usuario.setNotificacionesEmail(true);
+        usuario.setNotificacionesPush(true);
         usuario.setIntereses(new ArrayList<>());
-
+        usuario.setEsTutor(Boolean.TRUE.equals(requestParam.getEsTutor()));
         usuarioRepository.save(usuario);
 
         final String token = jwtService.generateToken(usuario.getEmail());
@@ -120,10 +125,15 @@ public class AuthService {
         final Usuario usuario =
                 usuarioRepository
                         .findByEmail(requestParam.getEmail())
-                        .orElseThrow(() -> new ValidationException("Credenciales incorrectas"));
+                        .orElseThrow(
+                                () -> new ValidationException("Este email no está registrado"));
 
         if (!passwordEncoder.matches(requestParam.getPassword(), usuario.getPassword())) {
             throw new ValidationException("Credenciales incorrectas");
+        }
+
+        if (applyPreferenceDefaultsIfNeeded(usuario)) {
+            usuarioRepository.save(usuario);
         }
 
         final String token = jwtService.generateToken(usuario.getEmail());
@@ -201,13 +211,72 @@ public class AuthService {
                         .email(usuario.getEmail())
                         .nombre(usuario.getNombre())
                         .foto(usuario.getFoto())
+                        .fotoBackgroundColor(usuario.getFotoBackgroundColor())
                         .bio(usuario.getBio())
+                        .universidad(usuario.getUniversidad())
+                        .grado(usuario.getGrado())
+                        .nivelEstudios(usuario.getNivelEstudios())
+                        .baseFormativa(usuario.getBaseFormativa())
+                        .ubicacion(convertToUbicacionResponse(usuario.getUbicacion()))
                         .intereses(usuario.getIntereses())
                         .visibleEnListados(usuario.getVisibleEnListados())
                         .esTutor(usuario.getEsTutor())
+                        .autenticacionDosFactores(usuario.getAutenticacionDosFactores())
+                        .notificacionesEmail(usuario.getNotificacionesEmail())
+                        .notificacionesPush(usuario.getNotificacionesPush())
                         .createdAt(usuario.getCreatedAt())
                         .build();
 
         return AuthResponse.builder().accessToken(token).user(userDetail).build();
+    }
+
+    /**
+     * Convierte una entidad Ubicacion a su DTO correspondiente.
+     *
+     * @param ubicacion Entidad de ubicación.
+     * @return UbicacionResponse DTO o null si la entrada es null.
+     */
+    private UbicacionResponse convertToUbicacionResponse(final Ubicacion ubicacion) {
+        if (ubicacion == null) {
+            return null;
+        }
+        return UbicacionResponse.builder()
+                .id(ubicacion.getId())
+                .nombre(ubicacion.getNombre())
+                .direccion(ubicacion.getDireccion())
+                .latitud(ubicacion.getLatitud())
+                .longitud(ubicacion.getLongitud())
+                .tipo(ubicacion.getTipo())
+                .coste(ubicacion.getCoste())
+                .build();
+    }
+
+    /**
+     * Aplica defaults de preferencias cuando faltan en usuarios ya existentes.
+     *
+     * @param usuario Usuario sobre el que aplicar defaults.
+     * @return true si se cambió algún valor.
+     */
+    private boolean applyPreferenceDefaultsIfNeeded(final Usuario usuario) {
+        boolean changed = false;
+
+        if (usuario.getVisibleEnListados() == null) {
+            usuario.setVisibleEnListados(true);
+            changed = true;
+        }
+        if (usuario.getAutenticacionDosFactores() == null) {
+            usuario.setAutenticacionDosFactores(false);
+            changed = true;
+        }
+        if (usuario.getNotificacionesEmail() == null) {
+            usuario.setNotificacionesEmail(true);
+            changed = true;
+        }
+        if (usuario.getNotificacionesPush() == null) {
+            usuario.setNotificacionesPush(true);
+            changed = true;
+        }
+
+        return changed;
     }
 }
