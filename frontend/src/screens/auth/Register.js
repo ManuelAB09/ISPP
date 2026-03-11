@@ -63,7 +63,7 @@ const Register = () => {
 
     // Validación de formato de correo (solo letras minúsculas antes y después de @)
     const emailRegex = /^[a-z]+@[a-z]+\.[a-z.]+$/;
-    if (formData.email.match(emailRegex)) {
+    if (!formData.email.match(emailRegex)) {
       setError('El correo debe tener el formato usuario@dominio.ext y usar sólo letras minúsculas');
       return;
     }
