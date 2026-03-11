@@ -296,7 +296,7 @@ const MyProfile = () => {
                                 <button className="btn-settings" onClick={() => setShowSettings(true)}>
                                     Configuración
                                 </button>
-                                <button className="btn-settings" onClick={handleLogout}>
+                                <button className="btn-logout" onClick={handleLogout}>
                                     Cerrar Sesión
                                 </button>
                             </>
