@@ -25,6 +25,7 @@ import es.us.meerkat.backend.dto.MessageResponse;
 import es.us.meerkat.backend.dto.RegisterRequest;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.exception.ConflictException;
+import es.us.meerkat.backend.exception.EmailNotVerifiedException;
 import es.us.meerkat.backend.exception.ValidationException;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import es.us.meerkat.backend.security.JwtService;
@@ -66,7 +67,7 @@ class AuthServiceTest {
         assertThat(savedUser.getEmailVerificado()).isFalse();
         assertThat(savedUser.getVerificationToken()).isNotNull();
 
-        assertThat(response.getMessage()).contains("verificación");
+        assertThat(response.getMessage()).contains("verificar");
     }
 
     @Test
@@ -118,6 +119,7 @@ class AuthServiceTest {
         usuario.setPassword("encoded-password");
         usuario.setVisibleEnListados(true);
         usuario.setEsTutor(false);
+        usuario.setEmailVerificado(true);
 
         when(usuarioRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches(request.getPassword(), usuario.getPassword()))
@@ -162,6 +164,27 @@ class AuthServiceTest {
         assertThatThrownBy(() -> authService.iniciarSesion(request))
                 .isInstanceOf(ValidationException.class)
                 .hasMessage("Credenciales incorrectas");
+    }
+
+    @Test
+    void iniciarSesionShouldThrowEmailNotVerifiedWhenEmailNotVerified() {
+        LoginRequest request = new LoginRequest();
+        request.setEmail("user@meerkat.es");
+        request.setPassword("password123");
+
+        Usuario usuario = new Usuario();
+        usuario.setId(20L);
+        usuario.setEmail(request.getEmail());
+        usuario.setPassword("encoded-password");
+        usuario.setEmailVerificado(false);
+
+        when(usuarioRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches(request.getPassword(), usuario.getPassword()))
+                .thenReturn(true);
+
+        assertThatThrownBy(() -> authService.iniciarSesion(request))
+                .isInstanceOf(EmailNotVerifiedException.class)
+                .hasMessageContaining("verificar tu email");
     }
 
     @Test
