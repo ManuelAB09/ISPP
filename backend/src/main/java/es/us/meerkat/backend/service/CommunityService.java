@@ -2,6 +2,7 @@ package es.us.meerkat.backend.service;
 
 import java.io.IOException;
 import java.util.Base64;
+import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.data.domain.Page;
@@ -14,6 +15,7 @@ import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.EstadoComunidad;
 import es.us.meerkat.backend.entity.MiembroComunidad;
 import es.us.meerkat.backend.entity.RolComunidad;
+import es.us.meerkat.backend.entity.Suscripcion;
 import es.us.meerkat.backend.entity.TipoGrupo;
 import es.us.meerkat.backend.entity.TipoPlan;
 import es.us.meerkat.backend.entity.TipoPlanComunidad;
@@ -68,12 +70,9 @@ public class CommunityService {
             long freeCommunities =
                     comunidadRepository.countByCreadorIdAndTipoPlan(userId, TipoPlanComunidad.FREE);
 
-            TipoPlan userPlan;
-            if (suscripcionService.obtenerMiSuscripcion(userId).get() == null) {
-                userPlan = TipoPlan.FREE;
-            } else {
-                userPlan = suscripcionService.obtenerMiSuscripcion(userId).get().getPlan();
-            }
+            Optional<Suscripcion> suscripcionOpt = suscripcionService.obtenerMiSuscripcion(userId);
+            TipoPlan userPlan = suscripcionOpt.map(Suscripcion::getPlan).orElse(TipoPlan.FREE);
+
             if (userPlan == TipoPlan.FREE && freeCommunities >= MAX_FREE_COMMUNITIES) {
                 throw new IllegalArgumentException(
                         "Se ha alcanzado el límite de 3 comunidades gratuitas. Actualiza a Premium"
