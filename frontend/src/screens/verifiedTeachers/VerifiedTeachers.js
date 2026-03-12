@@ -381,6 +381,7 @@ const VerifiedTeachers = () => {
                     >
                       Ver perfil
                     </Link>
+
                     {/* Contactar: solo si no es el propio usuario */}
                     {(() => {
                       const targetUserId = tutor.userId ?? tutor.usuario?.id;
