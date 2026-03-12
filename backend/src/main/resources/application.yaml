@@ -52,7 +52,14 @@ zoom:
   webhook-secret-token: ${ZOOM_WEBHOOK_SECRET_TOKEN:}
   api-base-url: ${ZOOM_API_BASE_URL:https://api.zoom.us/v2}
   recordings:
+    storage-mode: ${ZOOM_RECORDINGS_STORAGE_MODE:local}
     storage-path: ${ZOOM_RECORDINGS_STORAGE_PATH:storage/zoom-recordings}
+    retention-days: ${ZOOM_RECORDINGS_RETENTION_DAYS:30}
+    cleanup-cron: ${ZOOM_RECORDINGS_CLEANUP_CRON:0 0 3 * * *}
+    supabase:
+      url: ${ZOOM_RECORDINGS_SUPABASE_URL:}
+      service-role-key: ${ZOOM_RECORDINGS_SUPABASE_SERVICE_ROLE_KEY:}
+      bucket: ${ZOOM_RECORDINGS_SUPABASE_BUCKET:zoom-recordings}
 
 
 # perfil especial para arrancar con H2 cuando se quiera

@@ -12,8 +12,10 @@ public record ZoomRecordingResponse(
         String playUrl,
         String downloadUrl,
         Boolean storedInApp,
-        String localFilePath,
+        String appDownloadUrl,
         Long fileSizeBytes,
         LocalDateTime recordingStart,
         LocalDateTime recordingEnd,
+        LocalDateTime expiresAt,
+        String status,
         LocalDateTime createdAt) {}

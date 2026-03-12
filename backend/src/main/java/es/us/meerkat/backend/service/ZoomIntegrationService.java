@@ -1,9 +1,6 @@
 package es.us.meerkat.backend.service;
 
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -24,6 +21,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
@@ -59,6 +57,7 @@ public class ZoomIntegrationService {
     private final ComunidadRepository comunidadRepository;
     private final UsuarioRepository usuarioRepository;
     private final AuthorizationService authorizationService;
+    private final ZoomRecordingStorageService zoomRecordingStorageService;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -77,8 +76,8 @@ public class ZoomIntegrationService {
     @Value("${zoom.api-base-url:https://api.zoom.us/v2}")
     private String zoomApiBaseUrl;
 
-    @Value("${zoom.recordings.storage-path:storage/zoom-recordings}")
-    private String zoomRecordingsStoragePath;
+    @Value("${zoom.recordings.retention-days:30}")
+    private long zoomRecordingsRetentionDays;
 
     /** Crea una reunion privada para una comunidad o devuelve la activa. */
     @Transactional
@@ -261,23 +260,52 @@ public class ZoomIntegrationService {
         return recordingRepository
                 .findByZoomMeetingComunidadIdOrderByCreatedAtDesc(comunidadId)
                 .stream()
-                .map(
-                        r ->
-                                new ZoomRecordingResponse(
-                                        r.getZoomRecordingId(),
-                                        r.getZoomMeeting().getZoomMeetingId(),
-                                        r.getZoomMeeting().getComunidad().getId(),
-                                        r.getZoomMeeting().getComunidad().getNombre(),
-                                        r.getFileType(),
-                                        r.getPlayUrl(),
-                                        r.getDownloadUrl(),
-                                        r.getStoredInApp(),
-                                        r.getLocalFilePath(),
-                                        r.getFileSizeBytes(),
-                                        r.getRecordingStart(),
-                                        r.getRecordingEnd(),
-                                        r.getCreatedAt()))
+                .map(this::toRecordingResponse)
                 .toList();
+    }
+
+    /** Devuelve el detalle de una grabacion de comunidad. */
+    public ZoomRecordingResponse getRecordingForCommunity(
+            final Long comunidadId, final String recordingId, final Long userId) {
+        return toRecordingResponse(findRecordingForCommunity(comunidadId, recordingId, userId));
+    }
+
+    /** Descarga una grabacion almacenada por la aplicacion. */
+    public RecordingDownload downloadRecordingForCommunity(
+            final Long comunidadId, final String recordingId, final Long userId) {
+        ZoomRecording recording = findRecordingForCommunity(comunidadId, recordingId, userId);
+
+        if (!Boolean.TRUE.equals(recording.getStoredInApp())) {
+            throw new RuntimeException("La grabacion aun no esta disponible en la app");
+        }
+        if (recording.getExpiresAt() != null
+                && recording.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("La grabacion ha expirado");
+        }
+
+        byte[] content = zoomRecordingStorageService.download(recording);
+        return new RecordingDownload(
+                content,
+                buildStoredFileName(recording),
+                resolveRecordingMimeType(recording.getFileType()));
+    }
+
+    /** Elimina diariamente las grabaciones expiradas del almacenamiento y de la base de datos. */
+    @Scheduled(cron = "${zoom.recordings.cleanup-cron:0 0 3 * * *}")
+    @Transactional
+    public void cleanupExpiredRecordings() {
+        LocalDateTime now = LocalDateTime.now();
+        for (ZoomRecording recording : recordingRepository.findByExpiresAtBefore(now)) {
+            try {
+                if (Boolean.TRUE.equals(recording.getStoredInApp())) {
+                    zoomRecordingStorageService.delete(recording);
+                }
+                recordingRepository.delete(recording);
+            } catch (RuntimeException e) {
+                recording.setStatus("PURGE_FAILED");
+                recordingRepository.save(recording);
+            }
+        }
     }
 
     /** Procesa webhooks de Zoom para participantes, fin de llamada y grabaciones. */
@@ -431,6 +459,7 @@ public class ZoomIntegrationService {
             rec.setDownloadUrl(downloadUrl);
             rec.setRecordingStart(recordingStart);
             rec.setRecordingEnd(recordingEnd);
+            rec.setExpiresAt(LocalDateTime.now().plusDays(zoomRecordingsRetentionDays));
             rec.setStatus("AVAILABLE");
 
             ZoomRecording saved = recordingRepository.save(rec);
@@ -458,27 +487,15 @@ public class ZoomIntegrationService {
             }
 
             byte[] content = response.getBody();
-            String extension =
-                    recording.getFileType() != null ? recording.getFileType().toLowerCase() : "mp4";
-            String safeFileName =
-                    "zoom-"
-                            + recording.getZoomMeeting().getComunidad().getId()
-                            + "-"
-                            + recording.getZoomMeeting().getZoomMeetingId()
-                            + "-"
-                            + recording.getZoomRecordingId()
-                            + "."
-                            + extension;
-
-            Path baseDir = Paths.get(zoomRecordingsStoragePath);
-            Files.createDirectories(baseDir);
-
-            Path filePath = baseDir.resolve(safeFileName);
-            Files.write(filePath, content);
+            ZoomRecordingStorageService.StoredRecording storedRecording =
+                    zoomRecordingStorageService.store(recording, content);
 
             recording.setStoredInApp(true);
-            recording.setLocalFilePath(filePath.toString());
-            recording.setFileSizeBytes((long) content.length);
+            recording.setStorageProvider(storedRecording.provider());
+            recording.setLocalFilePath(storedRecording.localFilePath());
+            recording.setStorageObjectKey(storedRecording.storageObjectKey());
+            recording.setFileSizeBytes(storedRecording.fileSizeBytes());
+            recording.setStatus("STORED");
             recordingRepository.save(recording);
         } catch (HttpClientErrorException.Forbidden e) {
             recording.setStoredInApp(false);
@@ -502,6 +519,72 @@ public class ZoomIntegrationService {
         if (!authorizationService.isMemberOf(userId, comunidadId)) {
             throw new RuntimeException("No perteneces a esta comunidad");
         }
+    }
+
+    private ZoomRecording findRecordingForCommunity(
+            final Long comunidadId, final String recordingId, final Long userId) {
+        assertMember(comunidadId, userId);
+
+        return recordingRepository
+                .findByZoomMeetingComunidadIdAndZoomRecordingId(comunidadId, recordingId)
+                .orElseThrow(() -> new RuntimeException("Grabacion no encontrada"));
+    }
+
+    private ZoomRecordingResponse toRecordingResponse(final ZoomRecording recording) {
+        return new ZoomRecordingResponse(
+                recording.getZoomRecordingId(),
+                recording.getZoomMeeting().getZoomMeetingId(),
+                recording.getZoomMeeting().getComunidad().getId(),
+                recording.getZoomMeeting().getComunidad().getNombre(),
+                recording.getFileType(),
+                recording.getPlayUrl(),
+                recording.getDownloadUrl(),
+                recording.getStoredInApp(),
+                buildRecordingDownloadPath(
+                        recording.getZoomMeeting().getComunidad().getId(),
+                        recording.getZoomRecordingId()),
+                recording.getFileSizeBytes(),
+                recording.getRecordingStart(),
+                recording.getRecordingEnd(),
+                recording.getExpiresAt(),
+                recording.getStatus(),
+                recording.getCreatedAt());
+    }
+
+    private String buildRecordingDownloadPath(final Long comunidadId, final String recordingId) {
+        return "/api/v1/zoom/communities/"
+                + comunidadId
+                + "/recordings/"
+                + recordingId
+                + "/download";
+    }
+
+    private String buildStoredFileName(final ZoomRecording recording) {
+        return "zoom-"
+                + recording.getZoomMeeting().getComunidad().getId()
+                + "-"
+                + recording.getZoomMeeting().getZoomMeetingId()
+                + "-"
+                + recording.getZoomRecordingId()
+                + "."
+                + resolveRecordingExtension(recording.getFileType());
+    }
+
+    private String resolveRecordingExtension(final String fileType) {
+        if (fileType == null || fileType.isBlank()) {
+            return "bin";
+        }
+        return fileType.toLowerCase().replaceAll("[^a-z0-9]+", "");
+    }
+
+    private String resolveRecordingMimeType(final String fileType) {
+        return switch (resolveRecordingExtension(fileType)) {
+            case "mp4" -> "video/mp4";
+            case "m4a" -> "audio/mp4";
+            case "txt" -> MediaType.TEXT_PLAIN_VALUE;
+            case "json" -> MediaType.APPLICATION_JSON_VALUE;
+            default -> MediaType.APPLICATION_OCTET_STREAM_VALUE;
+        };
     }
 
     private Map<String, Object> createZoomMeeting(
@@ -650,4 +733,7 @@ public class ZoomIntegrationService {
     private boolean isBlank(final String value) {
         return value == null || value.isBlank();
     }
+
+    /** Contenido binario de una grabacion lista para ser descargada. */
+    public record RecordingDownload(byte[] content, String fileName, String mimeType) {}
 }

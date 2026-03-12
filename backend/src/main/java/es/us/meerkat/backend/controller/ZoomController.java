@@ -2,7 +2,9 @@ package es.us.meerkat.backend.controller;
 
 import java.util.Map;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -244,6 +246,83 @@ public class ZoomController {
 
         return ResponseEntity.ok(
                 zoomIntegrationService.getRecordingsForCommunity(communityId, usuario.getId()));
+    }
+
+    @GetMapping("/communities/{communityId}/recordings/{recordingId}")
+    @Operation(summary = "Obtener detalle de una grabacion de la comunidad")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Grabacion encontrada"),
+        @ApiResponse(responseCode = "401", description = "No autenticado"),
+        @ApiResponse(responseCode = "403", description = "No pertenece a la comunidad"),
+        @ApiResponse(responseCode = "404", description = "Grabacion no encontrada")
+    })
+    public ResponseEntity<?> getRecording(
+            @PathVariable Long communityId,
+            @PathVariable String recordingId,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(MessageResponse.builder().message("Usuario no autenticado").build());
+        }
+        if (!authorizationService.isMemberOf(usuario.getId(), communityId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(
+                            MessageResponse.builder()
+                                    .message("No perteneces a esta comunidad")
+                                    .build());
+        }
+
+        try {
+            return ResponseEntity.ok(
+                    zoomIntegrationService.getRecordingForCommunity(
+                            communityId, recordingId, usuario.getId()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(MessageResponse.builder().message(e.getMessage()).build());
+        }
+    }
+
+    @GetMapping("/communities/{communityId}/recordings/{recordingId}/download")
+    @Operation(summary = "Descargar una grabacion de la comunidad")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Grabacion descargada"),
+        @ApiResponse(responseCode = "401", description = "No autenticado"),
+        @ApiResponse(responseCode = "403", description = "No pertenece a la comunidad"),
+        @ApiResponse(responseCode = "404", description = "Grabacion no encontrada")
+    })
+    public ResponseEntity<?> downloadRecording(
+            @PathVariable Long communityId,
+            @PathVariable String recordingId,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(MessageResponse.builder().message("Usuario no autenticado").build());
+        }
+        if (!authorizationService.isMemberOf(usuario.getId(), communityId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(
+                            MessageResponse.builder()
+                                    .message("No perteneces a esta comunidad")
+                                    .build());
+        }
+
+        try {
+            ZoomIntegrationService.RecordingDownload recording =
+                    zoomIntegrationService.downloadRecordingForCommunity(
+                            communityId, recordingId, usuario.getId());
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(recording.mimeType()))
+                    .header(
+                            HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + recording.fileName() + "\"")
+                    .body(recording.content());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(MessageResponse.builder().message(e.getMessage()).build());
+        }
     }
 
     @io.swagger.v3.oas.annotations.parameters.RequestBody(required = false)

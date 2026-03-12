@@ -46,6 +46,12 @@ public class ZoomRecording {
     @Column(length = 2048)
     private String localFilePath;
 
+    @Column(length = 255)
+    private String storageProvider;
+
+    @Column(length = 1024)
+    private String storageObjectKey;
+
     private Long fileSizeBytes;
 
     @Column(nullable = false)
@@ -55,6 +61,8 @@ public class ZoomRecording {
     private LocalDateTime recordingStart;
 
     private LocalDateTime recordingEnd;
+
+    private LocalDateTime expiresAt;
 
     @Column(nullable = false)
     @Builder.Default

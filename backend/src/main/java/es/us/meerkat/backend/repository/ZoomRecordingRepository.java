@@ -1,5 +1,6 @@
 package es.us.meerkat.backend.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,6 +14,11 @@ public interface ZoomRecordingRepository extends JpaRepository<ZoomRecording, Lo
     List<ZoomRecording> findByZoomMeetingIdOrderByCreatedAtDesc(Long zoomMeetingId);
 
     List<ZoomRecording> findByZoomMeetingComunidadIdOrderByCreatedAtDesc(Long comunidadId);
+
+    Optional<ZoomRecording> findByZoomMeetingComunidadIdAndZoomRecordingId(
+            Long comunidadId, String zoomRecordingId);
+
+    List<ZoomRecording> findByExpiresAtBefore(LocalDateTime expiresAt);
 
     Optional<ZoomRecording> findByZoomRecordingId(String zoomRecordingId);
 }
