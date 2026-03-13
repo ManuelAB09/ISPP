@@ -83,6 +83,9 @@ public class EventoService {
             final Boolean visibleMapaParam,
             final Long ubicacionId) {
 
+        validarAforo(aforoParam);
+        validarFechaInicioNoPasada(fechaHoraParam);
+
         final Usuario creador =
                 usuarioRepository
                         .findById(creadorId)
@@ -165,7 +168,11 @@ public class EventoService {
             final String queLlevarParam,
             final Boolean esVirtualParam,
             final Boolean privadoParam,
-            final Long ubicacionId) {
+            final Long ubicacionId,
+            final Boolean visibleMapaParam) {
+
+        validarAforo(aforoParam);
+        validarFechaInicioNoPasada(fechaInicioParam);
 
         // Validar que la fecha de inicio sea anterior a la fecha de fin
         if (fechaFinParam != null && fechaInicioParam.isAfter(fechaFinParam)) {
@@ -177,6 +184,8 @@ public class EventoService {
                 eventoRepository
                         .findById(eventoIdParam)
                         .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
+
+        validarEventoNoIniciado(evento);
 
         evento.editar(
                 tituloParam,
@@ -197,6 +206,10 @@ public class EventoService {
             evento.setUbicacion(ubicacion);
         } else if (Boolean.TRUE.equals(esVirtualParam)) {
             evento.setUbicacion(null);
+        }
+
+        if (visibleMapaParam != null) {
+            evento.setVisibleMapa(visibleMapaParam);
         }
 
         return eventoRepository.save(evento);
@@ -220,8 +233,34 @@ public class EventoService {
                         .findById(eventoIdParam)
                         .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
 
+        validarEventoNoIniciado(evento);
+
         evento.cancelar(motivoParam);
         return eventoRepository.save(evento);
+    }
+
+    private void validarEventoNoIniciado(final Evento evento) {
+        if (evento.getFechaHora() != null && !evento.getFechaHora().isAfter(LocalDateTime.now())) {
+            throw new IllegalStateException(
+                    "No se puede modificar o cancelar un evento que ya ha comenzado");
+        }
+    }
+
+    private void validarAforo(final Integer aforo) {
+        if (aforo == null || aforo < 1 || aforo > 999) {
+            throw new IllegalArgumentException("El aforo debe ser un numero entre 1 y 999");
+        }
+    }
+
+    private void validarFechaInicioNoPasada(final LocalDateTime fechaInicio) {
+        if (fechaInicio == null) {
+            throw new IllegalArgumentException("La fecha de inicio es obligatoria");
+        }
+
+        if (fechaInicio.isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException(
+                    "La fecha y hora de inicio no puede ser anterior a la fecha y hora actual");
+        }
     }
 
     // ===============================
