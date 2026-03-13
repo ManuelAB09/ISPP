@@ -31,7 +31,7 @@ const Settings = ({ onClose, isOwner = true }) => {
     const [isChangingPassword, setIsChangingPassword] = useState(false)
 
     // Estado para mensajes de acceso no autorizado
-    const [unauthorizedMessage, setUnauthorizedMessage] = useState("")
+    const [unauthorizedMessage] = useState("")
 
     useEffect(() => {
         if (!user) {
