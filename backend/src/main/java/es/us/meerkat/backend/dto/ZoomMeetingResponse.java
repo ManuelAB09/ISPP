@@ -12,6 +12,7 @@ public record ZoomMeetingResponse(
         String status,
         Long communityId,
         String communityName,
+        Integer durationMinutes,
         LocalDateTime createdAt,
         LocalDateTime startedAt,
         LocalDateTime endedAt) {}

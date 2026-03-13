@@ -82,6 +82,9 @@ public class ZoomController {
                             request != null ? request.topic() : null,
                             request != null ? request.durationMinutes() : null);
             return ResponseEntity.ok(toResponse(meeting));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(MessageResponse.builder().message(e.getMessage()).build());
         } catch (RuntimeException e) {
             if ("Faltan credenciales Zoom. Revisa zoom.client-id, zoom.client-secret y zoom.account-id"
                     .equals(e.getMessage())) {
@@ -427,6 +430,7 @@ public class ZoomController {
                 meeting.getStatus().name(),
                 meeting.getComunidad().getId(),
                 meeting.getComunidad().getNombre(),
+                meeting.getDurationMinutes(),
                 meeting.getCreatedAt(),
                 meeting.getStartedAt(),
                 meeting.getEndedAt());

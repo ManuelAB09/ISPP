@@ -122,10 +122,14 @@ public class ZoomIntegrationService {
                 (topicParam == null || topicParam.isBlank())
                         ? "Llamada de " + comunidad.getNombre()
                         : topicParam;
+        if (durationMinutesParam != null && durationMinutesParam < 0) {
+            throw new IllegalArgumentException("durationMinutes no puede ser menor que cero");
+        }
+
         Integer durationMinutes =
-                durationMinutesParam == null || durationMinutesParam <= 0
-                        ? 60
-                        : durationMinutesParam;
+                durationMinutesParam != null && durationMinutesParam > 0
+                        ? durationMinutesParam
+                        : null;
 
         Map<String, Object> zoomMeeting = createZoomMeeting(topic, durationMinutes);
 
@@ -623,7 +627,9 @@ public class ZoomIntegrationService {
         Map<String, Object> body = new HashMap<>();
         body.put("topic", topic);
         body.put("type", 2);
-        body.put("duration", durationMinutes);
+        if (durationMinutes != null) {
+            body.put("duration", durationMinutes);
+        }
         body.put("password", password);
 
         Map<String, Object> settings = new HashMap<>();
