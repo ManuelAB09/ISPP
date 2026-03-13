@@ -160,7 +160,6 @@ const VerificacionModal = ({ tutorId, verificado, onClose, onVerificado }) => {
         <div className="tm-verificacion tm-verificacion--pago-ok">
           <div className="tm-verificacion__icon tm-verificacion__icon--ok">✓</div>
           <h3 className="tm-verificacion__heading">Pago realizado</h3>
-          <p className="tm-verificacion__text">Procesando solicitud de verificación…</p>
         </div>
       );
     }
