@@ -219,7 +219,7 @@ const VerifiedTeachers = () => {
         <div className="vt-header__inner">
 
           <div className="headerTitle">
-            <p>Profesionales con identidad confirmada, calidad contrastada y acceso directo al contacto</p>
+            <p>Profesionales con identidad confirmada</p>
             <span className="line"></span>
             <h1>Profesores Verificados</h1>
           </div>
@@ -318,7 +318,8 @@ const VerifiedTeachers = () => {
               return (
                 <div key={tutor.id ?? i} className="vt-card">
                   {/* Insignia verificado */}
-                  <span className="vt-card__badge">Verificado</span>
+                  {tutor.verificado && <span className="vt-card__badge">Verificado</span>}
+                  {!tutor.verificado && <span className="vt-card__badge vt-card__badge--unverified">No verificado</span>}
 
                   {/* Etiqueta de distancia */}
                   {userHasCoords && (

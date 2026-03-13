@@ -106,25 +106,25 @@
 
 /* ── Variables ──────────────────────────────────────────────── */
 :root {
-  --tp-primary: #676F9D;          /* indigo suave */
-  --tp-primary-dark: #555c85;     /* indigo oscuro hover */
-  --tp-accent: #F2C18E;           /* melocotón cálido */
-  --tp-dark: #2D3250;             /* navy oscuro */
-  --tp-bg: #F5F5F5;               /* whitesmoke */
-  --tp-white: #FFFFFF;            /* blanco puro */
-  --tp-silver: #C0C0C0;           /* silver */
-  --tp-border: #C0C0C0;           /* silver para bordes */
-  --tp-text: #2D3250;             /* navy para texto principal */
-  --tp-text-muted: #9CA3AF;       /* gris texto secundario */
+  --tp-primary: var(--spaceIndigo);
+  --tp-primary-dark: #1e2240;
+  --tp-accent: var(--peachGlow);
+  --tp-dark: var(--spaceIndigo);
+  --tp-bg: var(--whiteSmoke);
+  --tp-white: #ffffff;
+  --tp-silver: var(--silver);
+  --tp-border: var(--alabasterGray);
+  --tp-text: var(--spaceIndigo);
+  --tp-text-muted: var(--glaucous);
   --tp-green: #22c55e;
   --tp-green-bg: #eafaf1;
   --tp-green-text: #1a7c42;
-  --tp-tag-bg: #fdf0dc;           /* fondo tags basado en accent */
-  --tp-tag-color: #b8862c;        /* texto tags */
-  --tp-badge-bg: #e8e6f2;         /* badge fondo basado en primary */
-  --tp-badge-color: #676F9D;      /* badge texto = primary */
-  --tp-shadow: 0 2px 14px rgba(45, 50, 80, 0.07);
-  --tp-radius: 18px;
+  --tp-tag-bg: var(--whiteSmoke);
+  --tp-tag-color: var(--glaucous);
+  --tp-badge-bg: var(--whiteSmoke);
+  --tp-badge-color: var(--spaceIndigo);
+  --tp-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  --tp-radius: 16px;
   --tp-radius-sm: 12px;
 }
 
@@ -132,7 +132,7 @@
 
 /* ── Página ─────────────────────────────────────────────────── */
 .tp-page {
-  background: #f4f4f4;
+  background: var(--whiteSmoke);
   width: 100%;
   min-height: 1884px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -170,7 +170,7 @@
   max-width: 1080px;
   margin: 0 auto;
   padding: clamp(1.5rem, 3vw, 2.5rem) clamp(2rem, 5vw, 4rem) 3rem;
-  background-color: #f4f4f4;
+  background-color: var(--whiteSmoke);
 }
 
 /* ── Títulos de sección ─────────────────────────────────────── */
@@ -514,7 +514,8 @@
 }
 
 .tp-actividad {
-  background: var(--tp-primary);
+  background: var(--whiteSmoke);
+  border: 1px solid var(--tp-border);
   border-radius: var(--tp-radius);
   padding: clamp(1rem, 2vw, 1.5rem) clamp(1rem, 2vw, 1.5rem) clamp(0.85rem, 1.8vw, 1.25rem);
   width: 384px;
@@ -524,7 +525,7 @@
 .tp-actividad__title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--spaceIndigo);
   margin: 0 0 1.2rem;
   text-align: center;
 }
@@ -536,26 +537,28 @@
 }
 
 .tp-actividad__stat {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--tp-white);
   border-radius: var(--tp-radius-sm);
   padding: 1rem 0.75rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+  border: 1px solid var(--tp-border);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 }
 
 .tp-actividad__num {
   font-size: clamp(1.5rem, 3vw, 2.1rem);
   font-weight: 800;
-  color: #fff;
+  color: var(--peachGlow);
   line-height: 1.15;
 }
 
 .tp-actividad__label {
   font-size: 0.72rem;
   letter-spacing: 0.07em;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--glaucous);
   text-transform: uppercase;
   margin-top: 0.3rem;
 }

@@ -65,16 +65,26 @@ const Register = () => {
       return;
     }
 
-    // Validación de formato de correo (solo letras minúsculas antes y después de @)
-    const emailRegex = /^[a-z]+@[a-z]+\.[a-z.]+$/;
+    // Validación de formato de correo
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email.match(emailRegex)) {
-      setError('El correo debe tener el formato usuario@dominio.ext y usar sólo letras minúsculas');
+      setError('Introduce un correo electrónico válido (ej: usuario@dominio.com)');
       return;
     }
 
     // Validación de contraseñas coinciden
     if (formData.password !== formData.confirmPassword) {
       setError('Las contraseñas no coinciden');
+      return;
+    }
+
+    // Validación de nombre
+    if (!formData.fullName.trim()) {
+      setError('El nombre no puede estar vacío');
+      return;
+    }
+    if (formData.fullName.trim().length < 2) {
+      setError('El nombre debe tener al menos 2 caracteres');
       return;
     }
 
@@ -217,7 +227,7 @@ const Register = () => {
                 type="email"
                 id="email"
                 name="email"
-                placeholder="correo@org.es"
+                placeholder="tu@correo.com"
                 value={formData.email}
                 onChange={handleInputChange}
                 required

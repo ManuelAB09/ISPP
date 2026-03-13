@@ -59,6 +59,24 @@ const Login = () => {
     setEmailNotVerified(false);
     setResendMessage('');
 
+    // Validaciones frontend
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim()) {
+      setError('El correo electrónico no puede estar vacío');
+      setIsLoading(false);
+      return;
+    }
+    if (!emailRegex.test(formData.email)) {
+      setError('Introduce un correo electrónico válido (ej: usuario@dominio.com)');
+      setIsLoading(false);
+      return;
+    }
+    if (!formData.password) {
+      setError('La contraseña no puede estar vacía');
+      setIsLoading(false);
+      return;
+    }
+
     const result = await login(formData.email, formData.password);
 
     if (result.success) {
@@ -134,7 +152,7 @@ const Login = () => {
                 type="email"
                 id="email"
                 name="email"
-                placeholder="nombre@universidadDeSevilla.mola"
+                placeholder="tu@correo.com"
                 value={formData.email}
                 onChange={handleInputChange}
                 required

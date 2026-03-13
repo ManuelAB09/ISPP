@@ -108,9 +108,14 @@ function AppRoutes() {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/comunidades" element={<Comunidades />} />
         <Route path="/comunidades/:communityId" element={<CommunityDetail />} />
+        <Route path="/comunidades/:communityId/apuntes" element={<CommunityDetail />} />
+        <Route path="/comunidades/:communityId/editar" element={<CommunityDetail />} />
 
         {/* Rutas protegidas - solo disponibles si está autenticado */}
         {ownerRoutes}
+
+        {/* Catch-all: redirige rutas no encontradas a inicio */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </SocketProvider>
   );
