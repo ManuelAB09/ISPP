@@ -29,4 +29,9 @@ public interface ComunidadRepository extends JpaRepository<Comunidad, Long> {
     
     @EntityGraph(attributePaths = {"creador"})
     Optional<Comunidad> findWithCreadorById(Long id);
+
+    Page<Comunidad> findByEstado(EstadoComunidad estado, Pageable pageable);
+
+    Page<Comunidad> findByNombreContainingIgnoreCaseAndEstado(
+            String nombre, EstadoComunidad estado, Pageable pageable);
 }

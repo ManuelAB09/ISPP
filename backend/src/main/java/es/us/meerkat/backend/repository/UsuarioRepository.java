@@ -38,4 +38,12 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
      * @return Lista de usuarios con visibleEnListados a true.
      */
     List<Usuario> findByVisibleEnListadosTrue();
+
+    /**
+     * Busca un usuario por su token de verificación de email.
+     *
+     * @param verificationToken Token de verificación.
+     * @return Optional con el usuario si existe.
+     */
+    Optional<Usuario> findByVerificationToken(String verificationToken);
 }

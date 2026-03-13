@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { getTutorById, getMyTutorProfiles } from "../../api/tutorEndpoints";
 import Header from "../../components/Header/Header";
-import PersonIcon from "../../components/icons/Person";
 import EditProfileModal from "./EditProfileModal";
 import CreateProfileModal from "./CreateProfileModal";
 import VerificacionModal from "./VerificacionModal";
@@ -11,7 +10,6 @@ import Settings from "../myProfile/Settings";
 import HireTutorModal from "./HireTutorModal";
 import { getApiBaseUrl } from "../../api/baseUrl";
 import "./TeacherProfile.css";
-import ClassroomLinkRequests from "../../components/GoogleClassroomButton/ClassroomLinkRequests";
 
 const toAbsoluteImageUrl = (imageUrl, fallback = '/MeerKatters_logo.png') => {
   const raw = String(imageUrl || '').trim();
@@ -44,7 +42,6 @@ const Estrellas = ({ valor }) => (
 const TeacherProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, loading } = useAuth();
   const esNuevo = id === "nuevo";
 
@@ -57,6 +54,7 @@ const TeacherProfile = () => {
   const [showVerificacion, setShowVerificacion] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showHireModal, setShowHireModal] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   // Callback: actualiza estado local tras editar
   const handlePerfilGuardado = (updatedTutor) => {
@@ -211,8 +209,9 @@ const TeacherProfile = () => {
             <div className="tp-header__left">
               <img
                 className="tp-header__photo"
-                src={toAbsoluteImageUrl(tutor.usuario?.foto, '/MeerKatters_logo.png')}
+                src={avatarError ? '/MeerKatters_logo.png' : toAbsoluteImageUrl(tutor.usuario?.foto)}
                 alt={tutor.usuario?.nombre}
+                onError={() => setAvatarError(true)}
               />
               <div className="tp-header__info">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -268,12 +267,6 @@ const TeacherProfile = () => {
                 >
                   {tutor.verificado ? "🏅 Verificado" : "Promocionarse"}
                 </button>
-                <button
-                  className="tp-btn tp-btn--public"
-                  onClick={() => setShowSettings(true)}
-                >
-                  ⚙️ Configuración
-                </button>
               </div>
             )}
 
@@ -282,6 +275,20 @@ const TeacherProfile = () => {
               <div className="tp-header__actions">
                 <button
                   className="tp-btn tp-btn--contact"
+
+                  onClick={() => {
+                    const targetUserId = tutor.userId ?? tutor.usuario?.id;
+                    const nombre = tutor.usuario?.nombre || 'Profesor';
+                    if (!targetUserId) return;
+                    const params = new URLSearchParams({
+                      userId: String(targetUserId),
+                      userName: nombre,
+                    });
+                    if (tutor.usuario?.foto) {
+                      params.set('userPhoto', toAbsoluteImageUrl(tutor.usuario.foto));
+                    }
+                    navigate(`/chats?${params.toString()}`);
+                  }}
                 >
                   💬 Contactar
                 </button>
@@ -391,14 +398,22 @@ const TeacherProfile = () => {
                 </div>
               ))}
               {/* Placeholder "Explorar más comunidades" */}
-              <div className="tp-comunidades__card tp-comunidades__card--explore tp-comunidades__card--xl">
+              <div 
+                className="tp-comunidades__card tp-comunidades__card--explore tp-comunidades__card--xl"
+                onClick={() => navigate('/comunidades')}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="tp-comunidades__explore-icon tp-comunidades__explore-icon--xl">+</div>
                 <span className="tp-comunidades__explore-title tp-comunidades__explore-title--xl">Explorar más comunidades</span>
                 <span className="tp-comunidades__explore-text tp-comunidades__explore-text--xl">
                   Busca entre miles de comunidades de estudio adaptadas a tus necesidades
                 </span>
               </div>
-              <span className="tp-comunidades__ver-todas tp-comunidades__ver-todas--xl">Ver todas</span>
+              <span 
+                className="tp-comunidades__ver-todas tp-comunidades__ver-todas--xl"
+                onClick={() => navigate('/comunidades')}
+                style={{ cursor: 'pointer' }}
+              >Ver todas</span>
             </div>
           </section>
 
@@ -413,7 +428,10 @@ const TeacherProfile = () => {
                 Crea comunidades, une a estudiantes y enseña sobre lo que sabes.
               </p>
               {user?.id === tutor.usuario?.id && (
-                <button className="tp-btn tp-btn--crear tp-btn--crear-xl">+ Crear Nueva</button>
+                <button 
+                  className="tp-btn tp-btn--crear tp-btn--crear-xl"
+                  onClick={() => navigate('/crear-comunidad')}
+                >+ Crear Nueva</button>
               )}
             </div>
             <div className="tp-creadas__list tp-creadas__list--xl">

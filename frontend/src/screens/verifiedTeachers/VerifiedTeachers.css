@@ -175,6 +175,11 @@
   border-radius: 20px;
 }
 
+.vt-card__badge--unverified {
+  background: #f0f0f0;
+  color: #999;
+}
+
 .vt-card__badge-distancia {
   position: absolute;
   top: 1rem;

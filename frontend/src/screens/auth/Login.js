@@ -6,7 +6,7 @@ import studyShareLogo from '../../static/images/MeerKatters_logo.png';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, error: authError, clearError, isAuthenticated, loading } = useAuth();
+  const { login, resendVerification, error: authError, clearError, isAuthenticated, loading } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -15,6 +15,9 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [emailNotVerified, setEmailNotVerified] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
 
   // Si ya está autenticado, mostrar mensaje
   if (!loading && isAuthenticated) {
@@ -43,6 +46,8 @@ const Login = () => {
     }));
     // Limpiar errores al escribir
     if (error) setError('');
+    if (emailNotVerified) setEmailNotVerified(false);
+    if (resendMessage) setResendMessage('');
     if (authError) clearError();
   };
 
@@ -51,16 +56,56 @@ const Login = () => {
 
     setIsLoading(true);
     setError('');
+    setEmailNotVerified(false);
+    setResendMessage('');
+
+    // Validaciones frontend
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim()) {
+      setError('El correo electrónico no puede estar vacío');
+      setIsLoading(false);
+      return;
+    }
+    if (!emailRegex.test(formData.email)) {
+      setError('Introduce un correo electrónico válido (ej: usuario@dominio.com)');
+      setIsLoading(false);
+      return;
+    }
+    if (!formData.password) {
+      setError('La contraseña no puede estar vacía');
+      setIsLoading(false);
+      return;
+    }
 
     const result = await login(formData.email, formData.password);
 
     if (result.success) {
       navigate('/');
     } else {
-      setError(result.error || 'Error al iniciar sesión');
+      const errorMsg = result.error || 'Error al iniciar sesión';
+      // Detectar si el error es por email no verificado
+      if (errorMsg.toLowerCase().includes('verificar') || errorMsg.toLowerCase().includes('verificado')) {
+        setEmailNotVerified(true);
+      }
+      setError(errorMsg);
     }
 
     setIsLoading(false);
+  };
+
+  const handleResendVerification = async () => {
+    setResendLoading(true);
+    setResendMessage('');
+    
+    const result = await resendVerification(formData.email);
+    
+    if (result.success) {
+      setResendMessage('Email de verificación reenviado correctamente. Revisa tu bandeja de entrada.');
+    } else {
+      setResendMessage(result.error || 'Error al reenviar el email');
+    }
+    
+    setResendLoading(false);
   };
 
   return (
@@ -78,13 +123,15 @@ const Login = () => {
           </p>
 
           <div className="login-feature-buttons">
-            <button type="button" className="login-feature-btn">
+            <button type="button" className="login-feature-btn" aria-describedby="tooltip-notas">
               <span className="login-feature-icon">📚</span>
               <span>Notas compartidas</span>
+              <span id="tooltip-notas" className="login-feature-tooltip">Comparte y descarga apuntes organizados por asignatura.</span>
             </button>
-            <button type="button" className="login-feature-btn">
+            <button type="button" className="login-feature-btn" aria-describedby="tooltip-grupos">
               <span className="login-feature-icon">👥</span>
               <span>Grupos de estudio</span>
+              <span id="tooltip-grupos" className="login-feature-tooltip">Crea o únete a grupos para estudiar con compañeros.</span>
             </button>
           </div>
         </div>
@@ -105,7 +152,7 @@ const Login = () => {
                 type="email"
                 id="email"
                 name="email"
-                placeholder="nombre@universidadDeSevilla.mola"
+                placeholder="tu@correo.com"
                 value={formData.email}
                 onChange={handleInputChange}
                 required
@@ -165,6 +212,39 @@ const Login = () => {
             {error && (
               <div className="login-error-message">
                 {error}
+                {emailNotVerified && (
+                  <div style={{ marginTop: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={handleResendVerification}
+                      disabled={resendLoading || !formData.email}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#3b82f6',
+                        textDecoration: 'underline',
+                        cursor: resendLoading ? 'not-allowed' : 'pointer',
+                        padding: 0,
+                        fontSize: '14px'
+                      }}
+                    >
+                      {resendLoading ? 'Enviando...' : 'Reenviar email de verificación'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {resendMessage && (
+              <div style={{
+                padding: '10px',
+                borderRadius: '8px',
+                marginBottom: '15px',
+                backgroundColor: resendMessage.includes('Error') ? '#fee2e2' : '#d1fae5',
+                color: resendMessage.includes('Error') ? '#991b1b' : '#065f46',
+                fontSize: '14px'
+              }}>
+                {resendMessage}
               </div>
             )}
 
