@@ -81,7 +81,7 @@ public class ZoomController {
                             usuario.getId(),
                             request != null ? request.topic() : null,
                             request != null ? request.durationMinutes() : null);
-            return ResponseEntity.ok(toResponse(meeting));
+            return ResponseEntity.ok(toResponse(meeting, usuario));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
                     .body(MessageResponse.builder().message(e.getMessage()).build());
@@ -120,7 +120,8 @@ public class ZoomController {
         try {
             return ResponseEntity.ok(
                     toResponse(
-                            zoomIntegrationService.getActiveMeeting(communityId, usuario.getId())));
+                            zoomIntegrationService.getActiveMeeting(communityId, usuario.getId()),
+                            usuario));
         } catch (RuntimeException e) {
             if ("No hay llamada activa en esta comunidad".equals(e.getMessage())) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -207,7 +208,7 @@ public class ZoomController {
                 zoomIntegrationService
                         .getMeetingsForCommunity(communityId, usuario.getId())
                         .stream()
-                        .map(this::toResponse)
+                        .map(meeting -> toResponse(meeting, usuario))
                         .toList());
     }
 
@@ -420,12 +421,17 @@ public class ZoomController {
         return null;
     }
 
-    private ZoomMeetingResponse toResponse(final ZoomMeeting meeting) {
+    private ZoomMeetingResponse toResponse(final ZoomMeeting meeting, final Usuario usuario) {
+        String startUrl =
+                usuario != null && meeting.getCreador().getId().equals(usuario.getId())
+                        ? meeting.getStartUrl()
+                        : null;
         return new ZoomMeetingResponse(
                 meeting.getId(),
                 meeting.getZoomMeetingId(),
                 meeting.getTopic(),
                 meeting.getJoinUrl(),
+                startUrl,
                 meeting.getPassword(),
                 meeting.getStatus().name(),
                 meeting.getComunidad().getId(),

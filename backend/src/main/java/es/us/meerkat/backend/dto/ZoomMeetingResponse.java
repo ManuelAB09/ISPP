@@ -8,6 +8,7 @@ public record ZoomMeetingResponse(
         String zoomMeetingId,
         String topic,
         String joinUrl,
+        String startUrl,
         String password,
         String status,
         Long communityId,

@@ -46,6 +46,7 @@ const CommunityChat = ({
     initiallyOpen = false,
     mode = 'floating',
     onOpenPrivateChat,
+    extraActions,
 }) => {
     const isEmbedded = mode === 'embedded';
     const navigate = useNavigate();
@@ -685,16 +686,19 @@ const CommunityChat = ({
     return (
         <div className={isEmbedded ? 'community-chat-embedded' : 'community-chat-floating'}>
             {!isEmbedded && (
-                <button
-                    type="button"
-                    className="chat-toggle-button"
-                    onClick={() => setChatAbierto((prev) => !prev)}
-                    aria-expanded={chatAbierto}
-                    aria-label="Abrir chat de comunidad"
-                >
-                    <LuMessageCircle size={20} />
-                    <span>Chat</span>
-                </button>
+                <div className="chat-floating-actions-row">
+                    {extraActions ? <div className="chat-floating-extra-actions">{extraActions}</div> : null}
+                    <button
+                        type="button"
+                        className="chat-toggle-button"
+                        onClick={() => setChatAbierto((prev) => !prev)}
+                        aria-expanded={chatAbierto}
+                        aria-label="Abrir chat de comunidad"
+                    >
+                        <LuMessageCircle size={20} />
+                        <span>Chat</span>
+                    </button>
+                </div>
             )}
 
             {!chatAbierto && !isEmbedded ? null : (

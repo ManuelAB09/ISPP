@@ -14,16 +14,56 @@
 .chat-toggle-button {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
     border: none;
     border-radius: 999px;
     background: var(--spaceIndigo);
     color: #fff;
-    padding: 0.7rem 1rem;
+    padding: 0 1rem;
     font-size: 0.9rem;
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 8px 24px rgba(45, 50, 80, 0.25);
+    min-width: 120px;
+    height: 42px;
+    white-space: nowrap;
+}
+
+.chat-floating-actions-row {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.75rem;
+    position: relative;
+}
+
+.chat-floating-extra-actions {
+    position: relative;
+    right: auto;
+    top: auto;
+    display: block;
+    width: auto;
+    max-width: none;
+    overflow: visible;
+}
+
+.chat-floating-extra-actions::-webkit-scrollbar {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    .chat-floating-actions-row {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.5rem;
+    }
+
+    .chat-floating-extra-actions {
+        position: static;
+        width: 100%;
+    }
 }
 
 .chat-toggle-button:hover {
@@ -604,6 +644,16 @@
     .community-chat-floating {
         top: 5.8rem;
         right: 0.8rem;
+    }
+
+    .chat-floating-actions-row {
+        width: calc(100vw - 1.6rem);
+        justify-content: flex-end;
+        align-items: stretch;
+    }
+
+    .chat-floating-extra-actions {
+        width: 100%;
     }
 
     .community-chat-panel {
