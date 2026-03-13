@@ -75,6 +75,7 @@ class AuthServiceTest {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("used@meerkat.es");
         request.setPassword("password123");
+        request.setNombre("Usuario Test");
 
         when(usuarioRepository.existsByEmail(request.getEmail())).thenReturn(true);
 
@@ -101,6 +102,7 @@ class AuthServiceTest {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("user@meerkat.es");
         request.setPassword("short");
+        request.setNombre("Usuario Test");
 
         assertThatThrownBy(() -> authService.registrar(request))
                 .isInstanceOf(ValidationException.class)

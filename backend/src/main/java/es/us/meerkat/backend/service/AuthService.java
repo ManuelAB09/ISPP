@@ -136,6 +136,16 @@ public class AuthService {
             throw new ValidationException("El email no puede estar vacío");
         }
 
+        // Validar formato de email
+        final String emailRegex = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$";
+        if (!request.getEmail().matches(emailRegex)) {
+            throw new ValidationException("El formato del email no es válido");
+        }
+
+        if (request.getNombre() == null || request.getNombre().isBlank()) {
+            throw new ValidationException("El nombre no puede estar vacío");
+        }
+
         if (request.getPassword() == null || request.getPassword().length() < MIN_PASSWORD_LENGTH) {
             throw new ValidationException("La contraseña debe tener al menos 8 caracteres");
         }
@@ -168,7 +178,6 @@ public class AuthService {
             throw new ValidationException("Credenciales incorrectas");
         }
 
-        // Verificar que el email esté verificado
         if (!Boolean.TRUE.equals(usuario.getEmailVerificado())) {
             throw new EmailNotVerifiedException(
                     "Debes verificar tu email antes de iniciar sesión. Revisa tu bandeja de entrada"

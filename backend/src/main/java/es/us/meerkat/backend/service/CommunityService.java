@@ -123,7 +123,7 @@ public class CommunityService {
         // TODO: Implementar inyección de InstitutionRepository
     }
 
-    /** Obtiene una comunidad por ID, verificando visibilidad según tipo. */
+    /** Obtiene una comunidad por ID. Comunidades privadas solo son visibles para miembros. */
     @Transactional(readOnly = true)
     public Comunidad getCommunityById(Long communityId, Long userId) {
         Comunidad comunidad =
@@ -131,12 +131,9 @@ public class CommunityService {
                         .findById(communityId)
                         .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
 
-        // Verificar acceso: si es privada, solo miembros pueden ver todos los detalles
-        if (comunidad.getTipoGrupo() == TipoGrupo.GRUPO_PRIVADO && userId != null) {
-            if (!authorizationService.isMemberOf(userId, communityId)) {
-                throw new IllegalArgumentException(
-                        "No tienes permiso para acceder a esta comunidad privada");
-            }
+        if (comunidad.getTipoGrupo() == TipoGrupo.GRUPO_PRIVADO
+                && !authorizationService.isMemberOf(userId, communityId)) {
+            throw new IllegalArgumentException("No tienes acceso a esta comunidad privada");
         }
 
         return comunidad;
@@ -181,15 +178,14 @@ public class CommunityService {
         comunidadRepository.delete(comunidad);
     }
 
-    /** Lista comunidades públicas con filtros opcionales. */
+    /** Lista comunidades activas (públicas y privadas) con filtros opcionales. */
     @Transactional(readOnly = true)
-    public Page<Comunidad> listPublicCommunities(String search, Pageable pageable) {
+    public Page<Comunidad> listActiveCommunities(String search, Pageable pageable) {
         if (search != null && !search.isBlank()) {
-            return comunidadRepository.findByTipoGrupoAndNombreContainingIgnoreCaseAndEstado(
-                    TipoGrupo.COMUNIDAD_PUBLICA, search, EstadoComunidad.ACTIVA, pageable);
+            return comunidadRepository.findByNombreContainingIgnoreCaseAndEstado(
+                    search, EstadoComunidad.ACTIVA, pageable);
         } else {
-            return comunidadRepository.findByTipoGrupoAndEstado(
-                    TipoGrupo.COMUNIDAD_PUBLICA, EstadoComunidad.ACTIVA, pageable);
+            return comunidadRepository.findByEstado(EstadoComunidad.ACTIVA, pageable);
         }
     }
 

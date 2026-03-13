@@ -37,8 +37,8 @@ spring:
           writetimeout: 5000
 
 jwt:
-  secret: dGhpcyBpcyBhIHNlY3JldCBrZXkgZm9yIG1lZXJrYXQgYmFja2VuZCBqd3Q=
-  expiration: 86400000
+  secret: ${JWT_SECRET:dGhpcyBpcyBhIHNlY3JldCBrZXkgZm9yIG1lZXJrYXQgYmFja2VuZCBqd3Q=}
+  expiration: ${JWT_EXPIRATION:86400000}
 
 # ── CONFIGURACIÓN APP ──
 app:

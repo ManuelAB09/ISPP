@@ -360,19 +360,24 @@ public class UsuarioService {
      *
      * @param usuario Usuario autenticado.
      * @param requestParam Contraseña actual y nueva.
-     * @throws RuntimeException si la contraseña actual es incorrecta o la nueva no cumple los
+     * @throws ValidationException si la contraseña actual es incorrecta o la nueva no cumple los
      *     requisitos.
      */
     @Transactional
     public void cambiarPassword(final Usuario usuario, final ChangePasswordRequest requestParam) {
 
         if (!passwordEncoder.matches(requestParam.getCurrentPassword(), usuario.getPassword())) {
-            throw new RuntimeException("La contraseña actual es incorrecta");
+            throw new ValidationException("La contraseña actual es incorrecta");
         }
 
         if (requestParam.getNewPassword() == null
                 || requestParam.getNewPassword().length() < MIN_PASSWORD_LENGTH) {
-            throw new RuntimeException("La nueva contraseña debe tener " + "al menos 8 caracteres");
+            throw new ValidationException("La nueva contraseña debe tener al menos 8 caracteres");
+        }
+
+        // Validar que la nueva contraseña no sea igual a la actual
+        if (passwordEncoder.matches(requestParam.getNewPassword(), usuario.getPassword())) {
+            throw new ValidationException("La nueva contraseña no puede ser igual a la anterior");
         }
 
         usuario.setPassword(passwordEncoder.encode(requestParam.getNewPassword()));

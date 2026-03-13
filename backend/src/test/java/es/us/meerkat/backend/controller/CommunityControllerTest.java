@@ -140,8 +140,10 @@ class CommunityControllerTest {
 
         when(memberService.joinPublicCommunity(usuario.getId(), 100L)).thenReturn(miembro);
 
+        @SuppressWarnings("unchecked")
         ResponseEntity<MemberResponse> response =
-                communityController.joinPublicCommunity(100L, usuario);
+                (ResponseEntity<MemberResponse>)
+                        communityController.joinPublicCommunity(100L, usuario);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isNotNull();

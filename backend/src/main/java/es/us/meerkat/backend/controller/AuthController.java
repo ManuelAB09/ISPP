@@ -16,6 +16,7 @@ import es.us.meerkat.backend.dto.MessageResponse;
 import es.us.meerkat.backend.dto.RegisterRequest;
 import es.us.meerkat.backend.dto.ResendVerificationRequest;
 import es.us.meerkat.backend.service.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -43,7 +44,8 @@ public final class AuthController {
      * @return MessageResponse con instrucciones para verificar el email.
      */
     @PostMapping("/register")
-    public ResponseEntity<MessageResponse> register(@RequestBody final RegisterRequest request) {
+    public ResponseEntity<MessageResponse> register(
+            @Valid @RequestBody final RegisterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.registrar(request));
     }
 
