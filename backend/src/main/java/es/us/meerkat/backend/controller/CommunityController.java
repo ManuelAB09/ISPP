@@ -7,9 +7,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import es.us.meerkat.backend.dto.*;
 import es.us.meerkat.backend.entity.Categoria;
@@ -74,7 +76,7 @@ public class CommunityController {
 
         Long userId = usuario != null ? usuario.getId() : null;
         Pageable pageable = PageRequest.of(page, size);
-        Page<Comunidad> comunidades = communityService.listPublicCommunities(search, pageable);
+        Page<Comunidad> comunidades = communityService.listActiveCommunities(search, pageable);
         Page<CommunityDetailResponse> response =
                 comunidades.map(c -> entityToDetailResponse(c, userId));
         return ResponseEntity.ok(new CommunityListResponse(response));
@@ -125,7 +127,7 @@ public class CommunityController {
                 description = "Datos inválidos o límite de comunidades gratuitas" + " alcanzado"),
         @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
     })
-    public ResponseEntity<CommunityDetailResponse> createCommunity(
+    public ResponseEntity<?> createCommunity(
             @Valid @RequestBody CreateCommunityRequest request,
             @AuthenticationPrincipal Usuario usuario) {
 
@@ -147,7 +149,8 @@ public class CommunityController {
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(entityToDetailResponse(comunidad, usuario.getId()));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest()
+                    .body(MessageResponse.builder().message(e.getMessage()).build());
         }
     }
 
@@ -327,6 +330,39 @@ public class CommunityController {
                         .build());
     }
 
+    /**
+     * Sube/actualiza la imagen de portada de la comunidad. POST
+     * /api/v1/communities/{communityId}/photo
+     */
+    @PostMapping(value = "/{communityId}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "Subir foto de comunidad",
+            description = "Sube una imagen para la portada de la comunidad (solo admin)",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<CommunityDetailResponse> uploadCommunityPhoto(
+            @PathVariable Long communityId,
+            @AuthenticationPrincipal Usuario usuario,
+            @RequestParam("file") MultipartFile file) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        try {
+            Comunidad comunidad =
+                    communityService.actualizarFotoComunidad(usuario.getId(), communityId, file);
+            return ResponseEntity.ok(entityToDetailResponse(comunidad, usuario.getId()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     // =====================================================
     // MIEMBROS
     // =====================================================
@@ -364,7 +400,7 @@ public class CommunityController {
                 description = "No puedes unirte (privada, llena, ya eres miembro)"),
         @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
     })
-    public ResponseEntity<MemberResponse> joinPublicCommunity(
+    public ResponseEntity<?> joinPublicCommunity(
             @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
 
         if (usuario == null) {
@@ -376,7 +412,8 @@ public class CommunityController {
                     memberService.joinPublicCommunity(usuario.getId(), communityId);
             return ResponseEntity.status(HttpStatus.CREATED).body(entityToMemberResponse(miembro));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest()
+                    .body(MessageResponse.builder().message(e.getMessage()).build());
         }
     }
 
@@ -583,6 +620,32 @@ public class CommunityController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    /**
+     * Comprueba si el usuario tiene solicitud pendiente. GET
+     * /api/v1/communities/{communityId}/requests/me
+     */
+    @GetMapping("/{communityId}/requests/me")
+    @Operation(
+            summary = "Comprobar mi solicitud pendiente",
+            description =
+                    "Devuelve si el usuario autenticado tiene una solicitud pendiente en esta"
+                            + " comunidad",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Estado de solicitud obtenido"),
+        @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
+    })
+    public ResponseEntity<java.util.Map<String, Boolean>> getMyRequestStatus(
+            @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        boolean pending = requestService.hasPendingRequest(usuario.getId(), communityId);
+        return ResponseEntity.ok(java.util.Map.of("pending", pending));
     }
 
     /**

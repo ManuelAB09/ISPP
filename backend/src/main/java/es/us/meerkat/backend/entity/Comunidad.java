@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -51,6 +52,7 @@ public class Comunidad {
     @Builder.Default
     private TipoPlanComunidad tipoPlan = TipoPlanComunidad.FREE;
 
+    @Column(columnDefinition = "TEXT")
     private String imagenUrl;
 
     @ManyToOne

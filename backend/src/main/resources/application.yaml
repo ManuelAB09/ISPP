@@ -22,8 +22,9 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${EMAIL}
-    password: ${PASSWORD_EMAIL}
+    username: ${EMAIL:meerkattersauth@gmail.com}
+    password: ${PASSWORD_EMAIL:zbfv vnhb bodh ernd}
+    from: meerkattersauth@gmail.com
     properties:
       mail:
         smtp:
@@ -36,8 +37,14 @@ spring:
           writetimeout: 5000
 
 jwt:
-  secret: dGhpcyBpcyBhIHNlY3JldCBrZXkgZm9yIG1lZXJrYXQgYmFja2VuZCBqd3Q=
-  expiration: 86400000
+  secret: ${JWT_SECRET:dGhpcyBpcyBhIHNlY3JldCBrZXkgZm9yIG1lZXJrYXQgYmFja2VuZCBqd3Q=}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+# ── CONFIGURACIÓN APP ──
+app:
+  name: MeerKatters
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:3000}
 
 google:
   classroom:

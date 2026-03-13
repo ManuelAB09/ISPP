@@ -76,7 +76,10 @@ public class MemberService {
         return miembroGuardado;
     }
 
-    /** Abandona una comunidad. Si es único admin, lanza error. */
+    /**
+     * Abandona una comunidad. Si es único admin y único miembro, elimina la comunidad. Si es único
+     * admin pero hay más miembros, lanza error.
+     */
     public void leaveCommunity(Long userId, Long communityId) {
         MiembroComunidad miembro =
                 miembroComunidadRepository
@@ -92,6 +95,13 @@ public class MemberService {
                     miembroComunidadRepository.countByComunidadIdAndRol(
                             communityId, RolComunidad.ADMIN);
             if (adminCount <= 1) {
+                long totalMembers = miembroComunidadRepository.countByComunidadId(communityId);
+                if (totalMembers <= 1) {
+                    // Único admin y único miembro: eliminar la comunidad
+                    Comunidad comunidad = miembro.getComunidad();
+                    comunidadRepository.delete(comunidad);
+                    return;
+                }
                 throw new IllegalArgumentException(
                         "No puedes abandonar siendo el único admin. Transfiere la administración"
                                 + " primero.");

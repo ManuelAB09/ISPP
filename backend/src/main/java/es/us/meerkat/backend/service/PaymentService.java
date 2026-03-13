@@ -14,7 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.stripe.exception.StripeException;
+import com.stripe.model.PaymentIntent;
 import com.stripe.model.checkout.Session;
+import com.stripe.param.PaymentIntentCreateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 
 import es.us.meerkat.backend.dto.PaymentUrlResponse;
@@ -135,8 +137,8 @@ public class PaymentService {
                 SessionCreateParams.builder()
                         .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
                         .setSuccessUrl(
-                                "http://localhost:3000/planes/success?session_id={CHECKOUT_SESSION_ID}")
-                        .setCancelUrl("http://localhost:3000/planes")
+                                successUrl + "?session_id={CHECKOUT_SESSION_ID}&tipo=suscripcion")
+                        .setCancelUrl(cancelUrl)
                         .setCustomerEmail(usuario.getEmail())
                         .addLineItem(
                                 SessionCreateParams.LineItem.builder()
@@ -351,5 +353,48 @@ public class PaymentService {
                         .build();
 
         return Session.create(params);
+    }
+
+    // -------------------------------------------------------------------------
+    // PaymentIntent para Stripe Elements (pago embebido en la app)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Crea un PaymentIntent para suscripcion Premium usando Stripe Elements. Devuelve clientSecret
+     * para inicializar el formulario de pago embebido.
+     */
+    public Map<String, String> crearPaymentIntentSuscripcion(
+            Usuario usuario, TipoPlan plan, String periodo) throws StripeException {
+
+        long amount;
+        String description;
+        if ("anual".equalsIgnoreCase(periodo)) {
+            amount = 2599L; // 25.99 EUR en centimos
+            description = "Suscripcion Premium Anual - MeerKatters";
+        } else {
+            amount = 299L; // 2.99 EUR en centimos
+            description = "Suscripcion Premium Mensual - MeerKatters";
+        }
+
+        PaymentIntentCreateParams params =
+                PaymentIntentCreateParams.builder()
+                        .setAmount(amount)
+                        .setCurrency("eur")
+                        .setDescription(description)
+                        .setReceiptEmail(usuario.getEmail())
+                        .putMetadata("usuarioId", usuario.getId().toString())
+                        .putMetadata("plan", plan.name())
+                        .putMetadata("periodo", periodo)
+                        .putMetadata("tipo", TipoTransaccion.SUSCRIPCION.name())
+                        .addPaymentMethodType("card")
+                        .build();
+
+        PaymentIntent intent = PaymentIntent.create(params);
+        log.info("PaymentIntent creado para usuario {}: {}", usuario.getId(), intent.getId());
+
+        Map<String, String> result = new HashMap<>();
+        result.put("clientSecret", intent.getClientSecret());
+        result.put("paymentIntentId", intent.getId());
+        return result;
     }
 }

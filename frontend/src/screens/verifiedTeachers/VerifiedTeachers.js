@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getVerifiedTutors } from "../../api/tutorEndpoints";
 import { getApiBaseUrl } from "../../api/baseUrl";
 import Header from "../../components/Header/Header";
@@ -31,6 +31,7 @@ const VerifiedTeachers = () => {
   };
 
   const { isAuthenticated, user, refreshUser } = useAuth();
+  const navigate = useNavigate();
   const [profesores, setProfesores] = useState([]);
   const [profesoresOriginales, setProfesoresOriginales] = useState([]);
   const [total, setTotal] = useState(0);
@@ -218,7 +219,7 @@ const VerifiedTeachers = () => {
         <div className="vt-header__inner">
 
           <div className="headerTitle">
-            <p>Profesionales con identidad confirmada, calidad contrastada y acceso directo al contacto</p>
+            <p>Profesionales con identidad confirmada</p>
             <span className="line"></span>
             <h1>Profesores Verificados</h1>
           </div>
@@ -317,7 +318,8 @@ const VerifiedTeachers = () => {
               return (
                 <div key={tutor.id ?? i} className="vt-card">
                   {/* Insignia verificado */}
-                  <span className="vt-card__badge">Verificado</span>
+                  {tutor.verificado && <span className="vt-card__badge">Verificado</span>}
+                  {!tutor.verificado && <span className="vt-card__badge vt-card__badge--unverified">No verificado</span>}
 
                   {/* Etiqueta de distancia */}
                   {userHasCoords && (
@@ -380,12 +382,29 @@ const VerifiedTeachers = () => {
                     >
                       Ver perfil
                     </Link>
-                    {/* Contactar */}
-                    <button
-                      className="vt-btn vt-btn--primary"
-                    >
-                      Contactar
-                    </button>
+
+                    {/* Contactar: solo si no es el propio usuario */}
+                    {(() => {
+                      const targetUserId = tutor.userId ?? tutor.usuario?.id;
+                      if (!targetUserId || targetUserId === user?.id) return null;
+                      return (
+                        <button
+                          className="vt-btn vt-btn--primary"
+                          onClick={() => {
+                            const params = new URLSearchParams({
+                              userId: String(targetUserId),
+                              userName: nombre,
+                            });
+                            if (tutor.usuario?.foto) {
+                              params.set('userPhoto', toAbsoluteImageUrl(tutor.usuario.foto));
+                            }
+                            navigate(`/chats?${params.toString()}`);
+                          }}
+                        >
+                          Contactar
+                        </button>
+                      );
+                    })()}
                   </div>
                 </div>
               );

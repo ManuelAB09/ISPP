@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { LuPlus, LuArrowLeft, LuCalendar, LuUsers, LuLogIn, LuLogOut, LuVideo, LuPlay } from 'react-icons/lu';
+import { LuPlus, LuArrowLeft, LuCalendar, LuUsers, LuLogIn, LuLogOut, LuVideo, LuPlay, LuPencil, LuTrash2, LuCheck, LuX, LuUserPlus } from 'react-icons/lu';
 import Header from '../../components/Header/Header';
 import TarjetaEvento from '../../components/Evento/TarjetaEvento';
 import CommunityChat from '../chat/CommunityChat';
 import GoogleClassroomButton from '../../components/GoogleClassroomButton/GoogleClassroomButton';
+import EditCommunityModal from '../../components/Comunidad/EditCommunityModal';
+import TransferAdminModal from '../../components/Comunidad/TransferAdminModal';
 import { communitiesApi } from '../../api/communities.api';
 import { ZoomApi } from '../../api/zoom.api';
 import { listCommunityEvents, attendEvent, cancelAttendance, getMyAttendance } from '../../api/eventEndpoints';
@@ -93,8 +95,18 @@ export default function CommunityDetail() {
   const [downloadingRecordingId, setDownloadingRecordingId] = useState(null);
   const [uploadingMeetingId, setUploadingMeetingId] = useState(null);
   const [uploadFeedback, setUploadFeedback] = useState(null);
+  const [requestSent, setRequestSent] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [requestsLoading, setRequestsLoading] = useState(false);
+  const [respondingId, setRespondingId] = useState(null);
+  const [showTransferModal, setShowTransferModal] = useState(false);
   const fileInputRef = useRef(null);
   const activeMeetingRequestInFlightRef = useRef(false);
+
+  const isPrivate = community?.tipoGrupo === 'GRUPO_PRIVADO';
+  const isAdmin = community?.miRol === 'ADMIN';
 
   const currentUserId = localStorage.getItem('userId');
   const openChatOnLoad = searchParams.get('chat') === 'open';
@@ -104,7 +116,7 @@ export default function CommunityDetail() {
     foto: user?.foto || null,
     fotoBackgroundColor: user?.fotoBackgroundColor || '#ffffff',
   };
-  const communityImage = community?.imagen || community?.imagenUrl || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
+  const communityImage = community?.imagenUrl !== 'empty' ? community?.imagenUrl : 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
 
   const fetchCommunity = useCallback(async () => {
     try {
@@ -121,6 +133,18 @@ export default function CommunityDetail() {
           setIsMember(true);
         } catch {
           setIsMember(false);
+        }
+      }
+
+      // Si es comunidad privada y el usuario no es miembro, comprobar solicitud pendiente
+      if (data.tipoGrupo === 'GRUPO_PRIVADO' && !data.esMiembro && currentUserId) {
+        try {
+          const status = await communitiesApi.getMyRequestStatus(communityId);
+          if (status && status.pending) {
+            setRequestSent(true);
+          }
+        } catch {
+          // Ignorar error, el usuario simplemente puede solicitar
         }
       }
     } catch (err) {
@@ -162,10 +186,31 @@ export default function CommunityDetail() {
     }
   }, [communityId, filterCancelled, currentUserId]);
 
+  const fetchPendingRequests = useCallback(async () => {
+    try {
+      setRequestsLoading(true);
+      const data = await communitiesApi.listRequests(communityId, { estado: 'PENDIENTE' });
+      const list = data?.content || data?.solicitudes || [];
+      setPendingRequests(Array.isArray(list) ? list : []);
+    } catch (err) {
+      console.error('Error al cargar solicitudes:', err);
+      setPendingRequests([]);
+    } finally {
+      setRequestsLoading(false);
+    }
+  }, [communityId]);
+
   useEffect(() => {
     fetchCommunity();
     fetchEvents();
   }, [fetchCommunity, fetchEvents]);
+
+  // Cargar solicitudes pendientes cuando el admin accede a una comunidad privada
+  useEffect(() => {
+    if (isAdmin && isPrivate) {
+      fetchPendingRequests();
+    }
+  }, [isAdmin, isPrivate, fetchPendingRequests]);
 
   const fetchActiveMeeting = useCallback(async ({ silent = false } = {}) => {
     if (!currentUserId || !isMember) {
@@ -595,16 +640,27 @@ export default function CommunityDetail() {
     try {
       setJoinLoading(true);
       setMembershipError(null);
-      await communitiesApi.join(communityId);
-      setIsMember(true);
-      await fetchCommunity(); // Refresh member count
-      await fetchEvents(); // Refresh events to show private events
+      if (isPrivate) {
+        await communitiesApi.requestAccess(communityId);
+        setRequestSent(true);
+      } else {
+        await communitiesApi.join(communityId);
+        setIsMember(true);
+        await fetchCommunity();
+        await fetchEvents();
+      }
     } catch (err) {
-      console.error('Error al unirse a la comunidad:', err);
+      console.error('Error al unirse/solicitar acceso:', err);
       if (err.status === 401 || err.message?.includes('401')) {
         navigate('/login');
       } else if (err.status === 409 || err.message?.includes('409')) {
-        setIsMember(true); // Already a member
+        setIsMember(true);
+      } else if (err.status === 400) {
+        if (isPrivate) {
+          setRequestSent(true);
+        } else {
+          setMembershipError(err.message || 'Error al unirse a la comunidad');
+        }
       } else {
         setMembershipError(err.message || 'Error al unirse a la comunidad');
       }
@@ -618,6 +674,12 @@ export default function CommunityDetail() {
       setJoinLoading(true);
       setMembershipError(null);
       await communitiesApi.leave(communityId);
+      // Si el admin era el único miembro, el backend elimina la comunidad
+      // En ese caso redirigimos a la lista
+      if (isAdmin) {
+        navigate('/comunidades');
+        return;
+      }
       setIsMember(false);
       await fetchCommunity(); // Refresh member count
       await fetchEvents(); // Refresh events to hide private events
@@ -631,6 +693,38 @@ export default function CommunityDetail() {
       }
     } finally {
       setJoinLoading(false);
+    }
+  };
+
+  const handleDeleteCommunity = async () => {
+    if (!window.confirm('¿Estás seguro de que quieres eliminar esta comunidad? Se expulsará a todos los miembros y no se podrá deshacer.')) {
+      return;
+    }
+    try {
+      setDeleteLoading(true);
+      setMembershipError(null);
+      await communitiesApi.deleteCommunity(communityId);
+      navigate('/comunidades');
+    } catch (err) {
+      console.error('Error al eliminar la comunidad:', err);
+      setMembershipError(err.message || 'Error al eliminar la comunidad');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleRespondRequest = async (requestId, aceptado) => {
+    try {
+      setRespondingId(requestId);
+      await communitiesApi.respondToRequest(communityId, requestId, aceptado);
+      setPendingRequests(prev => prev.filter(r => r.id !== requestId));
+      if (aceptado) {
+        await fetchCommunity();
+      }
+    } catch (err) {
+      console.error('Error al responder solicitud:', err);
+    } finally {
+      setRespondingId(null);
     }
   };
 
@@ -697,10 +791,35 @@ export default function CommunityDetail() {
                   <LuUsers /> {community.miembrosActuales || 0} miembros
                 </span>
               </div>
-              {/* Join / Leave community */}
+              {/* Join / Leave / Request access */}
               <div className="cd-membership-actions">
                 {membershipError && (
                   <span className="cd-membership-error">{membershipError}</span>
+                )}
+                {isAdmin && (
+                  <button
+                    className="cd-btn cd-btn-edit"
+                    onClick={() => setShowEditModal(true)}
+                  >
+                    <LuPencil /> Editar comunidad
+                  </button>
+                )}
+                {isAdmin && (
+                  <button
+                    className="cd-btn cd-btn-transfer"
+                    onClick={() => setShowTransferModal(true)}
+                  >
+                    <LuUsers /> Transferir administración
+                  </button>
+                )}
+                {isAdmin && (
+                  <button
+                    className="cd-btn cd-btn-delete"
+                    onClick={handleDeleteCommunity}
+                    disabled={deleteLoading}
+                  >
+                    <LuTrash2 /> {deleteLoading ? 'Eliminando...' : 'Eliminar comunidad'}
+                  </button>
                 )}
                 {currentUserId ? (
                   isMember ? (
@@ -711,13 +830,19 @@ export default function CommunityDetail() {
                     >
                       <LuLogOut /> {joinLoading ? 'Saliendo...' : 'Abandonar comunidad'}
                     </button>
+                  ) : requestSent ? (
+                    <button className="cd-btn cd-btn-pending" disabled>
+                      Solicitud de acceso enviada
+                    </button>
                   ) : (
                     <button
                       className="cd-btn cd-btn-join"
                       onClick={handleJoinCommunity}
                       disabled={joinLoading}
                     >
-                      <LuLogIn /> {joinLoading ? 'Uniéndose...' : 'Unirse a la comunidad'}
+                      <LuLogIn /> {joinLoading
+                        ? (isPrivate ? 'Solicitando...' : 'Uniendose...')
+                        : (isPrivate ? 'Solicitar acceso' : 'Unirse a la comunidad')}
                     </button>
                   )
                 ) : (
@@ -734,12 +859,67 @@ export default function CommunityDetail() {
           </div>
         )}
 
-        {/* Sección de Google Classroom */}
-        {community && (isMember || community.classroom) && (
+        {/* Seccion de solicitudes pendientes - solo admin de comunidad privada */}
+        {isAdmin && isPrivate && (
+          <div className="cd-requests-section">
+            <h2 className="cd-requests-title">
+              <LuUserPlus /> Solicitudes de acceso
+              {pendingRequests.length > 0 && (
+                <span className="cd-requests-badge">{pendingRequests.length}</span>
+              )}
+            </h2>
+            {requestsLoading ? (
+              <p className="cd-loading">Cargando solicitudes...</p>
+            ) : pendingRequests.length > 0 ? (
+              <div className="cd-requests-list">
+                {pendingRequests.map(req => (
+                  <div key={req.id} className="cd-request-item">
+                    <div className="cd-request-info">
+                      <span className="cd-request-name">
+                        {req.solicitante?.nombre || 'Usuario'}
+                      </span>
+                      {req.mensaje && (
+                        <span className="cd-request-message">{req.mensaje}</span>
+                      )}
+                      {req.fechaSolicitud && (
+                        <span className="cd-request-date">
+                          {new Date(req.fechaSolicitud).toLocaleDateString('es-ES', {
+                            day: 'numeric', month: 'short', year: 'numeric'
+                          })}
+                        </span>
+                      )}
+                    </div>
+                    <div className="cd-request-actions">
+                      <button
+                        className="cd-btn cd-btn-accept"
+                        onClick={() => handleRespondRequest(req.id, true)}
+                        disabled={respondingId === req.id}
+                      >
+                        <LuCheck /> Aceptar
+                      </button>
+                      <button
+                        className="cd-btn cd-btn-reject"
+                        onClick={() => handleRespondRequest(req.id, false)}
+                        disabled={respondingId === req.id}
+                      >
+                        <LuX /> Rechazar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="cd-requests-empty">No hay solicitudes pendientes.</p>
+            )}
+          </div>
+        )}
+
+        {/* Seccion de Google Classroom - si hay vinculacion o es admin */}
+        {community && (community.classroom || isAdmin) && (
           <GoogleClassroomButton
             communityId={Number(communityId)}
             linkedCourse={community.classroom}
-            isAdmin={community.miRol === 'ADMIN'}
+            isAdmin={isAdmin}
             onLinked={fetchCommunity}
           />
         )}
@@ -1064,6 +1244,29 @@ extraActions={(
 )}
           />
         ) : null}
+
+        {showEditModal && community && (
+          <EditCommunityModal
+            community={community}
+            onClose={() => setShowEditModal(false)}
+            onSaved={() => {
+              setShowEditModal(false);
+              fetchCommunity();
+            }}
+          />
+        )}
+
+        {showTransferModal && (
+          <TransferAdminModal
+            communityId={communityId}
+            currentUserId={currentUserId}
+            onClose={() => setShowTransferModal(false)}
+            onTransferred={() => {
+              setShowTransferModal(false);
+              fetchCommunity();
+            }}
+          />
+        )}
       </div>
     </>
   );
