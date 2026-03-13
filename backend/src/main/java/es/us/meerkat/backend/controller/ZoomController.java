@@ -7,13 +7,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import es.us.meerkat.backend.dto.CreateZoomMeetingRequest;
 import es.us.meerkat.backend.dto.MessageResponse;
@@ -66,16 +69,9 @@ public class ZoomController {
             @RequestBody(required = false) CreateZoomMeetingRequest request,
             @AuthenticationPrincipal Usuario usuario) {
 
-        if (usuario == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(MessageResponse.builder().message("Usuario no autenticado").build());
-        }
-        if (!authorizationService.isMemberOf(usuario.getId(), communityId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(
-                            MessageResponse.builder()
-                                    .message("No perteneces a esta comunidad")
-                                    .build());
+        ResponseEntity<?> authError = validateMembership(usuario, communityId);
+        if (authError != null) {
+            return authError;
         }
 
         try {
@@ -85,7 +81,6 @@ public class ZoomController {
                             usuario.getId(),
                             request != null ? request.topic() : null,
                             request != null ? request.durationMinutes() : null);
-
             return ResponseEntity.ok(toResponse(meeting));
         } catch (RuntimeException e) {
             if ("Faltan credenciales Zoom. Revisa zoom.client-id, zoom.client-secret y zoom.account-id"
@@ -114,29 +109,19 @@ public class ZoomController {
     public ResponseEntity<?> getActiveMeeting(
             @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
 
-        if (usuario == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(MessageResponse.builder().message("Usuario no autenticado").build());
-        }
-        if (!authorizationService.isMemberOf(usuario.getId(), communityId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(
-                            MessageResponse.builder()
-                                    .message("No perteneces a esta comunidad")
-                                    .build());
+        ResponseEntity<?> authError = validateMembership(usuario, communityId);
+        if (authError != null) {
+            return authError;
         }
 
         try {
-            ZoomMeeting meeting =
-                    zoomIntegrationService.getActiveMeeting(communityId, usuario.getId());
-            return ResponseEntity.ok(toResponse(meeting));
+            return ResponseEntity.ok(
+                    toResponse(
+                            zoomIntegrationService.getActiveMeeting(communityId, usuario.getId())));
         } catch (RuntimeException e) {
             if ("No hay llamada activa en esta comunidad".equals(e.getMessage())) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(
-                                MessageResponse.builder()
-                                        .message("No hay llamada activa en esta comunidad")
-                                        .build());
+                        .body(MessageResponse.builder().message(e.getMessage()).build());
             }
             throw e;
         }
@@ -145,9 +130,7 @@ public class ZoomController {
     @PostMapping("/communities/{communityId}/meeting/join")
     @Operation(
             summary = "Entrar en la llamada",
-            description =
-                    "Devuelve link y clave de acceso de forma automatica y registra que el usuario"
-                            + " entro")
+            description = "Devuelve link y clave de acceso y registra que el usuario entro")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Acceso a llamada devuelto"),
         @ApiResponse(responseCode = "401", description = "No autenticado"),
@@ -157,16 +140,9 @@ public class ZoomController {
     public ResponseEntity<?> joinMeeting(
             @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
 
-        if (usuario == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(MessageResponse.builder().message("Usuario no autenticado").build());
-        }
-        if (!authorizationService.isMemberOf(usuario.getId(), communityId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(
-                            MessageResponse.builder()
-                                    .message("No perteneces a esta comunidad")
-                                    .build());
+        ResponseEntity<?> authError = validateMembership(usuario, communityId);
+        if (authError != null) {
+            return authError;
         }
 
         try {
@@ -175,10 +151,7 @@ public class ZoomController {
         } catch (RuntimeException e) {
             if ("No hay llamada activa en esta comunidad".equals(e.getMessage())) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(
-                                MessageResponse.builder()
-                                        .message("No hay llamada activa en esta comunidad")
-                                        .build());
+                        .body(MessageResponse.builder().message(e.getMessage()).build());
             }
             throw e;
         }
@@ -195,16 +168,9 @@ public class ZoomController {
     public ResponseEntity<?> listParticipants(
             @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
 
-        if (usuario == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(MessageResponse.builder().message("Usuario no autenticado").build());
-        }
-        if (!authorizationService.isMemberOf(usuario.getId(), communityId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(
-                            MessageResponse.builder()
-                                    .message("No perteneces a esta comunidad")
-                                    .build());
+        ResponseEntity<?> authError = validateMembership(usuario, communityId);
+        if (authError != null) {
+            return authError;
         }
 
         try {
@@ -213,13 +179,33 @@ public class ZoomController {
         } catch (RuntimeException e) {
             if ("No hay llamada activa en esta comunidad".equals(e.getMessage())) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(
-                                MessageResponse.builder()
-                                        .message("No hay llamada activa en esta comunidad")
-                                        .build());
+                        .body(MessageResponse.builder().message(e.getMessage()).build());
             }
             throw e;
         }
+    }
+
+    @GetMapping("/communities/{communityId}/meetings")
+    @Operation(summary = "Listar historico de reuniones de la comunidad")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Reuniones listadas"),
+        @ApiResponse(responseCode = "401", description = "No autenticado"),
+        @ApiResponse(responseCode = "403", description = "No pertenece a la comunidad")
+    })
+    public ResponseEntity<?> listMeetings(
+            @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
+
+        ResponseEntity<?> authError = validateMembership(usuario, communityId);
+        if (authError != null) {
+            return authError;
+        }
+
+        return ResponseEntity.ok(
+                zoomIntegrationService
+                        .getMeetingsForCommunity(communityId, usuario.getId())
+                        .stream()
+                        .map(this::toResponse)
+                        .toList());
     }
 
     @GetMapping("/communities/{communityId}/recordings")
@@ -232,16 +218,9 @@ public class ZoomController {
     public ResponseEntity<?> listRecordings(
             @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
 
-        if (usuario == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(MessageResponse.builder().message("Usuario no autenticado").build());
-        }
-        if (!authorizationService.isMemberOf(usuario.getId(), communityId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(
-                            MessageResponse.builder()
-                                    .message("No perteneces a esta comunidad")
-                                    .build());
+        ResponseEntity<?> authError = validateMembership(usuario, communityId);
+        if (authError != null) {
+            return authError;
         }
 
         return ResponseEntity.ok(
@@ -261,16 +240,9 @@ public class ZoomController {
             @PathVariable String recordingId,
             @AuthenticationPrincipal Usuario usuario) {
 
-        if (usuario == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(MessageResponse.builder().message("Usuario no autenticado").build());
-        }
-        if (!authorizationService.isMemberOf(usuario.getId(), communityId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(
-                            MessageResponse.builder()
-                                    .message("No perteneces a esta comunidad")
-                                    .build());
+        ResponseEntity<?> authError = validateMembership(usuario, communityId);
+        if (authError != null) {
+            return authError;
         }
 
         try {
@@ -279,6 +251,42 @@ public class ZoomController {
                             communityId, recordingId, usuario.getId()));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(MessageResponse.builder().message(e.getMessage()).build());
+        }
+    }
+
+    @PostMapping(
+            value = "/communities/{communityId}/meetings/{meetingId}/recordings/upload",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Subir manualmente una grabacion para una reunion")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Grabacion subida"),
+        @ApiResponse(responseCode = "400", description = "Archivo invalido"),
+        @ApiResponse(responseCode = "401", description = "No autenticado"),
+        @ApiResponse(responseCode = "403", description = "No pertenece a la comunidad"),
+        @ApiResponse(responseCode = "404", description = "Reunion no encontrada")
+    })
+    public ResponseEntity<?> uploadRecording(
+            @PathVariable Long communityId,
+            @PathVariable Long meetingId,
+            @AuthenticationPrincipal Usuario usuario,
+            @RequestParam("file") MultipartFile file) {
+
+        ResponseEntity<?> authError = validateMembership(usuario, communityId);
+        if (authError != null) {
+            return authError;
+        }
+
+        try {
+            return ResponseEntity.ok(
+                    zoomIntegrationService.uploadRecordingForMeeting(
+                            communityId, meetingId, usuario.getId(), file));
+        } catch (RuntimeException e) {
+            if ("Reunion no encontrada".equals(e.getMessage())) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(MessageResponse.builder().message(e.getMessage()).build());
+            }
+            return ResponseEntity.badRequest()
                     .body(MessageResponse.builder().message(e.getMessage()).build());
         }
     }
@@ -296,23 +304,15 @@ public class ZoomController {
             @PathVariable String recordingId,
             @AuthenticationPrincipal Usuario usuario) {
 
-        if (usuario == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(MessageResponse.builder().message("Usuario no autenticado").build());
-        }
-        if (!authorizationService.isMemberOf(usuario.getId(), communityId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(
-                            MessageResponse.builder()
-                                    .message("No perteneces a esta comunidad")
-                                    .build());
+        ResponseEntity<?> authError = validateMembership(usuario, communityId);
+        if (authError != null) {
+            return authError;
         }
 
         try {
             ZoomIntegrationService.RecordingDownload recording =
                     zoomIntegrationService.downloadRecordingForCommunity(
                             communityId, recordingId, usuario.getId());
-
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(recording.mimeType()))
                     .header(
@@ -325,8 +325,7 @@ public class ZoomController {
         }
     }
 
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(required = false)
-    @org.springframework.web.bind.annotation.DeleteMapping("/communities/{communityId}/meeting")
+    @DeleteMapping("/communities/{communityId}/meeting")
     @Operation(
             summary = "Finalizar llamada activa",
             description = "Solo el creador de la llamada puede finalizarla")
@@ -348,16 +347,9 @@ public class ZoomController {
     public ResponseEntity<?> endMeeting(
             @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
 
-        if (usuario == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(MessageResponse.builder().message("Usuario no autenticado").build());
-        }
-        if (!authorizationService.isMemberOf(usuario.getId(), communityId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(
-                            MessageResponse.builder()
-                                    .message("No perteneces a esta comunidad")
-                                    .build());
+        ResponseEntity<?> authError = validateMembership(usuario, communityId);
+        if (authError != null) {
+            return authError;
         }
 
         try {
@@ -366,17 +358,11 @@ public class ZoomController {
         } catch (RuntimeException e) {
             if ("No hay llamada activa en esta comunidad".equals(e.getMessage())) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(
-                                MessageResponse.builder()
-                                        .message("No hay llamada activa en esta comunidad")
-                                        .build());
+                        .body(MessageResponse.builder().message(e.getMessage()).build());
             }
             if ("Solo el creador puede finalizar la llamada".equals(e.getMessage())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(
-                                MessageResponse.builder()
-                                        .message("Solo el creador puede finalizar la llamada")
-                                        .build());
+                        .body(MessageResponse.builder().message(e.getMessage()).build());
             }
             throw e;
         }
@@ -389,21 +375,15 @@ public class ZoomController {
         @ApiResponse(responseCode = "401", description = "No autenticado")
     })
     public ResponseEntity<?> getMyActiveCalls(@AuthenticationPrincipal Usuario usuario) {
-
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(MessageResponse.builder().message("Usuario no autenticado").build());
         }
-
         return ResponseEntity.ok(zoomIntegrationService.getActiveCallsForUser(usuario.getId()));
     }
 
     @PostMapping("/webhook")
-    @Operation(
-            summary = "Webhook de Zoom",
-            description =
-                    "Recibe eventos de Zoom para sincronizar participantes y grabaciones de"
-                            + " llamadas")
+    @Operation(summary = "Webhook de Zoom", description = "Recibe eventos de Zoom")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Webhook procesado"),
         @ApiResponse(responseCode = "401", description = "Webhook no autorizado")
@@ -422,6 +402,21 @@ public class ZoomController {
         }
     }
 
+    private ResponseEntity<?> validateMembership(final Usuario usuario, final Long communityId) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(MessageResponse.builder().message("Usuario no autenticado").build());
+        }
+        if (!authorizationService.isMemberOf(usuario.getId(), communityId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(
+                            MessageResponse.builder()
+                                    .message("No perteneces a esta comunidad")
+                                    .build());
+        }
+        return null;
+    }
+
     private ZoomMeetingResponse toResponse(final ZoomMeeting meeting) {
         return new ZoomMeetingResponse(
                 meeting.getId(),
@@ -431,6 +426,9 @@ public class ZoomController {
                 meeting.getPassword(),
                 meeting.getStatus().name(),
                 meeting.getComunidad().getId(),
-                meeting.getComunidad().getNombre());
+                meeting.getComunidad().getNombre(),
+                meeting.getCreatedAt(),
+                meeting.getStartedAt(),
+                meeting.getEndedAt());
     }
 }

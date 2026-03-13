@@ -60,6 +60,8 @@ public class ZoomMeeting {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    private LocalDateTime startedAt;
+
     private LocalDateTime endedAt;
 
     @Column(nullable = false)
@@ -78,5 +80,14 @@ public class ZoomMeeting {
     public void endMeeting() {
         this.status = ZoomMeetingStatus.ENDED;
         this.endedAt = LocalDateTime.now();
+    }
+
+    /** Marca el inicio real de la reunion al entrar el primer participante. */
+    public void markStarted() {
+        if (this.startedAt == null) {
+            this.startedAt = LocalDateTime.now();
+        }
+        this.status = ZoomMeetingStatus.ACTIVE;
+        this.endedAt = null;
     }
 }

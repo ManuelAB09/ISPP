@@ -3,8 +3,8 @@ spring:
     name: backend
   servlet:
     multipart:
-      max-file-size: 5MB
-      max-request-size: 5MB
+      max-file-size: ${MAX_UPLOAD_FILE_SIZE:50MB}
+      max-request-size: ${MAX_UPLOAD_REQUEST_SIZE:50MB}
 
 # ── configuración por defecto: PostgreSQL (usa variables de entorno) ──
 # En Azure se activa "staging" o "production" via SPRING_PROFILES_ACTIVE

@@ -1,5 +1,7 @@
 package es.us.meerkat.backend.dto;
 
+import java.time.LocalDateTime;
+
 /** Respuesta de una reunion Zoom gestionada por la app. */
 public record ZoomMeetingResponse(
         Long id,
@@ -9,4 +11,7 @@ public record ZoomMeetingResponse(
         String password,
         String status,
         Long communityId,
-        String communityName) {}
+        String communityName,
+        LocalDateTime createdAt,
+        LocalDateTime startedAt,
+        LocalDateTime endedAt) {}
