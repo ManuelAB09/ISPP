@@ -26,4 +26,17 @@ export const paymentsApi = {
   getTransaction(transactionId) {
     return apiClient.get(`/api/v1/payments/${transactionId}`);
   },
+
+
+  getMisContrataciones(params = {}) {
+    const query = new URLSearchParams();
+    if (params.page !== undefined) query.set('page', String(params.page));
+    if (params.size !== undefined) query.set('size', String(params.size));
+    const qs = query.toString();
+    return apiClient.get(`/api/v1/contrataciones/mis-contrataciones${qs ? '?' + qs : ''}`);
+  },
+
+  verifyHiringSession(sessionId) {
+    return apiClient.post('/api/v1/contrataciones/verify-hiring-session', { sessionId });
+  },
 };

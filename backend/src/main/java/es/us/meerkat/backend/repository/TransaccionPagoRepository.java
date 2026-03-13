@@ -32,4 +32,5 @@ public interface TransaccionPagoRepository extends JpaRepository<TransaccionPago
 
     /** Elimina todas las transacciones de pago de un usuario. */
     void deleteByUsuarioId(Long usuarioId);
+    Page<TransaccionPago> findByTutorIdOrderByIniciadoAtDesc(Long tutorId, Pageable pageable);
 }

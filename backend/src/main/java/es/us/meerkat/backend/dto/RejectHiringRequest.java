@@ -16,8 +16,6 @@ import lombok.NoArgsConstructor;
 public class RejectHiringRequest {
 
     @NotBlank(message = "El motivo del rechazo es obligatorio")
-    @Schema(
-            description = "Motivo del rechazo",
-            example = "No dispongo de tiempo en este momento")
+    @Schema(description = "Motivo del rechazo", example = "No dispongo de tiempo en este momento")
     private String motivo;
 }

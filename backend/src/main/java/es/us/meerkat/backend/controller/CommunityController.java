@@ -1169,7 +1169,9 @@ public class CommunityController {
     @PostMapping("/{communityId}/tutor/{tutorId}")
     @Operation(
             summary = "Solicitar contratación de tutor",
-            description = "Crea una solicitud de contratación de tutor. El tutor debe aceptarla antes de proceder al pago.",
+            description =
+                    "Crea una solicitud de contratación de tutor. El tutor debe aceptarla antes de"
+                            + " proceder al pago.",
             security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(
@@ -1197,7 +1199,9 @@ public class CommunityController {
                     communityId, tutorId, request, usuario.getId());
             return ResponseEntity.ok(
                     MessageResponse.builder()
-                            .message("Solicitud de contratación enviada al tutor. Espera su aprobación.")
+                            .message(
+                                    "Solicitud de contratación enviada al tutor. Espera su"
+                                            + " aprobación.")
                             .build());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
@@ -1221,9 +1225,7 @@ public class CommunityController {
             description = "Genera URL de pago para una solicitud aprobada por el tutor.",
             security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
-        @ApiResponse(
-                responseCode = "200",
-                description = "URL de pago generada correctamente"),
+        @ApiResponse(responseCode = "200", description = "URL de pago generada correctamente"),
         @ApiResponse(responseCode = "400", description = "No hay solicitud aprobada"),
         @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
         @ApiResponse(
@@ -1250,9 +1252,10 @@ public class CommunityController {
                     .body(MessageResponse.builder().message(e.getMessage()).build());
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                    .body(MessageResponse.builder()
-                            .message("Error al generar URL de pago: " + e.getMessage())
-                            .build());
+                    .body(
+                            MessageResponse.builder()
+                                    .message("Error al generar URL de pago: " + e.getMessage())
+                                    .build());
         }
     }
 
@@ -1380,46 +1383,59 @@ public class CommunityController {
             // Verificar que el usuario es admin de la comunidad
             if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(MessageResponse.builder()
-                                .message("No tienes permisos para ver las solicitudes de esta comunidad")
-                                .build());
+                        .body(
+                                MessageResponse.builder()
+                                        .message(
+                                                "No tienes permisos para ver las solicitudes de"
+                                                        + " esta comunidad")
+                                        .build());
             }
 
             Pageable pageable = PageRequest.of(page, size);
             Page<TutorContratacion> contrataciones =
-                    tutorContratacionService.obtenerContratacionesDeLaComunidad(communityId, pageable);
+                    tutorContratacionService.obtenerContratacionesDeLaComunidad(
+                            communityId, pageable);
 
             // Convertir a DTO con información del tutor
-            var response = contrataciones.map(c -> {
-                var builder = es.us.meerkat.backend.dto.TutorContratacionResponse.builder()
-                        .id(c.getId())
-                        .modalidad(c.getModalidad())
-                        .duracion(c.getDuracion())
-                        .tarifaAcordada(c.getTarifaAcordada())
-                        .estado(c.getEstado().name())
-                        .fechaInicio(c.getFechaInicio())
-                        .fechaFin(c.getFechaFin())
-                        .motivoCancelacion(c.getMotivoCancelacion());
-                
-                // Agregar información del tutor si está disponible
-                if (c.getTutor() != null) {
-                    var tutorResponse = TutorResponse.builder()
-                            .id(c.getTutor().getId())
-                            .verificado(c.getTutor().getVerificado());
-                    
-                    if (c.getTutor().getUsuario() != null) {
-                        tutorResponse.usuario(TutorResponse.UsuarioDto.builder()
-                                .id(c.getTutor().getUsuario().getId())
-                                .nombre(c.getTutor().getUsuario().getNombre())
-                                .foto(c.getTutor().getUsuario().getFoto())
-                                .build());
-                    }
-                    
-                    builder.tutor(tutorResponse.build());
-                }
-                
-                return builder.build();
-            });
+            var response =
+                    contrataciones.map(
+                            c -> {
+                                var builder =
+                                        es.us.meerkat.backend.dto.TutorContratacionResponse
+                                                .builder()
+                                                .id(c.getId())
+                                                .modalidad(c.getModalidad())
+                                                .duracion(c.getDuracion())
+                                                .tarifaAcordada(c.getTarifaAcordada())
+                                                .estado(c.getEstado().name())
+                                                .fechaInicio(c.getFechaInicio())
+                                                .fechaFin(c.getFechaFin())
+                                                .motivoCancelacion(c.getMotivoCancelacion());
+
+                                // Agregar información del tutor si está disponible
+                                if (c.getTutor() != null) {
+                                    var tutorResponse =
+                                            TutorResponse.builder()
+                                                    .id(c.getTutor().getId())
+                                                    .verificado(c.getTutor().getVerificado());
+
+                                    if (c.getTutor().getUsuario() != null) {
+                                        tutorResponse.usuario(
+                                                TutorResponse.UsuarioDto.builder()
+                                                        .id(c.getTutor().getUsuario().getId())
+                                                        .nombre(
+                                                                c.getTutor()
+                                                                        .getUsuario()
+                                                                        .getNombre())
+                                                        .foto(c.getTutor().getUsuario().getFoto())
+                                                        .build());
+                                    }
+
+                                    builder.tutor(tutorResponse.build());
+                                }
+
+                                return builder.build();
+                            });
 
             return ResponseEntity.ok(new PageInfo(response));
         } catch (IllegalArgumentException e) {
@@ -1427,9 +1443,10 @@ public class CommunityController {
                     .body(MessageResponse.builder().message(e.getMessage()).build());
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                    .body(MessageResponse.builder()
-                            .message("Error al obtener solicitudes: " + e.getMessage())
-                            .build());
+                    .body(
+                            MessageResponse.builder()
+                                    .message("Error al obtener solicitudes: " + e.getMessage())
+                                    .build());
         }
     }
 

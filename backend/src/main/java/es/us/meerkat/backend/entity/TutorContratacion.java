@@ -81,6 +81,12 @@ public class TutorContratacion {
     @Column(length = 500)
     private String motivoCancelacion;
 
+    @Column(name = "payment_url", length = 500)
+    private String paymentUrl;
+
+    @Column(name = "stripe_session_id")
+    private String stripeSessionId;
+
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
