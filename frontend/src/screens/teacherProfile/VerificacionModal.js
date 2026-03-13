@@ -102,7 +102,11 @@ const VerificacionModal = ({ tutorId, verificado, onClose, onVerificado }) => {
             <input
               type="text"
               value={pagoForm.numero}
-              onChange={e => setPagoForm(f => ({ ...f, numero: e.target.value }))}
+              onChange={e => {
+                const digits = e.target.value.replace(/\D/g, "").substring(0, 16);
+                const formatted = digits.replace(/(\d{4})(?=\d)/g, "$1 ");
+                setPagoForm(f => ({ ...f, numero: formatted }));
+              }}
               placeholder="1234 5678 9012 3456"
               maxLength={19}
               inputMode="numeric"
@@ -114,9 +118,16 @@ const VerificacionModal = ({ tutorId, verificado, onClose, onVerificado }) => {
               <input
                 type="text"
                 value={pagoForm.caducidad}
-                onChange={e => setPagoForm(f => ({ ...f, caducidad: e.target.value }))}
+                onChange={e => {
+                  const digits = e.target.value.replace(/\D/g, "").substring(0, 4);
+                  const formatted = digits.length >= 3
+                    ? digits.substring(0, 2) + "/" + digits.substring(2)
+                    : digits;
+                  setPagoForm(f => ({ ...f, caducidad: formatted }));
+                }}
                 placeholder="MM/AA"
                 maxLength={5}
+                inputMode="numeric"
               />
             </div>
             <div>
@@ -124,9 +135,12 @@ const VerificacionModal = ({ tutorId, verificado, onClose, onVerificado }) => {
               <input
                 type="text"
                 value={pagoForm.cvc}
-                onChange={e => setPagoForm(f => ({ ...f, cvc: e.target.value }))}
+                onChange={e => {
+                  const digits = e.target.value.replace(/\D/g, "").substring(0, 3);
+                  setPagoForm(f => ({ ...f, cvc: digits }));
+                }}
                 placeholder="123"
-                maxLength={4}
+                maxLength={3}
                 inputMode="numeric"
               />
             </div>
