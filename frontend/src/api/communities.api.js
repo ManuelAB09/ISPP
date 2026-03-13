@@ -136,7 +136,81 @@ export const communitiesApi = {
    */
   leave(communityId) {
     return apiClient.delete(`/api/v1/communities/${communityId}/members/me`);
+  },
 
+  /**
+   * POST /api/v1/communities/{id}/admin/transfer
+   * Transferir rol de admin a otro miembro
+   * @param {number} communityId
+   * @param {number} nuevoAdminId
+   */
+  transferAdmin(communityId, nuevoAdminId) {
+    return apiClient.post(`/api/v1/communities/${communityId}/admin/transfer`, { nuevoAdminId });
+  },
+
+  /**
+   * POST /api/v1/communities/{communityId}/requests
+   * Solicitar acceso a una comunidad privada
+   * @param {number} communityId
+   * @param {string} mensaje
+   */
+  requestAccess(communityId, mensaje = '') {
+    return apiClient.post(`/api/v1/communities/${communityId}/requests`, { mensaje });
+  },
+
+  /**
+   * GET /api/v1/communities/{communityId}/requests/me
+   * Comprobar si tengo solicitud pendiente en una comunidad
+   * @param {number} communityId
+   * @returns {Promise<{pending: boolean}>}
+   */
+  getMyRequestStatus(communityId) {
+    return apiClient.get(`/api/v1/communities/${communityId}/requests/me`);
+  },
+
+  /**
+   * GET /api/v1/communities/{communityId}/requests
+   * Listar solicitudes de acceso (solo admin)
+   * @param {number} communityId
+   * @param {Object} params - { estado?, page?, size? }
+   */
+  listRequests(communityId, params = {}) {
+    const query = new URLSearchParams();
+    if (params.estado) query.set('estado', params.estado);
+    if (params.page !== undefined) query.set('page', String(params.page));
+    if (params.size !== undefined) query.set('size', String(params.size));
+    const queryString = query.toString();
+    return apiClient.get(`/api/v1/communities/${communityId}/requests${queryString ? '?' + queryString : ''}`);
+  },
+
+  /**
+   * PUT /api/v1/communities/{communityId}/requests/{requestId}
+   * Aceptar o rechazar solicitud de acceso (solo admin)
+   * @param {number} communityId
+   * @param {number} requestId
+   * @param {boolean} aceptado
+   */
+  respondToRequest(communityId, requestId, aceptado) {
+    return apiClient.put(`/api/v1/communities/${communityId}/requests/${requestId}`, { aceptado });
+  },
+
+  /**
+   * DELETE /api/v1/communities/{communityId}
+   * Eliminar comunidad (solo admin)
+   * @param {number} communityId
+   */
+  deleteCommunity(communityId) {
+    return apiClient.delete(`/api/v1/communities/${communityId}`);
+  },
+
+  /**
+   * PUT /api/v1/communities/{communityId}
+   * Actualizar datos de comunidad (solo admin)
+   * @param {number} communityId
+   * @param {Object} data - { nombre, descripcion, imagenUrl }
+   */
+  update(communityId, data) {
+    return apiClient.put(`/api/v1/communities/${communityId}`, data);
   },
 
   // ─── Google Classroom ───

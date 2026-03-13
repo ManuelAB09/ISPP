@@ -159,4 +159,13 @@ public class RequestService {
                 .findById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("Solicitud no encontrada"));
     }
+
+    /** Comprueba si el usuario tiene una solicitud PENDIENTE en la comunidad. */
+    @Transactional(readOnly = true)
+    public boolean hasPendingRequest(Long userId, Long communityId) {
+        return solicitudComunidadRepository
+                .findBySolicitanteIdAndComunidadIdAndEstado(
+                        userId, communityId, EstadoSolicitud.PENDIENTE)
+                .isPresent();
+    }
 }
