@@ -88,13 +88,20 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
     @EntityGraph(attributePaths = {"usuario"})
     @Query(
             """
-    SELECT DISTINCT t
+        SELECT t
     FROM Tutor t
-    LEFT JOIN t.especialidades e
-    WHERE t.verificado = true
-    AND (:especialidad IS NULL OR LOWER(e) LIKE LOWER(CONCAT('%', CAST(:especialidad AS string), '%')))
+        WHERE (
+                :especialidad IS NULL
+                OR EXISTS (
+                        SELECT 1
+                        FROM Tutor t2 JOIN t2.especialidades e
+                        WHERE t2.id = t.id
+                        AND LOWER(e) LIKE LOWER(CONCAT('%', CAST(:especialidad AS string), '%'))
+                )
+        )
     AND (:tarifaMin IS NULL OR t.tarifaHora >= :tarifaMin)
     AND (:tarifaMax IS NULL OR t.tarifaHora <= :tarifaMax)
+        ORDER BY t.verificado DESC, t.createdAt DESC
 """)
     Page<Tutor> findVerificadosFiltrados(
             @Param("especialidad") String especialidad,
