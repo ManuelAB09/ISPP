@@ -43,4 +43,12 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     @Query("SELECT mc.usuario FROM MiembroComunidad mc WHERE mc.comunidad.id = :comunidadId")
     List<Usuario> findMiembrosByComunidadId(@Param("comunidadId") Long comunidadId);
+
+    @Query(
+            "SELECT mc.usuario FROM MiembroComunidad mc "
+                    + "JOIN GoogleCalendarToken gct ON gct.usuario.id = mc.usuario.id "
+                    + "WHERE mc.comunidad.id = :comunidadId "
+                    + "AND gct.sincronizacionActiva = true")
+    List<Usuario> findMiembrosConCalendarActivoByComunidadId(
+            @Param("comunidadId") Long comunidadId);
 }

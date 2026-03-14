@@ -45,6 +45,8 @@ public class EventoService {
     /** Servicio de autorización para verificar roles en comunidades. */
     private final AuthorizationService authorizationService;
 
+    private final GoogleCalendarService googleCalendarService;
+
     // ===============================
     // CREAR EVENTO
     // ===============================
@@ -131,7 +133,12 @@ public class EventoService {
                             .orElseThrow(() -> new RuntimeException("Ubicación no encontrada"));
             evento.setUbicacion(ubicacion);
         }
+        try {
+            googleCalendarService.sincronizarCreacion(evento);
+        } catch (Exception e) {
 
+            // No propagamos el error: el evento se crea aunque GCal falle
+        }
         return eventoRepository.save(evento);
     }
 
@@ -198,7 +205,12 @@ public class EventoService {
         } else if (Boolean.TRUE.equals(esVirtualParam)) {
             evento.setUbicacion(null);
         }
+        try {
+            googleCalendarService.sincronizarActualizacion(evento);
+        } catch (Exception e) {
+            // no se cancela si no se conecta
 
+        }
         return eventoRepository.save(evento);
     }
 
@@ -221,6 +233,13 @@ public class EventoService {
                         .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
 
         evento.cancelar(motivoParam);
+
+        try {
+            googleCalendarService.sincronizarCancelacion(evento);
+        } catch (Exception e) {
+            // log.warn("Error sincronizando con Google Calendar al cancelar: {}",
+            // e.getMessage());
+        }
         return eventoRepository.save(evento);
     }
 
