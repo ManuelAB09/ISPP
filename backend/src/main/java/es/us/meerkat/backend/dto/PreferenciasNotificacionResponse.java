@@ -2,6 +2,7 @@ package es.us.meerkat.backend.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import es.us.meerkat.backend.entity.TipoCanal;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,4 +27,7 @@ public class PreferenciasNotificacionResponse {
 
     /** Si recibe recordatorio 30min antes. */
     private Boolean recordatorio30min;
+
+    /** Canal por defecto para alarmas personalizadas. PLATAFORMA, EMAIL o AMBOS. */
+    private TipoCanal canalAlarmasPorDefecto;
 }

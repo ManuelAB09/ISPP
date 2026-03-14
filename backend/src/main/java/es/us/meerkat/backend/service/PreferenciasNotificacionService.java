@@ -12,10 +12,8 @@ import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Servicio para gestionar las preferencias de notificación por email del usuario.
- *
- * <p>Si el usuario no tiene preferencias guardadas aún, se crean con los valores por defecto (todo
- * activado) en el momento de la primera consulta.
+ * Servicio para gestionar las preferencias de notificación del usuario. Versión actualizada:
+ * incluye canalAlarmasPorDefecto para alarmas personalizadas.
  */
 @Service
 @RequiredArgsConstructor
@@ -25,34 +23,18 @@ public class PreferenciasNotificacionService {
     private final UsuarioRepository usuarioRepository;
 
     // ===============================
-    // OBTENER PREFERENCIAS
+    // OBTENER
     // ===============================
 
-    /**
-     * Obtiene las preferencias de notificación del usuario. Si no existen, las crea con valores por
-     * defecto.
-     *
-     * @param usuarioId ID del usuario.
-     * @return DTO con las preferencias actuales.
-     */
     @Transactional
     public PreferenciasNotificacionResponse obtenerPreferencias(final Long usuarioId) {
-        final PreferenciasNotificacion prefs = getOrCreate(usuarioId);
-        return toResponse(prefs);
+        return toResponse(getOrCreate(usuarioId));
     }
 
     // ===============================
-    // ACTUALIZAR PREFERENCIAS
+    // ACTUALIZAR
     // ===============================
 
-    /**
-     * Actualiza las preferencias de notificación del usuario. Solo actualiza los campos que vienen
-     * informados en el request (patch parcial).
-     *
-     * @param usuarioId ID del usuario.
-     * @param request Campos a actualizar.
-     * @return DTO con las preferencias actualizadas.
-     */
     @Transactional
     public PreferenciasNotificacionResponse actualizarPreferencias(
             final Long usuarioId, final UpdatePreferenciasRequest request) {
@@ -62,29 +44,33 @@ public class PreferenciasNotificacionService {
         if (request.getEmailsActivados() != null) {
             prefs.setEmailsActivados(request.getEmailsActivados());
         }
+
         if (request.getRecordatorio24h() != null) {
             prefs.setRecordatorio24h(request.getRecordatorio24h());
         }
+
         if (request.getRecordatorio1h() != null) {
             prefs.setRecordatorio1h(request.getRecordatorio1h());
         }
+
         if (request.getRecordatorio30min() != null) {
             prefs.setRecordatorio30min(request.getRecordatorio30min());
+        }
+
+        if (request.getCanalAlarmasPorDefecto() != null) {
+            prefs.setCanalAlarmasPorDefecto(request.getCanalAlarmasPorDefecto());
         }
 
         return toResponse(preferenciasRepository.save(prefs));
     }
 
     // ===============================
-    // USO INTERNO (desde RecordatorioService)
+    // USO INTERNO
     // ===============================
 
     /**
-     * Devuelve la entidad de preferencias del usuario. Crea una con valores por defecto si no
-     * existe. Método público para ser usado por {@link RecordatorioEmailService}.
-     *
-     * @param usuarioId ID del usuario.
-     * @return Entidad PreferenciasNotificacion.
+     * Devuelve la entidad de preferencias, creándola con valores por defecto si no existe. Público
+     * para ser usado por AlarmaPersonalizadaService y RecordatorioEmailService.
      */
     @Transactional
     public PreferenciasNotificacion getOrCreate(final Long usuarioId) {
@@ -106,7 +92,7 @@ public class PreferenciasNotificacionService {
     }
 
     // ===============================
-    // HELPERS
+    // HELPER
     // ===============================
 
     private PreferenciasNotificacionResponse toResponse(final PreferenciasNotificacion prefs) {
@@ -115,6 +101,7 @@ public class PreferenciasNotificacionService {
                 .recordatorio24h(prefs.getRecordatorio24h())
                 .recordatorio1h(prefs.getRecordatorio1h())
                 .recordatorio30min(prefs.getRecordatorio30min())
+                .canalAlarmasPorDefecto(prefs.getCanalAlarmasPorDefecto())
                 .build();
     }
 }

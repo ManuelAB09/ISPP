@@ -182,6 +182,168 @@ public class EmailService {
                 evento.getId());
     }
 
+    /**
+     * Envía un email de recordatorio para una alarma personalizada. Reutiliza el mismo template
+     * HTML que los recordatorios globales, pasando la etiqueta de la alarma como texto de
+     * antelación.
+     *
+     * @param usuario Destinatario.
+     * @param evento Evento al que hace referencia.
+     * @param etiqueta Texto de antelación: "2 días antes", "1 hora antes", etc.
+     * @throws Exception Si el envío falla.
+     */
+    public void enviarRecordatorioAlarma(
+            final Usuario usuario, final Evento evento, final String etiqueta) throws Exception {
+
+        // Reutilizamos buildRecordatorioHtml pero con etiqueta personalizada
+        // Creamos un TipoRecordatorio sintético con la descripción correcta
+        final String html = buildRecordatorioHtmlConEtiqueta(evento, etiqueta);
+
+        final TipoEvento tipoEvento =
+                evento.getTipoEvento() != null ? evento.getTipoEvento() : TipoEvento.OTRO;
+        final String asunto =
+                String.format(
+                        "%s %s — %s (%s)",
+                        tipoEvento.getIcono(),
+                        evento.getTitulo(),
+                        etiqueta,
+                        evento.getFechaHora() != null
+                                ? evento.getFechaHora().format(TIME_FORMATTER)
+                                : "");
+
+        final MimeMessage message = mailSender.createMimeMessage();
+        final MimeMessageHelper helper =
+                new MimeMessageHelper(message, true, StandardCharsets.UTF_8.name());
+
+        helper.setFrom(from, appName);
+        helper.setTo(usuario.getEmail());
+        helper.setSubject(asunto);
+        helper.setText(html, true);
+
+        mailSender.send(message);
+        log.info(
+                "Email alarma personalizada [{}] enviado a {} para evento {}",
+                etiqueta,
+                usuario.getEmail(),
+                evento.getId());
+    }
+
+    /**
+     * Igual que buildRecordatorioHtml pero acepta una etiqueta de texto libre en lugar de un
+     * TipoRecordatorio.
+     */
+    private String buildRecordatorioHtmlConEtiqueta(final Evento evento, final String etiqueta)
+            throws Exception {
+
+        final ClassPathResource resource =
+                new ClassPathResource("templates/email-recordatorio.html");
+        String html = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
+
+        final TipoEvento tipoEvento =
+                evento.getTipoEvento() != null ? evento.getTipoEvento() : TipoEvento.OTRO;
+
+        final List<AsistenciaEvento> asistencias =
+                asistenciaEventoRepository.findByEventoIdAndEstado(
+                        evento.getId(), EstadoAsistencia.CONFIRMADA);
+        final List<String> nombres =
+                asistencias.stream()
+                        .map(a -> a.getUsuario().getNombre())
+                        .collect(Collectors.toList());
+
+        final StringBuilder chipsHtml = new StringBuilder();
+        nombres.forEach(
+                n ->
+                        chipsHtml
+                                .append("<span class=\"attendee-chip\">")
+                                .append(escapeHtml(n))
+                                .append("</span>"));
+
+        final String horaInicio =
+                evento.getFechaHora() != null
+                        ? evento.getFechaHora().format(TIME_FORMATTER)
+                        : "--:--";
+        final String horaFin =
+                evento.getFechaFin() != null
+                        ? evento.getFechaFin().format(TIME_FORMATTER)
+                        : "--:--";
+        final String fechaFormateada =
+                evento.getFechaHora() != null ? evento.getFechaHora().format(DATE_FORMATTER) : "";
+
+        html =
+                html.replace("{{icono}}", tipoEvento.getIcono())
+                        .replace("{{tipoRecordatorioTexto}}", etiqueta)
+                        .replace("{{tituloEvento}}", escapeHtml(evento.getTitulo()))
+                        .replace("{{tipoEventoNombre}}", tipoEvento.getNombre())
+                        .replace(
+                                "{{comunidadNombre}}",
+                                evento.getComunidad() != null
+                                        ? escapeHtml(evento.getComunidad().getNombre())
+                                        : "")
+                        .replace("{{fechaFormateada}}", fechaFormateada)
+                        .replace("{{horaInicio}}", horaInicio)
+                        .replace("{{horaFin}}", horaFin)
+                        .replace("{{totalAsistentes}}", String.valueOf(nombres.size()))
+                        .replace("{{urlPreferencias}}", appUrl + "/settings/notifications");
+
+        if (Boolean.TRUE.equals(evento.getEsVirtual()) && evento.getEnlaceVirtual() != null) {
+            html =
+                    html.replace("{{#esVirtual}}", "")
+                            .replace("{{/esVirtual}}", "")
+                            .replace("{{enlaceVirtual}}", evento.getEnlaceVirtual());
+        } else {
+            html = removeBlock(html, "{{#esVirtual}}", "{{/esVirtual}}");
+        }
+
+        if (!Boolean.TRUE.equals(evento.getEsVirtual()) && evento.getUbicacion() != null) {
+            final String dir =
+                    evento.getUbicacion().getDireccion() != null
+                            ? evento.getUbicacion().getDireccion()
+                            : "";
+            html =
+                    html.replace("{{#tieneUbicacion}}", "")
+                            .replace("{{/tieneUbicacion}}", "")
+                            .replace(
+                                    "{{ubicacionNombre}}",
+                                    escapeHtml(evento.getUbicacion().getNombre()))
+                            .replace("{{#ubicacionDireccion}}", "")
+                            .replace("{{/ubicacionDireccion}}", "")
+                            .replace("{{ubicacionDireccion}}", escapeHtml(dir));
+        } else {
+            html = removeBlock(html, "{{#tieneUbicacion}}", "{{/tieneUbicacion}}");
+        }
+
+        if (evento.getQueLlevar() != null && !evento.getQueLlevar().isBlank()) {
+            html =
+                    html.replace("{{#tieneQueLlevar}}", "")
+                            .replace("{{/tieneQueLlevar}}", "")
+                            .replace("{{queLlevar}}", escapeHtml(evento.getQueLlevar()));
+        } else {
+            html = removeBlock(html, "{{#tieneQueLlevar}}", "{{/tieneQueLlevar}}");
+        }
+
+        if (evento.getDescripcion() != null && !evento.getDescripcion().isBlank()) {
+            html =
+                    html.replace("{{#tieneDescripcion}}", "")
+                            .replace("{{/tieneDescripcion}}", "")
+                            .replace("{{descripcion}}", escapeHtml(evento.getDescripcion()));
+        } else {
+            html = removeBlock(html, "{{#tieneDescripcion}}", "{{/tieneDescripcion}}");
+        }
+
+        if (!nombres.isEmpty()) {
+            html =
+                    html.replace("{{#tieneAsistentes}}", "")
+                            .replace("{{/tieneAsistentes}}", "")
+                            .replace(
+                                    "{{#asistentes}}{{nombre}}{{/asistentes}}",
+                                    chipsHtml.toString());
+        } else {
+            html = removeBlock(html, "{{#tieneAsistentes}}", "{{/tieneAsistentes}}");
+        }
+
+        return html;
+    }
+
     private String buildRecordatorioHtml(final Evento evento, final TipoRecordatorio tipo)
             throws Exception {
 

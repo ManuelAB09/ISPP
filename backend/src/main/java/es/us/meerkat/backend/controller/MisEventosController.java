@@ -13,9 +13,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import es.us.meerkat.backend.dto.AlarmaPersonalizadaResponse;
 import es.us.meerkat.backend.dto.AlertaEventoResponse;
 import es.us.meerkat.backend.dto.MisEventosItemResponse;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.service.AlarmaPersonalizadaService;
 import es.us.meerkat.backend.service.MisEventosService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -45,6 +47,7 @@ import lombok.RequiredArgsConstructor;
 public class MisEventosController {
 
     private final MisEventosService misEventosService;
+    private final AlarmaPersonalizadaService alarmaPersonalizadaService;
 
     // ===============================
     // MIS EVENTOS
@@ -250,5 +253,24 @@ public class MisEventosController {
         if (usuario == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado");
         }
+    }
+
+    /**
+     * Lista todas las alarmas personalizadas pendientes del usuario, de todos sus eventos,
+     * ordenadas por fecha de disparo. Útil para mostrar un resumen en el panel principal.
+     */
+    @GetMapping("/alarms")
+    @Operation(
+            summary = "Mis alarmas pendientes",
+            description =
+                    "Devuelve todas las alarmas personalizadas pendientes del usuario "
+                            + "para todos sus eventos, ordenadas por fecha de disparo.",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponse(responseCode = "200", description = "Lista de alarmas obtenida")
+    public ResponseEntity<List<AlarmaPersonalizadaResponse>> misAlarmasPendientes(
+            @AuthenticationPrincipal Usuario usuario) {
+        requireAuth(usuario);
+        return ResponseEntity.ok(
+                alarmaPersonalizadaService.listarAlarmasPendientes(usuario.getId()));
     }
 }

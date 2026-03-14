@@ -1,6 +1,8 @@
 package es.us.meerkat.backend.entity;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -46,6 +48,13 @@ public class PreferenciasNotificacion {
     private Boolean recordatorio30min;
 
     /**
+     * Canal por defecto para las alarmas personalizadas. Se usa cuando el usuario crea una alarma
+     * sin especificar canal. Por defecto: AMBOS.
+     */
+    @Enumerated(EnumType.STRING)
+    private TipoCanal canalAlarmasPorDefecto;
+
+    /**
      * Inicializa preferencias por defecto: todo activado. Se aplica al crear la entidad por primera
      * vez.
      */
@@ -62,6 +71,9 @@ public class PreferenciasNotificacion {
         }
         if (this.recordatorio30min == null) {
             this.recordatorio30min = false;
+        }
+        if (this.canalAlarmasPorDefecto == null) {
+            this.canalAlarmasPorDefecto = TipoCanal.AMBOS;
         }
     }
 

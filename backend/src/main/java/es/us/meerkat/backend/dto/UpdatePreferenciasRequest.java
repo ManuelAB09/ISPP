@@ -1,5 +1,6 @@
 package es.us.meerkat.backend.dto;
 
+import es.us.meerkat.backend.entity.TipoCanal;
 import lombok.Data;
 
 /**
@@ -21,4 +22,7 @@ public class UpdatePreferenciasRequest {
 
     /** Activar/desactivar recordatorio 30min antes. */
     private Boolean recordatorio30min;
+
+    /** Canal por defecto para las alarmas personalizadas. PLATAFORMA, EMAIL o AMBOS. */
+    private TipoCanal canalAlarmasPorDefecto;
 }
