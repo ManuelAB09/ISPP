@@ -228,8 +228,7 @@ public class EmailService {
                         .replace("{{fechaFormateada}}", fechaFormateada)
                         .replace("{{horaInicio}}", horaInicio)
                         .replace("{{horaFin}}", horaFin)
-                        .replace("{{totalAsistentes}}", String.valueOf(asistencias.size()))
-                        .replace("{{urlPreferencias}}", appUrl + "/settings/notifications");
+                        .replace("{{totalAsistentes}}", String.valueOf(asistencias.size()));
 
         // ── Bloque virtual / ubicación (mutuamente excluyentes) ─────────────
         //
@@ -239,10 +238,7 @@ public class EmailService {
         //
         if (Boolean.TRUE.equals(evento.getEsVirtual())) {
             // Mostrar bloque virtual con enlace a "Mis eventos" en la plataforma
-            html =
-                    html.replace("{{#esVirtual}}", "")
-                            .replace("{{/esVirtual}}", "")
-                            .replace("{{urlMisEventos}}", appUrl + "/my-events");
+            html = html.replace("{{#esVirtual}}", "").replace("{{/esVirtual}}", "");
             // Siempre ocultar ubicación física en eventos virtuales
             html = removeBlock(html, "{{#tieneUbicacion}}", "{{/tieneUbicacion}}");
 
