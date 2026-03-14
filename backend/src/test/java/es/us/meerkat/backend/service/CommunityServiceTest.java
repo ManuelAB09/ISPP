@@ -21,7 +21,9 @@ import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.EstadoComunidad;
 import es.us.meerkat.backend.entity.MiembroComunidad;
 import es.us.meerkat.backend.entity.RolComunidad;
+import es.us.meerkat.backend.entity.Suscripcion;
 import es.us.meerkat.backend.entity.TipoGrupo;
+import es.us.meerkat.backend.entity.TipoPlan;
 import es.us.meerkat.backend.entity.TipoPlanComunidad;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.ComunidadRepository;
@@ -35,6 +37,7 @@ class CommunityServiceTest {
     @Mock private MiembroComunidadRepository miembroComunidadRepository;
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private AuthorizationService authorizationService;
+    @Mock private SuscripcionService suscripcionService;
 
     @InjectMocks private CommunityService communityService;
 
@@ -44,6 +47,8 @@ class CommunityServiceTest {
         Usuario usuario = buildUsuario(userId);
 
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
+        when(suscripcionService.obtenerMiSuscripcion(userId))
+                .thenReturn(Optional.of(Suscripcion.builder().plan(TipoPlan.FREE).build()));
         when(comunidadRepository.countByCreadorIdAndTipoPlan(userId, TipoPlanComunidad.FREE))
                 .thenReturn(0L);
         when(comunidadRepository.save(any(Comunidad.class)))
@@ -79,6 +84,8 @@ class CommunityServiceTest {
     void createCommunityShouldFailWhenFreeLimitReached() {
         Long userId = 1L;
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(buildUsuario(userId)));
+        when(suscripcionService.obtenerMiSuscripcion(userId))
+                .thenReturn(Optional.of(Suscripcion.builder().plan(TipoPlan.FREE).build()));
         when(comunidadRepository.countByCreadorIdAndTipoPlan(userId, TipoPlanComunidad.FREE))
                 .thenReturn(3L);
 
@@ -137,22 +144,16 @@ class CommunityServiceTest {
     }
 
     @Test
-    void listPublicCommunitiesShouldUseSearchFilterWhenSearchProvided() {
-        when(comunidadRepository.findByTipoGrupoAndNombreContainingIgnoreCaseAndEstado(
-                        TipoGrupo.COMUNIDAD_PUBLICA,
-                        "java",
-                        EstadoComunidad.ACTIVA,
-                        PageRequest.of(0, 20)))
+    void listActiveCommunitiesShouldUseSearchFilterWhenSearchProvided() {
+        when(comunidadRepository.findByNombreContainingIgnoreCaseAndEstado(
+                        "java", EstadoComunidad.ACTIVA, PageRequest.of(0, 20)))
                 .thenReturn(new PageImpl<>(java.util.List.of()));
 
-        communityService.listPublicCommunities("java", PageRequest.of(0, 20));
+        communityService.listActiveCommunities("java", PageRequest.of(0, 20));
 
         verify(comunidadRepository)
-                .findByTipoGrupoAndNombreContainingIgnoreCaseAndEstado(
-                        TipoGrupo.COMUNIDAD_PUBLICA,
-                        "java",
-                        EstadoComunidad.ACTIVA,
-                        PageRequest.of(0, 20));
+                .findByNombreContainingIgnoreCaseAndEstado(
+                        "java", EstadoComunidad.ACTIVA, PageRequest.of(0, 20));
     }
 
     private Usuario buildUsuario(final Long id) {

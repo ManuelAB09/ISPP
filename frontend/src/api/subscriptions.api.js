@@ -57,4 +57,28 @@ export const subscriptionsApi = {
   verifySession(sessionId) {
     return apiClient.post('/api/v1/subscriptions/me/verify-session', { sessionId });
   },
+
+  /**
+   * POST /api/v1/subscriptions/me/create-payment-intent
+   * Crear un PaymentIntent para Stripe Elements embebido
+   * @param {Object} params - { planId, aceptarTerminos, periodo }
+   * @returns {Promise<Object>} - { clientSecret, paymentIntentId }
+   */
+  createPaymentIntent({ planId = 'PREMIUM', aceptarTerminos = true, periodo = 'mensual' } = {}) {
+    return apiClient.post('/api/v1/subscriptions/me/create-payment-intent', {
+      planId,
+      aceptarTerminos,
+      periodo,
+    });
+  },
+
+  /**
+   * POST /api/v1/subscriptions/me/confirm-embedded-payment
+   * Confirmar pago tras Stripe Elements exitoso
+   * @param {string} paymentIntentId
+   * @returns {Promise<Object>} - { mensaje }
+   */
+  confirmEmbeddedPayment(paymentIntentId) {
+    return apiClient.post('/api/v1/subscriptions/me/confirm-embedded-payment', { paymentIntentId });
+  },
 };

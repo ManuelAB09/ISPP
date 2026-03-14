@@ -134,7 +134,7 @@ describe('VerificacionModal', () => {
 
     const numeroInput = screen.getByPlaceholderText(/1234 5678 9012 3456/i);
     await userEvent.type(numeroInput, '4111111111111111');
-    expect(numeroInput).toHaveValue('4111111111111111');
+    expect(numeroInput).toHaveValue('4111 1111 1111 1111');
   });
 
   test('muestra botón para cancelar pago', async () => {

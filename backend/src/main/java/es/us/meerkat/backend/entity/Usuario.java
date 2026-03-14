@@ -117,6 +117,17 @@ public class Usuario {
     @Column(nullable = false)
     private TipoPlan plan = TipoPlan.FREE;
 
+    /** Indica si el email del usuario ha sido verificado. */
+    @Column(nullable = false)
+    private Boolean emailVerificado = false;
+
+    /** Token de verificación de email (UUID). */
+    @Column(length = 36)
+    private String verificationToken;
+
+    /** Fecha de expiración del token de verificación. */
+    private LocalDateTime tokenExpiration;
+
     /** Fecha y hora de creación de la cuenta. */
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -147,6 +158,9 @@ public class Usuario {
         }
         if (this.notificacionesPush == null) {
             this.notificacionesPush = true;
+        }
+        if (this.emailVerificado == null) {
+            this.emailVerificado = false;
         }
     }
 }

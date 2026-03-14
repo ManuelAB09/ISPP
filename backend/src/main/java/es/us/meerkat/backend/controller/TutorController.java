@@ -95,14 +95,20 @@ public class TutorController {
     @Operation(
             summary = "Crear perfil de tutor",
             description = "El usuario autenticado crea su perfil de tutor")
-    public ResponseEntity<TutorResponse> createTutor(
+    public ResponseEntity<?> createTutor(
             @AuthenticationPrincipal final Usuario usuario,
             @Valid @RequestBody CreateTutorRequest request) {
         try {
             Tutor tutor = tutorService.crearPerfil(usuario.getId(), request);
             return ResponseEntity.status(HttpStatus.CREATED).body(toTutorResponse(tutor));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest()
+                    .body(
+                            Map.of(
+                                    "error",
+                                    e.getMessage() != null
+                                            ? e.getMessage()
+                                            : "Error al crear el perfil de tutor"));
         }
     }
 

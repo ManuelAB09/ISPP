@@ -6,8 +6,10 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import { SocketProvider } from './contexts/SocketContext';
 import Login from './screens/auth/Login';
 import Register from './screens/auth/Register';
+import VerifyEmail from './screens/auth/VerifyEmail';
 import Terms from './screens/legal/Terms';
 import Privacy from './screens/legal/Privacy';
+import LandingPage from './screens/landing/LandingPage';
 import CommunityDetail from './screens/comunidades/CommunityDetail';
 import Comunidades from './screens/comunidades/Comunidades';
 import CrearComunidad from './screens/comunidades/CrearComunidad';
@@ -74,7 +76,7 @@ function AppRoutes() {
   return (
     <SocketProvider token={socketToken}>
       <Routes>
-        {/* Ruta principal - redirige a login si no está autenticado */}
+        {/* Ruta principal - muestra landing page si no está autenticado */}
         <Route path="/" element={
           loading ? (
             <div style={{
@@ -91,20 +93,29 @@ function AppRoutes() {
           ) : isAuthenticated ? (
             <Home />
           ) : (
-            <Navigate to="/login" replace />
+            <LandingPage />
           )
         } />
+
+        {/* Landing page - siempre accesible */}
+        <Route path="/landing" element={<LandingPage />} />
 
         {/* Rutas públicas */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/comunidades" element={<Comunidades />} />
         <Route path="/comunidades/:communityId" element={<CommunityDetail />} />
+        <Route path="/comunidades/:communityId/apuntes" element={<CommunityDetail />} />
+        <Route path="/comunidades/:communityId/editar" element={<CommunityDetail />} />
 
         {/* Rutas protegidas - solo disponibles si está autenticado */}
         {ownerRoutes}
+
+        {/* Catch-all: redirige rutas no encontradas a inicio */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </SocketProvider>
   );

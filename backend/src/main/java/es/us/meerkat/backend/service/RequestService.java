@@ -141,7 +141,7 @@ public class RequestService {
                     MiembroComunidad.builder()
                             .usuario(solicitud.getSolicitante())
                             .comunidad(solicitud.getComunidad())
-                            .rol(RolComunidad.MIEMBRO)
+                            .rol(RolComunidad.ALUMNO)
                             .build();
 
             miembroComunidadRepository.save(miembro);
@@ -158,5 +158,14 @@ public class RequestService {
         return solicitudComunidadRepository
                 .findById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("Solicitud no encontrada"));
+    }
+
+    /** Comprueba si el usuario tiene una solicitud PENDIENTE en la comunidad. */
+    @Transactional(readOnly = true)
+    public boolean hasPendingRequest(Long userId, Long communityId) {
+        return solicitudComunidadRepository
+                .findBySolicitanteIdAndComunidadIdAndEstado(
+                        userId, communityId, EstadoSolicitud.PENDIENTE)
+                .isPresent();
     }
 }

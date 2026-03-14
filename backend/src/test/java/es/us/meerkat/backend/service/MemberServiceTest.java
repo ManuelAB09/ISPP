@@ -55,7 +55,7 @@ class MemberServiceTest {
         verify(miembroComunidadRepository).save(miembro);
         assertThat(miembro.getUsuario()).isEqualTo(usuario);
         assertThat(miembro.getComunidad()).isEqualTo(comunidad);
-        assertThat(miembro.getRol()).isEqualTo(RolComunidad.MIEMBRO);
+        assertThat(miembro.getRol()).isEqualTo(RolComunidad.ALUMNO);
     }
 
     @Test
@@ -97,6 +97,7 @@ class MemberServiceTest {
                 .thenReturn(Optional.of(admin));
         when(miembroComunidadRepository.countByComunidadIdAndRol(communityId, RolComunidad.ADMIN))
                 .thenReturn(1L);
+        when(miembroComunidadRepository.countByComunidadId(communityId)).thenReturn(5L);
 
         assertThatThrownBy(() -> memberService.leaveCommunity(userId, communityId))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -121,7 +122,7 @@ class MemberServiceTest {
         Long communityId = 10L;
 
         MiembroComunidad actual = MiembroComunidad.builder().rol(RolComunidad.ADMIN).build();
-        MiembroComunidad nuevo = MiembroComunidad.builder().rol(RolComunidad.MIEMBRO).build();
+        MiembroComunidad nuevo = MiembroComunidad.builder().rol(RolComunidad.ALUMNO).build();
 
         when(authorizationService.isAdminOf(adminId, communityId)).thenReturn(true);
         when(miembroComunidadRepository.findByUsuarioIdAndComunidadId(newAdminId, communityId))
@@ -133,7 +134,7 @@ class MemberServiceTest {
 
         MiembroComunidad result = memberService.transferAdmin(adminId, communityId, newAdminId);
 
-        assertThat(actual.getRol()).isEqualTo(RolComunidad.MIEMBRO);
+        assertThat(actual.getRol()).isEqualTo(RolComunidad.ALUMNO);
         assertThat(nuevo.getRol()).isEqualTo(RolComunidad.ADMIN);
         assertThat(result.getRol()).isEqualTo(RolComunidad.ADMIN);
     }
