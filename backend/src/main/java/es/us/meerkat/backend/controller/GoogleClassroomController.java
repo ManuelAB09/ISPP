@@ -566,4 +566,39 @@ public class GoogleClassroomController {
                     .body(Map.of("error", e.getMessage()));
         }
     }
+
+    /**
+     * GET /oauth2/communities/{communityId}/students/stats Devuelve estadísticas básicas de los
+     * alumnos del curso vinculado a la comunidad.
+     */
+    @GetMapping("/communities/{communityId}/students/stats")
+    public ResponseEntity<?> obtenerEstadisticasAlumnos(@PathVariable Long communityId) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getName())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "unauthorized"));
+        }
+
+        Object principal = auth.getPrincipal();
+        if (!(principal instanceof Usuario)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "invalid_user"));
+        }
+
+        Usuario usuario = (Usuario) principal;
+
+        if (!authorizationService.isAdminOrProfesor(usuario.getId(), communityId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "No autorizado"));
+        }
+
+        try {
+            Map<String, Object> stats =
+                    googleClassroomService.obtenerEstadisticasAlumnos(usuario, communityId);
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
 }
