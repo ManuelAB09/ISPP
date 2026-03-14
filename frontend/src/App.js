@@ -14,6 +14,7 @@ import CrearComunidad from './screens/comunidades/CrearComunidad';
 import CrearEvento from './screens/evento/CrearEvento';
 import DetalleEvento from './screens/evento/DetalleEvento';
 import EventosMapaScreen from './screens/evento/EventosMapaScreen';
+import MisEventos from './screens/evento/MisEventos';
 import Home from './screens/home/Home';
 import Profile from './screens/myProfile/Profile';
 import MisPagos from './screens/pagos/MisPagos';
@@ -66,6 +67,7 @@ function AppRoutes() {
         <Route path="/pagos" element={<MisPagos />} />
         <Route path="/eventos/:eventId" element={<DetalleEvento />} />
         <Route path="/eventos-mapa" element={<EventosMapaScreen />} />
+        <Route path="/mis-eventos" element={<MisEventos />} />
         <Route path="/planes/success" element={<PlanesSuccess />} />
       </>
     )
