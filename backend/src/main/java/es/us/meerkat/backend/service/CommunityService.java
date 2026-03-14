@@ -123,6 +123,20 @@ public class CommunityService {
         // TODO: Implementar inyección de InstitutionRepository
     }
 
+    /**
+     * Indica si una comunidad está vinculada a una institución (es corporativa/institucional).
+     *
+     * @param communityId ID de la comunidad
+     * @return true si la comunidad tiene una institución asociada, false en caso contrario
+     */
+    @Transactional(readOnly = true)
+    public boolean isCommunityCorporate(Long communityId) {
+        return comunidadRepository
+                .findById(communityId)
+                .map(c -> c.getInstitution() != null)
+                .orElse(false);
+    }
+
     /** Obtiene una comunidad por ID. Comunidades privadas solo son visibles para miembros. */
     @Transactional(readOnly = true)
     public Comunidad getCommunityById(Long communityId, Long userId) {

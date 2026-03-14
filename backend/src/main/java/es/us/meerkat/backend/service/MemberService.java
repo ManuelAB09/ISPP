@@ -210,6 +210,44 @@ public class MemberService {
         return miembroComunidadRepository.save(nuevoAdmin);
     }
 
+    /**
+     * Añade un administrador adicional a la comunidad (solo si la comunidad es corporativa).
+     * Requiere que el solicitante sea ADMIN de la comunidad y que el objetivo sea miembro.
+     *
+     * @param userId ID del usuario que realiza la acción
+     * @param communityId ID de la comunidad
+     * @param targetUserId ID del usuario a promover a ADMIN
+     * @return la entidad MiembroComunidad actualizada
+     */
+    public MiembroComunidad addAdmin(Long userId, Long communityId, Long targetUserId) {
+        if (!authorizationService.isAdminOf(userId, communityId)) {
+            throw new IllegalArgumentException("Solo admins pueden agregar nuevos administradores");
+        }
+
+        // Solo permitido para comunidades corporativas/institucionales
+        if (!communityService.isCommunityCorporate(communityId)) {
+            throw new IllegalArgumentException(
+                    "Solo se pueden añadir administradores en comunidades corporativas");
+        }
+
+        MiembroComunidad targetMiembro =
+                miembroComunidadRepository
+                        .findByUsuarioIdAndComunidadId(targetUserId, communityId)
+                        .orElseThrow(
+                                () ->
+                                        new IllegalArgumentException(
+                                                "El usuario debe ser miembro de la comunidad"));
+
+        if (targetMiembro.getRol() == RolComunidad.ADMIN) {
+            throw new IllegalArgumentException("El usuario ya es administrador");
+        }
+
+        targetMiembro.setRol(RolComunidad.ADMIN);
+        MiembroComunidad saved = miembroComunidadRepository.save(targetMiembro);
+
+        return saved;
+    }
+
     /** Cuenta los ADMINs de una comunidad específica. */
     @Transactional(readOnly = true)
     public long countAdmins(Long communityId) {
