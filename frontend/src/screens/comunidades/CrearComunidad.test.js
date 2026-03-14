@@ -239,4 +239,9 @@ describe('CrearComunidad', () => {
     renderComponent();
     expect(screen.getByText(/La capacidad máxima dependerá de tu plan/i)).toBeInTheDocument();
   });
+
+  test('muestra acceso al flujo de planes institucionales', () => {
+    renderComponent();
+    expect(screen.getByRole('button', { name: /Ir a planes institucionales/i })).toBeInTheDocument();
+  });
 });

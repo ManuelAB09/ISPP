@@ -10,6 +10,14 @@ import TransferAdminModal from '../../components/Comunidad/TransferAdminModal';
 import { communitiesApi } from '../../api/communities.api';
 import { listCommunityEvents, attendEvent, cancelAttendance, getMyAttendance } from '../../api/eventEndpoints';
 import { useAuth } from '../../contexts/AuthContext';
+import {
+  canCreateCommunityEvent,
+  getCommunityRoleCapabilities,
+  getCommunityRoleLabel,
+  isAdminRole,
+  isTeacherRole,
+  normalizeCommunityRole,
+} from '../../utils/communityRoles';
 import './CommunityDetail.css';
 
 export default function CommunityDetail() {
@@ -35,11 +43,20 @@ export default function CommunityDetail() {
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [respondingId, setRespondingId] = useState(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
+  const [members, setMembers] = useState([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [activatingTeacherRole, setActivatingTeacherRole] = useState(false);
 
   const isPrivate = community?.tipoGrupo === 'GRUPO_PRIVADO';
-  const isAdmin = community?.miRol === 'ADMIN';
-
+  const normalizedRole = normalizeCommunityRole(community?.miRol);
+  const isAdmin = isAdminRole(normalizedRole);
+  const isTeacher = isTeacherRole(normalizedRole);
+  const canCreateEvent = canCreateCommunityEvent(normalizedRole);
+  const roleLabel = getCommunityRoleLabel(normalizedRole);
+  const roleCapabilities = getCommunityRoleCapabilities(normalizedRole);
   const currentUserId = localStorage.getItem('userId');
+  const hasTeacherProfile = Boolean(user?.esTutor || user?.esProfesor);
+  const canActivateTeacherRole = Boolean(currentUserId) && isMember && hasTeacherProfile && !isTeacher && !isAdmin;
   const openChatOnLoad = searchParams.get('chat') === 'open';
   const currentUser = {
     id: Number(currentUserId),
@@ -48,24 +65,76 @@ export default function CommunityDetail() {
     fotoBackgroundColor: user?.fotoBackgroundColor || '#ffffff',
   };
   const communityImage = community?.imagenUrl !== 'empty' ? community?.imagenUrl : 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
+  const groupedMembers = members.reduce((acc, member) => {
+    const role = normalizeCommunityRole(member?.rol);
+    const key = role || 'OTROS';
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(member);
+    return acc;
+  }, {});
+  const adminMembers = groupedMembers.ADMIN || [];
+  const teacherMembers = groupedMembers.PROFESOR || [];
+  const studentMembers = [...(groupedMembers.ALUMNO || []), ...(groupedMembers.MIEMBRO || [])];
+
+  const formatPlanLabel = (plan) => {
+    switch (String(plan || '').toUpperCase()) {
+      case 'CORPORATIVO':
+      case 'INSTITUTIONAL':
+      case 'EMPRESARIAL':
+        return 'Plan corporativo';
+      case 'PREMIUM':
+        return 'Plan premium';
+      case 'FREE':
+      case 'GRATUITO':
+        return 'Plan gratuito';
+      default:
+        return plan ? `Plan ${String(plan).toLowerCase()}` : null;
+    }
+  };
+
+  const getMemberName = (member) => member?.usuario?.nombre || member?.nombre || 'Usuario';
+  const getMemberId = (member) => member?.usuario?.id || member?.id || getMemberName(member);
+  const renderMemberPills = (list, emptyMessage) => {
+    if (!list.length) {
+      return <p className="cd-role-empty">{emptyMessage}</p>;
+    }
+
+    return (
+      <div className="cd-member-pills">
+        {list.map((member) => (
+          <span key={getMemberId(member)} className="cd-member-pill">
+            {getMemberName(member)}
+          </span>
+        ))}
+      </div>
+    );
+  };
 
   const fetchCommunity = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await communitiesApi.getById(communityId);
-      setCommunity(data);
+      let data = await communitiesApi.getById(communityId);
       // Use esMiembro from backend response if available
       if (data.esMiembro !== undefined) {
         setIsMember(data.esMiembro);
       } else if (currentUserId) {
         // Fallback: check membership via API
         try {
-          await communitiesApi.getMyMembership(communityId);
+          const membership = await communitiesApi.getMyMembership(communityId);
+          if (membership) {
+            data = {
+              ...data,
+              esMiembro: true,
+              miRol: data.miRol || membership.rol,
+            };
+          }
           setIsMember(true);
         } catch {
           setIsMember(false);
         }
       }
+
+      setCommunity(data);
 
       // Si es comunidad privada y el usuario no es miembro, comprobar solicitud pendiente
       if (data.tipoGrupo === 'GRUPO_PRIVADO' && !data.esMiembro && currentUserId) {
@@ -85,6 +154,20 @@ export default function CommunityDetail() {
       setLoading(false);
     }
   }, [communityId, currentUserId]);
+
+  const fetchMembers = useCallback(async () => {
+    try {
+      setMembersLoading(true);
+      const data = await communitiesApi.getMembers(communityId, { size: 200 });
+      const list = data?.content || data?.miembros || data || [];
+      setMembers(Array.isArray(list) ? list : []);
+    } catch (err) {
+      console.error('Error al cargar miembros:', err);
+      setMembers([]);
+    } finally {
+      setMembersLoading(false);
+    }
+  }, [communityId]);
 
   const fetchEvents = useCallback(async () => {
     try {
@@ -135,6 +218,10 @@ export default function CommunityDetail() {
     fetchCommunity();
     fetchEvents();
   }, [fetchCommunity, fetchEvents]);
+
+  useEffect(() => {
+    fetchMembers();
+  }, [fetchMembers]);
 
   // Cargar solicitudes pendientes cuando el admin accede a una comunidad privada
   useEffect(() => {
@@ -281,6 +368,26 @@ export default function CommunityDetail() {
     }
   };
 
+  const handleActivateTeacherRole = async () => {
+    try {
+      setActivatingTeacherRole(true);
+      setMembershipError(null);
+      await communitiesApi.activateTeacherRole(communityId);
+      await fetchCommunity();
+      await fetchMembers();
+    } catch (err) {
+      console.error('Error al activar rol de profesor:', err);
+      const status = err?.status || err?.response?.status;
+      if (status === 404 || status === 405) {
+        setMembershipError('Tu perfil de profesor está listo, pero falta habilitar en backend el endpoint para activar rol de profesor en la comunidad.');
+      } else {
+        setMembershipError(err.message || 'No se pudo activar el rol de profesor en esta comunidad.');
+      }
+    } finally {
+      setActivatingTeacherRole(false);
+    }
+  };
+
   if (loading) {
     return (
       <>
@@ -335,6 +442,19 @@ export default function CommunityDetail() {
                 <span className="cd-members">
                   <LuUsers /> {community.miembrosActuales || 0} miembros
                 </span>
+                {community?.miRol && (
+                  <span className="cd-role-chip cd-role-chip--role">
+                    Tu rol: {roleLabel}
+                  </span>
+                )}
+                {formatPlanLabel(community?.tipoPlan) && (
+                  <span className="cd-role-chip cd-role-chip--plan">
+                    {formatPlanLabel(community?.tipoPlan)}
+                  </span>
+                )}
+                <span className="cd-role-chip cd-role-chip--capacity">
+                  Aforo {community?.maxMiembros ? `hasta ${community.maxMiembros}` : 'sin límite'}
+                </span>
               </div>
               {/* Join / Leave / Request access */}
               <div className="cd-membership-actions">
@@ -364,6 +484,15 @@ export default function CommunityDetail() {
                     disabled={deleteLoading}
                   >
                     <LuTrash2 /> {deleteLoading ? 'Eliminando...' : 'Eliminar comunidad'}
+                  </button>
+                )}
+                {canActivateTeacherRole && (
+                  <button
+                    className="cd-btn cd-btn-teacher"
+                    onClick={handleActivateTeacherRole}
+                    disabled={activatingTeacherRole}
+                  >
+                    {activatingTeacherRole ? 'Activando perfil de profesor...' : 'Entrar como profesor en esta comunidad'}
                   </button>
                 )}
                 {currentUserId ? (
@@ -399,6 +528,62 @@ export default function CommunityDetail() {
                   </button>
                 )}
               </div>
+            </div>
+          </div>
+        )}
+
+        {community && (
+          <div className="cd-roles-section">
+            <div className="cd-role-card">
+              <h2 className="cd-role-card-title">Sistema de roles</h2>
+              <p className="cd-role-card-subtitle">
+                La comunidad distingue entre administración, profesorado y alumnado.
+              </p>
+              <div className="cd-role-summary-head">
+                <span className="cd-role-chip cd-role-chip--role">{roleLabel}</span>
+                {isAdmin && <span className="cd-role-summary-note">Acceso completo a gestión</span>}
+                {isTeacher && <span className="cd-role-summary-note">Puede crear eventos y coordinar actividades</span>}
+                {canActivateTeacherRole && <span className="cd-role-summary-note">Puedes activar tu rol de profesor sin perder rol de alumno</span>}
+              </div>
+              <ul className="cd-role-capabilities">
+                {roleCapabilities.map((capability) => (
+                  <li key={capability}>{capability}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="cd-role-card">
+              <h2 className="cd-role-card-title">Equipo de la comunidad</h2>
+              <p className="cd-role-card-subtitle">
+                Listado visible de responsables y miembros por rol.
+              </p>
+              {membersLoading ? (
+                <p className="cd-loading">Cargando miembros...</p>
+              ) : (
+                <div className="cd-role-groups">
+                  <div className="cd-role-group">
+                    <div className="cd-role-group-head">
+                      <span>Administradores</span>
+                      <strong>{adminMembers.length}</strong>
+                    </div>
+                    {renderMemberPills(adminMembers, 'Todavía no hay administradores visibles.')}
+                  </div>
+                  <div className="cd-role-group">
+                    <div className="cd-role-group-head">
+                      <span>Profesores</span>
+                      <strong>{teacherMembers.length}</strong>
+                    </div>
+                    {renderMemberPills(teacherMembers, 'No hay profesores asignados en este momento.')}
+                  </div>
+                  <div className="cd-role-group">
+                    <div className="cd-role-group-head">
+                      <span>Alumnos</span>
+                      <strong>{studentMembers.length}</strong>
+                    </div>
+                    {renderMemberPills(studentMembers, 'No hay alumnos visibles en este momento.')}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -483,13 +668,15 @@ export default function CommunityDetail() {
                 />
                 Mostrar cancelados
               </label>
-              {isMember ? (
+              {isMember && canCreateEvent ? (
                 <button
                   className="cd-btn cd-btn-create"
                   onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
                 >
                   <LuPlus /> Crear evento
                 </button>
+              ) : isMember ? (
+                <span className="cd-member-hint">Solo administradores y profesores pueden crear eventos</span>
               ) : (
                 <span className="cd-member-hint">Únete a la comunidad para crear eventos</span>
               )}
@@ -514,7 +701,7 @@ export default function CommunityDetail() {
             <div className="cd-empty-events">
               <LuCalendar className="cd-empty-icon" />
               <h3>No hay eventos</h3>
-              {isMember ? (
+              {isMember && canCreateEvent ? (
                 <>
                   <p>Sé el primero en crear un evento para esta comunidad.</p>
                   <button
@@ -524,6 +711,8 @@ export default function CommunityDetail() {
                     <LuPlus /> Crear evento
                   </button>
                 </>
+              ) : isMember ? (
+                <p>Solo administradores y profesores pueden crear eventos en esta comunidad.</p>
               ) : (
                 <p>Únete a la comunidad para poder crear eventos.</p>
               )}

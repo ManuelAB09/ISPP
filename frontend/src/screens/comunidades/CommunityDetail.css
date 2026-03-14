@@ -93,6 +93,30 @@
   flex-wrap: wrap;
 }
 
+.cd-role-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.cd-role-chip--role {
+  background: #eef2ff;
+  color: #3c4a8c;
+}
+
+.cd-role-chip--plan {
+  background: #ecfdf5;
+  color: #13795b;
+}
+
+.cd-role-chip--capacity {
+  background: #fff7ed;
+  color: #b45309;
+}
+
 .cd-tag {
   display: inline-block;
   padding: 0.3rem 0.8rem;
@@ -115,6 +139,98 @@
 /* Events section */
 .cd-events-section {
   margin-top: 1rem;
+}
+
+.cd-roles-section {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.cd-role-card {
+  background: white;
+  border-radius: 1rem;
+  border: 1px solid #EAEBF0;
+  padding: 1.5rem;
+}
+
+.cd-role-card-title {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #2E3559;
+}
+
+.cd-role-card-subtitle {
+  margin: 0.5rem 0 1rem;
+  color: #6B73A1;
+  font-size: 0.9rem;
+}
+
+.cd-role-summary-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.cd-role-summary-note {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.cd-role-capabilities {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: #2E3559;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.cd-role-groups {
+  display: grid;
+  gap: 1rem;
+}
+
+.cd-role-group {
+  border: 1px solid #EAEBF0;
+  border-radius: 0.85rem;
+  padding: 1rem;
+  background: #fafbff;
+}
+
+.cd-role-group-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #2E3559;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.cd-member-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.cd-member-pill {
+  display: inline-flex;
+  align-items: center;
+  background: white;
+  border: 1px solid #d9dff0;
+  color: #444d78;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.cd-role-empty {
+  margin: 0;
+  color: #848BA8;
+  font-size: 0.85rem;
 }
 
 /* Membership actions */
@@ -190,6 +306,17 @@
 .cd-btn-transfer:hover:not(:disabled) {
   background-color: var(--glaucous, #676F9D);
   color: white;
+}
+
+.cd-btn-teacher {
+  background: #fff8eb;
+  color: #9a5a00;
+  border: 1.5px solid #f2c18e !important;
+}
+
+.cd-btn-teacher:hover:not(:disabled) {
+  background: #f2c18e;
+  color: #3f2a00;
 }
 
 .cd-events-header {
@@ -427,6 +554,10 @@
   .cd-events-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .cd-roles-section {
+    grid-template-columns: 1fr;
   }
 
   .cd-title {

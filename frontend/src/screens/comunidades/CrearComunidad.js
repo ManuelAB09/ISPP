@@ -249,6 +249,23 @@ export default function CrearComunidad() {
                         </p>
                     </div>
                </div>
+               <div className="third-section">
+                    <h3>Comunidades corporativas</h3>
+                    <div className="config-group">
+                        <p style={{ fontSize: '14px', color: '#444', marginTop: 0, lineHeight: 1.5 }}>
+                            Si representas a una academia, universidad o centro educativo, la contratación se realiza desde el flujo institucional.
+                            Ahí podrás revisar el plan corporativo con múltiples administradores, aforo ampliado, estadísticas avanzadas e integración con Google Classroom.
+                        </p>
+                        <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => navigate('/planes/instituciones')}
+                            style={{ marginTop: '8px' }}
+                        >
+                            Ir a planes institucionales
+                        </button>
+                    </div>
+               </div>
                <div>
                     <div>
                         {error && (

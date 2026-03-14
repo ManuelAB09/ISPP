@@ -5,6 +5,7 @@ import './CrearEvento.css';
 import Header from '../../components/Header/Header';
 import { createEvent, getEventById, updateEvent } from '../../api/eventEndpoints';
 import { communitiesApi } from '../../api/communities.api';
+import { canCreateCommunityEvent, getCommunityRoleLabel, normalizeCommunityRole } from '../../utils/communityRoles';
 
 const DATE_TIME_FIELD_MAX_LENGTH = {
   dia: 2,
@@ -80,6 +81,7 @@ const CrearEvento = () => {
   const [eventStarted, setEventStarted] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   const [materialInput, setMaterialInput] = useState('');
+  const [selectedCommunityRole, setSelectedCommunityRole] = useState(null);
 
   const isEdit = id && id !== 'new';
   const currentUserId = localStorage.getItem('userId');
@@ -115,9 +117,18 @@ const CrearEvento = () => {
         try {
           const data = await communitiesApi.listMine();
           const communitiesList = Array.isArray(data) ? data : (data.content || []);
-          setMyCommunities(communitiesList);
-          if (!selectedCommunityId && communitiesList.length === 1) {
-            setSelectedCommunityId(communitiesList[0].id.toString());
+          const creatableCommunities = communitiesList.filter((community) => {
+            if (!community?.miRol) return true;
+            return canCreateCommunityEvent(community.miRol);
+          });
+
+          setMyCommunities(creatableCommunities);
+          if (!selectedCommunityId && creatableCommunities.length === 1) {
+            setSelectedCommunityId(creatableCommunities[0].id.toString());
+          }
+
+          if (!selectedCommunityId && communitiesList.length > 0 && creatableCommunities.length === 0) {
+            setError('Solo puedes crear eventos en comunidades donde seas administrador o profesor.');
           }
         } catch (err) {
           console.error("Error fetching user's communities:", err);
@@ -134,8 +145,21 @@ const CrearEvento = () => {
           setLoading(true);
           const data = await getEventById(id);
 
-          if (data.creador && data.creador.id?.toString() !== currentUserId) {
-            setError('No tienes permiso para editar este evento. Solo el creador puede editarlo.');
+          let canEdit = data.creador && data.creador.id?.toString() === currentUserId;
+
+          if (!canEdit && data.comunidad?.id) {
+            try {
+              const membership = await communitiesApi.getMyMembership(data.comunidad.id);
+              const normalizedRole = normalizeCommunityRole(membership?.rol);
+              setSelectedCommunityRole(normalizedRole || null);
+              canEdit = canCreateCommunityEvent(normalizedRole);
+            } catch {
+              canEdit = false;
+            }
+          }
+
+          if (!canEdit) {
+            setError('No tienes permiso para editar este evento. Solo el creador, un administrador o un profesor de la comunidad pueden hacerlo.');
             setLoading(false);
             return;
           }
@@ -189,9 +213,19 @@ const CrearEvento = () => {
     if (!isEdit && selectedCommunityId && currentUserId) {
       const checkMembership = async () => {
         try {
-          await communitiesApi.getMyMembership(selectedCommunityId);
+          const membership = await communitiesApi.getMyMembership(selectedCommunityId);
+          const normalizedRole = normalizeCommunityRole(membership?.rol);
+          setSelectedCommunityRole(normalizedRole || null);
+
+          if (!canCreateCommunityEvent(normalizedRole)) {
+            const roleLabel = getCommunityRoleLabel(normalizedRole);
+            setError(`No puedes crear eventos con rol ${roleLabel.toLowerCase()}. Solo administradores y profesores pueden hacerlo.`);
+            return;
+          }
+
           setError(null);
         } catch {
+          setSelectedCommunityRole(null);
           setError('No puedes crear eventos en una comunidad a la que no perteneces.');
         }
       };
@@ -379,6 +413,10 @@ const CrearEvento = () => {
           setError('No se ha especificado la comunidad para crear el evento.');
           return;
         }
+        if (!canCreateCommunityEvent(selectedCommunityRole)) {
+          setError('Solo administradores y profesores pueden crear eventos en esta comunidad.');
+          return;
+        }
         await createEvent(selectedCommunityId, payload);
       }
 
@@ -447,7 +485,7 @@ const CrearEvento = () => {
               <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
                 <h3 className="community-title">Evento de comunidad</h3>
                 {!isEdit && myCommunities.length > 0 && (
-                  <select 
+                  <select
                     className="input-box" 
                     style={{ marginTop: '8px', padding: '8px' }}
                     value={selectedCommunityId} 
@@ -455,9 +493,16 @@ const CrearEvento = () => {
                   >
                     <option value="" disabled>Selecciona una comunidad...</option>
                     {myCommunities.map(c => (
-                      <option key={c.id} value={c.id}>{c.nombre}</option>
+                      <option key={c.id} value={c.id}>
+                        {c.nombre}{c.miRol ? ` · ${getCommunityRoleLabel(c.miRol)}` : ''}
+                      </option>
                     ))}
                   </select>
+                )}
+                {!isEdit && selectedCommunityRole && (
+                  <span className="field-hint" style={{ marginTop: '8px' }}>
+                    Rol detectado en esta comunidad: {getCommunityRoleLabel(selectedCommunityRole)}
+                  </span>
                 )}
               </div>
             </div>

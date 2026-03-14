@@ -71,6 +71,8 @@ describe('CommunityDetail', () => {
     communitiesApi.join.mockResolvedValue({});
     communitiesApi.leave.mockResolvedValue({});
     communitiesApi.getMyMembership.mockRejectedValue({ status: 404 });
+    communitiesApi.getMembers.mockResolvedValue([]);
+    communitiesApi.activateTeacherRole.mockResolvedValue({});
 
     eventEndpoints.listCommunityEvents.mockResolvedValue(mockEvents);
     eventEndpoints.getMyAttendance.mockResolvedValue(null);
@@ -252,11 +254,12 @@ describe('CommunityDetail', () => {
   test('muestra botón de crear evento para miembros', async () => {
     localStorage.setItem('userId', '100');
     useAuth.mockReturnValue({
-      user: { id: 100, nombre: 'Test User' },
+      user: { id: 100, nombre: 'Test User', esTutor: true },
     });
     communitiesApi.getById.mockResolvedValue({
       ...mockCommunity,
       esMiembro: true,
+      miRol: 'PROFESOR',
     });
 
     await renderComponent();
@@ -273,6 +276,82 @@ describe('CommunityDetail', () => {
     await screen.findByText('Comunidad de Matemáticas');
 
     expect(screen.queryByRole('button', { name: /Crear evento/i })).not.toBeInTheDocument();
+  });
+
+  test('muestra el sistema de roles y el listado de administradores', async () => {
+    communitiesApi.getById.mockResolvedValue({
+      ...mockCommunity,
+      esMiembro: true,
+      miRol: 'ADMIN',
+      tipoPlan: 'CORPORATIVO',
+      maxMiembros: null,
+    });
+    communitiesApi.getMembers.mockResolvedValue([
+      { id: 10, rol: 'ADMIN', usuario: { id: 10, nombre: 'Ana Admin' } },
+      { id: 11, rol: 'ADMIN', usuario: { id: 11, nombre: 'Carlos Admin' } },
+      { id: 12, rol: 'PROFESOR', usuario: { id: 12, nombre: 'Paula Profe' } },
+      { id: 13, rol: 'MIEMBRO', usuario: { id: 13, nombre: 'Alberto Alumno' } },
+    ]);
+
+    await renderComponent();
+
+    await screen.findByText(/Sistema de roles/i);
+    expect(screen.getByText(/Tu rol: Administrador/i)).toBeInTheDocument();
+    expect(screen.getByText(/Plan corporativo/i)).toBeInTheDocument();
+    expect(screen.getByText('Ana Admin')).toBeInTheDocument();
+    expect(screen.getByText('Carlos Admin')).toBeInTheDocument();
+    expect(screen.getByText('Paula Profe')).toBeInTheDocument();
+  });
+
+  test('muestra aviso cuando el usuario es alumno y no puede crear eventos', async () => {
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({
+      user: { id: 100, nombre: 'Test User', esTutor: false },
+    });
+    communitiesApi.getById.mockResolvedValue({
+      ...mockCommunity,
+      esMiembro: true,
+      miRol: 'ALUMNO',
+    });
+
+    await renderComponent();
+
+    await screen.findByText('Comunidad de Matemáticas');
+    expect(screen.queryByRole('button', { name: /Crear evento/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/Solo administradores y profesores pueden crear eventos/i)).toBeInTheDocument();
+  });
+
+  test('muestra acción para entrar como profesor si es miembro y tiene perfil docente', async () => {
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({
+      user: { id: 100, nombre: 'Test User', esTutor: true },
+    });
+    communitiesApi.getById.mockResolvedValue({
+      ...mockCommunity,
+      esMiembro: true,
+      miRol: 'ALUMNO',
+    });
+
+    await renderComponent();
+
+    await screen.findByRole('button', { name: /Entrar como profesor en esta comunidad/i });
+  });
+
+  test('no muestra acción de entrar como profesor si no tiene perfil docente', async () => {
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({
+      user: { id: 100, nombre: 'Test User', esTutor: false },
+    });
+    communitiesApi.getById.mockResolvedValue({
+      ...mockCommunity,
+      esMiembro: true,
+      miRol: 'ALUMNO',
+    });
+
+    await renderComponent();
+    await screen.findByText('Comunidad de Matemáticas');
+
+    expect(screen.queryByRole('button', { name: /Entrar como profesor en esta comunidad/i })).not.toBeInTheDocument();
   });
 
   test('muestra checkbox para filtrar eventos cancelados', async () => {

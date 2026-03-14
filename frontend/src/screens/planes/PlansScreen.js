@@ -289,13 +289,14 @@ export default function PlansScreen() {
                     Ofrecemos planes especiales para academias, universidades y centros
                     educativos, con gestión de grupos, múltiples administradores y
                     estadísticas avanzadas. También disponemos de precios reducidos para
-                    centros públicos y concertados.
+                    centros públicos y concertados, integración con Google Classroom y
+                    contratación específica para comunidades corporativas.
                   </p>
                   <div className="instBannerFeatures">
                     <span>👥 Múltiples admins</span>
                     <span>📊 Estadísticas avanzadas</span>
-                    <span>🏫 Gestión de grupos</span>
-                    <span>💜 Precios especiales</span>
+                    <span>📚 Google Classroom</span>
+                    <span>🏢 Facturación corporativa</span>
                   </div>
                 </div>
               </div>

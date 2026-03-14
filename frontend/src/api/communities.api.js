@@ -149,6 +149,32 @@ export const communitiesApi = {
   },
 
   /**
+   * Activar rol PROFESOR para el usuario autenticado dentro de una comunidad.
+   * Nota: se prueban varias rutas por compatibilidad hasta fijar el contrato backend.
+   * @param {number} communityId
+   */
+  async activateTeacherRole(communityId) {
+    try {
+      return await apiClient.put(`/api/v1/communities/${communityId}/members/me/role`, { rol: 'PROFESOR' });
+    } catch (err) {
+      const status = err?.status || err?.response?.status;
+      if (status !== 404 && status !== 405) {
+        throw err;
+      }
+
+      try {
+        return await apiClient.post(`/api/v1/communities/${communityId}/members/me/teacher`, {});
+      } catch (err2) {
+        const status2 = err2?.status || err2?.response?.status;
+        if (status2 !== 404 && status2 !== 405) {
+          throw err2;
+        }
+        return apiClient.post(`/api/v1/communities/${communityId}/members/me/teacher/activate`, {});
+      }
+    }
+  },
+
+  /**
    * POST /api/v1/communities/{communityId}/requests
    * Solicitar acceso a una comunidad privada
    * @param {number} communityId
