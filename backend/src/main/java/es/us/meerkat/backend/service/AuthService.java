@@ -178,11 +178,11 @@ public class AuthService {
             throw new ValidationException("Credenciales incorrectas");
         }
 
-        if (!Boolean.TRUE.equals(usuario.getEmailVerificado())) {
-            throw new EmailNotVerifiedException(
-                    "Debes verificar tu email antes de iniciar sesión. Revisa tu bandeja de entrada"
-                            + " o solicita un nuevo email de verificación.");
-        }
+         if (!Boolean.TRUE.equals(usuario.getEmailVerificado())) {
+             throw new EmailNotVerifiedException(
+                     "Debes verificar tu email antes de iniciar sesión. Revisa tu bandeja de entrada"
+                             + " o solicita un nuevo email de verificación.");
+         }
 
         if (applyPreferenceDefaultsIfNeeded(usuario)) {
             usuarioRepository.save(usuario);
