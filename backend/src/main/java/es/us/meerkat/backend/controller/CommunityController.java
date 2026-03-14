@@ -546,6 +546,46 @@ public class CommunityController {
         }
     }
 
+    /**
+     * Añade un nuevo administrador a la comunidad (solo comunidades corporativas). POST
+     * /api/v1/communities/{communityId}/admins
+     */
+    @PostMapping("/{communityId}/admins/{nuevoAdminId}")
+    @Operation(
+            summary = "Añadir administrador (corporativo)",
+            description = "Añade un administrador adicional a una comunidad corporativa",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Administrador añadido"),
+        @ApiResponse(
+                responseCode = "400",
+                description = "Datos inválidos o condiciones no cumplidas"),
+        @ApiResponse(responseCode = "403", description = "No tienes permisos"),
+        @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
+    })
+    public ResponseEntity<?> addAdminToCommunity(
+            @PathVariable Long communityId,
+            @PathVariable Long nuevoAdminId,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        try {
+            MiembroComunidad miembro =
+                    memberService.addAdmin(usuario.getId(), communityId, nuevoAdminId);
+            return ResponseEntity.ok(entityToMemberResponse(miembro));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(MessageResponse.builder().message(e.getMessage()).build());
+        }
+    }
+
     // =====================================================
     // SOLICITUDES
     // =====================================================

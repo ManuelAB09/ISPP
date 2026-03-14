@@ -22,6 +22,7 @@ import es.us.meerkat.backend.dto.EventDetailResponse;
 import es.us.meerkat.backend.dto.EventSummaryResponse;
 import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.service.AuthorizationService;
 import es.us.meerkat.backend.service.EventoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -37,6 +38,8 @@ public class EventoController {
 
     /** Servicio para operaciones de evento. */
     private final EventoService eventoService;
+
+    private final AuthorizationService authorizationService;
 
     // ===============================
     // CREAR EVENTO
@@ -61,6 +64,12 @@ public class EventoController {
 
         if (usuario == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado");
+        }
+
+        if (!authorizationService.isAdminOrProfesor(usuario.getId(), comunidadId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "No tienes permisos para crear eventos en esta comunidad");
         }
 
         final Evento evento;
@@ -213,8 +222,7 @@ public class EventoController {
 
         if (evento.getFechaHora() != null && !evento.getFechaHora().isAfter(LocalDateTime.now())) {
             throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "No se puede actualizar un evento que ya ha comenzado");
+                    HttpStatus.CONFLICT, "No se puede actualizar un evento que ya ha comenzado");
         }
 
         final String tituloFinal = titulo != null ? titulo : evento.getTitulo();
@@ -283,8 +291,7 @@ public class EventoController {
 
         if (evento.getFechaHora() != null && !evento.getFechaHora().isAfter(LocalDateTime.now())) {
             throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "No se puede cancelar un evento que ya ha comenzado");
+                    HttpStatus.CONFLICT, "No se puede cancelar un evento que ya ha comenzado");
         }
 
         try {

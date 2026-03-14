@@ -53,4 +53,16 @@ public class AuthorizationService {
         RolComunidad rol = getUserRoleInCommunity(userId, communityId);
         return rol != null ? rol.name() : null;
     }
+
+    /** Verifica si un usuario es ADMIN o PROFESOR en una comunidad. */
+    public boolean isAdminOrProfesor(Long userId, Long communityId) {
+        return miembroComunidadRepository
+                .findByUsuarioIdAndComunidadId(userId, communityId)
+                .map(
+                        m -> {
+                            RolComunidad r = m.getRol();
+                            return r == RolComunidad.ADMIN || r == RolComunidad.PROFESOR;
+                        })
+                .orElse(false);
+    }
 }
