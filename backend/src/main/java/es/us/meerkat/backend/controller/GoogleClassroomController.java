@@ -28,8 +28,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import es.us.meerkat.backend.dto.ClassroomUserResponse;
 import es.us.meerkat.backend.dto.CreateStudentRequest;
 import es.us.meerkat.backend.dto.CreateTeacherRequest;
+import es.us.meerkat.backend.entity.ComunidadClassroom;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.ComunidadClassroomRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.service.AuthorizationService;
 import es.us.meerkat.backend.service.GoogleClassroomService;
 
 @RestController
@@ -38,12 +41,18 @@ public class GoogleClassroomController {
 
     private final GoogleClassroomService googleClassroomService;
     private final UsuarioRepository usuarioRepository;
+    private final ComunidadClassroomRepository comunidadClassroomRepository;
+    private final AuthorizationService authorizationService;
 
     public GoogleClassroomController(
             final GoogleClassroomService googleClassroomService,
-            final UsuarioRepository usuarioRepository) {
+            final UsuarioRepository usuarioRepository,
+            final ComunidadClassroomRepository comunidadClassroomRepository,
+            final AuthorizationService authorizationService) {
         this.googleClassroomService = googleClassroomService;
         this.usuarioRepository = usuarioRepository;
+        this.comunidadClassroomRepository = comunidadClassroomRepository;
+        this.authorizationService = authorizationService;
     }
 
     @Value("${google.classroom.client-id}")
@@ -437,6 +446,20 @@ public class GoogleClassroomController {
 
         Usuario usuario = (Usuario) principal;
 
+        // Verificar que el curso esté vinculado a una comunidad y que el usuario sea ADMIN/PROFESOR
+        ComunidadClassroom cc =
+                comunidadClassroomRepository.findByClassroomCourseId(courseId).orElse(null);
+        if (cc == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Curso no vinculado a ninguna comunidad"));
+        }
+
+        Long comunidadId = cc.getComunidad().getId();
+        if (!authorizationService.isAdminOrProfesor(usuario.getId(), comunidadId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "No autorizado"));
+        }
+
         try {
             // Construir JSON para Google Classroom
             String studentData;
@@ -479,6 +502,11 @@ public class GoogleClassroomController {
 
         Usuario usuario = (Usuario) principal;
 
+        if (!authorizationService.isAdminOrProfesor(usuario.getId(), communityId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "No autorizado"));
+        }
+
         try {
             Map<String, Object> resp =
                     googleClassroomService.listarArchivosCursoVinculado(usuario, communityId);
@@ -512,6 +540,19 @@ public class GoogleClassroomController {
         }
 
         Usuario usuario = (Usuario) principal;
+
+        ComunidadClassroom cc =
+                comunidadClassroomRepository.findByClassroomCourseId(courseId).orElse(null);
+        if (cc == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Curso no vinculado a ninguna comunidad"));
+        }
+
+        Long comunidadId = cc.getComunidad().getId();
+        if (!authorizationService.isAdminOrProfesor(usuario.getId(), comunidadId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "No autorizado"));
+        }
 
         try {
             String teacherData = String.format("{\"userId\":\"%s\"}", request.userId());

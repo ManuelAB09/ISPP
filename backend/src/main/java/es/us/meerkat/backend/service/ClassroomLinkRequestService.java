@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 public class ClassroomLinkRequestService {
     private final ClassroomLinkRequestRepository repository;
     private final GoogleClassroomService googleClassroomService;
+    private final AuthorizationService authorizationService;
 
     @Transactional
     public ClassroomLinkRequest crearSolicitud(Long comunidadId, Long tutorId) {
@@ -71,7 +72,16 @@ public class ClassroomLinkRequestService {
             throw new IllegalStateException("Solo se pueden completar solicitudes pendientes.");
         }
 
-        googleClassroomService.vincularCurso(solicitud.getComunidadId(), cursoId, nombreCurso);
+        Long comunidadId = solicitud.getComunidadId();
+
+        boolean isTutor = solicitud.getTutorId() != null && solicitud.getTutorId().equals(tutorId);
+        boolean isAdminOrProfesor = authorizationService.isAdminOrProfesor(tutorId, comunidadId);
+
+        if (!isTutor && !isAdminOrProfesor) {
+            throw new IllegalStateException("No autorizado para completar la solicitud.");
+        }
+
+        googleClassroomService.vincularCurso(comunidadId, cursoId, nombreCurso);
 
         solicitud.setEstado(ClassroomLinkRequestStatus.COMPLETADA);
         solicitud.setFechaActualizacion(LocalDateTime.now());
