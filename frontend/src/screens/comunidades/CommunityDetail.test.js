@@ -1,11 +1,10 @@
-import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import CommunityDetail from './CommunityDetail';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { communitiesApi } from '../../api/communities.api';
 import * as eventEndpoints from '../../api/eventEndpoints';
 import { useAuth } from '../../contexts/AuthContext';
+import CommunityDetail from './CommunityDetail';
 
 // Mocks
 jest.mock('../../api/communities.api');
@@ -189,6 +188,21 @@ describe('CommunityDetail', () => {
 
     await renderComponent();
     await screen.findByRole('button', { name: /Abandonar comunidad/i });
+  });
+
+  test('muestra botón de invitar por email para administradores', async () => {
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({
+      user: { id: 100, nombre: 'Admin User' },
+    });
+    communitiesApi.getById.mockResolvedValue({
+      ...mockCommunity,
+      esMiembro: true,
+      miRol: 'ADMIN',
+    });
+
+    await renderComponent();
+    await screen.findByRole('button', { name: /Invitar por email/i });
   });
 
   test('puede abandonar la comunidad', async () => {
