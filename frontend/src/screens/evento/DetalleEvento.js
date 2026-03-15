@@ -19,11 +19,11 @@ import { communitiesApi } from '../../api/communities.api';
 import { getApiBaseUrl } from '../../api/baseUrl';
 
 const OPCIONES_ANTELACION = [
-  { label: '2 días antes', value: 2880 },
-  { label: '1 día antes', value: 1440 },
-  { label: '2 horas antes', value: 120 },
-  { label: '1 hora antes', value: 60 },
-  { label: '30 minutos antes', value: 30 },
+  { label: 'Empieza en 2 días', value: 2880 },
+  { label: 'Empieza en 1 día', value: 1440 },
+  { label: 'Empieza en 2 horas', value: 120 },
+  { label: 'Empieza en 1 hora', value: 60 },
+  { label: 'Empieza en 30 minutos', value: 30 },
 ];
 
 const CANAL_LABELS = { PLATAFORMA: 'Solo en la app', EMAIL: 'Solo por email', AMBOS: 'Ambos' };
