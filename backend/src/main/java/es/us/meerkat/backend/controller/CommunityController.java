@@ -868,8 +868,8 @@ public class CommunityController {
         }
 
         try {
-            communityService.getCommunityById(communityId, null);
-        } catch (Exception e) {
+            communityService.getCommunityById(communityId, usuario.getId());
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
@@ -891,6 +891,8 @@ public class CommunityController {
                             request.getUbicacionId());
 
             return ResponseEntity.status(HttpStatus.CREATED).body(evento.toDTO());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         } catch (RuntimeException e) {
             if (e.getMessage() != null && e.getMessage().contains("no perteneces")) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
@@ -913,13 +915,14 @@ public class CommunityController {
             @RequestParam(name = "cancelados", defaultValue = "false") boolean cancelados,
             @AuthenticationPrincipal Usuario usuario) {
 
+        Long usuarioId = usuario != null ? usuario.getId() : null;
+
         try {
-            communityService.getCommunityById(communityId, null);
-        } catch (Exception e) {
+            communityService.getCommunityById(communityId, usuarioId);
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
-        Long usuarioId = usuario != null ? usuario.getId() : null;
         List<Evento> eventos =
                 eventoService.obtenerEventosPorComunidad(communityId, cancelados, usuarioId);
         List<EventSummaryResponse> response =
