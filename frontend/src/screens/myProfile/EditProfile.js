@@ -18,7 +18,6 @@ const ACADEMIC_INTERESTS = [
     'Literatura',
     'Química',
     'Derecho',
-    'Otros',
 ]
 
 const defaultPosition = [37.3891, -5.9845]

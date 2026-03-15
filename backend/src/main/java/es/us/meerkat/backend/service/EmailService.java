@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class EmailService {
 
-    @Value("${spring.mail.from:meerkattersauth@gmail.com}")
+    @Value("${spring.mail.from:noreply@meerkat.es}")
     private String from;
 
     @Value("${app.name:Meerkat}")

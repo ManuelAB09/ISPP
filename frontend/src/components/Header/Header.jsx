@@ -56,25 +56,15 @@ export default function Header({ user, page }) {
     return (
         <>
             <div className="header-container">
-                {isAuthenticated ? (
-                    <Link to="/perfil" className="header-profile-link">
-                        <img
-                            className="header-profile-image"
-                            src={profileImage || DEFAULT_PROFILE_AVATAR}
-                            alt="Perfil"
-                            style={{ backgroundColor: profileBackgroundColor }}
-                            onError={e => { e.target.onerror = null; e.target.src = DEFAULT_PROFILE_AVATAR; }}
-                        />
-                    </Link>
-                ) : (
-                    <Link to="/login" className="header-profile-link">
-                        <img
-                            className="header-profile-image"
-                            src={DEFAULT_PROFILE_AVATAR}
-                            alt="Iniciar sesión"
-                        />
-                    </Link>
-                )}
+                <Link to="/perfil" className="header-profile-link">
+                    <img
+                        className="header-profile-image"
+                        src={profileImage || DEFAULT_PROFILE_AVATAR}
+                        alt="Perfil"
+                        style={{ backgroundColor: profileBackgroundColor }}
+                        onError={e => { e.target.onerror = null; e.target.src = DEFAULT_PROFILE_AVATAR; }}
+                    />
+                </Link>
 
                 <div className="header-actions-desktop">
                     <GoogleClassroomButton />
@@ -100,7 +90,7 @@ export default function Header({ user, page }) {
 
                 </div>
 
-                <button
+                <button 
                     className={`header-hamburger ${isMenuOpen ? 'open' : ''}`}
                     onClick={toggleMenu}
                     aria-label="Menú"
@@ -123,14 +113,6 @@ export default function Header({ user, page }) {
                 <div className="header-links-mobile">
                     <Link to="/" className={page === 'inicio' ? 'active' : ''} onClick={closeMenu}>Inicio</Link>
                     <Link to="/comunidades" className={page === 'comunidades' ? 'active' : ''} onClick={closeMenu}>Comunidades</Link>
-
-                    <Link to="/eventos-mapa" className={page === 'eventos-mapa' ? 'active' : ''} onClick={closeMenu}>Mapa de eventos</Link>
-                    <Link to="/mis-eventos" className={page === 'mis-eventos' ? 'active' : ''} onClick={closeMenu}>Mis eventos</Link>
-                    <Link to="/profesores" className={page === 'profesores' ? 'active' : ''} onClick={closeMenu}>Profesores</Link>
-                    <Link to="/chats" className={page === 'chats' ? 'active' : ''} onClick={closeMenu}>Chats</Link>
-                    <Link to="/planes" className={page === 'planes' ? 'active' : ''} onClick={closeMenu}>Planes</Link>
-                    <Link to="/pagos" className={page === 'pagos' ? 'active' : ''} onClick={closeMenu}>Mis pagos</Link>
-
                     {isAuthenticated && (
                         <>
                             <Link to="/eventos-mapa" className={page === 'eventos-mapa' ? 'active' : ''} onClick={closeMenu}>Mapa de eventos</Link>

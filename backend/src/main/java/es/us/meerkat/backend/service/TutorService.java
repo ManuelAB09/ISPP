@@ -214,7 +214,9 @@ public class TutorService {
     }
 
     /**
-     * Obtiene todos los tutores verificados aplicando filtros opcionales y paginación.
+     * Obtiene todos los tutores aplicando filtros opcionales y paginación.
+     *
+     * <p>El resultado se ordena dejando primero los tutores verificados.
      *
      * @param especialidad Filtro por especialidad (opcional)
      * @param tarifaMin Tarifa mínima por hora (opcional, default 0)

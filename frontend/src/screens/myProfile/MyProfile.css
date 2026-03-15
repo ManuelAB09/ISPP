@@ -148,6 +148,25 @@
     color: white;
 }
 
+.btn-logout {
+    background-color: transparent;
+    color: #dc2626;
+    font-family: 'inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 12px 24px;
+    border: 2px solid #dc2626;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-logout:hover {
+    background-color: #dc2626;
+    border-color: #dc2626;
+    color: white;
+}
+
 .btn-become-tutor {
     display: flex;
     align-items: center;

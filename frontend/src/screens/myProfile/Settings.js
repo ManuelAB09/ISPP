@@ -214,7 +214,7 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
         }
 
         // Validar que las contraseñas nuevas coincidan
-        if (newPassword.trim() !== confirmPassword.trim()) {
+        if (newPassword !== confirmPassword) {
             setPasswordError("Las contraseñas nuevas no coinciden")
             return
         }
