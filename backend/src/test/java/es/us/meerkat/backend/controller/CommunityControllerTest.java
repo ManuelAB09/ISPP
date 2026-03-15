@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import es.us.meerkat.backend.dto.AccessRequestBody;
 import es.us.meerkat.backend.dto.CommunityDetailResponse;
 import es.us.meerkat.backend.dto.CreateCommunityRequest;
+import es.us.meerkat.backend.dto.JoinCommunityRequest;
 import es.us.meerkat.backend.dto.MemberResponse;
 import es.us.meerkat.backend.dto.PrivacyRequest;
 import es.us.meerkat.backend.dto.RequestResponse;
@@ -138,17 +139,18 @@ class CommunityControllerTest {
                         .rol(RolComunidad.ALUMNO)
                         .build();
 
-        when(memberService.joinPublicCommunity(usuario.getId(), 100L)).thenReturn(miembro);
+        when(memberService.joinPublicCommunity(usuario.getId(), 100L, null)).thenReturn(miembro);
 
         @SuppressWarnings("unchecked")
         ResponseEntity<MemberResponse> response =
                 (ResponseEntity<MemberResponse>)
-                        communityController.joinPublicCommunity(100L, usuario);
+                        communityController.joinPublicCommunity(
+                                100L, new JoinCommunityRequest(null), usuario);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().id()).isEqualTo(50L);
-        verify(memberService).joinPublicCommunity(usuario.getId(), 100L);
+        verify(memberService).joinPublicCommunity(usuario.getId(), 100L, null);
     }
 
     @Test

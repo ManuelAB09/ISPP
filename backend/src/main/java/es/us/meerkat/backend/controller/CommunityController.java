@@ -20,6 +20,7 @@ import es.us.meerkat.backend.entity.ComunidadClassroom;
 import es.us.meerkat.backend.entity.EstadoSolicitud;
 import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.MiembroComunidad;
+import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.SolicitudComunidad;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.AuthorizationService;
@@ -401,15 +402,27 @@ public class CommunityController {
         @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
     })
     public ResponseEntity<?> joinPublicCommunity(
-            @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
+            @PathVariable Long communityId,
+            @Valid @RequestBody JoinCommunityRequest request,
+            @AuthenticationPrincipal Usuario usuario) {
 
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         try {
+            RolComunidad desiredRol = null;
+            if (request != null && request.rol() != null) {
+                try {
+                    desiredRol = RolComunidad.valueOf(request.rol().toUpperCase());
+                } catch (IllegalArgumentException ex) {
+                    return ResponseEntity.badRequest()
+                            .body(MessageResponse.builder().message("Rol inválido").build());
+                }
+            }
+
             MiembroComunidad miembro =
-                    memberService.joinPublicCommunity(usuario.getId(), communityId);
+                    memberService.joinPublicCommunity(usuario.getId(), communityId, desiredRol);
             return ResponseEntity.status(HttpStatus.CREATED).body(entityToMemberResponse(miembro));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()

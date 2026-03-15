@@ -30,8 +30,12 @@ public class MemberService {
     private final CommunityService communityService;
     private final GoogleClassroomService googleClassroomService;
 
-    /** Se une a una comunidad pública (verifica aforo y tipo). */
-    public MiembroComunidad joinPublicCommunity(Long userId, Long communityId) {
+    /**
+     * Se une a una comunidad pública (verifica aforo y tipo). Permite especificar el rol deseado
+     * (ALUMNO por defecto, o PROFESOR si el usuario es tutor).
+     */
+    public MiembroComunidad joinPublicCommunity(
+            Long userId, Long communityId, RolComunidad desiredRol) {
         Usuario usuario =
                 usuarioRepository
                         .findById(userId)
@@ -60,12 +64,22 @@ public class MemberService {
             throw new IllegalArgumentException("La comunidad está llena");
         }
 
+        // Determinar rol deseado (por defecto ALUMNO)
+        RolComunidad rolFinal = desiredRol != null ? desiredRol : RolComunidad.ALUMNO;
+
+        // Si solicita ser PROFESOR, validar que el usuario sea tutor
+        if (rolFinal == RolComunidad.PROFESOR
+                && (usuario.getEsTutor() == null || !usuario.getEsTutor())) {
+            throw new IllegalArgumentException(
+                    "Solo los usuarios tutores pueden unirse como profesor");
+        }
+
         // Crear membresía
         MiembroComunidad miembro =
                 MiembroComunidad.builder()
                         .usuario(usuario)
                         .comunidad(comunidad)
-                        .rol(RolComunidad.ALUMNO)
+                        .rol(rolFinal)
                         .build();
 
         MiembroComunidad miembroGuardado = miembroComunidadRepository.save(miembro);

@@ -50,7 +50,7 @@ class MemberServiceTest {
         when(miembroComunidadRepository.save(any(MiembroComunidad.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        MiembroComunidad miembro = memberService.joinPublicCommunity(userId, communityId);
+        MiembroComunidad miembro = memberService.joinPublicCommunity(userId, communityId, null);
 
         verify(miembroComunidadRepository).save(miembro);
         assertThat(miembro.getUsuario()).isEqualTo(usuario);
@@ -66,7 +66,7 @@ class MemberServiceTest {
         when(comunidadRepository.findById(communityId))
                 .thenReturn(Optional.of(buildComunidad(communityId, TipoGrupo.GRUPO_PRIVADO)));
 
-        assertThatThrownBy(() -> memberService.joinPublicCommunity(userId, communityId))
+        assertThatThrownBy(() -> memberService.joinPublicCommunity(userId, communityId, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("comunidad privada");
     }
@@ -82,7 +82,7 @@ class MemberServiceTest {
         when(communityService.countMembers(communityId)).thenReturn(50L);
         when(communityService.getMaxMembers(communityId)).thenReturn(50);
 
-        assertThatThrownBy(() -> memberService.joinPublicCommunity(userId, communityId))
+        assertThatThrownBy(() -> memberService.joinPublicCommunity(userId, communityId, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("La comunidad está llena");
     }
