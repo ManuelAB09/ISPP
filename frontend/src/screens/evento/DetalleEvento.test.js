@@ -100,8 +100,13 @@ describe('DetalleEvento', () => {
   test('confirma asistencia al pulsar botón', async () => {
     renderComponent();
 
+    // Primer click abre el modal de confirmación de asistencia
     const btn = await screen.findByRole('button', { name: /Confirmar asistencia/i });
     fireEvent.click(btn);
+
+    // El modal aparece con un segundo botón "Confirmar asistencia"; clickearlo llama a attendEvent
+    const confirmBtns = await screen.findAllByRole('button', { name: /Confirmar asistencia/i });
+    fireEvent.click(confirmBtns[confirmBtns.length - 1]);
 
     await waitFor(() => {
       expect(attendEvent).toHaveBeenCalledWith('77');
