@@ -34,6 +34,27 @@ const DURACION_OPTIONS = [
   { value: 12, label: "1 año (recomendado)" },
 ];
 
+const persistManagedInstitution = (institution) => {
+  if (!institution?.id) return;
+
+  try {
+    const raw = localStorage.getItem("managedInstitutions");
+    const current = raw ? JSON.parse(raw) : [];
+    const safeCurrent = Array.isArray(current) ? current : [];
+
+    const sanitized = {
+      id: institution.id,
+      nombre: institution.nombre || "Institución",
+      dominioEmail: institution.dominioEmail || "",
+    };
+
+    const withoutCurrent = safeCurrent.filter((item) => String(item?.id) !== String(institution.id));
+    localStorage.setItem("managedInstitutions", JSON.stringify([sanitized, ...withoutCurrent]));
+  } catch (error) {
+    console.warn("No se pudo guardar la institución administrada en localStorage", error);
+  }
+};
+
 /* ── Component ────────────────────────────────────── */
 export default function InstitutionPlanModal({ plan, onClose }) {
   const steps = plan.requiereEligibilidad
@@ -133,6 +154,7 @@ export default function InstitutionPlanModal({ plan, onClose }) {
         ubicacion: ubicacion.trim() || undefined,
         sitioweb: sitioweb.trim() || undefined,
       });
+      persistManagedInstitution(institution);
 
       // 2. Contract the corporate plan
       const planResponse = await institutionsApi.hirePlan(institution.id, {

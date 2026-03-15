@@ -273,6 +273,42 @@
     font-weight: 500;
 }
 
+.institution-select {
+    margin-bottom: 8px;
+}
+
+.institution-help-text {
+    margin: 0 0 16px 0;
+    font-size: 12px;
+    color: #3d4866;
+}
+
+.capacity-note {
+    margin-top: 14px;
+    border: 1px solid #d6e2ff;
+    background: #f4f8ff;
+    border-radius: 10px;
+    padding: 12px 14px;
+}
+
+.capacity-note p {
+    margin: 0;
+    font-size: 12px;
+    color: #3d4866;
+    line-height: 1.45;
+}
+
+.capacity-note p + p {
+    margin-top: 8px;
+}
+
+.capacity-note code {
+    background: rgba(61, 72, 102, 0.08);
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-size: 11px;
+}
+
 /* Buttons Container */
 .buttons-container {
     display: flex;

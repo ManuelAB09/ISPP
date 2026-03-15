@@ -1,9 +1,8 @@
-import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import CrearComunidad from './CrearComunidad';
 import { communitiesApi } from '../../api/communities.api';
+import CrearComunidad from './CrearComunidad';
 
 // Mocks
 jest.mock('../../api/communities.api');
@@ -57,6 +56,11 @@ describe('CrearComunidad', () => {
     renderComponent();
     expect(screen.getByText(/Pública \(acceso libre\)/i)).toBeInTheDocument();
     expect(screen.getByText(/Privada \(requiere solicitud\)/i)).toBeInTheDocument();
+  });
+
+  test('renderiza selector de institución', () => {
+    renderComponent();
+    expect(screen.getByLabelText(/Institución administrada/i)).toBeInTheDocument();
   });
 
   test('comunidad pública está seleccionada por defecto', () => {
@@ -235,8 +239,4 @@ describe('CrearComunidad', () => {
     expect(screen.getByRole('button', { name: /Guardar Borrador/i })).toBeInTheDocument();
   });
 
-  test('muestra información sobre capacidad según plan', () => {
-    renderComponent();
-    expect(screen.getByText(/La capacidad máxima dependerá de tu plan/i)).toBeInTheDocument();
-  });
 });

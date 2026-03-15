@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { communitiesApi } from "../../api/communities.api";
 import Header from "../../components/Header/Header";
@@ -14,6 +14,8 @@ export default function CrearComunidad() {
     const [categoriaInput, setCategoriaInput] = useState("");
     const [categorias, setCategorias] = useState([]);
     const [tipoComunidad, setTipoComunidad] = useState("COMUNIDAD_PUBLICA"); // Debe ser enum del backend
+    const [managedInstitutions, setManagedInstitutions] = useState([]);
+    const [selectedInstitutionId, setSelectedInstitutionId] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
@@ -46,6 +48,7 @@ export default function CrearComunidad() {
             nombre: nombre.trim(),
             descripcion: descripcion.trim(),
             tipoComunidad,
+            selectedInstitutionId,
             categorias,
             imagenPreview // store preview data URL, file cannot be stored
         };
@@ -65,12 +68,25 @@ export default function CrearComunidad() {
     // Load draft from localStorage on mount
     useEffect(() => {
         try {
+            const institutionsRaw = localStorage.getItem('managedInstitutions');
+            if (institutionsRaw) {
+                const parsed = JSON.parse(institutionsRaw);
+                if (Array.isArray(parsed)) {
+                    setManagedInstitutions(
+                        parsed.filter((institution) => institution && institution.id)
+                    );
+                }
+            }
+
             const saved = localStorage.getItem('crearComunidadDraft');
             if (saved) {
                 const draft = JSON.parse(saved);
                 if (draft.nombre) setNombre(draft.nombre);
                 if (draft.descripcion) setDescripcion(draft.descripcion);
                 if (draft.tipoComunidad) setTipoComunidad(draft.tipoComunidad);
+                if (draft.selectedInstitutionId) {
+                    setSelectedInstitutionId(String(draft.selectedInstitutionId));
+                }
                 if (Array.isArray(draft.categorias)) setCategorias(draft.categorias);
                 if (draft.imagenPreview) setImagenPreview(draft.imagenPreview);
             }
@@ -223,6 +239,30 @@ export default function CrearComunidad() {
                <div className="third-section">
                     <h3>Configuración de la Comunidad</h3>
                     <div className="config-group">
+                        <label htmlFor="institution-select">Institución administrada (opcional)</label>
+                        <select
+                            id="institution-select"
+                            className="form-input institution-select"
+                            value={selectedInstitutionId}
+                            onChange={(e) => setSelectedInstitutionId(e.target.value)}
+                            disabled={managedInstitutions.length === 0}
+                        >
+                            <option value="">
+                                {managedInstitutions.length > 0
+                                    ? "Sin institución (comunidad individual)"
+                                    : "No hay instituciones disponibles"}
+                            </option>
+                            {managedInstitutions.map((institution) => (
+                                <option key={institution.id} value={String(institution.id)}>
+                                    {institution.nombre || `Institución ${institution.id}`}
+                                </option>
+                            ))}
+                        </select>
+                        <p className="institution-help-text">
+                            {managedInstitutions.length > 0
+                                ? "Puedes seleccionar una institución que administras para dejarlo reflejado en este formulario."
+                                : "No encontramos instituciones en tu sesión. Puedes crear una desde Planes institucionales."}
+                        </p>
                         <label>Tipo de Comunidad</label>
                         <div className="radio-group">
                             <label className="radio-label">
@@ -244,9 +284,6 @@ export default function CrearComunidad() {
                                 <span>Privada (requiere solicitud)</span>
                             </label>
                         </div>
-                        <p style={{ fontSize: '12px', color: '#666', marginTop: '10px' }}>
-                            La capacidad máxima dependerá de tu plan de suscripción.
-                        </p>
                     </div>
                </div>
                <div>
