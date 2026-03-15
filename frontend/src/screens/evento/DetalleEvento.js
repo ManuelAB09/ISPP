@@ -19,14 +19,27 @@ import { communitiesApi } from '../../api/communities.api';
 import { getApiBaseUrl } from '../../api/baseUrl';
 
 const OPCIONES_ANTELACION = [
-  { label: 'Empieza en 2 días', value: 2880 },
-  { label: 'Empieza en 1 día', value: 1440 },
-  { label: 'Empieza en 2 horas', value: 120 },
-  { label: 'Empieza en 1 hora', value: 60 },
-  { label: 'Empieza en 30 minutos', value: 30 },
+  { label: '2 días antes', value: 2880 },
+  { label: '1 día antes', value: 1440 },
+  { label: '2 horas antes', value: 120 },
+  { label: '1 hora antes', value: 60 },
+  { label: '30 minutos antes', value: 30 },
 ];
 
 const CANAL_LABELS = { PLATAFORMA: 'Solo en la app', EMAIL: 'Solo por email', AMBOS: 'Ambos' };
+
+const formatAlarmLabel = (minutos) => {
+  if (!minutos) return '';
+  if (minutos >= 1440 && minutos % 1440 === 0) {
+    const dias = minutos / 1440;
+    return dias === 1 ? 'en 1 día' : `en ${dias} días`;
+  }
+  if (minutos >= 60 && minutos % 60 === 0) {
+    const horas = minutos / 60;
+    return horas === 1 ? 'en 1 hora' : `en ${horas} horas`;
+  }
+  return `en ${minutos} minutos`;
+};
 
 const toAbsoluteImageUrl = (imageUrl, fallback = '') => {
   const raw = String(imageUrl || '').trim();
@@ -568,7 +581,7 @@ const DetalleEvento = () => {
                       <ul className="ed-alarms-list">
                         {alarms.map(alarm => (
                           <li key={alarm.id} className={`ed-alarm-item ${alarm.disparada ? 'ed-alarm-item--fired' : ''}`}>
-                            <span className="ed-alarm-label">{alarm.etiqueta || `${alarm.minutosAntes} min`}</span>
+                            <span className="ed-alarm-label">{formatAlarmLabel(alarm.minutosAntes)}</span>
                             <span className="ed-alarm-canal">{CANAL_LABELS[alarm.canal] || alarm.canal}</span>
                             {!alarm.disparada && (
                               <button
