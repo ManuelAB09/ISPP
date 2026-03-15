@@ -133,13 +133,14 @@ public class EventoService {
                             .orElseThrow(() -> new RuntimeException("Ubicación no encontrada"));
             evento.setUbicacion(ubicacion);
         }
+        final Evento savedEvento = eventoRepository.save(evento);
         try {
-            googleCalendarService.sincronizarCreacion(evento);
+            googleCalendarService.sincronizarCreacion(savedEvento);
         } catch (Exception e) {
 
             // No propagamos el error: el evento se crea aunque GCal falle
         }
-        return eventoRepository.save(evento);
+        return savedEvento;
     }
 
     // ===============================

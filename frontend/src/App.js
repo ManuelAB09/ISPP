@@ -27,6 +27,7 @@ import PasarelaPagoTutor from './screens/teacherProfile/PasarelaPagoTutor';
 import TeacherProfile from './screens/teacherProfile/TeacherProfile';
 import CrearUbicacionScreen from './screens/ubicaciones/CrearUbicacionScreen';
 import VerifiedTeachers from './screens/verifiedTeachers/VerifiedTeachers';
+import CalendarCallback from './screens/myProfile/CalendarCallback';
 
 
 import Chats from './screens/chat/Chats';
@@ -69,6 +70,7 @@ function AppRoutes() {
         <Route path="/eventos-mapa" element={<EventosMapaScreen />} />
         <Route path="/mis-eventos" element={<MisEventos />} />
         <Route path="/planes/success" element={<PlanesSuccess />} />
+        <Route path="/settings/calendar" element={<CalendarCallback />} />
       </>
     )
   }
