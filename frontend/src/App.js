@@ -7,9 +7,7 @@ import { SocketProvider } from './contexts/SocketContext';
 import Login from './screens/auth/Login';
 import Register from './screens/auth/Register';
 import VerifyEmail from './screens/auth/VerifyEmail';
-import Terms from './screens/legal/Terms';
-import Privacy from './screens/legal/Privacy';
-import LandingPage from './screens/landing/LandingPage';
+import AceptarInvitacion from './screens/comunidades/AceptarInvitacion';
 import CommunityDetail from './screens/comunidades/CommunityDetail';
 import Comunidades from './screens/comunidades/Comunidades';
 import CrearComunidad from './screens/comunidades/CrearComunidad';
@@ -17,13 +15,16 @@ import CrearEvento from './screens/evento/CrearEvento';
 import DetalleEvento from './screens/evento/DetalleEvento';
 import EventosMapaScreen from './screens/evento/EventosMapaScreen';
 import Home from './screens/home/Home';
+import LandingPage from './screens/landing/LandingPage';
+import Privacy from './screens/legal/Privacy';
+import Terms from './screens/legal/Terms';
 import Profile from './screens/myProfile/Profile';
 import MisPagos from './screens/pagos/MisPagos';
 import PagoExitoso from './screens/pagos/PagoExitoso';
 import InstitutionPlansScreen from './screens/planes/InstitutionPlansScreen';
 import PasarelaPago from './screens/planes/PasarelaPago';
-import PlansScreen from './screens/planes/PlansScreen';
 import PlanesSuccess from './screens/planes/PlanesSuccess';
+import PlansScreen from './screens/planes/PlansScreen';
 import PasarelaPagoTutor from './screens/teacherProfile/PasarelaPagoTutor';
 import TeacherProfile from './screens/teacherProfile/TeacherProfile';
 import CrearUbicacionScreen from './screens/ubicaciones/CrearUbicacionScreen';
@@ -107,6 +108,7 @@ function AppRoutes() {
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/comunidades" element={<Comunidades />} />
+        <Route path="/invitacion/:codigo/aceptar" element={<AceptarInvitacion />} />
         <Route path="/comunidades/:communityId" element={<CommunityDetail />} />
         <Route path="/comunidades/:communityId/apuntes" element={<CommunityDetail />} />
         <Route path="/comunidades/:communityId/editar" element={<CommunityDetail />} />

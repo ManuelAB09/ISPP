@@ -1,13 +1,17 @@
 // filepath: c:\Users\juana\OneDrive\Escritorio\Juan Antonio\Universidad\cuarto año\ISPP\ISPP\frontend\src\screens\auth\Register.js
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import './Register.css';
 import studyShareLogo from '../../static/images/MeerKatters_logo.png';
+import { getPendingInvitationPath } from '../../utils/invitationFlow';
+import './Register.css';
 
 const Register = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { register, resendVerification, error: authError, clearError, isAuthenticated, loading } = useAuth();
+  const nextParam = searchParams.get('next') || getPendingInvitationPath();
+  const loginLink = nextParam ? `/login?next=${encodeURIComponent(nextParam)}` : '/login';
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -159,7 +163,7 @@ const Register = () => {
             >
               {resendLoading ? 'Enviando...' : 'Reenviar email'}
             </button>
-            <Link to="/login" className="btn-home">Ir a iniciar sesión</Link>
+            <Link to={loginLink} className="btn-home">Ir a iniciar sesión</Link>
           </div>
         </div>
       </div>
@@ -348,7 +352,7 @@ const Register = () => {
 
           <div className="login-link">
             <p>
-              Ya tienes una cuenta? <Link to="/login">Iniciar sesión</Link>
+              Ya tienes una cuenta? <Link to={loginLink}>Iniciar sesión</Link>
             </p>
           </div>
         </div>
