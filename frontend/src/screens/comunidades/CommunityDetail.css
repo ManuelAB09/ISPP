@@ -455,8 +455,13 @@
   left: 0;
 }
 
+.cd-inline-recordings-section {
+  margin-top: 0.7rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid #e3e7f1;
+}
+
 .cd-floating-meetings-panel,
-.cd-floating-recordings-panel,
 .cd-floating-participants-panel,
 .cd-meeting-form-card {
   width: 380px;
@@ -839,7 +844,6 @@
   }
 
   .cd-floating-meetings-panel,
-  .cd-floating-recordings-panel,
   .cd-floating-participants-panel,
   .cd-meeting-form-card {
     width: 100%;

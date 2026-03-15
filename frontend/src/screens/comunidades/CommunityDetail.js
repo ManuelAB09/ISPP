@@ -1157,6 +1157,49 @@ extraActions={(
                   </li>
                 ))}
               </ul>
+
+              {recordingsOpen ? (
+                <div className="cd-inline-recordings-section">
+                  {recordingsError ? (
+                    <p className="cd-floating-recordings-error">{recordingsError}</p>
+                  ) : visibleRecordings.length > 0 ? (
+                    <>
+                      <p className="cd-floating-recordings-title">
+                        {selectedRecordingMeetingId
+                          ? `Grabaciones de la reunion (${visibleRecordings.length})`
+                          : `Grabaciones de la comunidad (${visibleRecordings.length})`}
+                      </p>
+                      <ul className="cd-floating-recordings-list">
+                        {visibleRecordings.map((recording, index) => (
+                          <li key={recording?.zoomRecordingId || index}>
+                            <strong>{recording?.fileType || 'Grabacion'}</strong>
+                            <span>Inicio: {formatDateTime(recording?.recordingStart || recording?.createdAt)}</span>
+                            {recording?.recordingEnd ? <span>Fin: {formatDateTime(recording.recordingEnd)}</span> : null}
+                            <span>{formatFileSize(recording?.fileSizeBytes)}</span>
+                            <div className="cd-floating-recordings-links">
+                              {recording?.playUrl ? (
+                                <a href={recording.playUrl} target="_blank" rel="noreferrer">Abrir</a>
+                              ) : null}
+                              {(recording?.appDownloadUrl || recording?.downloadUrl) ? (
+                                <button
+                                  type="button"
+                                  className="cd-recording-link-button"
+                                  onClick={() => handleDownloadRecording(recording)}
+                                  disabled={downloadingRecordingId === recording?.zoomRecordingId}
+                                >
+                                  {downloadingRecordingId === recording?.zoomRecordingId ? 'Descargando...' : 'Descargar'}
+                                </button>
+                              ) : null}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : (
+                    <p className="cd-floating-recordings-empty">No hay grabaciones disponibles para esta reunión.</p>
+                  )}
+                </div>
+              ) : null}
             </>
           ) : (
             <p className="cd-floating-meetings-empty">No hay reuniones registradas todavia.</p>
@@ -1187,51 +1230,6 @@ extraActions={(
             </>
           ) : (
             <p className="cd-floating-participants-empty">No hay participantes activos en este momento.</p>
-          )}
-        </div>
-      </div>
-    ) : null}
-
-    {recordingsOpen ? (
-      <div className="cd-floating-popover cd-floating-popover-recordings">
-        <div className="cd-floating-recordings-panel">
-          {recordingsError ? (
-            <p className="cd-floating-recordings-error">{recordingsError}</p>
-          ) : visibleRecordings.length > 0 ? (
-            <>
-              <p className="cd-floating-recordings-title">
-                {selectedRecordingMeetingId
-                  ? `Grabaciones de la reunion (${visibleRecordings.length})`
-                  : `Grabaciones de la comunidad (${visibleRecordings.length})`}
-              </p>
-              <ul className="cd-floating-recordings-list">
-                {visibleRecordings.map((recording, index) => (
-                  <li key={recording?.zoomRecordingId || index}>
-                    <strong>{recording?.fileType || 'Grabacion'}</strong>
-                    <span>Inicio: {formatDateTime(recording?.recordingStart || recording?.createdAt)}</span>
-                    {recording?.recordingEnd ? <span>Fin: {formatDateTime(recording.recordingEnd)}</span> : null}
-                    <span>{formatFileSize(recording?.fileSizeBytes)}</span>
-                    <div className="cd-floating-recordings-links">
-                      {recording?.playUrl ? (
-                        <a href={recording.playUrl} target="_blank" rel="noreferrer">Abrir</a>
-                      ) : null}
-                      {(recording?.appDownloadUrl || recording?.downloadUrl) ? (
-                        <button
-                          type="button"
-                          className="cd-recording-link-button"
-                          onClick={() => handleDownloadRecording(recording)}
-                          disabled={downloadingRecordingId === recording?.zoomRecordingId}
-                        >
-                          {downloadingRecordingId === recording?.zoomRecordingId ? 'Descargando...' : 'Descargar'}
-                        </button>
-                      ) : null}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : (
-            <p className="cd-floating-recordings-empty">No hay grabaciones disponibles para esta reunión.</p>
           )}
         </div>
       </div>
