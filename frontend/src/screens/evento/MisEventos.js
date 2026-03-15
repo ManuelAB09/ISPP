@@ -122,13 +122,18 @@ function EventoCard({ evento, onVerDetalle }) {
   );
 }
 
+function formatMensajeAlerta(mensaje) {
+  if (!mensaje) return mensaje;
+  return mensaje.replace(/comienza (.+?) antes/g, 'comienza en $1');
+}
+
 function AlertaItem({ alerta, onMarcarLeida }) {
   const icono = TIPO_ICONO[alerta.tipoEvento] || TIPO_ICONO.OTRO;
   return (
     <div className={`alerta-item ${alerta.leida ? 'alerta-item--leida' : ''}`}>
       <div className="alerta-item__icono">{icono}</div>
       <div className="alerta-item__body">
-        <p className="alerta-item__mensaje">{alerta.mensaje}</p>
+        <p className="alerta-item__mensaje">{formatMensajeAlerta(alerta.mensaje)}</p>
         <span className="alerta-item__fecha">{formatAlertaFecha(alerta.createdAt)}</span>
       </div>
       {!alerta.leida && (
