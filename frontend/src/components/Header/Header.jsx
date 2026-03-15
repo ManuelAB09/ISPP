@@ -84,23 +84,17 @@ export default function Header({ user, page }) {
                     <Link to="/" className={page === 'inicio' ? 'active' : ''}>Inicio</Link>
                     <Link to="/comunidades" className={page === 'comunidades' ? 'active' : ''}>Comunidades</Link>
 
-                    <Link to="/eventos-mapa" className={page === 'eventos-mapa' ? 'active' : ''}>Mapa de eventos</Link>
-                    <Link to="/mis-eventos" className={page === 'mis-eventos' ? 'active' : ''}>Mis eventos</Link>
-                    <Link to="/profesores" className={page === 'profesores' ? 'active' : ''}>Profesores</Link>
-                    <Link to="/chats" className={page === 'chats' ? 'active' : ''}>Chats</Link>
-                    <Link to="/planes" className={page === 'planes' ? 'active' : ''}>Planes</Link>
-                    <Link to="/pagos" className={page === 'pagos' ? 'active' : ''}>Mis pagos</Link>
-
                     {isAuthenticated && (
                         <>
                             <Link to="/eventos-mapa" className={page === 'eventos-mapa' ? 'active' : ''}>Mapa de eventos</Link>
+                            <Link to="/mis-eventos" className={page === 'mis-eventos' ? 'active' : ''}>Mis eventos</Link>
                             <Link to="/profesores" className={page === 'profesores' ? 'active' : ''}>Profesores</Link>
                             <Link to="/chats" className={page === 'chats' ? 'active' : ''}>Chats</Link>
                             <Link to="/planes" className={page === 'planes' ? 'active' : ''}>Planes</Link>
                             <Link to="/pagos" className={page === 'pagos' ? 'active' : ''}>Mis pagos</Link>
                         </>
                     )}
-                    {!isAuthenticated && (
+                    {!isAuthenticated && (  
                         <Link to="/login">Iniciar sesión</Link>
                     )}
 
