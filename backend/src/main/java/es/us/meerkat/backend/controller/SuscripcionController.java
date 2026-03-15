@@ -181,7 +181,7 @@ public class SuscripcionController {
                         .body(
                                 Map.of(
                                         "error",
-                                        "El pago no esta completado: " + session.getStatus()));
+                                        "El pago no está completado: " + session.getStatus()));
             }
 
             String usuarioIdEnSession = session.getMetadata().get("usuarioId");
@@ -190,7 +190,7 @@ public class SuscripcionController {
 
             if (!usuario.getId().toString().equals(usuarioIdEnSession)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("error", "Sesion no valida para este usuario"));
+                        .body(Map.of("error", "Sesión no válida para este usuario"));
             }
 
             BigDecimal monto =
@@ -201,9 +201,9 @@ public class SuscripcionController {
 
             log.info("Llamando activarSuscripcionTrasStripe con monto: {}", monto);
             suscripcionService.activarSuscripcionTrasStripe(usuario.getId(), monto);
-            log.info("=== SUSCRIPCION ACTIVADA CORRECTAMENTE ===");
+            log.info("=== SUSCRIPCIÓN ACTIVADA CORRECTAMENTE ===");
 
-            return ResponseEntity.ok(Map.of("mensaje", "Suscripcion activada correctamente"));
+            return ResponseEntity.ok(Map.of("mensaje", "Suscripción activada correctamente"));
 
         } catch (StripeException e) {
             log.error("StripeException: code={}, message={}", e.getCode(), e.getMessage(), e);
@@ -218,70 +218,6 @@ public class SuscripcionController {
                     e);
             return ResponseEntity.internalServerError()
                     .body(Map.of("error", e.getClass().getSimpleName() + ": " + e.getMessage()));
-        }
-    }
-
-    /** Confirma la suscripcion tras pago exitoso con Stripe Elements (PaymentIntent). */
-    @PostMapping("/me/confirm-embedded-payment")
-    @Operation(
-            summary = "Confirmar pago embebido con Stripe Elements",
-            description = "Verifica el PaymentIntent y activa la suscripcion Premium")
-    public ResponseEntity<?> confirmarPagoEmbebido(
-            @AuthenticationPrincipal final Usuario usuario, @RequestBody Map<String, String> body) {
-
-        String paymentIntentId = body.get("paymentIntentId");
-        if (paymentIntentId == null || paymentIntentId.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "paymentIntentId requerido"));
-        }
-
-        try {
-            com.stripe.model.PaymentIntent intent =
-                    com.stripe.model.PaymentIntent.retrieve(paymentIntentId);
-
-            if (!"succeeded".equals(intent.getStatus())) {
-                return ResponseEntity.badRequest()
-                        .body(
-                                Map.of(
-                                        "error",
-                                        "El pago no se ha completado: " + intent.getStatus()));
-            }
-
-            String usuarioIdMeta = intent.getMetadata().get("usuarioId");
-            if (!usuario.getId().toString().equals(usuarioIdMeta)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("error", "PaymentIntent no valido para este usuario"));
-            }
-
-            BigDecimal monto =
-                    BigDecimal.valueOf(intent.getAmount()).divide(BigDecimal.valueOf(100));
-            suscripcionService.activarSuscripcionTrasStripe(usuario.getId(), monto);
-
-            return ResponseEntity.ok(Map.of("mensaje", "Suscripcion activada correctamente"));
-
-        } catch (StripeException e) {
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("error", "Error Stripe: " + e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    @PostMapping("/me/create-payment-intent")
-    @Operation(
-            summary = "Crear PaymentIntent para suscripcion",
-            description = "Devuelve el clientSecret para usar con Stripe Elements")
-    public ResponseEntity<?> crearPaymentIntent(
-            @AuthenticationPrincipal final Usuario usuario,
-            @Valid @RequestBody SubscribeRequest request) {
-
-        try {
-            Map<String, String> result =
-                    paymentService.crearPaymentIntentSuscripcion(
-                            usuario, TipoPlan.PREMIUM, request.getPeriodo());
-            return ResponseEntity.ok(result);
-        } catch (StripeException e) {
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("error", "Error al crear el intent de pago: " + e.getMessage()));
         }
     }
 }

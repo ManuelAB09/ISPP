@@ -58,5 +58,5 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
      * @param verificationToken Token de verificación.
      * @return Optional con el usuario si existe.
      */
-    Optional<Usuario> findByVerificationToken(String verificationToken);
+    // Optional<Usuario> findByVerificationToken(String verificationToken);
 }

@@ -144,16 +144,22 @@ class CommunityServiceTest {
     }
 
     @Test
-    void listActiveCommunitiesShouldUseSearchFilterWhenSearchProvided() {
-        when(comunidadRepository.findByNombreContainingIgnoreCaseAndEstado(
-                        "java", EstadoComunidad.ACTIVA, PageRequest.of(0, 20)))
+    void listPublicCommunitiesShouldUseSearchFilterWhenSearchProvided() {
+        when(comunidadRepository.findByTipoGrupoAndNombreContainingIgnoreCaseAndEstado(
+                        TipoGrupo.COMUNIDAD_PUBLICA,
+                        "java",
+                        EstadoComunidad.ACTIVA,
+                        PageRequest.of(0, 20)))
                 .thenReturn(new PageImpl<>(java.util.List.of()));
 
-        communityService.listActiveCommunities("java", PageRequest.of(0, 20));
+        communityService.listPublicCommunities("java", PageRequest.of(0, 20));
 
         verify(comunidadRepository)
-                .findByNombreContainingIgnoreCaseAndEstado(
-                        "java", EstadoComunidad.ACTIVA, PageRequest.of(0, 20));
+                .findByTipoGrupoAndNombreContainingIgnoreCaseAndEstado(
+                        TipoGrupo.COMUNIDAD_PUBLICA,
+                        "java",
+                        EstadoComunidad.ACTIVA,
+                        PageRequest.of(0, 20));
     }
 
     private Usuario buildUsuario(final Long id) {

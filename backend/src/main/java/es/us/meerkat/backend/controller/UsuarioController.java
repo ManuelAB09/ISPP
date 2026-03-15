@@ -129,7 +129,7 @@ public final class UsuarioController {
     @PutMapping("/me/password")
     public ResponseEntity<MessageResponse> changePassword(
             @AuthenticationPrincipal final Usuario usuario,
-            @Valid @RequestBody final ChangePasswordRequest request) {
+            @RequestBody final ChangePasswordRequest request) {
         usuarioService.cambiarPassword(usuario, request);
         return ResponseEntity.ok(
                 MessageResponse.builder().message("Contraseña actualizada correctamente").build());

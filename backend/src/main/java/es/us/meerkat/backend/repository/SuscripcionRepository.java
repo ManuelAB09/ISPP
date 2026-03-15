@@ -25,11 +25,4 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> 
      * @return Suscripción si existe
      */
     Optional<Suscripcion> findByUsuarioId(Long usuarioId);
-
-    /**
-     * Elimina todas las suscripciones de un usuario.
-     *
-     * @param usuarioId ID del usuario
-     */
-    void deleteByUsuarioId(Long usuarioId);
 }

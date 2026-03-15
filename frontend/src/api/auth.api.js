@@ -71,24 +71,4 @@ export const authApi = {
   getProfileAvatars() {
     return apiClient.get('/api/v1/users/profile-avatars');
   },
-
-  /**
-   * GET /api/v1/auth/verify
-   * Verificar email con token
-   * @param {string} token - Token de verificación
-   * @returns {Promise<Object>} - { accessToken, user }
-   */
-  verifyEmail(token) {
-    return apiClient.get(`/api/v1/auth/verify?token=${encodeURIComponent(token)}`);
-  },
-
-  /**
-   * POST /api/v1/auth/resend-verification
-   * Reenviar email de verificación
-   * @param {string} email - Email del usuario
-   * @returns {Promise<Object>} - { message }
-   */
-  resendVerification(email) {
-    return apiClient.post('/api/v1/auth/resend-verification', { email });
-  },
 };

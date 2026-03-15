@@ -2,7 +2,6 @@ package es.us.meerkat.backend.service;
 
 import java.io.IOException;
 import java.util.Base64;
-import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.data.domain.Page;
@@ -15,7 +14,6 @@ import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.EstadoComunidad;
 import es.us.meerkat.backend.entity.MiembroComunidad;
 import es.us.meerkat.backend.entity.RolComunidad;
-import es.us.meerkat.backend.entity.Suscripcion;
 import es.us.meerkat.backend.entity.TipoGrupo;
 import es.us.meerkat.backend.entity.TipoPlan;
 import es.us.meerkat.backend.entity.TipoPlanComunidad;
@@ -70,9 +68,12 @@ public class CommunityService {
             long freeCommunities =
                     comunidadRepository.countByCreadorIdAndTipoPlan(userId, TipoPlanComunidad.FREE);
 
-            Optional<Suscripcion> suscripcionOpt = suscripcionService.obtenerMiSuscripcion(userId);
-            TipoPlan userPlan = suscripcionOpt.map(Suscripcion::getPlan).orElse(TipoPlan.FREE);
-
+            TipoPlan userPlan;
+            if (suscripcionService.obtenerMiSuscripcion(userId).get() == null) {
+                userPlan = TipoPlan.FREE;
+            } else {
+                userPlan = suscripcionService.obtenerMiSuscripcion(userId).get().getPlan();
+            }
             if (userPlan == TipoPlan.FREE && freeCommunities >= MAX_FREE_COMMUNITIES) {
                 throw new IllegalArgumentException(
                         "Se ha alcanzado el límite de 3 comunidades gratuitas. Actualiza a Premium"
@@ -123,7 +124,7 @@ public class CommunityService {
         // TODO: Implementar inyección de InstitutionRepository
     }
 
-    /** Obtiene una comunidad por ID. Comunidades privadas solo son visibles para miembros. */
+    /** Obtiene una comunidad por ID, verificando visibilidad según tipo. */
     @Transactional(readOnly = true)
     public Comunidad getCommunityById(Long communityId, Long userId) {
         Comunidad comunidad =
@@ -131,9 +132,12 @@ public class CommunityService {
                         .findById(communityId)
                         .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
 
-        if (comunidad.getTipoGrupo() == TipoGrupo.GRUPO_PRIVADO
-                && !authorizationService.isMemberOf(userId, communityId)) {
-            throw new IllegalArgumentException("No tienes acceso a esta comunidad privada");
+        // Verificar acceso: si es privada, solo miembros pueden ver todos los detalles
+        if (comunidad.getTipoGrupo() == TipoGrupo.GRUPO_PRIVADO && userId != null) {
+            if (!authorizationService.isMemberOf(userId, communityId)) {
+                throw new IllegalArgumentException(
+                        "No tienes permiso para acceder a esta comunidad privada");
+            }
         }
 
         return comunidad;
@@ -178,14 +182,15 @@ public class CommunityService {
         comunidadRepository.delete(comunidad);
     }
 
-    /** Lista comunidades activas (públicas y privadas) con filtros opcionales. */
+    /** Lista comunidades públicas con filtros opcionales. */
     @Transactional(readOnly = true)
-    public Page<Comunidad> listActiveCommunities(String search, Pageable pageable) {
+    public Page<Comunidad> listPublicCommunities(String search, Pageable pageable) {
         if (search != null && !search.isBlank()) {
-            return comunidadRepository.findByNombreContainingIgnoreCaseAndEstado(
-                    search, EstadoComunidad.ACTIVA, pageable);
+            return comunidadRepository.findByTipoGrupoAndNombreContainingIgnoreCaseAndEstado(
+                    TipoGrupo.COMUNIDAD_PUBLICA, search, EstadoComunidad.ACTIVA, pageable);
         } else {
-            return comunidadRepository.findByEstado(EstadoComunidad.ACTIVA, pageable);
+            return comunidadRepository.findByTipoGrupoAndEstado(
+                    TipoGrupo.COMUNIDAD_PUBLICA, EstadoComunidad.ACTIVA, pageable);
         }
     }
 

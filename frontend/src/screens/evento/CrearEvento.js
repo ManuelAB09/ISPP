@@ -6,53 +6,18 @@ import Header from '../../components/Header/Header';
 import { createEvent, getEventById, updateEvent } from '../../api/eventEndpoints';
 import { communitiesApi } from '../../api/communities.api';
 
-const DATE_TIME_FIELD_MAX_LENGTH = {
-  dia: 2,
-  mes: 2,
-  anio: 4,
-  hora: 2,
-  minuto: 2,
-  diaFin: 2,
-  mesFin: 2,
-  anioFin: 4,
-  horaFin: 2,
-  minutoFin: 2,
-};
-
-const DATE_TIME_FIELDS = new Set(Object.keys(DATE_TIME_FIELD_MAX_LENGTH));
-const AFORO_MAX_DIGITS = 3;
-
-const parseMaterials = (value) => {
-  if (Array.isArray(value)) {
-    return value
-      .map((m) => String(m || '').trim())
-      .filter(Boolean);
-  }
-
-  if (typeof value !== 'string') {
-    return [];
-  }
-
-  return value
-    .split(',')
-    .map((m) => m.trim())
-    .filter(Boolean);
-};
-
 
 const CrearEvento = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const rawCommunityId = searchParams.get('communityId') === 'null' ? null : searchParams.get('communityId');
-  const [selectedCommunityId, setSelectedCommunityId] = useState(rawCommunityId || '');
-  const [myCommunities, setMyCommunities] = useState([]);
+  const communityId = searchParams.get('communityId');
 
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
-    materiales: [],
+    comentario: '',
     dia: '',
     mes: '',
     anio: '',
@@ -77,24 +42,18 @@ const CrearEvento = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [eventStarted, setEventStarted] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
-  const [materialInput, setMaterialInput] = useState('');
 
   const isEdit = id && id !== 'new';
   const currentUserId = localStorage.getItem('userId');
 
+  // Recibir ubicación seleccionada desde CrearUbicacionScreen
   useEffect(() => {
+    // Restaurar borrador del formulario PRIMERO
     if (location.state?.eventFormDraft) {
-      setFormData(prev => {
-        const draft = { ...prev, ...location.state.eventFormDraft };
-        return {
-          ...draft,
-          materiales: parseMaterials(draft.materiales || draft.comentario || draft.queLlevar)
-        };
-      });
+      setFormData(prev => ({ ...prev, ...location.state.eventFormDraft }));
     }
-
+    // Luego aplicar la ubicación nueva (sobrescribe los campos de ubicación del draft)
     if (location.state?.ubicacion) {
       const ub = location.state.ubicacion;
       setFormData(prev => ({
@@ -109,24 +68,7 @@ const CrearEvento = () => {
     }
   }, [location.state]);
 
-  useEffect(() => {
-    if (!isEdit && currentUserId) {
-      const fetchMyCommunities = async () => {
-        try {
-          const data = await communitiesApi.listMine();
-          const communitiesList = Array.isArray(data) ? data : (data.content || []);
-          setMyCommunities(communitiesList);
-          if (!selectedCommunityId && communitiesList.length === 1) {
-            setSelectedCommunityId(communitiesList[0].id.toString());
-          }
-        } catch (err) {
-          console.error("Error fetching user's communities:", err);
-        }
-      };
-      fetchMyCommunities();
-    }
-  }, [isEdit, currentUserId, selectedCommunityId]);
-
+  // Cargar datos del evento si es edición
   useEffect(() => {
     if (isEdit) {
       const fetchEvent = async () => {
@@ -134,25 +76,19 @@ const CrearEvento = () => {
           setLoading(true);
           const data = await getEventById(id);
 
+          // Verificar que el usuario actual es el creador del evento
           if (data.creador && data.creador.id?.toString() !== currentUserId) {
             setError('No tienes permiso para editar este evento. Solo el creador puede editarlo.');
             setLoading(false);
             return;
           }
 
-          if (data.comunidad?.id) {
-            setSelectedCommunityId(data.comunidad.id.toString());
-          }
-
-          const started = data.fechaHora ? new Date(data.fechaHora).getTime() <= Date.now() : false;
-          setEventStarted(started);
-
           const fecha = new Date(data.fechaHora);
           const fechaFin = data.fechaFin ? new Date(data.fechaFin) : null;
           setFormData({
             nombre: data.titulo || '',
             descripcion: data.descripcion || '',
-            materiales: parseMaterials(data.queLlevar),
+            comentario: data.queLlevar || '',
             dia: String(fecha.getDate()).padStart(2, '0'),
             mes: String(fecha.getMonth() + 1).padStart(2, '0'),
             anio: String(fecha.getFullYear()),
@@ -185,38 +121,29 @@ const CrearEvento = () => {
     }
   }, [id, isEdit, currentUserId, navigate]);
 
+  // Verificar que el usuario es miembro de la comunidad al crear
   useEffect(() => {
-    if (!isEdit && selectedCommunityId && currentUserId) {
+    if (!isEdit && communityId && currentUserId) {
       const checkMembership = async () => {
         try {
-          await communitiesApi.getMyMembership(selectedCommunityId);
-          setError(null);
+          await communitiesApi.getMyMembership(communityId);
         } catch {
           setError('No puedes crear eventos en una comunidad a la que no perteneces.');
         }
       };
       checkMembership();
     }
-  }, [isEdit, selectedCommunityId, currentUserId]);
+  }, [isEdit, communityId, currentUserId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    let parsedValue = value;
-
-    if (DATE_TIME_FIELDS.has(name)) {
-      parsedValue = value.replace(/\D/g, '');
-      parsedValue = parsedValue.slice(0, DATE_TIME_FIELD_MAX_LENGTH[name]);
-    }
-
-    if (name === 'aforo') {
-      parsedValue = value.replace(/\D/g, '').slice(0, AFORO_MAX_DIGITS);
-    }
-
-    setFormData({ ...formData, [name]: parsedValue });
+    setFormData({ ...formData, [name]: value });
+    // Limpiar error de validación al cambiar campo
     const updatedErrors = { ...validationErrors };
     if (updatedErrors[name]) {
       updatedErrors[name] = null;
     }
+    // Limpiar error de fechaFin al cambiar cualquier campo de fecha/hora fin
     if (['diaFin', 'mesFin', 'anioFin', 'horaFin', 'minutoFin'].includes(name)) {
       updatedErrors.fechaFin = null;
     }
@@ -231,22 +158,9 @@ const CrearEvento = () => {
     if (!formData.dia || !formData.mes || !formData.anio) errors.fecha = 'La fecha es obligatoria';
     if (!formData.hora || !formData.minuto) errors.hora = 'La hora es obligatoria';
     if (!formData.aforo || parseInt(formData.aforo) < 1) errors.aforo = 'El aforo debe ser al menos 1';
-    if (parseInt(formData.aforo) > 999) errors.aforo = 'El aforo no puede superar 999';
+    if (parseInt(formData.aforo) > 500) errors.aforo = 'El aforo no puede superar 500';
 
-    if (!errors.fecha && !errors.hora) {
-      const fechaInicio = new Date(
-        parseInt(formData.anio),
-        parseInt(formData.mes) - 1,
-        parseInt(formData.dia),
-        parseInt(formData.hora),
-        parseInt(formData.minuto)
-      );
-
-      if (!Number.isNaN(fechaInicio.getTime()) && fechaInicio.getTime() < Date.now()) {
-        errors.hora = 'La fecha y hora de inicio no puede ser anterior al momento actual';
-      }
-    }
-
+    // Validar que la fecha de inicio no sea posterior a la fecha de fin
     const tieneAlgunCampoFin = formData.diaFin || formData.mesFin || formData.anioFin || formData.horaFin || formData.minutoFin;
     if (tieneAlgunCampoFin) {
       if (!formData.diaFin || !formData.mesFin || !formData.anioFin) {
@@ -280,48 +194,6 @@ const CrearEvento = () => {
 
   const pad = (val) => String(val).padStart(2, '0');
 
-  const handleNumericKeyDown = (e) => {
-    const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'];
-    if (allowedKeys.includes(e.key)) {
-      return;
-    }
-
-    if (!/^\d$/.test(e.key)) {
-      e.preventDefault();
-    }
-  };
-
-  const handleAddMaterial = () => {
-    const newMaterial = materialInput.trim();
-    if (!newMaterial) {
-      return;
-    }
-
-    const alreadyExists = formData.materiales.some(
-      (item) => item.toLowerCase() === newMaterial.toLowerCase()
-    );
-
-    if (!alreadyExists) {
-      setFormData(prev => ({ ...prev, materiales: [...prev.materiales, newMaterial] }));
-    }
-
-    setMaterialInput('');
-  };
-
-  const handleRemoveMaterial = (indexToRemove) => {
-    setFormData(prev => ({
-      ...prev,
-      materiales: prev.materiales.filter((_, index) => index !== indexToRemove)
-    }));
-  };
-
-  const handleMaterialKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAddMaterial();
-    }
-  };
-
   const buildEventPayload = () => {
     const fechaHora = `${formData.anio}-${pad(formData.mes)}-${pad(formData.dia)}T${pad(formData.hora)}:${pad(formData.minuto)}:00`;
     const esVirtual = formData.tipoLocalizacion === 'Online';
@@ -332,12 +204,13 @@ const CrearEvento = () => {
       fechaInicio: fechaHora,
       fechaHora,
       aforo: parseInt(formData.aforo) || 50,
-      queLlevar: formData.materiales.length > 0 ? formData.materiales.join(', ') : undefined,
+      queLlevar: formData.comentario || undefined,
       esVirtual,
       privado: formData.privado,
       visibleEnMapa: formData.visibleEnMapa
     };
 
+    // Fecha fin si se proporcionó
     if (formData.diaFin && formData.mesFin && formData.anioFin) {
       const hFin = formData.horaFin || '0';
       const mFin = formData.minutoFin || '0';
@@ -352,20 +225,11 @@ const CrearEvento = () => {
       payload.enlaceVirtual = formData.direccion;
     }
 
-    if (!isEdit && selectedCommunityId) {
-      payload.communityId = Number(selectedCommunityId);
-    }
-
     return payload;
   };
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
-
-    if (isEdit && eventStarted) {
-      setError('No puedes actualizar un evento que ya ha comenzado.');
-      return;
-    }
 
     try {
       setLoading(true);
@@ -375,15 +239,15 @@ const CrearEvento = () => {
       if (isEdit) {
         await updateEvent(id, payload);
       } else {
-        if (!selectedCommunityId) {
+        if (!communityId) {
           setError('No se ha especificado la comunidad para crear el evento.');
           return;
         }
-        await createEvent(selectedCommunityId, payload);
+        await createEvent(communityId, payload);
       }
 
-      if (selectedCommunityId) {
-        navigate(`/comunidades/${selectedCommunityId}`);
+      if (communityId) {
+        navigate(`/comunidades/${communityId}`);
       } else {
         navigate(-1);
       }
@@ -396,6 +260,7 @@ const CrearEvento = () => {
   };
 
   const handleSaveDraft = () => {
+    // Guardar borrador en localStorage
     localStorage.setItem('eventDraft', JSON.stringify(formData));
     alert('Borrador guardado correctamente.');
   };
@@ -422,12 +287,7 @@ const CrearEvento = () => {
           </div>
         )}
 
-        {isEdit && eventStarted && (
-          <div className="error-message" style={{ color: '#7a3f00', padding: '10px', margin: '10px 0', background: '#fff2e8', borderRadius: '8px' }}>
-            Este evento ya ha comenzado. No se puede actualizar.
-          </div>
-        )}
-
+        {/* Si es error de permisos, no mostrar el formulario */}
         {error && (error.includes('No tienes permiso') || error.includes('no perteneces')) ? (
           <div className="actions-container" style={{ marginTop: '2rem' }}>
             <button className="back-link" onClick={() => navigate(-1)}>
@@ -444,30 +304,15 @@ const CrearEvento = () => {
               <div className="community-image">
                 <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=150&q=80" alt="Evento" />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                <h3 className="community-title">Evento de comunidad</h3>
-                {!isEdit && myCommunities.length > 0 && (
-                  <select 
-                    className="input-box" 
-                    style={{ marginTop: '8px', padding: '8px' }}
-                    value={selectedCommunityId} 
-                    onChange={(e) => setSelectedCommunityId(e.target.value)}
-                  >
-                    <option value="" disabled>Selecciona una comunidad...</option>
-                    {myCommunities.map(c => (
-                      <option key={c.id} value={c.id}>{c.nombre}</option>
-                    ))}
-                  </select>
-                )}
-              </div>
+              <h3 className="community-title">Evento de comunidad</h3>
             </div>
 
             <div className="input-group">
               <label className="input-label">Fecha de inicio *</label>
               <div className="input-row">
-                <input type="text" name="dia" placeholder="DD" value={formData.dia} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-small ${validationErrors.fecha ? 'input-error' : ''}`} maxLength={2} />
-                <input type="text" name="mes" placeholder="MM" value={formData.mes} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-small ${validationErrors.fecha ? 'input-error' : ''}`} maxLength={2} />
-                <input type="text" name="anio" placeholder="YYYY" value={formData.anio} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-medium ${validationErrors.fecha ? 'input-error' : ''}`} maxLength={4} />
+                <input type="text" name="dia" placeholder="DD" value={formData.dia} onChange={handleChange} className={`input-box input-small ${validationErrors.fecha ? 'input-error' : ''}`} maxLength={2} />
+                <input type="text" name="mes" placeholder="MM" value={formData.mes} onChange={handleChange} className={`input-box input-small ${validationErrors.fecha ? 'input-error' : ''}`} maxLength={2} />
+                <input type="text" name="anio" placeholder="YYYY" value={formData.anio} onChange={handleChange} className={`input-box input-medium ${validationErrors.fecha ? 'input-error' : ''}`} maxLength={4} />
                 <LuCalendar className="input-icon" />
               </div>
               {validationErrors.fecha && <span className="field-error">{validationErrors.fecha}</span>}
@@ -476,8 +321,8 @@ const CrearEvento = () => {
             <div className="input-group">
               <label className="input-label">Hora de inicio *</label>
               <div className="input-row">
-                <input type="text" name="hora" placeholder="HH" value={formData.hora} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-medium ${validationErrors.hora ? 'input-error' : ''}`} maxLength={2} />
-                <input type="text" name="minuto" placeholder="mm" value={formData.minuto} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-medium ${validationErrors.hora ? 'input-error' : ''}`} maxLength={2} />
+                <input type="text" name="hora" placeholder="HH" value={formData.hora} onChange={handleChange} className={`input-box input-medium ${validationErrors.hora ? 'input-error' : ''}`} maxLength={2} />
+                <input type="text" name="minuto" placeholder="mm" value={formData.minuto} onChange={handleChange} className={`input-box input-medium ${validationErrors.hora ? 'input-error' : ''}`} maxLength={2} />
                 <LuSquareCheck className="input-icon" />
               </div>
               {validationErrors.hora && <span className="field-error">{validationErrors.hora}</span>}
@@ -486,9 +331,9 @@ const CrearEvento = () => {
             <div className="input-group">
               <label className="input-label">Fecha de fin (opcional)</label>
               <div className="input-row">
-                <input type="text" name="diaFin" placeholder="DD" value={formData.diaFin} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-small ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={2} />
-                <input type="text" name="mesFin" placeholder="MM" value={formData.mesFin} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-small ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={2} />
-                <input type="text" name="anioFin" placeholder="YYYY" value={formData.anioFin} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-medium ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={4} />
+                <input type="text" name="diaFin" placeholder="DD" value={formData.diaFin} onChange={handleChange} className={`input-box input-small ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={2} />
+                <input type="text" name="mesFin" placeholder="MM" value={formData.mesFin} onChange={handleChange} className={`input-box input-small ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={2} />
+                <input type="text" name="anioFin" placeholder="YYYY" value={formData.anioFin} onChange={handleChange} className={`input-box input-medium ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={4} />
                 <LuCalendar className="input-icon" />
               </div>
               {validationErrors.fechaFin && <span className="field-error">{validationErrors.fechaFin}</span>}
@@ -497,8 +342,8 @@ const CrearEvento = () => {
             <div className="input-group">
               <label className="input-label">Hora de fin (opcional)</label>
               <div className="input-row">
-                <input type="text" name="horaFin" placeholder="HH" value={formData.horaFin} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-medium ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={2} />
-                <input type="text" name="minutoFin" placeholder="mm" value={formData.minutoFin} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-medium ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={2} />
+                <input type="text" name="horaFin" placeholder="HH" value={formData.horaFin} onChange={handleChange} className={`input-box input-medium ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={2} />
+                <input type="text" name="minutoFin" placeholder="mm" value={formData.minutoFin} onChange={handleChange} className={`input-box input-medium ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={2} />
                 <LuSquareCheck className="input-icon" />
               </div>
             </div>
@@ -506,11 +351,10 @@ const CrearEvento = () => {
             <div className="input-group">
               <label className="input-label">Aforo máximo *</label>
               <div className="input-row">
-                <input type="text" name="aforo" placeholder="Ej. 30" value={formData.aforo} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-medium ${validationErrors.aforo ? 'input-error' : ''}`} min={1} max={999} maxLength={AFORO_MAX_DIGITS} />
+                <input type="number" name="aforo" placeholder="Ej. 30" value={formData.aforo} onChange={handleChange} className={`input-box input-medium ${validationErrors.aforo ? 'input-error' : ''}`} min={1} max={500} />
                 <LuUsers className="input-icon" />
               </div>
               {validationErrors.aforo && <span className="field-error">{validationErrors.aforo}</span>}
-              <span className="field-hint">Solo números (máximo 3 cifras).</span>
             </div>
           </div>
 
@@ -528,37 +372,8 @@ const CrearEvento = () => {
 
             <div className="input-group">
               <label className="input-label">Materiales necesarios</label>
-              <div className="materials-input-row">
-                <input
-                  type="text"
-                  placeholder="Ej. Libro de texto"
-                  value={materialInput}
-                  onChange={(e) => setMaterialInput(e.target.value)}
-                  onKeyDown={handleMaterialKeyDown}
-                  className="input-box input-large"
-                />
-                <button type="button" className="btn-material-add" onClick={handleAddMaterial}>
-                  Añadir
-                </button>
-              </div>
-              {formData.materiales.length > 0 && (
-                <div className="materials-list">
-                  {formData.materiales.map((material, index) => (
-                    <span key={`${material}-${index}`} className="material-chip">
-                      {material}
-                      <button
-                        type="button"
-                        className="material-chip-remove"
-                        onClick={() => handleRemoveMaterial(index)}
-                        aria-label={`Eliminar ${material}`}
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-              <span className="field-hint">Escribe un material y pulsa "Añadir" o Enter.</span>
+              <input type="text" name="comentario" placeholder="Ej. Libro de texto, ordenador portátil, calculadora científica" value={formData.comentario} onChange={handleChange} className="input-box input-large" />
+              <span className="field-hint">Separa cada material con una coma (,). Ej: Libro de texto, ordenador portátil, calculadora</span>
             </div>
 
             <div className="input-group">
@@ -675,7 +490,7 @@ const CrearEvento = () => {
                         style={{ fontSize: '0.85rem', padding: '6px 14px', whiteSpace: 'nowrap' }}
                         onClick={() => {
                           const returnPath = isEdit ? `/crear-evento/${id}` : `/crear-evento/new`;
-                          const returnQuery = selectedCommunityId ? `?communityId=${selectedCommunityId}` : '';
+                          const returnQuery = communityId ? `?communityId=${communityId}` : '';
                           navigate('/crear-ubicacion?returnTo=' + encodeURIComponent(returnPath + returnQuery), {
                             state: { eventFormDraft: formData }
                           });
@@ -693,7 +508,7 @@ const CrearEvento = () => {
                       style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                       onClick={() => {
                         const returnPath = isEdit ? `/crear-evento/${id}` : `/crear-evento/new`;
-                        const returnQuery = selectedCommunityId ? `?communityId=${selectedCommunityId}` : '';
+                        const returnQuery = communityId ? `?communityId=${communityId}` : '';
                         navigate('/crear-ubicacion?returnTo=' + encodeURIComponent(returnPath + returnQuery), {
                           state: { eventFormDraft: formData }
                         });
@@ -717,8 +532,8 @@ const CrearEvento = () => {
             <button className="btn btn-outline" onClick={handleSaveDraft} disabled={loading}>
               Guardar Borrador
             </button>
-            <button className="btn btn-primary" onClick={handleSubmit} disabled={loading || (isEdit && eventStarted)}>
-              {loading ? 'Guardando...' : (isEdit ? (eventStarted ? 'Evento iniciado' : 'Actualizar Evento') : 'Crear Evento')}
+            <button className="btn btn-primary" onClick={handleSubmit} disabled={loading}>
+              {loading ? 'Guardando...' : (isEdit ? 'Actualizar Evento' : 'Crear Evento')}
             </button>
           </div>
 

@@ -102,11 +102,7 @@ const VerificacionModal = ({ tutorId, verificado, onClose, onVerificado }) => {
             <input
               type="text"
               value={pagoForm.numero}
-              onChange={e => {
-                const digits = e.target.value.replace(/\D/g, "").substring(0, 16);
-                const formatted = digits.replace(/(\d{4})(?=\d)/g, "$1 ");
-                setPagoForm(f => ({ ...f, numero: formatted }));
-              }}
+              onChange={e => setPagoForm(f => ({ ...f, numero: e.target.value }))}
               placeholder="1234 5678 9012 3456"
               maxLength={19}
               inputMode="numeric"
@@ -118,16 +114,9 @@ const VerificacionModal = ({ tutorId, verificado, onClose, onVerificado }) => {
               <input
                 type="text"
                 value={pagoForm.caducidad}
-                onChange={e => {
-                  const digits = e.target.value.replace(/\D/g, "").substring(0, 4);
-                  const formatted = digits.length >= 3
-                    ? digits.substring(0, 2) + "/" + digits.substring(2)
-                    : digits;
-                  setPagoForm(f => ({ ...f, caducidad: formatted }));
-                }}
+                onChange={e => setPagoForm(f => ({ ...f, caducidad: e.target.value }))}
                 placeholder="MM/AA"
                 maxLength={5}
-                inputMode="numeric"
               />
             </div>
             <div>
@@ -135,12 +124,9 @@ const VerificacionModal = ({ tutorId, verificado, onClose, onVerificado }) => {
               <input
                 type="text"
                 value={pagoForm.cvc}
-                onChange={e => {
-                  const digits = e.target.value.replace(/\D/g, "").substring(0, 3);
-                  setPagoForm(f => ({ ...f, cvc: digits }));
-                }}
+                onChange={e => setPagoForm(f => ({ ...f, cvc: e.target.value }))}
                 placeholder="123"
-                maxLength={3}
+                maxLength={4}
                 inputMode="numeric"
               />
             </div>
@@ -160,6 +146,7 @@ const VerificacionModal = ({ tutorId, verificado, onClose, onVerificado }) => {
         <div className="tm-verificacion tm-verificacion--pago-ok">
           <div className="tm-verificacion__icon tm-verificacion__icon--ok">✓</div>
           <h3 className="tm-verificacion__heading">Pago realizado</h3>
+          <p className="tm-verificacion__text">Procesando solicitud de verificación…</p>
         </div>
       );
     }

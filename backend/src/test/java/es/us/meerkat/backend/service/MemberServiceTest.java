@@ -97,7 +97,6 @@ class MemberServiceTest {
                 .thenReturn(Optional.of(admin));
         when(miembroComunidadRepository.countByComunidadIdAndRol(communityId, RolComunidad.ADMIN))
                 .thenReturn(1L);
-        when(miembroComunidadRepository.countByComunidadId(communityId)).thenReturn(5L);
 
         assertThatThrownBy(() -> memberService.leaveCommunity(userId, communityId))
                 .isInstanceOf(IllegalArgumentException.class)

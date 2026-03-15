@@ -118,31 +118,6 @@ class EventoServiceTest {
     }
 
     @Test
-    void crearEventoShouldFailWhenStartDateTimeIsInThePast() {
-        Long creadorId = 1L;
-        Long comunidadId = 2L;
-
-        assertThatThrownBy(
-                        () ->
-                                eventoService.crearEvento(
-                                        creadorId,
-                                        comunidadId,
-                                        "Meet",
-                                        "Desc",
-                                        LocalDateTime.now().minusMinutes(5),
-                                        LocalDateTime.now().plusHours(1),
-                                        20,
-                                        "Nada",
-                                        false,
-                                        false,
-                                        null,
-                                        true,
-                                        null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("fecha y hora actual");
-    }
-
-    @Test
     void editarEventoShouldUpdateLocationAndClearItForVirtualEvents() {
         Long eventId = 10L;
         Long ubicacionId = 5L;
@@ -168,8 +143,7 @@ class EventoServiceTest {
                         "Cuaderno",
                         false,
                         false,
-                        ubicacionId,
-                        true);
+                        ubicacionId);
 
         assertThat(presencial.getUbicacion()).isNotNull();
 
@@ -184,74 +158,9 @@ class EventoServiceTest {
                         "Cuaderno",
                         true,
                         false,
-                        null,
-                        false);
+                        null);
 
         assertThat(virtual.getUbicacion()).isNull();
-        assertThat(virtual.getVisibleMapa()).isFalse();
-    }
-
-    @Test
-    void editarEventoShouldFailWhenEventAlreadyStarted() {
-        Long eventId = 12L;
-        Evento evento = new Evento();
-        evento.setId(eventId);
-        evento.setFechaHora(LocalDateTime.now().minusHours(1));
-
-        when(eventoRepository.findById(eventId)).thenReturn(Optional.of(evento));
-
-        assertThatThrownBy(
-                        () ->
-                                eventoService.editarEvento(
-                                        eventId,
-                                        "Nuevo título",
-                                        "Nueva desc",
-                                        LocalDateTime.now().plusDays(1),
-                                        LocalDateTime.now().plusDays(1).plusHours(1),
-                                        25,
-                                        "Cuaderno",
-                                        false,
-                                        false,
-                                        null,
-                                        true))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("ya ha comenzado");
-    }
-
-    @Test
-    void editarEventoShouldFailWhenNewStartDateTimeIsInThePast() {
-        Long eventId = 99L;
-
-        assertThatThrownBy(
-                        () ->
-                                eventoService.editarEvento(
-                                        eventId,
-                                        "Nuevo título",
-                                        "Nueva desc",
-                                        LocalDateTime.now().minusMinutes(1),
-                                        LocalDateTime.now().plusHours(2),
-                                        25,
-                                        "Cuaderno",
-                                        false,
-                                        false,
-                                        null,
-                                        true))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("fecha y hora actual");
-    }
-
-    @Test
-    void cancelarEventoShouldFailWhenEventAlreadyStarted() {
-        Long eventId = 13L;
-        Evento evento = new Evento();
-        evento.setId(eventId);
-        evento.setFechaHora(LocalDateTime.now().minusMinutes(10));
-
-        when(eventoRepository.findById(eventId)).thenReturn(Optional.of(evento));
-
-        assertThatThrownBy(() -> eventoService.cancelarEvento(eventId, "motivo"))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("ya ha comenzado");
     }
 
     @Test

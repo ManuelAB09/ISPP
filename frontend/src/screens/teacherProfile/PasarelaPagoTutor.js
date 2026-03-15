@@ -67,25 +67,26 @@ export default function PasarelaPagoTutor() {
     const { name, value } = e.target;
     let formattedValue = value;
 
-    // Solo permitir digitos en el numero de tarjeta, espacio cada 4
+    // Formatear número de tarjeta (espacios cada 4 dígitos)
     if (name === "cardNumber") {
-      const digitsOnly = value.replace(/\D/g, "").substring(0, 16);
-      formattedValue = digitsOnly.replace(/(\d{4})(?=\d)/g, "$1 ");
+      formattedValue = value
+        .replace(/\s/g, "")
+        .replace(/(\d{4})/g, "$1 ")
+        .trim();
+      formattedValue = formattedValue.substring(0, 19);
     }
 
-    // Formatear fecha de expiracion (MM/YY) - solo 4 digitos con barra
+    // Formatear fecha de expiración (MM/YY)
     if (name === "expiryDate") {
-      const digitsOnly = value.replace(/\D/g, "").substring(0, 4);
-      if (digitsOnly.length >= 3) {
-        formattedValue = digitsOnly.substring(0, 2) + "/" + digitsOnly.substring(2);
-      } else {
-        formattedValue = digitsOnly;
-      }
+      formattedValue = value
+        .replace(/\D/g, "")
+        .replace(/(\d{2})(\d)/, "$1/$2")
+        .substring(0, 5);
     }
 
-    // Limitar CVV a 3 o 4 digitos
+    // Limitar CVV a 3 dígitos
     if (name === "cvv") {
-      formattedValue = value.replace(/\D/g, "").substring(0, 4);
+      formattedValue = value.replace(/\D/g, "").substring(0, 3);
     }
 
     setFormData((prev) => ({ ...prev, [name]: formattedValue }));
@@ -130,8 +131,8 @@ export default function PasarelaPagoTutor() {
 
     if (!formData.cvv) {
       newErrors.cvv = "El CVV es requerido";
-    } else if (formData.cvv.length < 3 || formData.cvv.length > 4) {
-      newErrors.cvv = "El CVV debe tener 3 o 4 digitos";
+    } else if (formData.cvv.length !== 3) {
+      newErrors.cvv = "El CVV debe tener 3 dígitos";
     }
 
     setErrors(newErrors);
@@ -308,8 +309,6 @@ export default function PasarelaPagoTutor() {
                     value={formData.cardNumber}
                     onChange={handleInputChange}
                     placeholder="1234 5678 9012 3456"
-                    inputMode="numeric"
-                    autoComplete="cc-number"
                     className={`ppt-input ${
                       errors.cardNumber ? "ppt-input--error" : ""
                     }`}
@@ -355,8 +354,6 @@ export default function PasarelaPagoTutor() {
                     value={formData.expiryDate}
                     onChange={handleInputChange}
                     placeholder="MM/YY"
-                    inputMode="numeric"
-                    autoComplete="cc-exp"
                     className={`ppt-input ${
                       errors.expiryDate ? "ppt-input--error" : ""
                     }`}
@@ -377,8 +374,6 @@ export default function PasarelaPagoTutor() {
                     value={formData.cvv}
                     onChange={handleInputChange}
                     placeholder="123"
-                    inputMode="numeric"
-                    autoComplete="cc-csc"
                     className={`ppt-input ${
                       errors.cvv ? "ppt-input--error" : ""
                     }`}

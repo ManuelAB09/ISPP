@@ -17,37 +17,8 @@ const getUserId = () => localStorage.getItem('userId');
  * POST /communities/{communityId}/events
  */
 export const createEvent = async (communityId, eventData) => {
-  const resolvedCommunityId =
-    communityId ??
-    eventData?.communityId ??
-    eventData?.comunidadId;
-
-  if (!resolvedCommunityId) {
-    throw new Error('communityId es obligatorio para crear un evento');
-  }
-
-  const payload = {
-    ...eventData,
-    communityId: Number(resolvedCommunityId),
-  };
-
-  try {
-    const response = await axiosInstance.post(
-      `/api/v1/communities/${resolvedCommunityId}/events`,
-      payload
-    );
-    return response.data;
-  } catch (error) {
-    const status = error?.response?.status;
-    if (status === 404 || status === 405) {
-      const fallbackResponse = await axiosInstance.post(
-        `/api/v1/events/${resolvedCommunityId}`,
-        payload
-      );
-      return fallbackResponse.data;
-    }
-    throw error;
-  }
+  const response = await axiosInstance.post(`/api/v1/communities/${communityId}/events`, eventData);
+  return response.data;
 };
 
 /**

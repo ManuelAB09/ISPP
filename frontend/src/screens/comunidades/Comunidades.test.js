@@ -167,7 +167,6 @@ describe('Comunidades', () => {
   });
 
   test('renderiza el botón de crear comunidad', async () => {
-    localStorage.setItem('accessToken', 'test-token');
     await renderComponent();
     const createButton = screen.getByRole('button', { name: /Crear comunidad/i });
     expect(createButton).toBeInTheDocument();

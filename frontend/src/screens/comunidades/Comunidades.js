@@ -16,8 +16,6 @@ export default function Comunidades() {
     const [totalPages, setTotalPages] = useState(0)
     const [search, setSearch] = useState('')
 
-    const isAuthenticated = Boolean(localStorage.getItem('accessToken'));
-
     useEffect(() => {
         setLoading(true);
         setError(null);
@@ -45,20 +43,18 @@ export default function Comunidades() {
                     className="comunidad"
                 />
                 <div className="search">
-                    <InputSearch
-                        placeholder='Buscar una comunidad por nombre, etiqueta o palabra clave'
+                    <InputSearch 
+                        placeholder='Buscar una comunidad por nombre, etiqueta o palabra clave' 
                         mobilePlaceholder='Buscar comunidad'
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
-                    {isAuthenticated && (
-                        <button
-                            className="create-community-btn"
-                            onClick={() => navigate('/crear-comunidad')}
-                        >
-                            Crear comunidad
-                        </button>
-                    )}
+                    <button 
+                        className="create-community-btn"
+                        onClick={() => navigate('/crear-comunidad')}
+                    >
+                        Crear comunidad
+                    </button>
                 </div>
             </div>
             <div className="body">

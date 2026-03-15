@@ -142,20 +142,6 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       const response = await authApi.register({ email, password, nombre, esTutor });
-      // Ahora el registro devuelve un mensaje, no token/user
-      // El usuario debe verificar su email antes de poder iniciar sesión
-      return { success: true, requiresVerification: true, message: response.message };
-    } catch (err) {
-      const message = err.message || 'Error al registrarse';
-      setError(message);
-      return { success: false, error: message };
-    }
-  }, []);
-
-  const verifyEmail = useCallback(async (token) => {
-    setError(null);
-    try {
-      const response = await authApi.verifyEmail(token);
       const { accessToken, user: userData } = response;
 
       localStorage.setItem('accessToken', accessToken);
@@ -165,19 +151,7 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true };
     } catch (err) {
-      const message = err.message || 'Error al verificar el email';
-      setError(message);
-      return { success: false, error: message };
-    }
-  }, []);
-
-  const resendVerification = useCallback(async (email) => {
-    setError(null);
-    try {
-      const response = await authApi.resendVerification(email);
-      return { success: true, message: response.message };
-    } catch (err) {
-      const message = err.message || 'Error al reenviar el email de verificación';
+      const message = err.message || 'Error al registrarse';
       setError(message);
       return { success: false, error: message };
     }
@@ -292,8 +266,6 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!user,
     login,
     register,
-    verifyEmail,
-    resendVerification,
     logout,
     updateProfile,
     refreshUser,

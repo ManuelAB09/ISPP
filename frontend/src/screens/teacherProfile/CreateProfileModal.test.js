@@ -144,7 +144,6 @@ describe('CreateProfileModal', () => {
 
     await userEvent.type(screen.getByLabelText(/Especialidades/i), 'Matemáticas');
     await userEvent.type(screen.getByLabelText(/Tarifa por hora/i), '20');
-    await userEvent.type(screen.getByLabelText(/Biografía profesional/i), 'Profesor experto');
 
     const submitBtn = screen.getByRole('button', { name: /Crear perfil/i });
     await userEvent.click(submitBtn);
@@ -164,7 +163,6 @@ describe('CreateProfileModal', () => {
 
     await userEvent.type(screen.getByLabelText(/Especialidades/i), 'Matemáticas');
     await userEvent.type(screen.getByLabelText(/Tarifa por hora/i), '20');
-    await userEvent.type(screen.getByLabelText(/Biografía profesional/i), 'Profesor experto');
 
     const submitBtn = screen.getByRole('button', { name: /Crear perfil/i });
     await userEvent.click(submitBtn);

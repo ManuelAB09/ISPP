@@ -399,26 +399,6 @@
 /* RESPONSIVE */
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-/* Stripe Elements container styling */
-.pasarela-input .StripeElement {
-  padding: 0;
-  width: 100%;
-  height: auto;
-}
-
-/* When using div as Stripe Element container */
-div.pasarela-input {
-  display: flex;
-  align-items: center;
-  min-height: 48px;
-  cursor: text;
-}
-
-/* Ensure the Stripe iframe container gets full width */
-div.pasarela-input > div {
-  width: 100%;
-}
-
 @media (max-width: 968px) {
   .pasarela-container {
     grid-template-columns: 1fr;

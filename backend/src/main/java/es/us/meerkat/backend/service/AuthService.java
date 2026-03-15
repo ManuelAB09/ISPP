@@ -1,11 +1,8 @@
 package es.us.meerkat.backend.service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.UUID;
 
 import org.apache.commons.lang3.RandomStringUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,12 +18,10 @@ import es.us.meerkat.backend.dto.UserDetailResponse;
 import es.us.meerkat.backend.entity.Ubicacion;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.exception.ConflictException;
-import es.us.meerkat.backend.exception.EmailNotVerifiedException;
 import es.us.meerkat.backend.exception.ValidationException;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import es.us.meerkat.backend.security.JwtService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * Servicio de autenticación.
@@ -37,18 +32,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class AuthService {
 
     /** Longitud mínima requerida para las contraseñas. */
     private static final int MIN_PASSWORD_LENGTH = 8;
-
-    /** Horas de validez del token de verificación. */
-    private static final int VERIFICATION_TOKEN_HOURS = 24;
-
-    /** URL base de la aplicación frontend para verificación. */
-    @Value("${app.frontend.url:http://localhost:3000}")
-    private String frontendUrl;
 
     /** Repositorio para acceder a la información de usuarios. */
     private final UsuarioRepository usuarioRepository;
@@ -69,60 +56,38 @@ public class AuthService {
     /**
      * Registra un nuevo usuario con email y contraseña.
      *
-     * <p>Valida que el email sea único y que la contraseña tenga al menos 8 caracteres. Genera un
-     * token de verificación y envía un email para que el usuario verifique su cuenta.
+     * <p>Valida que el email sea único y que la contraseña tenga al menos 8 caracteres. Devuelve un
+     * token JWT listo para usar.
      *
      * @param requestParam Datos del nuevo usuario.
-     * @return MessageResponse con instrucciones para verificar el email.
+     * @return AuthResponse con token JWT y datos del usuario.
      * @throws ValidationException si los datos no son válidos (400).
      * @throws ConflictException si el email ya está registrado (409).
      */
     @Transactional
-    public MessageResponse registrar(final RegisterRequest requestParam) {
+    public AuthResponse registrar(final RegisterRequest requestParam) {
         validateRegistrationData(requestParam);
 
         if (usuarioRepository.existsByEmail(requestParam.getEmail())) {
             throw new ConflictException("El email ya está registrado");
         }
 
-        // Generar token de verificación
-        final String verificationToken = UUID.randomUUID().toString();
-        final LocalDateTime tokenExpiration =
-                LocalDateTime.now().plusHours(VERIFICATION_TOKEN_HOURS);
-
         final Usuario usuario = new Usuario();
         usuario.setEmail(requestParam.getEmail());
         usuario.setPassword(passwordEncoder.encode(requestParam.getPassword()));
         usuario.setNombre(requestParam.getNombre());
-        usuario.setEsTutor(Boolean.TRUE.equals(requestParam.getEsTutor()));
+        usuario.setEsTutor(false);
         usuario.setVisibleEnListados(true);
         usuario.setAutenticacionDosFactores(false);
         usuario.setNotificacionesEmail(true);
         usuario.setNotificacionesPush(true);
         usuario.setIntereses(new ArrayList<>());
-        usuario.setEmailVerificado(false);
-        usuario.setVerificationToken(verificationToken);
-        usuario.setTokenExpiration(tokenExpiration);
+        usuario.setEsTutor(Boolean.TRUE.equals(requestParam.getEsTutor()));
         usuarioRepository.save(usuario);
 
-        // Enviar email de verificación
-        try {
-            String verificationUrl = frontendUrl + "/verify-email";
-            emailService.sendVerificationEmail(
-                    usuario.getEmail(),
-                    usuario.getNombre() != null ? usuario.getNombre() : "Usuario",
-                    verificationToken,
-                    verificationUrl);
-        } catch (Exception e) {
-            log.error("Error al enviar email de verificación: {}", e.getMessage());
-            // Continuamos aunque falle el email, el usuario puede solicitar reenvío
-        }
+        final String token = jwtService.generateToken(usuario.getEmail());
 
-        return MessageResponse.builder()
-                .message(
-                        "Registro exitoso. Por favor, revisa tu correo electrónico para verificar"
-                                + " tu cuenta.")
-                .build();
+        return buildAuthResponse(usuario, token);
     }
 
     /**
@@ -134,16 +99,6 @@ public class AuthService {
     private void validateRegistrationData(final RegisterRequest request) {
         if (request.getEmail() == null || request.getEmail().isBlank()) {
             throw new ValidationException("El email no puede estar vacío");
-        }
-
-        // Validar formato de email
-        final String emailRegex = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$";
-        if (!request.getEmail().matches(emailRegex)) {
-            throw new ValidationException("El formato del email no es válido");
-        }
-
-        if (request.getNombre() == null || request.getNombre().isBlank()) {
-            throw new ValidationException("El nombre no puede estar vacío");
         }
 
         if (request.getPassword() == null || request.getPassword().length() < MIN_PASSWORD_LENGTH) {
@@ -158,13 +113,12 @@ public class AuthService {
     /**
      * Autentica a un usuario con sus credenciales.
      *
-     * <p>Verifica que el email exista, que la contraseña coincida con la almacenada cifrada y que
-     * el email haya sido verificado. Devuelve un token JWT válido.
+     * <p>Verifica que el email exista y que la contraseña coincida con la almacenada cifrada.
+     * Devuelve un token JWT válido.
      *
      * @param requestParam Credenciales del usuario.
      * @return AuthResponse con token JWT y datos del usuario.
      * @throws ValidationException si las credenciales son incorrectas (400).
-     * @throws EmailNotVerifiedException si el email no ha sido verificado (403).
      */
     public AuthResponse iniciarSesion(final LoginRequest requestParam) {
 
@@ -176,12 +130,6 @@ public class AuthService {
 
         if (!passwordEncoder.matches(requestParam.getPassword(), usuario.getPassword())) {
             throw new ValidationException("Credenciales incorrectas");
-        }
-
-        if (!Boolean.TRUE.equals(usuario.getEmailVerificado())) {
-            throw new EmailNotVerifiedException(
-                    "Debes verificar tu email antes de iniciar sesión. Revisa tu bandeja de entrada"
-                            + " o solicita un nuevo email de verificación.");
         }
 
         if (applyPreferenceDefaultsIfNeeded(usuario)) {
@@ -240,104 +188,6 @@ public class AuthService {
     private String generarContrasenaSegura(final int length) {
         return RandomStringUtils.randomAlphanumeric(length).toUpperCase()
                 + RandomStringUtils.randomNumeric(2);
-    }
-
-    // ===============================
-    // VERIFICACIÓN DE EMAIL
-    // ===============================
-
-    /**
-     * Verifica el email de un usuario usando el token de verificación.
-     *
-     * @param token Token de verificación enviado por email.
-     * @return AuthResponse con token JWT y datos del usuario si la verificación es exitosa.
-     * @throws ValidationException si el token es inválido o ha expirado (400).
-     */
-    @Transactional
-    public AuthResponse verificarEmail(final String token) {
-        if (token == null || token.isBlank()) {
-            throw new ValidationException("Token de verificación inválido");
-        }
-
-        final Usuario usuario =
-                usuarioRepository
-                        .findByVerificationToken(token)
-                        .orElseThrow(
-                                () ->
-                                        new ValidationException(
-                                                "Token de verificación inválido o ya utilizado"));
-
-        // Verificar que el token no ha expirado
-        if (usuario.getTokenExpiration() == null
-                || LocalDateTime.now().isAfter(usuario.getTokenExpiration())) {
-            throw new ValidationException(
-                    "El token de verificación ha expirado. Solicita un nuevo email de"
-                            + " verificación.");
-        }
-
-        // Marcar el email como verificado y limpiar el token
-        usuario.setEmailVerificado(true);
-        usuario.setVerificationToken(null);
-        usuario.setTokenExpiration(null);
-        usuarioRepository.save(usuario);
-
-        // Generar JWT para que el usuario pueda iniciar sesión automáticamente
-        final String jwtToken = jwtService.generateToken(usuario.getEmail());
-
-        return buildAuthResponse(usuario, jwtToken);
-    }
-
-    /**
-     * Reenvía el email de verificación a un usuario.
-     *
-     * @param email Email del usuario que solicita el reenvío.
-     * @return MessageResponse con confirmación.
-     * @throws ValidationException si el email no existe o ya está verificado (400).
-     */
-    @Transactional
-    public MessageResponse reenviarVerificacion(final String email) {
-        if (email == null || email.isBlank()) {
-            throw new ValidationException("El email no puede estar vacío");
-        }
-
-        final Usuario usuario =
-                usuarioRepository
-                        .findByEmail(email)
-                        .orElseThrow(
-                                () ->
-                                        new ValidationException(
-                                                "No existe una cuenta con este email"));
-
-        if (Boolean.TRUE.equals(usuario.getEmailVerificado())) {
-            throw new ValidationException("Este email ya ha sido verificado");
-        }
-
-        // Generar nuevo token de verificación
-        final String verificationToken = UUID.randomUUID().toString();
-        final LocalDateTime tokenExpiration =
-                LocalDateTime.now().plusHours(VERIFICATION_TOKEN_HOURS);
-
-        usuario.setVerificationToken(verificationToken);
-        usuario.setTokenExpiration(tokenExpiration);
-        usuarioRepository.save(usuario);
-
-        // Enviar email de verificación
-        try {
-            String verificationUrl = frontendUrl + "/verify-email";
-            emailService.sendVerificationEmail(
-                    usuario.getEmail(),
-                    usuario.getNombre() != null ? usuario.getNombre() : "Usuario",
-                    verificationToken,
-                    verificationUrl);
-        } catch (Exception e) {
-            log.error("Error al reenviar email de verificación: {}", e.getMessage());
-            throw new ValidationException(
-                    "No se pudo enviar el email de verificación. Inténtalo de nuevo más tarde.");
-        }
-
-        return MessageResponse.builder()
-                .message("Se ha enviado un nuevo email de verificación a " + email)
-                .build();
     }
 
     // ===============================

@@ -88,22 +88,6 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Maneja excepciones de email no verificado (403 Forbidden).
-     *
-     * @param ex Excepción de email no verificado.
-     * @param request Solicitud HTTP que causó el error.
-     * @return ResponseEntity con estado 403 y detalles del error.
-     */
-    @ExceptionHandler(EmailNotVerifiedException.class)
-    public ResponseEntity<ErrorResponse> handleEmailNotVerifiedException(
-            final EmailNotVerifiedException ex, final HttpServletRequest request) {
-        final ErrorResponse errorResponse =
-                new ErrorResponse(
-                        HttpStatus.FORBIDDEN.value(), ex.getMessage(), request.getRequestURI());
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
-    }
-
-    /**
      * Maneja excepciones genéricas no capturadas (500 Internal Server Error).
      *
      * <p>NOTA: Aunque esté aquí, no afectará a las rutas de Swagger porque el @RestControllerAdvice

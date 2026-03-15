@@ -29,7 +29,4 @@ public interface TransaccionPagoRepository extends JpaRepository<TransaccionPago
 
     /** Obtiene una transacción específica del usuario. */
     Optional<TransaccionPago> findByIdAndUsuarioId(Long id, Long usuarioId);
-
-    /** Elimina todas las transacciones de pago de un usuario. */
-    void deleteByUsuarioId(Long usuarioId);
 }

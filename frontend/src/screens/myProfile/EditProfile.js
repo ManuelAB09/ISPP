@@ -298,6 +298,18 @@ const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
             return
         }
 
+        if (!formData.universidad.trim()) {
+            setFieldErrors({ universidad: 'La universidad donde estudias es obligatorio' })
+            setIsSaving(false)
+            return
+        }
+
+        if (!formData.grado.trim()) {
+            setFieldErrors({ nombre: 'El grado que estas estudiando es obligatorio' })
+            setIsSaving(false)
+            return
+        }
+
         const ubicacionTexto = formData.ubicacion.trim()
 
         let ubicacionFinal = null

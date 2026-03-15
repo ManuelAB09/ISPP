@@ -24,7 +24,7 @@ public class CreateEventRequest {
     /** Fecha y hora de fin del evento. */
     private LocalDateTime fechaFin;
 
-    /** Aforo máximo del evento (requerido, 1-999). */
+    /** Aforo máximo del evento (requerido, 1-500). */
     private Integer aforo;
 
     /** Qué llevar o qué preparar para el evento (máximo 1000 caracteres). */

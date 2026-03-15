@@ -222,7 +222,7 @@ const VerifiedTeachers = () => {
         <div className="vt-header__inner">
 
           <div className="headerTitle">
-            <p>Profesionales con identidad confirmada</p>
+            <p>Profesionales con identidad confirmada, calidad contrastada y acceso directo al contacto</p>
             <span className="line"></span>
             <h1>Profesores</h1>
           </div>
@@ -386,7 +386,6 @@ const VerifiedTeachers = () => {
                     >
                       Ver perfil
                     </Link>
-
                     {/* Contactar: solo si no es el propio usuario */}
                     {(() => {
                       const targetUserId = tutor.userId ?? tutor.usuario?.id;

@@ -23,10 +23,4 @@ public interface SolicitudComunidadRepository extends JpaRepository<SolicitudCom
 
     Optional<SolicitudComunidad> findBySolicitanteIdAndComunidadId(
             Long solicitanteId, Long comunidadId);
-
-    /** Elimina todas las solicitudes hechas por un usuario. */
-    void deleteBySolicitanteId(Long usuarioId);
-
-    /** Elimina todas las solicitudes respondidas por un usuario. */
-    void deleteByRespondidaPorId(Long usuarioId);
 }

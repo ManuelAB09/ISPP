@@ -8,7 +8,7 @@ test('renders MeerKatters Home', () => {
       <App />
     </MemoryRouter>
   );
-  const elements = screen.getAllByText(/MeerKatters/i);
-  expect(elements.length).toBeGreaterThan(0);
+  const heading = screen.getByText(/MeerKatters/i);
+  expect(heading).toBeInTheDocument();
 });
 
