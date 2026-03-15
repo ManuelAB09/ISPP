@@ -92,7 +92,6 @@ export const useSocket = (token) => {
                 return;
             }
             isIdleDisconnectedRef.current = true;
-            console.log('🛑 Socket desconectado por inactividad');
             deactivateSocket();
         };
 
@@ -104,7 +103,6 @@ export const useSocket = (token) => {
         const handleUserActivity = () => {
             if (isIdleDisconnectedRef.current) {
                 isIdleDisconnectedRef.current = false;
-                console.log('🔄 Actividad detectada: reconectando socket...');
                 activateSocket();
             }
             resetInactivityTimer();
@@ -229,22 +227,18 @@ export const useSocket = (token) => {
                 setIsConnected(true);
                 subscribeAll();
                 emitLocal('connect', {});
-                console.log('✓ Conectado al servidor WebSocket (STOMP)');
             },
             onStompError: (frame) => {
                 setIsConnected(false);
                 emitLocal('error', { message: frame?.headers?.message || 'STOMP error' });
-                console.error('✗ STOMP error:', frame?.body);
             },
             onWebSocketError: (error) => {
                 setIsConnected(false);
                 emitLocal('connect_error', error);
-                console.error('✗ Error de conexión WebSocket:', error);
             },
             onWebSocketClose: () => {
                 setIsConnected(false);
                 emitLocal('disconnect', {});
-                console.log('✗ Desconectado del servidor WebSocket');
             },
         });
 

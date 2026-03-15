@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class EmailService {
 
-    @Value("${spring.mail.from:noreply@meerkat.es}")
+    @Value("${spring.mail.from:meerkattersauth@gmail.com}")
     private String from;
 
     @Value("${app.name:Meerkat}")
@@ -385,5 +385,88 @@ public class EmailService {
                 .replace("<", "&lt;")
                 .replace(">", "&gt;")
                 .replace("\"", "&quot;");
+    }
+
+    /**
+     * Envía un email de verificación de cuenta.
+     *
+     * @param to Email del destinatario
+     * @param userName Nombre del usuario
+     * @param verificationToken Token de verificación
+     * @param verificationUrl URL base para la verificación
+     */
+    public void sendVerificationEmail(
+            final String to,
+            final String userName,
+            final String verificationToken,
+            final String verificationUrl)
+            throws MessagingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+        String subject = appName + " - Verifica tu cuenta";
+        String htmlContent =
+                buildVerificationHtmlEmail(userName, verificationToken, verificationUrl);
+
+        helper.setFrom(from);
+        helper.setTo(to);
+        helper.setSubject(subject);
+        helper.setText(htmlContent, true);
+
+        try {
+            mailSender.send(message);
+            log.info("Email de verificación enviado a: {}", to);
+        } catch (final Exception e) {
+            log.error("Error al enviar email de verificación a {}: {}", to, e.getMessage());
+            throw e;
+        }
+    }
+
+    private String buildVerificationHtmlEmail(
+            final String userName, final String verificationToken, final String verificationUrl) {
+        String fullVerificationUrl = verificationUrl + "?token=" + verificationToken;
+
+        return "<html><head><style>body { font-family: Arial, sans-serif; color: #333; }.container"
+                + " { max-width: 600px; margin: 0 auto; padding: 20px; }.header {"
+                + " background-color: #2D3250; color: white; padding: 20px; text-align: center;"
+                + " border-radius: 5px 5px 0 0; }.content { background-color: #f9f9f9; padding:"
+                + " 20px; border: 1px solid #ddd; }.footer { background-color: #f0f0f0; padding:"
+                + " 15px; text-align: center; font-size: 12px; border-radius: 0 0 5px 5px;"
+                + " }.button { display: inline-block; background-color: #2D3250; color: white;"
+                + " padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight:"
+                + " bold; margin: 20px 0; }.button:hover { background-color: #1e2340; }.info {"
+                + " background-color: #e8f4f8; padding: 15px; border-left: 4px solid #2D3250;"
+                + " margin: 20px 0; }</style></head><body><div class='container'><div"
+                + " class='header'><h1>¡Bienvenido a "
+                + appName
+                + "!</h1>"
+                + "</div>"
+                + "<div class='content'>"
+                + "<p>Hola <strong>"
+                + userName
+                + "</strong>,</p>"
+                + "<p>Gracias por registrarte en "
+                + appName
+                + ". Para completar tu registro y activar tu cuenta, por favor verifica tu"
+                + " dirección de correo electrónico haciendo clic en el siguiente botón:</p><div"
+                + " style='text-align: center;'><a href='"
+                + fullVerificationUrl
+                + "' class='button' style='color: white;'>Verificar mi cuenta</a></div><div"
+                + " class='info'><strong>ℹ️ Información importante:</strong><ul><li>Este enlace"
+                + " expirará en 24 horas.</li><li>Si no solicitaste esta cuenta, puedes ignorar"
+                + " este email.</li></ul></div><p>Si el botón no funciona, copia y pega el"
+                + " siguiente enlace en tu navegador:</p><p style='word-break: break-all;"
+                + " font-size: 12px; color: #666;'>"
+                + fullVerificationUrl
+                + "</p>"
+                + "</div>"
+                + "<div class='footer'>"
+                + "<p>&copy; "
+                + appName
+                + " - Universidad de Sevilla</p>"
+                + "</div>"
+                + "</div>"
+                + "</body>"
+                + "</html>";
     }
 }

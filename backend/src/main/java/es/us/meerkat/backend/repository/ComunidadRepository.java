@@ -24,4 +24,9 @@ public interface ComunidadRepository extends JpaRepository<Comunidad, Long> {
 
     Page<Comunidad> findByTipoGrupoAndNombreContainingIgnoreCaseAndEstado(
             TipoGrupo tipoGrupo, String nombre, EstadoComunidad estado, Pageable pageable);
+
+    Page<Comunidad> findByEstado(EstadoComunidad estado, Pageable pageable);
+
+    Page<Comunidad> findByNombreContainingIgnoreCaseAndEstado(
+            String nombre, EstadoComunidad estado, Pageable pageable);
 }

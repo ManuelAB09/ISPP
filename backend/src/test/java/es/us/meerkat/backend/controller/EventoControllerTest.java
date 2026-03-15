@@ -70,6 +70,7 @@ class EventoControllerTest {
                                         false,
                                         false,
                                         1L,
+                                        true,
                                         null))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("401 UNAUTHORIZED");
@@ -100,9 +101,54 @@ class EventoControllerTest {
                                         false,
                                         false,
                                         1L,
+                                        true,
                                         otroUsuario))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("403 FORBIDDEN");
+    }
+
+    @Test
+    void editarEventoShouldFailWhenEventAlreadyStarted() {
+        Usuario creador = new Usuario();
+        creador.setId(1L);
+
+        Evento evento = buildEvento(1L, true);
+        evento.setCreador(creador);
+        evento.setFechaHora(LocalDateTime.now().minusMinutes(5));
+        when(eventoService.obtenerEventoInterno(1L)).thenReturn(evento);
+
+        assertThatThrownBy(
+                        () ->
+                                eventoController.editarEvento(
+                                        1L,
+                                        "Título",
+                                        "Desc",
+                                        LocalDateTime.now().plusDays(1),
+                                        LocalDateTime.now().plusDays(1).plusHours(2),
+                                        20,
+                                        "Portátil",
+                                        false,
+                                        false,
+                                        1L,
+                                        true,
+                                        creador))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("409 CONFLICT");
+    }
+
+    @Test
+    void cancelarEventoShouldFailWhenEventAlreadyStarted() {
+        Usuario creador = new Usuario();
+        creador.setId(1L);
+
+        Evento evento = buildEvento(1L, true);
+        evento.setCreador(creador);
+        evento.setFechaHora(LocalDateTime.now().minusMinutes(1));
+        when(eventoService.obtenerEventoInterno(1L)).thenReturn(evento);
+
+        assertThatThrownBy(() -> eventoController.cancelarEvento(1L, "motivo", creador))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("409 CONFLICT");
     }
 
     private Evento buildEvento(final Long id, final boolean visibleMapa) {

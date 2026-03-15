@@ -68,6 +68,9 @@ const VerifiedTeachers = () => {
         });
         // La respuesta es Page<TutorProfileResponse>: { content, totalElements, number, ... }
         let contenido = resp?.content ?? (Array.isArray(resp) ? resp : []);
+        contenido = [...contenido].sort(
+          (a, b) => Number(Boolean(b?.verificado)) - Number(Boolean(a?.verificado))
+        );
         const totalElem = resp?.totalElements ?? contenido.length;
         const userHasCoords = hasValidCoords(user?.ubicacion);
         
@@ -219,9 +222,9 @@ const VerifiedTeachers = () => {
         <div className="vt-header__inner">
 
           <div className="headerTitle">
-            <p>Profesionales con identidad confirmada, calidad contrastada y acceso directo al contacto</p>
+            <p>Profesionales con identidad confirmada</p>
             <span className="line"></span>
-            <h1>Profesores Verificados</h1>
+            <h1>Profesores</h1>
           </div>
 
         </div>
@@ -278,7 +281,7 @@ const VerifiedTeachers = () => {
         </form>
         {!cargando && !error && (
           <span className="vt-total">
-            {total} profesor{total !== 1 ? "es" : ""} verificado{total !== 1 ? "s" : ""}
+            {total} profesor{total !== 1 ? "es" : ""}
             {busquedaCercaniaActiva && (
               <span style={{ marginLeft: 8, color: '#676F9D' }}>
                 • A menos de {radioKm} km de ti
@@ -317,8 +320,10 @@ const VerifiedTeachers = () => {
 
               return (
                 <div key={tutor.id ?? i} className="vt-card">
-                  {/* Insignia verificado */}
-                  <span className="vt-card__badge">Verificado</span>
+                  {/* Insignia de estado */}
+                  {tutor.verificado && (
+                    <span className="vt-card__badge">Verificado</span>
+                  )}
 
                   {/* Etiqueta de distancia */}
                   {userHasCoords && (
@@ -381,6 +386,7 @@ const VerifiedTeachers = () => {
                     >
                       Ver perfil
                     </Link>
+
                     {/* Contactar: solo si no es el propio usuario */}
                     {(() => {
                       const targetUserId = tutor.userId ?? tutor.usuario?.id;

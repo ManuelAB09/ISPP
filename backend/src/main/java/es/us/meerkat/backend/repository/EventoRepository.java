@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -167,4 +168,12 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
                     + "ORDER BY e.fechaHora ASC")
     List<Evento> findConfirmedEventosByUsuarioId(
             @Param("usuarioId") Long usuarioId, @Param("ahora") LocalDateTime ahora);
+
+    /** Obtiene todos los eventos creados por un usuario. */
+    List<Evento> findByCreadorId(Long usuarioId);
+
+    /** Elimina todos los eventos creados por un usuario. */
+    @Modifying
+    @Query("DELETE FROM Evento e WHERE e.creador.id = :usuarioId")
+    void deleteByUsuarioId(@Param("usuarioId") Long usuarioId);
 }

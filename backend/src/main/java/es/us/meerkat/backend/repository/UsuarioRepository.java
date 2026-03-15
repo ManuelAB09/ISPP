@@ -51,4 +51,12 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
                     + "AND gct.sincronizacionActiva = true")
     List<Usuario> findMiembrosConCalendarActivoByComunidadId(
             @Param("comunidadId") Long comunidadId);
+
+    /**
+     * Busca un usuario por su token de verificación de email.
+     *
+     * @param verificationToken Token de verificación.
+     * @return Optional con el usuario si existe.
+     */
+    Optional<Usuario> findByVerificationToken(String verificationToken);
 }

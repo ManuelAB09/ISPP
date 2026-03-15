@@ -30,7 +30,7 @@ describe('VerifiedTeachers', () => {
       especialidades: ['Inglés'],
       tarifaHora: 30.50,
       disponibilidad: 'Mañanas',
-      verificado: true,
+      verificado: false,
     },
   ];
 
@@ -65,7 +65,7 @@ describe('VerifiedTeachers', () => {
 
   test('renderiza el título y subtítulo', async () => {
     await renderComponent();
-    expect(screen.getByRole('heading', { name: /Profesores Verificados/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Profesores/i })).toBeInTheDocument();
     expect(screen.getByText(/Profesionales con identidad confirmada/i)).toBeInTheDocument();
   });
 
@@ -93,10 +93,11 @@ describe('VerifiedTeachers', () => {
     expect(screen.getByText(/30.50 €/i)).toBeInTheDocument();
   });
 
-  test('muestra la insignia de Verificado', async () => {
+  test('muestra la insignia solo para tutores verificados', async () => {
     await renderComponent();
     const badges = screen.getAllByText('Verificado');
-    expect(badges.length).toBe(2);
+    expect(badges.length).toBe(1);
+    expect(screen.queryByText('No verificado')).not.toBeInTheDocument();
   });
 
   test('renderiza los filtros de búsqueda', async () => {

@@ -76,7 +76,7 @@ public class CommunityController {
 
         Long userId = usuario != null ? usuario.getId() : null;
         Pageable pageable = PageRequest.of(page, size);
-        Page<Comunidad> comunidades = communityService.listPublicCommunities(search, pageable);
+        Page<Comunidad> comunidades = communityService.listActiveCommunities(search, pageable);
         Page<CommunityDetailResponse> response =
                 comunidades.map(c -> entityToDetailResponse(c, userId));
         return ResponseEntity.ok(new CommunityListResponse(response));
@@ -400,7 +400,7 @@ public class CommunityController {
                 description = "No puedes unirte (privada, llena, ya eres miembro)"),
         @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
     })
-    public ResponseEntity<MemberResponse> joinPublicCommunity(
+    public ResponseEntity<?> joinPublicCommunity(
             @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
 
         if (usuario == null) {
@@ -412,7 +412,8 @@ public class CommunityController {
                     memberService.joinPublicCommunity(usuario.getId(), communityId);
             return ResponseEntity.status(HttpStatus.CREATED).body(entityToMemberResponse(miembro));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest()
+                    .body(MessageResponse.builder().message(e.getMessage()).build());
         }
     }
 
@@ -619,6 +620,32 @@ public class CommunityController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    /**
+     * Comprueba si el usuario tiene solicitud pendiente. GET
+     * /api/v1/communities/{communityId}/requests/me
+     */
+    @GetMapping("/{communityId}/requests/me")
+    @Operation(
+            summary = "Comprobar mi solicitud pendiente",
+            description =
+                    "Devuelve si el usuario autenticado tiene una solicitud pendiente en esta"
+                            + " comunidad",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Estado de solicitud obtenido"),
+        @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
+    })
+    public ResponseEntity<java.util.Map<String, Boolean>> getMyRequestStatus(
+            @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        boolean pending = requestService.hasPendingRequest(usuario.getId(), communityId);
+        return ResponseEntity.ok(java.util.Map.of("pending", pending));
     }
 
     /**
@@ -841,8 +868,8 @@ public class CommunityController {
         }
 
         try {
-            communityService.getCommunityById(communityId, null);
-        } catch (Exception e) {
+            communityService.getCommunityById(communityId, usuario.getId());
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
@@ -864,6 +891,8 @@ public class CommunityController {
                             request.getUbicacionId());
 
             return ResponseEntity.status(HttpStatus.CREATED).body(evento.toDTO());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         } catch (RuntimeException e) {
             if (e.getMessage() != null && e.getMessage().contains("no perteneces")) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
@@ -886,13 +915,14 @@ public class CommunityController {
             @RequestParam(name = "cancelados", defaultValue = "false") boolean cancelados,
             @AuthenticationPrincipal Usuario usuario) {
 
+        Long usuarioId = usuario != null ? usuario.getId() : null;
+
         try {
-            communityService.getCommunityById(communityId, null);
-        } catch (Exception e) {
+            communityService.getCommunityById(communityId, usuarioId);
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
-        Long usuarioId = usuario != null ? usuario.getId() : null;
         List<Evento> eventos =
                 eventoService.obtenerEventosPorComunidad(communityId, cancelados, usuarioId);
         List<EventSummaryResponse> response =
