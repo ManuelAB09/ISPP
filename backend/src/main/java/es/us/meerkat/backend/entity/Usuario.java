@@ -104,6 +104,14 @@ public class Usuario {
     @Column(nullable = false)
     private Boolean autenticacionDosFactores = false;
 
+    /** Se almacena la clave TOTP activa (Base32) cuando 2FA está habilitado. */
+    @Column(length = 128)
+    private String totpSecret;
+
+    /** Clave TOTP temporal en el proceso de activación (no habilitada hasta verificar). */
+    @Column(length = 128)
+    private String totpTempSecret;
+
     /** Indica si el usuario quiere recibir notificaciones por email. */
     @Column(nullable = false)
     private Boolean notificacionesEmail = true;

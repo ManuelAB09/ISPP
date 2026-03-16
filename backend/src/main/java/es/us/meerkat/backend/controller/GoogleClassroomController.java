@@ -2,10 +2,7 @@ package es.us.meerkat.backend.controller;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
-import java.util.Base64;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -31,6 +28,7 @@ import es.us.meerkat.backend.dto.CreateTeacherRequest;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import es.us.meerkat.backend.service.GoogleClassroomService;
+import es.us.meerkat.backend.service.GoogleClassroomService.OAuthCtx;
 
 @RestController
 @RequestMapping("/oauth2")
@@ -58,16 +56,7 @@ public class GoogleClassroomController {
     private final RestTemplate rest = new RestTemplate();
     private final ObjectMapper mapper = new ObjectMapper();
 
-    private static record OAuthCtx(Long userId, Long communityId, Long requestId) {}
-
-    private final Map<String, OAuthCtx> oauthStateStore = new ConcurrentHashMap<>();
-    private final SecureRandom secureRandom = new SecureRandom();
-
-    private String generateState() {
-        byte[] bytes = new byte[32];
-        secureRandom.nextBytes(bytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-    }
+    // State store is managed by GoogleClassroomService
 
     @GetMapping("/authorize/google-classroom-url")
     public ResponseEntity<Map<String, String>> authorizeUrl(
@@ -90,28 +79,9 @@ public class GoogleClassroomController {
                     .body(Map.of("error", "invalid_user"));
         }
 
-        String state = generateState();
-        oauthStateStore.put(state, new OAuthCtx(userId, communityId, requestId));
-
-        String scope =
-                URLEncoder.encode(
-                        "https://www.googleapis.com/auth/classroom.courses.readonly",
-                        StandardCharsets.UTF_8);
-
         String url =
-                "https://accounts.google.com/o/oauth2/v2/auth"
-                        + "?client_id="
-                        + clientId
-                        + "&redirect_uri="
-                        + URLEncoder.encode(redirectUri, StandardCharsets.UTF_8)
-                        + "&response_type=code"
-                        + "&scope="
-                        + scope
-                        + "&access_type=offline"
-                        + "&prompt=consent"
-                        + "&state="
-                        + URLEncoder.encode(state, StandardCharsets.UTF_8);
-
+                googleClassroomService.buildAuthorizeUrlForUser(
+                        userId, communityId, requestId, false);
         return ResponseEntity.ok(Map.of("url", url));
     }
 
@@ -126,26 +96,7 @@ public class GoogleClassroomController {
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        String state = generateState();
-        oauthStateStore.put(state, new OAuthCtx(userId, null, null));
-        String scope =
-                URLEncoder.encode(
-                        "https://www.googleapis.com/auth/classroom.courses.readonly",
-                        StandardCharsets.UTF_8);
-        String url =
-                "https://accounts.google.com/o/oauth2/v2/auth"
-                        + "?client_id="
-                        + clientId
-                        + "&redirect_uri="
-                        + URLEncoder.encode(redirectUri, StandardCharsets.UTF_8)
-                        + "&response_type=code"
-                        + "&scope="
-                        + scope
-                        + "&access_type=offline"
-                        + "&prompt=consent"
-                        + "&state="
-                        + URLEncoder.encode(state, StandardCharsets.UTF_8);
-
+        String url = googleClassroomService.buildAuthorizeUrlForUser(userId, null, null, false);
         HttpHeaders headers = new HttpHeaders();
         headers.setLocation(java.net.URI.create(url));
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
@@ -170,7 +121,7 @@ public class GoogleClassroomController {
             return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(htmlError("no_state"));
         }
 
-        OAuthCtx ctx = oauthStateStore.remove(state);
+        GoogleClassroomService.OAuthCtx ctx = googleClassroomService.consumeState(state);
         if (ctx == null) {
             return ResponseEntity.ok()
                     .contentType(MediaType.TEXT_HTML)
@@ -302,8 +253,8 @@ public class GoogleClassroomController {
                     .body(Map.of("error", "invalid_user"));
         }
 
-        String state = generateState();
-        oauthStateStore.put(state, new OAuthCtx(userId, null, null));
+        String state = googleClassroomService.generateState();
+        googleClassroomService.oauthStateStore.put(state, new OAuthCtx(userId, null, null));
 
         // Scopes para gestionar estudiantes y profesores
         String[] scopes = {
@@ -352,7 +303,7 @@ public class GoogleClassroomController {
             return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(htmlError("no_state"));
         }
 
-        OAuthCtx ctx = oauthStateStore.remove(state);
+        OAuthCtx ctx = googleClassroomService.oauthStateStore.remove(state);
         if (ctx == null) {
             return ResponseEntity.ok()
                     .contentType(MediaType.TEXT_HTML)
