@@ -32,6 +32,8 @@ import VerifiedTeachers from './screens/verifiedTeachers/VerifiedTeachers';
 
 
 import Chats from './screens/chat/Chats';
+import CommunityHiringRequests from './screens/solicitudes/CommunityHiringRequests';
+import TutorHiringRequests from './screens/solicitudes/TutorHiringRequests';
 
 function AppRoutes() {
   const { isAuthenticated, loading } = useAuth();
@@ -57,6 +59,8 @@ function AppRoutes() {
         <Route path="/crear-comunidad" element={<CrearComunidad />} />
         <Route path="/crear-ubicacion" element={<CrearUbicacionScreen />} />
         <Route path="/chats" element={<Chats />} />
+        <Route path="/solicitudes/tutor" element={<TutorHiringRequests />} />
+        <Route path="/solicitudes/comunidad" element={<CommunityHiringRequests />} />
         <Route path="/success" element={<PagoExitoso />} />
         <Route path="/profesores" element={<VerifiedTeachers />} />
         <Route path="/profesores/:id" element={<TeacherProfile />} />

@@ -10,10 +10,46 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import es.us.meerkat.backend.dto.*;
+import es.us.meerkat.backend.dto.AccessRequestBody;
+import es.us.meerkat.backend.dto.CategoryListResponse;
+import es.us.meerkat.backend.dto.CategoryResponse;
+import es.us.meerkat.backend.dto.ClassroomInfoResponse;
+import es.us.meerkat.backend.dto.CommunityDetailResponse;
+import es.us.meerkat.backend.dto.CommunityListResponse;
+import es.us.meerkat.backend.dto.CreateCategoryRequest;
+import es.us.meerkat.backend.dto.CreateCommunityRequest;
+import es.us.meerkat.backend.dto.CreateEventRequest;
+import es.us.meerkat.backend.dto.EventDetailResponse;
+import es.us.meerkat.backend.dto.EventSummaryResponse;
+import es.us.meerkat.backend.dto.HireTutorRequest;
+import es.us.meerkat.backend.dto.LinkClassroomRequest;
+import es.us.meerkat.backend.dto.MemberListResponse;
+import es.us.meerkat.backend.dto.MemberResponse;
+import es.us.meerkat.backend.dto.MessageResponse;
+import es.us.meerkat.backend.dto.PageInfo;
+import es.us.meerkat.backend.dto.PaymentUrlResponse;
+import es.us.meerkat.backend.dto.PrivacyRequest;
+import es.us.meerkat.backend.dto.ReorderCategoriesRequest;
+import es.us.meerkat.backend.dto.RequestListResponse;
+import es.us.meerkat.backend.dto.RequestResponse;
+import es.us.meerkat.backend.dto.RespondRequestBody;
+import es.us.meerkat.backend.dto.TransferAdminRequest;
+import es.us.meerkat.backend.dto.TutorResponse;
+import es.us.meerkat.backend.dto.UpdateCategoryRequest;
+import es.us.meerkat.backend.dto.UpdateCommunityRequest;
+import es.us.meerkat.backend.dto.UpgradeCommunityRequest;
+import es.us.meerkat.backend.dto.UserSimpleResponse;
 import es.us.meerkat.backend.entity.Categoria;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.ComunidadClassroom;
@@ -21,6 +57,7 @@ import es.us.meerkat.backend.entity.EstadoSolicitud;
 import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.MiembroComunidad;
 import es.us.meerkat.backend.entity.SolicitudComunidad;
+import es.us.meerkat.backend.entity.TutorContratacion;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.AuthorizationService;
 import es.us.meerkat.backend.service.CategoryService;
@@ -1134,13 +1171,15 @@ public class CommunityController {
      */
     @PostMapping("/{communityId}/tutor/{tutorId}")
     @Operation(
-            summary = "Contratar tutor",
-            description = "Contrata un tutor para la comunidad. Retorna URL de pago.",
+            summary = "Solicitar contratación de tutor",
+            description =
+                    "Crea una solicitud de contratación de tutor. El tutor debe aceptarla antes de"
+                            + " proceder al pago.",
             security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
         @ApiResponse(
                 responseCode = "200",
-                description = "Tutor contratación iniciada, URL de pago generada"),
+                description = "Solicitud de contratación creada correctamente"),
         @ApiResponse(responseCode = "400", description = "Datos inválidos o validación fallida"),
         @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
         @ApiResponse(
@@ -1148,7 +1187,7 @@ public class CommunityController {
                 description = "No tienes permisos para contratar en esta comunidad"),
         @ApiResponse(responseCode = "404", description = "Comunidad o tutor no encontrado")
     })
-    public ResponseEntity<PaymentUrlResponse> hireTutor(
+    public ResponseEntity<?> hireTutor(
             @PathVariable Long communityId,
             @PathVariable Long tutorId,
             @Valid @RequestBody HireTutorRequest request,
@@ -1159,12 +1198,67 @@ public class CommunityController {
         }
 
         try {
+            tutorContratacionService.crearSolicitudContratacion(
+                    communityId, tutorId, request, usuario.getId());
+            return ResponseEntity.ok(
+                    MessageResponse.builder()
+                            .message(
+                                    "Solicitud de contratación enviada al tutor. Espera su"
+                                            + " aprobación.")
+                            .build());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(MessageResponse.builder().message(e.getMessage()).build());
+        }
+    }
+
+    /**
+     * Procede al pago de una contratación aprobada por el tutor.
+     *
+     * <p>POST /api/v1/communities/{communityId}/tutor/{tutorId}/payment
+     *
+     * @param communityId ID de la comunidad
+     * @param tutorId ID del tutor
+     * @param usuario Usuario autenticado (debe ser admin de comunidad)
+     * @return PaymentUrlResponse con URL para procesar pago
+     */
+    @PostMapping("/{communityId}/tutor/{tutorId}/payment")
+    @Operation(
+            summary = "Proceder al pago de contratación",
+            description = "Genera URL de pago para una solicitud aprobada por el tutor.",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "URL de pago generada correctamente"),
+        @ApiResponse(responseCode = "400", description = "No hay solicitud aprobada"),
+        @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
+        @ApiResponse(
+                responseCode = "403",
+                description = "No tienes permisos para pagar esta contratación"),
+        @ApiResponse(responseCode = "404", description = "Comunidad o tutor no encontrado")
+    })
+    public ResponseEntity<?> proceedToPayment(
+            @PathVariable Long communityId,
+            @PathVariable Long tutorId,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
             PaymentUrlResponse paymentUrl =
-                    tutorContratacionService.crearContratacion(
-                            communityId, tutorId, request, usuario.getId());
+                    tutorContratacionService.generarPagoContratacion(
+                            communityId, tutorId, usuario.getId());
             return ResponseEntity.ok(paymentUrl);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest()
+                    .body(MessageResponse.builder().message(e.getMessage()).build());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(
+                            MessageResponse.builder()
+                                    .message("Error al generar URL de pago: " + e.getMessage())
+                                    .build());
         }
     }
 
@@ -1253,6 +1347,109 @@ public class CommunityController {
             return ResponseEntity.ok(tutor.get());
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * Obtiene todas las contrataciones (historial) de una comunidad.
+     *
+     * <p>GET /api/v1/communities/{communityId}/hiring-requests
+     *
+     * @param communityId ID de la comunidad
+     * @param page Número de página
+     * @param size Tamaño de página
+     * @param usuario Usuario autenticado (debe ser admin de comunidad)
+     * @return Lista paginada de contrataciones
+     */
+    @GetMapping("/{communityId}/hiring-requests")
+    @Operation(
+            summary = "Obtener solicitudes de la comunidad",
+            description = "Lista todas las solicitudes/contrataciones de la comunidad (historial)",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Lista obtenida correctamente"),
+        @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
+        @ApiResponse(responseCode = "403", description = "No eres admin de esta comunidad"),
+        @ApiResponse(responseCode = "404", description = "Comunidad no encontrada")
+    })
+    public ResponseEntity<?> obtenerSolicitudesComunidad(
+            @PathVariable Long communityId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            // Verificar que el usuario es admin de la comunidad
+            if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(
+                                MessageResponse.builder()
+                                        .message(
+                                                "No tienes permisos para ver las solicitudes de"
+                                                        + " esta comunidad")
+                                        .build());
+            }
+
+            Pageable pageable = PageRequest.of(page, size);
+            Page<TutorContratacion> contrataciones =
+                    tutorContratacionService.obtenerContratacionesDeLaComunidad(
+                            communityId, pageable);
+
+            // Convertir a DTO con información del tutor
+            var response =
+                    contrataciones.map(
+                            c -> {
+                                var builder =
+                                        es.us.meerkat.backend.dto.TutorContratacionResponse
+                                                .builder()
+                                                .id(c.getId())
+                                                .modalidad(c.getModalidad())
+                                                .duracion(c.getDuracion())
+                                                .tarifaAcordada(c.getTarifaAcordada())
+                                                .estado(c.getEstado().name())
+                                                .fechaInicio(c.getFechaInicio())
+                                                .fechaFin(c.getFechaFin())
+                                                .motivoCancelacion(c.getMotivoCancelacion());
+
+                                // Agregar información del tutor si está disponible
+                                if (c.getTutor() != null) {
+                                    var tutorResponse =
+                                            TutorResponse.builder()
+                                                    .id(c.getTutor().getId())
+                                                    .verificado(c.getTutor().getVerificado());
+
+                                    if (c.getTutor().getUsuario() != null) {
+                                        tutorResponse.usuario(
+                                                TutorResponse.UsuarioDto.builder()
+                                                        .id(c.getTutor().getUsuario().getId())
+                                                        .nombre(
+                                                                c.getTutor()
+                                                                        .getUsuario()
+                                                                        .getNombre())
+                                                        .foto(c.getTutor().getUsuario().getFoto())
+                                                        .build());
+                                    }
+
+                                    builder.tutor(tutorResponse.build());
+                                }
+
+                                return builder.build();
+                            });
+
+            return ResponseEntity.ok(new PageInfo(response));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(MessageResponse.builder().message(e.getMessage()).build());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(
+                            MessageResponse.builder()
+                                    .message("Error al obtener solicitudes: " + e.getMessage())
+                                    .build());
         }
     }
 

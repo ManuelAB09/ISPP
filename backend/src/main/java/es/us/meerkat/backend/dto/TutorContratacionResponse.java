@@ -40,6 +40,9 @@ public class TutorContratacionResponse {
     @Schema(description = "Fecha de fin")
     private LocalDate fechaFin;
 
+    @Schema(description = "Motivo de cancelación o rechazo")
+    private String motivoCancelacion;
+
     @Schema(description = "Detalles de la transacción de pago")
     private TransactionResponse transaccion;
 }

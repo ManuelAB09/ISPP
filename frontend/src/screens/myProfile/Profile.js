@@ -296,6 +296,62 @@ const MyProfile = () => {
                                 <button className="btn-settings" onClick={() => setShowSettings(true)}>
                                     Configuración
                                 </button>
+                                {miPerfilTutor?.id && (
+                                    <button
+                                        className="btn-settings"
+                                        onClick={() => navigate(`/profesores/${miPerfilTutor.id}`)}
+                                    >
+                                        <span className="btn-icon">🎓</span>
+                                        Mi perfil de profesor
+                                    </button>
+                                )}
+
+                                {user?.esTutor && !loadingTutorProfile && !miPerfilTutor && (
+                                    <button
+                                        className="btn-settings"
+                                        onClick={() => setShowCreateTutorModal(true)}
+                                    >
+                                        <span className="btn-icon">✨</span>
+                                        Crear Perfil de Tutor
+                                    </button>
+                                )}
+
+                                {user?.esTutor && miPerfilTutor && (
+                                    <button
+                                        className="btn-settings"
+                                        onClick={() => navigate('/solicitudes/tutor')}
+                                    >
+                                        <span className="btn-icon">📋</span>
+                                        Solicitudes Tutor
+                                    </button>
+                                )}
+
+                                <button
+                                    className="btn-settings"
+                                    onClick={() => navigate('/solicitudes/comunidad')}
+                                >
+                                    <span className="btn-icon">📬</span>
+                                    Solicitudes Comunidad
+                                </button>
+
+                                {
+                                    !user?.esTutor && (
+                                        <>
+                                            <button
+                                                className="btn-become-tutor"
+                                                onClick={handleBecomeTutor}
+                                                disabled={becomingTutor}
+                                            >
+                                                <span className="btn-icon">🎓</span>
+                                                {becomingTutor ? 'Actualizando...' : 'Convertirme en tutor'}
+                                            </button>
+                                            {becomeTutorError && (
+                                                <span className="become-tutor-error">{becomeTutorError}</span>
+                                            )}
+                                        </>
+                                    )
+                                }
+
                                 <button className="btn-logout" onClick={handleLogout}>
                                     Cerrar Sesión
                                 </button>
