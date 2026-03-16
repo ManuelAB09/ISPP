@@ -61,6 +61,7 @@ export default function CommunityDetail() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const openChatOnLoad = searchParams.get('chat') === 'open';
 
   const [community, setCommunity] = useState(null);
   const [events, setEvents] = useState([]);
@@ -102,14 +103,27 @@ export default function CommunityDetail() {
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [respondingId, setRespondingId] = useState(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
+  const [chatOpen, setChatOpen] = useState(openChatOnLoad);
   const fileInputRef = useRef(null);
   const activeMeetingRequestInFlightRef = useRef(false);
+
+  const closeAllOverlays = useCallback(({ keepChat = false } = {}) => {
+    setShowMeetingForm(false);
+    setParticipantsOpen(false);
+    setMeetingsOpen(false);
+    setRecordingsOpen(false);
+    setSelectedRecordingMeetingId(null);
+    setShowEditModal(false);
+    setShowTransferModal(false);
+    if (!keepChat) {
+      setChatOpen(false);
+    }
+  }, []);
 
   const isPrivate = community?.tipoGrupo === 'GRUPO_PRIVADO';
   const isAdmin = community?.miRol === 'ADMIN';
 
   const currentUserId = localStorage.getItem('userId');
-  const openChatOnLoad = searchParams.get('chat') === 'open';
   const currentUser = {
     id: Number(currentUserId),
     nombre: user?.nombre || 'Usuario',
@@ -390,8 +404,14 @@ export default function CommunityDetail() {
       return;
     }
 
+    if (showMeetingForm) {
+      setShowMeetingForm(false);
+      return;
+    }
+
+    closeAllOverlays();
     setMeetingError(null);
-    setShowMeetingForm((prev) => !prev);
+    setShowMeetingForm(true);
   };
 
   const handleToggleParticipants = async () => {
@@ -400,6 +420,7 @@ export default function CommunityDetail() {
       return;
     }
 
+    closeAllOverlays();
     setParticipantsOpen(true);
 
     try {
@@ -423,6 +444,8 @@ export default function CommunityDetail() {
       setSelectedRecordingMeetingId(null);
       return;
     }
+
+    closeAllOverlays();
 
     try {
       setMeetingsLoading(true);
@@ -577,6 +600,23 @@ export default function CommunityDetail() {
     setRecordings([]);
     setSelectedRecordingMeetingId(null);
   }, [communityId]);
+
+  const handleOpenEditModal = () => {
+    closeAllOverlays();
+    setShowEditModal(true);
+  };
+
+  const handleOpenTransferModal = () => {
+    closeAllOverlays();
+    setShowTransferModal(true);
+  };
+
+  const handleChatOpenChange = (nextOpen) => {
+    if (nextOpen) {
+      closeAllOverlays({ keepChat: true });
+    }
+    setChatOpen(nextOpen);
+  };
 
   const visibleRecordings = selectedRecordingMeetingId
     ? recordings.filter((recording) => recording?.zoomMeetingId === selectedRecordingMeetingId)
@@ -763,6 +803,7 @@ export default function CommunityDetail() {
 
         <input
           ref={fileInputRef}
+          data-testid="recording-file-input"
           type="file"
           accept=".mp4,.mov,.webm,.m4a,video/mp4,video/quicktime,video/webm,audio/mp4"
           onChange={handleRecordingFileChange}
@@ -799,7 +840,7 @@ export default function CommunityDetail() {
                 {isAdmin && (
                   <button
                     className="cd-btn cd-btn-edit"
-                    onClick={() => setShowEditModal(true)}
+                    onClick={handleOpenEditModal}
                   >
                     <LuPencil /> Editar comunidad
                   </button>
@@ -807,7 +848,7 @@ export default function CommunityDetail() {
                 {isAdmin && (
                   <button
                     className="cd-btn cd-btn-transfer"
-                    onClick={() => setShowTransferModal(true)}
+                    onClick={handleOpenTransferModal}
                   >
                     <LuUsers /> Transferir administración
                   </button>
@@ -994,6 +1035,8 @@ export default function CommunityDetail() {
             comunidadNombre={community?.nombre}
             comunidadImagen={communityImage}
             initiallyOpen={openChatOnLoad}
+            isOpen={chatOpen}
+            onOpenChange={handleChatOpenChange}
 extraActions={(
   <div className="cd-floating-tools">
     <div className="cd-floating-toolbar">
