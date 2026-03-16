@@ -1,6 +1,5 @@
 package es.us.meerkat.backend.dto;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -9,23 +8,22 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** Request DTO para dar feedback sobre una recomendación. */
+/** Request para registrar el feedback de un usuario sobre una recomendación. */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Feedback sobre una recomendación")
 public class FeedbackRecomendacionRequest {
 
-    @NotNull(message = "¿Le fue útil?")
-    @Schema(description = "¿Le fue útil la recomendación?", example = "true")
+    /** ¿Le fue útil la recomendación? true = útil, false = no útil */
+    @NotNull(message = "Debes indicar si la recomendación fue útil o no")
     private Boolean esUtil;
 
-    @Schema(description = "Comentario opcional", example = "Me gustaría, pero el horario no me va")
+    /** Comentario opcional del usuario */
     private String comentario;
 
-    @Min(value = 1, message = "Mínimo 1")
-    @Max(value = 5, message = "Máximo 5")
-    @Schema(description = "Nivel de satisfacción (1-5)", example = "4")
+    /** Valoración de 1 a 5 (opcional) */
+    @Min(value = 1, message = "La satisfacción mínima es 1")
+    @Max(value = 5, message = "La satisfacción máxima es 5")
     private Integer satisfaccion;
 }
