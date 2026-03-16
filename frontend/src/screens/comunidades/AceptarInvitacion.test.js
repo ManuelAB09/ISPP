@@ -22,15 +22,13 @@ describe('AceptarInvitacion', () => {
   test('guarda invitación pendiente y muestra acciones de autenticación si no hay sesión', async () => {
     useAuth.mockReturnValue({ isAuthenticated: false, loading: false });
 
-    await act(async () => {
-      render(
-        <MemoryRouter initialEntries={['/invitacion/codigo-demo/aceptar']}>
-          <Routes>
-            <Route path="/invitacion/:codigo/aceptar" element={<AceptarInvitacion />} />
-          </Routes>
-        </MemoryRouter>
-      );
-    });
+    render(
+      <MemoryRouter initialEntries={['/invitacion/codigo-demo/aceptar']}>
+        <Routes>
+          <Route path="/invitacion/:codigo/aceptar" element={<AceptarInvitacion />} />
+        </Routes>
+      </MemoryRouter>
+    );
 
     await screen.findByText(/Necesitas iniciar sesión o registrarte/i);
 
@@ -47,15 +45,13 @@ describe('AceptarInvitacion', () => {
     useAuth.mockReturnValue({ isAuthenticated: true, loading: false });
     communitiesApi.acceptInvitationByCode.mockResolvedValue({ message: 'ok' });
 
-    await act(async () => {
-      render(
-        <MemoryRouter initialEntries={['/invitacion/codigo-demo/aceptar?communityId=12']}>
-          <Routes>
-            <Route path="/invitacion/:codigo/aceptar" element={<AceptarInvitacion />} />
-          </Routes>
-        </MemoryRouter>
-      );
-    });
+    render(
+      <MemoryRouter initialEntries={['/invitacion/codigo-demo/aceptar?communityId=12']}>
+        <Routes>
+          <Route path="/invitacion/:codigo/aceptar" element={<AceptarInvitacion />} />
+        </Routes>
+      </MemoryRouter>
+    );
 
     await waitFor(() => {
       expect(communitiesApi.acceptInvitationByCode).toHaveBeenCalledWith(12, 'codigo-demo');
