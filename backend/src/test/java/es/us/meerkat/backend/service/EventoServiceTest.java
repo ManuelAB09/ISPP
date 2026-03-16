@@ -218,27 +218,27 @@ class EventoServiceTest {
                 .hasMessageContaining("ya ha comenzado");
     }
 
-        @Test
-        void editarEventoShouldFailWhenNewStartDateTimeIsInThePast() {
-                Long eventId = 99L;
+    @Test
+    void editarEventoShouldFailWhenNewStartDateTimeIsInThePast() {
+        Long eventId = 99L;
 
-                assertThatThrownBy(
-                                                () ->
-                                                                eventoService.editarEvento(
-                                                                                eventId,
-                                                                                "Nuevo título",
-                                                                                "Nueva desc",
-                                                                                LocalDateTime.now().minusMinutes(1),
-                                                                                LocalDateTime.now().plusHours(2),
-                                                                                25,
-                                                                                "Cuaderno",
-                                                                                false,
-                                                                                false,
-                                                                                null,
-                                                                                true))
-                                .isInstanceOf(IllegalArgumentException.class)
-                                .hasMessageContaining("fecha y hora actual");
-        }
+        assertThatThrownBy(
+                        () ->
+                                eventoService.editarEvento(
+                                        eventId,
+                                        "Nuevo título",
+                                        "Nueva desc",
+                                        LocalDateTime.now().minusMinutes(1),
+                                        LocalDateTime.now().plusHours(2),
+                                        25,
+                                        "Cuaderno",
+                                        false,
+                                        false,
+                                        null,
+                                        true))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("fecha y hora actual");
+    }
 
     @Test
     void cancelarEventoShouldFailWhenEventAlreadyStarted() {

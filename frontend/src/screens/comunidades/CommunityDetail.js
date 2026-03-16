@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { LuPlus, LuArrowLeft, LuCalendar, LuUsers, LuLogIn, LuLogOut, LuPencil, LuTrash2, LuCheck, LuX, LuUserPlus } from 'react-icons/lu';
+import { LuPlus, LuArrowLeft, LuCalendar, LuUsers, LuLogIn, LuLogOut, LuVideo, LuPlay, LuPencil, LuTrash2, LuCheck, LuX, LuUserPlus } from 'react-icons/lu';
 import Header from '../../components/Header/Header';
 import TarjetaEvento from '../../components/Evento/TarjetaEvento';
 import CommunityChat from '../chat/CommunityChat';
@@ -8,9 +8,53 @@ import GoogleClassroomButton from '../../components/GoogleClassroomButton/Google
 import EditCommunityModal from '../../components/Comunidad/EditCommunityModal';
 import TransferAdminModal from '../../components/Comunidad/TransferAdminModal';
 import { communitiesApi } from '../../api/communities.api';
+import { ZoomApi } from '../../api/zoom.api';
 import { listCommunityEvents, attendEvent, cancelAttendance, getMyAttendance } from '../../api/eventEndpoints';
 import { useAuth } from '../../contexts/AuthContext';
 import './CommunityDetail.css';
+
+const formatDuration = (milliseconds) => {
+  const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+};
+
+const formatDateTime = (value) => {
+  if (!value) {
+    return 'Sin fecha';
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return 'Sin fecha';
+  }
+
+  return parsed.toLocaleString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+const formatFileSize = (bytes) => {
+  const size = Number(bytes);
+  if (!Number.isFinite(size) || size <= 0) {
+    return 'Tamano desconocido';
+  }
+  if (size < 1024 * 1024) {
+    return `${Math.round(size / 1024)} KB`;
+  }
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+};
 
 export default function CommunityDetail() {
   const { communityId } = useParams();
@@ -28,6 +72,29 @@ export default function CommunityDetail() {
   const [isMember, setIsMember] = useState(false);
   const [joinLoading, setJoinLoading] = useState(false);
   const [membershipError, setMembershipError] = useState(null);
+  const [activeMeeting, setActiveMeeting] = useState(null);
+  const [meetingLoading, setMeetingLoading] = useState(false);
+  const [meetingError, setMeetingError] = useState(null);
+  const [meetingNow, setMeetingNow] = useState(Date.now());
+  const [showMeetingForm, setShowMeetingForm] = useState(false);
+  const [meetingTopic, setMeetingTopic] = useState('Reunion de la comunidad');
+  const [meetingDurationForm, setMeetingDurationForm] = useState(60);
+  const [participantsOpen, setParticipantsOpen] = useState(false);
+  const [participantsLoading, setParticipantsLoading] = useState(false);
+  const [participantsError, setParticipantsError] = useState(null);
+  const [activeParticipants, setActiveParticipants] = useState([]);
+  const [meetingsOpen, setMeetingsOpen] = useState(false);
+  const [meetingsLoading, setMeetingsLoading] = useState(false);
+  const [meetingsError, setMeetingsError] = useState(null);
+  const [meetingHistory, setMeetingHistory] = useState([]);
+  const [recordingsOpen, setRecordingsOpen] = useState(false);
+  const [recordingsLoading, setRecordingsLoading] = useState(false);
+  const [recordingsError, setRecordingsError] = useState(null);
+  const [recordings, setRecordings] = useState([]);
+  const [selectedRecordingMeetingId, setSelectedRecordingMeetingId] = useState(null);
+  const [downloadingRecordingId, setDownloadingRecordingId] = useState(null);
+  const [uploadingMeetingId, setUploadingMeetingId] = useState(null);
+  const [uploadFeedback, setUploadFeedback] = useState(null);
   const [requestSent, setRequestSent] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -35,6 +102,8 @@ export default function CommunityDetail() {
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [respondingId, setRespondingId] = useState(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
+  const fileInputRef = useRef(null);
+  const activeMeetingRequestInFlightRef = useRef(false);
 
   const isPrivate = community?.tipoGrupo === 'GRUPO_PRIVADO';
   const isAdmin = community?.miRol === 'ADMIN';
@@ -142,6 +211,384 @@ export default function CommunityDetail() {
       fetchPendingRequests();
     }
   }, [isAdmin, isPrivate, fetchPendingRequests]);
+
+  const fetchActiveMeeting = useCallback(async ({ silent = false } = {}) => {
+    if (!currentUserId || !isMember) {
+      setActiveMeeting(null);
+      return;
+    }
+
+    if (activeMeetingRequestInFlightRef.current) {
+      return;
+    }
+
+    activeMeetingRequestInFlightRef.current = true;
+
+    try {
+      if (!silent) {
+        setMeetingError(null);
+      }
+
+      const meeting = await ZoomApi.getActiveMeeting(communityId);
+      if (!meeting) {
+        setActiveMeeting(null);
+        return;
+      }
+
+      setActiveMeeting(meeting);
+    } catch (err) {
+      if (err?.status === 404) {
+        setActiveMeeting(null);
+        return;
+      }
+
+      console.error('Error al obtener la reunión activa:', err);
+
+      if (!silent) {
+        setActiveMeeting(null);
+        setMeetingError(err?.message || 'No se pudo comprobar la reunión activa');
+      }
+    } finally {
+      activeMeetingRequestInFlightRef.current = false;
+    }
+  }, [communityId, currentUserId, isMember]);
+
+  useEffect(() => {
+    fetchActiveMeeting();
+  }, [fetchActiveMeeting]);
+
+  useEffect(() => {
+    if (!currentUserId || !isMember) {
+      return undefined;
+    }
+
+    const pollId = setInterval(() => {
+      fetchActiveMeeting({ silent: true });
+    }, 1000);
+
+    return () => clearInterval(pollId);
+  }, [fetchActiveMeeting, currentUserId, isMember]);
+
+  useEffect(() => {
+    if (!activeMeeting) {
+      return undefined;
+    }
+
+    const timerId = setInterval(() => {
+      setMeetingNow(Date.now());
+    }, 1000);
+
+    return () => clearInterval(timerId);
+  }, [activeMeeting]);
+
+  const meetingStartRaw = activeMeeting?.startedAt || activeMeeting?.createdAt;
+  const meetingStartMs = meetingStartRaw ? new Date(meetingStartRaw).getTime() : null;
+  const safeMeetingStartMs = Number.isFinite(meetingStartMs) ? meetingStartMs : null;
+  const elapsedMs = safeMeetingStartMs ? Math.max(0, meetingNow - safeMeetingStartMs) : 0;
+  const durationMinutes = Number(activeMeeting?.durationMinutes);
+  const hasFiniteDuration = Number.isFinite(durationMinutes) && durationMinutes > 0;
+  const remainingMs = hasFiniteDuration ? Math.max(0, durationMinutes * 60 * 1000 - elapsedMs) : null;
+
+  const normalizeParticipants = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.participants)) return payload.participants;
+    if (Array.isArray(payload?.content)) return payload.content;
+    if (Array.isArray(payload?.items)) return payload.items;
+    return [];
+  };
+
+  const normalizeMeetings = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.meetings)) return payload.meetings;
+    if (Array.isArray(payload?.content)) return payload.content;
+    if (Array.isArray(payload?.items)) return payload.items;
+    return [];
+  };
+
+  const normalizeRecordings = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.recordings)) return payload.recordings;
+    if (Array.isArray(payload?.content)) return payload.content;
+    if (Array.isArray(payload?.items)) return payload.items;
+    return [];
+  };
+
+  const getParticipantLabel = (participant, index) => {
+    return participant?.usuarioNombre
+      || participant?.nombre
+      || participant?.displayName
+      || participant?.name
+      || participant?.email
+      || `Participante ${index + 1}`;
+  };
+
+  const handleJoinMeeting = async () => {
+    try {
+      setMeetingLoading(true);
+      setMeetingError(null);
+
+      const hostUrl = activeMeeting?.startUrl;
+      if (hostUrl) {
+        window.open(hostUrl, '_blank', 'noopener,noreferrer');
+        return;
+      }
+
+      const joinData = await ZoomApi.joinMeeting(communityId);
+      const joinUrl = joinData?.joinUrl || activeMeeting?.joinUrl;
+
+      if (!joinUrl) {
+        setMeetingError('La reunión no tiene enlace de acceso disponible');
+        return;
+      }
+
+      window.open(joinUrl, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      console.error('Error al unirse a la reunión:', err);
+      setMeetingError(err?.message || 'No se pudo unir a la reunión');
+    } finally {
+      setMeetingLoading(false);
+    }
+  };
+
+  const handleCreateAndJoinMeeting = async () => {
+    try {
+      setMeetingLoading(true);
+      setMeetingError(null);
+
+      const parsedDuration = Number(meetingDurationForm);
+      const payload = {
+        topic: (meetingTopic || '').trim() || 'Reunion de la comunidad',
+        durationMinutes: Number.isFinite(parsedDuration) && parsedDuration > 0 ? parsedDuration : 60,
+      };
+
+      const meeting = await ZoomApi.createOrGetMeeting(communityId, payload);
+      setActiveMeeting(meeting || null);
+      setShowMeetingForm(false);
+
+      const hostUrl = meeting?.startUrl;
+      const accessUrl = hostUrl || meeting?.joinUrl;
+      if (accessUrl) {
+        window.open(accessUrl, '_blank', 'noopener,noreferrer');
+        return;
+      }
+
+      const joinData = await ZoomApi.joinMeeting(communityId);
+      if (joinData?.joinUrl) {
+        window.open(joinData.joinUrl, '_blank', 'noopener,noreferrer');
+      }
+    } catch (err) {
+      console.error('Error al crear o unirse a la reunión:', err);
+      setMeetingError(err?.message || 'No se pudo crear o unir a la reunión');
+    } finally {
+      setMeetingLoading(false);
+    }
+  };
+
+  const handleMeetingMainAction = async () => {
+    if (activeMeeting) {
+      await handleJoinMeeting();
+      return;
+    }
+
+    setMeetingError(null);
+    setShowMeetingForm((prev) => !prev);
+  };
+
+  const handleToggleParticipants = async () => {
+    if (participantsOpen) {
+      setParticipantsOpen(false);
+      return;
+    }
+
+    setParticipantsOpen(true);
+
+    try {
+      setParticipantsLoading(true);
+      setParticipantsError(null);
+      const data = await ZoomApi.listParticipants(communityId);
+      setActiveParticipants(normalizeParticipants(data));
+    } catch (err) {
+      console.error('Error al listar participantes activos:', err);
+      setParticipantsError(err?.message || 'No se pudieron cargar los participantes');
+      setActiveParticipants([]);
+    } finally {
+      setParticipantsLoading(false);
+    }
+  };
+
+  const handleToggleMeetings = async () => {
+    if (meetingsOpen) {
+      setMeetingsOpen(false);
+      setRecordingsOpen(false);
+      setSelectedRecordingMeetingId(null);
+      return;
+    }
+
+    try {
+      setMeetingsLoading(true);
+      setMeetingsError(null);
+      const [data, recordingsData] = await Promise.all([
+        ZoomApi.listMeetings(communityId),
+        ZoomApi.listRecordings(communityId).catch((err) => {
+          console.error('Error al precargar grabaciones para el historial:', err);
+          return [];
+        }),
+      ]);
+      setMeetingHistory(normalizeMeetings(data));
+      setRecordings(normalizeRecordings(recordingsData));
+      setMeetingsOpen(true);
+    } catch (err) {
+      console.error('Error al cargar el historial de reuniones:', err);
+      setMeetingsError(err?.message || 'No se pudo cargar el historial de reuniones');
+      setMeetingHistory([]);
+      setMeetingsOpen(true);
+    } finally {
+      setMeetingsLoading(false);
+    }
+  };
+
+  const loadRecordings = async (meetingId = null) => {
+    try {
+      setRecordingsLoading(true);
+      setRecordingsError(null);
+      const data = await ZoomApi.listRecordings(communityId);
+      const normalized = normalizeRecordings(data);
+      setRecordings(normalized);
+      setSelectedRecordingMeetingId(meetingId);
+      setRecordingsOpen(true);
+    } catch (err) {
+      console.error('Error al cargar las grabaciones:', err);
+      setRecordingsError(err?.message || 'No se pudieron cargar las grabaciones');
+      setRecordings([]);
+      setSelectedRecordingMeetingId(meetingId);
+      setRecordingsOpen(true);
+    } finally {
+      setRecordingsLoading(false);
+    }
+  };
+
+  const handleSelectRecordingFile = (meetingId) => {
+    setUploadFeedback(null);
+    setUploadingMeetingId(meetingId);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleRecordingFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    const meetingId = uploadingMeetingId;
+
+    if (!file || !meetingId) {
+      return;
+    }
+
+    try {
+      setRecordingsError(null);
+      setUploadFeedback(null);
+      await ZoomApi.uploadRecording(communityId, meetingId, file);
+      setUploadFeedback({
+        type: 'success',
+        message: 'Grabacion subida correctamente.',
+      });
+
+      if (recordingsOpen) {
+        await loadRecordings(selectedRecordingMeetingId);
+      } else {
+        const data = await ZoomApi.listRecordings(communityId);
+        setRecordings(normalizeRecordings(data));
+      }
+    } catch (err) {
+      console.error('Error al subir la grabacion:', err);
+      setUploadFeedback({
+        type: 'error',
+        message: err?.message || 'No se pudo subir la grabacion.',
+      });
+    } finally {
+      setUploadingMeetingId(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleShowMeetingRecordings = async (meeting) => {
+    const meetingId = meeting?.zoomMeetingId || null;
+
+    if (recordingsOpen && selectedRecordingMeetingId === meetingId) {
+      setRecordingsOpen(false);
+      return;
+    }
+
+    await loadRecordings(meetingId);
+  };
+
+  const handleDownloadRecording = async (recording) => {
+    if (!recording?.zoomRecordingId) {
+      return;
+    }
+
+    try {
+      setDownloadingRecordingId(recording.zoomRecordingId);
+
+      if (recording?.appDownloadUrl) {
+        const download = await ZoomApi.downloadRecording(communityId, recording.zoomRecordingId);
+        const objectUrl = window.URL.createObjectURL(download.blob);
+        const link = document.createElement('a');
+        link.href = objectUrl;
+        link.download = download.fileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(objectUrl);
+        return;
+      }
+
+      if (recording?.downloadUrl) {
+        window.open(recording.downloadUrl, '_blank', 'noopener,noreferrer');
+      }
+    } catch (err) {
+      console.error('Error al descargar la grabacion:', err);
+      setRecordingsError(err?.message || 'No se pudo descargar la grabacion.');
+    } finally {
+      setDownloadingRecordingId(null);
+    }
+  };
+
+  useEffect(() => {
+    if (activeMeeting) {
+      setShowMeetingForm(false);
+      return;
+    }
+
+    setParticipantsOpen(false);
+    setParticipantsError(null);
+    setActiveParticipants([]);
+  }, [activeMeeting]);
+
+  useEffect(() => {
+    setMeetingsOpen(false);
+    setMeetingsError(null);
+    setMeetingHistory([]);
+    setRecordingsOpen(false);
+    setRecordingsError(null);
+    setRecordings([]);
+    setSelectedRecordingMeetingId(null);
+  }, [communityId]);
+
+  const visibleRecordings = selectedRecordingMeetingId
+    ? recordings.filter((recording) => recording?.zoomMeetingId === selectedRecordingMeetingId)
+    : recordings;
+
+  const getMeetingRecordings = (meeting) => {
+    const zoomMeetingId = meeting?.zoomMeetingId;
+    if (!zoomMeetingId) {
+      return [];
+    }
+    return recordings.filter((recording) => recording?.zoomMeetingId === zoomMeetingId);
+  };
 
   const handleAttend = async (eventId) => {
     if (!currentUserId) {
@@ -314,6 +761,14 @@ export default function CommunityDetail() {
           <LuArrowLeft /> Volver a comunidades
         </button>
 
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".mp4,.mov,.webm,.m4a,video/mp4,video/quicktime,video/webm,audio/mp4"
+          onChange={handleRecordingFileChange}
+          style={{ display: 'none' }}
+        />
+
         {/* Cabecera de la comunidad */}
         {community && (
           <div className="cd-header">
@@ -399,6 +854,7 @@ export default function CommunityDetail() {
                   </button>
                 )}
               </div>
+
             </div>
           </div>
         )}
@@ -538,6 +994,252 @@ export default function CommunityDetail() {
             comunidadNombre={community?.nombre}
             comunidadImagen={communityImage}
             initiallyOpen={openChatOnLoad}
+extraActions={(
+  <div className="cd-floating-tools">
+    <div className="cd-floating-toolbar">
+      {activeMeeting ? (
+        <div className="cd-floating-meeting-timer" title="Tiempo de la reunión activa">
+          <span>Activa: {formatDuration(elapsedMs)}</span>
+          <span>
+            {hasFiniteDuration
+              ? `Restante: ${formatDuration(remainingMs)}`
+              : 'Restante: 60 min máx.'}
+          </span>
+        </div>
+      ) : null}
+
+      <button
+        type="button"
+        className="cd-floating-zoom-btn cd-floating-zoom-btn-history"
+        onClick={handleToggleMeetings}
+        disabled={meetingsLoading}
+        title="Ver historial de reuniones"
+      >
+        <LuCalendar size={18} />
+        <span>{meetingsOpen ? 'Ocultar historial' : 'Historial'}</span>
+      </button>
+
+      <button
+        type="button"
+        className={`cd-floating-zoom-btn ${activeMeeting ? 'cd-floating-zoom-btn-join' : ''}`}
+        onClick={handleMeetingMainAction}
+        disabled={meetingLoading}
+        title={activeMeeting ? 'Unirse a la reunion activa' : 'Crear reunion con formulario'}
+      >
+        {activeMeeting ? <LuPlay size={18} /> : <LuVideo size={18} />}
+        <span>
+          {meetingLoading
+            ? 'Procesando...'
+            : activeMeeting
+              ? 'Unirse'
+              : 'Crear y unirse'}
+        </span>
+      </button>
+
+      {activeMeeting ? (
+        <button
+          type="button"
+          className="cd-floating-zoom-btn cd-floating-zoom-btn-participants"
+          onClick={handleToggleParticipants}
+          disabled={participantsLoading}
+          title="Ver participantes activos"
+        >
+          <LuUsers size={18} />
+          <span>{participantsOpen ? 'Ocultar participantes' : 'Participantes'}</span>
+        </button>
+      ) : null}
+    </div>
+
+    {!activeMeeting && showMeetingForm ? (
+      <div className="cd-floating-popover cd-floating-popover-create">
+        <div className="cd-meeting-form-card">
+          <div className="cd-meeting-form-row">
+            <label htmlFor="meeting-topic">Tema</label>
+            <input
+              id="meeting-topic"
+              type="text"
+              value={meetingTopic}
+              onChange={(e) => setMeetingTopic(e.target.value)}
+              placeholder="Ej. Tutorias semanales"
+              maxLength={120}
+            />
+          </div>
+          <div className="cd-meeting-form-row">
+            <label htmlFor="meeting-duration">Duracion (min)</label>
+            <input
+              id="meeting-duration"
+              type="number"
+              min="5"
+              max="180"
+              step="5"
+              value={meetingDurationForm}
+              onChange={(e) => setMeetingDurationForm(e.target.value)}
+            />
+          </div>
+          <div className="cd-meeting-form-actions">
+            <button
+              type="button"
+              className="cd-btn cd-btn-create"
+              onClick={handleCreateAndJoinMeeting}
+              disabled={meetingLoading}
+            >
+              <LuVideo /> {meetingLoading ? 'Creando...' : 'Crear reunion'}
+            </button>
+            <button
+              type="button"
+              className="cd-btn cd-btn-leave"
+              onClick={() => setShowMeetingForm(false)}
+              disabled={meetingLoading}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+    ) : null}
+
+    {meetingsOpen ? (
+      <div className="cd-floating-popover cd-floating-popover-history">
+        <div className="cd-floating-meetings-panel">
+          {meetingsError ? (
+            <p className="cd-floating-meetings-error">{meetingsError}</p>
+          ) : meetingHistory.length > 0 ? (
+            <>
+              <p className="cd-floating-meetings-title">
+                Historial de reuniones ({meetingHistory.length})
+              </p>
+              {uploadFeedback ? (
+                <p className={`cd-floating-upload-feedback ${uploadFeedback.type === 'error' ? 'is-error' : 'is-success'}`}>
+                  {uploadFeedback.message}
+                </p>
+              ) : null}
+              <ul className="cd-floating-meetings-list">
+                {meetingHistory.map((meeting, index) => (
+                  <li key={meeting?.id || meeting?.zoomMeetingId || index}>
+                    {(() => {
+                      const meetingRecordings = getMeetingRecordings(meeting);
+                      const hasRecordings = meetingRecordings.length > 0;
+
+                      return (
+                        <>
+                          <strong>{meeting?.topic || `Reunion ${index + 1}`}</strong>
+                          <span>{meeting?.status || 'SIN_ESTADO'}</span>
+                          <span>Creada: {formatDateTime(meeting?.createdAt)}</span>
+                          {meeting?.startedAt ? <span>Inicio: {formatDateTime(meeting.startedAt)}</span> : null}
+                          {meeting?.endedAt ? <span>Fin: {formatDateTime(meeting.endedAt)}</span> : null}
+                          <div className="cd-meeting-history-actions">
+                            {hasRecordings ? (
+                              <button
+                                type="button"
+                                className="cd-meeting-history-link"
+                                onClick={() => handleShowMeetingRecordings(meeting)}
+                                disabled={recordingsLoading}
+                              >
+                                {recordingsLoading && selectedRecordingMeetingId === meeting?.zoomMeetingId
+                                  ? 'Cargando grabaciones...'
+                                  : `Ver grabaciones (${meetingRecordings.length})`}
+                              </button>
+                            ) : (
+                              <span className="cd-meeting-history-muted">Sin grabaciones</span>
+                            )}
+                            <button
+                              type="button"
+                              className="cd-meeting-history-link"
+                              onClick={() => handleSelectRecordingFile(meeting?.id)}
+                              disabled={uploadingMeetingId === meeting?.id}
+                            >
+                              {uploadingMeetingId === meeting?.id ? 'Subiendo...' : 'Subir grabacion'}
+                            </button>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </li>
+                ))}
+              </ul>
+
+              {recordingsOpen ? (
+                <div className="cd-inline-recordings-section">
+                  {recordingsError ? (
+                    <p className="cd-floating-recordings-error">{recordingsError}</p>
+                  ) : visibleRecordings.length > 0 ? (
+                    <>
+                      <p className="cd-floating-recordings-title">
+                        {selectedRecordingMeetingId
+                          ? `Grabaciones de la reunion (${visibleRecordings.length})`
+                          : `Grabaciones de la comunidad (${visibleRecordings.length})`}
+                      </p>
+                      <ul className="cd-floating-recordings-list">
+                        {visibleRecordings.map((recording, index) => (
+                          <li key={recording?.zoomRecordingId || index}>
+                            <strong>{recording?.fileType || 'Grabacion'}</strong>
+                            <span>Inicio: {formatDateTime(recording?.recordingStart || recording?.createdAt)}</span>
+                            {recording?.recordingEnd ? <span>Fin: {formatDateTime(recording.recordingEnd)}</span> : null}
+                            <span>{formatFileSize(recording?.fileSizeBytes)}</span>
+                            <div className="cd-floating-recordings-links">
+                              {recording?.playUrl ? (
+                                <a href={recording.playUrl} target="_blank" rel="noreferrer">Abrir</a>
+                              ) : null}
+                              {(recording?.appDownloadUrl || recording?.downloadUrl) ? (
+                                <button
+                                  type="button"
+                                  className="cd-recording-link-button"
+                                  onClick={() => handleDownloadRecording(recording)}
+                                  disabled={downloadingRecordingId === recording?.zoomRecordingId}
+                                >
+                                  {downloadingRecordingId === recording?.zoomRecordingId ? 'Descargando...' : 'Descargar'}
+                                </button>
+                              ) : null}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : (
+                    <p className="cd-floating-recordings-empty">No hay grabaciones disponibles para esta reunión.</p>
+                  )}
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <p className="cd-floating-meetings-empty">No hay reuniones registradas todavia.</p>
+          )}
+        </div>
+      </div>
+    ) : null}
+
+    {activeMeeting && participantsOpen ? (
+      <div className="cd-floating-popover cd-floating-popover-participants">
+        <div className="cd-floating-participants-panel">
+          {participantsLoading ? (
+            <p className="cd-floating-participants-empty">Cargando participantes...</p>
+          ) : participantsError ? (
+            <p className="cd-floating-participants-error">{participantsError}</p>
+          ) : activeParticipants.length > 0 ? (
+            <>
+              <p className="cd-floating-participants-title">
+                Participantes activos ({activeParticipants.length})
+              </p>
+              <ul className="cd-floating-participants-list">
+                {activeParticipants.map((participant, index) => (
+                  <li key={participant?.id || participant?.usuarioId || participant?.email || index}>
+                    {getParticipantLabel(participant, index)}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <p className="cd-floating-participants-empty">No hay participantes activos en este momento.</p>
+          )}
+        </div>
+      </div>
+    ) : null}
+
+    {meetingError ? (
+      <span className="cd-floating-zoom-error">{meetingError}</span>
+    ) : null}
+  </div>
+)}
           />
         ) : null}
 
