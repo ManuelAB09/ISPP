@@ -4,6 +4,7 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 application-local.properties
+application.properties
 
 .env
 
@@ -38,6 +39,7 @@ build/
 data.sql
 
 application-local.properties
+application.properties
 
 # Logs generados en ejecución (PostgreSQL, Spring, etc.)
 *.log

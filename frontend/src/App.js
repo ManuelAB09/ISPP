@@ -7,6 +7,7 @@ import { SocketProvider } from './contexts/SocketContext';
 import Login from './screens/auth/Login';
 import Register from './screens/auth/Register';
 import VerifyEmail from './screens/auth/VerifyEmail';
+import AceptarInvitacion from './screens/comunidades/AceptarInvitacion';
 import CommunityDetail from './screens/comunidades/CommunityDetail';
 import Comunidades from './screens/comunidades/Comunidades';
 import CrearComunidad from './screens/comunidades/CrearComunidad';
@@ -111,6 +112,7 @@ function AppRoutes() {
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/comunidades" element={<Comunidades />} />
+        <Route path="/invitacion/:codigo/aceptar" element={<AceptarInvitacion />} />
         <Route path="/comunidades/:communityId" element={<CommunityDetail />} />
         <Route path="/comunidades/:communityId/apuntes" element={<CommunityDetail />} />
         <Route path="/comunidades/:communityId/editar" element={<CommunityDetail />} />

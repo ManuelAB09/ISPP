@@ -192,6 +192,15 @@
   color: white;
 }
 
+.cd-btn-invite {
+  background-color: #236f4f;
+  color: white;
+}
+
+.cd-btn-invite:hover:not(:disabled) {
+  background-color: #1b5b40;
+}
+
 .cd-events-header {
   display: flex;
   justify-content: space-between;

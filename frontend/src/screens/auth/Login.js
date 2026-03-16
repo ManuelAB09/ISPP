@@ -1,12 +1,16 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import './Login.css';
 import studyShareLogo from '../../static/images/MeerKatters_logo.png';
+import { getPendingInvitationPath } from '../../utils/invitationFlow';
+import './Login.css';
 
 const Login = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login, resendVerification, error: authError, clearError, isAuthenticated, loading } = useAuth();
+  const nextPath = searchParams.get('next') || getPendingInvitationPath();
+  const registerLink = nextPath ? `/register?next=${encodeURIComponent(nextPath)}` : '/register';
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -80,7 +84,8 @@ const Login = () => {
     const result = await login(formData.email, formData.password);
 
     if (result.success) {
-      navigate('/');
+      const pendingInvitationPath = getPendingInvitationPath();
+      navigate(pendingInvitationPath || nextPath || '/');
     } else {
       const errorMsg = result.error || 'Error al iniciar sesión';
       // Detectar si el error es por email no verificado
@@ -255,7 +260,7 @@ const Login = () => {
 
           <div className="register-link">
             <p>
-              No tienes cuenta todavía? <Link to="/register">Crear cuenta</Link>
+              No tienes cuenta todavía? <Link to={registerLink}>Crear cuenta</Link>
             </p>
           </div>
         </div>

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import './Register.css';
 import studyShareLogo from '../../static/images/MeerKatters_logo.png';
+import { getPendingInvitationPath } from '../../utils/invitationFlow';
+import './Register.css';
 
 const VerifyEmail = () => {
   const [searchParams] = useSearchParams();
@@ -28,9 +29,10 @@ const VerifyEmail = () => {
       
       if (result.success) {
         setStatus('success');
+        const pendingInvitationPath = getPendingInvitationPath();
         // Redirigir al home después de 3 segundos
         setTimeout(() => {
-          navigate('/');
+          navigate(pendingInvitationPath || '/');
         }, 3000);
       } else {
         setStatus('error');

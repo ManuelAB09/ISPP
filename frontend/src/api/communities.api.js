@@ -277,4 +277,56 @@ export const communitiesApi = {
   uploadPhoto(communityId, formData) {
     return apiClient.post(`/api/v1/communities/${communityId}/photo`, formData);
   },
+
+  /**
+   * GET /api/v1/communities/{communityId}/invitations
+   * Listar invitaciones de la comunidad (solo admin)
+   * @param {number} communityId
+   * @param {Object} params - { page?, size? }
+   */
+  listInvitations(communityId, params = {}) {
+    const query = new URLSearchParams();
+    if (params.page !== undefined) query.set('page', String(params.page));
+    if (params.size !== undefined) query.set('size', String(params.size));
+
+    const queryString = query.toString();
+    return apiClient.get(
+      `/api/v1/communities/${communityId}/invitations${queryString ? '?' + queryString : ''}`
+    );
+  },
+
+  /**
+   * POST /api/v1/communities/{communityId}/invitations
+   * Crear invitacion por email (solo admin)
+   * @param {number} communityId
+   * @param {{ email: string, rol: 'ADMIN'|'PROFESOR'|'ALUMNO' }} data
+   */
+  createInvitation(communityId, data) {
+    return apiClient.post(`/api/v1/communities/${communityId}/invitations`, data);
+  },
+
+  /**
+   * GET /api/v1/communities/{communityId}/invitations/codigo/{codigo}
+   * Obtener una invitación por código dentro de una comunidad concreta
+   * @param {number|string} communityId
+   * @param {string} codigo
+   */
+  getInvitationByCode(communityId, codigo) {
+    return apiClient.get(
+      `/api/v1/communities/${communityId}/invitations/codigo/${encodeURIComponent(codigo)}`
+    );
+  },
+
+  /**
+   * POST /api/v1/communities/{communityId}/invitations/codigo/{codigo}/aceptar
+   * Aceptar una invitación por código
+   * @param {number|string} communityId
+   * @param {string} codigo
+   */
+  acceptInvitationByCode(communityId, codigo) {
+    return apiClient.post(
+      `/api/v1/communities/${communityId}/invitations/codigo/${encodeURIComponent(codigo)}/aceptar`,
+      {}
+    );
+  },
 };

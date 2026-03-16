@@ -1,15 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { LuPlus, LuArrowLeft, LuCalendar, LuUsers, LuLogIn, LuLogOut, LuPencil, LuTrash2, LuCheck, LuX, LuUserPlus } from 'react-icons/lu';
-import Header from '../../components/Header/Header';
-import TarjetaEvento from '../../components/Evento/TarjetaEvento';
-import CommunityChat from '../chat/CommunityChat';
-import GoogleClassroomButton from '../../components/GoogleClassroomButton/GoogleClassroomButton';
-import EditCommunityModal from '../../components/Comunidad/EditCommunityModal';
-import TransferAdminModal from '../../components/Comunidad/TransferAdminModal';
+import { useCallback, useEffect, useState } from 'react';
+import { LuArrowLeft, LuCalendar, LuCheck, LuLogIn, LuLogOut, LuPencil, LuPlus, LuTrash2, LuUserPlus, LuUsers, LuX } from 'react-icons/lu';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { communitiesApi } from '../../api/communities.api';
-import { listCommunityEvents, attendEvent, cancelAttendance, getMyAttendance } from '../../api/eventEndpoints';
+import { attendEvent, cancelAttendance, getMyAttendance, listCommunityEvents } from '../../api/eventEndpoints';
+import EditCommunityModal from '../../components/Comunidad/EditCommunityModal';
+import InviteMemberModal from '../../components/Comunidad/InviteMemberModal';
+import TransferAdminModal from '../../components/Comunidad/TransferAdminModal';
+import TarjetaEvento from '../../components/Evento/TarjetaEvento';
+import GoogleClassroomButton from '../../components/GoogleClassroomButton/GoogleClassroomButton';
+import Header from '../../components/Header/Header';
 import { useAuth } from '../../contexts/AuthContext';
+import CommunityChat from '../chat/CommunityChat';
 import './CommunityDetail.css';
 
 export default function CommunityDetail() {
@@ -35,6 +36,7 @@ export default function CommunityDetail() {
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [respondingId, setRespondingId] = useState(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
 
   const isPrivate = community?.tipoGrupo === 'GRUPO_PRIVADO';
   const isAdmin = community?.miRol === 'ADMIN';
@@ -351,6 +353,14 @@ export default function CommunityDetail() {
                 )}
                 {isAdmin && (
                   <button
+                    className="cd-btn cd-btn-invite"
+                    onClick={() => setShowInviteModal(true)}
+                  >
+                    <LuUserPlus /> Invitar por email
+                  </button>
+                )}
+                {isAdmin && (
+                  <button
                     className="cd-btn cd-btn-transfer"
                     onClick={() => setShowTransferModal(true)}
                   >
@@ -559,6 +569,17 @@ export default function CommunityDetail() {
             onClose={() => setShowTransferModal(false)}
             onTransferred={() => {
               setShowTransferModal(false);
+              fetchCommunity();
+            }}
+          />
+        )}
+
+        {showInviteModal && (
+          <InviteMemberModal
+            communityId={communityId}
+            onClose={() => setShowInviteModal(false)}
+            onInvited={() => {
+              // Refresca estado por si backend ajusta contadores relacionados
               fetchCommunity();
             }}
           />

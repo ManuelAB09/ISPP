@@ -108,6 +108,7 @@ const DetalleEvento = () => {
   const isConfirmed = myAttendance?.estado === 'CONFIRMADA';
   const isFull = event && event.aforo && (event.asistentesConfirmados || 0) >= event.aforo;
   const isCancelled = event?.cancelado;
+  const isStarted = event?.fechaHora ? new Date(event.fechaHora).getTime() <= Date.now() : false;
 
   const handleAttend = async () => {
     try {
@@ -137,6 +138,12 @@ const DetalleEvento = () => {
   };
 
   const handleCancelEvent = async () => {
+    if (isStarted) {
+      setError('No se puede cancelar un evento que ya ha comenzado.');
+      setShowCancelModal(false);
+      return;
+    }
+
     try {
       setCancelLoading(true);
       await cancelEvent(eventId, cancelReason);
@@ -223,6 +230,9 @@ const DetalleEvento = () => {
               {event.visibleMapa && !isCancelled && (
                 <span className="ed-badge ed-badge-map"><LuMap /> Visible en mapa</span>
               )}
+              {isStarted && !isCancelled && (
+                <span className="ed-badge ed-badge-cancelled">Evento iniciado</span>
+              )}
             </div>
             <h1 className="ed-title">{event.titulo}</h1>
             {event.creador && (
@@ -245,7 +255,7 @@ const DetalleEvento = () => {
           </div>
 
           {/* Acciones del organizador */}
-          {isOrganizer && !isCancelled && (
+          {isOrganizer && !isCancelled && !isStarted && (
             <div className="ed-organizer-actions">
               <button
                 className="ed-btn ed-btn-edit"
