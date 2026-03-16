@@ -2,6 +2,8 @@ package es.us.meerkat.backend.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -9,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.dto.CorporatePlanRequest;
 import es.us.meerkat.backend.dto.CreateInstitutionRequest;
+import es.us.meerkat.backend.dto.InstitutionResponse;
 import es.us.meerkat.backend.dto.PaymentUrlResponse;
 import es.us.meerkat.backend.dto.UpdateInstitutionRequest;
 import es.us.meerkat.backend.entity.Institution;
@@ -142,6 +145,52 @@ public class InstitutionService {
 
         institution.setUpdatedAt(LocalDateTime.now());
         return institutionRepository.save(institution);
+    }
+
+    /**
+     * Obtiene todas las instituciones registradas.
+     *
+     * @return Lista de todas las instituciones
+     */
+    @Transactional(readOnly = true)
+    public List<Institution> obtenerTodasLasInstituciones() {
+        return institutionRepository.findAll();
+    }
+
+    /**
+     * Obtiene todas las instituciones como DTOs.
+     *
+     * @return Lista de InstitutionResponse con todas las instituciones
+     */
+    @Transactional(readOnly = true)
+    public List<InstitutionResponse> obtenerTodasLasInstitucionesResponse() {
+        List<Institution> instituciones = institutionRepository.findAll();
+        return instituciones.stream().map(this::toInstitutionResponse).collect(Collectors.toList());
+    }
+
+    // Método helper para convertir Institution a InstitutionResponse
+    private InstitutionResponse toInstitutionResponse(Institution institution) {
+        return InstitutionResponse.builder()
+                .id(institution.getId())
+                .nombre(institution.getNombre())
+                .descripcion(institution.getDescripcion())
+                .emailContacto(institution.getEmailContacto())
+                .telefonoContacto(institution.getTelefonoContacto())
+                .dominioEmail(institution.getDominioEmail())
+                .ubicacion(institution.getUbicacion())
+                .sitioweb(institution.getSitioweb())
+                .logoUrl(institution.getLogoUrl())
+                .verificada(institution.getVerificada())
+                .planCorporativo(
+                        institution.getPlanCorporativo() != null
+                                ? institution.getPlanCorporativo().name()
+                                : null)
+                .planActivo(institution.getPlanActivo())
+                .totalUsuarios((int) contarUsuarios(institution.getId()))
+                .totalComunidades((int) contarComunidades(institution.getId()))
+                .createdAt(institution.getCreatedAt())
+                .updatedAt(institution.getUpdatedAt())
+                .build();
     }
 
     // ===============================

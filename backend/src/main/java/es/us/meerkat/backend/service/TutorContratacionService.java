@@ -63,8 +63,8 @@ public class TutorContratacionService {
 
         Comunidad comunidad =
                 comunidadRepository
-                .findWithCreadorById(comunidadId)
-                .or(() -> comunidadRepository.findById(comunidadId))
+                        .findWithCreadorById(comunidadId)
+                        .or(() -> comunidadRepository.findById(comunidadId))
                         .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
 
         if (!authorizationService.isAdminOf(usuarioId, comunidadId)) {
@@ -365,7 +365,7 @@ public class TutorContratacionService {
         Comunidad comunidad = contratacion.getComunidad();
         boolean isAdmin = authorizationService.isAdminOf(usuarioId, comunidad.getId());
         boolean isCreator =
-            comunidad.getCreador() != null && usuarioId.equals(comunidad.getCreador().getId());
+                comunidad.getCreador() != null && usuarioId.equals(comunidad.getCreador().getId());
 
         // Validar que el usuario es admin o creador de la comunidad
         if (!isAdmin && !isCreator) {

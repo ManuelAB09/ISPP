@@ -1,6 +1,8 @@
 package es.us.meerkat.backend.controller;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -202,6 +204,22 @@ public class InstitutionController {
                         put("usuariosPermitidos", institution.getNumUsuariosPermitidos());
                     }
                 });
+    }
+
+    /**
+     * Lista todas las instituciones registradas.
+     *
+     * @return Lista de todas las instituciones
+     */
+    @GetMapping
+    @Operation(summary = "Listar todas las instituciones")
+    public ResponseEntity<List<InstitutionResponse>> listarInstituciones() {
+        List<Institution> instituciones = institutionService.obtenerTodasLasInstituciones();
+        List<InstitutionResponse> response =
+                instituciones.stream()
+                        .map(this::toInstitutionResponse)
+                        .collect(Collectors.toList());
+        return ResponseEntity.ok(response);
     }
 
     // ===============================
