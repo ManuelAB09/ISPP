@@ -234,8 +234,16 @@ public class TutorContratacionService {
         tutorContratacionRepository.save(contratacion);
 
         try {
-            return paymentService.generarPagoContratacionTutor(
-                    tutorId, comunidadId, contratacion.getTarifaAcordada(), usuarioId);
+            PaymentUrlResponse response =
+                    paymentService.generarPagoContratacionTutor(
+                            tutorId, comunidadId, contratacion.getTarifaAcordada(), usuarioId);
+
+            // Persistimos la URL de pago y el ID de sesión de Stripe en la contratación
+            contratacion.setPaymentUrl(response.getPaymentUrl());
+            contratacion.setStripeSessionId(response.getSessionId());
+            tutorContratacionRepository.save(contratacion);
+
+            return response;
         } catch (com.stripe.exception.StripeException e) {
             // Si Stripe falla revertimos el estado
             contratacion.setEstado(EstadoContratacion.APROBADA);
