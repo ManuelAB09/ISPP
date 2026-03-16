@@ -63,7 +63,8 @@ public class TutorContratacionService {
 
         Comunidad comunidad =
                 comunidadRepository
-                        .findWithCreadorById(comunidadId)
+                .findWithCreadorById(comunidadId)
+                .or(() -> comunidadRepository.findById(comunidadId))
                         .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
 
         if (!authorizationService.isAdminOf(usuarioId, comunidadId)) {
@@ -239,8 +240,8 @@ public class TutorContratacionService {
                             tutorId, comunidadId, contratacion.getTarifaAcordada(), usuarioId);
 
             // Persistimos la URL de pago y el ID de sesión de Stripe en la contratación
-            contratacion.setPaymentUrl(response.getPaymentUrl());
-            contratacion.setStripeSessionId(response.getSessionId());
+            contratacion.setPaymentUrl(response.paymentUrl());
+            contratacion.setStripeSessionId(response.sessionId());
             tutorContratacionRepository.save(contratacion);
 
             return response;
@@ -361,8 +362,13 @@ public class TutorContratacionService {
                         .orElseThrow(
                                 () -> new IllegalArgumentException("Contratación no encontrada"));
 
-        // Validar que el usuario es admin de la comunidad
-        if (!authorizationService.isAdminOf(usuarioId, contratacion.getComunidad().getId())) {
+        Comunidad comunidad = contratacion.getComunidad();
+        boolean isAdmin = authorizationService.isAdminOf(usuarioId, comunidad.getId());
+        boolean isCreator =
+            comunidad.getCreador() != null && usuarioId.equals(comunidad.getCreador().getId());
+
+        // Validar que el usuario es admin o creador de la comunidad
+        if (!isAdmin && !isCreator) {
             throw new IllegalArgumentException(
                     "No tienes permisos para cancelar esta contratación");
         }
