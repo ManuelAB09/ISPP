@@ -14,6 +14,8 @@ public class DatabaseSchemaFixRunner implements ApplicationRunner {
 
     private final JdbcTemplate jdbcTemplate;
 
+    // Este runner se ejecutará al iniciar la aplicación y aplicará las correcciones
+    // necesarias
     @Override
     public void run(ApplicationArguments args) {
         jdbcTemplate.execute(
