@@ -10,6 +10,8 @@ import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -21,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import es.us.meerkat.backend.dto.CorporatePlanRequest;
 import es.us.meerkat.backend.dto.CreateInstitutionRequest;
+import es.us.meerkat.backend.dto.InstitutionResponse;
 import es.us.meerkat.backend.dto.PaymentUrlResponse;
 import es.us.meerkat.backend.dto.UpdateInstitutionRequest;
 import es.us.meerkat.backend.entity.Institution;
@@ -316,6 +319,134 @@ class InstitutionServiceTest {
         long result = institutionService.contarComunidades(institutionId);
 
         assertThat(result).isEqualTo(3L);
+    }
+
+    @Test
+    void obtenerTodasLasInstitucionesShouldReturnAllInstitutions() {
+        // Given
+        Institution institution1 = buildInstitution(1L, 1L);
+        Institution institution2 = buildInstitution(2L, 2L);
+        List<Institution> expectedInstitutions = Arrays.asList(institution1, institution2);
+
+        when(institutionRepository.findAll()).thenReturn(expectedInstitutions);
+
+        // When
+        List<Institution> result = institutionService.obtenerTodasLasInstituciones();
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result).hasSize(2);
+        assertThat(result).containsExactly(institution1, institution2);
+        verify(institutionRepository).findAll();
+    }
+
+    @Test
+    void obtenerTodasLasInstitucionesShouldReturnEmptyListWhenNoInstitutions() {
+        // Given
+        when(institutionRepository.findAll()).thenReturn(List.of());
+
+        // When
+        List<Institution> result = institutionService.obtenerTodasLasInstituciones();
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result).isEmpty();
+        verify(institutionRepository).findAll();
+    }
+
+    @Test
+    void obtenerTodasLasInstitucionesResponseShouldReturnAllInstitutionsAsDTOs() {
+        // Given
+        Long adminId1 = 1L;
+        Long adminId2 = 2L;
+
+        Institution institution1 = buildInstitution(1L, adminId1);
+        Institution institution2 = buildInstitution(2L, adminId2);
+        List<Institution> institutions = Arrays.asList(institution1, institution2);
+
+        when(institutionRepository.findAll()).thenReturn(institutions);
+        when(institutionRepository.countUsuariosByDominioEmail(institution1.getDominioEmail()))
+                .thenReturn(5L);
+        when(institutionRepository.countUsuariosByDominioEmail(institution2.getDominioEmail()))
+                .thenReturn(3L);
+        when(institutionRepository.countComunidadesByInstitutionId(1L)).thenReturn(2L);
+        when(institutionRepository.countComunidadesByInstitutionId(2L)).thenReturn(1L);
+
+        // When
+        List<InstitutionResponse> result =
+                institutionService.obtenerTodasLasInstitucionesResponse();
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result).hasSize(2);
+
+        InstitutionResponse response1 = result.get(0);
+        assertThat(response1.getId()).isEqualTo(institution1.getId());
+        assertThat(response1.getNombre()).isEqualTo(institution1.getNombre());
+        assertThat(response1.getTotalUsuarios()).isEqualTo(5);
+        assertThat(response1.getTotalComunidades()).isEqualTo(2);
+
+        InstitutionResponse response2 = result.get(1);
+        assertThat(response2.getId()).isEqualTo(institution2.getId());
+        assertThat(response2.getNombre()).isEqualTo(institution2.getNombre());
+        assertThat(response2.getTotalUsuarios()).isEqualTo(3);
+        assertThat(response2.getTotalComunidades()).isEqualTo(1);
+
+        verify(institutionRepository).findAll();
+        verify(institutionRepository).countUsuariosByDominioEmail(institution1.getDominioEmail());
+        verify(institutionRepository).countUsuariosByDominioEmail(institution2.getDominioEmail());
+        verify(institutionRepository).countComunidadesByInstitutionId(1L);
+        verify(institutionRepository).countComunidadesByInstitutionId(2L);
+    }
+
+    @Test
+    void obtenerTodasLasInstitucionesResponseShouldHandleNullPlanCorporativo() {
+        // Given
+        Institution institution = buildInstitution(1L, 1L);
+        institution.setPlanCorporativo(null); // Explicitly set to null
+        List<Institution> institutions = List.of(institution);
+
+        when(institutionRepository.findAll()).thenReturn(institutions);
+        when(institutionRepository.countUsuariosByDominioEmail(institution.getDominioEmail()))
+                .thenReturn(5L);
+        when(institutionRepository.countComunidadesByInstitutionId(1L)).thenReturn(2L);
+
+        // When
+        List<InstitutionResponse> result =
+                institutionService.obtenerTodasLasInstitucionesResponse();
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result).hasSize(1);
+
+        InstitutionResponse response = result.get(0);
+        assertThat(response.getPlanCorporativo()).isNull();
+        assertThat(response.getTotalUsuarios()).isEqualTo(5);
+        assertThat(response.getTotalComunidades()).isEqualTo(2);
+    }
+
+    @Test
+    void obtenerTodasLasInstitucionesResponseShouldHandleZeroCounts() {
+        // Given
+        Institution institution = buildInstitution(1L, 1L);
+        List<Institution> institutions = List.of(institution);
+
+        when(institutionRepository.findAll()).thenReturn(institutions);
+        when(institutionRepository.countUsuariosByDominioEmail(institution.getDominioEmail()))
+                .thenReturn(0L);
+        when(institutionRepository.countComunidadesByInstitutionId(1L)).thenReturn(0L);
+
+        // When
+        List<InstitutionResponse> result =
+                institutionService.obtenerTodasLasInstitucionesResponse();
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result).hasSize(1);
+
+        InstitutionResponse response = result.get(0);
+        assertThat(response.getTotalUsuarios()).isZero();
+        assertThat(response.getTotalComunidades()).isZero();
     }
 
     // Helper methods
