@@ -53,9 +53,10 @@ export const communitiesApi = {
    * POST /api/v1/communities/{id}/members
    * Unirse a comunidad pública
    * @param {number} communityId
+   * @param {'ALUMNO'|'PROFESOR'} rol
    */
-  join(communityId) {
-    return apiClient.post(`/api/v1/communities/${communityId}/members`, {});
+  join(communityId, rol = 'ALUMNO') {
+    return apiClient.post(`/api/v1/communities/${communityId}/members`, { rol });
   },
 
   /**
@@ -136,6 +137,16 @@ export const communitiesApi = {
    */
   leave(communityId) {
     return apiClient.delete(`/api/v1/communities/${communityId}/members/me`);
+  },
+
+  /**
+   * DELETE /api/v1/communities/{communityId}/members/{userId}
+   * Expulsar a un miembro de la comunidad (solo admin)
+   * @param {number} communityId
+   * @param {number} userId
+   */
+  expelMember(communityId, userId) {
+    return apiClient.delete(`/api/v1/communities/${communityId}/members/${userId}`);
   },
 
   /**

@@ -277,4 +277,50 @@ describe('CrearEvento', () => {
     expect(await screen.findByDisplayValue('Evento de admin')).toBeInTheDocument();
     expect(screen.queryByText(/No tienes permiso para editar este evento/i)).not.toBeInTheDocument();
   });
+
+  test('bloquea la edición de un evento comunitario al creador si su rol es alumno', async () => {
+    communitiesApi.getMyMembership.mockResolvedValueOnce({ rol: 'ALUMNO' });
+    getEventById.mockResolvedValueOnce({
+      id: 55,
+      titulo: 'Evento de alumno',
+      descripcion: 'Descripción',
+      fechaHora: '2026-07-01T17:00:00',
+      esVirtual: true,
+      enlaceVirtual: 'https://meet.google.com/xxx-yyyy-zzz',
+      aforo: 50,
+      privado: false,
+      visibleMapa: true,
+      creador: { id: 1 },
+      comunidad: { id: 10 },
+    });
+
+    renderEdit();
+
+    expect(
+      await screen.findByText(/Solo un administrador o un profesor de la comunidad pueden hacerlo/i)
+    ).toBeInTheDocument();
+    expect(screen.queryByDisplayValue('Evento de alumno')).not.toBeInTheDocument();
+  });
+
+  test('permite editar un evento comunitario si el usuario es profesor', async () => {
+    communitiesApi.getMyMembership.mockResolvedValueOnce({ rol: 'PROFESOR' });
+    getEventById.mockResolvedValueOnce({
+      id: 55,
+      titulo: 'Evento de profesor',
+      descripcion: 'Descripción',
+      fechaHora: '2026-07-01T17:00:00',
+      esVirtual: true,
+      enlaceVirtual: 'https://meet.google.com/xxx-yyyy-zzz',
+      aforo: 50,
+      privado: false,
+      visibleMapa: true,
+      creador: { id: 99 },
+      comunidad: { id: 10 },
+    });
+
+    renderEdit();
+
+    expect(await screen.findByDisplayValue('Evento de profesor')).toBeInTheDocument();
+    expect(screen.queryByText(/No tienes permiso para editar este evento/i)).not.toBeInTheDocument();
+  });
 });

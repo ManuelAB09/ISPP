@@ -70,9 +70,9 @@ describe('CommunityDetail', () => {
     communitiesApi.getById.mockResolvedValue(mockCommunity);
     communitiesApi.join.mockResolvedValue({});
     communitiesApi.leave.mockResolvedValue({});
+    communitiesApi.expelMember.mockResolvedValue({});
     communitiesApi.getMyMembership.mockRejectedValue({ status: 404 });
     communitiesApi.getMembers.mockResolvedValue([]);
-    communitiesApi.activateTeacherRole.mockResolvedValue({});
 
     eventEndpoints.listCommunityEvents.mockResolvedValue(mockEvents);
     eventEndpoints.getMyAttendance.mockResolvedValue(null);
@@ -175,7 +175,42 @@ describe('CommunityDetail', () => {
     userEvent.click(joinButton);
 
     await waitFor(() => {
-      expect(communitiesApi.join).toHaveBeenCalledWith('1');
+      expect(communitiesApi.join).toHaveBeenCalledWith('1', 'ALUMNO');
+    });
+  });
+
+  test('si tiene perfil docente, al unirse muestra selector de rol', async () => {
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({
+      user: { id: 100, nombre: 'Test User', esTutor: true },
+    });
+
+    await renderComponent();
+
+    const joinButton = await screen.findByRole('button', { name: /Unirse a la comunidad/i });
+    userEvent.click(joinButton);
+
+    await screen.findByText(/Elige cómo quieres unirte/i);
+    expect(screen.getByRole('button', { name: /Unirme como profesor/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Unirme como alumno/i })).toBeInTheDocument();
+  });
+
+  test('si tiene perfil docente, puede unirse como profesor', async () => {
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({
+      user: { id: 100, nombre: 'Test User', esTutor: true },
+    });
+
+    await renderComponent();
+
+    const joinButton = await screen.findByRole('button', { name: /Unirse a la comunidad/i });
+    userEvent.click(joinButton);
+
+    const joinAsTeacherButton = await screen.findByRole('button', { name: /Unirme como profesor/i });
+    userEvent.click(joinAsTeacherButton);
+
+    await waitFor(() => {
+      expect(communitiesApi.join).toHaveBeenCalledWith('1', 'PROFESOR');
     });
   });
 
@@ -303,6 +338,131 @@ describe('CommunityDetail', () => {
     expect(screen.getByText('Paula Profe')).toBeInTheDocument();
   });
 
+  test('resuelve correctamente la foto relativa de un miembro', async () => {
+    communitiesApi.getById.mockResolvedValue({
+      ...mockCommunity,
+      esMiembro: true,
+      miRol: 'ADMIN',
+    });
+    communitiesApi.getMembers.mockResolvedValue([
+      { id: 12, rol: 'PROFESOR', usuario: { id: 12, nombre: 'Paula Profe', foto: '/uploads/paula.png' } },
+    ]);
+
+    await renderComponent();
+
+    const avatar = await screen.findByRole('img', { name: 'Paula Profe' });
+    expect(avatar).toHaveAttribute('src', 'http://localhost:8080/uploads/paula.png');
+  });
+
+  test('resuelve correctamente la foto de un miembro cuando llega en fotoPerfil', async () => {
+    communitiesApi.getById.mockResolvedValue({
+      ...mockCommunity,
+      esMiembro: true,
+      miRol: 'ADMIN',
+    });
+    communitiesApi.getMembers.mockResolvedValue([
+      { id: 12, rol: 'PROFESOR', usuario: { id: 12, nombre: 'Paula Profe', fotoPerfil: '/uploads/paula-perfil.png' } },
+    ]);
+
+    await renderComponent();
+
+    const avatar = await screen.findByRole('img', { name: 'Paula Profe' });
+    expect(avatar).toHaveAttribute('src', 'http://localhost:8080/uploads/paula-perfil.png');
+  });
+
+  test('resuelve correctamente la foto de un miembro cuando llega en avatarUrl', async () => {
+    communitiesApi.getById.mockResolvedValue({
+      ...mockCommunity,
+      esMiembro: true,
+      miRol: 'ADMIN',
+    });
+    communitiesApi.getMembers.mockResolvedValue([
+      { id: 12, rol: 'PROFESOR', usuario: { id: 12, nombre: 'Paula Profe', avatarUrl: '/static/images/renata/avatar-1.png' } },
+    ]);
+
+    await renderComponent();
+
+    const avatar = await screen.findByRole('img', { name: 'Paula Profe' });
+    expect(avatar).toHaveAttribute('src', 'http://localhost:8080/static/images/renata/avatar-1.png');
+  });
+
+  test('permite abrir el perfil de un miembro desde el listado', async () => {
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({
+      user: { id: 100, nombre: 'Admin User' },
+    });
+    communitiesApi.getById.mockResolvedValue({
+      ...mockCommunity,
+      esMiembro: true,
+      miRol: 'ADMIN',
+    });
+    communitiesApi.getMembers.mockResolvedValue([
+      { id: 10, rol: 'ADMIN', usuario: { id: 100, nombre: 'Admin User' } },
+      { id: 12, rol: 'PROFESOR', usuario: { id: 12, nombre: 'Paula Profe' } },
+    ]);
+
+    await renderComponent();
+
+    const memberButton = await screen.findByRole('button', { name: /Paula Profe/i });
+    userEvent.click(memberButton);
+
+    expect(mockNavigate).toHaveBeenCalledWith('/perfil/12');
+  });
+
+  test('permite al administrador expulsar a un miembro de la comunidad', async () => {
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({
+      user: { id: 100, nombre: 'Admin User' },
+    });
+    communitiesApi.getById.mockResolvedValue({
+      ...mockCommunity,
+      esMiembro: true,
+      miRol: 'ADMIN',
+      miembrosActuales: 2,
+    });
+    communitiesApi.getMembers.mockResolvedValue([
+      { id: 10, rol: 'ADMIN', usuario: { id: 100, nombre: 'Admin User' } },
+      { id: 12, rol: 'PROFESOR', usuario: { id: 12, nombre: 'Paula Profe' } },
+    ]);
+    const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
+
+    await renderComponent();
+
+    const expelButton = await screen.findByRole('button', { name: /Expulsar/i });
+    userEvent.click(expelButton);
+
+    await waitFor(() => {
+      expect(communitiesApi.expelMember).toHaveBeenCalledWith('1', 12);
+    });
+    expect(await screen.findByText(/ha sido expulsado de la comunidad/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText('Paula Profe')).not.toBeInTheDocument();
+    });
+
+    confirmSpy.mockRestore();
+  });
+
+  test('no muestra acción de expulsar para usuarios que no son admin', async () => {
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({
+      user: { id: 100, nombre: 'Teacher User', esTutor: true },
+    });
+    communitiesApi.getById.mockResolvedValue({
+      ...mockCommunity,
+      esMiembro: true,
+      miRol: 'PROFESOR',
+    });
+    communitiesApi.getMembers.mockResolvedValue([
+      { id: 12, rol: 'PROFESOR', usuario: { id: 12, nombre: 'Paula Profe' } },
+      { id: 13, rol: 'ALUMNO', usuario: { id: 13, nombre: 'Alberto Alumno' } },
+    ]);
+
+    await renderComponent();
+    await screen.findByText('Paula Profe');
+
+    expect(screen.queryByRole('button', { name: /Expulsar/i })).not.toBeInTheDocument();
+  });
+
   test('muestra aviso cuando el usuario es alumno y no puede crear eventos', async () => {
     localStorage.setItem('userId', '100');
     useAuth.mockReturnValue({
@@ -319,39 +479,6 @@ describe('CommunityDetail', () => {
     await screen.findByText('Comunidad de Matemáticas');
     expect(screen.queryByRole('button', { name: /Crear evento/i })).not.toBeInTheDocument();
     expect(screen.getByText(/Solo administradores y profesores pueden crear eventos/i)).toBeInTheDocument();
-  });
-
-  test('muestra acción para entrar como profesor si es miembro y tiene perfil docente', async () => {
-    localStorage.setItem('userId', '100');
-    useAuth.mockReturnValue({
-      user: { id: 100, nombre: 'Test User', esTutor: true },
-    });
-    communitiesApi.getById.mockResolvedValue({
-      ...mockCommunity,
-      esMiembro: true,
-      miRol: 'ALUMNO',
-    });
-
-    await renderComponent();
-
-    await screen.findByRole('button', { name: /Entrar como profesor en esta comunidad/i });
-  });
-
-  test('no muestra acción de entrar como profesor si no tiene perfil docente', async () => {
-    localStorage.setItem('userId', '100');
-    useAuth.mockReturnValue({
-      user: { id: 100, nombre: 'Test User', esTutor: false },
-    });
-    communitiesApi.getById.mockResolvedValue({
-      ...mockCommunity,
-      esMiembro: true,
-      miRol: 'ALUMNO',
-    });
-
-    await renderComponent();
-    await screen.findByText('Comunidad de Matemáticas');
-
-    expect(screen.queryByRole('button', { name: /Entrar como profesor en esta comunidad/i })).not.toBeInTheDocument();
   });
 
   test('muestra checkbox para filtrar eventos cancelados', async () => {

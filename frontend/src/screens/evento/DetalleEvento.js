@@ -16,6 +16,7 @@ import {
 } from '../../api/eventEndpoints';
 import { communitiesApi } from '../../api/communities.api';
 import { getApiBaseUrl } from '../../api/baseUrl';
+import { canCreateCommunityEvent, normalizeCommunityRole } from '../../utils/communityRoles';
 
 const toAbsoluteImageUrl = (imageUrl, fallback = '') => {
   const raw = String(imageUrl || '').trim();
@@ -60,6 +61,7 @@ const DetalleEvento = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelLoading, setCancelLoading] = useState(false);
   const [isMember, setIsMember] = useState(false);
+  const [communityRole, setCommunityRole] = useState(null);
 
   const currentUserId = localStorage.getItem('userId');
 
@@ -76,10 +78,12 @@ const DetalleEvento = () => {
       // Verificar si soy miembro de la comunidad del evento
       if (currentUserId && eventData.comunidadId) {
         try {
-          await communitiesApi.getMyMembership(eventData.comunidadId);
+          const membership = await communitiesApi.getMyMembership(eventData.comunidadId);
           setIsMember(true);
+          setCommunityRole(normalizeCommunityRole(membership?.rol));
         } catch {
           setIsMember(false);
+          setCommunityRole(null);
         }
       }
 
@@ -105,6 +109,7 @@ const DetalleEvento = () => {
   }, [fetchEventData]);
 
   const isOrganizer = event?.creador?.id?.toString() === currentUserId;
+  const canEditEvent = event?.comunidadId ? canCreateCommunityEvent(communityRole) : isOrganizer;
   const isConfirmed = myAttendance?.estado === 'CONFIRMADA';
   const isFull = event && event.aforo && (event.asistentesConfirmados || 0) >= event.aforo;
   const isCancelled = event?.cancelado;
@@ -255,7 +260,7 @@ const DetalleEvento = () => {
           </div>
 
           {/* Acciones del organizador */}
-          {isOrganizer && !isCancelled && !isStarted && (
+          {canEditEvent && !isCancelled && !isStarted && (
             <div className="ed-organizer-actions">
               <button
                 className="ed-btn ed-btn-edit"

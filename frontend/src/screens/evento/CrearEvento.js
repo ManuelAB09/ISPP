@@ -147,7 +147,7 @@ const CrearEvento = () => {
 
           let canEdit = data.creador && data.creador.id?.toString() === currentUserId;
 
-          if (!canEdit && data.comunidad?.id) {
+          if (data.comunidad?.id) {
             try {
               const membership = await communitiesApi.getMyMembership(data.comunidad.id);
               const normalizedRole = normalizeCommunityRole(membership?.rol);
@@ -159,7 +159,9 @@ const CrearEvento = () => {
           }
 
           if (!canEdit) {
-            setError('No tienes permiso para editar este evento. Solo el creador, un administrador o un profesor de la comunidad pueden hacerlo.');
+            setError(data.comunidad?.id
+              ? 'No tienes permiso para editar este evento. Solo un administrador o un profesor de la comunidad pueden hacerlo.'
+              : 'No tienes permiso para editar este evento. Solo el creador puede hacerlo.');
             setLoading(false);
             return;
           }
