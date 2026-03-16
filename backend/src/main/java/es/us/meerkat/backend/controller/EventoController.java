@@ -213,8 +213,7 @@ public class EventoController {
 
         if (evento.getFechaHora() != null && !evento.getFechaHora().isAfter(LocalDateTime.now())) {
             throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "No se puede actualizar un evento que ya ha comenzado");
+                    HttpStatus.CONFLICT, "No se puede actualizar un evento que ya ha comenzado");
         }
 
         final String tituloFinal = titulo != null ? titulo : evento.getTitulo();
@@ -283,8 +282,7 @@ public class EventoController {
 
         if (evento.getFechaHora() != null && !evento.getFechaHora().isAfter(LocalDateTime.now())) {
             throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "No se puede cancelar un evento que ya ha comenzado");
+                    HttpStatus.CONFLICT, "No se puede cancelar un evento que ya ha comenzado");
         }
 
         try {
