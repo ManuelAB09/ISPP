@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { getTutorById, getMyTutorProfiles } from "../../api/tutorEndpoints";
@@ -8,6 +8,8 @@ import CreateProfileModal from "./CreateProfileModal";
 import VerificacionModal from "./VerificacionModal";
 import Settings from "../myProfile/Settings";
 import HireTutorModal from "./HireTutorModal";
+import BookClassModal from "./BookClassModal";
+import TutorReservasPanel from "./TutorReservasPanel";
 import { getApiBaseUrl } from "../../api/baseUrl";
 import "./TeacherProfile.css";
 
@@ -54,6 +56,7 @@ const TeacherProfile = () => {
   const [showVerificacion, setShowVerificacion] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showHireModal, setShowHireModal] = useState(false);
+  const [showBookModal, setShowBookModal] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
 
   // Callback: actualiza estado local tras editar
@@ -275,7 +278,6 @@ const TeacherProfile = () => {
               <div className="tp-header__actions">
                 <button
                   className="tp-btn tp-btn--contact"
-
                   onClick={() => {
                     const targetUserId = tutor.userId ?? tutor.usuario?.id;
                     const nombre = tutor.usuario?.nombre || 'Profesor';
@@ -291,6 +293,9 @@ const TeacherProfile = () => {
                   }}
                 >
                   💬 Contactar
+                </button>
+                <button className="tp-btn tp-btn--book" onClick={() => setShowBookModal(true)}>
+                  📅 Reservar clase
                 </button>
                 <button className="tp-btn tp-btn--hire" onClick={() => setShowHireModal(true)}>
                   🎓 Contratar
@@ -311,6 +316,13 @@ const TeacherProfile = () => {
         </div>
       )}
       */}
+          {/* ═══════════════ PANEL RESERVAS (solo propietario) ═══════════════ */}
+          {user?.id === tutor.usuario?.id && (
+            <div style={{ marginBottom: '1.5rem' }}>
+              <TutorReservasPanel />
+            </div>
+          )}
+
           {/* ═══════════════ FILA: MIS DATOS + ACTIVIDAD ═══════════════ */}
           <div className="tp-row tp-row--datos-actividad">
             {/* — Mis datos — */}
@@ -466,6 +478,9 @@ const TeacherProfile = () => {
 
       {showHireModal && (
         <HireTutorModal tutor={tutor} onClose={() => setShowHireModal(false)} />
+      )}
+      {showBookModal && (
+        <BookClassModal tutor={tutor} onClose={() => setShowBookModal(false)} />
       )}
     </>
   );

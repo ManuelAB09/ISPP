@@ -1,0 +1,270 @@
+/* ══════════════════════════════════════════════
+   TutorReservasPanel — panel gestión de reservas
+   ══════════════════════════════════════════════ */
+
+.trp-panel {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.trp-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.trp-panel__title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+.trp-loading,
+.trp-empty {
+  font-size: 0.9rem;
+  color: #9ca3af;
+  text-align: center;
+  padding: 2rem 0;
+}
+
+/* List & cards */
+.trp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.trp-card {
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  transition: border-color 0.15s;
+}
+.trp-card:hover {
+  border-color: #c4b5fd;
+}
+
+.trp-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.trp-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.trp-card__alumno {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #1a1a2e;
+}
+
+.trp-card__fecha {
+  font-size: 0.84rem;
+  color: #6b7280;
+}
+
+.trp-card__tema {
+  font-size: 0.9rem;
+  color: #374151;
+  font-weight: 600;
+}
+
+.trp-card__detalle {
+  font-size: 0.82rem;
+  color: #9ca3af;
+}
+
+.trp-card__desc {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin: 0;
+  padding-left: 0.1rem;
+}
+
+.trp-card__right {
+  flex-shrink: 0;
+}
+
+/* Badges */
+.trp-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 0.2rem 0.65rem;
+}
+.trp-badge--pending  { background: #fef3c7; color: #92400e; }
+.trp-badge--confirmed { background: #d1fae5; color: #065f46; }
+.trp-badge--done      { background: #e0e7ff; color: #3730a3; }
+.trp-badge--cancelled { background: #fee2e2; color: #991b1b; }
+.trp-badge--absent    { background: #f3f4f6; color: #4b5563; }
+
+/* Actions */
+.trp-card__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.trp-btn {
+  border: none;
+  border-radius: 7px;
+  padding: 0.4rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.trp-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.trp-btn--confirm {
+  background: #6c3fc5;
+  color: #fff;
+}
+.trp-btn--confirm:hover:not(:disabled) {
+  background: #5a32a3;
+}
+.trp-btn--cancel {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.trp-btn--cancel:hover:not(:disabled) {
+  background: #fecaca;
+}
+.trp-btn--secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+.trp-btn--secondary:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+/* Rating */
+.trp-card__rating {
+  font-size: 0.9rem;
+  color: #f59e0b;
+}
+.trp-card__comment {
+  color: #6b7280;
+  font-size: 0.82rem;
+  font-style: italic;
+}
+
+/* Pagination */
+.trp-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.trp-page-btn {
+  border: 1.5px solid #d1d5db;
+  background: #fff;
+  border-radius: 7px;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: #374151;
+}
+.trp-page-btn:hover:not(:disabled) {
+  border-color: #6c3fc5;
+  color: #6c3fc5;
+}
+.trp-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.trp-page-info {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+/* Confirm cancel modal */
+.trp-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 1rem;
+}
+
+.trp-confirm-modal {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.15);
+}
+
+.trp-confirm-modal__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+.trp-confirm-modal__text {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.trp-confirm-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.trp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.trp-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.trp-textarea {
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #1a1a2e;
+  outline: none;
+  resize: vertical;
+  transition: border-color 0.15s;
+}
+.trp-textarea:focus {
+  border-color: #6c3fc5;
+}

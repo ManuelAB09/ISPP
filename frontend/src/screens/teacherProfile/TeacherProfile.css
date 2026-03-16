@@ -396,6 +396,17 @@
   background: var(--tp-bg);
 }
 
+/* Reservar clase */
+.tp-btn--book {
+  background: #059669;
+  color: #fff;
+  font-weight: 700;
+}
+
+.tp-btn--book:hover {
+  background: #047857;
+}
+
 /* Contratar */
 .tp-btn--hire {
   background: var(--tp-primary);
