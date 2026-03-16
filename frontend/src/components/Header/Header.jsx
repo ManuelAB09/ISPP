@@ -83,15 +83,12 @@ export default function Header({ user, page }) {
                 <div className="header-links-desktop">
                     <Link to="/" className={page === 'inicio' ? 'active' : ''}>Inicio</Link>
                     <Link to="/comunidades" className={page === 'comunidades' ? 'active' : ''}>Comunidades</Link>
-                    {isAuthenticated && (
-                        <>
-                            <Link to="/eventos-mapa" className={page === 'eventos-mapa' ? 'active' : ''}>Mapa de eventos</Link>
-                            <Link to="/profesores" className={page === 'profesores' ? 'active' : ''}>Profesores</Link>
-                            <Link to="/chats" className={page === 'chats' ? 'active' : ''}>Chats</Link>
-                            <Link to="/planes" className={page === 'planes' ? 'active' : ''}>Planes</Link>
-                            <Link to="/pagos" className={page === 'pagos' ? 'active' : ''}>Mis pagos</Link>
-                        </>
-                    )}
+                    <Link to="/eventos-mapa" className={page === 'eventos-mapa' ? 'active' : ''}>Mapa de eventos</Link>
+                    <Link to="/mis-eventos" className={page === 'mis-eventos' ? 'active' : ''}>Mis eventos</Link>
+                    <Link to="/profesores" className={page === 'profesores' ? 'active' : ''}>Profesores</Link>
+                    <Link to="/chats" className={page === 'chats' ? 'active' : ''}>Chats</Link>
+                    <Link to="/planes" className={page === 'planes' ? 'active' : ''}>Planes</Link>
+                    <Link to="/pagos" className={page === 'pagos' ? 'active' : ''}>Mis pagos</Link>
                     {!isAuthenticated && (
                         <Link to="/login">Iniciar sesión</Link>
                     )}
@@ -120,20 +117,17 @@ export default function Header({ user, page }) {
                 <div className="header-links-mobile">
                     <Link to="/" className={page === 'inicio' ? 'active' : ''} onClick={closeMenu}>Inicio</Link>
                     <Link to="/comunidades" className={page === 'comunidades' ? 'active' : ''} onClick={closeMenu}>Comunidades</Link>
-                    {isAuthenticated && (
-                        <>
-                            <Link to="/eventos-mapa" className={page === 'eventos-mapa' ? 'active' : ''} onClick={closeMenu}>Mapa de eventos</Link>
-                            <Link to="/profesores" className={page === 'profesores' ? 'active' : ''} onClick={closeMenu}>Profesores</Link>
-                            <Link to="/chats" className={page === 'chats' ? 'active' : ''} onClick={closeMenu}>Chats</Link>
-                            <Link to="/planes" className={page === 'planes' ? 'active' : ''} onClick={closeMenu}>Planes</Link>
-                            <Link to="/pagos" className={page === 'pagos' ? 'active' : ''} onClick={closeMenu}>Mis pagos</Link>
-                        </>
-                    )}
+                    <Link to="/eventos-mapa" className={page === 'eventos-mapa' ? 'active' : ''} onClick={closeMenu}>Mapa de eventos</Link>
+                    <Link to="/mis-eventos" className={page === 'mis-eventos' ? 'active' : ''} onClick={closeMenu}>Mis eventos</Link>
+                    <Link to="/profesores" className={page === 'profesores' ? 'active' : ''} onClick={closeMenu}>Profesores</Link>
+                    <Link to="/chats" className={page === 'chats' ? 'active' : ''} onClick={closeMenu}>Chats</Link>
+                    <Link to="/planes" className={page === 'planes' ? 'active' : ''} onClick={closeMenu}>Planes</Link>
+                    <Link to="/pagos" className={page === 'pagos' ? 'active' : ''} onClick={closeMenu}>Mis pagos</Link>
                     {!isAuthenticated && (
                         <Link to="/login" onClick={closeMenu}>Iniciar sesión</Link>
                     )}
                 </div>
-            </div>
+            </div >
         </>
     );
 }

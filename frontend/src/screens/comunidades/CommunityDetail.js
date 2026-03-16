@@ -11,8 +11,20 @@ import TarjetaEvento from '../../components/Evento/TarjetaEvento';
 import GoogleClassroomButton from '../../components/GoogleClassroomButton/GoogleClassroomButton';
 import { ZoomApi } from '../../api/zoom.api';
 import { useAuth } from '../../contexts/AuthContext';
+import axiosInstance from '../../api/axiosConfig';
 import CommunityChat from '../chat/CommunityChat';
 import './CommunityDetail.css';
+
+
+const OPCIONES_ANTELACION = [
+  { label: '2 días antes', value: 2880 },
+  { label: '1 día antes', value: 1440 },
+  { label: '2 horas antes', value: 120 },
+  { label: '1 hora antes', value: 60 },
+  { label: '30 minutos antes', value: 30 },
+];
+
+const CANAL_LABELS = { PLATAFORMA: 'Solo en la app', EMAIL: 'Solo por email', AMBOS: 'Ambos' };
 
 const formatDuration = (milliseconds) => {
   const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
@@ -206,6 +218,19 @@ export default function CommunityDetail() {
     fetchCommunity();
     fetchEvents();
   }, [fetchCommunity, fetchEvents]);
+
+
+  // Modal de alarmas al confirmar asistencia
+  const [showAttendModal, setShowAttendModal] = useState(false);
+  const [pendingAttendEventId, setPendingAttendEventId] = useState(null);
+  const [selectedMinutos, setSelectedMinutos] = useState([]);
+  const [selectedCanal, setSelectedCanal] = useState('AMBOS');
+
+  const toggleMinuto = (value) => {
+    setSelectedMinutos(prev =>
+      prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]
+    );
+  };
 
   // Cargar solicitudes pendientes cuando el admin accede a una comunidad privada
   useEffect(() => {
@@ -593,20 +618,34 @@ export default function CommunityDetail() {
   };
 
   const handleAttend = async (eventId) => {
+
     if (!currentUserId) {
       navigate('/login');
       return;
     }
+    setSelectedMinutos([]);
+    setSelectedCanal('AMBOS');
+    setPendingAttendEventId(eventId);
+    setShowAttendModal(true);
+  };
+
+  const handleConfirmAttend = async () => {
+    const eventId = pendingAttendEventId;
     try {
       setAttendanceLoading(true);
       await attendEvent(eventId);
-      // Actualizar optimistamente el estado local
+      if (selectedMinutos.length > 0) {
+        await axiosInstance.post(`/api/v1/events/${eventId}/alarms/batch`, {
+          minutosAntesList: selectedMinutos,
+          canal: selectedCanal,
+        });
+      }
+      setShowAttendModal(false);
       setEvents(prev => prev.map(ev =>
         ev.id === eventId
           ? { ...ev, miAsistencia: 'CONFIRMADA', asistentesConfirmados: (ev.asistentesConfirmados || 0) + 1 }
           : ev
       ));
-      // Refrescar desde el servidor
       await fetchEvents();
     } catch (err) {
       console.error('Error al confirmar asistencia:', err);
@@ -1287,6 +1326,73 @@ extraActions={(
           />
         )}
       </div>
+
+      {/* Modal alarmas al apuntarse */}
+      {showAttendModal && (
+        <div className="ed-modal-overlay" onClick={() => setShowAttendModal(false)}>
+          <div className="ed-modal" onClick={e => e.stopPropagation()}>
+            <h2 className="ed-modal-title">Confirmar asistencia</h2>
+            <p className="ed-modal-text">
+              ¿Quieres recibir alarmas para recordarte este evento?
+            </p>
+
+            <div className="ed-attend-checkboxes">
+              {OPCIONES_ANTELACION.map(o => (
+                <label key={o.value} className="ed-attend-check-label">
+                  <input
+                    type="checkbox"
+                    checked={selectedMinutos.includes(o.value)}
+                    onChange={() => toggleMinuto(o.value)}
+                  />
+                  {o.label}
+                </label>
+              ))}
+            </div>
+
+            {selectedMinutos.length > 0 && (
+              <div className="ed-modal-field" style={{ marginBottom: '1rem' }}>
+                <label className="ed-modal-label">Canal de notificación</label>
+                <div className="ed-canal-radios">
+                  {Object.entries(CANAL_LABELS).map(([k, v]) => (
+                    <label key={k} className="ed-canal-radio-label">
+                      <input
+                        type="radio"
+                        name="canal-cd"
+                        value={k}
+                        checked={selectedCanal === k}
+                        onChange={() => setSelectedCanal(k)}
+                      />
+                      {v}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="ed-modal-actions">
+              <button
+                className="ed-btn ed-btn-secondary"
+                onClick={() => setShowAttendModal(false)}
+                disabled={attendanceLoading}
+              >
+                Cancelar
+              </button>
+              <button
+                className="ed-btn ed-btn-attend"
+                style={{ width: 'auto', padding: '0.75rem 1.5rem' }}
+                onClick={handleConfirmAttend}
+                disabled={attendanceLoading}
+              >
+                {attendanceLoading
+                  ? 'Confirmando...'
+                  : selectedMinutos.length > 0
+                    ? 'Confirmar con alarmas'
+                    : 'Confirmar asistencia'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

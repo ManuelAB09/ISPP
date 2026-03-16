@@ -50,6 +50,8 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers("/oauth2/authorize/google-classroom-url")
                                         .authenticated()
+                                        .requestMatchers("/api/v1/google-calendar/oauth/callback")
+                                        .permitAll()
                                         .requestMatchers(
                                                 "/api/v1/auth/**",
                                                 "/api/v1/zoom/webhook",

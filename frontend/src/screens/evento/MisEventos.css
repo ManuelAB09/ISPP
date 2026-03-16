@@ -1,0 +1,479 @@
+/* ── Page layout ─────────────────────────────────────────── */
+.mis-eventos-page {
+  min-height: 100vh;
+  background: #F8F9FB;
+  font-family: 'Inter', sans-serif;
+}
+
+.mis-eventos-content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+/* ── Page header ─────────────────────────────────────────── */
+.mis-eventos-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.mis-eventos-titulo {
+  font-family: 'SpaceGrotesk', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--spaceIndigo, #2D3250);
+  margin: 0 0 0.25rem;
+}
+
+.mis-eventos-subtitulo {
+  font-size: 0.95rem;
+  color: #777;
+  margin: 0;
+}
+
+/* ── Bell / alert button ─────────────────────────────────── */
+.btn-alertas {
+  position: relative;
+  background: #fff;
+  border: 1px solid #EAEBF0;
+  border-radius: 0.75rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  font-size: 1.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  transition: border-color 0.2s;
+  flex-shrink: 0;
+}
+
+.btn-alertas--activo {
+  border-color: var(--glaucous, #676F9D);
+}
+
+.badge-alertas-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #E53935;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 999px;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+}
+
+/* ── Urgent global banner ────────────────────────────────── */
+.banner-inminente {
+  background: #FFEBEE;
+  border: 1px solid #EF9A9A;
+  color: #B71C1C;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+}
+
+/* ── Tabs ────────────────────────────────────────────────── */
+.mis-eventos-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.tab-btn {
+  background: none;
+  border: 1px solid #EAEBF0;
+  border-radius: 999px;
+  padding: 0.4rem 1.1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #555;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.tab-btn--activo,
+.tab-btn:hover {
+  background: var(--spaceIndigo, #2D3250);
+  color: #fff;
+  border-color: var(--spaceIndigo, #2D3250);
+}
+
+/* ── Type filters ────────────────────────────────────────── */
+.filtros-tipo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.filtro-btn {
+  background: #fff;
+  border: 1px solid #EAEBF0;
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #555;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.filtro-btn--activo,
+.filtro-btn:hover {
+  background: var(--glaucous, #676F9D);
+  color: #fff;
+  border-color: var(--glaucous, #676F9D);
+}
+
+/* ── Events list ─────────────────────────────────────────── */
+.eventos-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Event card ──────────────────────────────────────────── */
+.evento-card {
+  background: #fff;
+  border: 1px solid #EAEBF0;
+  border-radius: 1rem;
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow 0.18s, border-color 0.18s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.evento-card:hover {
+  box-shadow: 0 4px 16px rgba(45,50,80,0.1);
+  border-color: var(--glaucous, #676F9D);
+}
+
+.evento-card:focus-visible {
+  outline: 2px solid var(--glaucous, #676F9D);
+  outline-offset: 2px;
+}
+
+.evento-card--proximo {
+  border-color: #F2C18E;
+  background: #FFFDF9;
+}
+
+.evento-card--urgente {
+  border-color: #EF9A9A;
+  background: #FFF8F8;
+}
+
+.evento-card--cancelado {
+  opacity: 0.65;
+}
+
+/* Inline urgent banner inside the card */
+.evento-banner-urgente {
+  background: #FFEBEE;
+  color: #B71C1C;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.4rem 1rem;
+  border-bottom: 1px solid #EF9A9A;
+}
+
+.evento-card__body {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem;
+}
+
+.evento-card__icono {
+  font-size: 2rem;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #F4F4F4;
+  border-radius: 0.75rem;
+  flex-shrink: 0;
+}
+
+.evento-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.evento-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.4rem;
+}
+
+.evento-card__titulo {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--spaceIndigo, #2D3250);
+  margin: 0 0 0.4rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.evento-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  font-size: 0.82rem;
+  color: #666;
+}
+
+.evento-card__aforo {
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 0.3rem;
+}
+
+/* ── Type badges ─────────────────────────────────────────── */
+.badge-tipo {
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+}
+
+.badge-tipo--reunion   { background: #E8EAF0; color: #3949AB; }
+.badge-tipo--examen    { background: #FFF3CD; color: #856404; }
+.badge-tipo--cuestionario { background: #D4EDDA; color: #155724; }
+.badge-tipo--tutoria   { background: #FCEBD7; color: #D4843D; }
+.badge-tipo--clase     { background: #E3F2FD; color: #1565C0; }
+.badge-tipo--otro      { background: #F3F3F3; color: #555; }
+
+.badge-proximo {
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  background: #FFF3CD;
+  color: #856404;
+}
+
+.badge-cancelado {
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  background: #FFE0E0;
+  color: #dc3545;
+}
+
+.badge-inscrito {
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  background: #D4EDDA;
+  color: #155724;
+}
+
+/* ── Empty / loading / error states ─────────────────────── */
+.mis-eventos-loading,
+.mis-eventos-error,
+.mis-eventos-empty {
+  text-align: center;
+  padding: 4rem 1rem;
+  color: #888;
+  font-size: 0.95rem;
+}
+
+.mis-eventos-empty__icono {
+  display: block;
+  font-size: 3rem;
+  margin-bottom: 0.75rem;
+}
+
+.mis-eventos-error {
+  color: #dc3545;
+}
+
+/* ── Notifications side panel ────────────────────────────── */
+.panel-alertas-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.25);
+  z-index: 1100;
+}
+
+.panel-alertas {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(380px, 100vw);
+  height: 100vh;
+  background: #fff;
+  z-index: 1101;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -4px 0 24px rgba(0,0,0,0.12);
+}
+
+.panel-alertas__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.25rem 1rem;
+  border-bottom: 1px solid #EAEBF0;
+  flex-shrink: 0;
+}
+
+.panel-alertas__header h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--spaceIndigo, #2D3250);
+  margin: 0;
+}
+
+.panel-alertas__acciones {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.panel-alertas__cerrar {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #888;
+  line-height: 1;
+  padding: 0.2rem;
+}
+
+.panel-alertas__cerrar:hover {
+  color: #333;
+}
+
+.panel-alertas__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem 0;
+}
+
+.panel-alertas__cargando,
+.panel-alertas__vacio {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: #999;
+  font-size: 0.9rem;
+}
+
+/* ── Alert item ──────────────────────────────────────────── */
+.alerta-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.9rem 1.25rem;
+  border-bottom: 1px solid #F0F0F0;
+  transition: background 0.15s;
+}
+
+.alerta-item:hover {
+  background: #FAFAFA;
+}
+
+.alerta-item--leida {
+  opacity: 0.55;
+}
+
+.alerta-item__icono {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.alerta-item__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.alerta-item__mensaje {
+  font-size: 0.875rem;
+  color: #333;
+  margin: 0 0 0.2rem;
+  line-height: 1.4;
+}
+
+.alerta-item__fecha {
+  font-size: 0.75rem;
+  color: #aaa;
+}
+
+.alerta-item__btn-leer {
+  background: none;
+  border: 1px solid #EAEBF0;
+  border-radius: 999px;
+  width: 1.75rem;
+  height: 1.75rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: #676F9D;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.alerta-item__btn-leer:hover {
+  background: var(--glaucous, #676F9D);
+  color: #fff;
+  border-color: var(--glaucous, #676F9D);
+}
+
+/* ── Shared btn-link ─────────────────────────────────────── */
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--glaucous, #676F9D);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.btn-link:hover {
+  color: var(--spaceIndigo, #2D3250);
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .mis-eventos-content {
+    padding: 1.25rem 1rem 3rem;
+  }
+
+  .mis-eventos-titulo {
+    font-size: 1.5rem;
+  }
+
+  .filtros-tipo {
+    gap: 0.35rem;
+  }
+
+  .filtro-btn {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.7rem;
+  }
+
+  .evento-card__body {
+    padding: 0.9rem 1rem;
+  }
+}

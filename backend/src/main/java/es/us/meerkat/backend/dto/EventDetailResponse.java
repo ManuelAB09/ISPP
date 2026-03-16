@@ -3,6 +3,7 @@ package es.us.meerkat.backend.dto;
 import java.time.LocalDateTime;
 
 import es.us.meerkat.backend.entity.EstadoAsistencia;
+import es.us.meerkat.backend.entity.TipoEvento;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,6 +20,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EventDetailResponse {
+    /** Tipo de evento (REUNION, EXAMEN, CUESTIONARIO, TUTORIA, CLASE, OTRO). */
+    private TipoEvento tipoEvento;
+
+    //
+    // /** Icono emoji del tipo de evento (ej: "📝", "👥"). */
+    private String iconoEvento;
 
     /** Identificador del evento. */
     private Long id;

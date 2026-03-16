@@ -58,6 +58,7 @@ const MyProfile = () => {
     })
     const isOwner = true // Siempre es el propietario en esta pantalla
     const [unauthorizedMessage, setUnauthorizedMessage] = useState("")
+    const [calendarNotification, setCalendarNotification] = useState(null)
     const { logout } = useAuth()
 
     // Cargar perfil de tutor cuando el usuario es tutor
@@ -79,19 +80,29 @@ const MyProfile = () => {
             .finally(() => setLoadingTutorProfile(false));
     }, [isAuthenticated, loading, user]);
 
-    // Abrir modal de edición cuando se navega con estado desde otras pantallas.
+    // Abrir modal de edición/configuración cuando se navega con estado desde otras pantallas.
     useEffect(() => {
         const ubicacion = location.state?.ubicacion;
         const openEditProfile = Boolean(location.state?.openEditProfile);
+        const openSettings = Boolean(location.state?.openSettings);
+        const calendarNotif = location.state?.calendarNotification;
 
-        if (!ubicacion && !openEditProfile) {
+        if (!ubicacion && !openEditProfile && !openSettings && !calendarNotif) {
             return;
         }
 
         if (ubicacion) {
             setUbicacionPreseleccionada(ubicacion);
         }
-        setShowEditProfile(true);
+        if (ubicacion || openEditProfile) {
+            setShowEditProfile(true);
+        }
+        if (openSettings) {
+            setShowSettings(true);
+        }
+        if (calendarNotif) {
+            setCalendarNotification(calendarNotif);
+        }
 
         navigate(location.pathname, { replace: true, state: {} });
     }, [location.pathname, location.state, navigate]);
@@ -623,7 +634,12 @@ const MyProfile = () => {
             {/* Modal de configuración */}
             {
                 showSettings && (
-                    <Settings onClose={() => setShowSettings(false)} isOwner={isOwner} />
+                    <Settings
+                        onClose={() => setShowSettings(false)}
+                        isOwner={isOwner}
+                        calendarNotification={calendarNotification}
+                        onCalendarNotificationRead={() => setCalendarNotification(null)}
+                    />
                 )
             }
 

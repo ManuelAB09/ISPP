@@ -248,7 +248,7 @@ const VerifiedTeachers = () => {
               type="number"
               min="0"
               step="1"
-              placeholder="€ mín"
+              placeholder="€ min"
               value={filtros.tarifaMin}
               onChange={handleFiltroChange}
             />
@@ -259,7 +259,7 @@ const VerifiedTeachers = () => {
               type="number"
               min="0"
               step="1"
-              placeholder="€ máx"
+              placeholder="€ max"
               value={filtros.tarifaMax}
               onChange={handleFiltroChange}
             />
