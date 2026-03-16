@@ -2,10 +2,12 @@ package es.us.meerkat.backend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import es.us.meerkat.backend.util.EnvLoader;
 
 @SpringBootApplication
+@EnableScheduling
 public final class BackendApplication {
 
     private BackendApplication() {

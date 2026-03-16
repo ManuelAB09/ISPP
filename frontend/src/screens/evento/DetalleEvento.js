@@ -3,19 +3,43 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   LuCalendar, LuMapPin, LuLink, LuUsers, LuUser,
   LuPencil, LuX, LuArrowLeft, LuPackage,
-  LuEye, LuEyeOff, LuMap, LuClock, LuCheck
+  LuEye, LuEyeOff, LuMap, LuClock, LuCheck, LuBell, LuTrash2
 } from 'react-icons/lu';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import './DetalleEvento.css';
 import Header from '../../components/Header/Header';
+import axiosInstance from '../../api/axiosConfig';
 import {
   getEventById, cancelEvent, attendEvent, cancelAttendance,
   getConfirmedAttendees, getMyAttendance
 } from '../../api/eventEndpoints';
 import { communitiesApi } from '../../api/communities.api';
 import { getApiBaseUrl } from '../../api/baseUrl';
+
+const OPCIONES_ANTELACION = [
+  { label: '2 días antes', value: 2880 },
+  { label: '1 día antes', value: 1440 },
+  { label: '2 horas antes', value: 120 },
+  { label: '1 hora antes', value: 60 },
+  { label: '30 minutos antes', value: 30 },
+];
+
+const CANAL_LABELS = { PLATAFORMA: 'Solo en la app', EMAIL: 'Solo por email', AMBOS: 'Ambos' };
+
+const formatAlarmLabel = (minutos) => {
+  if (!minutos) return '';
+  if (minutos >= 1440 && minutos % 1440 === 0) {
+    const dias = minutos / 1440;
+    return dias === 1 ? 'en 1 día' : `en ${dias} días`;
+  }
+  if (minutos >= 60 && minutos % 60 === 0) {
+    const horas = minutos / 60;
+    return horas === 1 ? 'en 1 hora' : `en ${horas} horas`;
+  }
+  return `en ${minutos} minutos`;
+};
 
 const toAbsoluteImageUrl = (imageUrl, fallback = '') => {
   const raw = String(imageUrl || '').trim();
@@ -61,6 +85,18 @@ const DetalleEvento = () => {
   const [cancelLoading, setCancelLoading] = useState(false);
   const [isMember, setIsMember] = useState(false);
 
+  // Alarmas
+  const [alarms, setAlarms] = useState([]);
+  const [alarmsLoading, setAlarmsLoading] = useState(false);
+  const [addAlarmMinutos, setAddAlarmMinutos] = useState(1440);
+  const [addAlarmCanal, setAddAlarmCanal] = useState('AMBOS');
+  const [addAlarmLoading, setAddAlarmLoading] = useState(false);
+
+  // Modal de confirmación de asistencia con alarmas
+  const [showAttendModal, setShowAttendModal] = useState(false);
+  const [selectedMinutos, setSelectedMinutos] = useState([]);
+  const [selectedCanal, setSelectedCanal] = useState('AMBOS');
+
   const currentUserId = localStorage.getItem('userId');
 
   const fetchEventData = useCallback(async () => {
@@ -91,6 +127,14 @@ const DetalleEvento = () => {
         } catch {
           setMyAttendance(null);
         }
+
+        // Cargar alarmas del usuario para este evento
+        try {
+          const alarmsData = await axiosInstance.get(`/api/v1/events/${eventId}/alarms`);
+          setAlarms(Array.isArray(alarmsData.data) ? alarmsData.data : []);
+        } catch {
+          setAlarms([]);
+        }
       }
     } catch (err) {
       console.error('Error al cargar el evento:', err);
@@ -108,14 +152,29 @@ const DetalleEvento = () => {
   const isConfirmed = myAttendance?.estado === 'CONFIRMADA';
   const isFull = event && event.aforo && (event.asistentesConfirmados || 0) >= event.aforo;
   const isCancelled = event?.cancelado;
+  const isStarted = event?.fechaHora ? new Date(event.fechaHora).getTime() <= Date.now() : false;
 
-  const handleAttend = async () => {
+  // Abre el modal de confirmación de asistencia
+  const handleAttend = () => {
+    setSelectedMinutos([]);
+    setSelectedCanal('AMBOS');
+    setShowAttendModal(true);
+  };
+
+  // Confirma asistencia y crea alarmas si se eligieron
+  const handleConfirmAttend = async () => {
     try {
       setAttendanceLoading(true);
       await attendEvent(eventId);
+      if (selectedMinutos.length > 0) {
+        await axiosInstance.post(`/api/v1/events/${eventId}/alarms/batch`, {
+          minutosAntesList: selectedMinutos,
+          canal: selectedCanal,
+        });
+      }
+      setShowAttendModal(false);
       await fetchEventData();
     } catch (err) {
-      console.error('Error al confirmar asistencia:', err);
       setError(err.response?.data?.message || 'Error al confirmar asistencia.');
     } finally {
       setAttendanceLoading(false);
@@ -126,17 +185,54 @@ const DetalleEvento = () => {
     try {
       setAttendanceLoading(true);
       await cancelAttendance(eventId);
+      // Eliminar todas las alarmas al cancelar asistencia
+      try { await axiosInstance.delete(`/api/v1/events/${eventId}/alarms`); } catch { /* silencioso */ }
       setMyAttendance(null);
+      setAlarms([]);
       await fetchEventData();
     } catch (err) {
-      console.error('Error al cancelar asistencia:', err);
       setError(err.response?.data?.message || 'Error al cancelar asistencia.');
     } finally {
       setAttendanceLoading(false);
     }
   };
 
+  const handleDeleteAlarm = async (alarmaId) => {
+    setAlarmsLoading(true);
+    try {
+      await axiosInstance.delete(`/api/v1/events/${eventId}/alarms/${alarmaId}`);
+      setAlarms(prev => prev.filter(a => a.id !== alarmaId));
+    } catch { /* silencioso */ } finally {
+      setAlarmsLoading(false);
+    }
+  };
+
+  const handleAddAlarm = async () => {
+    setAddAlarmLoading(true);
+    try {
+      const res = await axiosInstance.post(`/api/v1/events/${eventId}/alarms`, {
+        minutosAntes: addAlarmMinutos,
+        canal: addAlarmCanal,
+      });
+      setAlarms(prev => [...prev, res.data]);
+    } catch { /* silencioso */ } finally {
+      setAddAlarmLoading(false);
+    }
+  };
+
+  const toggleMinuto = (value) => {
+    setSelectedMinutos(prev =>
+      prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]
+    );
+  };
+
   const handleCancelEvent = async () => {
+    if (isStarted) {
+      setError('No se puede cancelar un evento que ya ha comenzado.');
+      setShowCancelModal(false);
+      return;
+    }
+
     try {
       setCancelLoading(true);
       await cancelEvent(eventId, cancelReason);
@@ -223,6 +319,9 @@ const DetalleEvento = () => {
               {event.visibleMapa && !isCancelled && (
                 <span className="ed-badge ed-badge-map"><LuMap /> Visible en mapa</span>
               )}
+              {isStarted && !isCancelled && (
+                <span className="ed-badge ed-badge-cancelled">Evento iniciado</span>
+              )}
             </div>
             <h1 className="ed-title">{event.titulo}</h1>
             {event.creador && (
@@ -245,7 +344,7 @@ const DetalleEvento = () => {
           </div>
 
           {/* Acciones del organizador */}
-          {isOrganizer && !isCancelled && (
+          {isOrganizer && !isCancelled && !isStarted && (
             <div className="ed-organizer-actions">
               <button
                 className="ed-btn ed-btn-edit"
@@ -472,6 +571,64 @@ const DetalleEvento = () => {
                   </button>
                 )}
 
+                {/* Alarmas rápidas (solo si confirmado) */}
+                {isConfirmed && currentUserId && (
+                  <div className="ed-alarms-inline">
+                    <div className="ed-alarms-inline__header">
+                      <span><LuBell style={{ verticalAlign: 'middle', marginRight: 4 }} />Mis alarmas</span>
+                    </div>
+                    {alarms.length > 0 ? (
+                      <ul className="ed-alarms-list">
+                        {alarms.map(alarm => (
+                          <li key={alarm.id} className={`ed-alarm-item ${alarm.disparada ? 'ed-alarm-item--fired' : ''}`}>
+                            <span className="ed-alarm-label">{formatAlarmLabel(alarm.minutosAntes)}</span>
+                            <span className="ed-alarm-canal">{CANAL_LABELS[alarm.canal] || alarm.canal}</span>
+                            {!alarm.disparada && (
+                              <button
+                                className="ed-alarm-delete"
+                                onClick={() => handleDeleteAlarm(alarm.id)}
+                                disabled={alarmsLoading}
+                                title="Eliminar alarma"
+                              >
+                                <LuTrash2 />
+                              </button>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="ed-alarms-empty">Sin alarmas configuradas</p>
+                    )}
+                    <div className="ed-alarm-add">
+                      <select
+                        className="ed-alarm-select"
+                        value={addAlarmMinutos}
+                        onChange={e => setAddAlarmMinutos(Number(e.target.value))}
+                      >
+                        {OPCIONES_ANTELACION.map(o => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                      <select
+                        className="ed-alarm-select"
+                        value={addAlarmCanal}
+                        onChange={e => setAddAlarmCanal(e.target.value)}
+                      >
+                        {Object.entries(CANAL_LABELS).map(([k, v]) => (
+                          <option key={k} value={k}>{v}</option>
+                        ))}
+                      </select>
+                      <button
+                        className="ed-alarm-add-btn"
+                        onClick={handleAddAlarm}
+                        disabled={addAlarmLoading}
+                      >
+                        {addAlarmLoading ? '...' : '+ Añadir'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {!currentUserId && (
                   <p className="ed-login-hint">
                     <a href="/login">Inicia sesión</a> para confirmar asistencia
@@ -513,6 +670,73 @@ const DetalleEvento = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal de confirmación de asistencia con alarmas */}
+      {showAttendModal && (
+        <div className="ed-modal-overlay" onClick={() => setShowAttendModal(false)}>
+          <div className="ed-modal" onClick={e => e.stopPropagation()}>
+            <h2 className="ed-modal-title">Confirmar asistencia</h2>
+            <p className="ed-modal-text">
+              ¿Quieres recibir alarmas para recordarte este evento?
+            </p>
+
+            <div className="ed-attend-checkboxes">
+              {OPCIONES_ANTELACION.map(o => (
+                <label key={o.value} className="ed-attend-check-label">
+                  <input
+                    type="checkbox"
+                    checked={selectedMinutos.includes(o.value)}
+                    onChange={() => toggleMinuto(o.value)}
+                  />
+                  {o.label}
+                </label>
+              ))}
+            </div>
+
+            {selectedMinutos.length > 0 && (
+              <div className="ed-modal-field" style={{ marginBottom: '1rem' }}>
+                <label className="ed-modal-label">Canal de notificación</label>
+                <div className="ed-canal-radios">
+                  {Object.entries(CANAL_LABELS).map(([k, v]) => (
+                    <label key={k} className="ed-canal-radio-label">
+                      <input
+                        type="radio"
+                        name="canal"
+                        value={k}
+                        checked={selectedCanal === k}
+                        onChange={() => setSelectedCanal(k)}
+                      />
+                      {v}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="ed-modal-actions">
+              <button
+                className="ed-btn ed-btn-secondary"
+                onClick={() => setShowAttendModal(false)}
+                disabled={attendanceLoading}
+              >
+                Cancelar
+              </button>
+              <button
+                className="ed-btn ed-btn-attend"
+                style={{ width: 'auto', padding: '0.75rem 1.5rem' }}
+                onClick={handleConfirmAttend}
+                disabled={attendanceLoading}
+              >
+                {attendanceLoading
+                  ? 'Confirmando...'
+                  : selectedMinutos.length > 0
+                    ? 'Confirmar con alarmas'
+                    : 'Confirmar asistencia'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de cancelación */}
       {showCancelModal && (

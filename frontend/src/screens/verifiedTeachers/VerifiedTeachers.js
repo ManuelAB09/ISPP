@@ -68,6 +68,9 @@ const VerifiedTeachers = () => {
         });
         // La respuesta es Page<TutorProfileResponse>: { content, totalElements, number, ... }
         let contenido = resp?.content ?? (Array.isArray(resp) ? resp : []);
+        contenido = [...contenido].sort(
+          (a, b) => Number(Boolean(b?.verificado)) - Number(Boolean(a?.verificado))
+        );
         const totalElem = resp?.totalElements ?? contenido.length;
         const userHasCoords = hasValidCoords(user?.ubicacion);
         
@@ -221,7 +224,7 @@ const VerifiedTeachers = () => {
           <div className="headerTitle">
             <p>Profesionales con identidad confirmada</p>
             <span className="line"></span>
-            <h1>Profesores Verificados</h1>
+            <h1>Profesores</h1>
           </div>
 
         </div>
@@ -245,7 +248,7 @@ const VerifiedTeachers = () => {
               type="number"
               min="0"
               step="1"
-              placeholder="€ mín"
+              placeholder="€ min"
               value={filtros.tarifaMin}
               onChange={handleFiltroChange}
             />
@@ -256,7 +259,7 @@ const VerifiedTeachers = () => {
               type="number"
               min="0"
               step="1"
-              placeholder="€ máx"
+              placeholder="€ max"
               value={filtros.tarifaMax}
               onChange={handleFiltroChange}
             />
@@ -278,7 +281,7 @@ const VerifiedTeachers = () => {
         </form>
         {!cargando && !error && (
           <span className="vt-total">
-            {total} profesor{total !== 1 ? "es" : ""} verificado{total !== 1 ? "s" : ""}
+            {total} profesor{total !== 1 ? "es" : ""}
             {busquedaCercaniaActiva && (
               <span style={{ marginLeft: 8, color: '#676F9D' }}>
                 • A menos de {radioKm} km de ti
@@ -317,9 +320,10 @@ const VerifiedTeachers = () => {
 
               return (
                 <div key={tutor.id ?? i} className="vt-card">
-                  {/* Insignia verificado */}
-                  {tutor.verificado && <span className="vt-card__badge">Verificado</span>}
-                  {!tutor.verificado && <span className="vt-card__badge vt-card__badge--unverified">No verificado</span>}
+                  {/* Insignia de estado */}
+                  {tutor.verificado && (
+                    <span className="vt-card__badge">Verificado</span>
+                  )}
 
                   {/* Etiqueta de distancia */}
                   {userHasCoords && (

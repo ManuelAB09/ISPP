@@ -63,21 +63,26 @@ public class EventoController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado");
         }
 
-        final Evento evento =
-                eventoService.crearEvento(
-                        usuario.getId(),
-                        comunidadId,
-                        request.getTitulo(),
-                        request.getDescripcion(),
-                        request.getFechaHora(),
-                        request.getFechaFin(),
-                        request.getAforo(),
-                        request.getQueLlevar(),
-                        request.getEsVirtual(),
-                        request.getPrivado(),
-                        request.getEnlaceVirtual(),
-                        request.getVisibleEnMapa(),
-                        null);
+        final Evento evento;
+        try {
+            evento =
+                    eventoService.crearEvento(
+                            usuario.getId(),
+                            comunidadId,
+                            request.getTitulo(),
+                            request.getDescripcion(),
+                            request.getFechaHora(),
+                            request.getFechaFin(),
+                            request.getAforo(),
+                            request.getQueLlevar(),
+                            request.getEsVirtual(),
+                            request.getPrivado(),
+                            request.getEnlaceVirtual(),
+                            request.getVisibleEnMapa(),
+                            null);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(evento.toDTO());
     }
@@ -175,17 +180,25 @@ public class EventoController {
             description = "Actualiza la información de un evento existente")
     public ResponseEntity<EventDetailResponse> editarEvento(
             @PathVariable @Parameter(description = "ID del evento") final Long eventId,
-            @Parameter(description = "Título") @RequestParam final String titulo,
-            @Parameter(description = "Descripción") @RequestParam final String descripcion,
-            @Parameter(description = "Fecha/hora inicio") @RequestParam
+            @Parameter(description = "Título") @RequestParam(required = false) final String titulo,
+            @Parameter(description = "Descripción") @RequestParam(required = false)
+                    final String descripcion,
+            @Parameter(description = "Fecha/hora inicio") @RequestParam(required = false)
                     final LocalDateTime fechaInicio,
-            @Parameter(description = "Fecha/hora fin") @RequestParam final LocalDateTime fechaFin,
-            @Parameter(description = "Aforo máximo") @RequestParam final Integer aforo,
-            @Parameter(description = "Qué llevar") @RequestParam final String queLlevar,
-            @Parameter(description = "Es virtual") @RequestParam final Boolean esVirtual,
-            @Parameter(description = "Es privado") @RequestParam final Boolean privado,
+            @Parameter(description = "Fecha/hora fin") @RequestParam(required = false)
+                    final LocalDateTime fechaFin,
+            @Parameter(description = "Aforo máximo") @RequestParam(required = false)
+                    final Integer aforo,
+            @Parameter(description = "Qué llevar") @RequestParam(required = false)
+                    final String queLlevar,
+            @Parameter(description = "Es virtual") @RequestParam(required = false)
+                    final Boolean esVirtual,
+            @Parameter(description = "Es privado") @RequestParam(required = false)
+                    final Boolean privado,
             @Parameter(description = "ID de ubicación") @RequestParam(required = false)
                     final Long ubicacionId,
+            @Parameter(description = "Visible en mapa") @RequestParam(required = false)
+                    final Boolean visibleEnMapa,
             @AuthenticationPrincipal Usuario usuario) {
 
         if (usuario == null) {
@@ -198,18 +211,41 @@ public class EventoController {
                     HttpStatus.FORBIDDEN, "Solo el creador del evento puede editarlo");
         }
 
-        final Evento eventoEditado =
-                eventoService.editarEvento(
-                        eventId,
-                        titulo,
-                        descripcion,
-                        fechaInicio,
-                        fechaFin,
-                        aforo,
-                        queLlevar,
-                        esVirtual,
-                        privado,
-                        ubicacionId);
+        if (evento.getFechaHora() != null && !evento.getFechaHora().isAfter(LocalDateTime.now())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "No se puede actualizar un evento que ya ha comenzado");
+        }
+
+        final String tituloFinal = titulo != null ? titulo : evento.getTitulo();
+        final String descripcionFinal = descripcion != null ? descripcion : evento.getDescripcion();
+        final LocalDateTime fechaInicioFinal =
+                fechaInicio != null ? fechaInicio : evento.getFechaHora();
+        final LocalDateTime fechaFinFinal = fechaFin != null ? fechaFin : evento.getFechaFin();
+        final Integer aforoFinal = aforo != null ? aforo : evento.getAforo();
+        final String queLlevarFinal = queLlevar != null ? queLlevar : evento.getQueLlevar();
+        final Boolean esVirtualFinal = esVirtual != null ? esVirtual : evento.getEsVirtual();
+        final Boolean privadoFinal = privado != null ? privado : evento.getPrivado();
+
+        final Evento eventoEditado;
+        try {
+            eventoEditado =
+                    eventoService.editarEvento(
+                            eventId,
+                            tituloFinal,
+                            descripcionFinal,
+                            fechaInicioFinal,
+                            fechaFinFinal,
+                            aforoFinal,
+                            queLlevarFinal,
+                            esVirtualFinal,
+                            privadoFinal,
+                            ubicacionId,
+                            visibleEnMapa);
+        } catch (IllegalStateException e) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
 
         return ResponseEntity.ok(eventoEditado.toDTO());
     }
@@ -244,6 +280,15 @@ public class EventoController {
                     HttpStatus.FORBIDDEN, "Solo el creador del evento puede cancelarlo");
         }
 
-        return ResponseEntity.ok(eventoService.cancelarEvento(eventId, motivo).toDTO());
+        if (evento.getFechaHora() != null && !evento.getFechaHora().isAfter(LocalDateTime.now())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "No se puede cancelar un evento que ya ha comenzado");
+        }
+
+        try {
+            return ResponseEntity.ok(eventoService.cancelarEvento(eventId, motivo).toDTO());
+        } catch (IllegalStateException e) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+        }
     }
 }
