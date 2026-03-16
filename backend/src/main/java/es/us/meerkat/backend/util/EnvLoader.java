@@ -8,12 +8,9 @@ import java.nio.charset.StandardCharsets;
 public class EnvLoader {
 
     public static void loadIfExists() {
-        File f = new File(".env");
-        if (!f.exists()) {
-            f = new File("../.env");
-            if (!f.exists()) {
-                return;
-            }
+        File f = resolveEnvFile();
+        if (f == null) {
+            return;
         }
 
         try (BufferedReader br = new BufferedReader(new FileReader(f, StandardCharsets.UTF_8))) {
@@ -26,6 +23,20 @@ public class EnvLoader {
         } catch (Exception e) {
             System.err.println("[EnvLoader] Error cargando .env: " + e.getMessage());
         }
+    }
+
+    private static File resolveEnvFile() {
+        File[] candidates = {
+            new File(".env"), new File("../.env"), new File("src/main/resources/.env")
+        };
+
+        for (File candidate : candidates) {
+            if (candidate.exists() && candidate.isFile()) {
+                return candidate;
+            }
+        }
+
+        return null;
     }
 
     private static boolean isValidLine(String line) {
