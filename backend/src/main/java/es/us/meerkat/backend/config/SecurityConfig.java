@@ -54,6 +54,7 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers(
                                                 "/api/v1/auth/**",
+                                                "/api/v1/zoom/webhook",
                                                 "/api/ubicaciones",
                                                 "/api/ubicaciones/**",
                                                 "/api/nominatim/**",
