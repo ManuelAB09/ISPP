@@ -10,8 +10,8 @@
 **Documento:** Entrega  
 **Sprint:** Sprint S2  
 **Semana:** Semana 2  
-**Estado:** Borrador
-**Fecha:** 0x/0x/2026  
+**Estado:** Aprobado  
+**Fecha:** 16/03/2026  
 **Autor(es):** Alejandro Soult Toscano
 
 ---
@@ -104,4 +104,4 @@
 
 ## 2. Acciones a realizar
 
-Al estar en el primer Sprint de desarrollo, se les ha informado a los usuarios pilotos con el enlace a la primera versión desplegada de MeerKatter, provisionándoles también de un pequeño cuestionario de feedback en el que pueden dar su opinión y proponer mejoras que serán tomadas en cuentas para el próximo sprint.
+Al estar en el segundo Sprint de desarrollo, se ha recopilado su feedback y se han corregido los errores encontrados. Ahora, al lanzarse una nueva versión, se volverá a notificar a los usuarios pilotos para que vuelvan a recopilar errores nuevos.
