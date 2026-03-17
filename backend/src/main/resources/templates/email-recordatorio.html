@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recordatorio de evento — Meerkat</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f4f6f9;
+      font-family: 'Segoe UI', Arial, sans-serif;
+    }
+
+    .wrapper {
+      max-width: 600px;
+      margin: 32px auto;
+      background: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    /* CABECERA */
+    .header {
+      background: linear-gradient(135deg, #4F46E5, #7C3AED);
+      padding: 36px 40px;
+      text-align: center;
+    }
+
+    .header .icon {
+      font-size: 48px;
+      margin-bottom: 8px;
+    }
+
+    .header h1 {
+      color: #ffffff;
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .header .badge {
+      display: inline-block;
+      margin-top: 10px;
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+      border-radius: 20px;
+      padding: 4px 16px;
+      font-size: 13px;
+    }
+
+    /* CUERPO */
+    .body {
+      padding: 36px 40px;
+    }
+
+    .event-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 4px;
+    }
+
+    .event-meta {
+      font-size: 13px;
+      color: #6B7280;
+      margin-top: 2px;
+    }
+
+    .section {
+      margin-top: 28px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #6B7280;
+      margin-bottom: 10px;
+    }
+
+    .info-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid #F3F4F6;
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-icon {
+      font-size: 18px;
+      width: 24px;
+      flex-shrink: 0;
+    }
+
+    .info-text {
+      font-size: 14px;
+      color: #374151;
+      line-height: 1.5;
+    }
+
+    .info-text strong {
+      color: #111827;
+    }
+
+    /* ENLACE VIRTUAL */
+    .virtual-link {
+      display: inline-block;
+      margin-top: 10px;
+      background: #4F46E5;
+      color: #ffffff !important;
+      text-decoration: none;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    /* LISTA DE ASISTENTES */
+    .attendees-box {
+      background: #F9FAFB;
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-top: 8px;
+    }
+
+    .attendee-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 0;
+      border-bottom: 1px solid #F3F4F6;
+    }
+
+    .attendee-row:last-child {
+      border-bottom: none;
+    }
+
+    .attendee-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4F46E5, #7C3AED);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .attendee-name {
+      font-size: 14px;
+      color: #111827;
+      font-weight: 500;
+    }
+
+    .attendee-count {
+      display: inline-block;
+      margin-left: 6px;
+      background: #EEF2FF;
+      color: #4338CA;
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      vertical-align: middle;
+    }
+
+    .no-attendees {
+      font-size: 13px;
+      color: #9CA3AF;
+      font-style: italic;
+    }
+
+    /* BANNER ALERTA */
+    .alert-banner {
+      background: #FEF3C7;
+      border-left: 4px solid #F59E0B;
+      padding: 12px 16px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 20px;
+      font-size: 14px;
+      color: #92400E;
+    }
+
+    /* PIE */
+    .footer {
+      background: #F9FAFB;
+      padding: 20px 40px;
+      text-align: center;
+      border-top: 1px solid #E5E7EB;
+    }
+
+    .footer p {
+      font-size: 12px;
+      color: #9CA3AF;
+      margin: 4px 0;
+    }
+
+    .footer a {
+      color: #4F46E5;
+      text-decoration: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrapper">
+
+    <!-- CABECERA -->
+    <div class="header">
+      <div class="icon">{{icono}}</div>
+      <h1>Recordatorio de evento</h1>
+      <span class="badge">{{tipoRecordatorioTexto}}</span>
+    </div>
+
+    <!-- CUERPO -->
+    <div class="body">
+
+      <div class="alert-banner">
+        ⏰ <strong>{{tipoRecordatorioTexto}}</strong> empieza <strong>{{tituloEvento}}</strong>
+      </div>
+
+      <div class="event-title">{{icono}} {{tituloEvento}}</div>
+      <div class="event-meta">{{tipoEventoNombre}} · {{comunidadNombre}}</div>
+
+      <!-- DETALLES DEL EVENTO -->
+      <div class="section">
+        <div class="section-label">Detalles del evento</div>
+
+        <div class="info-row">
+          <span class="info-icon">📅</span>
+          <span class="info-text"><strong>Fecha:</strong> {{fechaFormateada}}</span>
+        </div>
+
+        <div class="info-row">
+          <span class="info-icon">🕐</span>
+          <span class="info-text"><strong>Hora:</strong> {{horaInicio}} — {{horaFin}}</span>
+        </div>
+
+        {{#esVirtual}}
+        <!-- Evento online: redirigir a la plataforma, no exponer enlace directo -->
+        <div class="info-row">
+          <span class="info-icon">💻</span>
+          <span class="info-text">
+            <strong>Evento online</strong><br />
+            <span style="color:#6B7280; font-size:13px;">
+              Cuando el evento comience, podrás unirte a la videollamada desde tu panel de eventos
+              en la plataforma. Si eres el primero en entrar, tú iniciarás la sesión.
+            </span><br />
+
+          </span>
+        </div>
+        {{/esVirtual}}
+
+        {{#tieneUbicacion}}
+        <!-- Evento presencial: mostrar ubicación física (este bloque no se renderiza si esVirtual=true) -->
+        <div class="info-row">
+          <span class="info-icon">📍</span>
+          <span class="info-text">
+            <strong>Ubicación:</strong> {{ubicacionNombre}}
+            {{#ubicacionDireccion}}<br /><span
+              style="color:#6B7280;">{{ubicacionDireccion}}</span>{{/ubicacionDireccion}}
+          </span>
+        </div>
+        {{/tieneUbicacion}}
+
+        {{#tieneQueLlevar}}
+        <div class="info-row">
+          <span class="info-icon">🎒</span>
+          <span class="info-text"><strong>Qué llevar:</strong> {{queLlevar}}</span>
+        </div>
+        {{/tieneQueLlevar}}
+
+        {{#tieneDescripcion}}
+        <div class="info-row">
+          <span class="info-icon">📝</span>
+          <span class="info-text"><strong>Descripción:</strong> {{descripcion}}</span>
+        </div>
+        {{/tieneDescripcion}}
+
+      </div>
+
+      <!-- LISTA DE ASISTENTES -->
+      <div class="section">
+        <div class="section-label">
+          Asistentes confirmados
+          <span class="attendee-count">{{totalAsistentes}}</span>
+        </div>
+
+        <div class="attendees-box">
+          {{#tieneAsistentes}}
+          {{#asistentes}}
+          <div class="attendee-row">
+            <div class="attendee-avatar">{{inicial}}</div>
+            <span class="attendee-name">{{nombre}}</span>
+          </div>
+          {{/asistentes}}
+          {{/tieneAsistentes}}
+
+          {{#sinAsistentes}}
+          <p class="no-attendees">Aún no hay asistentes confirmados.</p>
+          {{/sinAsistentes}}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PIE -->
+    <div class="footer">
+      <p>Has recibido este email porque estás inscrito en el evento.</p>
+      <p>Puedes gestionar tus preferencias en
+        <a href="{{urlPreferencias}}">Configuración → Notificaciones</a>
+      </p>
+      <p style="margin-top:12px; color:#D1D5DB;">Meerkat · Universidad de Sevilla</p>
+    </div>
+
+  </div>
+</body>
+
+</html>

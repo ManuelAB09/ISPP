@@ -103,6 +103,10 @@ describe('DetalleEvento', () => {
     const btn = await screen.findByRole('button', { name: /Confirmar asistencia/i });
     fireEvent.click(btn);
 
+    // El botón abre un modal; hay que confirmar en él
+    const modalConfirmBtn = await screen.findAllByRole('button', { name: /Confirmar asistencia/i });
+    fireEvent.click(modalConfirmBtn[modalConfirmBtn.length - 1]);
+
     await waitFor(() => {
       expect(attendEvent).toHaveBeenCalledWith('77');
     });

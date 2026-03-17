@@ -146,7 +146,7 @@ export default function Header({ user, page }) {
                         <Link to="/login" onClick={closeMenu}>Iniciar sesión</Link>
                     )}
                 </div>
-            </div>
+            </div >
         </>
     );
 }
