@@ -61,6 +61,30 @@ public class PreferenciasNotificacionService {
             prefs.setCanalAlarmasPorDefecto(request.getCanalAlarmasPorDefecto());
         }
 
+        if (request.getFrecuenciaMensajeComunidad() != null) {
+            prefs.setFrecuenciaMensajeComunidad(request.getFrecuenciaMensajeComunidad());
+        }
+
+        if (request.getFrecuenciaMenciones() != null) {
+            prefs.setFrecuenciaMenciones(request.getFrecuenciaMenciones());
+        }
+
+        if (request.getFrecuenciaInvitaciones() != null) {
+            prefs.setFrecuenciaInvitaciones(request.getFrecuenciaInvitaciones());
+        }
+
+        if (request.getFrecuenciaAnuncios() != null) {
+            prefs.setFrecuenciaAnuncios(request.getFrecuenciaAnuncios());
+        }
+
+        if (request.getFrecuenciaSolicitudAcceso() != null) {
+            prefs.setFrecuenciaSolicitudAcceso(request.getFrecuenciaSolicitudAcceso());
+        }
+
+        if (request.getFrecuenciaCambiosDeEventos() != null) {
+            prefs.setFrecuenciaCambiosDeEventos(request.getFrecuenciaCambiosDeEventos());
+        }
+
         return toResponse(preferenciasRepository.save(prefs));
     }
 
@@ -102,6 +126,12 @@ public class PreferenciasNotificacionService {
                 .recordatorio1h(prefs.getRecordatorio1h())
                 .recordatorio30min(prefs.getRecordatorio30min())
                 .canalAlarmasPorDefecto(prefs.getCanalAlarmasPorDefecto())
+                .frecuenciaMensajeComunidad(prefs.getFrecuenciaMensajeComunidad())
+                .frecuenciaMenciones(prefs.getFrecuenciaMenciones())
+                .frecuenciaInvitaciones(prefs.getFrecuenciaInvitaciones())
+                .frecuenciaAnuncios(prefs.getFrecuenciaAnuncios())
+                .frecuenciaSolicitudAcceso(prefs.getFrecuenciaSolicitudAcceso())
+                .frecuenciaCambiosDeEventos(prefs.getFrecuenciaCambiosDeEventos())
                 .build();
     }
 }

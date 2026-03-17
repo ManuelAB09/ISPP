@@ -47,6 +47,30 @@ public class PreferenciasNotificacion {
     /** Si desea recibir recordatorio 30 minutos antes del evento. */
     private Boolean recordatorio30min;
 
+    /** Frecuencia de notificaciones. SIEMPRE, RESUMEN_DIARIO, NUNCA */
+    @Enumerated(EnumType.STRING)
+    private FrecuenciaNotificacion frecuenciaMensajeComunidad;
+
+    /** Frecuencia de notificaciones. SIEMPRE, RESUMEN_DIARIO, NUNCA */
+    @Enumerated(EnumType.STRING)
+    private FrecuenciaNotificacion frecuenciaMenciones;
+
+    /** Frecuencia de notificaciones. SIEMPRE, RESUMEN_DIARIO, NUNCA */
+    @Enumerated(EnumType.STRING)
+    private FrecuenciaNotificacion frecuenciaInvitaciones;
+
+    /** Frecuencia de notificaciones. SIEMPRE, RESUMEN_DIARIO, NUNCA */
+    @Enumerated(EnumType.STRING)
+    private FrecuenciaNotificacion frecuenciaAnuncios;
+
+    /** Frecuencia de notificaciones. SIEMPRE, RESUMEN_DIARIO, NUNCA */
+    @Enumerated(EnumType.STRING)
+    private FrecuenciaNotificacion frecuenciaSolicitudAcceso;
+
+    /** Frecuencia de notificaciones. SIEMPRE, RESUMEN_DIARIO, NUNCA */
+    @Enumerated(EnumType.STRING)
+    private FrecuenciaNotificacion frecuenciaCambiosDeEventos;
+
     /**
      * Canal por defecto para las alarmas personalizadas. Se usa cuando el usuario crea una alarma
      * sin especificar canal. Por defecto: AMBOS.
@@ -74,6 +98,24 @@ public class PreferenciasNotificacion {
         }
         if (this.canalAlarmasPorDefecto == null) {
             this.canalAlarmasPorDefecto = TipoCanal.AMBOS;
+        }
+        if (this.frecuenciaMensajeComunidad == null) {
+            this.frecuenciaMensajeComunidad = FrecuenciaNotificacion.NUNCA;
+        }
+        if (this.frecuenciaMenciones == null) {
+            this.frecuenciaMenciones = FrecuenciaNotificacion.NUNCA;
+        }
+        if (this.frecuenciaInvitaciones == null) {
+            this.frecuenciaInvitaciones = FrecuenciaNotificacion.NUNCA;
+        }
+        if (this.frecuenciaAnuncios == null) {
+            this.frecuenciaAnuncios = FrecuenciaNotificacion.NUNCA;
+        }
+        if (this.frecuenciaSolicitudAcceso == null) {
+            this.frecuenciaSolicitudAcceso = FrecuenciaNotificacion.NUNCA;
+        }
+        if (this.frecuenciaCambiosDeEventos == null) {
+            this.frecuenciaCambiosDeEventos = FrecuenciaNotificacion.NUNCA;
         }
     }
 
