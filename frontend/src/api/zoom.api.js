@@ -139,4 +139,54 @@ export const ZoomApi = {
     return apiClient.get('/api/v1/zoom/me/calls');
   },
 
+  // ============================
+  // ENDPOINTS DE EVENTOS
+  // ============================
+
+  /**
+   * POST /api/v1/zoom/events/{eventId}/meeting
+   * Crear o reutilizar llamada activa de un evento
+   * @param {number} eventId
+   * @param {{ topic?: string, durationMinutes?: number }} [request]
+   */
+  createOrGetEventMeeting(eventId, request = null) {
+    return apiClient.post(`/api/v1/zoom/events/${eventId}/meeting`, request);
+  },
+
+  /**
+   * GET /api/v1/zoom/events/{eventId}/meeting
+   * Obtener llamada activa del evento
+   * @param {number} eventId
+   */
+  getActiveEventMeeting(eventId) {
+    return apiClient.get(`/api/v1/zoom/events/${eventId}/meeting`);
+  },
+
+  /**
+   * POST /api/v1/zoom/events/{eventId}/meeting/join
+   * Entrar en la llamada activa del evento
+   * @param {number} eventId
+   */
+  joinEventMeeting(eventId) {
+    return apiClient.post(`/api/v1/zoom/events/${eventId}/meeting/join`);
+  },
+
+  /**
+   * GET /api/v1/zoom/events/{eventId}/meeting/participants
+   * Listar quién está en la llamada activa del evento
+   * @param {number} eventId
+   */
+  listEventParticipants(eventId) {
+    return apiClient.get(`/api/v1/zoom/events/${eventId}/meeting/participants`);
+  },
+
+  /**
+   * DELETE /api/v1/zoom/events/{eventId}/meeting
+   * Finalizar la llamada activa del evento (solo el creador)
+   * @param {number} eventId
+   */
+  endEventMeeting(eventId) {
+    return apiClient.delete(`/api/v1/zoom/events/${eventId}/meeting`);
+  },
+
 };

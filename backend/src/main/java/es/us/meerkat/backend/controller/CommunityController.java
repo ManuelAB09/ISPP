@@ -471,6 +471,10 @@ public class CommunityController {
         try {
             memberService.leaveCommunity(usuario.getId(), communityId);
             return ResponseEntity.noContent().build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .header("Content-Type", "text/plain")
+                    .build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }

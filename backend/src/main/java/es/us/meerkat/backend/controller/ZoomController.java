@@ -372,6 +372,180 @@ public class ZoomController {
         }
     }
 
+    // ============================
+    // ENDPOINTS DE EVENTOS
+    // ============================
+
+    @PostMapping("/events/{eventId}/meeting")
+    @Operation(
+            summary = "Crear o reutilizar llamada Zoom de evento",
+            description =
+                    "Si no existe una llamada activa para el evento, la crea. Si existe, todos"
+                            + " reciben la misma sala")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Llamada creada u obtenida"),
+        @ApiResponse(responseCode = "401", description = "No autenticado"),
+        @ApiResponse(responseCode = "403", description = "No pertenece a la comunidad del evento"),
+        @ApiResponse(responseCode = "503", description = "Zoom no configurado en backend")
+    })
+    public ResponseEntity<?> createOrGetEventMeeting(
+            @PathVariable Long eventId,
+            @RequestBody(required = false) CreateZoomMeetingRequest request,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(MessageResponse.builder().message("Usuario no autenticado").build());
+        }
+
+        try {
+            ZoomMeeting meeting =
+                    zoomIntegrationService.createOrGetActiveMeetingForEvent(
+                            eventId,
+                            usuario.getId(),
+                            request != null ? request.topic() : null,
+                            request != null ? request.durationMinutes() : null);
+            return ResponseEntity.ok(toResponse(meeting, usuario));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(MessageResponse.builder().message(e.getMessage()).build());
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null
+                    && e.getMessage().contains("Faltan credenciales Zoom")) {
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                        .body(
+                                MessageResponse.builder()
+                                        .message(
+                                                "Zoom no esta configurado en backend. Define"
+                                                        + " ZOOM_CLIENT_ID, ZOOM_CLIENT_SECRET y"
+                                                        + " ZOOM_ACCOUNT_ID")
+                                        .build());
+            }
+            throw e;
+        }
+    }
+
+    @GetMapping("/events/{eventId}/meeting")
+    @Operation(summary = "Obtener llamada activa del evento")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Llamada activa encontrada"),
+        @ApiResponse(responseCode = "401", description = "No autenticado"),
+        @ApiResponse(responseCode = "404", description = "No hay llamada activa")
+    })
+    public ResponseEntity<?> getActiveEventMeeting(
+            @PathVariable Long eventId, @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(MessageResponse.builder().message("Usuario no autenticado").build());
+        }
+
+        try {
+            return ResponseEntity.ok(
+                    toResponse(
+                            zoomIntegrationService.getActiveMeetingForEvent(
+                                    eventId, usuario.getId()),
+                            usuario));
+        } catch (RuntimeException e) {
+            if ("No hay llamada activa en este evento".equals(e.getMessage())) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(MessageResponse.builder().message(e.getMessage()).build());
+            }
+            throw e;
+        }
+    }
+
+    @PostMapping("/events/{eventId}/meeting/join")
+    @Operation(
+            summary = "Entrar en la llamada del evento",
+            description = "Devuelve link y clave de acceso y registra que el usuario entro")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Acceso a llamada devuelto"),
+        @ApiResponse(responseCode = "401", description = "No autenticado"),
+        @ApiResponse(responseCode = "404", description = "No hay llamada activa")
+    })
+    public ResponseEntity<?> joinEventMeeting(
+            @PathVariable Long eventId, @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(MessageResponse.builder().message("Usuario no autenticado").build());
+        }
+
+        try {
+            return ResponseEntity.ok(
+                    zoomIntegrationService.joinActiveMeetingForEvent(eventId, usuario.getId()));
+        } catch (RuntimeException e) {
+            if ("No hay llamada activa en este evento".equals(e.getMessage())) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(MessageResponse.builder().message(e.getMessage()).build());
+            }
+            throw e;
+        }
+    }
+
+    @GetMapping("/events/{eventId}/meeting/participants")
+    @Operation(summary = "Listar quien esta en la llamada activa del evento")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Participantes listados"),
+        @ApiResponse(responseCode = "401", description = "No autenticado"),
+        @ApiResponse(responseCode = "404", description = "No hay llamada activa")
+    })
+    public ResponseEntity<?> listEventParticipants(
+            @PathVariable Long eventId, @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(MessageResponse.builder().message("Usuario no autenticado").build());
+        }
+
+        try {
+            return ResponseEntity.ok(
+                    zoomIntegrationService.getActiveParticipantsForEvent(
+                            eventId, usuario.getId()));
+        } catch (RuntimeException e) {
+            if ("No hay llamada activa en este evento".equals(e.getMessage())) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(MessageResponse.builder().message(e.getMessage()).build());
+            }
+            throw e;
+        }
+    }
+
+    @DeleteMapping("/events/{eventId}/meeting")
+    @Operation(
+            summary = "Finalizar llamada activa del evento",
+            description = "Solo el creador de la llamada puede finalizarla")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Llamada finalizada"),
+        @ApiResponse(responseCode = "401", description = "No autenticado"),
+        @ApiResponse(responseCode = "403", description = "No eres el creador de la llamada"),
+        @ApiResponse(responseCode = "404", description = "No hay llamada activa")
+    })
+    public ResponseEntity<?> endEventMeeting(
+            @PathVariable Long eventId, @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(MessageResponse.builder().message("Usuario no autenticado").build());
+        }
+
+        try {
+            zoomIntegrationService.endActiveMeetingForEvent(eventId, usuario.getId());
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            if ("No hay llamada activa en este evento".equals(e.getMessage())) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(MessageResponse.builder().message(e.getMessage()).build());
+            }
+            if ("Solo el creador puede finalizar la llamada".equals(e.getMessage())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(MessageResponse.builder().message(e.getMessage()).build());
+            }
+            throw e;
+        }
+    }
+
     @GetMapping("/me/calls")
     @Operation(summary = "Saber en que llamada esta el usuario")
     @ApiResponses({

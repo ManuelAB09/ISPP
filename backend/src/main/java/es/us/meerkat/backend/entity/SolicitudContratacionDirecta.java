@@ -41,6 +41,9 @@ public class SolicitudContratacionDirecta {
     @Column(nullable = false)
     private LocalDate dia;
 
+    /** Día original de la clase (no cambia al reprogramar). */
+    private LocalDate diaOriginal;
+
     /** Hora de inicio. */
     @Column(nullable = false)
     private LocalTime horaInicio;

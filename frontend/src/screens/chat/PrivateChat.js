@@ -81,7 +81,10 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
      * Suscribe al socket para recibir mensajes privados en tiempo real.
      */
     useEffect(() => {
-        if (!socket || !isConnected) return;
+        if (!socket || !isConnected) {
+            return;
+        }
+
 
         // Escuchar nuevos mensajes privados
         const handleNewDM = (nuevoMensaje) => {
@@ -127,8 +130,8 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
             setError(`Error: ${error.message}`);
         };
 
-        socket.on('dm_message', (nuevoMensaje) => {
-            // normalizar antes de procesar
+        // Bug C fix: store wrapper reference so socket.off() can match it
+        const dmHandler = (nuevoMensaje) => {
             const normalized = nuevoMensaje
                 ? {
                       ...nuevoMensaje,
@@ -137,13 +140,14 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
                   }
                 : nuevoMensaje;
             handleNewDM(normalized);
-        });
+        };
+        socket.on('dm_message', dmHandler);
         socket.on('dm_delete_success', handleDMDeleted);
         socket.on('dm_update_success', handleDMUpdated);
         socket.on('error', handleSocketError);
 
         return () => {
-            socket.off('dm_message', handleNewDM);
+            socket.off('dm_message', dmHandler);
             socket.off('dm_delete_success', handleDMDeleted);
             socket.off('dm_update_success', handleDMUpdated);
             socket.off('error', handleSocketError);

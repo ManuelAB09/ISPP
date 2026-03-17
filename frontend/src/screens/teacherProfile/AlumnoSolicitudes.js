@@ -142,7 +142,6 @@ const AlumnoSolicitudes = ({ tutorId }) => {
       setIntentError(
         err?.response?.data?.error || "Error al iniciar el pago"
       );
-      setPayingId(null);
     }
   };
 
@@ -171,6 +170,13 @@ const AlumnoSolicitudes = ({ tutorId }) => {
     RECHAZADA: "❌ Rechazada",
     PAGADA: "💰 Pagada",
     CANCELADA: "🚫 Cancelada",
+  };
+
+  /** Comprueba si la fecha/hora de la clase ya ha pasado. */
+  const clasePasada = (s) => {
+    if (!s.dia || !s.horaInicio) return false;
+    const fechaHora = new Date(`${s.dia}T${s.horaInicio}`);
+    return fechaHora < new Date();
   };
 
   return (
@@ -209,7 +215,7 @@ const AlumnoSolicitudes = ({ tutorId }) => {
               )}
             </div>
 
-            {s.estado === "ACEPTADA" && payingId !== s.id && s.tutorStripeConfigured && (
+            {s.estado === "ACEPTADA" && payingId !== s.id && s.tutorStripeConfigured && !clasePasada(s) && (
               <div className="as-card__actions">
                 <button
                   className="as-btn as-btn--pay"
@@ -220,10 +226,18 @@ const AlumnoSolicitudes = ({ tutorId }) => {
               </div>
             )}
 
-            {s.estado === "ACEPTADA" && !s.tutorStripeConfigured && (
+            {s.estado === "ACEPTADA" && !s.tutorStripeConfigured && !clasePasada(s) && (
               <div className="as-card__actions">
                 <span className="as-card__info">
-                  ⚠️ El profesor aún no ha configurado sus datos bancarios para recibir pagos.
+                  ⚠️ El profesor aún no ha configurado su cuenta de Stripe Connect para recibir pagos. Contacta con tu profesor para que configure sus datos bancarios.
+                </span>
+              </div>
+            )}
+
+            {s.estado === "ACEPTADA" && clasePasada(s) && (
+              <div className="as-card__actions">
+                <span className="as-card__info as-card__info--expired">
+                  ⏰ La fecha de esta clase ya ha pasado. No se puede realizar el pago. Si lo deseas, puedes enviar una nueva solicitud.
                 </span>
               </div>
             )}
@@ -244,7 +258,23 @@ const AlumnoSolicitudes = ({ tutorId }) => {
             )}
 
             {payingId === s.id && !clientSecret && intentError && (
-              <p className="as-checkout-error">⚠️ {intentError}</p>
+              <div className="as-card__payment">
+                <p className="as-checkout-error">⚠️ {intentError}</p>
+                <div className="as-checkout-actions">
+                  <button
+                    className="as-btn as-btn--secondary"
+                    onClick={handleCancelPay}
+                  >
+                    Volver
+                  </button>
+                  <button
+                    className="as-btn as-btn--pay"
+                    onClick={() => handlePagar(s)}
+                  >
+                    Reintentar
+                  </button>
+                </div>
+              </div>
             )}
 
             {payingId === s.id && !clientSecret && !intentError && (

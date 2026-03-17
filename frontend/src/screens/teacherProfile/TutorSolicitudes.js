@@ -354,11 +354,15 @@ const TutorSolicitudes = () => {
               {reprogramandoId === s.id && (
                 <div className="ts-card__reschedule">
                   <p className="ts-card__reschedule-title">Nueva fecha y horario:</p>
+                  <p className="ts-card__reschedule-hint">
+                    Solo puedes mover la clase hasta 2 días después de la fecha original ({s.diaOriginal || s.dia}).
+                  </p>
                   <div className="ts-card__reschedule-fields">
                     <input
                       type="date"
                       className="ts-card__reschedule-input"
                       min={minDate}
+                      max={(() => { const d = new Date((s.diaOriginal || s.dia) + "T00:00:00"); d.setDate(d.getDate() + 2); return d.toISOString().split("T")[0]; })()}
                       value={nuevoDia}
                       onChange={(e) => setNuevoDia(e.target.value)}
                     />

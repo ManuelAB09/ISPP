@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { LuCalendar, LuSquareCheck, LuMapPin, LuLink, LuArrowLeft, LuUsers, LuEye, LuEyeOff, LuMap, LuMapPinOff, LuPlus } from 'react-icons/lu';
+import { LuCalendar, LuSquareCheck, LuMapPin, LuLink, LuArrowLeft, LuUsers, LuEye, LuEyeOff, LuMap, LuMapPinOff, LuPlus, LuVideo } from 'react-icons/lu';
 import './CrearEvento.css';
 import Header from '../../components/Header/Header';
 import { createEvent, getEventById, updateEvent } from '../../api/eventEndpoints';
@@ -65,6 +65,7 @@ const CrearEvento = () => {
     minutoFin: '',
     tipoLocalizacion: 'Presencial',
     direccion: '',
+    zoomDuration: 60,
     aforo: '',
     privado: false,
     visibleEnMapa: true,
@@ -164,7 +165,8 @@ const CrearEvento = () => {
             horaFin: fechaFin ? String(fechaFin.getHours()).padStart(2, '0') : '',
             minutoFin: fechaFin ? String(fechaFin.getMinutes()).padStart(2, '0') : '',
             tipoLocalizacion: data.esVirtual ? 'Online' : 'Presencial',
-            direccion: data.esVirtual ? (data.enlaceVirtual || '') : (data.ubicacion?.nombre || data.ubicacion || ''),
+            direccion: data.esVirtual ? '' : (data.ubicacion?.nombre || data.ubicacion || ''),
+            zoomDuration: 60,
             aforo: data.aforo ? String(data.aforo) : '',
             privado: data.privado || false,
             visibleEnMapa: data.visibleMapa !== undefined ? data.visibleMapa : (data.visibleEnMapa !== undefined ? data.visibleEnMapa : true),
@@ -268,8 +270,11 @@ const CrearEvento = () => {
       }
     }
 
-    if (formData.tipoLocalizacion === 'Online' && !formData.direccion.trim()) {
-      errors.direccion = 'El enlace virtual es obligatorio';
+    if (formData.tipoLocalizacion === 'Online') {
+      const dur = parseInt(formData.zoomDuration);
+      if (!dur || dur < 5 || dur > 480) {
+        errors.zoomDuration = 'La duración debe ser entre 5 y 480 minutos';
+      }
     }
     if (formData.tipoLocalizacion === 'Presencial' && !formData.ubicacionId) {
       errors.ubicacion = 'Debes seleccionar una ubicación para el evento presencial';
@@ -349,7 +354,7 @@ const CrearEvento = () => {
         payload.ubicacionId = formData.ubicacionId;
       }
     } else {
-      payload.enlaceVirtual = formData.direccion;
+      payload.zoomDuration = parseInt(formData.zoomDuration) || 60;
     }
 
     if (!isEdit && selectedCommunityId) {
@@ -633,11 +638,43 @@ const CrearEvento = () => {
 
           <div className="right-column">
             {formData.tipoLocalizacion === 'Online' && (
-              <>
-                <label className="input-label">Enlace virtual *</label>
-                <textarea name="direccion" placeholder="Ej. https://meet.google.com/abc-defg-hij" value={formData.direccion} onChange={handleChange} rows="3" className={`input-box input-large ${validationErrors.direccion ? 'input-error' : ''}`}></textarea>
-                {validationErrors.direccion && <span className="field-error">{validationErrors.direccion}</span>}
-              </>
+              <div style={{ marginTop: '12px' }}>
+                <div style={{
+                  background: '#f0f7ff',
+                  border: '1px solid #91caff',
+                  borderRadius: 10,
+                  padding: '16px',
+                  marginBottom: 4
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                    <LuVideo style={{ color: '#1890ff', fontSize: '1.3rem' }} />
+                    <span style={{ fontWeight: 700, fontSize: '1.05rem', color: '#222' }}>
+                      Reunión por Zoom
+                    </span>
+                  </div>
+                  <p style={{ margin: '0 0 12px 0', color: '#555', fontSize: '0.9rem', lineHeight: 1.4 }}>
+                    Se creará automáticamente una sala de Zoom cuando inicies la reunión desde el detalle del evento.
+                  </p>
+                  <div className="input-group" style={{ marginBottom: 0 }}>
+                    <label className="input-label">Duración máxima (minutos) *</label>
+                    <div className="input-row">
+                      <input
+                        type="number"
+                        name="zoomDuration"
+                        min="5"
+                        max="480"
+                        step="5"
+                        value={formData.zoomDuration}
+                        onChange={handleChange}
+                        className={`input-box input-medium ${validationErrors.zoomDuration ? 'input-error' : ''}`}
+                      />
+                      <LuVideo className="input-icon" />
+                    </div>
+                    {validationErrors.zoomDuration && <span className="field-error">{validationErrors.zoomDuration}</span>}
+                    <span className="field-hint">Entre 5 y 480 minutos.</span>
+                  </div>
+                </div>
+              </div>
             )}
 
             {formData.tipoLocalizacion === 'Presencial' && (

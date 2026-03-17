@@ -11,6 +11,7 @@ import { communitiesApi } from '../../api/communities.api';
 import { ZoomApi } from '../../api/zoom.api';
 import { listCommunityEvents, attendEvent, cancelAttendance, getMyAttendance } from '../../api/eventEndpoints';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSocketContext } from '../../contexts/SocketContext';
 import axiosInstance from '../../api/axiosConfig';
 import './CommunityDetail.css';
 
@@ -73,6 +74,7 @@ export default function CommunityDetail() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const { socket } = useSocketContext();
   const openChatOnLoad = searchParams.get('chat') === 'open';
 
   const [community, setCommunity] = useState(null);
@@ -297,16 +299,21 @@ export default function CommunityDetail() {
   }, [fetchActiveMeeting]);
 
   useEffect(() => {
-    if (!currentUserId || !isMember) {
+    if (!currentUserId || !isMember || !communityId) {
       return undefined;
     }
 
-    const pollId = setInterval(() => {
-      fetchActiveMeeting({ silent: true });
-    }, 1000);
-
-    return () => clearInterval(pollId);
-  }, [fetchActiveMeeting, currentUserId, isMember]);
+    const topic = `/topic/community.${communityId}.meeting`;
+    const handler = (data) => {
+      if (!data || data === '') {
+        setActiveMeeting(null);
+      } else {
+        setActiveMeeting(data);
+      }
+    };
+    socket.on(topic, handler);
+    return () => socket.off(topic, handler);
+  }, [socket, communityId, currentUserId, isMember]);
 
   useEffect(() => {
     if (!activeMeeting) {
@@ -706,6 +713,10 @@ export default function CommunityDetail() {
       await fetchEvents();
     } catch (err) {
       console.error('Error al cancelar asistencia:', err);
+      const status = err?.response?.status;
+      if (status === 403) {
+        alert('El organizador del evento no puede cancelar su asistencia. Cancela el evento en su lugar.');
+      }
     } finally {
       setAttendanceLoading(false);
     }
@@ -765,7 +776,9 @@ export default function CommunityDetail() {
     } catch (err) {
       console.error('Error al abandonar la comunidad:', err);
       const status = err.status || err.response?.status;
-      if (status === 400) {
+      if (status === 409) {
+        setMembershipError('No puedes abandonar la comunidad mientras tengas asistencia confirmada a eventos activos. Cancela tu asistencia primero.');
+      } else if (status === 400) {
         setMembershipError('No puedes abandonar siendo el único admin. Transfiere la administración primero.');
       } else {
         setMembershipError(err.message || 'Error al abandonar la comunidad');
@@ -1043,6 +1056,7 @@ export default function CommunityDetail() {
                   onAttend={currentUserId && isMember ? handleAttend : null}
                   onCancelAttendance={currentUserId ? handleCancelAttendance : null}
                   attendanceLoading={attendanceLoading}
+                  currentUserId={currentUserId}
                 />
               ))}
             </div>

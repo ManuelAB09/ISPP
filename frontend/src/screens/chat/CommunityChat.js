@@ -687,18 +687,7 @@ const CommunityChat = ({
             return;
         }
 
-        const params = new URLSearchParams({
-            communityId: String(comunidadId),
-            userId: String(targetId),
-            userName: payload.userName,
-        });
-        if (payload.userPhoto) {
-            params.set('userPhoto', payload.userPhoto);
-        }
-        if (payload.userPhotoBg) {
-            params.set('userPhotoBg', payload.userPhotoBg);
-        }
-        navigate(`/chats?${params.toString()}`);
+        navigate(`/chats?communityId=${comunidadId}&userId=${targetId}`);
     };
 
     return (

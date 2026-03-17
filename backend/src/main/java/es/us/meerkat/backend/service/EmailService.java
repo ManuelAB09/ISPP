@@ -821,6 +821,48 @@ public class EmailService {
         sendHtmlEmailSafe(email, subject, body);
     }
 
+    /** Email cuando una solicitud aceptada expira sin pago. */
+    public void sendBookingExpiredEmail(
+            String email,
+            String alumnoNombre,
+            String tutorNombre,
+            LocalDate dia,
+            LocalTime horaInicio,
+            LocalTime horaFin) {
+
+        String fecha = dia.format(DATE_FMT);
+        String horario = horaInicio.format(TIME_FMT) + " – " + horaFin.format(TIME_FMT);
+
+        String subject = appName + " - Solicitud de clase expirada";
+        String body =
+                "<html><body style='font-family:Arial,sans-serif;color:#333'><div"
+                    + " style='max-width:600px;margin:0 auto;padding:20px'><div"
+                    + " style='background:#2D3250;color:white;padding:20px;text-align:center;border-radius:5px"
+                    + " 5px 0 0'><h1>⏰ Solicitud expirada</h1></div><div"
+                    + " style='background:#f9f9f9;padding:20px;border:1px solid #ddd'><p>Hola"
+                    + " <strong>"
+                        + alumnoNombre
+                        + "</strong>,</p><p>Tu solicitud de clase con <strong>"
+                        + tutorNombre
+                        + "</strong> ha expirado porque no se realizó el pago antes de la"
+                        + " fecha de la clase:</p><div"
+                        + " style='background:#fde8e8;padding:15px;border-left:4px solid"
+                        + " #e53e3e;margin:20px 0'>"
+                        + "📅 Fecha: "
+                        + fecha
+                        + "<br>"
+                        + "🕐 Horario: "
+                        + horario
+                        + "</div><p>Si deseas reprogramar, puedes enviar una nueva solicitud"
+                        + " al profesor.</p></div><div"
+                        + " style='background:#f0f0f0;padding:15px;text-align:center;font-size:12px;border-radius:0"
+                        + " 0 5px 5px'><p>&copy; "
+                        + appName
+                        + "</p></div></div></body></html>";
+
+        sendHtmlEmailSafe(email, subject, body);
+    }
+
     private void sendHtmlEmailSafe(String to, String subject, String htmlBody) {
         try {
             MimeMessage message = mailSender.createMimeMessage();

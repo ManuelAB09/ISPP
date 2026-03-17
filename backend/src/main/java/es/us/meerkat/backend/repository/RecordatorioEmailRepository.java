@@ -40,4 +40,9 @@ public interface RecordatorioEmailRepository extends JpaRepository<RecordatorioE
     @Modifying
     @Query("DELETE FROM RecordatorioEmail r WHERE r.enviadoAt < :fechaLimite")
     void deleteOldRecordatorios(@Param("fechaLimite") LocalDateTime fechaLimite);
+
+    /** Elimina todos los recordatorios de un evento. */
+    @Modifying
+    @Query("DELETE FROM RecordatorioEmail r WHERE r.evento.id = :eventoId")
+    void deleteByEventoId(@Param("eventoId") Long eventoId);
 }

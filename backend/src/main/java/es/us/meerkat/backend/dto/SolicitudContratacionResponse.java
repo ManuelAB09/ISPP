@@ -25,6 +25,7 @@ public class SolicitudContratacionResponse {
     private String tutorNombre;
     private String tutorFoto;
     private LocalDate dia;
+    private LocalDate diaOriginal;
     private LocalTime horaInicio;
     private LocalTime horaFin;
     private BigDecimal tarifaHora;
