@@ -324,7 +324,8 @@ public class AuthService {
                     log.error("Token fail. Audience del token: {}", unverifiedToken.getPayload().getAudience());
                     log.error("Issuer del token: {}", unverifiedToken.getPayload().getIssuer());
                 } catch (Exception e) {
-                }
+                        // Ignored
+                    }
                 throw new ValidationException("ID token de Google inválido");
             }
 
@@ -791,7 +792,8 @@ public class AuthService {
                     log.error("Token fail. Audience del token: {}", unverifiedToken.getPayload().getAudience());
                     log.error("Issuer del token: {}", unverifiedToken.getPayload().getIssuer());
                 } catch (Exception e) {
-                }
+                        // Ignored
+                    }
                 throw new ValidationException("ID token de Google inválido");
             }
 
