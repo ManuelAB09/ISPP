@@ -238,10 +238,16 @@ public class AuthService {
     }
 
     private Long consumeTempLoginToken(String token) {
-        if (token == null || token.isBlank()) return null;
+        if (token == null || token.isBlank()) {
+            return null;
+        }
         TempLogin tl = tempLoginStore.remove(token);
-        if (tl == null) return null;
-        if (Instant.now().isAfter(tl.expiresAt())) return null;
+        if (tl == null) {
+            return null;
+        }
+        if (Instant.now().isAfter(tl.expiresAt())) {
+            return null;
+        }
         return tl.userId();
     }
 
@@ -439,13 +445,17 @@ public class AuthService {
     }
 
     private boolean verifyTotpCode(String base32Secret, String code) {
-        if (code == null || code.isBlank()) return false;
+        if (code == null || code.isBlank()) {
+            return false;
+        }
         byte[] key = base32Decode(base32Secret);
         long timeWindow = System.currentTimeMillis() / 1000L / 30L;
         for (int i = -1; i <= 1; i++) {
             long t = timeWindow + i;
             String generated = generateTotpForCounter(key, t);
-            if (generated.equals(code)) return true;
+            if (generated.equals(code)) {
+                return true;
+            }
         }
         return false;
     }
@@ -495,7 +505,9 @@ public class AuthService {
             } else {
                 digit = (currByte >> (8 - (index + 5))) & 0x1F;
                 index = (index + 5) % 8;
-                if (index == 0) i++;
+                if (index == 0) {
+                    i++;
+                }
             }
             sb.append(BASE32_ALPHABET.charAt(digit));
         }
@@ -509,7 +521,9 @@ public class AuthService {
         int buffer = 0, bitsLeft = 0, count = 0;
         for (char c : s.toCharArray()) {
             int val = BASE32_ALPHABET.indexOf(c);
-            if (val < 0) continue;
+            if (val < 0) {
+                continue;
+            }
             buffer <<= 5;
             buffer |= val & 0x1F;
             bitsLeft += 5;
@@ -518,7 +532,9 @@ public class AuthService {
                 bitsLeft -= 8;
             }
         }
-        if (count == result.length) return result;
+        if (count == result.length) {
+            return result;
+        }
         byte[] truncated = new byte[count];
         System.arraycopy(result, 0, truncated, 0, count);
         return truncated;
