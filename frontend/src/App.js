@@ -16,9 +16,11 @@ import CrearComunidad from './screens/comunidades/CrearComunidad';
 import CrearEvento from './screens/evento/CrearEvento';
 import DetalleEvento from './screens/evento/DetalleEvento';
 import EventosMapaScreen from './screens/evento/EventosMapaScreen';
+import MisEventos from './screens/evento/MisEventos';
 import Home from './screens/home/Home';
 import Profile from './screens/myProfile/Profile';
 import MisPagos from './screens/pagos/MisPagos';
+import MisGanancias from './screens/ganancias/MisGanancias';
 import PagoExitoso from './screens/pagos/PagoExitoso';
 import InstitutionPlansScreen from './screens/planes/InstitutionPlansScreen';
 import PasarelaPago from './screens/planes/PasarelaPago';
@@ -28,6 +30,7 @@ import PasarelaPagoTutor from './screens/teacherProfile/PasarelaPagoTutor';
 import TeacherProfile from './screens/teacherProfile/TeacherProfile';
 import CrearUbicacionScreen from './screens/ubicaciones/CrearUbicacionScreen';
 import VerifiedTeachers from './screens/verifiedTeachers/VerifiedTeachers';
+import CalendarCallback from './screens/myProfile/CalendarCallback';
 
 
 import Chats from './screens/chat/Chats';
@@ -66,9 +69,12 @@ function AppRoutes() {
         <Route path="/planes/pasarela" element={<PasarelaPago />} />
         <Route path="/planes/instituciones" element={<InstitutionPlansScreen />} />
         <Route path="/pagos" element={<MisPagos />} />
+        <Route path="/ganancias" element={<MisGanancias />} />
         <Route path="/eventos/:eventId" element={<DetalleEvento />} />
         <Route path="/eventos-mapa" element={<EventosMapaScreen />} />
+        <Route path="/mis-eventos" element={<MisEventos />} />
         <Route path="/planes/success" element={<PlanesSuccess />} />
+        <Route path="/settings/calendar" element={<CalendarCallback />} />
       </>
     )
   }

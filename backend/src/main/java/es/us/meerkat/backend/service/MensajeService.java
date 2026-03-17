@@ -322,5 +322,15 @@ public class MensajeService {
                 .build();
     }
 
+    /** Obtiene un mensaje por su ID y lo devuelve como DTO. */
+    @Transactional(readOnly = true)
+    public MensajeResponse obtenerMensaje(Long mensajeId) {
+        Mensaje mensaje =
+                mensajeRepository
+                        .findById(mensajeId)
+                        .orElseThrow(() -> new IllegalArgumentException("Mensaje no encontrado"));
+        return mapToResponse(mensaje);
+    }
+
     public record MensajeArchivo(byte[] data, String nombre, String mimeType) {}
 }

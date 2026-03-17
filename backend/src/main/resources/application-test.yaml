@@ -28,6 +28,10 @@ google:
     client-id: ${GOOGLE_CLASSROOM_CLIENT_ID:test-client-id}
     client-secret: ${GOOGLE_CLASSROOM_CLIENT_SECRET:test-client-secret}
     redirect-uri: ${GOOGLE_CLASSROOM_REDIRECT_URI:http://localhost:8080/oauth2/callback/google-classroom}
+  calendar:
+    client-id: ${GOOGLE_CALENDAR_CLIENT_ID:test-calendar-client-id}
+    client-secret: ${GOOGLE_CALENDAR_CLIENT_SECRET:test-calendar-client-secret}
+    redirect-uri: ${GOOGLE_CALENDAR_REDIRECT_URI:http://localhost:8080/api/v1/google-calendar/oauth/callback}
 stripe:
   api:
     key: stripe.api.key

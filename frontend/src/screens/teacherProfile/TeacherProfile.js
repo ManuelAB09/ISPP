@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { getTutorById, getMyTutorProfiles } from "../../api/tutorEndpoints";
+import { getTutorById, getMyTutorProfiles, iniciarOnboardingStripe } from "../../api/tutorEndpoints";
 import Header from "../../components/Header/Header";
 import EditProfileModal from "./EditProfileModal";
 import CreateProfileModal from "./CreateProfileModal";
 import VerificacionModal from "./VerificacionModal";
 import Settings from "../myProfile/Settings";
-import HireTutorModal from "./HireTutorModal";
+import HireDirectModal from "./HireDirectModal";
+import TutorSolicitudes from "./TutorSolicitudes";
+import TutorConversaciones from "./TutorConversaciones";
+import AlumnoSolicitudes from "./AlumnoSolicitudes";
+import PrivateChat from "../chat/PrivateChat";
 import { getApiBaseUrl } from "../../api/baseUrl";
 import "./TeacherProfile.css";
 
@@ -54,6 +58,8 @@ const TeacherProfile = () => {
   const [showVerificacion, setShowVerificacion] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showHireModal, setShowHireModal] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [stripeLoading, setStripeLoading] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
 
   // Callback: actualiza estado local tras editar
@@ -267,6 +273,23 @@ const TeacherProfile = () => {
                 >
                   {tutor.verificado ? "🏅 Verificado" : "Promocionarse"}
                 </button>
+                <button
+                  className={`tp-btn ${tutor.stripeConfigured ? 'tp-btn--edit' : 'tp-btn--hire'}`}
+                  disabled={stripeLoading}
+                  onClick={async () => {
+                    setStripeLoading(true);
+                    try {
+                      const returnUrl = window.location.href;
+                      const res = await iniciarOnboardingStripe(returnUrl);
+                      window.location.href = res.url;
+                    } catch (e) {
+                      alert('Error al iniciar la configuración de pagos: ' + (e?.response?.data?.error || e.message));
+                      setStripeLoading(false);
+                    }
+                  }}
+                >
+                  {tutor.stripeConfigured ? '✅ Pagos configurados' : '💳 Configurar pagos'}
+                </button>
               </div>
             )}
 
@@ -275,22 +298,9 @@ const TeacherProfile = () => {
               <div className="tp-header__actions">
                 <button
                   className="tp-btn tp-btn--contact"
-
-                  onClick={() => {
-                    const targetUserId = tutor.userId ?? tutor.usuario?.id;
-                    const nombre = tutor.usuario?.nombre || 'Profesor';
-                    if (!targetUserId) return;
-                    const params = new URLSearchParams({
-                      userId: String(targetUserId),
-                      userName: nombre,
-                    });
-                    if (tutor.usuario?.foto) {
-                      params.set('userPhoto', toAbsoluteImageUrl(tutor.usuario.foto));
-                    }
-                    navigate(`/chats?${params.toString()}`);
-                  }}
+                  onClick={() => setShowChat((prev) => !prev)}
                 >
-                  💬 Contactar
+                  {showChat ? '✕ Cerrar chat' : '💬 Contactar'}
                 </button>
                 <button className="tp-btn tp-btn--hire" onClick={() => setShowHireModal(true)}>
                   🎓 Contratar
@@ -300,8 +310,45 @@ const TeacherProfile = () => {
           </header>
         </div>
 
+        {/* Chat privado embebido en el perfil del profesor */}
+        {showChat && user?.id !== tutor.usuario?.id && (
+          <div className="tp-chat-embed">
+            <PrivateChat
+              tutorId={tutor.userId ?? tutor.usuario?.id}
+              tutorNombre={tutor.usuario?.nombre || 'Profesor'}
+              usuarioActual={{
+                id: Number(user?.id),
+                nombre: user?.nombre || 'Usuario',
+                foto: user?.foto || null,
+              }}
+              onClose={() => setShowChat(false)}
+            />
+          </div>
+        )}
+
         {/* ═══════════════ CONTENIDO PRINCIPAL (fondo blanco plano) ═══════════════ */}
         <div className="tp-content">
+
+          {/* Solicitudes de contratación (solo visible para el dueño del perfil) */}
+          {user?.id === tutor.usuario?.id && user?.esTutor && (
+            <TutorSolicitudes />
+          )}
+
+          {/* Solicitudes del alumno visitante */}
+          {user && user?.id !== tutor.usuario?.id && (
+            <AlumnoSolicitudes tutorId={tutor.id} />
+          )}
+
+          {/* Conversaciones privadas (solo visible para el dueño del perfil) */}
+          {user?.id === tutor.usuario?.id && user?.esTutor && (
+            <TutorConversaciones
+              usuarioActual={{
+                id: Number(user?.id),
+                nombre: user?.nombre || 'Usuario',
+                foto: user?.foto || null,
+              }}
+            />
+          )}
 
           {/* Solicitudes de vinculación Google Classroom (solo propietario del perfil) 
       /*
@@ -465,7 +512,7 @@ const TeacherProfile = () => {
       </div>
 
       {showHireModal && (
-        <HireTutorModal tutor={tutor} onClose={() => setShowHireModal(false)} />
+        <HireDirectModal tutor={tutor} onClose={() => setShowHireModal(false)} />
       )}
     </>
   );

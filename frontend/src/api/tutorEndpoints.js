@@ -72,6 +72,25 @@ export const verificarTutor = () => {
 };
 
 /**
+ * POST /api/v1/tutors/me/create-verification-payment-intent
+ * Crear un PaymentIntent para verificación de tutor con Stripe Elements
+ * @returns {Promise<Object>} - { clientSecret, paymentIntentId }
+ */
+export const createVerificationPaymentIntent = () => {
+  return apiClient.post('/api/v1/tutors/me/create-verification-payment-intent', {});
+};
+
+/**
+ * POST /api/v1/tutors/me/confirm-verification-payment
+ * Confirmar pago de verificación tras Stripe Elements exitoso
+ * @param {string} paymentIntentId
+ * @returns {Promise<Object>} - { mensaje }
+ */
+export const confirmVerificationPayment = (paymentIntentId) => {
+  return apiClient.post('/api/v1/tutors/me/confirm-verification-payment', { paymentIntentId });
+};
+
+/**
  * GET /api/v1/tutors/me
  * Obtener perfiles de tutor del usuario autenticado
  */
@@ -86,4 +105,23 @@ export const getMyTutorProfiles = () => {
  */
 export const getMyTutorProfile = (tutorId) => {
   return apiClient.get(`/api/v1/tutors/me/${tutorId}`);
+};
+
+/** POST /api/v1/tutors/me/stripe-connect/onboarding — Inicia onboarding Stripe Connect */
+export const iniciarOnboardingStripe = (returnUrl) => {
+  return apiClient.post('/api/v1/tutors/me/stripe-connect/onboarding', { returnUrl });
+};
+
+/** GET /api/v1/tutors/me/stripe-connect/status — Estado de la cuenta Stripe Connect */
+export const obtenerEstadoStripeConnect = () => {
+  return apiClient.get('/api/v1/tutors/me/stripe-connect/status');
+};
+
+/** GET /api/v1/tutors/me/earnings — Ganancias del tutor */
+export const obtenerGananciasTutor = (params = {}) => {
+  const query = new URLSearchParams();
+  if (params.page !== undefined) query.set('page', String(params.page));
+  if (params.size !== undefined) query.set('size', String(params.size));
+  const qs = query.toString();
+  return apiClient.get(`/api/v1/tutors/me/earnings${qs ? '?' + qs : ''}`);
 };

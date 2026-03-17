@@ -1,100 +1,56 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { subscriptionsApi } from "../../api/subscriptions.api";
 import Header from "../../components/Header/Header";
 import "./PasarelaPago.css";
 
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLIC_KEY);
+
 /**
- * Formulario de pago con inputs manuales filtrados.
+ * Formulario de pago real con Stripe Elements.
  */
 function CheckoutForm({ selectedPeriod, prices }) {
   const navigate = useNavigate();
+  const stripe = useStripe();
+  const elements = useElements();
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState(null);
-  const [errors, setErrors] = useState({});
-
-  const [formData, setFormData] = useState({
-    cardNumber: "",
-    cardName: "",
-    expiryDate: "",
-    cvc: "",
-  });
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    let formattedValue = value;
-
-    if (name === "cardNumber") {
-      const digitsOnly = value.replace(/\D/g, "").substring(0, 16);
-      formattedValue = digitsOnly.replace(/(\d{4})(?=\d)/g, "$1 ");
-    }
-
-    if (name === "expiryDate") {
-      const digitsOnly = value.replace(/\D/g, "").substring(0, 4);
-      if (digitsOnly.length >= 3) {
-        formattedValue = digitsOnly.substring(0, 2) + "/" + digitsOnly.substring(2);
-      } else {
-        formattedValue = digitsOnly;
-      }
-    }
-
-    if (name === "cvc") {
-      formattedValue = value.replace(/\D/g, "").substring(0, 3);
-    }
-
-    setFormData((prev) => ({ ...prev, [name]: formattedValue }));
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-    const cardNumberClean = formData.cardNumber.replace(/\s/g, "");
-    if (!cardNumberClean) {
-      newErrors.cardNumber = "El numero de tarjeta es requerido";
-    } else if (cardNumberClean.length !== 16) {
-      newErrors.cardNumber = "El numero de tarjeta debe tener 16 digitos";
-    }
-    if (!formData.cardName.trim()) {
-      newErrors.cardName = "El nombre del titular es requerido";
-    }
-    if (!formData.expiryDate) {
-      newErrors.expiryDate = "La fecha de caducidad es requerida";
-    } else if (formData.expiryDate.length !== 5) {
-      newErrors.expiryDate = "Formato invalido (MM/YY)";
-    } else {
-      const [month, year] = formData.expiryDate.split("/");
-      const currentYear = new Date().getFullYear() % 100;
-      const currentMonth = new Date().getMonth() + 1;
-      if (parseInt(month) < 1 || parseInt(month) > 12) {
-        newErrors.expiryDate = "Mes invalido";
-      } else if (
-        parseInt(year) < currentYear ||
-        (parseInt(year) === currentYear && parseInt(month) < currentMonth)
-      ) {
-        newErrors.expiryDate = "Tarjeta expirada";
-      }
-    }
-    if (!formData.cvc) {
-      newErrors.cvc = "El CVC es requerido";
-    } else if (formData.cvc.length !== 3) {
-      newErrors.cvc = "El CVC debe tener 3 digitos";
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!stripe || !elements) return;
 
     setProcessing(true);
     setError(null);
 
     try {
-      await subscriptionsApi.confirmPayment();
-      navigate("/planes/success?embedded=true");
+      const { error: submitError } = await elements.submit();
+      if (submitError) {
+        setError(submitError.message);
+        setProcessing(false);
+        return;
+      }
+
+      const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: window.location.origin + "/planes/success?embedded=true",
+        },
+        redirect: "if_required",
+      });
+
+      if (confirmError) {
+        setError(confirmError.message);
+        setProcessing(false);
+        return;
+      }
+
+      if (paymentIntent && paymentIntent.status === "succeeded") {
+        await subscriptionsApi.confirmEmbeddedPayment(paymentIntent.id);
+        navigate("/planes/success?embedded=true");
+      }
     } catch (err) {
       console.error("Error al procesar el pago:", err);
       setError(
@@ -109,94 +65,12 @@ function CheckoutForm({ selectedPeriod, prices }) {
 
   return (
     <form onSubmit={handleSubmit} className="pasarela-form">
-      {/* Numero de tarjeta */}
-      <div className="pasarela-form-group">
-        <label className="pasarela-label">Numero de tarjeta</label>
-        <div className="pasarela-input-wrapper">
-          <span className="pasarela-card-icon">💳</span>
-          <input
-            type="text"
-            name="cardNumber"
-            value={formData.cardNumber}
-            onChange={handleInputChange}
-            placeholder="1234 5678 9012 3456"
-            inputMode="numeric"
-            autoComplete="cc-number"
-            className={`pasarela-input ${
-              errors.cardNumber ? "pasarela-input--error" : ""
-            }`}
-          />
-        </div>
-        {errors.cardNumber && (
-          <span className="pasarela-error">{errors.cardNumber}</span>
-        )}
-      </div>
-
-      {/* Nombre del titular */}
-      <div className="pasarela-form-group">
-        <label className="pasarela-label">Nombre del titular</label>
-        <input
-          type="text"
-          name="cardName"
-          value={formData.cardName}
-          onChange={handleInputChange}
-          placeholder="NOMBRE APELLIDO"
-          autoComplete="cc-name"
-          className={`pasarela-input ${
-            errors.cardName ? "pasarela-input--error" : ""
-          }`}
-          style={{ textTransform: "uppercase" }}
-        />
-        {errors.cardName && (
-          <span className="pasarela-error">{errors.cardName}</span>
-        )}
-      </div>
-
-      {/* Fecha y CVC */}
-      <div className="pasarela-form-row">
-        <div className="pasarela-form-group">
-          <label className="pasarela-label">Fecha de caducidad</label>
-          <input
-            type="text"
-            name="expiryDate"
-            value={formData.expiryDate}
-            onChange={handleInputChange}
-            placeholder="MM/YY"
-            inputMode="numeric"
-            autoComplete="cc-exp"
-            className={`pasarela-input ${
-              errors.expiryDate ? "pasarela-input--error" : ""
-            }`}
-          />
-          {errors.expiryDate && (
-            <span className="pasarela-error">{errors.expiryDate}</span>
-          )}
-        </div>
-
-        <div className="pasarela-form-group">
-          <label className="pasarela-label">CVC</label>
-          <input
-            type="text"
-            name="cvc"
-            value={formData.cvc}
-            onChange={handleInputChange}
-            placeholder="123"
-            inputMode="numeric"
-            autoComplete="cc-csc"
-            className={`pasarela-input ${
-              errors.cvc ? "pasarela-input--error" : ""
-            }`}
-          />
-          {errors.cvc && (
-            <span className="pasarela-error">{errors.cvc}</span>
-          )}
-        </div>
-      </div>
+      <PaymentElement />
 
       {error && (
         <div
           className="pasarela-error"
-          style={{ padding: "12px", background: "#fef2f2", borderRadius: 8 }}
+          style={{ padding: "12px", background: "#fef2f2", borderRadius: 8, marginTop: 16 }}
         >
           {error}
         </div>
@@ -214,7 +88,7 @@ function CheckoutForm({ selectedPeriod, prices }) {
         <button
           type="submit"
           className="pasarela-btn pasarela-btn--primary"
-          disabled={processing}
+          disabled={processing || !stripe}
         >
           {processing ? (
             <>
@@ -229,8 +103,8 @@ function CheckoutForm({ selectedPeriod, prices }) {
       <div className="pasarela-security-info">
         <span className="pasarela-security-icon">🔒</span>
         <p>
-          Tu informacion esta protegida con encriptacion SSL de 256 bits. No
-          almacenamos datos de tarjetas de credito.
+          Tu informacion esta protegida con encriptacion SSL de 256 bits.
+          El pago se procesa de forma segura a traves de Stripe.
         </p>
       </div>
     </form>
@@ -243,6 +117,9 @@ function CheckoutForm({ selectedPeriod, prices }) {
  */
 export default function PasarelaPago() {
   const [selectedPeriod, setSelectedPeriod] = useState("mensual");
+  const [clientSecret, setClientSecret] = useState(null);
+  const [loadingIntent, setLoadingIntent] = useState(false);
+  const [intentError, setIntentError] = useState(null);
 
   const prices = useMemo(
     () => ({
@@ -251,6 +128,38 @@ export default function PasarelaPago() {
     }),
     []
   );
+
+  // Crear PaymentIntent al montar y al cambiar de periodo
+  useEffect(() => {
+    let cancelled = false;
+    const fetchIntent = async () => {
+      setLoadingIntent(true);
+      setIntentError(null);
+      setClientSecret(null);
+      try {
+        const res = await subscriptionsApi.createPaymentIntent({
+          planId: "PREMIUM",
+          aceptarTerminos: true,
+          periodo: selectedPeriod,
+        });
+        const data = res.data || res;
+        if (!cancelled) setClientSecret(data.clientSecret);
+      } catch (err) {
+        if (!cancelled)
+          setIntentError(
+            err?.response?.data?.error || "Error al iniciar el pago. Intenta de nuevo."
+          );
+      } finally {
+        if (!cancelled) setLoadingIntent(false);
+      }
+    };
+    fetchIntent();
+    return () => { cancelled = true; };
+  }, [selectedPeriod]);
+
+  const elementsOptions = clientSecret
+    ? { clientSecret, appearance: { theme: "stripe" } }
+    : undefined;
 
   return (
     <>
@@ -304,7 +213,7 @@ export default function PasarelaPago() {
                   onClick={() => setSelectedPeriod("anual")}
                 >
                   <div className="pasarela-period-label">Anual</div>
-                  <div className="pasarela-period-price">25.99€/ano</div>
+                  <div className="pasarela-period-price">25.99€/año</div>
                   <div className="pasarela-period-save">Ahorra 28%</div>
                 </button>
               </div>
@@ -342,10 +251,19 @@ export default function PasarelaPago() {
               </p>
             </div>
 
-            <CheckoutForm
-              selectedPeriod={selectedPeriod}
-              prices={prices}
-            />
+            {loadingIntent && (
+              <p style={{ textAlign: "center", padding: 20 }}>Cargando pasarela de pago...</p>
+            )}
+            {intentError && (
+              <div className="pasarela-error" style={{ padding: 12, background: "#fef2f2", borderRadius: 8 }}>
+                {intentError}
+              </div>
+            )}
+            {clientSecret && elementsOptions && (
+              <Elements stripe={stripePromise} options={elementsOptions}>
+                <CheckoutForm selectedPeriod={selectedPeriod} prices={prices} />
+              </Elements>
+            )}
           </div>
         </div>
       </div>

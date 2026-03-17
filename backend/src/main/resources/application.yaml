@@ -23,7 +23,7 @@ spring:
     host: smtp.gmail.com
     port: 587
     username: ${EMAIL:meerkattersauth@gmail.com}
-    password: ${PASSWORD_EMAIL:zbfv vnhb bodh ernd}
+    password: ${PASSWORD_EMAIL:changeme}
     from: meerkattersauth@gmail.com
     properties:
       mail:
@@ -46,11 +46,27 @@ app:
   frontend:
     url: ${FRONTEND_URL:http://localhost:3000}
 
+stripe:
+  api:
+    key: ${STRIPE_API_KEY:sk_test_placeholder}
+  webhook:
+    secret: ${STRIPE_WEBHOOK_SECRET:whsec_placeholder}
+  success:
+    url: ${STRIPE_SUCCESS_URL:http://localhost:3000/success}
+  cancel:
+    url: ${STRIPE_CANCEL_URL:http://localhost:3000/cancel}
+  price:
+    premium: ${STRIPE_PRICE_PREMIUM:prod_U3x4AB7AnO2JPG}
+
 google:
   classroom:
-    client-id: ${GOOGLE_CLASSROOM_CLIENT_ID}
-    client-secret: ${GOOGLE_CLASSROOM_CLIENT_SECRET}
+    client-id: ${GOOGLE_CLASSROOM_CLIENT_ID:placeholder}
+    client-secret: ${GOOGLE_CLASSROOM_CLIENT_SECRET:placeholder}
     redirect-uri: ${GOOGLE_CLASSROOM_REDIRECT_URI:http://localhost:8080/oauth2/callback/google-classroom}
+  calendar:
+    client-id: ${GOOGLE_CALENDAR_CLIENT_ID:placeholder}
+    client-secret: ${GOOGLE_CALENDAR_CLIENT_SECRET:placeholder}
+    redirect-uri: ${GOOGLE_CALENDAR_REDIRECT_URI:http://localhost:8080/api/v1/google-calendar/oauth/callback}
 
 zoom:
   client-id: ${ZOOM_CLIENT_ID:}

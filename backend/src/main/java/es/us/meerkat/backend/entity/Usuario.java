@@ -31,7 +31,7 @@ import lombok.ToString;
  */
 @Entity
 @Data
-@ToString(exclude = {"intereses", "tutor"})
+@ToString(exclude = {"intereses", "tutor", "institution"})
 @NoArgsConstructor
 @AllArgsConstructor
 public class Usuario {
@@ -139,6 +139,11 @@ public class Usuario {
             orphanRemoval = true,
             fetch = FetchType.LAZY)
     private Tutor tutor;
+
+    /** Institución a la que pertenece el usuario (puede ser null). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "institution_id", nullable = true)
+    private Institution institution;
 
     /** Inicializa campos antes de persistir la entidad. */
     @PrePersist

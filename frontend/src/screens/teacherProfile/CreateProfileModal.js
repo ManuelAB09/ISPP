@@ -41,7 +41,7 @@ const CreateProfileModal = ({ onClose, onCreado }) => {
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean),
-      tarifaPorHora: parseFloat(form.tarifaHora) || 0,
+      tarifaPorHora: parseInt(form.tarifaHora, 10) || 0,
       disponibilidad: form.disponibilidad.trim(),
       biografia: form.bio.trim(),
     };
@@ -102,8 +102,8 @@ const CreateProfileModal = ({ onClose, onCreado }) => {
               id="tarifaHora"
               name="tarifaHora"
               type="number"
-              min="0"
-              step="0.5"
+              min="1"
+              step="1"
               className="tm-field__input tm-field__input--sm"
               value={form.tarifaHora}
               onChange={handleChange}

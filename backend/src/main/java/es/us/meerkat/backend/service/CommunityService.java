@@ -21,6 +21,7 @@ import es.us.meerkat.backend.entity.TipoPlan;
 import es.us.meerkat.backend.entity.TipoPlanComunidad;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.ComunidadRepository;
+import es.us.meerkat.backend.repository.InstitutionRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ public class CommunityService {
     private final ComunidadRepository comunidadRepository;
     private final MiembroComunidadRepository miembroComunidadRepository;
     private final UsuarioRepository usuarioRepository;
+    private final InstitutionRepository institutionRepository;
     private final AuthorizationService authorizationService;
     private final SuscripcionService suscripcionService;
 
@@ -115,12 +117,11 @@ public class CommunityService {
         return createCommunity(userId, nombre, descripcion, tipoGrupo, imagenUrl, null);
     }
 
-    /** Obtiene la institución del repositorio (requiere que exista InstitutionRepository). */
+    /** Obtiene la institución del repositorio. */
     private es.us.meerkat.backend.entity.Institution obtenerInstitucion(Long institutionId) {
-        // Este método asume que existe un InstitutionRepository
-        // Si no existe, será necesario crearlo o inyectarlo
-        return new es.us.meerkat.backend.entity.Institution();
-        // TODO: Implementar inyección de InstitutionRepository
+        return institutionRepository
+                .findById(institutionId)
+                .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada"));
     }
 
     /** Obtiene una comunidad por ID. Comunidades privadas solo son visibles para miembros. */

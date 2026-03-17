@@ -263,15 +263,15 @@ class EventoServiceTest {
 
         when(eventoRepository.findVisibleOnMap()).thenReturn(List.of(e1, e2));
 
-        List<Evento> visibles = eventoService.obtenerEventosEnMapa();
+        List<Evento> visibles = eventoService.obtenerEventosEnMapa(null, null, null);
 
         assertThat(visibles).hasSize(2);
         verify(eventoRepository).findVisibleOnMap();
     }
 
     @Test
-    void obtenerUbicacionesRecomendadasShouldReturnPlaceholderListUntilImplemented() {
-        List<String> result = eventoService.obtenerUbicacionesRecomendadas();
+    void obtenerUbicacionesRecomendadasShouldReturnEmptyWhenNoParams() {
+        List<String> result = eventoService.obtenerUbicacionesRecomendadas(null, null, null);
 
         assertThat(result).isEmpty();
     }
