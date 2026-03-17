@@ -129,7 +129,8 @@ const EventosMapaScreen = () => {
   const [tipoEvento, setTipoEvento] = useState('all'); // 'all', 'virtual', 'presencial'
 
   const [ubicacionUsuario, setUbicacionUsuario] = useState(null); // { lat, lng, direccion }
-  const [radioKm, setRadioKm] = useState(5); 
+  const [radioKm, setRadioKm] = useState(5);
+  const [soloEventosCercanos, setSoloEventosCercanos] = useState(false);
 
   const navigate = useNavigate();
 
@@ -211,7 +212,13 @@ const EventosMapaScreen = () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await listMapEvents();
+        const params = {};
+        if (soloEventosCercanos && ubicacionUsuario) {
+          params.lat = ubicacionUsuario.lat;
+          params.lon = ubicacionUsuario.lng;
+          params.radioKm = radioKm;
+        }
+        const res = await listMapEvents(params);
         setEventos(Array.isArray(res) ? res : []);
       } catch (err) {
         console.error(err);
@@ -221,7 +228,7 @@ const EventosMapaScreen = () => {
       }
     };
     fetchEventos();
-  }, []);
+  }, [soloEventosCercanos, ubicacionUsuario, radioKm]);
 
   const inferCityFromEvent = (ev) => {
     const ubic = ev?.ubicacion;
@@ -460,6 +467,20 @@ const EventosMapaScreen = () => {
               style={{ width: 200 }}
             />
             <span style={{ fontWeight: 600, color: '#1a237e' }}>{radioKm} km</span>
+
+            <label
+              htmlFor="soloEventosCercanos"
+              style={{ fontWeight: 600, color: '#2E3559', marginLeft: 16, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}
+            >
+              <input
+                id="soloEventosCercanos"
+                type="checkbox"
+                checked={soloEventosCercanos}
+                onChange={(e) => setSoloEventosCercanos(e.target.checked)}
+                style={{ width: 18, height: 18, cursor: 'pointer' }}
+              />
+              Solo eventos cercanos
+            </label>
           </div>
         )}
 

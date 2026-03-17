@@ -26,7 +26,7 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
     List<Evento> findByCanceladoFalse();
 
     /**
-     * Obtiene todos los eventos visibles en el mapa.
+     * Obtiene todos los eventos visibles en el mapa (solo públicos de comunidades públicas).
      *
      * @return Lista de eventos visibles en mapa.
      */

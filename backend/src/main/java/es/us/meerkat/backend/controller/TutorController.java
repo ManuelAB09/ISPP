@@ -36,8 +36,10 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /** Controlador REST para gestionar perfiles de tutores. */
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/tutors")
 @RequiredArgsConstructor
@@ -349,6 +351,105 @@ public class TutorController {
                 .build();
     }
 
+    @PostMapping("/me/create-verification-payment-intent")
+    @Operation(
+            summary = "Crear PaymentIntent para verificación de tutor",
+            description = "Devuelve el clientSecret para usar con Stripe Elements embebido")
+    public ResponseEntity<?> crearVerificationPaymentIntent(
+            @AuthenticationPrincipal final Usuario usuario) {
+
+        var tutorOpt = tutorService.obtenerTutorPorUsuarioId(usuario.getId());
+        if (tutorOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Tutor tutor = tutorOpt.get();
+        if (Boolean.TRUE.equals(tutor.getVerificado())) {
+            return ResponseEntity.badRequest()
+                    .body(java.util.Map.of("error", "Tu perfil ya está verificado"));
+        }
+
+        try {
+            java.util.Map<String, String> result =
+                    paymentService.crearPaymentIntentVerificacion(
+                            tutor.getId(), usuario.getId(), usuario.getEmail());
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(
+                            java.util.Map.of(
+                                    "error",
+                                    "Error al crear el intent de pago: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/me/confirm-verification-payment")
+    @Operation(
+            summary = "Confirmar pago de verificación de tutor",
+            description =
+                    "Confirma el PaymentIntent de verificación y activa la insignia Verificado")
+    public ResponseEntity<?> confirmarPagoVerificacion(
+            @AuthenticationPrincipal final Usuario usuario,
+            @RequestBody java.util.Map<String, String> body) {
+
+        String paymentIntentId = body.get("paymentIntentId");
+        if (paymentIntentId == null || paymentIntentId.isBlank()) {
+            return ResponseEntity.badRequest()
+                    .body(java.util.Map.of("error", "paymentIntentId requerido"));
+        }
+
+        try {
+            com.stripe.model.PaymentIntent intent =
+                    com.stripe.model.PaymentIntent.retrieve(paymentIntentId);
+
+            if (!"succeeded".equals(intent.getStatus())) {
+                return ResponseEntity.badRequest()
+                        .body(
+                                java.util.Map.of(
+                                        "error",
+                                        "El pago no se ha completado: " + intent.getStatus()));
+            }
+
+            String usuarioIdMeta = intent.getMetadata().get("usuarioId");
+            if (!usuario.getId().toString().equals(usuarioIdMeta)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                        .body(
+                                java.util.Map.of(
+                                        "error", "PaymentIntent no válido para este usuario"));
+            }
+
+            String tutorIdStr = intent.getMetadata().get("tutorId");
+            if (tutorIdStr == null) {
+                return ResponseEntity.badRequest()
+                        .body(java.util.Map.of("error", "PaymentIntent sin tutorId en metadata"));
+            }
+            Long tutorId = Long.parseLong(tutorIdStr);
+
+            tutorService.activarVerificacion(tutorId);
+
+            java.math.BigDecimal monto =
+                    java.math.BigDecimal.valueOf(intent.getAmount())
+                            .divide(java.math.BigDecimal.valueOf(100));
+            Tutor tutor = tutorService.obtenerTutorPorId(tutorId).orElse(null);
+            paymentService.procesarPagoExitoso(
+                    usuario.getId(),
+                    es.us.meerkat.backend.entity.TipoTransaccion.PAGO_VERIFICACION,
+                    monto,
+                    "Verificación de tutor completada vía Stripe Elements",
+                    tutor);
+
+            return ResponseEntity.ok(
+                    java.util.Map.of("mensaje", "Verificación activada correctamente"));
+
+        } catch (com.stripe.exception.StripeException e) {
+            return ResponseEntity.internalServerError()
+                    .body(java.util.Map.of("error", "Error Stripe: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
     @PostMapping("/me/verify-verification-session")
     @Operation(
             summary = "Verificar sesión de pago de verificación",
@@ -437,6 +538,174 @@ public class TutorController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body(Map.of("error", e.getClass().getSimpleName() + ": " + e.getMessage()));
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // STRIPE CONNECT — onboarding de cuenta conectada para tutores
+    // ═══════════════════════════════════════════════════════════════
+
+    @PostMapping("/me/stripe-connect/onboarding")
+    @Operation(
+            summary = "Iniciar onboarding Stripe Connect",
+            description = "Crea una cuenta Express y devuelve la URL de onboarding")
+    public ResponseEntity<?> iniciarOnboardingStripeConnect(
+            @AuthenticationPrincipal final Usuario usuario, @RequestBody Map<String, String> body) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No autenticado");
+        }
+        try {
+            Tutor tutor =
+                    tutorService
+                            .obtenerTutorPorUsuarioId(usuario.getId())
+                            .orElseThrow(
+                                    () ->
+                                            new IllegalArgumentException(
+                                                    "No tienes un perfil de tutor"));
+
+            // Create connected account if it doesn't exist yet
+            String accountId = paymentService.crearCuentaConectadaTutor(tutor);
+
+            String returnUrl =
+                    body.getOrDefault(
+                            "returnUrl", "http://localhost:3000/profesores/" + tutor.getId());
+            String onboardingUrl = paymentService.generarOnboardingLink(accountId, returnUrl);
+
+            return ResponseEntity.ok(
+                    Map.of(
+                            "url", onboardingUrl,
+                            "stripeAccountId", accountId));
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (com.stripe.exception.StripeException e) {
+            log.error("Error Stripe Connect onboarding: {} - {}", e.getCode(), e.getMessage());
+            return ResponseEntity.internalServerError()
+                    .body(
+                            Map.of(
+                                    "error",
+                                    "Error Stripe: " + e.getUserMessage(),
+                                    "code",
+                                    e.getCode() != null ? e.getCode() : "unknown"));
+        }
+    }
+
+    @GetMapping("/me/stripe-connect/status")
+    @Operation(
+            summary = "Consultar estado de cuenta Stripe Connect",
+            description = "Devuelve si la cuenta conectada está activa y puede recibir pagos")
+    public ResponseEntity<?> consultarEstadoStripeConnect(
+            @AuthenticationPrincipal final Usuario usuario) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No autenticado");
+        }
+        try {
+            Tutor tutor =
+                    tutorService
+                            .obtenerTutorPorUsuarioId(usuario.getId())
+                            .orElseThrow(
+                                    () ->
+                                            new IllegalArgumentException(
+                                                    "No tienes un perfil de tutor"));
+
+            if (tutor.getStripeAccountId() == null || tutor.getStripeAccountId().isBlank()) {
+                return ResponseEntity.ok(
+                        Map.of(
+                                "configured", false,
+                                "active", false));
+            }
+
+            boolean activa = paymentService.cuentaConectadaActiva(tutor.getStripeAccountId());
+            return ResponseEntity.ok(
+                    Map.of(
+                            "configured",
+                            true,
+                            "active",
+                            activa,
+                            "stripeAccountId",
+                            tutor.getStripeAccountId()));
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (com.stripe.exception.StripeException e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Error Stripe: " + e.getMessage()));
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // GANANCIAS DEL TUTOR
+    // ═══════════════════════════════════════════════════════════════
+
+    @GetMapping("/me/earnings")
+    @Operation(
+            summary = "Obtener ganancias del tutor",
+            description = "Devuelve el historial de pagos recibidos y totales del tutor")
+    public ResponseEntity<?> obtenerGanancias(
+            @AuthenticationPrincipal final Usuario usuario,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "15") int size) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No autenticado");
+        }
+        try {
+            Tutor tutor =
+                    tutorService
+                            .obtenerTutorPorUsuarioId(usuario.getId())
+                            .orElseThrow(
+                                    () ->
+                                            new IllegalArgumentException(
+                                                    "No tienes un perfil de tutor"));
+
+            // Get all completed tutor transactions
+            var todas = paymentService.obtenerTodasGananciasTutor(tutor.getId());
+            BigDecimal totalBruto = BigDecimal.ZERO;
+            BigDecimal totalComisiones = BigDecimal.ZERO;
+            for (var t : todas) {
+                totalBruto = totalBruto.add(t.getMonto());
+                totalComisiones =
+                        totalComisiones.add(
+                                t.getComision() != null ? t.getComision() : BigDecimal.ZERO);
+            }
+            BigDecimal totalNeto = totalBruto.subtract(totalComisiones);
+
+            // Paginated list
+            var pageable = org.springframework.data.domain.PageRequest.of(page, size);
+            var pagina = paymentService.obtenerGananciasTutor(tutor.getId(), pageable);
+
+            var transacciones =
+                    pagina.getContent().stream()
+                            .map(
+                                    t ->
+                                            Map.of(
+                                                    "id", t.getId(),
+                                                    "monto", t.getMonto(),
+                                                    "comision",
+                                                            t.getComision() != null
+                                                                    ? t.getComision()
+                                                                    : BigDecimal.ZERO,
+                                                    "montoNeto",
+                                                            paymentService.calcularMontoNeto(
+                                                                    t.getMonto()),
+                                                    "estado", t.getEstado().name(),
+                                                    "fecha",
+                                                            t.getCompletadoAt() != null
+                                                                    ? t.getCompletadoAt().toString()
+                                                                    : ""))
+                            .toList();
+
+            return ResponseEntity.ok(
+                    Map.of(
+                            "totalBruto", totalBruto,
+                            "totalComisiones", totalComisiones,
+                            "totalNeto", totalNeto,
+                            "totalTransacciones", todas.size(),
+                            "content", transacciones,
+                            "totalPages", pagina.getTotalPages(),
+                            "currentPage", page));
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 }

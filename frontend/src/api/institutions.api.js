@@ -53,4 +53,20 @@ export const institutionsApi = {
   verifySession(sessionId) {
     return apiClient.post('/api/v1/institutions/verify-session', { sessionId });
   },
+
+  /**
+   * POST /api/v1/institutions/{id}/create-plan-payment-intent
+   * Crea un PaymentIntent para plan corporativo (Stripe Elements embebido)
+   */
+  createPlanPaymentIntent(id, data) {
+    return apiClient.post(`/api/v1/institutions/${id}/create-plan-payment-intent`, data);
+  },
+
+  /**
+   * POST /api/v1/institutions/confirm-plan-payment
+   * Confirma el pago del plan corporativo tras Stripe Elements
+   */
+  confirmPlanPayment(paymentIntentId) {
+    return apiClient.post('/api/v1/institutions/confirm-plan-payment', { paymentIntentId });
+  },
 };

@@ -19,6 +19,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -42,6 +43,7 @@ import es.us.meerkat.backend.repository.ZoomRecordingRepository;
 
 @SpringBootTest
 @Transactional
+@ActiveProfiles("test")
 class ZoomIntegrationServiceTest {
 
     @Autowired private ZoomIntegrationService service;

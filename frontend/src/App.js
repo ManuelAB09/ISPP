@@ -19,6 +19,7 @@ import EventosMapaScreen from './screens/evento/EventosMapaScreen';
 import Home from './screens/home/Home';
 import Profile from './screens/myProfile/Profile';
 import MisPagos from './screens/pagos/MisPagos';
+import MisGanancias from './screens/ganancias/MisGanancias';
 import PagoExitoso from './screens/pagos/PagoExitoso';
 import InstitutionPlansScreen from './screens/planes/InstitutionPlansScreen';
 import PasarelaPago from './screens/planes/PasarelaPago';
@@ -66,6 +67,7 @@ function AppRoutes() {
         <Route path="/planes/pasarela" element={<PasarelaPago />} />
         <Route path="/planes/instituciones" element={<InstitutionPlansScreen />} />
         <Route path="/pagos" element={<MisPagos />} />
+        <Route path="/ganancias" element={<MisGanancias />} />
         <Route path="/eventos/:eventId" element={<DetalleEvento />} />
         <Route path="/eventos-mapa" element={<EventosMapaScreen />} />
         <Route path="/planes/success" element={<PlanesSuccess />} />

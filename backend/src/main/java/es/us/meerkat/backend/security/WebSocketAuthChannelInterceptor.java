@@ -58,11 +58,17 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
                 final Usuario usuario = usuarioRepository.findByEmail(email).orElse(null);
 
                 if (usuario != null) {
+                    final String userEmail = usuario.getEmail();
                     final UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(
                                     usuario,
                                     null,
-                                    List.of(new SimpleGrantedAuthority("ROLE_USER")));
+                                    List.of(new SimpleGrantedAuthority("ROLE_USER"))) {
+                                @Override
+                                public String getName() {
+                                    return userEmail;
+                                }
+                            };
 
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                     accessor.setUser(authToken);

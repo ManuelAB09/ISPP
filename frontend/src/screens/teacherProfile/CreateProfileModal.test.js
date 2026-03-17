@@ -198,6 +198,6 @@ describe('CreateProfileModal', () => {
     renderModal();
     const input = screen.getByLabelText(/Tarifa por hora/i);
     expect(input).toHaveAttribute('type', 'number');
-    expect(input).toHaveAttribute('min', '0');
+    expect(input).toHaveAttribute('min', '1');
   });
 });

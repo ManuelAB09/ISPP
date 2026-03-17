@@ -26,6 +26,7 @@ import es.us.meerkat.backend.dto.TransactionResponse;
 import es.us.meerkat.backend.entity.TipoTransaccion;
 import es.us.meerkat.backend.entity.TransaccionPago;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.service.InstitutionService;
 import es.us.meerkat.backend.service.PaymentService;
 import es.us.meerkat.backend.service.SuscripcionService;
 import es.us.meerkat.backend.service.TutorService;
@@ -43,7 +44,8 @@ import lombok.extern.slf4j.Slf4j;
 public class PaymentController {
 
     private final PaymentService paymentService;
-    private final SuscripcionService suscripcionService; // ← añadido para el webhook
+    private final SuscripcionService suscripcionService;
+    private final InstitutionService institutionService;
     private final TutorService tutorService;
 
     @Value("${stripe.webhook.secret}")
@@ -237,7 +239,8 @@ public class PaymentController {
             switch (tipo) {
                 case SUSCRIPCION -> {
                     // Activa suscripción + crea transacción + actualiza plan usuario
-                    suscripcionService.activarSuscripcionTrasStripe(usuarioId, monto);
+                    String periodo = session.getMetadata().get("periodo");
+                    suscripcionService.activarSuscripcionTrasStripe(usuarioId, monto, periodo);
                 }
 
                 case PAGO_VERIFICACION -> {
@@ -262,7 +265,18 @@ public class PaymentController {
                 }
 
                 case PAGO_TUTOR, COMISION -> {
-                    // Pago único genérico
+                    // Si es un plan corporativo institucional, activarlo
+                    String institucionIdStr = session.getMetadata().get("institucionId");
+                    if (tipo == TipoTransaccion.COMISION && institucionIdStr != null) {
+                        Long institucionId = Long.parseLong(institucionIdStr);
+                        String duracionStr = session.getMetadata().get("duracionMeses");
+                        String emailContacto = session.getMetadata().get("emailContacto");
+                        Integer duracionMeses =
+                                duracionStr != null ? Integer.parseInt(duracionStr) : 12;
+                        institutionService.activarPlanCorporativo(
+                                institucionId, duracionMeses, emailContacto);
+                    }
+                    // Registrar transacción
                     paymentService.procesarPagoExitoso(
                             usuarioId, tipo, monto, "Pago completado vía Stripe", null);
                 }

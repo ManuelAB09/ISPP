@@ -40,6 +40,9 @@ public class TutorProfileResponse {
     /** Indica si está conectado a Classroom. */
     private Boolean classroomConectado;
 
+    /** Indica si el tutor tiene configurada cuenta Stripe para recibir pagos. */
+    private Boolean stripeConfigured;
+
     /** Fecha de creación del tutor. */
     private String createdAt;
 

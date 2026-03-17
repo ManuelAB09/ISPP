@@ -144,9 +144,13 @@ export const useSocket = (token) => {
             const subscribeMap = {
                 dm_message: '/user/queue/dm',
                 dm_delete_success: '/user/queue/dm_delete_success',
+                dm_update_success: '/user/queue/dm_update_success',
                 dm_history: '/user/queue/dm_history',
                 conversations: '/user/queue/conversations',
                 community_history: '/user/queue/community_history',
+                solicitud_contratacion: '/user/queue/solicitud_contratacion',
+                solicitud_contratacion_respuesta: '/user/queue/solicitud_contratacion_respuesta',
+                solicitud_contratacion_pagada: '/user/queue/solicitud_contratacion_pagada',
                 error: '/user/queue/error',
             };
             return subscribeMap[event] || event;

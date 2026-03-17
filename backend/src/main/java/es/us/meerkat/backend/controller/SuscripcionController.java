@@ -1,9 +1,7 @@
 package es.us.meerkat.backend.controller;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.Map;
-import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -61,24 +59,9 @@ public class SuscripcionController {
     @Operation(summary = "Obtener mi suscripción", description = "Devuelve la suscripción actual")
     public ResponseEntity<SubscriptionResponse> obtenerMiSuscripcion(
             @AuthenticationPrincipal final Usuario usuario) {
-        Optional<Suscripcion> suscripcion =
-                suscripcionService.obtenerMiSuscripcion(usuario.getId());
-
-        if (suscripcion.isPresent()) {
-            return ResponseEntity.ok(suscripcion.get().toDTO());
-        } else {
-            SubscriptionResponse freePlan =
-                    SubscriptionResponse.builder()
-                            .id(null)
-                            .plan(TipoPlan.FREE)
-                            .fechaInicio(LocalDate.now())
-                            .fechaFin(LocalDate.now())
-                            .activa(true)
-                            .autoRenovar(false)
-                            .enPeriodoGracia(false)
-                            .build();
-            return ResponseEntity.ok(freePlan);
-        }
+        SubscriptionResponse response =
+                suscripcionService.obtenerMiSuscripcionCompleta(usuario.getId());
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -92,6 +75,16 @@ public class SuscripcionController {
     public ResponseEntity<?> suscribirse(
             @AuthenticationPrincipal final Usuario usuario,
             @Valid @RequestBody SubscribeRequest request) {
+
+        // Verificar si tiene plan institucional activo
+        if (suscripcionService.tienePlanInstitucionalActivo(usuario)) {
+            return ResponseEntity.badRequest()
+                    .body(
+                            Map.of(
+                                    "error",
+                                    "No puedes suscribirte a un plan individual mientras tengas un"
+                                            + " plan institucional activo"));
+        }
 
         try {
             PaymentUrlResponse paymentUrl =
@@ -254,7 +247,8 @@ public class SuscripcionController {
 
             BigDecimal monto =
                     BigDecimal.valueOf(intent.getAmount()).divide(BigDecimal.valueOf(100));
-            suscripcionService.activarSuscripcionTrasStripe(usuario.getId(), monto);
+            String periodo = intent.getMetadata().get("periodo");
+            suscripcionService.activarSuscripcionTrasStripe(usuario.getId(), monto, periodo);
 
             return ResponseEntity.ok(Map.of("mensaje", "Suscripcion activada correctamente"));
 
@@ -273,6 +267,16 @@ public class SuscripcionController {
     public ResponseEntity<?> crearPaymentIntent(
             @AuthenticationPrincipal final Usuario usuario,
             @Valid @RequestBody SubscribeRequest request) {
+
+        // Verificar si tiene plan institucional activo
+        if (suscripcionService.tienePlanInstitucionalActivo(usuario)) {
+            return ResponseEntity.badRequest()
+                    .body(
+                            Map.of(
+                                    "error",
+                                    "No puedes suscribirte a un plan individual mientras tengas un"
+                                            + " plan institucional activo"));
+        }
 
         try {
             Map<String, String> result =

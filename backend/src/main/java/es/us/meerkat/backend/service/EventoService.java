@@ -311,22 +311,91 @@ public class EventoService {
     }
 
     /**
-     * Obtiene todos los eventos visibles en el mapa.
+     * Obtiene todos los eventos visibles en el mapa (públicos, no cancelados). Opcionalmente filtra
+     * por radio de distancia respecto a una ubicación.
      *
+     * @param lat Latitud del centro de búsqueda (opcional).
+     * @param lon Longitud del centro de búsqueda (opcional).
+     * @param radioKm Radio de búsqueda en kilómetros (opcional).
      * @return Lista de eventos visibles en mapa.
      */
-    public List<Evento> obtenerEventosEnMapa() {
-        return eventoRepository.findVisibleOnMap();
+    public List<Evento> obtenerEventosEnMapa(
+            final Double lat, final Double lon, final Double radioKm) {
+        List<Evento> eventos = eventoRepository.findVisibleOnMap();
+        if (lat == null || lon == null || radioKm == null) {
+            return eventos;
+        }
+        return eventos.stream()
+                .filter(
+                        evento -> {
+                            Ubicacion ubicacion = evento.getUbicacion();
+                            if (ubicacion == null
+                                    || ubicacion.getLatitud() == null
+                                    || ubicacion.getLongitud() == null) {
+                                return false;
+                            }
+                            double distancia =
+                                    calcularDistanciaKm(
+                                            lat,
+                                            lon,
+                                            ubicacion.getLatitud(),
+                                            ubicacion.getLongitud());
+                            return distancia <= radioKm;
+                        })
+                .collect(Collectors.toList());
     }
 
     /**
-     * Obtiene los eventos recomendados basados en ubicaciones populares.
+     * Obtiene los nombres de ubicaciones con eventos activos dentro de un radio dado.
      *
-     * @return Lista de ubicaciones populares.
+     * @param lat Latitud del centro de búsqueda.
+     * @param lon Longitud del centro de búsqueda.
+     * @param radioKm Radio de búsqueda en kilómetros.
+     * @return Lista de nombres de ubicaciones recomendadas.
      */
-    public List<String> obtenerUbicacionesRecomendadas() {
-        // TODO: Implementar lógica de ubicaciones recomendadas
-        return List.of();
+    @Transactional(readOnly = true)
+    public List<String> obtenerUbicacionesRecomendadas(
+            final Double lat, final Double lon, final Double radioKm) {
+        if (lat == null || lon == null || radioKm == null) {
+            return List.of();
+        }
+        List<Evento> eventos = eventoRepository.findVisibleOnMap();
+        return eventos.stream()
+                .filter(
+                        e ->
+                                e.getUbicacion() != null
+                                        && e.getUbicacion().getLatitud() != null
+                                        && e.getUbicacion().getLongitud() != null)
+                .filter(
+                        e ->
+                                calcularDistanciaKm(
+                                                lat,
+                                                lon,
+                                                e.getUbicacion().getLatitud(),
+                                                e.getUbicacion().getLongitud())
+                                        <= radioKm)
+                .map(e -> e.getUbicacion().getNombre())
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Calcula la distancia en kilómetros entre dos puntos geográficos usando la fórmula de
+     * Haversine.
+     */
+    private double calcularDistanciaKm(
+            final double lat1, final double lon1, final double lat2, final double lon2) {
+        final double radioTierra = 6371.0;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                        + Math.cos(Math.toRadians(lat1))
+                                * Math.cos(Math.toRadians(lat2))
+                                * Math.sin(dLon / 2)
+                                * Math.sin(dLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return radioTierra * c;
     }
 
     /**

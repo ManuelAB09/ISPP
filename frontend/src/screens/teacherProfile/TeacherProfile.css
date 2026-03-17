@@ -988,3 +988,17 @@
     height: 120px;
   }
 }
+
+/* ── Chat embebido en perfil de profesor ─────────────────────── */
+.tp-chat-embed {
+  max-width: 900px;
+  margin: 0 auto 24px;
+  padding: 0 24px;
+}
+
+.tp-chat-embed .private-chat-container {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  max-height: 500px;
+}
