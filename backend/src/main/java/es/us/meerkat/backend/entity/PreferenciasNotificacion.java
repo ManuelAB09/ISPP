@@ -48,28 +48,22 @@ public class PreferenciasNotificacion {
     private Boolean recordatorio30min;
 
     /** Frecuencia de notificaciones. SIEMPRE, RESUMEN_DIARIO, NUNCA */
-    @Enumerated(EnumType.STRING)
-    private FrecuenciaNotificacion frecuenciaMensajeComunidad;
+    private Boolean notificarMensajeComunidad;
 
     /** Frecuencia de notificaciones. SIEMPRE, RESUMEN_DIARIO, NUNCA */
-    @Enumerated(EnumType.STRING)
-    private FrecuenciaNotificacion frecuenciaMenciones;
+    private Boolean notificarMenciones;
 
     /** Frecuencia de notificaciones. SIEMPRE, RESUMEN_DIARIO, NUNCA */
-    @Enumerated(EnumType.STRING)
-    private FrecuenciaNotificacion frecuenciaInvitaciones;
+    private Boolean notificarInvitaciones;
 
     /** Frecuencia de notificaciones. SIEMPRE, RESUMEN_DIARIO, NUNCA */
-    @Enumerated(EnumType.STRING)
-    private FrecuenciaNotificacion frecuenciaAnuncios;
+    private Boolean notificarAnuncios;
 
     /** Frecuencia de notificaciones. SIEMPRE, RESUMEN_DIARIO, NUNCA */
-    @Enumerated(EnumType.STRING)
-    private FrecuenciaNotificacion frecuenciaSolicitudAcceso;
+    private Boolean notificarSolicitudAcceso;
 
     /** Frecuencia de notificaciones. SIEMPRE, RESUMEN_DIARIO, NUNCA */
-    @Enumerated(EnumType.STRING)
-    private FrecuenciaNotificacion frecuenciaCambiosDeEventos;
+    private Boolean notificarCambiosDeEventos;
 
     /**
      * Canal por defecto para las alarmas personalizadas. Se usa cuando el usuario crea una alarma
@@ -99,23 +93,23 @@ public class PreferenciasNotificacion {
         if (this.canalAlarmasPorDefecto == null) {
             this.canalAlarmasPorDefecto = TipoCanal.AMBOS;
         }
-        if (this.frecuenciaMensajeComunidad == null) {
-            this.frecuenciaMensajeComunidad = FrecuenciaNotificacion.NUNCA;
+        if (this.notificarMensajeComunidad == null) {
+            this.notificarMensajeComunidad = false;
         }
-        if (this.frecuenciaMenciones == null) {
-            this.frecuenciaMenciones = FrecuenciaNotificacion.NUNCA;
+        if (this.notificarMenciones == null) {
+            this.notificarMenciones = false;
         }
-        if (this.frecuenciaInvitaciones == null) {
-            this.frecuenciaInvitaciones = FrecuenciaNotificacion.NUNCA;
+        if (this.notificarInvitaciones == null) {
+            this.notificarInvitaciones = false;
         }
-        if (this.frecuenciaAnuncios == null) {
-            this.frecuenciaAnuncios = FrecuenciaNotificacion.NUNCA;
+        if (this.notificarAnuncios == null) {
+            this.notificarAnuncios = false;
         }
-        if (this.frecuenciaSolicitudAcceso == null) {
-            this.frecuenciaSolicitudAcceso = FrecuenciaNotificacion.NUNCA;
+        if (this.notificarSolicitudAcceso == null) {
+            this.notificarSolicitudAcceso = false;
         }
-        if (this.frecuenciaCambiosDeEventos == null) {
-            this.frecuenciaCambiosDeEventos = FrecuenciaNotificacion.NUNCA;
+        if (this.notificarCambiosDeEventos == null) {
+            this.notificarCambiosDeEventos = false;
         }
     }
 

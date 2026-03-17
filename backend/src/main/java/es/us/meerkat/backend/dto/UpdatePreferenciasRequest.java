@@ -1,6 +1,5 @@
 package es.us.meerkat.backend.dto;
 
-import es.us.meerkat.backend.entity.FrecuenciaNotificacion;
 import es.us.meerkat.backend.entity.TipoCanal;
 import lombok.Data;
 
@@ -24,24 +23,17 @@ public class UpdatePreferenciasRequest {
     /** Activar/desactivar recordatorio 30min antes. */
     private Boolean recordatorio30min;
 
-    /** Canal por defecto para las alarmas personalizadas. PLATAFORMA, EMAIL o AMBOS. */
     private TipoCanal canalAlarmasPorDefecto;
 
-    /** Frecuencia de notificaciones para mensajes de comunidad. SIEMPRE, RESUMEN_DIARIO, NUNCA */
-    private FrecuenciaNotificacion frecuenciaMensajeComunidad;
+    private Boolean notificarMensajeComunidad;
 
-    /** Frecuencia de notificaciones para menciones. SIEMPRE, RESUMEN_DIARIO, NUNCA */
-    private FrecuenciaNotificacion frecuenciaMenciones;
+    private Boolean notificarMenciones;
 
-    /** Frecuencia de notificaciones para invitaciones. SIEMPRE, RESUMEN_DIARIO, NUNCA */
-    private FrecuenciaNotificacion frecuenciaInvitaciones;
+    private Boolean notificarInvitaciones;
 
-    /** Frecuencia de notificaciones para anuncios. SIEMPRE, RESUMEN_DIARIO, NUNCA */
-    private FrecuenciaNotificacion frecuenciaAnuncios;
+    private Boolean notificarAnuncios;
 
-    /** Frecuencia de notificaciones para solicitudes de acceso. SIEMPRE, RESUMEN_DIARIO, NUNCA */
-    private FrecuenciaNotificacion frecuenciaSolicitudAcceso;
+    private Boolean notificarSolicitudAcceso;
 
-    /** Frecuencia de notificaciones para cambios de eventos. SIEMPRE, RESUMEN_DIARIO, NUNCA */
-    private FrecuenciaNotificacion frecuenciaCambiosDeEventos;
+    private Boolean notificarCambiosDeEventos;
 }

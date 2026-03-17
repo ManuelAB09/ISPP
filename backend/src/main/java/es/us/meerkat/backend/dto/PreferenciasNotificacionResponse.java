@@ -2,7 +2,6 @@ package es.us.meerkat.backend.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-import es.us.meerkat.backend.entity.FrecuenciaNotificacion;
 import es.us.meerkat.backend.entity.TipoCanal;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -32,21 +31,21 @@ public class PreferenciasNotificacionResponse {
     /** Canal por defecto para alarmas personalizadas. PLATAFORMA, EMAIL o AMBOS. */
     private TipoCanal canalAlarmasPorDefecto;
 
-    /** Frecuencia de notificaciones para mensajes de comunidad. SIEMPRE, RESUMEN_DIARIO, NUNCA */
-    private FrecuenciaNotificacion frecuenciaMensajeComunidad;
+    /** Si desea recibir notificaciones para mensajes de comunidad. */
+    private Boolean notificarMensajeComunidad;
 
     /** Frecuencia de notificaciones para menciones. SIEMPRE, RESUMEN_DIARIO, NUNCA */
-    private FrecuenciaNotificacion frecuenciaMenciones;
+    private Boolean notificarMenciones;
 
     /** Frecuencia de notificaciones para invitaciones. SIEMPRE, RESUMEN_DIARIO, NUNCA */
-    private FrecuenciaNotificacion frecuenciaInvitaciones;
+    private Boolean notificarInvitaciones;
 
     /** Frecuencia de notificaciones para anuncios. SIEMPRE, RESUMEN_DIARIO, NUNCA */
-    private FrecuenciaNotificacion frecuenciaAnuncios;
+    private Boolean notificarAnuncios;
 
     /** Frecuencia de notificaciones para solicitudes de acceso. SIEMPRE, RESUMEN_DIARIO, NUNCA */
-    private FrecuenciaNotificacion frecuenciaSolicitudAcceso;
+    private Boolean notificarSolicitudAcceso;
 
     /** Frecuencia de notificaciones para cambios de eventos. SIEMPRE, RESUMEN_DIARIO, NUNCA */
-    private FrecuenciaNotificacion frecuenciaCambiosDeEventos;
+    private Boolean notificarCambiosDeEventos;
 }
