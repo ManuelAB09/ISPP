@@ -86,7 +86,9 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
      * @param ahora Momento actual para filtrar eventos futuros.
      * @return Lista de eventos activos futuros de la comunidad.
      */
-    @Query("SELECT e FROM Evento e WHERE e.comunidad.id = :comunidadId AND e.cancelado = false AND e.fechaHora >= :ahora")
+    @Query(
+            "SELECT e FROM Evento e WHERE e.comunidad.id = :comunidadId "
+                    + "AND e.cancelado = false AND e.fechaHora >= :ahora")
     List<Evento> findByComunidadIdAndCanceladoFalseAndFuture(
             @Param("comunidadId") Long comunidadId, @Param("ahora") LocalDateTime ahora);
 
