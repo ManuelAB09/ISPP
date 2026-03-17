@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { GoogleLogin } from '@react-oauth/google';
+import GoogleAuthButton from '../../components/GoogleAuthButton';
 import './Login.css';
 import studyShareLogo from '../../static/images/MeerKatters_logo.png';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, loginWithGoogle, login2fa, resendVerification, error: authError, clearError, isAuthenticated, loading } = useAuth();
+  const { login, processDirectLogin, login2fa, resendVerification, error: authError, clearError, isAuthenticated, loading } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -118,12 +118,13 @@ const Login = () => {
     setIsLoading(false);
   };
 
-  const handleGoogleSuccess = async (credentialResponse) => {
+  const handleGoogleSuccess = async (payload) => {
     setIsLoading(true);
     setError('');
-    const idToken = credentialResponse.credential;
-    const result = await loginWithGoogle(idToken, true);
-
+    
+    // AuthResponse format or 2FA challenge from the backend popup
+    const result = processDirectLogin(payload);
+    
     if (result.success) {
       if (result.isTwoFactor) {
         setTempToken(result.tempToken);
@@ -132,8 +133,9 @@ const Login = () => {
         navigate('/');
       }
     } else {
-      setError(result.error || 'Error al iniciar sesión con Google');
+      setError(result.error || 'Error al procesar la respuesta de Google');
     }
+    
     setIsLoading(false);
   };
 
@@ -340,16 +342,13 @@ const Login = () => {
                 <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
               </div>
               
-              <GoogleLogin
+              <GoogleAuthButton
                 onSuccess={handleGoogleSuccess}
-                onError={() => {
-                  setError('Fallo en el inicio de sesión de Google');
+                onError={(err) => {
+                  setError(err || 'Fallo en el inicio de sesión de Google');
                 }}
-                useOneTap
-                theme="outline"
-                text="continue_with"
-                shape="rectangular"
-                width="100%"
+                text="Continuar con Google"
+                flowType="login"
               />
             </div>
           </div>

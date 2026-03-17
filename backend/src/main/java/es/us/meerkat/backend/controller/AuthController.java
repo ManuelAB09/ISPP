@@ -11,8 +11,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import es.us.meerkat.backend.dto.AuthResponse;
 import es.us.meerkat.backend.dto.ForgotPasswordRequest;
-import es.us.meerkat.backend.dto.GoogleAuthRequest;
-import es.us.meerkat.backend.dto.GoogleAuthResponse;
 import es.us.meerkat.backend.dto.LoginRequest;
 import es.us.meerkat.backend.dto.MessageResponse;
 import es.us.meerkat.backend.dto.RegisterRequest;
@@ -128,27 +126,33 @@ public final class AuthController {
     }
 
     /**
-     * Autentica a un usuario usando Google ID Token.
-     *
-     * <p>POST /api/v1/auth/google
-     *
-     * @param request DTO con idToken y opción de solicitar Classroom
-     * @return AuthResponse con token JWT y datos del usuario.
+     * Inicia el flujo de autenticación con Google (Redirige a Google).
+     * GET /api/v1/auth/google/authorize
      */
-    @PostMapping("/google")
-    public ResponseEntity<GoogleAuthResponse> loginWithGoogle(
-            @RequestBody final GoogleAuthRequest request) {
-        return ResponseEntity.ok(authService.iniciarSesionConGoogle(request));
+    @GetMapping("/google/authorize")
+    public ResponseEntity<java.util.Map<String, String>> authorizeGoogleLogin() {
+        return ResponseEntity.ok(java.util.Map.of("url", authService.getGoogleAuthorizeUrl("login")));
     }
 
     /**
-     * Vincula la cuenta Google al usuario autenticado usando un ID token de Google. POST
-     * /api/v1/auth/google/link
+     * Callback de Google OAuth2 para inicio de sesión o registro.
+     * GET /api/v1/auth/google/callback
      */
-    @PostMapping("/google/link")
-    public ResponseEntity<MessageResponse> linkGoogle(
-            @RequestBody final GoogleAuthRequest request) {
-        return ResponseEntity.ok(authService.linkGoogleToCurrentUser(request));
+    @GetMapping("/google/callback")
+    public ResponseEntity<String> googleLoginCallback(
+            @RequestParam(name = "code", required = false) String code,
+            @RequestParam(name = "error", required = false) String error,
+            @RequestParam(name = "state", required = false) String state) {
+        return authService.processGoogleCallback(code, error, state);
+    }
+
+    /**
+     * Vincula la cuenta Google al usuario autenticado. 
+     * GET /api/v1/auth/google/link/authorize
+     */
+    @GetMapping("/google/link/authorize")
+    public ResponseEntity<java.util.Map<String, String>> authorizeGoogleLink() {
+        return ResponseEntity.ok(java.util.Map.of("url", authService.getGoogleAuthorizeUrl("link")));
     }
 
     /** Desvincula la cuenta Google del usuario autenticado. POST /api/v1/auth/google/unlink */

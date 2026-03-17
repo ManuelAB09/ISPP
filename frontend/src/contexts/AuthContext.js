@@ -214,6 +214,29 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  const processDirectLogin = useCallback((payload) => {
+    setError(null);
+    try {
+      if (payload.isTwoFactor) {
+        return { success: true, isTwoFactor: true, tempToken: payload.tempToken };
+      }
+
+      const { token, accessToken, user: userData } = payload;
+      // Backend returned 'token' instead of 'accessToken' in AuthResponse
+      const finalToken = token || accessToken; 
+      localStorage.setItem('accessToken', finalToken);
+      const savedUser = saveUserToStorage(userData);
+      apiClient.setToken(finalToken);
+      setUser(savedUser);
+
+      return { success: true };
+    } catch (err) {
+      const message = err.message || 'Error al procesar login con Google';
+      setError(message);
+      return { success: false, error: message };
+    }
+  }, []);
+
   const login2fa = useCallback(async (tempToken, code) => {
     setError(null);
     try {
@@ -349,6 +372,7 @@ export const AuthProvider = ({ children }) => {
     updateProfile,
     refreshUser,
     loginWithGoogle,
+    processDirectLogin,
     login2fa,
     clearError: () => setError(null),
   };

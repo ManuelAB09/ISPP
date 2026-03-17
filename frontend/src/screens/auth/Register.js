@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { GoogleLogin } from '@react-oauth/google';
+import GoogleAuthButton from '../../components/GoogleAuthButton';
 import './Register.css';
 import studyShareLogo from '../../static/images/MeerKatters_logo.png';
 
 const Register = () => {
   const navigate = useNavigate();
-  const { register, loginWithGoogle, resendVerification, error: authError, clearError, isAuthenticated, loading } = useAuth();
+  const { register, processDirectLogin, resendVerification, error: authError, clearError, isAuthenticated, loading } = useAuth();
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -111,11 +111,11 @@ const Register = () => {
     setIsLoading(false);
   };
 
-  const handleGoogleSuccess = async (credentialResponse) => {
+  const handleGoogleSuccess = async (payload) => {
     setIsLoading(true);
     setError('');
-    const idToken = credentialResponse.credential;
-    const result = await loginWithGoogle(idToken, true);
+    
+    const result = processDirectLogin(payload);
 
     if (result.success) {
       navigate('/');
@@ -369,16 +369,13 @@ const Register = () => {
                 <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
               </div>
               
-              <GoogleLogin
+              <GoogleAuthButton
                 onSuccess={handleGoogleSuccess}
-                onError={() => {
-                  setError('Fallo en el registro con Google');
+                onError={(err) => {
+                  setError(err || 'Fallo en el registro con Google');
                 }}
-                useOneTap
-                theme="outline"
-                text="signup_with"
-                shape="rectangular"
-                width="100%"
+                text="Registrarse con Google"
+                flowType="login"
               />
             </div>
           </div>
