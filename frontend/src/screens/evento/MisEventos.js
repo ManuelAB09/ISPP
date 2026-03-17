@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSocketContext } from '../../contexts/SocketContext';
 import Header from '../../components/Header/Header';
 import {
   getAlertas,
@@ -146,6 +147,7 @@ function AlertaItem({ alerta, onMarcarLeida }) {
 
 export default function MisEventos() {
   const { user } = useAuth();
+  const { socket } = useSocketContext();
   const navigate = useNavigate();
 
   const [eventos, setEventos] = useState([]);
@@ -160,8 +162,6 @@ export default function MisEventos() {
   const [loadingEventos, setLoadingEventos] = useState(true);
   const [loadingAlertas, setLoadingAlertas] = useState(false);
   const [error, setError] = useState(null);
-
-  const pollRef = useRef(null);
 
   const fetchEventos = useCallback(async () => {
     setLoadingEventos(true);
@@ -212,8 +212,11 @@ export default function MisEventos() {
 
   useEffect(() => {
     fetchAlertasCount();
-    pollRef.current = setInterval(fetchAlertasCount, 60_000);
-    return () => clearInterval(pollRef.current);
+    const handler = (count) => {
+      setAlertasCount(typeof count === 'number' ? count : 0);
+    };
+    socket.on('alerts_count', handler);
+    return () => socket.off('alerts_count', handler);
   }, [fetchAlertasCount]);
 
   useEffect(() => {

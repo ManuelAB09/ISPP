@@ -7,10 +7,12 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import es.us.meerkat.backend.entity.AsistenciaEvento;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.Ubicacion;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.EventoRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
@@ -29,6 +31,9 @@ public class EventoService {
 
     /** Repositorio para acceder a la información de eventos. */
     private final EventoRepository eventoRepository;
+
+    /** Repositorio para acceder a la información de asistencia a eventos. */
+    private final AsistenciaEventoRepository asistenciaEventoRepository;
 
     /** Repositorio para acceder a la información de usuarios. */
     private final UsuarioRepository usuarioRepository;
@@ -137,10 +142,20 @@ public class EventoService {
             evento.setUbicacion(ubicacion);
         }
         final Evento savedEvento = eventoRepository.save(evento);
+
+        // Auto-unir al creador como asistente confirmado
+        final AsistenciaEvento asistencia = new AsistenciaEvento();
+        asistencia.setEvento(savedEvento);
+        asistencia.setUsuario(creador);
+        asistencia.confirmarAsistencia();
+        asistencia.setCreatedAt(LocalDateTime.now());
+        asistenciaEventoRepository.save(asistencia);
+        savedEvento.setAsistentesConfirmados(1);
+        eventoRepository.save(savedEvento);
+
         try {
             googleCalendarService.sincronizarCreacion(savedEvento);
         } catch (Exception e) {
-
             // No propagamos el error: el evento se crea aunque GCal falle
         }
         return savedEvento;
@@ -328,7 +343,7 @@ public class EventoService {
      * @return Lista de eventos públicos.
      */
     public List<Evento> obtenerEventosPublicos() {
-        return eventoRepository.findPublicEvents();
+        return eventoRepository.findPublicEvents(LocalDateTime.now());
     }
 
     /**
@@ -342,7 +357,7 @@ public class EventoService {
      */
     public List<Evento> obtenerEventosEnMapa(
             final Double lat, final Double lon, final Double radioKm) {
-        List<Evento> eventos = eventoRepository.findVisibleOnMap();
+        List<Evento> eventos = eventoRepository.findVisibleOnMap(LocalDateTime.now());
         if (lat == null || lon == null || radioKm == null) {
             return eventos;
         }
@@ -380,7 +395,7 @@ public class EventoService {
         if (lat == null || lon == null || radioKm == null) {
             return List.of();
         }
-        List<Evento> eventos = eventoRepository.findVisibleOnMap();
+        List<Evento> eventos = eventoRepository.findVisibleOnMap(LocalDateTime.now());
         return eventos.stream()
                 .filter(
                         e ->
@@ -453,7 +468,8 @@ public class EventoService {
         if (incluirCancelados) {
             eventos = eventoRepository.findByComunidadId(comunidadId);
         } else {
-            eventos = eventoRepository.findByComunidadIdAndCanceladoFalse(comunidadId);
+            eventos = eventoRepository.findByComunidadIdAndCanceladoFalseAndFuture(
+                    comunidadId, LocalDateTime.now());
         }
         return filtrarEventosPrivados(eventos, usuarioId);
     }

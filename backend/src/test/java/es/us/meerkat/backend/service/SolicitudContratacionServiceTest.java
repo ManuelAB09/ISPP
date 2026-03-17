@@ -286,7 +286,7 @@ class SolicitudContratacionServiceTest {
                         .alumno(alumno)
                         .tutor(tutor)
                         .estado(EstadoSolicitudContratacion.ACEPTADA)
-                        .dia(LocalDate.of(2025, 6, 15))
+                        .dia(LocalDate.now().plusDays(5))
                         .horaInicio(LocalTime.of(10, 0))
                         .horaFin(LocalTime.of(11, 0))
                         .importeTotal(BigDecimal.valueOf(20))

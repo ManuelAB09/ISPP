@@ -60,4 +60,9 @@ public interface AlarmaPersonalizadaRepository extends JpaRepository<AlarmaPerso
             "DELETE FROM AlarmaPersonalizada a "
                     + "WHERE a.disparada = true AND a.disparadaAt < :fechaLimite")
     void deleteOldDisparadas(@Param("fechaLimite") LocalDateTime fechaLimite);
+
+    /** Elimina todas las alarmas de un evento. */
+    @Modifying
+    @Query("DELETE FROM AlarmaPersonalizada a WHERE a.evento.id = :eventoId")
+    void deleteByEventoId(@Param("eventoId") Long eventoId);
 }

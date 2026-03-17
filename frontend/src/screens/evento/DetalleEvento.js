@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   LuCalendar, LuMapPin, LuLink, LuUsers, LuUser,
   LuPencil, LuX, LuArrowLeft, LuPackage,
-  LuEye, LuEyeOff, LuMap, LuClock, LuCheck, LuBell, LuTrash2
+  LuEye, LuEyeOff, LuMap, LuClock, LuCheck, LuBell, LuTrash2,
+  LuVideo, LuPlay
 } from 'react-icons/lu';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -16,7 +17,9 @@ import {
   getConfirmedAttendees, getMyAttendance
 } from '../../api/eventEndpoints';
 import { communitiesApi } from '../../api/communities.api';
+import { ZoomApi } from '../../api/zoom.api';
 import { getApiBaseUrl } from '../../api/baseUrl';
+import { useSocketContext } from '../../contexts/SocketContext';
 
 const OPCIONES_ANTELACION = [
   { label: '2 días antes', value: 2880 },
@@ -73,6 +76,7 @@ const eventIconRed = L.icon({
 const DetalleEvento = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
+  const { socket } = useSocketContext();
 
   const [event, setEvent] = useState(null);
   const [attendees, setAttendees] = useState([]);
@@ -96,6 +100,18 @@ const DetalleEvento = () => {
   const [showAttendModal, setShowAttendModal] = useState(false);
   const [selectedMinutos, setSelectedMinutos] = useState([]);
   const [selectedCanal, setSelectedCanal] = useState('AMBOS');
+
+  // Zoom meeting state
+  const [activeMeeting, setActiveMeeting] = useState(null);
+  const [meetingLoading, setMeetingLoading] = useState(false);
+  const [meetingError, setMeetingError] = useState(null);
+  const [meetingNow, setMeetingNow] = useState(Date.now());
+  const [showMeetingForm, setShowMeetingForm] = useState(false);
+  const [meetingTopic, setMeetingTopic] = useState('');
+  const [meetingDurationForm, setMeetingDurationForm] = useState(60);
+  const [zoomParticipants, setZoomParticipants] = useState([]);
+  const [participantsOpen, setParticipantsOpen] = useState(false);
+  const activeMeetingRequestInFlightRef = useRef(false);
 
   const currentUserId = localStorage.getItem('userId');
 
@@ -243,6 +259,144 @@ const DetalleEvento = () => {
       setError(err.response?.data?.message || 'Error al cancelar el evento.');
     } finally {
       setCancelLoading(false);
+    }
+  };
+
+  // ============================
+  // ZOOM MEETING FUNCTIONS
+  // ============================
+
+  const fetchActiveEventMeeting = useCallback(async ({ silent = false } = {}) => {
+    if (!currentUserId || !isMember || !event?.esVirtual) {
+      setActiveMeeting(null);
+      return;
+    }
+    if (activeMeetingRequestInFlightRef.current) return;
+    activeMeetingRequestInFlightRef.current = true;
+
+    try {
+      if (!silent) setMeetingError(null);
+      const meeting = await ZoomApi.getActiveEventMeeting(eventId);
+      if (!meeting) { setActiveMeeting(null); return; }
+      setActiveMeeting(meeting);
+    } catch (err) {
+      if (err?.status === 404) { setActiveMeeting(null); return; }
+      if (!silent) {
+        setActiveMeeting(null);
+        setMeetingError(err?.message || 'No se pudo comprobar la reunión activa');
+      }
+    } finally {
+      activeMeetingRequestInFlightRef.current = false;
+    }
+  }, [eventId, currentUserId, isMember, event?.esVirtual]);
+
+  useEffect(() => {
+    if (event?.esVirtual) fetchActiveEventMeeting();
+  }, [fetchActiveEventMeeting, event?.esVirtual]);
+
+  useEffect(() => {
+    if (!currentUserId || !isMember || !event?.esVirtual || !eventId) return undefined;
+
+    const topic = `/topic/event.${eventId}.meeting`;
+    const handler = (data) => {
+      if (!data || data === '') {
+        setActiveMeeting(null);
+      } else {
+        setActiveMeeting(data);
+      }
+    };
+    socket.on(topic, handler);
+    return () => socket.off(topic, handler);
+  }, [socket, eventId, currentUserId, isMember, event?.esVirtual]);
+
+  useEffect(() => {
+    if (!activeMeeting) return undefined;
+    const timerId = setInterval(() => setMeetingNow(Date.now()), 1000);
+    return () => clearInterval(timerId);
+  }, [activeMeeting]);
+
+  const meetingStartRaw = activeMeeting?.startedAt || activeMeeting?.createdAt;
+  const meetingStartMs = meetingStartRaw ? new Date(meetingStartRaw).getTime() : null;
+  const safeMeetingStartMs = Number.isFinite(meetingStartMs) ? meetingStartMs : null;
+  const elapsedMs = safeMeetingStartMs ? Math.max(0, meetingNow - safeMeetingStartMs) : 0;
+  const durationMinutes = Number(activeMeeting?.durationMinutes);
+  const hasFiniteDuration = Number.isFinite(durationMinutes) && durationMinutes > 0;
+  const remainingMs = hasFiniteDuration ? Math.max(0, durationMinutes * 60 * 1000 - elapsedMs) : null;
+
+  const formatDuration = (ms) => {
+    if (ms == null || !Number.isFinite(ms)) return '--:--';
+    const totalSecs = Math.floor(ms / 1000);
+    const h = Math.floor(totalSecs / 3600);
+    const m = Math.floor((totalSecs % 3600) / 60);
+    const s = totalSecs % 60;
+    return h > 0
+      ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+      : `${m}:${String(s).padStart(2, '0')}`;
+  };
+
+  const handleJoinEventMeeting = async () => {
+    try {
+      setMeetingLoading(true);
+      setMeetingError(null);
+      const hostUrl = activeMeeting?.startUrl;
+      if (hostUrl) { window.open(hostUrl, '_blank', 'noopener,noreferrer'); return; }
+      const joinData = await ZoomApi.joinEventMeeting(eventId);
+      const joinUrl = joinData?.joinUrl || activeMeeting?.joinUrl;
+      if (!joinUrl) { setMeetingError('La reunión no tiene enlace de acceso disponible'); return; }
+      window.open(joinUrl, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      setMeetingError(err?.message || 'No se pudo unir a la reunión');
+    } finally {
+      setMeetingLoading(false);
+    }
+  };
+
+  const handleCreateAndJoinEventMeeting = async () => {
+    try {
+      setMeetingLoading(true);
+      setMeetingError(null);
+      const parsedDuration = Number(meetingDurationForm);
+      const payload = {
+        topic: (meetingTopic || '').trim() || `Evento: ${event?.titulo || 'Reunión'}`,
+        durationMinutes: Number.isFinite(parsedDuration) && parsedDuration > 0 ? parsedDuration : 60,
+      };
+      const meeting = await ZoomApi.createOrGetEventMeeting(eventId, payload);
+      setActiveMeeting(meeting || null);
+      setShowMeetingForm(false);
+      const hostUrl = meeting?.startUrl;
+      const accessUrl = hostUrl || meeting?.joinUrl;
+      if (accessUrl) { window.open(accessUrl, '_blank', 'noopener,noreferrer'); return; }
+      const joinData = await ZoomApi.joinEventMeeting(eventId);
+      if (joinData?.joinUrl) window.open(joinData.joinUrl, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      setMeetingError(err?.message || 'No se pudo crear o unir a la reunión');
+    } finally {
+      setMeetingLoading(false);
+    }
+  };
+
+  const handleEndEventMeeting = async () => {
+    try {
+      setMeetingLoading(true);
+      setMeetingError(null);
+      await ZoomApi.endEventMeeting(eventId);
+      setActiveMeeting(null);
+    } catch (err) {
+      setMeetingError(err?.message || 'No se pudo finalizar la reunión');
+    } finally {
+      setMeetingLoading(false);
+    }
+  };
+
+  const handleToggleZoomParticipants = async () => {
+    if (participantsOpen) { setParticipantsOpen(false); return; }
+    try {
+      const data = await ZoomApi.listEventParticipants(eventId);
+      setZoomParticipants(Array.isArray(data) ? data : (data?.participants || data?.content || []));
+      setParticipantsOpen(true);
+    } catch (err) {
+      setZoomParticipants([]);
+      setParticipantsOpen(true);
     }
   };
 
@@ -409,17 +563,180 @@ const DetalleEvento = () => {
                 )}
 
                 {event.esVirtual ? (
-                  <div className="ed-detail-item">
-                    <LuLink className="ed-detail-icon" />
-                    <div>
-                      <span className="ed-detail-label">Enlace virtual</span>
-                      <span className="ed-detail-value">
-                        {event.enlaceVirtual ? (
-                          <a href={event.enlaceVirtual} target="_blank" rel="noopener noreferrer" style={{ color: '#1890ff', textDecoration: 'underline' }}>
-                            {event.enlaceVirtual}
-                          </a>
-                        ) : 'Por confirmar'}
-                      </span>
+                  <div className="ed-detail-item" style={{ alignItems: 'flex-start' }}>
+                    <LuVideo className="ed-detail-icon" style={{ color: '#1890ff', fontSize: '1.3rem', marginTop: 2 }} />
+                    <div style={{ flex: 1 }}>
+                      <span className="ed-detail-label">Reunión por Zoom</span>
+
+                      {meetingError && (
+                        <p style={{ color: '#ff4d4f', fontSize: '0.85rem', margin: '4px 0' }}>{meetingError}</p>
+                      )}
+
+                      {activeMeeting ? (
+                        <div style={{ marginTop: 8 }}>
+                          <div style={{
+                            background: '#f0faf5', border: '1px solid #b7eb8f',
+                            borderRadius: 8, padding: '10px 14px', marginBottom: 8
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                              <span style={{ color: '#52c41a', fontWeight: 700, fontSize: '0.95rem' }}>
+                                Llamada activa
+                              </span>
+                              <span style={{ fontSize: '0.85rem', color: '#888' }}>
+                                {formatDuration(elapsedMs)}
+                                {hasFiniteDuration ? ` / ${durationMinutes} min` : ''}
+                              </span>
+                            </div>
+                            <p style={{ margin: '2px 0 0', fontSize: '0.85rem', color: '#555' }}>
+                              {activeMeeting.topic}
+                            </p>
+                          </div>
+
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            <button
+                              onClick={handleJoinEventMeeting}
+                              disabled={meetingLoading}
+                              style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 6,
+                                padding: '8px 16px', background: '#52c41a', color: '#fff',
+                                border: 'none', borderRadius: 6, cursor: 'pointer',
+                                fontWeight: 600, fontSize: '0.9rem'
+                              }}
+                            >
+                              <LuPlay size={16} />
+                              {meetingLoading ? 'Procesando...' : 'Unirse a la llamada'}
+                            </button>
+
+                            <button
+                              onClick={handleToggleZoomParticipants}
+                              style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 6,
+                                padding: '8px 16px', background: '#f0f0f0', color: '#333',
+                                border: '1px solid #d9d9d9', borderRadius: 6, cursor: 'pointer',
+                                fontSize: '0.9rem'
+                              }}
+                            >
+                              <LuUsers size={16} />
+                              {participantsOpen ? 'Ocultar' : 'Participantes'}
+                            </button>
+
+                            {isOrganizer && (
+                              <button
+                                onClick={handleEndEventMeeting}
+                                disabled={meetingLoading}
+                                style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                                  padding: '8px 16px', background: '#ff4d4f', color: '#fff',
+                                  border: 'none', borderRadius: 6, cursor: 'pointer',
+                                  fontSize: '0.9rem'
+                                }}
+                              >
+                                <LuX size={16} /> Finalizar
+                              </button>
+                            )}
+                          </div>
+
+                          {participantsOpen && (
+                            <div style={{ marginTop: 8, padding: '8px 12px', background: '#fafafa', borderRadius: 6, border: '1px solid #f0f0f0' }}>
+                              <p style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: 4 }}>En la llamada:</p>
+                              {zoomParticipants.length > 0 ? (
+                                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                                  {zoomParticipants.map((p, i) => (
+                                    <li key={p.usuarioId || i} style={{ padding: '2px 0', fontSize: '0.85rem', color: '#333' }}>
+                                      {p.displayName || p.nombre || p.email || `Participante ${i + 1}`}
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p style={{ fontSize: '0.85rem', color: '#999', margin: 0 }}>Nadie en la llamada ahora mismo</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div style={{ marginTop: 8 }}>
+                          {!showMeetingForm ? (
+                            <div>
+                              <p style={{ color: '#888', fontSize: '0.9rem', margin: '0 0 8px' }}>
+                                {isOrganizer
+                                  ? 'No hay llamada activa. Inicia una reunión Zoom para este evento.'
+                                  : 'No hay llamada activa. El organizador debe iniciar la reunión.'}
+                              </p>
+                              {isOrganizer && (
+                                <button
+                                  onClick={() => {
+                                    setMeetingTopic(`Evento: ${event.titulo}`);
+                                    setShowMeetingForm(true);
+                                  }}
+                                  disabled={meetingLoading}
+                                  style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                                    padding: '8px 16px', background: '#1890ff', color: '#fff',
+                                    border: 'none', borderRadius: 6, cursor: 'pointer',
+                                    fontWeight: 600, fontSize: '0.9rem'
+                                  }}
+                                >
+                                  <LuVideo size={16} /> Crear y unirse
+                                </button>
+                              )}
+                            </div>
+                          ) : (
+                            <div style={{
+                              background: '#f0f7ff', border: '1px solid #91caff',
+                              borderRadius: 8, padding: '12px 16px'
+                            }}>
+                              <div style={{ marginBottom: 8 }}>
+                                <label style={{ display: 'block', fontWeight: 600, fontSize: '0.85rem', marginBottom: 4 }}>Tema</label>
+                                <input
+                                  type="text"
+                                  value={meetingTopic}
+                                  onChange={(e) => setMeetingTopic(e.target.value)}
+                                  placeholder="Ej. Reunión del evento"
+                                  maxLength={120}
+                                  style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid #d9d9d9', fontSize: '0.9rem' }}
+                                />
+                              </div>
+                              <div style={{ marginBottom: 10 }}>
+                                <label style={{ display: 'block', fontWeight: 600, fontSize: '0.85rem', marginBottom: 4 }}>Duración (min)</label>
+                                <input
+                                  type="number"
+                                  min="5"
+                                  max="480"
+                                  step="5"
+                                  value={meetingDurationForm}
+                                  onChange={(e) => setMeetingDurationForm(e.target.value)}
+                                  style={{ width: '100px', padding: '6px 10px', borderRadius: 6, border: '1px solid #d9d9d9', fontSize: '0.9rem' }}
+                                />
+                              </div>
+                              <div style={{ display: 'flex', gap: 8 }}>
+                                <button
+                                  onClick={handleCreateAndJoinEventMeeting}
+                                  disabled={meetingLoading}
+                                  style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                                    padding: '8px 16px', background: '#1890ff', color: '#fff',
+                                    border: 'none', borderRadius: 6, cursor: 'pointer',
+                                    fontWeight: 600, fontSize: '0.9rem'
+                                  }}
+                                >
+                                  <LuVideo size={16} /> {meetingLoading ? 'Creando...' : 'Crear reunión'}
+                                </button>
+                                <button
+                                  onClick={() => setShowMeetingForm(false)}
+                                  disabled={meetingLoading}
+                                  style={{
+                                    padding: '8px 16px', background: '#f0f0f0', color: '#333',
+                                    border: '1px solid #d9d9d9', borderRadius: 6, cursor: 'pointer',
+                                    fontSize: '0.9rem'
+                                  }}
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -552,13 +869,17 @@ const DetalleEvento = () => {
                     <div className="ed-confirmed-badge">
                       <LuCheck /> Asistencia confirmada
                     </div>
-                    <button
-                      className="ed-btn ed-btn-cancel-attendance"
-                      onClick={handleCancelAttendance}
-                      disabled={attendanceLoading}
-                    >
-                      {attendanceLoading ? 'Cancelando...' : 'Cancelar asistencia'}
-                    </button>
+                    {isOrganizer ? (
+                      <span style={{ fontSize: '0.85rem', color: '#888' }}>Eres el organizador de este evento</span>
+                    ) : (
+                      <button
+                        className="ed-btn ed-btn-cancel-attendance"
+                        onClick={handleCancelAttendance}
+                        disabled={attendanceLoading}
+                      >
+                        {attendanceLoading ? 'Cancelando...' : 'Cancelar asistencia'}
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <button

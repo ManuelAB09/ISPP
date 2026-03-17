@@ -28,10 +28,13 @@ import es.us.meerkat.backend.config.GoogleCalendarConfig;
 import es.us.meerkat.backend.dto.GoogleCalendarStatusResponse;
 import es.us.meerkat.backend.dto.UpdateCalendarPreferenciasRequest;
 import es.us.meerkat.backend.entity.Evento;
+import es.us.meerkat.backend.entity.GoogleCalendarBooking;
 import es.us.meerkat.backend.entity.GoogleCalendarEvento;
 import es.us.meerkat.backend.entity.GoogleCalendarToken;
+import es.us.meerkat.backend.entity.SolicitudContratacionDirecta;
 import es.us.meerkat.backend.entity.TipoEvento;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.GoogleCalendarBookingRepository;
 import es.us.meerkat.backend.repository.GoogleCalendarEventoRepository;
 import es.us.meerkat.backend.repository.GoogleCalendarTokenRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
@@ -61,6 +64,7 @@ public class GoogleCalendarService {
     private final GoogleCalendarConfig calendarConfig;
     private final GoogleCalendarTokenRepository tokenRepository;
     private final GoogleCalendarEventoRepository calendarEventoRepository;
+    private final GoogleCalendarBookingRepository calendarBookingRepository;
     private final UsuarioRepository usuarioRepository;
 
     @Value("${app.url:http://localhost:3000}")
@@ -141,6 +145,7 @@ public class GoogleCalendarService {
     @Transactional
     public void desconectar(final Long usuarioId) {
         calendarEventoRepository.deleteByUsuarioId(usuarioId);
+        calendarBookingRepository.deleteByUsuarioId(usuarioId);
         tokenRepository.deleteByUsuarioId(usuarioId);
         log.info("Google Calendar desconectado para usuario {}", usuarioId);
     }
@@ -277,6 +282,68 @@ public class GoogleCalendarService {
                                 e.getMessage());
                     }
                 });
+    }
+
+    /**
+     * Sincroniza un evento en Google Calendar para un usuario concreto.
+     * Usado cuando un usuario confirma asistencia a un evento.
+     * Si el usuario no tiene GCal conectado o ya lo tiene sincronizado, no hace nada.
+     *
+     * @param evento Evento de la plataforma.
+     * @param usuario Usuario que confirma asistencia.
+     */
+    @Transactional
+    public void sincronizarParaUsuario(final Evento evento, final Usuario usuario) {
+        final Optional<GoogleCalendarToken> tokenOpt =
+                tokenRepository.findByUsuarioId(usuario.getId());
+
+        if (tokenOpt.isEmpty() || !Boolean.TRUE.equals(tokenOpt.get().getSincronizacionActiva())) {
+            return;
+        }
+
+        if (calendarEventoRepository
+                .findByEventoIdAndUsuarioId(evento.getId(), usuario.getId())
+                .isPresent()) {
+            return;
+        }
+
+        try {
+            crearEventoParaUsuario(evento, usuario);
+        } catch (Exception e) {
+            log.error(
+                    "Error sincronizando evento {} en GCal para usuario {}: {}",
+                    evento.getId(),
+                    usuario.getId(),
+                    e.getMessage());
+        }
+    }
+
+    /**
+     * Elimina un evento de Google Calendar para un usuario concreto.
+     * Usado cuando un usuario cancela su asistencia a un evento.
+     *
+     * @param evento Evento de la plataforma.
+     * @param usuario Usuario que cancela asistencia.
+     */
+    @Transactional
+    public void desincronizarParaUsuario(final Evento evento, final Usuario usuario) {
+        final Optional<GoogleCalendarEvento> mapeoOpt =
+                calendarEventoRepository.findByEventoIdAndUsuarioId(
+                        evento.getId(), usuario.getId());
+
+        if (mapeoOpt.isEmpty()) {
+            return;
+        }
+
+        try {
+            eliminarEventoParaUsuario(mapeoOpt.get());
+        } catch (Exception e) {
+            log.error(
+                    "Error desincronizando evento {} de GCal para usuario {}: {}",
+                    evento.getId(),
+                    usuario.getId(),
+                    e.getMessage());
+        }
     }
 
     // ===============================
@@ -499,5 +566,166 @@ public class GoogleCalendarService {
                 .filter(s -> !s.isEmpty())
                 .map(TipoEvento::valueOf)
                 .collect(Collectors.toList());
+    }
+
+    // ===============================
+    // SINCRONIZACIÓN DE CLASES RESERVADAS
+    // ===============================
+
+    /**
+     * Sincroniza una clase reservada (solicitud pagada) en Google Calendar para un usuario concreto.
+     * Si el usuario no tiene GCal conectado o ya lo tiene sincronizado, no hace nada.
+     *
+     * @param solicitud Solicitud de contratación directa pagada.
+     * @param usuario Usuario (alumno o tutor) para quien crear el evento.
+     */
+    @Transactional
+    public void sincronizarBookingParaUsuario(
+            final SolicitudContratacionDirecta solicitud, final Usuario usuario) {
+
+        final Optional<GoogleCalendarToken> tokenOpt =
+                tokenRepository.findByUsuarioId(usuario.getId());
+
+        if (tokenOpt.isEmpty()
+                || !Boolean.TRUE.equals(tokenOpt.get().getSincronizacionActiva())) {
+            return;
+        }
+
+        if (calendarBookingRepository
+                .findBySolicitudIdAndUsuarioId(solicitud.getId(), usuario.getId())
+                .isPresent()) {
+            return;
+        }
+
+        try {
+            crearBookingParaUsuario(solicitud, usuario);
+        } catch (Exception e) {
+            log.error(
+                    "Error sincronizando booking {} en GCal para usuario {}: {}",
+                    solicitud.getId(),
+                    usuario.getId(),
+                    e.getMessage());
+        }
+    }
+
+    /**
+     * Elimina los eventos de Google Calendar de una clase cancelada para todos los usuarios
+     * sincronizados.
+     *
+     * @param solicitud Solicitud cancelada.
+     */
+    @Transactional
+    public void desincronizarBooking(final SolicitudContratacionDirecta solicitud) {
+        final List<GoogleCalendarBooking> mapeos =
+                calendarBookingRepository.findBySolicitudId(solicitud.getId());
+
+        mapeos.forEach(
+                mapeo -> {
+                    try {
+                        eliminarBookingParaUsuario(mapeo);
+                    } catch (Exception e) {
+                        log.error(
+                                "Error eliminando booking gcal para usuario {}: {}",
+                                mapeo.getUsuario().getId(),
+                                e.getMessage());
+                    }
+                });
+    }
+
+    private void crearBookingParaUsuario(
+            final SolicitudContratacionDirecta solicitud, final Usuario usuario) throws Exception {
+
+        final GoogleCalendarToken token =
+                tokenRepository
+                        .findByUsuarioId(usuario.getId())
+                        .orElseThrow(() -> new RuntimeException("Token no encontrado"));
+
+        final Calendar calendar = getCalendarClient(token);
+        final Event gcalEvent = buildBookingGcalEvent(solicitud, usuario);
+        final Event creado = calendar.events().insert(CALENDAR_PRIMARY, gcalEvent).execute();
+
+        final GoogleCalendarBooking mapeo = new GoogleCalendarBooking();
+        mapeo.setGoogleEventId(creado.getId());
+        mapeo.setSolicitud(solicitud);
+        mapeo.setUsuario(usuario);
+        calendarBookingRepository.save(mapeo);
+
+        log.info(
+                "Booking {} creado en GCal para usuario {} → gcalId={}",
+                solicitud.getId(),
+                usuario.getId(),
+                creado.getId());
+    }
+
+    private void eliminarBookingParaUsuario(final GoogleCalendarBooking mapeo) throws Exception {
+        final GoogleCalendarToken token =
+                tokenRepository
+                        .findByUsuarioId(mapeo.getUsuario().getId())
+                        .orElseThrow(() -> new RuntimeException("Token no encontrado"));
+
+        final Calendar calendar = getCalendarClient(token);
+
+        try {
+            calendar.events().delete(CALENDAR_PRIMARY, mapeo.getGoogleEventId()).execute();
+        } catch (Exception e) {
+            log.warn(
+                    "Booking gcalId={} no encontrado al eliminar: {}",
+                    mapeo.getGoogleEventId(),
+                    e.getMessage());
+        }
+
+        calendarBookingRepository.delete(mapeo);
+        log.info("Booking gcalId={} eliminado de GCal", mapeo.getGoogleEventId());
+    }
+
+    /**
+     * Construye el evento de Google Calendar para una clase reservada.
+     */
+    private Event buildBookingGcalEvent(
+            final SolicitudContratacionDirecta solicitud, final Usuario usuario) {
+
+        final boolean esAlumno = solicitud.getAlumno().getId().equals(usuario.getId());
+        final String otraParte =
+                esAlumno
+                        ? solicitud.getTutor().getUsuario().getNombre()
+                        : solicitud.getAlumno().getNombre();
+        final String rol = esAlumno ? "con tu profesor" : "con tu alumno";
+
+        final String titulo = String.format("📚 Clase particular %s %s", rol, otraParte);
+
+        final StringBuilder desc = new StringBuilder();
+        desc.append("Clase particular reservada en MeerKatters\n\n");
+        desc.append("👤 ").append(esAlumno ? "Profesor" : "Alumno").append(": ").append(otraParte).append("\n");
+        desc.append("📍 Modalidad: ").append(solicitud.getModalidad()).append("\n");
+        desc.append("💰 Importe: ").append(solicitud.getImporteTotal()).append("€\n");
+        if (solicitud.getMensaje() != null && !solicitud.getMensaje().isBlank()) {
+            desc.append("📝 Nota: ").append(solicitud.getMensaje()).append("\n");
+        }
+
+        final Event gcalEvent =
+                new Event().setSummary(titulo).setDescription(desc.toString().trim());
+
+        // Fechas: usar dia + horaInicio / horaFin
+        final ZoneId zona = ZoneId.of(ZONA_HORARIA);
+        final java.time.LocalDateTime inicio =
+                java.time.LocalDateTime.of(solicitud.getDia(), solicitud.getHoraInicio());
+        final java.time.LocalDateTime fin =
+                java.time.LocalDateTime.of(solicitud.getDia(), solicitud.getHoraFin());
+
+        gcalEvent.setStart(toEventDateTime(inicio, zona));
+        gcalEvent.setEnd(toEventDateTime(fin, zona));
+
+        // Recordatorios: 24h, 1h y 15 min antes
+        final EventReminder reminder24h =
+                new EventReminder().setMethod("email").setMinutes(24 * 60);
+        final EventReminder reminder1h = new EventReminder().setMethod("popup").setMinutes(60);
+        final EventReminder reminder15min = new EventReminder().setMethod("popup").setMinutes(15);
+
+        gcalEvent.setReminders(
+                new Reminders()
+                        .setUseDefault(false)
+                        .setOverrides(List.of(reminder24h, reminder1h, reminder15min)));
+
+        return gcalEvent;
     }
 }

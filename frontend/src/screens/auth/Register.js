@@ -1,13 +1,13 @@
-// filepath: c:\Users\juana\OneDrive\Escritorio\Juan Antonio\Universidad\cuarto año\ISPP\ISPP\frontend\src\screens\auth\Register.js
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { GoogleLogin } from '@react-oauth/google';
 import './Register.css';
 import studyShareLogo from '../../static/images/MeerKatters_logo.png';
 
 const Register = () => {
   const navigate = useNavigate();
-  const { register, resendVerification, error: authError, clearError, isAuthenticated, loading } = useAuth();
+  const { register, loginWithGoogle, resendVerification, error: authError, clearError, isAuthenticated, loading } = useAuth();
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -108,6 +108,20 @@ const Register = () => {
       setError(result.error || 'Error al registrarse');
     }
     
+    setIsLoading(false);
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setIsLoading(true);
+    setError('');
+    const idToken = credentialResponse.credential;
+    const result = await loginWithGoogle(idToken, true);
+
+    if (result.success) {
+      navigate('/');
+    } else {
+      setError(result.error || 'Error al registrarse con Google');
+    }
     setIsLoading(false);
   };
 
@@ -346,7 +360,30 @@ const Register = () => {
             </button>
           </form>
 
-          <div className="login-link">
+          {/* Importar GoogleLogin dentro del componente */}
+          <div className="google-auth-container" style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', margin: '15px 0', width: '100%' }}>
+                <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                <span style={{ padding: '0 10px', color: '#94a3b8', fontSize: '0.9rem' }}>o registrarse con</span>
+                <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+              </div>
+              
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => {
+                  setError('Fallo en el registro con Google');
+                }}
+                useOneTap
+                theme="outline"
+                text="signup_with"
+                shape="rectangular"
+                width="100%"
+              />
+            </div>
+          </div>
+
+          <div className="login-link" style={{ marginTop: '15px' }}>
             <p>
               Ya tienes una cuenta? <Link to="/login">Iniciar sesión</Link>
             </p>

@@ -1,24 +1,37 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import CommunityDetail from './CommunityDetail';
 import { communitiesApi } from '../../api/communities.api';
 import * as eventEndpoints from '../../api/eventEndpoints';
 import { useAuth } from '../../contexts/AuthContext';
+import { ZoomApi } from '../../api/zoom.api';
 
 // Mocks
 jest.mock('../../api/communities.api');
 jest.mock('../../api/eventEndpoints');
 jest.mock('../../contexts/AuthContext');
+jest.mock('../../api/zoom.api');
+jest.mock('../../contexts/SocketContext', () => ({
+    useSocketContext: () => ({
+        socket: { on: jest.fn(), off: jest.fn() },
+        isConnected: true,
+    }),
+}));
 jest.mock('../../components/Header/Header', () => {
   return function MockHeader() {
     return <div data-testid="mock-header">Header</div>;
   };
 });
 jest.mock('../chat/CommunityChat', () => {
-  return function MockCommunityChat() {
-    return <div data-testid="mock-community-chat">Chat</div>;
+  return function MockCommunityChat({ extraActions }) {
+    return (
+      <div data-testid="mock-community-chat">
+        Chat
+        {extraActions}
+      </div>
+    );
   };
 });
 jest.mock('../../components/Evento/TarjetaEvento', () => {
@@ -63,6 +76,11 @@ describe('CommunityDetail', () => {
     jest.clearAllMocks();
     localStorage.clear();
 
+    // Mock window.URL for tests that need it
+    if (!window.URL) window.URL = {};
+    window.URL.createObjectURL = jest.fn(() => 'blob:mock-url');
+    window.URL.revokeObjectURL = jest.fn();
+
     useAuth.mockReturnValue({
       user: null,
     });
@@ -74,6 +92,19 @@ describe('CommunityDetail', () => {
 
     eventEndpoints.listCommunityEvents.mockResolvedValue(mockEvents);
     eventEndpoints.getMyAttendance.mockResolvedValue(null);
+
+    ZoomApi.getActiveMeeting.mockResolvedValue(null);
+    ZoomApi.createOrGetMeeting.mockResolvedValue(null);
+    ZoomApi.joinMeeting.mockResolvedValue({ joinUrl: 'https://zoom.us/j/123' });
+    ZoomApi.listParticipants.mockResolvedValue([]);
+    ZoomApi.listMeetings.mockResolvedValue([]);
+    ZoomApi.listRecordings.mockResolvedValue([]);
+    ZoomApi.uploadRecording.mockResolvedValue({ success: true });
+    ZoomApi.downloadRecording.mockResolvedValue({
+      blob: new Blob(['x'], { type: 'video/mp4' }),
+      fileName: 'grabacion.mp4',
+      contentType: 'video/mp4',
+    });
   });
 
   const renderComponent = async (communityId = '1') => {
@@ -313,5 +344,166 @@ describe('CommunityDetail', () => {
     await screen.findByText('Comunidad de Matemáticas');
 
     expect(screen.queryByTestId('mock-community-chat')).not.toBeInTheDocument();
+  });
+
+  test('muestra boton de crear reunion y unirse a zoom para miembros', async () => {
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({
+      user: { id: 100, nombre: 'Test User' },
+    });
+    communitiesApi.getById.mockResolvedValue({
+      ...mockCommunity,
+      esMiembro: true,
+    });
+    ZoomApi.getActiveMeeting.mockResolvedValue(null);
+
+    await renderComponent();
+    const crearBtn = await screen.findByRole('button', { name: /Crear y unirse/i });
+    expect(crearBtn).toBeInTheDocument();
+  });
+
+  test('crea reunion al enviar formulario de zoom', async () => {
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({ user: { id: 100, nombre: 'Test User' } });
+    communitiesApi.getById.mockResolvedValue({ ...mockCommunity, esMiembro: true });
+
+    const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+    ZoomApi.createOrGetMeeting.mockResolvedValue({
+      startUrl: 'https://zoom.us/s/abc',
+      joinUrl: 'https://zoom.us/j/abc',
+    });
+
+    await renderComponent();
+
+    userEvent.click(screen.getByRole('button', { name: /Crear y unirse/i }));
+    userEvent.click(screen.getByRole('button', { name: /Crear reunion/i }));
+
+    await waitFor(() => {
+      expect(ZoomApi.createOrGetMeeting).toHaveBeenCalledWith('1', expect.objectContaining({
+        topic: expect.any(String),
+        durationMinutes: expect.any(Number),
+      }));
+    });
+
+    expect(openSpy).toHaveBeenCalled();
+    openSpy.mockRestore();
+  });
+
+  test('carga historial al pulsar Historial', async () => {
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({ user: { id: 100, nombre: 'Test User' } });
+    communitiesApi.getById.mockResolvedValue({ ...mockCommunity, esMiembro: true });
+
+    ZoomApi.listMeetings.mockResolvedValue([
+      { id: 1, zoomMeetingId: 'm1', topic: 'Reunion semanal', createdAt: '2026-03-16T10:00:00Z' },
+    ]);
+    ZoomApi.listRecordings.mockResolvedValue([]);
+
+    await renderComponent();
+
+    userEvent.click(screen.getByRole('button', { name: /Historial/i }));
+
+    await waitFor(() => {
+      expect(ZoomApi.listMeetings).toHaveBeenCalledWith('1');
+    });
+
+    expect(screen.getByText(/Reunion semanal/i)).toBeInTheDocument();
+  });
+
+  test('muestra la lista de participantes de una reunion activa', async () => {
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({ user: { id: 100, nombre: 'Test User' } });
+    communitiesApi.getById.mockResolvedValue({ ...mockCommunity, esMiembro: true });
+    ZoomApi.getActiveMeeting.mockResolvedValue({
+      id: 77,
+      zoomMeetingId: 'zoom-77',
+      startedAt: '2026-03-16T10:00:00Z',
+      durationMinutes: 60,
+      joinUrl: 'https://zoom.us/j/77',
+    });
+    ZoomApi.listParticipants.mockResolvedValue([
+      { id: 1, usuarioNombre: 'Ana Tutor' },
+      { id: 2, email: 'alumno@correo.com' },
+    ]);
+
+    await renderComponent();
+
+    const participantsButton = await screen.findByRole('button', { name: /Participantes/i });
+    userEvent.click(participantsButton);
+
+    await waitFor(() => {
+      expect(ZoomApi.listParticipants).toHaveBeenCalledWith('1');
+    });
+
+    expect(screen.getByText(/Participantes activos \(2\)/i)).toBeInTheDocument();
+    expect(screen.getByText('Ana Tutor')).toBeInTheDocument();
+    expect(screen.getByText('alumno@correo.com')).toBeInTheDocument();
+  });
+
+  test('permite subir un archivo de grabacion desde el historial', async () => {
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({ user: { id: 100, nombre: 'Test User' } });
+    communitiesApi.getById.mockResolvedValue({ ...mockCommunity, esMiembro: true });
+    ZoomApi.listMeetings.mockResolvedValue([
+      { id: 1, zoomMeetingId: 'm1', topic: 'Reunion semanal', createdAt: '2026-03-16T10:00:00Z' },
+    ]);
+    ZoomApi.listRecordings.mockResolvedValue([]);
+
+    await renderComponent();
+
+    userEvent.click(screen.getByRole('button', { name: /Historial/i }));
+    const uploadButton = await screen.findByRole('button', { name: /Subir grabacion/i });
+    userEvent.click(uploadButton);
+
+    const file = new File(['video-content'], 'clase.mp4', { type: 'video/mp4' });
+    const fileInput = screen.getByTestId('recording-file-input');
+    fireEvent.change(fileInput, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(ZoomApi.uploadRecording).toHaveBeenCalledWith('1', 1, file);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Grabacion subida correctamente/i)).toBeInTheDocument();
+    });
+  });
+
+  test('permite descargar una grabacion desde el historial', async () => {
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({ user: { id: 100, nombre: 'Test User' } });
+    communitiesApi.getById.mockResolvedValue({ ...mockCommunity, esMiembro: true });
+
+    ZoomApi.listMeetings.mockResolvedValue([
+      { id: 1, zoomMeetingId: 'm1', topic: 'Reunion semanal', createdAt: '2026-03-16T10:00:00Z' },
+    ]);
+    ZoomApi.listRecordings.mockResolvedValue([
+      {
+        zoomRecordingId: 'rec-1',
+        zoomMeetingId: 'm1',
+        fileType: 'MP4',
+        createdAt: '2026-03-16T11:00:00Z',
+        fileSizeBytes: 2048,
+        appDownloadUrl: '/fake-app-download',
+      },
+    ]);
+
+    // No need to spy, ya está mockeado en beforeEach
+
+    await renderComponent();
+
+    const historyButton = await screen.findByRole('button', { name: /Historial/i });
+    userEvent.click(historyButton);
+    const viewRecordingsButton = await screen.findByRole('button', { name: /Ver grabaciones/i });
+    userEvent.click(viewRecordingsButton);
+
+    const downloadButton = await screen.findByRole('button', { name: /Descargar/i });
+    userEvent.click(downloadButton);
+
+    await waitFor(() => {
+      expect(ZoomApi.downloadRecording).toHaveBeenCalledWith('1', 'rec-1');
+    });
+
+    expect(window.URL.createObjectURL).toHaveBeenCalled();
+    expect(window.URL.revokeObjectURL).toHaveBeenCalled();
   });
 });

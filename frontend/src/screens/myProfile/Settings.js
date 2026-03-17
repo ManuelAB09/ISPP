@@ -2,7 +2,9 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import axiosInstance from "../../api/axiosConfig"
 import { apiClient } from "../../api/client"
+import { authApi } from "../../api/auth.api"
 import { useAuth } from "../../contexts/AuthContext"
+import { QRCodeCanvas } from "qrcode.react"
 import "./Settings.css"
 
 const EVENT_TYPES = [
@@ -25,6 +27,13 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
     const [twoFactorAuth, setTwoFactorAuth] = useState(false)
     const [isSavingPreferences, setIsSavingPreferences] = useState(false)
     const [preferencesError, setPreferencesError] = useState("")
+
+    // 2FA modal state
+    const [show2FAModal, setShow2FAModal] = useState(false) // false | 'setup' | 'disable'
+    const [totpSetupData, setTotpSetupData] = useState(null)
+    const [totpCode, setTotpCode] = useState("")
+    const [totpError, setTotpError] = useState("")
+    const [isTotpLoading, setIsTotpLoading] = useState(false)
 
     // Recordatorios por email + canal alarmas por defecto
     const [emailRecordatorios, setEmailRecordatorios] = useState({
@@ -320,12 +329,53 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
             return
         }
 
-        const newValue = !twoFactorAuth
-        setTwoFactorAuth(newValue)
+        if (twoFactorAuth) {
+            // Initiate disable flow
+            setTotpCode("")
+            setTotpError("")
+            setShow2FAModal('disable')
+        } else {
+            // Initiate setup flow
+            setTotpCode("")
+            setTotpError("")
+            setTotpSetupData(null)
+            setIsTotpLoading(true)
+            setShow2FAModal('setup')
+            try {
+                const res = await authApi.setup2fa()
+                // Backend usually returns { secret, qrCodeUrl } or { secret, otpauthUrl }
+                setTotpSetupData(res)
+            } catch (err) {
+                setTotpError("Error al iniciar configuración 2FA")
+                setShow2FAModal(false)
+            } finally {
+                setIsTotpLoading(false)
+            }
+        }
+    }
 
-        const ok = await savePreferences({ autenticacionDosFactores: newValue })
-        if (!ok) {
-            setTwoFactorAuth(!newValue)
+    const handleVerify2FA = async (e) => {
+        e.preventDefault()
+        setTotpError("")
+        setIsTotpLoading(true)
+
+        try {
+            if (show2FAModal === 'setup') {
+                await authApi.enable2fa(totpCode)
+                setTwoFactorAuth(true)
+                // Sync context
+                updateProfile({ autenticacionDosFactores: true })
+                setShow2FAModal(false)
+            } else if (show2FAModal === 'disable') {
+                await authApi.disable2fa(totpCode)
+                setTwoFactorAuth(false)
+                updateProfile({ autenticacionDosFactores: false })
+                setShow2FAModal(false)
+            }
+        } catch (err) {
+            setTotpError(err.message || 'Código incorrecto')
+        } finally {
+            setIsTotpLoading(false)
         }
     }
 
@@ -713,6 +763,84 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
                                 {isDeletingAccount ? 'Eliminando...' : 'Sí, eliminar mi cuenta'}
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal: 2FA Setup/Disable */}
+            {show2FAModal && (
+                <div className="settings-confirm-overlay">
+                    <div className="settings-confirm-modal">
+                        <h2 className="settings-confirm-title">
+                            {show2FAModal === 'setup' ? 'Activar Autenticación en 2 Pasos' : 'Desactivar Autenticación'}
+                        </h2>
+                        
+                        {show2FAModal === 'setup' && totpSetupData && (
+                            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                                <p className="settings-confirm-text" style={{ marginBottom: '15px' }}>
+                                    1. Escanea este código QR con Google Authenticator u otra app compatible.
+                                </p>
+                                <div style={{ background: '#fff', padding: '15px', display: 'inline-block', borderRadius: '8px', marginBottom: '15px' }}>
+                                    <QRCodeCanvas value={totpSetupData.qrCodeUrl || totpSetupData.otpauthUrl || totpSetupData.otpauth} size={150} />
+                                </div>
+                                <p className="settings-confirm-text" style={{ fontSize: '0.9rem' }}>
+                                    O introduce este código manualmente:<br/>
+                                    <strong>{totpSetupData.secret}</strong>
+                                </p>
+                            </div>
+                        )}
+
+                        <form onSubmit={handleVerify2FA}>
+                            <p className="settings-confirm-text">
+                                {show2FAModal === 'setup' 
+                                    ? '2. Introduce el código de 6 dígitos generado por tu app:' 
+                                    : 'Introduce el código de 6 dígitos actual de tu app para confirmar la desactivación:'}
+                            </p>
+                            <input
+                                type="text"
+                                value={totpCode}
+                                onChange={(e) => setTotpCode(e.target.value)}
+                                placeholder="000111"
+                                maxLength="6"
+                                required
+                                style={{
+                                    display: 'block',
+                                    width: '100%',
+                                    padding: '10px',
+                                    fontSize: '1.2rem',
+                                    textAlign: 'center',
+                                    letterSpacing: '5px',
+                                    marginBottom: '15px',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '8px'
+                                }}
+                            />
+                            
+                            {totpError && (
+                                <p className="settings-password-error" style={{ textAlign: 'center' }}>{totpError}</p>
+                            )}
+                            {isTotpLoading && !totpSetupData && show2FAModal === 'setup' && (
+                                <p style={{ textAlign: 'center' }}>Cargando código QR...</p>
+                            )}
+
+                            <div className="settings-confirm-actions" style={{ marginTop: '20px' }}>
+                                <button 
+                                    type="button"
+                                    className="settings-btn settings-btn--outline"
+                                    onClick={() => setShow2FAModal(false)}
+                                    disabled={isTotpLoading}
+                                >
+                                    Cancelar
+                                </button>
+                                <button 
+                                    type="submit"
+                                    className="settings-btn settings-btn--primary"
+                                    disabled={isTotpLoading || (!totpSetupData && show2FAModal === 'setup')}
+                                >
+                                    {isTotpLoading ? 'Verificando...' : 'Verificar'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

@@ -208,8 +208,32 @@ public class SolicitudContratacionController {
                         .body(
                                 Map.of(
                                         "error",
-                                        "El profesor aún no ha configurado sus datos bancarios para"
-                                                + " recibir pagos."));
+                                        "El profesor aún no ha configurado su cuenta de Stripe"
+                                                + " Connect para recibir pagos. Contacta con tu"
+                                                + " profesor para que configure sus datos"
+                                                + " bancarios."));
+            }
+
+            // Verify the Stripe Connect account is actually active (onboarding completed)
+            try {
+                boolean activa = paymentService.cuentaConectadaActiva(tutor.getStripeAccountId());
+                if (!activa) {
+                    return ResponseEntity.badRequest()
+                            .body(
+                                    Map.of(
+                                            "error",
+                                            "El profesor tiene cuenta de Stripe Connect pero aún"
+                                                + " no ha completado la configuración. Contacta"
+                                                + " con tu profesor para que termine de configurar"
+                                                + " sus datos bancarios."));
+                }
+            } catch (com.stripe.exception.StripeException stripeEx) {
+                return ResponseEntity.badRequest()
+                        .body(
+                                Map.of(
+                                        "error",
+                                        "No se pudo verificar la cuenta de pago del profesor."
+                                                + " Inténtalo de nuevo más tarde."));
             }
 
             Map<String, String> result =

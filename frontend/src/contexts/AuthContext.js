@@ -123,6 +123,12 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       const response = await authApi.login({ email, password });
+      
+      // Si la respuesta indica que es un desafío 2FA
+      if (response.isTwoFactor) {
+        return { success: true, isTwoFactor: true, tempToken: response.tempToken };
+      }
+
       const { accessToken, user: userData } = response;
 
       localStorage.setItem('accessToken', accessToken);
@@ -178,6 +184,51 @@ export const AuthProvider = ({ children }) => {
       return { success: true, message: response.message };
     } catch (err) {
       const message = err.message || 'Error al reenviar el email de verificación';
+      setError(message);
+      return { success: false, error: message };
+    }
+  }, []);
+
+  const loginWithGoogle = useCallback(async (idToken, requestClassroomAccess = false) => {
+    setError(null);
+    try {
+      const response = await authApi.loginWithGoogle({ idToken, requestClassroomAccess });
+
+      const authResp = response.authResponse;
+      
+      if (authResp?.isTwoFactor) {
+        return { success: true, isTwoFactor: true, tempToken: authResp.tempToken };
+      }
+
+      const { accessToken, user: userData } = authResp;
+      localStorage.setItem('accessToken', accessToken);
+      const savedUser = saveUserToStorage(userData);
+      apiClient.setToken(accessToken);
+      setUser(savedUser);
+
+      return { success: true, requestClassroomAccess: response.requestClassroomAccess };
+    } catch (err) {
+      const message = err.message || 'Error al autenticar con Google';
+      setError(message);
+      return { success: false, error: message };
+    }
+  }, []);
+
+  const login2fa = useCallback(async (tempToken, code) => {
+    setError(null);
+    try {
+      const response = await authApi.login2fa({ tempToken, code });
+      
+      const { accessToken, user: userData } = response;
+
+      localStorage.setItem('accessToken', accessToken);
+      const savedUser = saveUserToStorage(userData);
+      apiClient.setToken(accessToken);
+      setUser(savedUser);
+
+      return { success: true };
+    } catch (err) {
+      const message = err.message || 'Error al verificar el código 2FA';
       setError(message);
       return { success: false, error: message };
     }
@@ -297,6 +348,8 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateProfile,
     refreshUser,
+    loginWithGoogle,
+    login2fa,
     clearError: () => setError(null),
   };
 

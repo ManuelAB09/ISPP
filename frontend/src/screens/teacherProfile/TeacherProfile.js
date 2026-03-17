@@ -445,7 +445,7 @@ const TeacherProfile = () => {
                 </div>
               ))}
               {/* Placeholder "Explorar más comunidades" */}
-              <div 
+              <div
                 className="tp-comunidades__card tp-comunidades__card--explore tp-comunidades__card--xl"
                 onClick={() => navigate('/comunidades')}
                 style={{ cursor: 'pointer' }}
@@ -456,7 +456,7 @@ const TeacherProfile = () => {
                   Busca entre miles de comunidades de estudio adaptadas a tus necesidades
                 </span>
               </div>
-              <span 
+              <span
                 className="tp-comunidades__ver-todas tp-comunidades__ver-todas--xl"
                 onClick={() => navigate('/comunidades')}
                 style={{ cursor: 'pointer' }}
@@ -475,7 +475,7 @@ const TeacherProfile = () => {
                 Crea comunidades, une a estudiantes y enseña sobre lo que sabes.
               </p>
               {user?.id === tutor.usuario?.id && (
-                <button 
+                <button
                   className="tp-btn tp-btn--crear tp-btn--crear-xl"
                   onClick={() => navigate('/crear-comunidad')}
                 >+ Crear Nueva</button>
