@@ -50,6 +50,24 @@ public class SolicitudContratacionController {
         }
     }
 
+    /** Reservar directamente una franja disponible en el perfil del tutor (reserva aceptada). */
+    @PostMapping("/tutor/{tutorId}/reserve")
+    public ResponseEntity<?> reservarDirecta(
+            @AuthenticationPrincipal Usuario usuario,
+            @PathVariable Long tutorId,
+            @Valid @RequestBody SolicitudContratacionRequest request) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado");
+        }
+        try {
+            SolicitudContratacionResponse response =
+                    solicitudService.reservarDirecta(usuario.getId(), tutorId, request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     /** Aceptar una solicitud (solo el tutor destinatario). */
     @PostMapping("/{solicitudId}/aceptar")
     public ResponseEntity<?> aceptarSolicitud(

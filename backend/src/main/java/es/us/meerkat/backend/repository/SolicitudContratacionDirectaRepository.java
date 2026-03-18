@@ -66,6 +66,22 @@ public interface SolicitudContratacionDirectaRepository
             @Param("horaFin") LocalTime horaFin,
             @Param("excludeId") Long excludeId);
 
+    /**
+     * Busca reservas que solapen con el rango horario dado para un tutor y día (cualquier estado
+     * excepto CANCELADA y RECHAZADA). Se usa para bloquear franjas al reservar desde el perfil.
+     */
+    @Query(
+            "SELECT s FROM SolicitudContratacionDirecta s WHERE s.tutor.id = :tutorId AND s.dia ="
+                    + " :dia AND s.estado NOT IN"
+                    + " (es.us.meerkat.backend.entity.EstadoSolicitudContratacion.CANCELADA,"
+                    + " es.us.meerkat.backend.entity.EstadoSolicitudContratacion.RECHAZADA) AND"
+                    + " s.horaInicio < :horaFin AND s.horaFin > :horaInicio")
+    List<SolicitudContratacionDirecta> findConflictingBookingsAnyState(
+            @Param("tutorId") Long tutorId,
+            @Param("dia") LocalDate dia,
+            @Param("horaInicio") LocalTime horaInicio,
+            @Param("horaFin") LocalTime horaFin);
+
     /** Reservas confirmadas (PAGADA) cuya clase es mañana para enviar recordatorio. */
     @Query(
             "SELECT s FROM SolicitudContratacionDirecta s WHERE s.dia = :manana AND s.estado ="

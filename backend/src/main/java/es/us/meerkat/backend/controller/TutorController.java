@@ -1,6 +1,12 @@
 package es.us.meerkat.backend.controller;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.data.domain.Page;
@@ -17,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import es.us.meerkat.backend.dto.AvailabilitySlot;
 import es.us.meerkat.backend.dto.ConnectClassroomRequest;
 import es.us.meerkat.backend.dto.CreateTutorRequest;
 import es.us.meerkat.backend.dto.MessageResponse;
@@ -29,6 +36,8 @@ import es.us.meerkat.backend.dto.UbicacionResponse;
 import es.us.meerkat.backend.dto.UpdateTutorRequest;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.SolicitudContratacionDirectaRepository;
+import es.us.meerkat.backend.service.GoogleCalendarService;
 import es.us.meerkat.backend.service.PaymentService;
 import es.us.meerkat.backend.service.TutorService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,6 +57,8 @@ public class TutorController {
 
     private final TutorService tutorService;
     private final PaymentService paymentService;
+    private final GoogleCalendarService googleCalendarService;
+    private final SolicitudContratacionDirectaRepository solicitudRepository;
 
     /**
      * Lista tutores disponibles con filtros opcionales.
@@ -170,6 +181,78 @@ public class TutorController {
                 .obtenerTutorPorId(tutorId)
                 .map(tutor -> ResponseEntity.ok(toTutorResponse(tutor)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /** Devuelve las franjas de disponibilidad de un tutor en un rango de fechas. */
+    @GetMapping("/{tutorId}/availability")
+    public ResponseEntity<?> getAvailability(
+            @PathVariable Long tutorId,
+            @RequestParam(required = false) LocalDate from,
+            @RequestParam(required = false) LocalDate to,
+            @RequestParam(required = false, defaultValue = "30") int slotMinutes) {
+
+        var tutorOpt = tutorService.obtenerTutorPorId(tutorId);
+        if (tutorOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        LocalDate startDate = from != null ? from : LocalDate.now();
+        LocalDate endDate = to != null ? to : startDate.plusDays(7);
+
+        // Obtener busy intervals desde Google Calendar si aplica
+        LocalDateTime desde = startDate.atTime(0, 0);
+        LocalDateTime hasta = endDate.atTime(23, 59);
+        List<AvailabilitySlot> busyIntervals = Collections.emptyList();
+        try {
+            busyIntervals =
+                    googleCalendarService.obtenerBusyIntervals(
+                            tutorOpt.get().getUsuario().getId(), desde, hasta);
+        } catch (Exception e) {
+            // Ignorar si no se puede consultar GCal
+        }
+
+        List<AvailabilitySlot> slots = new ArrayList<>();
+
+        // Default daily working hours (could be enhanced later)
+        LocalTime workStart = LocalTime.of(8, 0);
+        LocalTime workEnd = LocalTime.of(20, 0);
+
+        for (LocalDate d = startDate; !d.isAfter(endDate); d = d.plusDays(1)) {
+            LocalTime cursor = workStart;
+            while (cursor.plusMinutes(slotMinutes).isBefore(workEnd)
+                    || cursor.plusMinutes(slotMinutes).equals(workEnd)) {
+                LocalDateTime s = LocalDateTime.of(d, cursor);
+                LocalDateTime e = s.plusMinutes(slotMinutes);
+
+                boolean conflict = false;
+
+                // Check DB conflicts (any non-cancelled state)
+                try {
+                    var conflictos =
+                            solicitudRepository.findConflictingBookingsAnyState(
+                                    tutorId, d, s.toLocalTime(), e.toLocalTime());
+                    conflict = !conflictos.isEmpty();
+                } catch (Exception ex) {
+                    conflict = false;
+                }
+
+                // Check Google busy intervals overlap
+                if (!conflict) {
+                    for (var b : busyIntervals) {
+                        if (!(e.isBefore(b.getStart()) || s.isAfter(b.getEnd()))) {
+                            conflict = true;
+                            break;
+                        }
+                    }
+                }
+
+                slots.add(new AvailabilitySlot(s, e, !conflict));
+
+                cursor = cursor.plusMinutes(slotMinutes);
+            }
+        }
+
+        return ResponseEntity.ok(slots);
     }
 
     /**

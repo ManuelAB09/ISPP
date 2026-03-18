@@ -1,10 +1,12 @@
 package es.us.meerkat.backend.service;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -18,13 +20,19 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeReque
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
+import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.Event.Reminders;
 import com.google.api.services.calendar.model.EventDateTime;
 import com.google.api.services.calendar.model.EventReminder;
+import com.google.api.services.calendar.model.FreeBusyRequest;
+import com.google.api.services.calendar.model.FreeBusyRequestItem;
+import com.google.api.services.calendar.model.FreeBusyResponse;
+import com.google.api.services.calendar.model.TimePeriod;
 
 import es.us.meerkat.backend.config.GoogleCalendarConfig;
+import es.us.meerkat.backend.dto.AvailabilitySlot;
 import es.us.meerkat.backend.dto.GoogleCalendarStatusResponse;
 import es.us.meerkat.backend.dto.UpdateCalendarPreferenciasRequest;
 import es.us.meerkat.backend.entity.Evento;
@@ -565,6 +573,49 @@ public class GoogleCalendarService {
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .map(TipoEvento::valueOf)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Consulta los intervalos "ocupados" (busy) del calendario del usuario entre dos instantes.
+     * Devuelve pares [start,end] como LocalDateTime en la zona configurada.
+     */
+    public List<AvailabilitySlot> obtenerBusyIntervals(
+            final Long usuarioId, final LocalDateTime desde, final LocalDateTime hasta)
+            throws Exception {
+
+        final Optional<GoogleCalendarToken> tokenOpt = tokenRepository.findByUsuarioId(usuarioId);
+        if (tokenOpt.isEmpty() || !Boolean.TRUE.equals(tokenOpt.get().getSincronizacionActiva())) {
+            return Collections.emptyList();
+        }
+
+        final GoogleCalendarToken token = tokenOpt.get();
+        final Calendar calendar = getCalendarClient(token);
+
+        // Construir FreeBusy request
+        FreeBusyRequest fbRequest = new FreeBusyRequest();
+
+        FreeBusyRequestItem item = new FreeBusyRequestItem();
+        item.setId(CALENDAR_PRIMARY);
+        fbRequest.setTimeMin(
+                new DateTime(Date.from(desde.atZone(ZoneId.of(ZONA_HORARIA)).toInstant())));
+        fbRequest.setTimeMax(
+                new DateTime(Date.from(hasta.atZone(ZoneId.of(ZONA_HORARIA)).toInstant())));
+        fbRequest.setItems(List.of(item));
+
+        FreeBusyResponse fbResponse = calendar.freebusy().query(fbRequest).execute();
+
+        final List<TimePeriod> busy = fbResponse.getCalendars().get(CALENDAR_PRIMARY).getBusy();
+
+        return busy.stream()
+                .map(
+                        tp -> {
+                            Instant s = Instant.ofEpochMilli(tp.getStart().getValue());
+                            Instant e = Instant.ofEpochMilli(tp.getEnd().getValue());
+                            LocalDateTime lds = LocalDateTime.ofInstant(s, ZoneId.of(ZONA_HORARIA));
+                            LocalDateTime lde = LocalDateTime.ofInstant(e, ZoneId.of(ZONA_HORARIA));
+                            return new AvailabilitySlot(lds, lde, false);
+                        })
                 .collect(Collectors.toList());
     }
 
