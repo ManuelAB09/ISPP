@@ -18,9 +18,9 @@ public class RegisterRequest {
     @Email(message = "El formato del email no es válido")
     private String email;
 
-    /** Contraseña del nuevo usuario. Se almacenará cifrada. Mínimo 8 caracteres. */
+    /** Contraseña del nuevo usuario. Se almacenará cifrada. Entre 8 y 128 caracteres. */
     @NotBlank(message = "La contraseña no puede estar vacía")
-    @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres")
+    @Size(min = 8, max = 128, message = "La contraseña debe tener entre 8 y 128 caracteres")
     private String password;
 
     /** Nombre completo del nuevo usuario. */

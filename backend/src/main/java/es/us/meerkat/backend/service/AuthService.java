@@ -43,6 +43,9 @@ public class AuthService {
     /** Longitud mínima requerida para las contraseñas. */
     private static final int MIN_PASSWORD_LENGTH = 8;
 
+    /** Longitud máxima permitida para las contraseñas. */
+    private static final int MAX_PASSWORD_LENGTH = 128;
+
     /** Horas de validez del token de verificación. */
     private static final int VERIFICATION_TOKEN_HOURS = 24;
 
@@ -136,8 +139,8 @@ public class AuthService {
             throw new ValidationException("El email no puede estar vacío");
         }
 
-        // Validar formato de email
-        final String emailRegex = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$";
+        // Validar formato de email (más estricto)
+        final String emailRegex = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
         if (!request.getEmail().matches(emailRegex)) {
             throw new ValidationException("El formato del email no es válido");
         }
@@ -148,6 +151,10 @@ public class AuthService {
 
         if (request.getPassword() == null || request.getPassword().length() < MIN_PASSWORD_LENGTH) {
             throw new ValidationException("La contraseña debe tener al menos 8 caracteres");
+        }
+
+        if (request.getPassword().length() > MAX_PASSWORD_LENGTH) {
+            throw new ValidationException("La contraseña no puede tener más de 128 caracteres");
         }
     }
 
