@@ -118,6 +118,9 @@ export default function CommunityDetail() {
   const [respondingId, setRespondingId] = useState(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [chatOpen, setChatOpen] = useState(openChatOnLoad);
+  const [ranking, setRanking] = useState([]);
+  const [rankingLoading, setRankingLoading] = useState(false);
+  const [rankingError, setRankingError] = useState(null);
   const fileInputRef = useRef(null);
   const activeMeetingRequestInFlightRef = useRef(false);
 
@@ -233,6 +236,32 @@ export default function CommunityDetail() {
     fetchEvents();
   }, [fetchCommunity, fetchEvents]);
 
+
+  const fetchRanking = useCallback(async () => {
+    if (!isMember) {
+      setRanking([]);
+      return;
+    }
+
+    try {
+      setRankingLoading(true);
+      setRankingError(null);
+      const data = await communitiesApi.getRanking(communityId);
+      setRanking(Array.isArray(data) ? data : (data?.content || []));
+    } catch (err) {
+      console.error('Error al cargar ranking:', err);
+      setRankingError('No se pudo cargar el ranking.');
+      setRanking([]);
+    } finally {
+      setRankingLoading(false);
+    }
+  }, [communityId, isMember]);
+
+  useEffect(() => {
+    if (isMember) {
+      fetchRanking();
+    }
+  }, [fetchRanking, isMember]);
 
   // Modal de alarmas al confirmar asistencia
   const [showAttendModal, setShowAttendModal] = useState(false);
@@ -1023,7 +1052,7 @@ export default function CommunityDetail() {
             <h2 className="cd-events-title">
               <LuCalendar /> Eventos
             </h2>
-            <div className="cd-events-actions">
+            <div className="cd-events- actions">
               <label className="cd-filter-label">
                 <input
                   type="checkbox"
@@ -1080,6 +1109,98 @@ export default function CommunityDetail() {
             </div>
           )}
         </div>
+        
+        {isMember && (
+          <div className="cd-ranking-section">
+            <h2 className="cd-ranking-title">
+              <LuUsers /> Ranking de la comunidad
+            </h2>
+
+            {rankingLoading ? (
+              <p className="cd-loading">Cargando ranking...</p>
+            ) : rankingError ? (
+              <p className="cd-ranking-error">{rankingError}</p>
+            ) : ranking.length > 0 ? (
+              <div className="cd-ranking-container">
+                <table className="cd-ranking-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Usuario</th>
+                      <th>Puntos</th>
+                      <th>Mensajes</th>
+                      <th>Eventos</th>
+                      <th>Asistencias</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {ranking.map((item, index) => {
+                      const isMe = item.usuario?.id === currentUserId;
+
+                      return (
+                        <tr
+                          key={item.usuario?.id || index}
+                          className={`
+                            cd-ranking-row 
+                            ${isMe ? 'is-me' : ''}
+                          `}
+                        >
+                          {/* Columna de Posición / Medalla */}
+                          <td>
+                            <div className="cd-ranking-position">
+                              {index === 0 ? '👑' : index + 1}
+                            </div>
+                          </td>
+
+                          {/* Columna de Usuario */}
+                          <td className="cd-ranking-user-cell">
+                            {item.usuario?.foto ? (
+                              <img
+                                src={item.usuario.foto}
+                                alt={item.usuario?.nombre || 'Usuario'}
+                                className="cd-ranking-avatar"
+                              />
+                            ) : (
+                              <div className="cd-ranking-avatar cd-ranking-avatar-fallback">
+                                {(item.usuario?.nombre || 'U').charAt(0).toUpperCase()}
+                              </div>
+                            )}
+
+                            <span className="cd-ranking-name">
+                              {item.usuario?.nombre || 'Usuario'}
+                            </span>
+
+                            {isMe && (
+                              <span className="cd-ranking-you-badge">Tú</span>
+                            )}
+                          </td>
+
+                          {/* Columna de Puntos con Badge */}
+                          <td>
+                            <span className="cd-ranking-points">
+                              {item.puntos}
+                            </span>
+                          </td>
+                          
+                          {/* Resto de estadísticas */}
+                          <td>{item.mensajes}</td>
+                          <td>{item.eventosCreados}</td>
+                          <td>{item.asistentesEventos}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="cd-ranking-empty">
+                Aún no hay actividad suficiente.
+              </p>
+            )}
+          </div>
+        )}
+
 
         {currentUserId && isMember && user ? (
           <CommunityChat
