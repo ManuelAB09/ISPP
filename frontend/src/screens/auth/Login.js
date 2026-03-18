@@ -191,21 +191,21 @@ const Login = () => {
             <div className="login-2fa-container">
               <div className="login-header">
                 <h2>Verificación en dos pasos</h2>
-                <p>Introduce el código de tu aplicación de autenticación (ej. Google Authenticator)</p>
+                <p>Introduce el código de tu app de autenticación o un código de respaldo</p>
               </div>
 
               <form onSubmit={handle2FASubmit} className="login-form">
                 <div className="form-group">
-                  <label htmlFor="totpCode">Código 2FA</label>
+                  <label htmlFor="totpCode">Código 2FA o de respaldo</label>
                   <input
                     type="text"
                     id="totpCode"
                     value={totpCode}
-                    onChange={(e) => setTotpCode(e.target.value)}
-                    placeholder="000111"
-                    maxLength="6"
+                    onChange={(e) => setTotpCode(e.target.value.toUpperCase())}
+                    placeholder="000111 o ABCD-EFGH"
+                    maxLength="24"
                     required
-                    style={{ letterSpacing: '2px', textAlign: 'center', fontSize: '1.2rem' }}
+                    style={{ letterSpacing: '1px', textAlign: 'center', fontSize: '1.2rem' }}
                   />
                 </div>
                 {error && <div className="login-error-message">{error}</div>}

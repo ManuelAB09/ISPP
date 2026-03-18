@@ -137,7 +137,7 @@ export const authApi = {
 
   /**
    * POST /api/v1/auth/2fa/login
-   * Completar inicio de sesión con código 2FA
+   * Completar inicio de sesión con código TOTP o código de respaldo
    * @param {Object} data - { tempToken: string, code: string }
    * @returns {Promise<Object>} - AuthResponse
    */
@@ -158,7 +158,7 @@ export const authApi = {
    * POST /api/v1/auth/2fa/enable
    * Activar 2FA verificando el primer código
    * @param {string} code - Código TOTP de la app autenticadora
-   * @returns {Promise<Object>} - MessageResponse
+   * @returns {Promise<Object>} - TotpEnableResponse { message, backupCodes, timestamp }
    */
   enable2fa(code) {
     return apiClient.post('/api/v1/auth/2fa/enable', { code });
@@ -166,8 +166,8 @@ export const authApi = {
 
   /**
    * POST /api/v1/auth/2fa/disable
-   * Desactivar 2FA verificando un código actual
-   * @param {string} code - Código TOTP de la app autenticadora
+   * Desactivar 2FA verificando un código TOTP o un código de respaldo
+   * @param {string} code - Código TOTP o de respaldo
    * @returns {Promise<Object>} - MessageResponse
    */
   disable2fa(code) {

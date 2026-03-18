@@ -34,6 +34,8 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
     const [totpCode, setTotpCode] = useState("")
     const [totpError, setTotpError] = useState("")
     const [isTotpLoading, setIsTotpLoading] = useState(false)
+    const [backupCodes, setBackupCodes] = useState([])
+    const [showBackupCodesModal, setShowBackupCodesModal] = useState(false)
 
     // Recordatorios por email + canal alarmas por defecto
     const [emailRecordatorios, setEmailRecordatorios] = useState({
@@ -339,6 +341,8 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
             setTotpCode("")
             setTotpError("")
             setTotpSetupData(null)
+            setBackupCodes([])
+            setShowBackupCodesModal(false)
             setIsTotpLoading(true)
             setShow2FAModal('setup')
             try {
@@ -354,6 +358,38 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
         }
     }
 
+    const buildBackupCodesTxt = (codes) => {
+        const generatedAt = new Date().toLocaleString('es-ES')
+        return [
+            'MeerKatters - Códigos de respaldo 2FA',
+            `Generado: ${generatedAt}`,
+            '',
+            'Guarda estos códigos en un lugar seguro. Cada código solo se puede usar una vez.',
+            'Si pierdes acceso a tu app de autenticación, podrás iniciar sesión con uno de ellos.',
+            '',
+            ...codes,
+        ].join('\n')
+    }
+
+    const handleDownloadBackupCodes = () => {
+        if (!backupCodes.length) {
+            return
+        }
+
+        const content = buildBackupCodesTxt(backupCodes)
+        const file = new Blob([content], { type: 'text/plain;charset=utf-8' })
+        const fileUrl = window.URL.createObjectURL(file)
+        const link = document.createElement('a')
+        const date = new Date().toISOString().slice(0, 10)
+
+        link.href = fileUrl
+        link.download = `meerkat-2fa-backup-codes-${date}.txt`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(fileUrl)
+    }
+
     const handleVerify2FA = async (e) => {
         e.preventDefault()
         setTotpError("")
@@ -361,11 +397,17 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
 
         try {
             if (show2FAModal === 'setup') {
-                await authApi.enable2fa(totpCode)
+                const response = await authApi.enable2fa(totpCode)
+                const generatedCodes = Array.isArray(response?.backupCodes)
+                    ? response.backupCodes
+                    : []
+
+                setBackupCodes(generatedCodes)
                 setTwoFactorAuth(true)
                 // Sync context
                 updateProfile({ autenticacionDosFactores: true })
                 setShow2FAModal(false)
+                setShowBackupCodesModal(generatedCodes.length > 0)
             } else if (show2FAModal === 'disable') {
                 await authApi.disable2fa(totpCode)
                 setTwoFactorAuth(false)
@@ -794,14 +836,14 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
                             <p className="settings-confirm-text">
                                 {show2FAModal === 'setup' 
                                     ? '2. Introduce el código de 6 dígitos generado por tu app:' 
-                                    : 'Introduce el código de 6 dígitos actual de tu app para confirmar la desactivación:'}
+                                    : 'Introduce el código actual de tu app o un código de respaldo para confirmar la desactivación:'}
                             </p>
                             <input
                                 type="text"
                                 value={totpCode}
-                                onChange={(e) => setTotpCode(e.target.value)}
-                                placeholder="000111"
-                                maxLength="6"
+                                onChange={(e) => setTotpCode(e.target.value.toUpperCase())}
+                                placeholder={show2FAModal === 'setup' ? '000111' : '000111 o ABCD-EFGH'}
+                                maxLength={show2FAModal === 'setup' ? 6 : 24}
                                 required
                                 style={{
                                     display: 'block',
@@ -809,7 +851,7 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
                                     padding: '10px',
                                     fontSize: '1.2rem',
                                     textAlign: 'center',
-                                    letterSpacing: '5px',
+                                    letterSpacing: show2FAModal === 'setup' ? '5px' : '1px',
                                     marginBottom: '15px',
                                     border: '1px solid #d1d5db',
                                     borderRadius: '8px'
@@ -841,6 +883,41 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal: códigos de respaldo 2FA */}
+            {showBackupCodesModal && (
+                <div className="settings-confirm-overlay">
+                    <div className="settings-confirm-modal settings-backup-modal">
+                        <h2 className="settings-confirm-title">Códigos de respaldo generados</h2>
+                        <p className="settings-confirm-text">
+                            Guarda estos códigos ahora. Solo se mostrarán una vez y cada código sirve para un único uso.
+                        </p>
+
+                        <div className="settings-backup-codes-grid">
+                            {backupCodes.map((code) => (
+                                <code key={code} className="settings-backup-code">{code}</code>
+                            ))}
+                        </div>
+
+                        <div className="settings-confirm-actions" style={{ marginTop: '20px' }}>
+                            <button
+                                type="button"
+                                className="settings-btn settings-btn--outline"
+                                onClick={handleDownloadBackupCodes}
+                            >
+                                Descargar .txt
+                            </button>
+                            <button
+                                type="button"
+                                className="settings-btn settings-btn--primary"
+                                onClick={() => setShowBackupCodesModal(false)}
+                            >
+                                Ya los he guardado
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

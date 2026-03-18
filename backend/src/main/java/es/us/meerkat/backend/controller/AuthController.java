@@ -15,6 +15,7 @@ import es.us.meerkat.backend.dto.LoginRequest;
 import es.us.meerkat.backend.dto.MessageResponse;
 import es.us.meerkat.backend.dto.RegisterRequest;
 import es.us.meerkat.backend.dto.ResendVerificationRequest;
+import es.us.meerkat.backend.dto.TotpEnableResponse;
 import es.us.meerkat.backend.dto.TotpSetupResponse;
 import es.us.meerkat.backend.dto.TotpVerifyRequest;
 import es.us.meerkat.backend.service.AuthService;
@@ -114,7 +115,7 @@ public final class AuthController {
 
     /** Verifica el código TOTP y activa 2FA para el usuario. POST /api/v1/auth/2fa/enable */
     @PostMapping("/2fa/enable")
-    public ResponseEntity<MessageResponse> enable2fa(@RequestBody final TotpVerifyRequest request) {
+    public ResponseEntity<TotpEnableResponse> enable2fa(@RequestBody final TotpVerifyRequest request) {
         return ResponseEntity.ok(authService.enableTotpForCurrentUser(request.getCode()));
     }
 

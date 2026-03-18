@@ -112,6 +112,12 @@ public class Usuario {
     @Column(length = 128)
     private String totpTempSecret;
 
+    /** Códigos de respaldo (hasheados) para recuperar acceso cuando el usuario no puede usar su app. */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "usuario_backup_codes", joinColumns = @JoinColumn(name = "usuario_id"))
+    @Column(name = "codigo_hash", length = 80)
+    private List<String> backupCodeHashes = new ArrayList<>();
+
     /** Indica si el usuario quiere recibir notificaciones por email. */
     @Column(nullable = false)
     private Boolean notificacionesEmail = true;
@@ -165,6 +171,9 @@ public class Usuario {
         }
         if (this.autenticacionDosFactores == null) {
             this.autenticacionDosFactores = false;
+        }
+        if (this.backupCodeHashes == null) {
+            this.backupCodeHashes = new ArrayList<>();
         }
         if (this.notificacionesEmail == null) {
             this.notificacionesEmail = true;

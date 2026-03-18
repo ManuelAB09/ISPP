@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,6 +47,7 @@ import es.us.meerkat.backend.dto.GoogleAuthResponse;
 import es.us.meerkat.backend.dto.LoginRequest;
 import es.us.meerkat.backend.dto.MessageResponse;
 import es.us.meerkat.backend.dto.RegisterRequest;
+import es.us.meerkat.backend.dto.TotpEnableResponse;
 import es.us.meerkat.backend.dto.TotpSetupResponse;
 import es.us.meerkat.backend.dto.TwoFactorChallengeResponse;
 import es.us.meerkat.backend.dto.UbicacionResponse;
@@ -80,6 +82,12 @@ public class AuthService {
 
     /** Horas de validez del token de verificación. */
     private static final int VERIFICATION_TOKEN_HOURS = 24;
+
+    /** Cantidad de códigos de respaldo generados al activar 2FA. */
+    private static final int BACKUP_CODES_COUNT = 8;
+
+    /** Longitud de cada código de respaldo (sin separador). */
+    private static final int BACKUP_CODE_LENGTH = 8;
 
     /** URL base de la aplicación frontend para verificación. */
     @Value("${app.frontend.url:http://localhost:3000}")
@@ -294,8 +302,16 @@ public class AuthService {
         if (usuario.getTotpSecret() == null) {
             throw new ValidationException("2FA no configurado para este usuario");
         }
-        if (!verifyTotpCode(usuario.getTotpSecret(), code)) {
-            throw new ValidationException("Código 2FA inválido");
+        boolean validTotp = verifyTotpCode(usuario.getTotpSecret(), code);
+        boolean usedBackupCode = false;
+        if (!validTotp) {
+            usedBackupCode = consumeBackupCode(usuario, code);
+        }
+        if (!validTotp && !usedBackupCode) {
+            throw new ValidationException("Código 2FA o de respaldo inválido");
+        }
+        if (usedBackupCode) {
+            usuarioRepository.save(usuario);
         }
 
         final String token = jwtService.generateToken(usuario.getEmail());
@@ -416,7 +432,7 @@ public class AuthService {
         return new TotpSetupResponse(secret, otpauth);
     }
 
-    public MessageResponse enableTotpForCurrentUser(final String code) {
+    public TotpEnableResponse enableTotpForCurrentUser(final String code) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getName())) {
             throw new ValidationException("Unauthorized");
@@ -435,12 +451,22 @@ public class AuthService {
             throw new ValidationException("Código 2FA inválido");
         }
 
+        List<String> backupCodes = generateBackupCodes();
+        List<String> backupCodeHashes = new ArrayList<>();
+        for (String backupCode : backupCodes) {
+            backupCodeHashes.add(passwordEncoder.encode(normalizeBackupCode(backupCode)));
+        }
+
         usuario.setTotpSecret(temp);
         usuario.setTotpTempSecret(null);
+        usuario.setBackupCodeHashes(backupCodeHashes);
         usuario.setAutenticacionDosFactores(true);
         usuarioRepository.save(usuario);
 
-        return MessageResponse.builder().message("2FA activado").build();
+        return TotpEnableResponse.builder()
+                .message("2FA activado")
+                .backupCodes(backupCodes)
+                .build();
     }
 
     public MessageResponse disableTotpForCurrentUser(final String code) {
@@ -458,15 +484,60 @@ public class AuthService {
         if (secret == null || secret.isBlank()) {
             throw new ValidationException("2FA no está activado");
         }
-        if (!verifyTotpCode(secret, code)) {
-            throw new ValidationException("Código 2FA inválido");
+
+        boolean validTotp = verifyTotpCode(secret, code);
+        boolean usedBackupCode = false;
+        if (!validTotp) {
+            usedBackupCode = consumeBackupCode(usuario, code);
+        }
+        if (!validTotp && !usedBackupCode) {
+            throw new ValidationException("Código 2FA o de respaldo inválido");
         }
 
         usuario.setTotpSecret(null);
+        usuario.setTotpTempSecret(null);
+        usuario.setBackupCodeHashes(new ArrayList<>());
         usuario.setAutenticacionDosFactores(false);
         usuarioRepository.save(usuario);
 
         return MessageResponse.builder().message("2FA desactivado").build();
+    }
+
+    private List<String> generateBackupCodes() {
+        List<String> backupCodes = new ArrayList<>();
+        for (int i = 0; i < BACKUP_CODES_COUNT; i++) {
+            String rawCode = RandomStringUtils.randomAlphanumeric(BACKUP_CODE_LENGTH).toUpperCase();
+            String formattedCode = rawCode.substring(0, 4) + "-" + rawCode.substring(4);
+            backupCodes.add(formattedCode);
+        }
+        return backupCodes;
+    }
+
+    private boolean consumeBackupCode(final Usuario usuario, final String code) {
+        if (code == null || code.isBlank()) {
+            return false;
+        }
+
+        List<String> backupCodeHashes = usuario.getBackupCodeHashes();
+        if (backupCodeHashes == null || backupCodeHashes.isEmpty()) {
+            return false;
+        }
+
+        String normalizedCode = normalizeBackupCode(code);
+        for (int i = 0; i < backupCodeHashes.size(); i++) {
+            String hash = backupCodeHashes.get(i);
+            if (passwordEncoder.matches(normalizedCode, hash)) {
+                backupCodeHashes.remove(i);
+                usuario.setBackupCodeHashes(backupCodeHashes);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private String normalizeBackupCode(final String code) {
+        return code.replace("-", "").replace(" ", "").trim().toUpperCase();
     }
 
     private String urlEncode(String s) {
