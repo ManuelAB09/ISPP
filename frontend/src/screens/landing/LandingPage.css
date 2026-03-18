@@ -130,13 +130,12 @@
 }
 
 .landing-btn-outline {
-  background: transparent;
+  background: var(--white);
   color: var(--primary-color);
-  border: 2px solid var(--primary-color);
 }
 
 .landing-btn-outline:hover {
-  background: var(--primary-color);
+  background: var(--secondary-color);
   color: var(--white);
 }
 
@@ -254,6 +253,7 @@
 .landing-hero-visual {
   position: relative;
   height: 500px;
+  width: 600px;
 }
 
 .landing-hero-image {
@@ -298,7 +298,7 @@
 
 .landing-hero-card-2 {
   top: 50%;
-  right: 0;
+  left: 70%;
   animation-delay: 2s;
 }
 
