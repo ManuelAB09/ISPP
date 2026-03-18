@@ -106,9 +106,15 @@ public class GoogleClassroomService {
                             + URLEncoder.encode(state, StandardCharsets.UTF_8);
 
         } else {
+            String[] commonScopes = {
+                "https://www.googleapis.com/auth/classroom.courses.readonly",
+                "https://www.googleapis.com/auth/classroom.coursework.me.readonly",
+                "https://www.googleapis.com/auth/classroom.coursework.students.readonly",
+                "https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly"
+            };
             scope =
                     URLEncoder.encode(
-                            "https://www.googleapis.com/auth/classroom.courses.readonly",
+                            String.join(" ", commonScopes),
                             StandardCharsets.UTF_8);
 
             url =
@@ -145,7 +151,9 @@ public class GoogleClassroomService {
                         .orElse(GoogleClassroomConnection.builder().usuario(usuario).build());
 
         connection.setAccessToken(accessToken);
-        connection.setRefreshToken(refreshToken);
+        if (refreshToken != null && !refreshToken.isEmpty()) {
+            connection.setRefreshToken(refreshToken);
+        }
         connection.setExpiresAt(expiresAt);
         connection.setActiva(true);
 

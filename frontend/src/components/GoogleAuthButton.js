@@ -27,7 +27,7 @@ const GoogleAuthButton = ({ onSuccess, onError, text = "Continuar con Google", f
         const height = 600;
         const left = window.screen.width / 2 - width / 2;
         const top = window.screen.height / 2 - height / 2;
-        const authWindow = window.open(data.url, 'GoogleAuth', `width=${width},height=${height},top=${top},left=${left}`);
+        window.open(data.url, 'GoogleAuth', `width=${width},height=${height},top=${top},left=${left}`);
 
         const messageListener = (event) => {
           // Filtrar origines en prod, de momento validamos la estructura

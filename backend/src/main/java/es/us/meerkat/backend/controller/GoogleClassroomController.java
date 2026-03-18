@@ -192,8 +192,23 @@ public class GoogleClassroomController {
 
         HttpEntity<Void> coursesReq = new HttpEntity<>(authHeaders);
 
-        ResponseEntity<String> coursesResp =
-                rest.exchange(coursesUrl, HttpMethod.GET, coursesReq, String.class);
+        ResponseEntity<String> coursesResp;
+        try {
+            coursesResp = rest.exchange(coursesUrl, HttpMethod.GET, coursesReq, String.class);
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            if (e.getStatusCode() == HttpStatus.FORBIDDEN || e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.TEXT_HTML)
+                        .body(htmlError("insufficient_scopes"));
+            }
+            return ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_HTML)
+                    .body(htmlError("courses_error"));
+        } catch (Exception e) {
+            return ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_HTML)
+                    .body(htmlError("courses_error"));
+        }
 
         String payload = "{}";
         if (coursesResp.getStatusCode().is2xxSuccessful() && coursesResp.getBody() != null) {
@@ -434,6 +449,9 @@ public class GoogleClassroomController {
             Map<String, Object> resp =
                     googleClassroomService.listarArchivosCursoVinculado(usuario, communityId);
             return ResponseEntity.ok(resp);
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            return ResponseEntity.status(e.getStatusCode())
+                    .body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", e.getMessage()));

@@ -2,6 +2,7 @@ package es.us.meerkat.backend.controller;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -321,6 +323,76 @@ public class EventoController {
             return ResponseEntity.ok(eventoService.cancelarEvento(eventId, motivo).toDTO());
         } catch (IllegalStateException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+        }
+    }
+    
+    // ===============================
+    // CLASSROOM TASK
+    // ===============================
+    
+    /**
+     * Vincula una tarea de Google Classroom a un evento.
+     *
+     * @param eventId Identificador del evento.
+     * @param request Cuerpo con la info de la tarea (taskId, title, url).
+     * @param usuario Usuario autenticado.
+     * @return El evento actualizado.
+     */
+    @PostMapping("/{eventId}/classroom-task")
+    @Operation(summary = "Vincular tarea de Classroom", description = "Vincula una tarea de Google Classroom a un evento")
+    public ResponseEntity<EventDetailResponse> vincularTareaClassroom(
+            @PathVariable @Parameter(description = "ID del evento") final Long eventId,
+            @RequestBody final Map<String, String> request,
+            @AuthenticationPrincipal Usuario usuario) {
+        
+        if (usuario == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado");
+        }
+        
+        String taskId = request.get("taskId");
+        String title = request.get("title");
+        String url = request.get("url");
+        
+        if (taskId == null || title == null || url == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Faltan datos de la tarea");
+        }
+        
+        try {
+            Evento eventoEditado = eventoService.vincularTareaClassroom(eventId, usuario.getId(), taskId, title, url);
+            return ResponseEntity.ok(eventoEditado.toDTO());
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("creador")) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+            }
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+    
+    /**
+     * Desvincula una tarea de Google Classroom de un evento.
+     *
+     * @param eventId Identificador del evento.
+     * @param usuario Usuario autenticado.
+     * @return El evento actualizado.
+     */
+    @DeleteMapping("/{eventId}/classroom-task")
+    @Operation(summary = "Desvincular tarea de Classroom", description = "Desvincula una tarea de Google Classroom de un evento")
+    public ResponseEntity<EventDetailResponse> desvincularTareaClassroom(
+            @PathVariable @Parameter(description = "ID del evento") final Long eventId,
+            @AuthenticationPrincipal Usuario usuario) {
+        
+        if (usuario == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado");
+        }
+        
+        try {
+            Evento eventoEditado = eventoService.desvincularTareaClassroom(eventId, usuario.getId());
+            return ResponseEntity.ok(eventoEditado.toDTO());
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("creador")) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+            }
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
 }

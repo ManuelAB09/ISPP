@@ -23,7 +23,11 @@ export default function GoogleClassroomButton({ communityId, linkedCourse, isAdm
     function handler(e) {
       if (!e.data) return;
       if (e.data.error) {
-        setError(e.data.error);
+        if (e.data.error === 'insufficient_scopes') {
+          setError('Debes conceder permisos para ver tus clases de Google Classroom. Vuelve a intentarlo marcando la casilla correspondiente.');
+        } else {
+          setError(e.data.error);
+        }
         setCourses(null);
       } else if (e.data.courses) {
         const courseData = e.data.courses.courses || e.data.courses;
