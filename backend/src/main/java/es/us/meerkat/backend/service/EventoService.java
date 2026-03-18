@@ -469,7 +469,12 @@ public class EventoService {
      * @return El evento actualizado.
      */
     @Transactional
-    public Evento vincularTareaClassroom(final Long eventoId, final Long usuarioId, final String taskId, final String title, final String url) {
+    public Evento vincularTareaClassroom(
+            final Long eventoId, 
+            final Long usuarioId, 
+            final String taskId, 
+            final String title, 
+            final String url) {
         final Evento evento = obtenerEventoInterno(eventoId);
         
         if (!evento.getCreador().getId().equals(usuarioId)) {

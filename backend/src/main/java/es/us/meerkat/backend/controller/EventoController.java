@@ -339,7 +339,8 @@ public class EventoController {
      * @return El evento actualizado.
      */
     @PostMapping("/{eventId}/classroom-task")
-    @Operation(summary = "Vincular tarea de Classroom", description = "Vincula una tarea de Google Classroom a un evento")
+    @Operation(summary = "Vincular tarea de Classroom", 
+               description = "Vincula una tarea de Google Classroom a un evento")
     public ResponseEntity<EventDetailResponse> vincularTareaClassroom(
             @PathVariable @Parameter(description = "ID del evento") final Long eventId,
             @RequestBody final Map<String, String> request,
@@ -376,7 +377,8 @@ public class EventoController {
      * @return El evento actualizado.
      */
     @DeleteMapping("/{eventId}/classroom-task")
-    @Operation(summary = "Desvincular tarea de Classroom", description = "Desvincula una tarea de Google Classroom de un evento")
+    @Operation(summary = "Desvincular tarea de Classroom", 
+               description = "Desvincula una tarea de Google Classroom de un evento")
     public ResponseEntity<EventDetailResponse> desvincularTareaClassroom(
             @PathVariable @Parameter(description = "ID del evento") final Long eventId,
             @AuthenticationPrincipal Usuario usuario) {
