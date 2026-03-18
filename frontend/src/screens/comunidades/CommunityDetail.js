@@ -1112,7 +1112,7 @@ export default function CommunityDetail() {
         
         {isMember && (
           <div className="cd-ranking-section">
-            <h2 className="cd-ranking-title">
+            <h2 className="cd-events-title">
               <LuUsers /> Ranking de la comunidad
             </h2>
 
