@@ -58,5 +58,8 @@ public class EventSummaryResponse {
     //
     // /** Icono emoji del tipo de evento (ej: "📝", "👥"). */
     private String iconoEvento;
+
+    /** Identificador del creador del evento. */
+    private Long creadorId;
     //
 }

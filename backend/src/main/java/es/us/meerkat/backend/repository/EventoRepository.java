@@ -33,8 +33,8 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
      */
     @Query(
             "SELECT e FROM Evento e WHERE e.visibleMapa = true AND e.cancelado = false AND"
-                    + " e.privado = false")
-    List<Evento> findVisibleOnMap();
+                    + " e.privado = false AND e.fechaHora >= :ahora")
+    List<Evento> findVisibleOnMap(@Param("ahora") LocalDateTime ahora);
 
     /**
      * Obtiene todos los eventos públicos de una comunidad.
@@ -42,8 +42,10 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
      * @param comunidadCount Identificador de la comunidad.
      * @return Lista de eventos públicos.
      */
-    @Query("SELECT e FROM Evento e WHERE e.privado = false AND e.cancelado = false")
-    List<Evento> findPublicEvents();
+    @Query(
+            "SELECT e FROM Evento e WHERE e.privado = false AND e.cancelado = false AND e.fechaHora"
+                    + " >= :ahora")
+    List<Evento> findPublicEvents(@Param("ahora") LocalDateTime ahora);
 
     /**
      * Obtiene todos los eventos privados de una comunidad.
@@ -78,6 +80,19 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
      * @return Lista de eventos activos de la comunidad.
      */
     List<Evento> findByComunidadIdAndCanceladoFalse(Long comunidadId);
+
+    /**
+     * Obtiene los eventos no cancelados y futuros de una comunidad.
+     *
+     * @param comunidadId Identificador de la comunidad.
+     * @param ahora Momento actual para filtrar eventos futuros.
+     * @return Lista de eventos activos futuros de la comunidad.
+     */
+    @Query(
+            "SELECT e FROM Evento e WHERE e.comunidad.id = :comunidadId"
+                    + " AND e.cancelado = false AND e.fechaHora >= :ahora")
+    List<Evento> findByComunidadIdAndCanceladoFalseAndFuture(
+            @Param("comunidadId") Long comunidadId, @Param("ahora") LocalDateTime ahora);
 
     // -----------------------------------------------
     // NUEVAS CONSULTAS: Mis Eventos
@@ -176,4 +191,17 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
     @Modifying
     @Query("DELETE FROM Evento e WHERE e.creador.id = :usuarioId")
     void deleteByUsuarioId(@Param("usuarioId") Long usuarioId);
+
+    /**
+     * Obtiene todos los eventos cuya fecha de fin (o fechaHora si no tiene fin) es anterior a la
+     * fecha límite proporcionada. Usado para borrado automático.
+     *
+     * @param limite Fecha límite (ahora - 24h).
+     * @return Lista de eventos pasados a eliminar.
+     */
+    @Query(
+            "SELECT e FROM Evento e "
+                    + "WHERE (e.fechaFin IS NOT NULL AND e.fechaFin < :limite) "
+                    + "OR (e.fechaFin IS NULL AND e.fechaHora < :limite)")
+    List<Evento> findEventosPasadosParaEliminar(@Param("limite") LocalDateTime limite);
 }

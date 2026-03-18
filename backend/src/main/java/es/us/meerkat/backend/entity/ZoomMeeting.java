@@ -33,6 +33,10 @@ public class ZoomMeeting {
     @JoinColumn(name = "comunidad_id", nullable = false)
     private Comunidad comunidad;
 
+    @ManyToOne
+    @JoinColumn(name = "evento_id")
+    private Evento evento;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "creador_id", nullable = false)
     private Usuario creador;

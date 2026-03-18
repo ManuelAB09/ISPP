@@ -20,6 +20,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,12 +34,14 @@ import es.us.meerkat.backend.dto.ZoomParticipantResponse;
 import es.us.meerkat.backend.dto.ZoomRecordingResponse;
 import es.us.meerkat.backend.dto.ZoomUserCallResponse;
 import es.us.meerkat.backend.entity.Comunidad;
+import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.entity.ZoomMeeting;
 import es.us.meerkat.backend.entity.ZoomMeetingParticipant;
 import es.us.meerkat.backend.entity.ZoomMeetingStatus;
 import es.us.meerkat.backend.entity.ZoomRecording;
 import es.us.meerkat.backend.repository.ComunidadRepository;
+import es.us.meerkat.backend.repository.EventoRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import es.us.meerkat.backend.repository.ZoomMeetingParticipantRepository;
 import es.us.meerkat.backend.repository.ZoomMeetingRepository;
@@ -58,9 +61,11 @@ public class ZoomIntegrationService {
     private final ZoomMeetingParticipantRepository participantRepository;
     private final ZoomRecordingRepository recordingRepository;
     private final ComunidadRepository comunidadRepository;
+    private final EventoRepository eventoRepository;
     private final UsuarioRepository usuarioRepository;
     private final AuthorizationService authorizationService;
     private final ZoomRecordingStorageService zoomRecordingStorageService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -146,7 +151,9 @@ public class ZoomIntegrationService {
                         .durationMinutes(durationMinutes)
                         .build();
 
-        return zoomMeetingRepository.save(meeting);
+        ZoomMeeting saved = zoomMeetingRepository.save(meeting);
+        broadcastCommunityMeeting(comunidadId, buildMeetingPayload(saved));
+        return saved;
     }
 
     /** Finaliza manualmente la llamada activa de una comunidad. */
@@ -161,6 +168,7 @@ public class ZoomIntegrationService {
         closeAllActiveParticipants(meeting);
         meeting.endMeeting();
         zoomMeetingRepository.save(meeting);
+        broadcastCommunityMeeting(comunidadId, null);
     }
 
     /** Obtiene la reunion activa de una comunidad si el usuario pertenece a ella. */
@@ -349,6 +357,170 @@ public class ZoomIntegrationService {
         }
     }
 
+    /** Crea una reunion Zoom para un evento o devuelve la activa. */
+    @Transactional
+    public ZoomMeeting createOrGetActiveMeetingForEvent(
+            final Long eventoId,
+            final Long userId,
+            final String topicParam,
+            final Integer durationMinutesParam) {
+
+        Evento evento =
+                eventoRepository
+                        .findById(eventoId)
+                        .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
+
+        Long comunidadId = evento.getComunidad().getId();
+        assertMember(comunidadId, userId);
+
+        Optional<ZoomMeeting> existing =
+                zoomMeetingRepository.findFirstByEventoIdAndStatusOrderByCreatedAtDesc(
+                        eventoId, ZoomMeetingStatus.ACTIVE);
+        if (existing.isPresent()) {
+            ZoomMeeting activeMeeting = existing.get();
+            if (activeMeeting.getStartedAt() != null
+                    && participantRepository
+                            .findByZoomMeetingIdAndInCallTrueOrderByJoinedAtAsc(
+                                    activeMeeting.getId())
+                            .isEmpty()) {
+                activeMeeting.endMeeting();
+                zoomMeetingRepository.save(activeMeeting);
+            } else {
+                return activeMeeting;
+            }
+        }
+
+        // Solo el organizador del evento puede crear una nueva reunión
+        if (!evento.getCreador().getId().equals(userId)) {
+            throw new RuntimeException("Solo el organizador del evento puede iniciar la reunión");
+        }
+
+        Usuario user =
+                usuarioRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        String topic =
+                (topicParam == null || topicParam.isBlank())
+                        ? "Evento: " + evento.getTitulo()
+                        : topicParam;
+        if (durationMinutesParam != null && durationMinutesParam < 0) {
+            throw new IllegalArgumentException("durationMinutes no puede ser menor que cero");
+        }
+
+        Integer durationMinutes =
+                durationMinutesParam != null && durationMinutesParam > 0
+                        ? durationMinutesParam
+                        : null;
+
+        Map<String, Object> zoomMeeting = createZoomMeeting(topic, durationMinutes);
+
+        ZoomMeeting meeting =
+                ZoomMeeting.builder()
+                        .comunidad(evento.getComunidad())
+                        .evento(evento)
+                        .creador(user)
+                        .zoomMeetingId(String.valueOf(zoomMeeting.get("id")))
+                        .topic(topic)
+                        .joinUrl((String) zoomMeeting.get("join_url"))
+                        .startUrl((String) zoomMeeting.get("start_url"))
+                        .password((String) zoomMeeting.get("password"))
+                        .status(ZoomMeetingStatus.ACTIVE)
+                        .durationMinutes(durationMinutes)
+                        .build();
+
+        ZoomMeeting saved = zoomMeetingRepository.save(meeting);
+        broadcastEventMeeting(eventoId, buildMeetingPayload(saved));
+        return saved;
+    }
+
+    /** Obtiene la reunion activa de un evento. */
+    public ZoomMeeting getActiveMeetingForEvent(final Long eventoId, final Long userId) {
+        Evento evento =
+                eventoRepository
+                        .findById(eventoId)
+                        .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
+        assertMember(evento.getComunidad().getId(), userId);
+
+        return zoomMeetingRepository
+                .findFirstByEventoIdAndStatusOrderByCreatedAtDesc(
+                        eventoId, ZoomMeetingStatus.ACTIVE)
+                .orElseThrow(() -> new RuntimeException("No hay llamada activa en este evento"));
+    }
+
+    /** Devuelve el acceso a la reunion del evento y registra presencia pendiente. */
+    @Transactional
+    public ZoomJoinResponse joinActiveMeetingForEvent(final Long eventoId, final Long userId) {
+        ZoomMeeting meeting = getActiveMeetingForEvent(eventoId, userId);
+        Usuario user =
+                usuarioRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        boolean alreadyTracked =
+                participantRepository
+                        .findFirstByZoomMeetingIdAndUsuarioIdOrderByJoinedAtDesc(
+                                meeting.getId(), userId)
+                        .isPresent();
+
+        if (!alreadyTracked) {
+            participantRepository.save(
+                    ZoomMeetingParticipant.builder()
+                            .zoomMeeting(meeting)
+                            .usuario(user)
+                            .zoomParticipantId(
+                                    "app-" + user.getId() + "-" + System.currentTimeMillis())
+                            .displayName(user.getNombre())
+                            .email(user.getEmail())
+                            .joinedAt(LocalDateTime.now())
+                            .inCall(false)
+                            .build());
+        }
+
+        return new ZoomJoinResponse(
+                meeting.getZoomMeetingId(),
+                meeting.getTopic(),
+                meeting.getJoinUrl(),
+                meeting.getPassword());
+    }
+
+    /** Lista participantes presentes en la llamada activa de un evento. */
+    public List<ZoomParticipantResponse> getActiveParticipantsForEvent(
+            final Long eventoId, final Long userId) {
+        ZoomMeeting meeting = getActiveMeetingForEvent(eventoId, userId);
+
+        return participantRepository
+                .findByZoomMeetingIdAndInCallTrueOrderByJoinedAtAsc(meeting.getId())
+                .stream()
+                .map(
+                        participant ->
+                                new ZoomParticipantResponse(
+                                        participant.getUsuario() != null
+                                                ? participant.getUsuario().getId()
+                                                : null,
+                                        participant.getDisplayName(),
+                                        participant.getEmail(),
+                                        participant.getInCall(),
+                                        participant.getJoinedAt(),
+                                        participant.getLeftAt()))
+                .toList();
+    }
+
+    /** Finaliza la llamada activa de un evento. */
+    @Transactional
+    public void endActiveMeetingForEvent(final Long eventoId, final Long userId) {
+        ZoomMeeting meeting = getActiveMeetingForEvent(eventoId, userId);
+
+        if (!meeting.getCreador().getId().equals(userId)) {
+            throw new RuntimeException("Solo el creador puede finalizar la llamada");
+        }
+
+        closeAllActiveParticipants(meeting);
+        meeting.endMeeting();
+        zoomMeetingRepository.save(meeting);
+        broadcastEventMeeting(eventoId, null);
+    }
+
     /** Procesa webhooks de Zoom para participantes y fin de llamada. */
     @Transactional
     public Map<String, Object> processWebhook(
@@ -434,6 +606,7 @@ public class ZoomIntegrationService {
             meeting.markStarted();
             zoomMeetingRepository.save(meeting);
         }
+        broadcastMeetingStatus(meeting);
     }
 
     private void handleParticipantLeft(
@@ -463,6 +636,9 @@ public class ZoomIntegrationService {
                                     .isEmpty()) {
                                 meeting.endMeeting();
                                 zoomMeetingRepository.save(meeting);
+                                broadcastMeetingEnded(meeting);
+                            } else {
+                                broadcastMeetingStatus(meeting);
                             }
                         });
     }
@@ -475,6 +651,7 @@ public class ZoomIntegrationService {
                             closeAllActiveParticipants(meeting);
                             meeting.endMeeting();
                             zoomMeetingRepository.save(meeting);
+                            broadcastMeetingEnded(meeting);
                         });
     }
 
@@ -486,6 +663,63 @@ public class ZoomIntegrationService {
                             participant.markLeft();
                             participantRepository.save(participant);
                         });
+    }
+
+    private void broadcastMeetingStatus(final ZoomMeeting meeting) {
+        try {
+            Map<String, Object> payload = buildMeetingPayload(meeting);
+            if (meeting.getEvento() != null) {
+                broadcastEventMeeting(meeting.getEvento().getId(), payload);
+            } else {
+                broadcastCommunityMeeting(meeting.getComunidad().getId(), payload);
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo enviar estado de reunión por WS: {}", e.getMessage());
+        }
+    }
+
+    private void broadcastMeetingEnded(final ZoomMeeting meeting) {
+        try {
+            if (meeting.getEvento() != null) {
+                broadcastEventMeeting(meeting.getEvento().getId(), null);
+            } else {
+                broadcastCommunityMeeting(meeting.getComunidad().getId(), null);
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo enviar fin de reunión por WS: {}", e.getMessage());
+        }
+    }
+
+    private void broadcastCommunityMeeting(final Long communityId, final Object payload) {
+        messagingTemplate.convertAndSend(
+                "/topic/community." + communityId + ".meeting", payload != null ? payload : "");
+    }
+
+    private void broadcastEventMeeting(final Long eventId, final Object payload) {
+        messagingTemplate.convertAndSend(
+                "/topic/event." + eventId + ".meeting", payload != null ? payload : "");
+    }
+
+    private Map<String, Object> buildMeetingPayload(final ZoomMeeting meeting) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("id", meeting.getId());
+        payload.put("zoomMeetingId", meeting.getZoomMeetingId());
+        payload.put("topic", meeting.getTopic());
+        payload.put("joinUrl", meeting.getJoinUrl());
+        payload.put("password", meeting.getPassword());
+        payload.put("status", meeting.getStatus().name());
+        payload.put("communityId", meeting.getComunidad().getId());
+        payload.put("communityName", meeting.getComunidad().getNombre());
+        payload.put("durationMinutes", meeting.getDurationMinutes());
+        payload.put(
+                "createdAt",
+                meeting.getCreatedAt() != null ? meeting.getCreatedAt().toString() : null);
+        payload.put(
+                "startedAt",
+                meeting.getStartedAt() != null ? meeting.getStartedAt().toString() : null);
+        payload.put(
+                "endedAt", meeting.getEndedAt() != null ? meeting.getEndedAt().toString() : null);
+        return payload;
     }
 
     private ZoomMeeting findMeetingForCommunity(

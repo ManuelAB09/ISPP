@@ -235,9 +235,7 @@ public class MensajeController {
 
     /** Broadcasts a new/file message to both sender and receiver via WebSocket. */
     private void broadcastDm(Usuario sender, MensajeResponse response) {
-        // Send to sender
         broker.convertAndSendToUser(sender.getEmail(), "/queue/dm", response);
-        // Send to receiver
         Long receiverId = response.getReceptorId();
         if (receiverId != null && !receiverId.equals(sender.getId())) {
             usuarioRepository

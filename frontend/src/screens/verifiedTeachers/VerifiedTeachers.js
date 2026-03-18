@@ -395,14 +395,7 @@ const VerifiedTeachers = () => {
                         <button
                           className="vt-btn vt-btn--primary"
                           onClick={() => {
-                            const params = new URLSearchParams({
-                              userId: String(targetUserId),
-                              userName: nombre,
-                            });
-                            if (tutor.usuario?.foto) {
-                              params.set('userPhoto', toAbsoluteImageUrl(tutor.usuario.foto));
-                            }
-                            navigate(`/chats?${params.toString()}`);
+                            navigate(`/chats?userId=${targetUserId}`);
                           }}
                         >
                           Contactar

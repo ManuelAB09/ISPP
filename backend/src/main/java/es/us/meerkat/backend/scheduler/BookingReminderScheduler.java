@@ -5,7 +5,9 @@ import java.util.List;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+import es.us.meerkat.backend.entity.EstadoSolicitudContratacion;
 import es.us.meerkat.backend.entity.SolicitudContratacionDirecta;
 import es.us.meerkat.backend.repository.SolicitudContratacionDirectaRepository;
 import es.us.meerkat.backend.service.EmailService;
@@ -14,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Tarea programada que envía recordatorios por email a alumnos y tutores 24 horas antes de sus
- * clases reservadas.
+ * clases reservadas, y expira solicitudes aceptadas cuya fecha ya ha pasado.
  */
 @Slf4j
 @Component
@@ -65,6 +67,64 @@ public class BookingReminderScheduler {
                         reserva.getId(),
                         e.getMessage());
             }
+        }
+    }
+
+    /**
+     * Expira solicitudes aceptadas (pendientes de pago) cuya fecha de clase ya ha pasado. Se
+     * ejecuta todos los días a las 01:00.
+     */
+    @Scheduled(cron = "0 0 1 * * *")
+    @Transactional
+    public void expirarSolicitudesVencidas() {
+        LocalDate ayer = LocalDate.now().minusDays(1);
+
+        // Expirar solicitudes ACEPTADAS (pendientes de pago) vencidas
+        List<SolicitudContratacionDirecta> aceptadasVencidas =
+                solicitudRepository.findExpiredAcceptedBookings(ayer);
+
+        // Expirar solicitudes PENDIENTES (sin respuesta del tutor) vencidas
+        List<SolicitudContratacionDirecta> pendientesVencidas =
+                solicitudRepository.findExpiredPendingBookings(ayer);
+
+        int total = aceptadasVencidas.size() + pendientesVencidas.size();
+        if (total == 0) {
+            return;
+        }
+
+        log.info(
+                "Expirando {} solicitudes vencidas ({} aceptadas, {} pendientes)",
+                total,
+                aceptadasVencidas.size(),
+                pendientesVencidas.size());
+
+        for (SolicitudContratacionDirecta solicitud : aceptadasVencidas) {
+            solicitud.setEstado(EstadoSolicitudContratacion.CANCELADA);
+            solicitud.setMotivoRechazo(
+                    "Expirada automáticamente: la fecha de la clase pasó sin realizarse el pago.");
+            solicitudRepository.save(solicitud);
+
+            try {
+                emailService.sendBookingExpiredEmail(
+                        solicitud.getAlumno().getEmail(),
+                        solicitud.getAlumno().getNombre(),
+                        solicitud.getTutor().getUsuario().getNombre(),
+                        solicitud.getDia(),
+                        solicitud.getHoraInicio(),
+                        solicitud.getHoraFin());
+            } catch (Exception e) {
+                log.warn(
+                        "No se pudo enviar email de expiración para solicitud {}: {}",
+                        solicitud.getId(),
+                        e.getMessage());
+            }
+        }
+
+        for (SolicitudContratacionDirecta solicitud : pendientesVencidas) {
+            solicitud.setEstado(EstadoSolicitudContratacion.CANCELADA);
+            solicitud.setMotivoRechazo(
+                    "Expirada automáticamente: la fecha de la clase pasó sin respuesta.");
+            solicitudRepository.save(solicitud);
         }
     }
 }

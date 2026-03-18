@@ -309,6 +309,14 @@ public class EventoController {
                     HttpStatus.CONFLICT, "No se puede cancelar un evento que ya ha comenzado");
         }
 
+        // Solo se puede cancelar hasta 30 minutos antes del inicio
+        if (evento.getFechaHora() != null
+                && evento.getFechaHora().minusMinutes(30).isBefore(LocalDateTime.now())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Solo se puede cancelar un evento hasta 30 minutos antes de su inicio");
+        }
+
         try {
             return ResponseEntity.ok(eventoService.cancelarEvento(eventId, motivo).toDTO());
         } catch (IllegalStateException e) {

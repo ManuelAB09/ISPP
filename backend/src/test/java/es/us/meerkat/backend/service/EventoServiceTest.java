@@ -22,6 +22,7 @@ import es.us.meerkat.backend.entity.MiembroComunidad;
 import es.us.meerkat.backend.entity.TipoGrupo;
 import es.us.meerkat.backend.entity.Ubicacion;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.EventoRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
@@ -32,11 +33,13 @@ import es.us.meerkat.backend.repository.UsuarioRepository;
 class EventoServiceTest {
 
     @Mock private EventoRepository eventoRepository;
+    @Mock private AsistenciaEventoRepository asistenciaEventoRepository;
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private ComunidadRepository comunidadRepository;
     @Mock private MiembroComunidadRepository miembroComunidadRepository;
     @Mock private UbicacionRepository ubicacionRepository;
     @Mock private AuthorizationService authorizationService;
+    @Mock private GoogleCalendarService googleCalendarService;
 
     @InjectMocks private EventoService eventoService;
 
@@ -261,12 +264,13 @@ class EventoServiceTest {
         Evento e2 = new Evento();
         e2.setId(2L);
 
-        when(eventoRepository.findVisibleOnMap()).thenReturn(List.of(e1, e2));
+        when(eventoRepository.findVisibleOnMap(any(LocalDateTime.class)))
+                .thenReturn(List.of(e1, e2));
 
         List<Evento> visibles = eventoService.obtenerEventosEnMapa(null, null, null);
 
         assertThat(visibles).hasSize(2);
-        verify(eventoRepository).findVisibleOnMap();
+        verify(eventoRepository).findVisibleOnMap(any(LocalDateTime.class));
     }
 
     @Test

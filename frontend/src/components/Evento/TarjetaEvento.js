@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { LuUser, LuClock, LuMonitor, LuWifi, LuMapPin, LuCalendar } from 'react-icons/lu';
 import './TarjetaEvento.css';
 
-const TarjetaEvento = ({ event, onAttend, onCancelAttendance, attendanceLoading }) => {
+const TarjetaEvento = ({ event, onAttend, onCancelAttendance, attendanceLoading, currentUserId }) => {
   const navigate = useNavigate();
 
   // Soportar ambos formatos de datos: API real y datos mock
@@ -16,6 +16,7 @@ const TarjetaEvento = ({ event, onAttend, onCancelAttendance, attendanceLoading 
   const aforo = event.aforo;
   const asistentes = event.asistentesConfirmados || 0;
   const isFull = aforo && asistentes >= aforo;
+  const isCreator = currentUserId && event.creadorId && String(event.creadorId) === String(currentUserId);
 
   const Icon = isOnline ? LuWifi : LuMonitor;
 
@@ -90,7 +91,10 @@ const TarjetaEvento = ({ event, onAttend, onCancelAttendance, attendanceLoading 
         ) : isConfirmed ? (
           <>
             <span className="badge-status badge-online">Inscrito</span>
-            {onCancelAttendance && (
+            {isCreator && (
+              <span className="badge-status" style={{ fontSize: '0.75rem', color: '#888' }}>Organizador</span>
+            )}
+            {onCancelAttendance && !isCreator && (
               <button
                 className="btn-link"
                 onClick={(e) => { e.stopPropagation(); onCancelAttendance(eventId); }}

@@ -29,4 +29,9 @@ public interface GoogleCalendarEventoRepository extends JpaRepository<GoogleCale
     @Modifying
     @Query("DELETE FROM GoogleCalendarEvento g WHERE g.usuario.id = :usuarioId")
     void deleteByUsuarioId(@Param("usuarioId") Long usuarioId);
+
+    /** Elimina todos los mapeos de un evento. */
+    @Modifying
+    @Query("DELETE FROM GoogleCalendarEvento g WHERE g.evento.id = :eventoId")
+    void deleteByEventoId(@Param("eventoId") Long eventoId);
 }

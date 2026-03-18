@@ -81,6 +81,7 @@ function AppRoutes() {
 
   return (
     <SocketProvider token={socketToken}>
+      <NotificationProvider>
       <Routes>
         {/* Ruta principal - muestra landing page si no está autenticado */}
         <Route path="/" element={
@@ -123,6 +124,7 @@ function AppRoutes() {
         {/* Catch-all: redirige rutas no encontradas a inicio */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </NotificationProvider>
     </SocketProvider>
   );
 }
@@ -130,9 +132,7 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <NotificationProvider>
-        <AppRoutes />
-      </NotificationProvider>
+      <AppRoutes />
     </AuthProvider>
   );
 }

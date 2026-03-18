@@ -64,6 +64,16 @@ export const authApi = {
   },
 
   /**
+   * GET /api/v1/users/:userId
+   * Obtener perfil público de un usuario por ID
+   * @param {number} userId
+   * @returns {Promise<Object>} - { id, nombre, foto, bio, ... }
+   */
+  getUserPublicProfile(userId) {
+    return apiClient.get(`/api/v1/users/${userId}`);
+  },
+
+  /**
    * GET /api/v1/users/profile-avatars
    * Obtener avatares predefinidos para foto de perfil
    * @returns {Promise<string[]>} - Lista de rutas públicas de avatares

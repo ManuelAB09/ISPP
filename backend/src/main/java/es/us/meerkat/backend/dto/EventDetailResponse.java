@@ -78,6 +78,9 @@ public class EventDetailResponse {
     /** Usuario creador del evento. */
     private UserPublicResponse creador;
 
+    /** Identificador del creador del evento. */
+    private Long creadorId;
+
     /** Estado de asistencia del usuario autenticado (null si no está registrado). */
     private EstadoAsistencia miAsistencia;
 
