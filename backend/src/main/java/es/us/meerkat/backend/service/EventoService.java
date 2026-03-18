@@ -468,8 +468,9 @@ public class EventoService {
         if (incluirCancelados) {
             eventos = eventoRepository.findByComunidadId(comunidadId);
         } else {
-            eventos = eventoRepository.findByComunidadIdAndCanceladoFalseAndFuture(
-                    comunidadId, LocalDateTime.now());
+            eventos =
+                    eventoRepository.findByComunidadIdAndCanceladoFalseAndFuture(
+                            comunidadId, LocalDateTime.now());
         }
         return filtrarEventosPrivados(eventos, usuarioId);
     }

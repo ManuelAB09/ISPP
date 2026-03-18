@@ -302,8 +302,7 @@ public class Evento {
                         .iconoEvento(tipo.getIcono())
                         .createdAt(this.createdAt)
                         .comunidadId(this.comunidad != null ? this.comunidad.getId() : null)
-                        .comunidadNombre(
-                                this.comunidad != null ? this.comunidad.getNombre() : null)
+                        .comunidadNombre(this.comunidad != null ? this.comunidad.getNombre() : null)
                         .creadorId(this.creador != null ? this.creador.getId() : null);
 
         if (this.creador != null) {
@@ -352,8 +351,7 @@ public class Evento {
                         .tipoEvento(tipo)
                         .iconoEvento(tipo.getIcono())
                         .comunidadId(this.comunidad != null ? this.comunidad.getId() : null)
-                        .comunidadNombre(
-                                this.comunidad != null ? this.comunidad.getNombre() : null)
+                        .comunidadNombre(this.comunidad != null ? this.comunidad.getNombre() : null)
                         .creadorId(this.creador != null ? this.creador.getId() : null);
 
         if (this.ubicacion != null) {

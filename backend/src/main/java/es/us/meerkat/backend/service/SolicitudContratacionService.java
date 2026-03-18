@@ -26,8 +26,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Servicio auxiliar que determina si la fecha/hora de una solicitud ya ha pasado.
- * Compara el día + hora de inicio con el momento actual.
+ * Servicio auxiliar que determina si la fecha/hora de una solicitud ya ha pasado. Compara el día +
+ * hora de inicio con el momento actual.
  */
 // Helper inline, kept as a static utility to avoid pulling in more dependencies
 
@@ -268,8 +268,7 @@ public class SolicitudContratacionService {
 
         // Sincronizar con Google Calendar para alumno y tutor
         try {
-            googleCalendarService.sincronizarBookingParaUsuario(
-                    solicitud, solicitud.getAlumno());
+            googleCalendarService.sincronizarBookingParaUsuario(solicitud, solicitud.getAlumno());
             googleCalendarService.sincronizarBookingParaUsuario(
                     solicitud, solicitud.getTutor().getUsuario());
         } catch (Exception e) {
@@ -452,8 +451,7 @@ public class SolicitudContratacionService {
 
         // La nueva fecha no puede ser en el pasado
         if (nuevoDia.isBefore(LocalDate.now())) {
-            throw new IllegalArgumentException(
-                    "No se puede reprogramar a una fecha pasada");
+            throw new IllegalArgumentException("No se puede reprogramar a una fecha pasada");
         }
 
         // Reglas de tiempo dependiendo del estado
@@ -569,8 +567,10 @@ public class SolicitudContratacionService {
                 .tutorNombre(tutorUsuario.getNombre())
                 .tutorFoto(tutorUsuario.getFoto())
                 .dia(solicitud.getDia())
-                .diaOriginal(solicitud.getDiaOriginal() != null
-                        ? solicitud.getDiaOriginal() : solicitud.getDia())
+                .diaOriginal(
+                        solicitud.getDiaOriginal() != null
+                                ? solicitud.getDiaOriginal()
+                                : solicitud.getDia())
                 .horaInicio(solicitud.getHoraInicio())
                 .horaFin(solicitud.getHoraFin())
                 .tarifaHora(solicitud.getTarifaHora())

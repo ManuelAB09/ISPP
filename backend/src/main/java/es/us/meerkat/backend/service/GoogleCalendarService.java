@@ -285,9 +285,9 @@ public class GoogleCalendarService {
     }
 
     /**
-     * Sincroniza un evento en Google Calendar para un usuario concreto.
-     * Usado cuando un usuario confirma asistencia a un evento.
-     * Si el usuario no tiene GCal conectado o ya lo tiene sincronizado, no hace nada.
+     * Sincroniza un evento en Google Calendar para un usuario concreto. Usado cuando un usuario
+     * confirma asistencia a un evento. Si el usuario no tiene GCal conectado o ya lo tiene
+     * sincronizado, no hace nada.
      *
      * @param evento Evento de la plataforma.
      * @param usuario Usuario que confirma asistencia.
@@ -319,8 +319,8 @@ public class GoogleCalendarService {
     }
 
     /**
-     * Elimina un evento de Google Calendar para un usuario concreto.
-     * Usado cuando un usuario cancela su asistencia a un evento.
+     * Elimina un evento de Google Calendar para un usuario concreto. Usado cuando un usuario
+     * cancela su asistencia a un evento.
      *
      * @param evento Evento de la plataforma.
      * @param usuario Usuario que cancela asistencia.
@@ -573,8 +573,8 @@ public class GoogleCalendarService {
     // ===============================
 
     /**
-     * Sincroniza una clase reservada (solicitud pagada) en Google Calendar para un usuario concreto.
-     * Si el usuario no tiene GCal conectado o ya lo tiene sincronizado, no hace nada.
+     * Sincroniza una clase reservada (solicitud pagada) en Google Calendar para un usuario
+     * concreto. Si el usuario no tiene GCal conectado o ya lo tiene sincronizado, no hace nada.
      *
      * @param solicitud Solicitud de contratación directa pagada.
      * @param usuario Usuario (alumno o tutor) para quien crear el evento.
@@ -586,8 +586,7 @@ public class GoogleCalendarService {
         final Optional<GoogleCalendarToken> tokenOpt =
                 tokenRepository.findByUsuarioId(usuario.getId());
 
-        if (tokenOpt.isEmpty()
-                || !Boolean.TRUE.equals(tokenOpt.get().getSincronizacionActiva())) {
+        if (tokenOpt.isEmpty() || !Boolean.TRUE.equals(tokenOpt.get().getSincronizacionActiva())) {
             return;
         }
 
@@ -678,9 +677,7 @@ public class GoogleCalendarService {
         log.info("Booking gcalId={} eliminado de GCal", mapeo.getGoogleEventId());
     }
 
-    /**
-     * Construye el evento de Google Calendar para una clase reservada.
-     */
+    /** Construye el evento de Google Calendar para una clase reservada. */
     private Event buildBookingGcalEvent(
             final SolicitudContratacionDirecta solicitud, final Usuario usuario) {
 
@@ -695,7 +692,11 @@ public class GoogleCalendarService {
 
         final StringBuilder desc = new StringBuilder();
         desc.append("Clase particular reservada en MeerKatters\n\n");
-        desc.append("👤 ").append(esAlumno ? "Profesor" : "Alumno").append(": ").append(otraParte).append("\n");
+        desc.append("👤 ")
+                .append(esAlumno ? "Profesor" : "Alumno")
+                .append(": ")
+                .append(otraParte)
+                .append("\n");
         desc.append("📍 Modalidad: ").append(solicitud.getModalidad()).append("\n");
         desc.append("💰 Importe: ").append(solicitud.getImporteTotal()).append("€\n");
         if (solicitud.getMensaje() != null && !solicitud.getMensaje().isBlank()) {

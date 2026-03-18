@@ -242,8 +242,8 @@ public class MensajeController {
                     .findById(receiverId)
                     .ifPresent(
                             receiver ->
-                                broker.convertAndSendToUser(
-                                        receiver.getEmail(), "/queue/dm", response));
+                                    broker.convertAndSendToUser(
+                                            receiver.getEmail(), "/queue/dm", response));
         }
     }
 

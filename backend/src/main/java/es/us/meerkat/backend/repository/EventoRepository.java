@@ -42,7 +42,9 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
      * @param comunidadCount Identificador de la comunidad.
      * @return Lista de eventos públicos.
      */
-    @Query("SELECT e FROM Evento e WHERE e.privado = false AND e.cancelado = false AND e.fechaHora >= :ahora")
+    @Query(
+            "SELECT e FROM Evento e WHERE e.privado = false AND e.cancelado = false AND e.fechaHora"
+                    + " >= :ahora")
     List<Evento> findPublicEvents(@Param("ahora") LocalDateTime ahora);
 
     /**
@@ -87,8 +89,8 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
      * @return Lista de eventos activos futuros de la comunidad.
      */
     @Query(
-            "SELECT e FROM Evento e WHERE e.comunidad.id = :comunidadId "
-                    + "AND e.cancelado = false AND e.fechaHora >= :ahora")
+            "SELECT e FROM Evento e WHERE e.comunidad.id = :comunidadId"
+                    + " AND e.cancelado = false AND e.fechaHora >= :ahora")
     List<Evento> findByComunidadIdAndCanceladoFalseAndFuture(
             @Param("comunidadId") Long comunidadId, @Param("ahora") LocalDateTime ahora);
 
@@ -191,8 +193,8 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
     void deleteByUsuarioId(@Param("usuarioId") Long usuarioId);
 
     /**
-     * Obtiene todos los eventos cuya fecha de fin (o fechaHora si no tiene fin)
-     * es anterior a la fecha límite proporcionada. Usado para borrado automático.
+     * Obtiene todos los eventos cuya fecha de fin (o fechaHora si no tiene fin) es anterior a la
+     * fecha límite proporcionada. Usado para borrado automático.
      *
      * @param limite Fecha límite (ahora - 24h).
      * @return Lista de eventos pasados a eliminar.
