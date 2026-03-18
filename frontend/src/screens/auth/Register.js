@@ -56,17 +56,39 @@ const Register = () => {
     if (authError) clearError();
   };
 
+  // Constantes de validación
+  const MIN_PASSWORD_LENGTH = 8;
+  const MAX_PASSWORD_LENGTH = 128;
+
+  // Función para validar requisitos de contraseña
+  const getPasswordRequirements = (password) => {
+    return {
+      minLength: password.length >= MIN_PASSWORD_LENGTH,
+      maxLength: password.length <= MAX_PASSWORD_LENGTH,
+      hasUppercase: /[A-Z]/.test(password),
+      hasLowercase: /[a-z]/.test(password),
+      hasNumber: /[0-9]/.test(password),
+    };
+  };
+
+  const passwordRequirements = getPasswordRequirements(formData.password);
+  const isPasswordValid = passwordRequirements.minLength &&
+                          passwordRequirements.maxLength &&
+                          passwordRequirements.hasUppercase &&
+                          passwordRequirements.hasLowercase &&
+                          passwordRequirements.hasNumber;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validación de términos y condiciones
     if (!formData.acceptTerms) {
       setError('Debes aceptar los términos y condiciones para continuar');
       return;
     }
 
-    // Validación de formato de correo
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Validación de formato de correo más estricta
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!formData.email.match(emailRegex)) {
       setError('Introduce un correo electrónico válido (ej: usuario@dominio.com)');
       return;
@@ -89,8 +111,16 @@ const Register = () => {
     }
 
     // Validación de contraseña
-    if (formData.password.length < 8) {
+    if (formData.password.length < MIN_PASSWORD_LENGTH) {
       setError('La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
+    if (formData.password.length > MAX_PASSWORD_LENGTH) {
+      setError('La contraseña no puede tener más de 128 caracteres');
+      return;
+    }
+    if (!isPasswordValid) {
+      setError('La contraseña debe contener mayúsculas, minúsculas y números');
       return;
     }
 
@@ -241,9 +271,10 @@ const Register = () => {
                   type={showPassword ? 'text' : 'password'}
                   id="password"
                   name="password"
-                  placeholder="(Al menos 8 caracteres)"
+                  placeholder="Introduce tu contraseña"
                   value={formData.password}
                   onChange={handleInputChange}
+                  maxLength={MAX_PASSWORD_LENGTH}
                   required
                 />
                 <button
@@ -265,6 +296,25 @@ const Register = () => {
                   )}
                 </button>
               </div>
+              {formData.password && (
+                <div className="password-requirements">
+                  <p className="password-requirements-title">La contraseña debe contener:</p>
+                  <ul className="password-requirements-list">
+                    <li className={passwordRequirements.minLength ? 'requirement-met' : 'requirement-unmet'}>
+                      {passwordRequirements.minLength ? '✓' : '✗'} Mínimo 8 caracteres
+                    </li>
+                    <li className={passwordRequirements.hasUppercase ? 'requirement-met' : 'requirement-unmet'}>
+                      {passwordRequirements.hasUppercase ? '✓' : '✗'} Al menos una mayúscula
+                    </li>
+                    <li className={passwordRequirements.hasLowercase ? 'requirement-met' : 'requirement-unmet'}>
+                      {passwordRequirements.hasLowercase ? '✓' : '✗'} Al menos una minúscula
+                    </li>
+                    <li className={passwordRequirements.hasNumber ? 'requirement-met' : 'requirement-unmet'}>
+                      {passwordRequirements.hasNumber ? '✓' : '✗'} Al menos un número
+                    </li>
+                  </ul>
+                </div>
+              )}
             </div>
 
             <div className="form-group">
@@ -274,9 +324,10 @@ const Register = () => {
                   type={showConfirmPassword ? 'text' : 'password'}
                   id="confirmPassword"
                   name="confirmPassword"
-                  placeholder="(Al menos 8 caracteres)"
+                  placeholder="Repite tu contraseña"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
+                  maxLength={MAX_PASSWORD_LENGTH}
                   required
                 />
                 <button
@@ -300,7 +351,7 @@ const Register = () => {
               </div>
             </div>
 
-            <div className="form-group checkbox-group">
+            <div className={`form-group checkbox-group${error && error.includes('términos') ? ' terms-warning' : ''}`}>
               <label className="checkbox-label">
                 <input
                   type="checkbox"
@@ -314,6 +365,9 @@ const Register = () => {
                   <Link to="/privacy">Política de privacidad</Link>.
                 </span>
               </label>
+              {error && error.includes('términos') && (
+                <p className="terms-error-hint">Debes marcar esta casilla para continuar</p>
+              )}
             </div>
 
             <div className="form-group tutor-toggle-group">
