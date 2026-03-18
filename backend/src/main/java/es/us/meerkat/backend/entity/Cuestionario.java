@@ -2,7 +2,9 @@ package es.us.meerkat.backend.entity;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -79,6 +81,11 @@ public class Cuestionario {
     @Column(nullable = false)
     private Boolean activo = true;
 
+    /** Indica si el cuestionario está publicado (`true`) o en borrador (`false`). */
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean publicado = false;
+
     @Builder.Default
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -89,4 +96,31 @@ public class Cuestionario {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+    /** Preguntas creadas manualmente por usuarios (test, verdadero/falso, respuesta corta) */
+    @OneToMany(
+            mappedBy = "cuestionario",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.EAGER)
+    @Builder.Default
+    private List<Pregunta> preguntas = new ArrayList<>();
+
+    /** Comunidades asociadas a este cuestionario. Puede pertenecer a varias comunidades. */
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "cuestionario_comunidades",
+            joinColumns = @JoinColumn(name = "cuestionario_id"),
+            inverseJoinColumns = @JoinColumn(name = "comunidad_id"))
+    @Builder.Default
+    private Set<Comunidad> comunidades = new HashSet<>();
+
+    /** Alumnos asignados o invitados a este cuestionario. */
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "cuestionario_alumnos",
+            joinColumns = @JoinColumn(name = "cuestionario_id"),
+            inverseJoinColumns = @JoinColumn(name = "usuario_id"))
+    @Builder.Default
+    private Set<Usuario> alumnos = new HashSet<>();
 }
