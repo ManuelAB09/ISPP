@@ -104,4 +104,9 @@ public interface AlertaEventoRepository extends JpaRepository<AlertaEvento, Long
     @Modifying
     @Query("DELETE FROM AlertaEvento a WHERE a.leida = true AND a.leidaAt < :fechaLimite")
     void deleteOldReadAlertas(@Param("fechaLimite") LocalDateTime fechaLimite);
+
+    /** Elimina todas las alertas de un evento. */
+    @Modifying
+    @Query("DELETE FROM AlertaEvento a WHERE a.evento.id = :eventoId")
+    void deleteByEventoId(@Param("eventoId") Long eventoId);
 }

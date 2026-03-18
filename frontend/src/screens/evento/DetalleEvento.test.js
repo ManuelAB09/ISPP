@@ -19,6 +19,12 @@ jest.mock('../../api/communities.api', () => ({
     getMyMembership: jest.fn(),
   },
 }));
+jest.mock('../../contexts/SocketContext', () => ({
+    useSocketContext: () => ({
+        socket: { on: jest.fn(), off: jest.fn() },
+        isConnected: true,
+    }),
+}));
 jest.mock('../../components/Header/Header', () => {
   return function MockHeader() {
     return <div data-testid="mock-header">Header</div>;

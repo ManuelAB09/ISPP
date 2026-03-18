@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { authApi } from '../../api/auth.api';
 import { getApiBaseUrl } from '../../api/baseUrl';
 import { communitiesApi } from '../../api/communities.api';
 import { obtenerConversaciones } from '../../api/mensajeService';
@@ -63,7 +64,9 @@ export default function Chats() {
     const [conversaciones, setConversaciones] = useState([]);
     const [selectedCommunityId, setSelectedCommunityId] = useState(null);
     const [privateTarget, setPrivateTarget] = useState(null);
-    const [activeTab, setActiveTab] = useState('communities'); // 'communities' o 'private'
+    const [activeTab, setActiveTab] = useState(
+        searchParams.get('userId') ? 'private' : 'communities'
+    ); // 'communities' o 'private'
     const [isMobileDropdownOpen, setIsMobileDropdownOpen] = useState(false);
 
     // lista que se mostrará en la barra lateral de privados; incluye el target cuando
@@ -85,9 +88,6 @@ export default function Chats() {
     const hasSidebar = sidebarConversations.length > 0;
     const communityIdFromQuery = Number(searchParams.get('communityId'));
     const privateUserIdFromQuery = Number(searchParams.get('userId'));
-    const privateUserNameFromQuery = searchParams.get('userName');
-    const privateUserPhotoFromQuery = searchParams.get('userPhoto');
-    const privateUserPhotoBgFromQuery = searchParams.get('userPhotoBg');
 
     const currentUser = {
         id: Number(localStorage.getItem('userId')),
@@ -130,29 +130,34 @@ export default function Chats() {
                 }
 
                 if (privateUserIdFromQuery) {
-                    const targetObj = {
-                        id: privateUserIdFromQuery,
-                        nombre: privateUserNameFromQuery || `Usuario ${privateUserIdFromQuery}`,
-                        foto: privateUserPhotoFromQuery || null,
-                        fotoBackgroundColor: privateUserPhotoBgFromQuery || '#ffffff',
-                    };
-                    setPrivateTarget(targetObj);
-                    setActiveTab('private');
-                    setConversaciones((prev) => {
-                        if (prev.some((c) => c.usuarioId === privateUserIdFromQuery)) {
-                            return prev;
-                        }
-                        return [
-                            ...prev,
-                            {
-                                usuarioId: privateUserIdFromQuery,
-                                usuarioNombre: targetObj.nombre,
-                                usuarioFoto: targetObj.foto,
-                                usuarioFotoBackgroundColor: targetObj.fotoBackgroundColor,
-                                ultimoMensaje: '',
-                            },
-                        ];
-                    });
+                    try {
+                        const { data: profile } = await authApi.getUserPublicProfile(privateUserIdFromQuery);
+                        const targetObj = {
+                            id: profile.id,
+                            nombre: profile.nombre || `Usuario ${privateUserIdFromQuery}`,
+                            foto: profile.foto || null,
+                            fotoBackgroundColor: '#ffffff',
+                        };
+                        setPrivateTarget(targetObj);
+                        setActiveTab('private');
+                        setConversaciones((prev) => {
+                            if (prev.some((c) => c.usuarioId === profile.id)) {
+                                return prev;
+                            }
+                            return [
+                                ...prev,
+                                {
+                                    usuarioId: profile.id,
+                                    usuarioNombre: targetObj.nombre,
+                                    usuarioFoto: targetObj.foto,
+                                    usuarioFotoBackgroundColor: targetObj.fotoBackgroundColor,
+                                    ultimoMensaje: '',
+                                },
+                            ];
+                        });
+                    } catch (err) {
+                        console.error('Error al cargar perfil del usuario:', err);
+                    }
                 }
 
                 // Cargar conversaciones
@@ -173,14 +178,7 @@ export default function Chats() {
         };
 
         fetchData();
-    }, [
-        navigate,
-        communityIdFromQuery,
-        privateUserIdFromQuery,
-        privateUserNameFromQuery,
-        privateUserPhotoFromQuery,
-        privateUserPhotoBgFromQuery,
-    ]);
+    }, [navigate, communityIdFromQuery, privateUserIdFromQuery]);
 
     // Recargar conversaciones cuando se abre la pestaña de privados
     useEffect(() => {

@@ -11,6 +11,7 @@ import { communitiesApi } from '../../api/communities.api';
 import { ZoomApi } from '../../api/zoom.api';
 import { listCommunityEvents, attendEvent, cancelAttendance, getMyAttendance } from '../../api/eventEndpoints';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSocketContext } from '../../contexts/SocketContext';
 import axiosInstance from '../../api/axiosConfig';
 import './CommunityDetail.css';
 
@@ -73,6 +74,8 @@ export default function CommunityDetail() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const { socket } = useSocketContext();
+  const openChatOnLoad = searchParams.get('chat') === 'open';
 
   const [community, setCommunity] = useState(null);
   const [events, setEvents] = useState([]);
@@ -114,14 +117,27 @@ export default function CommunityDetail() {
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [respondingId, setRespondingId] = useState(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
+  const [chatOpen, setChatOpen] = useState(openChatOnLoad);
   const fileInputRef = useRef(null);
   const activeMeetingRequestInFlightRef = useRef(false);
+
+  const closeAllOverlays = useCallback(({ keepChat = false } = {}) => {
+    setShowMeetingForm(false);
+    setParticipantsOpen(false);
+    setMeetingsOpen(false);
+    setRecordingsOpen(false);
+    setSelectedRecordingMeetingId(null);
+    setShowEditModal(false);
+    setShowTransferModal(false);
+    if (!keepChat) {
+      setChatOpen(false);
+    }
+  }, []);
 
   const isPrivate = community?.tipoGrupo === 'GRUPO_PRIVADO';
   const isAdmin = community?.miRol === 'ADMIN';
 
   const currentUserId = localStorage.getItem('userId');
-  const openChatOnLoad = searchParams.get('chat') === 'open';
   const currentUser = {
     id: Number(currentUserId),
     nombre: user?.nombre || 'Usuario',
@@ -283,16 +299,21 @@ export default function CommunityDetail() {
   }, [fetchActiveMeeting]);
 
   useEffect(() => {
-    if (!currentUserId || !isMember) {
+    if (!currentUserId || !isMember || !communityId) {
       return undefined;
     }
 
-    const pollId = setInterval(() => {
-      fetchActiveMeeting({ silent: true });
-    }, 1000);
-
-    return () => clearInterval(pollId);
-  }, [fetchActiveMeeting, currentUserId, isMember]);
+    const topic = `/topic/community.${communityId}.meeting`;
+    const handler = (data) => {
+      if (!data || data === '') {
+        setActiveMeeting(null);
+      } else {
+        setActiveMeeting(data);
+      }
+    };
+    socket.on(topic, handler);
+    return () => socket.off(topic, handler);
+  }, [socket, communityId, currentUserId, isMember]);
 
   useEffect(() => {
     if (!activeMeeting) {
@@ -415,8 +436,14 @@ export default function CommunityDetail() {
       return;
     }
 
+    if (showMeetingForm) {
+      setShowMeetingForm(false);
+      return;
+    }
+
+    closeAllOverlays();
     setMeetingError(null);
-    setShowMeetingForm((prev) => !prev);
+    setShowMeetingForm(true);
   };
 
   const handleToggleParticipants = async () => {
@@ -425,6 +452,7 @@ export default function CommunityDetail() {
       return;
     }
 
+    closeAllOverlays();
     setParticipantsOpen(true);
 
     try {
@@ -448,6 +476,8 @@ export default function CommunityDetail() {
       setSelectedRecordingMeetingId(null);
       return;
     }
+
+    closeAllOverlays();
 
     try {
       setMeetingsLoading(true);
@@ -603,6 +633,23 @@ export default function CommunityDetail() {
     setSelectedRecordingMeetingId(null);
   }, [communityId]);
 
+  const handleOpenEditModal = () => {
+    closeAllOverlays();
+    setShowEditModal(true);
+  };
+
+  const handleOpenTransferModal = () => {
+    closeAllOverlays();
+    setShowTransferModal(true);
+  };
+
+  const handleChatOpenChange = (nextOpen) => {
+    if (nextOpen) {
+      closeAllOverlays({ keepChat: true });
+    }
+    setChatOpen(nextOpen);
+  };
+
   const visibleRecordings = selectedRecordingMeetingId
     ? recordings.filter((recording) => recording?.zoomMeetingId === selectedRecordingMeetingId)
     : recordings;
@@ -666,6 +713,10 @@ export default function CommunityDetail() {
       await fetchEvents();
     } catch (err) {
       console.error('Error al cancelar asistencia:', err);
+      const status = err?.response?.status;
+      if (status === 403) {
+        alert('El organizador del evento no puede cancelar su asistencia. Cancela el evento en su lugar.');
+      }
     } finally {
       setAttendanceLoading(false);
     }
@@ -725,7 +776,9 @@ export default function CommunityDetail() {
     } catch (err) {
       console.error('Error al abandonar la comunidad:', err);
       const status = err.status || err.response?.status;
-      if (status === 400) {
+      if (status === 409) {
+        setMembershipError('No puedes abandonar la comunidad mientras tengas asistencia confirmada a eventos activos. Cancela tu asistencia primero.');
+      } else if (status === 400) {
         setMembershipError('No puedes abandonar siendo el único admin. Transfiere la administración primero.');
       } else {
         setMembershipError(err.message || 'Error al abandonar la comunidad');
@@ -802,6 +855,7 @@ export default function CommunityDetail() {
 
         <input
           ref={fileInputRef}
+          data-testid="recording-file-input"
           type="file"
           accept=".mp4,.mov,.webm,.m4a,video/mp4,video/quicktime,video/webm,audio/mp4"
           onChange={handleRecordingFileChange}
@@ -838,7 +892,7 @@ export default function CommunityDetail() {
                 {isAdmin && (
                   <button
                     className="cd-btn cd-btn-edit"
-                    onClick={() => setShowEditModal(true)}
+                    onClick={handleOpenEditModal}
                   >
                     <LuPencil /> Editar comunidad
                   </button>
@@ -846,7 +900,7 @@ export default function CommunityDetail() {
                 {isAdmin && (
                   <button
                     className="cd-btn cd-btn-transfer"
-                    onClick={() => setShowTransferModal(true)}
+                    onClick={handleOpenTransferModal}
                   >
                     <LuUsers /> Transferir administración
                   </button>
@@ -1002,6 +1056,7 @@ export default function CommunityDetail() {
                   onAttend={currentUserId && isMember ? handleAttend : null}
                   onCancelAttendance={currentUserId ? handleCancelAttendance : null}
                   attendanceLoading={attendanceLoading}
+                  currentUserId={currentUserId}
                 />
               ))}
             </div>
@@ -1033,6 +1088,8 @@ export default function CommunityDetail() {
             comunidadNombre={community?.nombre}
             comunidadImagen={communityImage}
             initiallyOpen={openChatOnLoad}
+            isOpen={chatOpen}
+            onOpenChange={handleChatOpenChange}
 extraActions={(
   <div className="cd-floating-tools">
     <div className="cd-floating-toolbar">

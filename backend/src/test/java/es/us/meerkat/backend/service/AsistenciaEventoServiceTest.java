@@ -32,6 +32,7 @@ class AsistenciaEventoServiceTest {
     @Mock private EventoRepository eventoRepository;
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private MiembroComunidadRepository miembroRepository;
+    @Mock private GoogleCalendarService googleCalendarService;
 
     @InjectMocks private AsistenciaEventoService asistenciaEventoService;
 
@@ -148,9 +149,13 @@ class AsistenciaEventoServiceTest {
 
     @Test
     void cancelarAsistenciaShouldUpdateStatusAndDecrement() {
+        Usuario creador = new Usuario();
+        creador.setId(99L);
+
         Evento evento = new Evento();
         evento.setId(10L);
         evento.setAsistentesConfirmados(5);
+        evento.setCreador(creador);
 
         AsistenciaEvento asistencia = new AsistenciaEvento();
         asistencia.setEvento(evento);
@@ -159,6 +164,10 @@ class AsistenciaEventoServiceTest {
         when(asistenciaRepository.findByEventoAndUsuario(10L, 1L))
                 .thenReturn(Optional.of(asistencia));
         when(eventoRepository.findById(10L)).thenReturn(Optional.of(evento));
+
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
 
         asistenciaEventoService.cancelarAsistencia(10L, 1L);
 

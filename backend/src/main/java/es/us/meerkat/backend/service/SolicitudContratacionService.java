@@ -25,6 +25,12 @@ import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Servicio auxiliar que determina si la fecha/hora de una solicitud ya ha pasado. Compara el día +
+ * hora de inicio con el momento actual.
+ */
+// Helper inline, kept as a static utility to avoid pulling in more dependencies
+
 /** Servicio para gestionar las solicitudes de contratación directa alumno-tutor. */
 @Slf4j
 @Service
@@ -39,6 +45,7 @@ public class SolicitudContratacionService {
     private final UsuarioRepository usuarioRepository;
     private final SimpMessagingTemplate broker;
     private final EmailService emailService;
+    private final GoogleCalendarService googleCalendarService;
 
     /**
      * Crea una solicitud de contratación directa.
@@ -109,6 +116,7 @@ public class SolicitudContratacionService {
                         .alumno(alumno)
                         .tutor(tutor)
                         .dia(request.getDia())
+                        .diaOriginal(request.getDia())
                         .horaInicio(request.getHoraInicio())
                         .horaFin(request.getHoraFin())
                         .tarifaHora(tarifaHora)
@@ -247,8 +255,25 @@ public class SolicitudContratacionService {
                     "La solicitud debe estar aceptada para poder pagarla");
         }
 
+        // Validar que la fecha de la clase no haya pasado
+        LocalDateTime fechaHoraClase =
+                LocalDateTime.of(solicitud.getDia(), solicitud.getHoraInicio());
+        if (fechaHoraClase.isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException(
+                    "La fecha de la clase ya ha pasado. No se puede realizar el pago.");
+        }
+
         solicitud.setEstado(EstadoSolicitudContratacion.PAGADA);
         solicitudRepository.save(solicitud);
+
+        // Sincronizar con Google Calendar para alumno y tutor
+        try {
+            googleCalendarService.sincronizarBookingParaUsuario(solicitud, solicitud.getAlumno());
+            googleCalendarService.sincronizarBookingParaUsuario(
+                    solicitud, solicitud.getTutor().getUsuario());
+        } catch (Exception e) {
+            log.warn("Error al sincronizar Google Calendar: {}", e.getMessage());
+        }
 
         SolicitudContratacionResponse response = mapToResponse(solicitud);
 
@@ -322,6 +347,14 @@ public class SolicitudContratacionService {
                     "La solicitud debe estar aceptada para poder pagarla");
         }
 
+        // Validar que la fecha de la clase no haya pasado
+        LocalDateTime fechaHoraClase =
+                LocalDateTime.of(solicitud.getDia(), solicitud.getHoraInicio());
+        if (fechaHoraClase.isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException(
+                    "La fecha de la clase ya ha pasado. No se puede realizar el pago.");
+        }
+
         return mapToResponse(solicitud);
     }
 
@@ -352,6 +385,13 @@ public class SolicitudContratacionService {
         solicitud.setEstado(EstadoSolicitudContratacion.CANCELADA);
         solicitud.setMotivoRechazo(motivo);
         solicitudRepository.save(solicitud);
+
+        // Desincronizar Google Calendar si estaba sincronizado
+        try {
+            googleCalendarService.desincronizarBooking(solicitud);
+        } catch (Exception e) {
+            log.warn("Error al desincronizar Google Calendar: {}", e.getMessage());
+        }
 
         SolicitudContratacionResponse response = mapToResponse(solicitud);
 
@@ -407,6 +447,24 @@ public class SolicitudContratacionService {
         if (!nuevaHoraFin.isAfter(nuevaHoraInicio)) {
             throw new IllegalArgumentException(
                     "La hora de fin debe ser posterior a la hora de inicio");
+        }
+
+        // La nueva fecha no puede ser en el pasado
+        if (nuevoDia.isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("No se puede reprogramar a una fecha pasada");
+        }
+
+        // Solo se puede reprogramar dentro de los 2 días siguientes a la fecha original
+        LocalDate diaBase =
+                solicitud.getDiaOriginal() != null
+                        ? solicitud.getDiaOriginal()
+                        : solicitud.getDia();
+        LocalDate limiteReprogramacion = diaBase.plusDays(2);
+        if (nuevoDia.isAfter(limiteReprogramacion)) {
+            throw new IllegalArgumentException(
+                    "Solo puedes reprogramar hasta 2 días después de la fecha original ("
+                            + limiteReprogramacion
+                            + ")");
         }
 
         // Si ya está pagada, la duración debe ser exactamente la misma
@@ -494,6 +552,10 @@ public class SolicitudContratacionService {
                 .tutorNombre(tutorUsuario.getNombre())
                 .tutorFoto(tutorUsuario.getFoto())
                 .dia(solicitud.getDia())
+                .diaOriginal(
+                        solicitud.getDiaOriginal() != null
+                                ? solicitud.getDiaOriginal()
+                                : solicitud.getDia())
                 .horaInicio(solicitud.getHoraInicio())
                 .horaFin(solicitud.getHoraFin())
                 .tarifaHora(solicitud.getTarifaHora())
