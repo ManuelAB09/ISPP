@@ -6,7 +6,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import es.us.meerkat.backend.dto.CreateCuestionarioRequest;
+import es.us.meerkat.backend.dto.SubmitAttemptRequest;
 import es.us.meerkat.backend.entity.Cuestionario;
+import es.us.meerkat.backend.entity.CuestionarioIntento;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.CuestionarioService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -45,6 +47,28 @@ public class CuestionarioController {
                 .findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Envia un intento del cuestionario por el alumno autenticado y devuelve la puntuación. POST
+     * /api/v1/cuestionarios/{id}/submit
+     */
+    @PostMapping("/{id}/submit")
+    public ResponseEntity<?> submitAttempt(
+            @PathVariable Long id,
+            @RequestBody SubmitAttemptRequest request,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            CuestionarioIntento intento = cuestionarioService.submitAttempt(id, request, usuario);
+            return ResponseEntity.ok(intento);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     /** Publica un cuestionario (cambia de BORRADOR a PUBLICADO). */
