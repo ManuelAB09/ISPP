@@ -90,7 +90,7 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
      */
     @Query(
             "SELECT e FROM Evento e WHERE e.comunidad.id = :comunidadId"
-                    + "AND e.cancelado = false AND e.fechaHora >= :ahora")
+                    + " AND e.cancelado = false AND e.fechaHora >= :ahora")
     List<Evento> findByComunidadIdAndCanceladoFalseAndFuture(
             @Param("comunidadId") Long comunidadId, @Param("ahora") LocalDateTime ahora);
 
