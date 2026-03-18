@@ -74,7 +74,8 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                     accessor.setUser(authToken);
                     accessor.setLeaveMutable(true);
-                    return MessageBuilder.createMessage(message.getPayload(), accessor.getMessageHeaders());
+                    return MessageBuilder.createMessage(
+                            message.getPayload(), accessor.getMessageHeaders());
                 } else {
                     throw new IllegalArgumentException("User not found in database");
                 }

@@ -410,8 +410,7 @@ public class ZoomController {
             return ResponseEntity.badRequest()
                     .body(MessageResponse.builder().message(e.getMessage()).build());
         } catch (RuntimeException e) {
-            if (e.getMessage() != null
-                    && e.getMessage().contains("Faltan credenciales Zoom")) {
+            if (e.getMessage() != null && e.getMessage().contains("Faltan credenciales Zoom")) {
                 return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                         .body(
                                 MessageResponse.builder()
@@ -501,8 +500,7 @@ public class ZoomController {
 
         try {
             return ResponseEntity.ok(
-                    zoomIntegrationService.getActiveParticipantsForEvent(
-                            eventId, usuario.getId()));
+                    zoomIntegrationService.getActiveParticipantsForEvent(eventId, usuario.getId()));
         } catch (RuntimeException e) {
             if ("No hay llamada activa en este evento".equals(e.getMessage())) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)

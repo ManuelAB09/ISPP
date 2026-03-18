@@ -18,10 +18,9 @@ import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Custom handshake handler that extracts the JWT from a query parameter
- * and sets the user Principal on the WebSocket session.
- * This is required for SimpUserRegistry to track connected users,
- * which in turn enables convertAndSendToUser() message delivery.
+ * Custom handshake handler that extracts the JWT from a query parameter and sets the user Principal
+ * on the WebSocket session. This is required for SimpUserRegistry to track connected users, which
+ * in turn enables convertAndSendToUser() message delivery.
  */
 @Component
 @RequiredArgsConstructor
@@ -32,13 +31,10 @@ public class JwtHandshakeHandler extends DefaultHandshakeHandler {
 
     @Override
     protected Principal determineUser(
-            ServerHttpRequest request,
-            WebSocketHandler wsHandler,
-            Map<String, Object> attributes) {
+            ServerHttpRequest request, WebSocketHandler wsHandler, Map<String, Object> attributes) {
 
         URI uri = request.getURI();
-        String token = UriComponentsBuilder.fromUri(uri).build()
-                .getQueryParams().getFirst("token");
+        String token = UriComponentsBuilder.fromUri(uri).build().getQueryParams().getFirst("token");
 
         if (token == null || token.isBlank()) {
             return null;
@@ -51,9 +47,7 @@ public class JwtHandshakeHandler extends DefaultHandshakeHandler {
                 if (usuario != null) {
                     final String userEmail = usuario.getEmail();
                     return new UsernamePasswordAuthenticationToken(
-                            usuario,
-                            null,
-                            List.of(new SimpleGrantedAuthority("ROLE_USER"))) {
+                            usuario, null, List.of(new SimpleGrantedAuthority("ROLE_USER"))) {
                         @Override
                         public String getName() {
                             return userEmail;

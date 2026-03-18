@@ -111,12 +111,13 @@ public class MemberService {
         }
 
         // Verificar si tiene asistencias confirmadas a eventos futuros activos
-        long eventosActivos = asistenciaEventoRepository.countActiveEventAttendances(
-                userId, communityId, java.time.LocalDateTime.now());
+        long eventosActivos =
+                asistenciaEventoRepository.countActiveEventAttendances(
+                        userId, communityId, java.time.LocalDateTime.now());
         if (eventosActivos > 0) {
             throw new IllegalStateException(
-                    "No puedes abandonar la comunidad mientras tengas asistencia confirmada a eventos activos. "
-                            + "Cancela tu asistencia primero.");
+                    "No puedes abandonar la comunidad mientras tengas asistencia confirmada a"
+                            + " eventos activos. Cancela tu asistencia primero.");
         }
 
         Usuario usuario = miembro.getUsuario();

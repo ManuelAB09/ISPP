@@ -853,8 +853,8 @@ public class EmailService {
                         + "<br>"
                         + "🕐 Horario: "
                         + horario
-                        + "</div><p>Si deseas reprogramar, puedes enviar una nueva solicitud"
-                        + " al profesor.</p></div><div"
+                        + "</div><p>Si deseas reprogramar, puedes enviar una nueva solicitud al"
+                        + " profesor.</p></div><div"
                         + " style='background:#f0f0f0;padding:15px;text-align:center;font-size:12px;border-radius:0"
                         + " 0 5px 5px'><p>&copy; "
                         + appName

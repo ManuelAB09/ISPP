@@ -222,10 +222,10 @@ public class SolicitudContratacionController {
                             .body(
                                     Map.of(
                                             "error",
-                                            "El profesor tiene cuenta de Stripe Connect pero aún"
-                                                + " no ha completado la configuración. Contacta"
-                                                + " con tu profesor para que termine de configurar"
-                                                + " sus datos bancarios."));
+                                            "El profesor tiene cuenta de Stripe Connect pero aún no"
+                                                + " ha completado la configuración. Contacta con tu"
+                                                + " profesor para que termine de configurar sus"
+                                                + " datos bancarios."));
                 }
             } catch (com.stripe.exception.StripeException stripeEx) {
                 return ResponseEntity.badRequest()

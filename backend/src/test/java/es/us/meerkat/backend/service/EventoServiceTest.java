@@ -264,7 +264,8 @@ class EventoServiceTest {
         Evento e2 = new Evento();
         e2.setId(2L);
 
-        when(eventoRepository.findVisibleOnMap(any(LocalDateTime.class))).thenReturn(List.of(e1, e2));
+        when(eventoRepository.findVisibleOnMap(any(LocalDateTime.class)))
+                .thenReturn(List.of(e1, e2));
 
         List<Evento> visibles = eventoService.obtenerEventosEnMapa(null, null, null);
 

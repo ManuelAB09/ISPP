@@ -392,8 +392,7 @@ public class ZoomIntegrationService {
 
         // Solo el organizador del evento puede crear una nueva reunión
         if (!evento.getCreador().getId().equals(userId)) {
-            throw new RuntimeException(
-                    "Solo el organizador del evento puede iniciar la reunión");
+            throw new RuntimeException("Solo el organizador del evento puede iniciar la reunión");
         }
 
         Usuario user =
@@ -712,9 +711,14 @@ public class ZoomIntegrationService {
         payload.put("communityId", meeting.getComunidad().getId());
         payload.put("communityName", meeting.getComunidad().getNombre());
         payload.put("durationMinutes", meeting.getDurationMinutes());
-        payload.put("createdAt", meeting.getCreatedAt() != null ? meeting.getCreatedAt().toString() : null);
-        payload.put("startedAt", meeting.getStartedAt() != null ? meeting.getStartedAt().toString() : null);
-        payload.put("endedAt", meeting.getEndedAt() != null ? meeting.getEndedAt().toString() : null);
+        payload.put(
+                "createdAt",
+                meeting.getCreatedAt() != null ? meeting.getCreatedAt().toString() : null);
+        payload.put(
+                "startedAt",
+                meeting.getStartedAt() != null ? meeting.getStartedAt().toString() : null);
+        payload.put(
+                "endedAt", meeting.getEndedAt() != null ? meeting.getEndedAt().toString() : null);
         return payload;
     }
 

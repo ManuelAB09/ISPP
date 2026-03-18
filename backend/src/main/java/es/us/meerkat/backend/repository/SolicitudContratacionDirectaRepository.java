@@ -73,24 +73,22 @@ public interface SolicitudContratacionDirectaRepository
     List<SolicitudContratacionDirecta> findBookingsForDate(@Param("manana") LocalDate manana);
 
     /**
-     * Solicitudes ACEPTADAS (pendientes de pago) cuya fecha de clase ya pasó.
-     * Se usan para expirar automáticamente las que no fueron pagadas a tiempo.
+     * Solicitudes ACEPTADAS (pendientes de pago) cuya fecha de clase ya pasó. Se usan para expirar
+     * automáticamente las que no fueron pagadas a tiempo.
      */
     @Query(
             "SELECT s FROM SolicitudContratacionDirecta s WHERE s.dia <= :fecha"
                     + " AND s.estado ="
                     + " es.us.meerkat.backend.entity.EstadoSolicitudContratacion.ACEPTADA")
-    List<SolicitudContratacionDirecta> findExpiredAcceptedBookings(
-            @Param("fecha") LocalDate fecha);
+    List<SolicitudContratacionDirecta> findExpiredAcceptedBookings(@Param("fecha") LocalDate fecha);
 
     /**
-     * Solicitudes PENDIENTES cuya fecha de clase ya pasó.
-     * Se usan para expirar automáticamente las que no recibieron respuesta del tutor.
+     * Solicitudes PENDIENTES cuya fecha de clase ya pasó. Se usan para expirar automáticamente las
+     * que no recibieron respuesta del tutor.
      */
     @Query(
             "SELECT s FROM SolicitudContratacionDirecta s WHERE s.dia <= :fecha"
                     + " AND s.estado ="
                     + " es.us.meerkat.backend.entity.EstadoSolicitudContratacion.PENDIENTE")
-    List<SolicitudContratacionDirecta> findExpiredPendingBookings(
-            @Param("fecha") LocalDate fecha);
+    List<SolicitudContratacionDirecta> findExpiredPendingBookings(@Param("fecha") LocalDate fecha);
 }

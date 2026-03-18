@@ -138,7 +138,8 @@ public class AsistenciaEventoService {
         // El creador del evento no puede cancelar su asistencia
         if (asistencia.getEvento().getCreador().getId().equals(usuarioIdParam)) {
             throw new IllegalStateException(
-                    "El creador del evento no puede cancelar su asistencia. Cancela el evento en su lugar.");
+                    "El creador del evento no puede cancelar su asistencia. Cancela el evento en su"
+                            + " lugar.");
         }
 
         final boolean estabaConfirmada = EstadoAsistencia.CONFIRMADA.equals(asistencia.getEstado());

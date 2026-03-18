@@ -18,9 +18,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Servicio para la limpieza automática de eventos pasados.
- * Elimina eventos cuya fecha de fin (o fecha de inicio si no tienen fin)
- * sea anterior a 24 horas atrás.
+ * Servicio para la limpieza automática de eventos pasados. Elimina eventos cuya fecha de fin (o
+ * fecha de inicio si no tienen fin) sea anterior a 24 horas atrás.
  */
 @Service
 @RequiredArgsConstructor
@@ -36,8 +35,8 @@ public class EventoCleanupService {
     private final ZoomMeetingRepository zoomMeetingRepository;
 
     /**
-     * Elimina todos los eventos cuya fecha de fin (o inicio) sea anterior a 24h atrás,
-     * junto con todas sus entidades relacionadas.
+     * Elimina todos los eventos cuya fecha de fin (o inicio) sea anterior a 24h atrás, junto con
+     * todas sus entidades relacionadas.
      *
      * @return Número de eventos eliminados.
      */

@@ -15,8 +15,7 @@ public interface GoogleCalendarBookingRepository
         extends JpaRepository<GoogleCalendarBooking, Long> {
 
     /** Busca el mapeo de una solicitud para un usuario concreto. */
-    Optional<GoogleCalendarBooking> findBySolicitudIdAndUsuarioId(
-            Long solicitudId, Long usuarioId);
+    Optional<GoogleCalendarBooking> findBySolicitudIdAndUsuarioId(Long solicitudId, Long usuarioId);
 
     /** Obtiene todos los mapeos de una solicitud (alumno + tutor). */
     List<GoogleCalendarBooking> findBySolicitudId(Long solicitudId);
