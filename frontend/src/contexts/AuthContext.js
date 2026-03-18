@@ -38,7 +38,6 @@ export const AuthProvider = ({ children }) => {
       esTutor: userData.esTutor,
       autenticacionDosFactores:
         extraData.autenticacionDosFactores ?? userData.autenticacionDosFactores ?? false,
-      notificacionesEmail: extraData.notificacionesEmail ?? userData.notificacionesEmail ?? true,
       notificacionesPush: extraData.notificacionesPush ?? userData.notificacionesPush ?? true,
       createdAt: userData.createdAt,
       // Campos que la API acepta en PUT pero no devuelve en GET
@@ -90,8 +89,6 @@ export const AuthProvider = ({ children }) => {
             fotoBackgroundColor: storedData?.fotoBackgroundColor ?? userData?.fotoBackgroundColor ?? '#ffffff',
             autenticacionDosFactores:
               storedData?.autenticacionDosFactores ?? userData?.autenticacionDosFactores ?? false,
-            notificacionesEmail:
-              storedData?.notificacionesEmail ?? userData?.notificacionesEmail ?? true,
             notificacionesPush:
               storedData?.notificacionesPush ?? userData?.notificacionesPush ?? false,
           };
@@ -224,11 +221,6 @@ export const AuthProvider = ({ children }) => {
           ?? updatedUser.autenticacionDosFactores
           ?? user?.autenticacionDosFactores
           ?? false,
-        notificacionesEmail:
-          profileData.notificacionesEmail
-          ?? updatedUser.notificacionesEmail
-          ?? user?.notificacionesEmail
-          ?? true,
         notificacionesPush:
           profileData.notificacionesPush
           ?? updatedUser.notificacionesPush
@@ -266,8 +258,6 @@ export const AuthProvider = ({ children }) => {
         fotoBackgroundColor: storedData?.fotoBackgroundColor ?? userData?.fotoBackgroundColor ?? '#ffffff',
         autenticacionDosFactores:
           storedData?.autenticacionDosFactores ?? userData?.autenticacionDosFactores ?? false,
-        notificacionesEmail:
-          storedData?.notificacionesEmail ?? userData?.notificacionesEmail ?? true,
         notificacionesPush:
           storedData?.notificacionesPush ?? userData?.notificacionesPush ?? false,
       };

@@ -20,7 +20,6 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
 
     // Estados para los toggles y configuraciones
     const [profileVisibility, setProfileVisibility] = useState(true)
-    const [emailNotifications, setEmailNotifications] = useState(true)
     const [pushNotifications, setPushNotifications] = useState(false)
     const [twoFactorAuth, setTwoFactorAuth] = useState(false)
     const [isSavingPreferences, setIsSavingPreferences] = useState(false)
@@ -68,7 +67,6 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
         }
 
         setProfileVisibility(user.visibleEnListados ?? true)
-        setEmailNotifications(user.notificacionesEmail ?? true)
         setPushNotifications(user.notificacionesPush ?? false)
         setTwoFactorAuth(user.autenticacionDosFactores ?? false)
     }, [user])
@@ -287,20 +285,6 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
         }
     }
 
-    const handleToggleEmailNotifications = async () => {
-        if (isSavingPreferences) {
-            return
-        }
-
-        const newValue = !emailNotifications
-        setEmailNotifications(newValue)
-
-        const ok = await savePreferences({ notificacionesEmail: newValue })
-        if (!ok) {
-            setEmailNotifications(!newValue)
-        }
-    }
-
     const handleTogglePushNotifications = async () => {
         if (isSavingPreferences) {
             return
@@ -393,18 +377,6 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
                     {/* Notificaciones */}
                     <div className="settings-subsection">
                         <h3 className="settings-subsection__title">Notificaciones</h3>
-                        <div className="settings-toggle-row">
-                            <span className="settings-toggle-label">
-                                Notificaciones por email
-                            </span>
-                            <button
-                                className={`settings-toggle ${emailNotifications ? 'settings-toggle--active' : ''}`}
-                                onClick={handleToggleEmailNotifications}
-                                disabled={isSavingPreferences}
-                            >
-                                <span className="settings-toggle__slider"></span>
-                            </button>
-                        </div>
                         <div className="settings-toggle-row">
                             <span className="settings-toggle-label">
                                 Notificaciones push

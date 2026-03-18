@@ -312,7 +312,6 @@ public class InstitutionService {
             usuario.setVisibleEnListados(true);
             usuario.setEsTutor(false);
             usuario.setAutenticacionDosFactores(false);
-            usuario.setNotificacionesEmail(true);
             usuario.setNotificacionesPush(false);
 
             String verificationToken = UUID.randomUUID().toString();

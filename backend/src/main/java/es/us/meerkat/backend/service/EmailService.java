@@ -863,6 +863,78 @@ public class EmailService {
         sendHtmlEmailSafe(email, subject, body);
     }
 
+    /**
+     * Email cuando un evento al que el usuario está apuntado ha sido modificado.
+     *
+     * @param usuario destinatario con asistencia confirmada.
+     * @param evento evento actualizado.
+     */
+    public void sendEventUpdatedEmail(final Usuario usuario, final Evento evento) {
+        if (usuario == null || usuario.getEmail() == null || evento == null) {
+            return;
+        }
+
+        final String fecha =
+                evento.getFechaHora() != null ? evento.getFechaHora().format(DATE_FORMATTER) : "";
+        final String horaInicio =
+                evento.getFechaHora() != null
+                        ? evento.getFechaHora().format(TIME_FORMATTER)
+                        : "--:--";
+        final String horaFin =
+                evento.getFechaFin() != null
+                        ? evento.getFechaFin().format(TIME_FORMATTER)
+                        : "--:--";
+        final String comunidad =
+                evento.getComunidad() != null && evento.getComunidad().getNombre() != null
+                        ? evento.getComunidad().getNombre()
+                        : "Comunidad";
+        final String modalidad =
+                Boolean.TRUE.equals(evento.getEsVirtual()) ? "Online" : "Presencial";
+        final String ubicacion =
+                !Boolean.TRUE.equals(evento.getEsVirtual()) && evento.getUbicacion() != null
+                        ? evento.getUbicacion().getNombre()
+                        : "";
+
+        final String subject = "🔄 Evento actualizado: " + evento.getTitulo();
+        final String body =
+                "<html><body style='font-family:Arial,sans-serif;color:#333'><div"
+                    + " style='max-width:600px;margin:0 auto;padding:20px'><div"
+                    + " style='background:#2D3250;color:white;padding:20px;text-align:center;border-radius:5px"
+                    + " 5px 0 0'><h1>Evento actualizado</h1></div><div"
+                    + " style='background:#f9f9f9;padding:20px;border:1px solid #ddd'><p>Hola"
+                    + " <strong>"
+                        + (usuario.getNombre() != null ? usuario.getNombre() : "")
+                        + "</strong>,</p><p>Se han aplicado cambios en un evento al que estás"
+                        + " apuntado:</p><div"
+                        + " style='background:#e8f4f8;padding:15px;border-left:4px solid"
+                        + " #2D3250;margin:20px 0'><strong>"
+                        + evento.getTitulo()
+                        + "</strong><br>"
+                        + "🏠 Comunidad: "
+                        + comunidad
+                        + "<br>"
+                        + "📅 Fecha: "
+                        + fecha
+                        + "<br>"
+                        + "🕐 Hora: "
+                        + horaInicio
+                        + " – "
+                        + horaFin
+                        + "<br>"
+                        + "💻 Modalidad: "
+                        + modalidad
+                        + (ubicacion != null && !ubicacion.isBlank()
+                                ? "<br>📍 Ubicación: " + ubicacion
+                                : "")
+                        + "</a></p></div><div"
+                        + " style='background:#f0f0f0;padding:15px;text-align:center;font-size:12px;border-radius:0"
+                        + " 0 5px 5px'><p>&copy; "
+                        + appName
+                        + "</p></div></div></body></html>";
+
+        sendHtmlEmailSafe(usuario.getEmail(), subject, body);
+    }
+
     private void sendHtmlEmailSafe(String to, String subject, String htmlBody) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
