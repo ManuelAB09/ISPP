@@ -262,7 +262,10 @@ public class MisEventosService {
             Long count = alertaEventoRepository.countUnreadByUsuarioId(usuarioId);
             messagingTemplate.convertAndSendToUser(email, "/queue/alerts_count", count);
         } catch (Exception e) {
-            log.warn("No se pudo enviar alert count por WS al usuario {}: {}", usuarioId, e.getMessage());
+            log.warn(
+                    "No se pudo enviar alert count por WS al usuario {}: {}",
+                    usuarioId,
+                    e.getMessage());
         }
     }
 
