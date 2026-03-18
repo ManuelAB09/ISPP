@@ -362,6 +362,7 @@ public class CommunityService {
                             long eventosCount = eventosCreados.getOrDefault(usuario.getId(), 0L);
                             long asistentes =
                                     asistentesPorCreador.getOrDefault(usuario.getId(), 0L);
+
                             long puntos = mensajes + (asistentes * 5);
 
                             return new CommunityRankingEntryResponse(
