@@ -488,6 +488,7 @@ public class UsuarioService {
                 .notificacionesEmail(usuario.getNotificacionesEmail())
                 .notificacionesPush(usuario.getNotificacionesPush())
                 .createdAt(usuario.getCreatedAt())
+                .googleLinked(usuario.getGoogleId() != null)
                 .build();
     }
 

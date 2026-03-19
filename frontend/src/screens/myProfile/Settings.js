@@ -2,7 +2,9 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import axiosInstance from "../../api/axiosConfig"
 import { apiClient } from "../../api/client"
+import { authApi } from "../../api/auth.api"
 import { useAuth } from "../../contexts/AuthContext"
+import { QRCodeCanvas } from "qrcode.react"
 import "./Settings.css"
 
 const EVENT_TYPES = [
@@ -25,6 +27,15 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
     const [twoFactorAuth, setTwoFactorAuth] = useState(false)
     const [isSavingPreferences, setIsSavingPreferences] = useState(false)
     const [preferencesError, setPreferencesError] = useState("")
+
+    // 2FA modal state
+    const [show2FAModal, setShow2FAModal] = useState(false) // false | 'setup' | 'disable'
+    const [totpSetupData, setTotpSetupData] = useState(null)
+    const [totpCode, setTotpCode] = useState("")
+    const [totpError, setTotpError] = useState("")
+    const [isTotpLoading, setIsTotpLoading] = useState(false)
+    const [backupCodes, setBackupCodes] = useState([])
+    const [showBackupCodesModal, setShowBackupCodesModal] = useState(false)
 
     // Recordatorios por email + canal alarmas por defecto
     const [emailRecordatorios, setEmailRecordatorios] = useState({
@@ -51,6 +62,11 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
     const [isDeletingAccount, setIsDeletingAccount] = useState(false)
     const [deleteError, setDeleteError] = useState("")
 
+    // Google account linking
+    const [isGoogleLinked, setIsGoogleLinked] = useState(user?.googleLinked ?? false)
+    const [isLinkingGoogle, setIsLinkingGoogle] = useState(false)
+    const [googleLinkMsg, setGoogleLinkMsg] = useState(null)
+
     // Estados para cambio de contraseña
     const [currentPassword, setCurrentPassword] = useState("")
     const [newPassword, setNewPassword] = useState("")
@@ -71,6 +87,7 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
         setEmailNotifications(user.notificacionesEmail ?? true)
         setPushNotifications(user.notificacionesPush ?? false)
         setTwoFactorAuth(user.autenticacionDosFactores ?? false)
+        setIsGoogleLinked(user.googleLinked ?? false)
     }, [user])
 
     useEffect(() => {
@@ -315,17 +332,147 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
         }
     }
 
+    const handleLinkGoogle = () => {
+        setIsLinkingGoogle(true)
+        setGoogleLinkMsg(null)
+        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080'
+        fetch(`${API_URL}/api/v1/auth/google/link/authorize`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
+        })
+            .then(res => { if (!res.ok) throw new Error(); return res.json() })
+            .then(data => {
+                if (data.url) {
+                    const w = 500, h = 600
+                    const left = window.screen.width / 2 - w / 2
+                    const top = window.screen.height / 2 - h / 2
+                    window.open(data.url, 'GoogleLink', `width=${w},height=${h},top=${top},left=${left}`)
+                    const listener = (event) => {
+                        if (event.data?.type === 'google-link-success') {
+                            window.removeEventListener('message', listener)
+                            setIsGoogleLinked(true)
+                            setGoogleLinkMsg({ type: 'success', text: 'Cuenta de Google vinculada correctamente.' })
+                            setIsLinkingGoogle(false)
+                        } else if (event.data?.type === 'google-auth-error') {
+                            window.removeEventListener('message', listener)
+                            setGoogleLinkMsg({ type: 'error', text: event.data.error || 'Error al vincular cuenta.' })
+                            setIsLinkingGoogle(false)
+                        }
+                    }
+                    window.addEventListener('message', listener)
+                }
+            })
+            .catch(() => {
+                setGoogleLinkMsg({ type: 'error', text: 'No se pudo iniciar la vinculación.' })
+                setIsLinkingGoogle(false)
+            })
+    }
+
+    const handleUnlinkGoogle = async () => {
+        setIsLinkingGoogle(true)
+        setGoogleLinkMsg(null)
+        try {
+            await authApi.unlinkGoogle()
+            setIsGoogleLinked(false)
+            setGoogleLinkMsg({ type: 'success', text: 'Cuenta de Google desvinculada.' })
+        } catch {
+            setGoogleLinkMsg({ type: 'error', text: 'No se pudo desvincular la cuenta.' })
+        } finally {
+            setIsLinkingGoogle(false)
+        }
+    }
+
     const handleToggleTwoFactorAuth = async () => {
         if (isSavingPreferences) {
             return
         }
 
-        const newValue = !twoFactorAuth
-        setTwoFactorAuth(newValue)
+        if (twoFactorAuth) {
+            // Initiate disable flow
+            setTotpCode("")
+            setTotpError("")
+            setShow2FAModal('disable')
+        } else {
+            // Initiate setup flow
+            setTotpCode("")
+            setTotpError("")
+            setTotpSetupData(null)
+            setBackupCodes([])
+            setShowBackupCodesModal(false)
+            setIsTotpLoading(true)
+            setShow2FAModal('setup')
+            try {
+                const res = await authApi.setup2fa()
+                // Backend usually returns { secret, qrCodeUrl } or { secret, otpauthUrl }
+                setTotpSetupData(res)
+            } catch (err) {
+                setTotpError("Error al iniciar configuración 2FA")
+                setShow2FAModal(false)
+            } finally {
+                setIsTotpLoading(false)
+            }
+        }
+    }
 
-        const ok = await savePreferences({ autenticacionDosFactores: newValue })
-        if (!ok) {
-            setTwoFactorAuth(!newValue)
+    const buildBackupCodesTxt = (codes) => {
+        const generatedAt = new Date().toLocaleString('es-ES')
+        return [
+            'MeerKatters - Códigos de respaldo 2FA',
+            `Generado: ${generatedAt}`,
+            '',
+            'Guarda estos códigos en un lugar seguro. Cada código solo se puede usar una vez.',
+            'Si pierdes acceso a tu app de autenticación, podrás iniciar sesión con uno de ellos.',
+            '',
+            ...codes,
+        ].join('\n')
+    }
+
+    const handleDownloadBackupCodes = () => {
+        if (!backupCodes.length) {
+            return
+        }
+
+        const content = buildBackupCodesTxt(backupCodes)
+        const file = new Blob([content], { type: 'text/plain;charset=utf-8' })
+        const fileUrl = window.URL.createObjectURL(file)
+        const link = document.createElement('a')
+        const date = new Date().toISOString().slice(0, 10)
+
+        link.href = fileUrl
+        link.download = `meerkat-2fa-backup-codes-${date}.txt`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(fileUrl)
+    }
+
+    const handleVerify2FA = async (e) => {
+        e.preventDefault()
+        setTotpError("")
+        setIsTotpLoading(true)
+
+        try {
+            if (show2FAModal === 'setup') {
+                const response = await authApi.enable2fa(totpCode)
+                const generatedCodes = Array.isArray(response?.backupCodes)
+                    ? response.backupCodes
+                    : []
+
+                setBackupCodes(generatedCodes)
+                setTwoFactorAuth(true)
+                // Sync context
+                updateProfile({ autenticacionDosFactores: true })
+                setShow2FAModal(false)
+                setShowBackupCodesModal(generatedCodes.length > 0)
+            } else if (show2FAModal === 'disable') {
+                await authApi.disable2fa(totpCode)
+                setTwoFactorAuth(false)
+                updateProfile({ autenticacionDosFactores: false })
+                setShow2FAModal(false)
+            }
+        } catch (err) {
+            setTotpError(err.message || 'Código incorrecto')
+        } finally {
+            setIsTotpLoading(false)
         }
     }
 
@@ -388,6 +535,38 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
                                 <span className="settings-toggle__slider"></span>
                             </button>
                         </div>
+                    </div>
+
+                    {/* Inicio de sesión con Google */}
+                    <div className="settings-subsection">
+                        <h3 className="settings-subsection__title">Inicio de sesión con Google</h3>
+                        <p className="settings-subsection__text">
+                            {isGoogleLinked
+                                ? 'Tu cuenta de Google está vinculada. Puedes iniciar sesión con Google.'
+                                : 'Vincula tu cuenta de Google para poder iniciar sesión con ella.'}
+                        </p>
+                        {googleLinkMsg && (
+                            <div className={googleLinkMsg.type === 'success' ? 'settings-password-success' : 'settings-password-error'} style={{ marginBottom: '8px' }}>
+                                {googleLinkMsg.text}
+                            </div>
+                        )}
+                        {isGoogleLinked ? (
+                            <button
+                                className="settings-btn settings-btn--outline"
+                                onClick={handleUnlinkGoogle}
+                                disabled={isLinkingGoogle}
+                            >
+                                {isLinkingGoogle ? 'Desvinculando...' : 'Desvincular cuenta de Google'}
+                            </button>
+                        ) : (
+                            <button
+                                className="settings-btn settings-btn--gcalendar"
+                                onClick={handleLinkGoogle}
+                                disabled={isLinkingGoogle}
+                            >
+                                {isLinkingGoogle ? 'Vinculando...' : '🔗 Vincular cuenta de Google'}
+                            </button>
+                        )}
                     </div>
 
                     {/* Notificaciones */}
@@ -711,6 +890,119 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
                                 disabled={isDeletingAccount}
                             >
                                 {isDeletingAccount ? 'Eliminando...' : 'Sí, eliminar mi cuenta'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal: 2FA Setup/Disable */}
+            {show2FAModal && (
+                <div className="settings-confirm-overlay">
+                    <div className="settings-confirm-modal">
+                        <h2 className="settings-confirm-title">
+                            {show2FAModal === 'setup' ? 'Activar Autenticación en 2 Pasos' : 'Desactivar Autenticación'}
+                        </h2>
+                        
+                        {show2FAModal === 'setup' && totpSetupData && (
+                            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                                <p className="settings-confirm-text" style={{ marginBottom: '15px' }}>
+                                    1. Escanea este código QR con Google Authenticator u otra app compatible.
+                                </p>
+                                <div style={{ background: '#fff', padding: '15px', display: 'inline-block', borderRadius: '8px', marginBottom: '15px' }}>
+                                    <QRCodeCanvas value={totpSetupData.qrCodeUrl || totpSetupData.otpauthUrl || totpSetupData.otpauth} size={150} />
+                                </div>
+                                <p className="settings-confirm-text" style={{ fontSize: '0.9rem' }}>
+                                    O introduce este código manualmente:<br/>
+                                    <strong>{totpSetupData.secret}</strong>
+                                </p>
+                            </div>
+                        )}
+
+                        <form onSubmit={handleVerify2FA}>
+                            <p className="settings-confirm-text">
+                                {show2FAModal === 'setup' 
+                                    ? '2. Introduce el código de 6 dígitos generado por tu app:' 
+                                    : 'Introduce el código actual de tu app o un código de respaldo para confirmar la desactivación:'}
+                            </p>
+                            <input
+                                type="text"
+                                value={totpCode}
+                                onChange={(e) => setTotpCode(e.target.value.toUpperCase())}
+                                placeholder={show2FAModal === 'setup' ? '000111' : '000111 o ABCD-EFGH'}
+                                maxLength={show2FAModal === 'setup' ? 6 : 24}
+                                required
+                                style={{
+                                    display: 'block',
+                                    width: '100%',
+                                    padding: '10px',
+                                    fontSize: '1.2rem',
+                                    textAlign: 'center',
+                                    letterSpacing: show2FAModal === 'setup' ? '5px' : '1px',
+                                    marginBottom: '15px',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '8px'
+                                }}
+                            />
+                            
+                            {totpError && (
+                                <p className="settings-password-error" style={{ textAlign: 'center' }}>{totpError}</p>
+                            )}
+                            {isTotpLoading && !totpSetupData && show2FAModal === 'setup' && (
+                                <p style={{ textAlign: 'center' }}>Cargando código QR...</p>
+                            )}
+
+                            <div className="settings-confirm-actions" style={{ marginTop: '20px' }}>
+                                <button 
+                                    type="button"
+                                    className="settings-btn settings-btn--outline"
+                                    onClick={() => setShow2FAModal(false)}
+                                    disabled={isTotpLoading}
+                                >
+                                    Cancelar
+                                </button>
+                                <button 
+                                    type="submit"
+                                    className="settings-btn settings-btn--primary"
+                                    disabled={isTotpLoading || (!totpSetupData && show2FAModal === 'setup')}
+                                >
+                                    {isTotpLoading ? 'Verificando...' : 'Verificar'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal: códigos de respaldo 2FA */}
+            {showBackupCodesModal && (
+                <div className="settings-confirm-overlay">
+                    <div className="settings-confirm-modal settings-backup-modal">
+                        <h2 className="settings-confirm-title">Códigos de respaldo generados</h2>
+                        <p className="settings-confirm-text">
+                            Guarda estos códigos ahora. Solo se mostrarán una vez y cada código sirve para un único uso.
+                        </p>
+
+                        <div className="settings-backup-codes-grid">
+                            {backupCodes.map((code) => (
+                                <code key={code} className="settings-backup-code">{code}</code>
+                            ))}
+                        </div>
+
+                        <div className="settings-confirm-actions" style={{ marginTop: '20px' }}>
+                            <button
+                                type="button"
+                                className="settings-btn settings-btn--outline"
+                                onClick={handleDownloadBackupCodes}
+                            >
+                                Descargar .txt
+                            </button>
+                            <button
+                                type="button"
+                                className="settings-btn settings-btn--primary"
+                                onClick={() => setShowBackupCodesModal(false)}
+                            >
+                                Ya los he guardado
                             </button>
                         </div>
                     </div>
