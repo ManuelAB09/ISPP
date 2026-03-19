@@ -9,7 +9,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import es.us.meerkat.backend.entity.MensajeComunidad;
-import es.us.meerkat.backend.entity.MiembroComunidad;
 
 /** Repositorio para acceder a mensajes de comunidades en la base de datos. */
 @Repository
@@ -49,6 +48,4 @@ public interface MensajeComunidadRepository extends JpaRepository<MensajeComunid
             "SELECT m.usuario.id, COUNT(m) FROM MensajeComunidad m WHERE m.comunidad.id ="
                     + " :comunidadId GROUP BY m.usuario.id")
     List<Object[]> countMensajesByComunidad(@Param("comunidadId") Long comunidadId);
-
-    List<MiembroComunidad> findByComunidadId(Long comunidadId);
 }

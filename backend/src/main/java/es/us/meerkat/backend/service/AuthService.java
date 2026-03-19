@@ -826,21 +826,14 @@ public class AuthService {
                                                 "Existe una cuenta con este email. Inicia sesion y"
                                                         + " vincula la cuenta desde ajustes."));
                     }
-                    // Registrar nuevo
-                    Usuario nuevo = new Usuario();
-                    nuevo.setEmail(email);
-                    nuevo.setPassword(passwordEncoder.encode(generarContrasenaSegura(12)));
-                    nuevo.setNombre(name);
-                    nuevo.setGoogleId(googleId);
-                    nuevo.setEmailVerificado(emailVerified);
-                    nuevo.setEsTutor(false);
-                    nuevo.setVisibleEnListados(true);
-                    nuevo.setAutenticacionDosFactores(false);
-                    nuevo.setNotificacionesEmail(true);
-                    nuevo.setNotificacionesPush(true);
-                    nuevo.setIntereses(new ArrayList<>());
-                    usuarioRepository.save(nuevo);
-                    usuario = nuevo;
+                    // No permitir login con Google si no existe cuenta registrada
+                    return ResponseEntity.ok()
+                            .contentType(MediaType.TEXT_HTML)
+                            .body(
+                                    htmlPostMessageError(
+                                            "No existe una cuenta con este email. Regístrate"
+                                                    + " primero y vincula tu cuenta de Google"
+                                                    + " desde ajustes."));
                 }
 
                 if (Boolean.TRUE.equals(usuario.getAutenticacionDosFactores())) {

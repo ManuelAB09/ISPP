@@ -1065,7 +1065,7 @@ export default function CommunityDetail() {
             <h2 className="cd-events-title">
               <LuCalendar /> Eventos
             </h2>
-            <div className="cd-events- actions">
+            <div className="cd-events-actions">
               <label className="cd-filter-label">
                 <input
                   type="checkbox"
@@ -1125,7 +1125,7 @@ export default function CommunityDetail() {
         
         {isMember && (
           <div className="cd-ranking-section">
-            <h2 className="cd-events-title">
+            <h2 className="cd-ranking-title">
               <LuUsers /> Ranking de la comunidad
             </h2>
 
@@ -1149,7 +1149,7 @@ export default function CommunityDetail() {
 
                   <tbody>
                     {ranking.map((item, index) => {
-                      const isMe = item.usuario?.id === currentUserId;
+                      const isMe = item.usuario?.id === Number(currentUserId);
 
                       return (
                         <tr
@@ -1168,9 +1168,9 @@ export default function CommunityDetail() {
 
                           {/* Columna de Usuario */}
                           <td className="cd-ranking-user-cell">
-                            {item.usuario?.foto ? (
+                            {item.usuario?.avatarUrl ? (
                               <img
-                                src={item.usuario.foto}
+                                src={item.usuario.avatarUrl}
                                 alt={item.usuario?.nombre || 'Usuario'}
                                 className="cd-ranking-avatar"
                               />
