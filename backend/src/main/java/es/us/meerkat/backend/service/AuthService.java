@@ -808,7 +808,7 @@ public class AuthService {
                 usuarioRepository.save(usuario);
 
                 String html =
-                        "<html><body><script>"
+                        "<html><head><meta charset=\"UTF-8\"></head><body><script>"
                                 + "window.opener.postMessage({ type: 'google-link-success' }, '*');"
                                 + "window.close();</script></body></html>";
                 return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
@@ -845,7 +845,7 @@ public class AuthService {
                     String payloadStr =
                             "{\"isTwoFactor\": true, \"tempToken\": \"" + tempToken + "\"}";
                     String html =
-                            "<html><body><script>window.opener.postMessage({ type:"
+                            "<html><head><meta charset=\"UTF-8\"></head><body><script>window.opener.postMessage({ type:"
                                     + " 'google-auth-success', payload: "
                                     + payloadStr
                                     + " }, '*');"
@@ -858,7 +858,7 @@ public class AuthService {
                 String payloadStr = objectMapper.writeValueAsString(authRes);
 
                 String html =
-                        "<html><body><script>window.opener.postMessage({ type:"
+                        "<html><head><meta charset=\"UTF-8\"></head><body><script>window.opener.postMessage({ type:"
                                 + " 'google-auth-success', payload: "
                                 + payloadStr
                                 + " }, '*');"
@@ -880,7 +880,7 @@ public class AuthService {
 
     private String htmlPostMessageError(String err) {
         String safe = err.replace("'", "\\'");
-        return "<html><body><script>"
+        return "<html><head><meta charset=\"UTF-8\"></head><body><script>"
                 + "window.opener.postMessage({ type: 'google-auth-error', error: '"
                 + safe
                 + "' }, '*');"
