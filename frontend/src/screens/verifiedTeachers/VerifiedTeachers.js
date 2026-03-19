@@ -248,7 +248,7 @@ const VerifiedTeachers = () => {
               type="number"
               min="0"
               step="1"
-              placeholder="€ mín"
+              placeholder="€ min"
               value={filtros.tarifaMin}
               onChange={handleFiltroChange}
             />
@@ -259,7 +259,7 @@ const VerifiedTeachers = () => {
               type="number"
               min="0"
               step="1"
-              placeholder="€ máx"
+              placeholder="€ max"
               value={filtros.tarifaMax}
               onChange={handleFiltroChange}
             />
@@ -395,14 +395,7 @@ const VerifiedTeachers = () => {
                         <button
                           className="vt-btn vt-btn--primary"
                           onClick={() => {
-                            const params = new URLSearchParams({
-                              userId: String(targetUserId),
-                              userName: nombre,
-                            });
-                            if (tutor.usuario?.foto) {
-                              params.set('userPhoto', toAbsoluteImageUrl(tutor.usuario.foto));
-                            }
-                            navigate(`/chats?${params.toString()}`);
+                            navigate(`/chats?userId=${targetUserId}`);
                           }}
                         >
                           Contactar

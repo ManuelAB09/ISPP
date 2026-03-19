@@ -215,7 +215,7 @@ const VerifyEmail = () => {
         </div>
 
         <div className="register-footer">
-          <p>© 2024 StudYshare. All rights reserved.</p>
+          <p>© 2026 Meerkatters. All rights reserved.</p>
         </div>
       </div>
 

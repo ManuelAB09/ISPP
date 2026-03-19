@@ -1,13 +1,23 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import axiosInstance from "../../api/axiosConfig"
 import { apiClient } from "../../api/client"
 import { useAuth } from "../../contexts/AuthContext"
 import "./Settings.css"
 
-const Settings = ({ onClose, isOwner = true }) => {
+const EVENT_TYPES = [
+    { value: 'REUNION', label: 'Reuniones' },
+    { value: 'EXAMEN', label: 'Exámenes' },
+    { value: 'CUESTIONARIO', label: 'Cuestionarios' },
+    { value: 'TUTORIA', label: 'Tutorías' },
+    { value: 'CLASE', label: 'Clases' },
+    { value: 'OTRO', label: 'Otros' },
+]
+
+const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNotificationRead }) => {
     const navigate = useNavigate()
     const { logout, user, updateProfile } = useAuth()
-    
+
     // Estados para los toggles y configuraciones
     const [profileVisibility, setProfileVisibility] = useState(true)
     const [emailNotifications, setEmailNotifications] = useState(true)
@@ -15,6 +25,25 @@ const Settings = ({ onClose, isOwner = true }) => {
     const [twoFactorAuth, setTwoFactorAuth] = useState(false)
     const [isSavingPreferences, setIsSavingPreferences] = useState(false)
     const [preferencesError, setPreferencesError] = useState("")
+
+    // Recordatorios por email + canal alarmas por defecto
+    const [emailRecordatorios, setEmailRecordatorios] = useState({
+        emailsActivados: true,
+        recordatorio24h: true,
+        recordatorio1h: true,
+        recordatorio30min: false,
+        canalAlarmasPorDefecto: 'AMBOS',
+    })
+    const [isSavingRecordatorios, setIsSavingRecordatorios] = useState(false)
+    const [recordatoriosError, setRecordatoriosError] = useState("")
+
+    // Google Calendar
+    const [calendarStatus, setCalendarStatus] = useState({ conectado: false, sincronizacionActiva: false, tiposSincronizados: [] })
+    const [isLoadingCalendar, setIsLoadingCalendar] = useState(true)
+    const [calendarMsg, setCalendarMsg] = useState(null)
+    const [isConnecting, setIsConnecting] = useState(false)
+    const [isDisconnecting, setIsDisconnecting] = useState(false)
+    const [isSavingCalendar, setIsSavingCalendar] = useState(false)
 
     // Estados para modales de confirmación
     const [showDeleteAccount, setShowDeleteAccount] = useState(false)
@@ -43,6 +72,111 @@ const Settings = ({ onClose, isOwner = true }) => {
         setPushNotifications(user.notificacionesPush ?? false)
         setTwoFactorAuth(user.autenticacionDosFactores ?? false)
     }, [user])
+
+    useEffect(() => {
+        axiosInstance.get('/api/v1/notifications/preferences')
+            .then(res => setEmailRecordatorios(res.data))
+            .catch(() => { /* usa valores por defecto */ })
+    }, [])
+
+    useEffect(() => {
+        setIsLoadingCalendar(true)
+        axiosInstance.get('/api/v1/google-calendar/status')
+            .then(res => setCalendarStatus(res.data))
+            .catch(() => { /* usa valores por defecto */ })
+            .finally(() => setIsLoadingCalendar(false))
+    }, [])
+
+    useEffect(() => {
+        if (!calendarNotification) return
+        if (calendarNotification === 'success') {
+            setCalendarMsg({ type: 'success', text: 'Google Calendar conectado correctamente.' })
+        } else {
+            setCalendarMsg({ type: 'error', text: 'No se pudo conectar Google Calendar. Inténtalo de nuevo.' })
+        }
+        onCalendarNotificationRead?.()
+    }, [calendarNotification]) // eslint-disable-line
+
+    const handleConnectCalendar = async () => {
+        setIsConnecting(true)
+        setCalendarMsg(null)
+        try {
+            const res = await axiosInstance.get('/api/v1/google-calendar/auth-url')
+            window.location.href = res.data
+        } catch {
+            setCalendarMsg({ type: 'error', text: 'No se pudo obtener la URL de autorización.' })
+            setIsConnecting(false)
+        }
+    }
+
+    const handleDisconnectCalendar = async () => {
+        setIsDisconnecting(true)
+        setCalendarMsg(null)
+        try {
+            await axiosInstance.delete('/api/v1/google-calendar/disconnect')
+            setCalendarStatus({ conectado: false, sincronizacionActiva: false, tiposSincronizados: [] })
+            setCalendarMsg({ type: 'success', text: 'Google Calendar desconectado.' })
+        } catch {
+            setCalendarMsg({ type: 'error', text: 'No se pudo desconectar. Inténtalo de nuevo.' })
+        } finally {
+            setIsDisconnecting(false)
+        }
+    }
+
+    const saveCalendarPreferences = async (partial) => {
+        setIsSavingCalendar(true)
+        try {
+            const res = await axiosInstance.put('/api/v1/google-calendar/preferences', partial)
+            setCalendarStatus(res.data)
+        } catch {
+            setCalendarMsg({ type: 'error', text: 'No se pudo guardar la preferencia.' })
+        } finally {
+            setIsSavingCalendar(false)
+        }
+    }
+
+    const handleToggleSyncActive = () => {
+        if (isSavingCalendar) return
+        const newVal = !calendarStatus.sincronizacionActiva
+        setCalendarStatus(prev => ({ ...prev, sincronizacionActiva: newVal }))
+        saveCalendarPreferences({ sincronizacionActiva: newVal })
+    }
+
+    const handleToggleEventType = (tipo) => {
+        if (isSavingCalendar) return
+        const current = calendarStatus.tiposSincronizados || []
+        // Si todos seleccionados (lista vacía = todos), al desmarcar uno → seleccionar todos excepto ese
+        const allSelected = current.length === 0
+        const base = allSelected ? EVENT_TYPES.map(t => t.value) : current
+        const updated = base.includes(tipo) ? base.filter(t => t !== tipo) : [...base, tipo]
+        // Si todos quedan seleccionados, mandar lista vacía (= todos)
+        const toSend = updated.length === EVENT_TYPES.length ? [] : updated
+        setCalendarStatus(prev => ({ ...prev, tiposSincronizados: toSend }))
+        saveCalendarPreferences({ tiposSincronizados: toSend })
+    }
+
+    const saveRecordatorios = async (partial) => {
+        setRecordatoriosError("")
+        setIsSavingRecordatorios(true)
+        const updated = { ...emailRecordatorios, ...partial }
+        try {
+            const res = await axiosInstance.put('/api/v1/notifications/preferences', updated)
+            setEmailRecordatorios(res.data)
+        } catch {
+            setRecordatoriosError("No se pudo guardar la preferencia. Inténtalo de nuevo.")
+            // revert
+            setEmailRecordatorios(prev => ({ ...prev }))
+        } finally {
+            setIsSavingRecordatorios(false)
+        }
+    }
+
+    const handleToggleRecordatorio = async (field, explicitValue) => {
+        if (isSavingRecordatorios) return
+        const newVal = explicitValue !== undefined ? explicitValue : !emailRecordatorios[field]
+        setEmailRecordatorios(prev => ({ ...prev, [field]: newVal }))
+        await saveRecordatorios({ [field]: newVal })
+    }
 
     const savePreferences = async (partial) => {
         setPreferencesError("")
@@ -263,7 +397,7 @@ const Settings = ({ onClose, isOwner = true }) => {
                             <span className="settings-toggle-label">
                                 Notificaciones por email
                             </span>
-                            <button 
+                            <button
                                 className={`settings-toggle ${emailNotifications ? 'settings-toggle--active' : ''}`}
                                 onClick={handleToggleEmailNotifications}
                                 disabled={isSavingPreferences}
@@ -275,13 +409,107 @@ const Settings = ({ onClose, isOwner = true }) => {
                             <span className="settings-toggle-label">
                                 Notificaciones push
                             </span>
-                            <button 
+                            <button
                                 className={`settings-toggle ${pushNotifications ? 'settings-toggle--active' : ''}`}
                                 onClick={handleTogglePushNotifications}
                                 disabled={isSavingPreferences}
                             >
                                 <span className="settings-toggle__slider"></span>
                             </button>
+                        </div>
+                    </div>
+
+                    {/* Recordatorios por email de eventos */}
+                    <div className="settings-subsection">
+                        <h3 className="settings-subsection__title">✉️ Recordatorios por email de eventos</h3>
+                        <p className="settings-subsection__text" style={{ marginBottom: '12px' }}>
+                            Recibe un email antes de que comiencen tus eventos.
+                        </p>
+                        {recordatoriosError && (
+                            <p className="settings-password-error" style={{ marginBottom: '8px' }}>{recordatoriosError}</p>
+                        )}
+                        <div className="settings-toggle-row">
+                            <span className="settings-toggle-label" style={{ fontWeight: 600 }}>
+                                Activar recordatorios por email
+                            </span>
+                            <button
+                                className={`settings-toggle ${emailRecordatorios.emailsActivados ? 'settings-toggle--active' : ''}`}
+                                onClick={() => handleToggleRecordatorio('emailsActivados')}
+                                disabled={isSavingRecordatorios}
+                            >
+                                <span className="settings-toggle__slider"></span>
+                            </button>
+                        </div>
+                        <p className="settings-subsection__text" style={{ margin: '4px 0 8px' }}>
+                            Recordarme antes de cada evento:
+                        </p>
+                        <div className="settings-recordatorios-sub">
+                            <div className="settings-toggle-row">
+                                <span className={`settings-toggle-label ${!emailRecordatorios.emailsActivados ? 'settings-toggle-label--disabled' : ''}`}>
+                                    24 horas antes
+                                </span>
+                                <button
+                                    className={`settings-toggle ${emailRecordatorios.recordatorio24h ? 'settings-toggle--active' : ''}`}
+                                    onClick={() => handleToggleRecordatorio('recordatorio24h')}
+                                    disabled={isSavingRecordatorios || !emailRecordatorios.emailsActivados}
+                                >
+                                    <span className="settings-toggle__slider"></span>
+                                </button>
+                            </div>
+                            <div className="settings-toggle-row">
+                                <span className={`settings-toggle-label ${!emailRecordatorios.emailsActivados ? 'settings-toggle-label--disabled' : ''}`}>
+                                    1 hora antes
+                                </span>
+                                <button
+                                    className={`settings-toggle ${emailRecordatorios.recordatorio1h ? 'settings-toggle--active' : ''}`}
+                                    onClick={() => handleToggleRecordatorio('recordatorio1h')}
+                                    disabled={isSavingRecordatorios || !emailRecordatorios.emailsActivados}
+                                >
+                                    <span className="settings-toggle__slider"></span>
+                                </button>
+                            </div>
+                            <div className="settings-toggle-row">
+                                <span className={`settings-toggle-label ${!emailRecordatorios.emailsActivados ? 'settings-toggle-label--disabled' : ''}`}>
+                                    30 minutos antes
+                                </span>
+                                <button
+                                    className={`settings-toggle ${emailRecordatorios.recordatorio30min ? 'settings-toggle--active' : ''}`}
+                                    onClick={() => handleToggleRecordatorio('recordatorio30min')}
+                                    disabled={isSavingRecordatorios || !emailRecordatorios.emailsActivados}
+                                >
+                                    <span className="settings-toggle__slider"></span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Alarmas personalizadas — canal por defecto */}
+                    <div className="settings-subsection">
+                        <h3 className="settings-subsection__title">🔔 Alarmas personalizadas</h3>
+                        <p className="settings-subsection__text" style={{ marginBottom: '12px' }}>
+                            Canal por defecto para tus alarmas de eventos.
+                        </p>
+                        {recordatoriosError && (
+                            <p className="settings-password-error" style={{ marginBottom: '8px' }}>{recordatoriosError}</p>
+                        )}
+                        <div className="settings-canal-radios">
+                            {[
+                                { value: 'PLATAFORMA', label: 'Solo en la app' },
+                                { value: 'EMAIL', label: 'Solo por email' },
+                                { value: 'AMBOS', label: 'Ambos' },
+                            ].map(({ value, label }) => (
+                                <label key={value} className="settings-canal-radio-label">
+                                    <input
+                                        type="radio"
+                                        name="canalAlarmasPorDefecto"
+                                        value={value}
+                                        checked={emailRecordatorios.canalAlarmasPorDefecto === value}
+                                        onChange={() => handleToggleRecordatorio('canalAlarmasPorDefecto', value)}
+                                        disabled={isSavingRecordatorios}
+                                    />
+                                    {label}
+                                </label>
+                            ))}
                         </div>
                     </div>
 
@@ -348,6 +576,83 @@ const Settings = ({ onClose, isOwner = true }) => {
                             {isChangingPassword ? 'Guardando...' : 'Cambiar contraseña'}
                         </button>
                     </form>
+                </section>
+
+                {/* Sección: Google Calendar */}
+                <section className="settings-section">
+                    <h2 className="settings-section__title">📅 Google Calendar</h2>
+                    <p className="settings-section__description">
+                        Sincroniza automáticamente los eventos de la plataforma con tu Google Calendar.
+                    </p>
+
+                    {calendarMsg && (
+                        <div className={calendarMsg.type === 'success' ? 'settings-password-success' : 'settings-password-error'} style={{ marginBottom: '16px' }}>
+                            {calendarMsg.text}
+                        </div>
+                    )}
+
+                    {isLoadingCalendar ? (
+                        <p className="settings-subsection__text">Cargando estado...</p>
+                    ) : !calendarStatus.conectado ? (
+                        <button
+                            className="settings-btn settings-btn--gcalendar"
+                            onClick={handleConnectCalendar}
+                            disabled={isConnecting}
+                        >
+                            {isConnecting ? 'Redirigiendo...' : '🔗 Conectar Google Calendar'}
+                        </button>
+                    ) : (
+                        <div className="settings-subsection">
+                            <div className="settings-toggle-row">
+                                <span className="settings-toggle-label" style={{ fontWeight: 600 }}>
+                                    Sincronización automática activa
+                                </span>
+                                <button
+                                    className={`settings-toggle ${calendarStatus.sincronizacionActiva ? 'settings-toggle--active' : ''}`}
+                                    onClick={handleToggleSyncActive}
+                                    disabled={isSavingCalendar}
+                                >
+                                    <span className="settings-toggle__slider"></span>
+                                </button>
+                            </div>
+
+                            <p className="settings-subsection__text" style={{ margin: '12px 0 8px' }}>
+                                Sincronizar tipos de evento:
+                            </p>
+                            <div className="settings-gcalendar-types">
+                                {EVENT_TYPES.map(({ value, label }) => {
+                                    const allSelected = !calendarStatus.tiposSincronizados || calendarStatus.tiposSincronizados.length === 0
+                                    const isSelected = allSelected || calendarStatus.tiposSincronizados.includes(value)
+                                    return (
+                                        <label key={value} className="settings-gcalendar-type-label">
+                                            <input
+                                                type="checkbox"
+                                                checked={isSelected}
+                                                onChange={() => handleToggleEventType(value)}
+                                                disabled={isSavingCalendar}
+                                            />
+                                            {label}
+                                        </label>
+                                    )
+                                })}
+                            </div>
+
+                            {calendarStatus.ultimaSincronizacion && (
+                                <p className="settings-subsection__text" style={{ marginTop: '12px' }}>
+                                    Última sincronización: {new Date(calendarStatus.ultimaSincronizacion).toLocaleString('es-ES')}
+                                </p>
+                            )}
+
+                            <button
+                                className="settings-btn settings-btn--outline"
+                                style={{ marginTop: '16px' }}
+                                onClick={handleDisconnectCalendar}
+                                disabled={isDisconnecting}
+                            >
+                                {isDisconnecting ? 'Desconectando...' : 'Desconectar Google Calendar'}
+                            </button>
+                        </div>
+                    )}
                 </section>
 
                 {/* Sección: Eliminación de cuenta */}

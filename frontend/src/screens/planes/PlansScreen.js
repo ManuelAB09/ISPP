@@ -27,11 +27,12 @@ export default function PlansScreen() {
   const [myPlan, setMyPlan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
+  const [successMessage] = useState("");
   const [showCheckout, setShowCheckout] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const isPremium = myPlan?.activa && myPlan?.plan === "PREMIUM";
+  const hasInstitutionPlan = myPlan?.planCorporativoActivo && myPlan?.institutionNombre;
 
   useEffect(() => {
     const loadData = async () => {
@@ -131,25 +132,6 @@ export default function PlansScreen() {
     };
   */
 
-  const handleCancel = async () => {
-    setSubmitting(true);
-    setError("");
-    setSuccessMessage("");
-
-    try {
-      const res = await subscriptionsApi.cancelSubscription();
-      setMyPlan(res || null);
-      setShowCheckout(false);
-      setSuccessMessage("Suscripción cancelada exitosamente");
-
-      setTimeout(() => setSuccessMessage(""), 5000);
-    } catch (e) {
-      setError(e?.message || "No se pudo cancelar la suscripción");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   //MOCK: simular cancelación exitosa
   /*  
     const handleCancel = async () => {
@@ -207,6 +189,21 @@ export default function PlansScreen() {
 
             {successMessage && <div className="plansSuccess">✓ {successMessage}</div>}
 
+            {hasInstitutionPlan && (
+              <div className="plansInfo" style={{
+                background: '#e8f4fd',
+                border: '1px solid #b3d7f2',
+                borderRadius: '8px',
+                padding: '12px 16px',
+                marginBottom: '16px',
+                color: '#1a5276',
+                fontSize: '14px'
+              }}>
+                ℹ️ Tienes un plan institucional activo a través de <b>{myPlan.institutionNombre}</b>.
+                No puedes suscribirte a un plan individual Premium mientras tu plan institucional esté vigente.
+              </div>
+            )}
+
             <div className="cardsGrid">
               {plans && plans.length > 0 ? (
                 plans.map((plan) => {
@@ -259,10 +256,11 @@ export default function PlansScreen() {
                       ) : isPremiumPlan ? (
                         <button
                           className="btn btn--primary"
-                          disabled={isPremium || submitting}
+                          disabled={isPremium || hasInstitutionPlan || submitting}
                           onClick={() => navigate("/planes/pasarela")}
+                          title={hasInstitutionPlan ? "No disponible con plan institucional activo" : ""}
                         >
-                          {isPremium ? "Ya eres Premium" : "Mejorar a Premium"}
+                          {isPremium ? "Ya eres Premium" : hasInstitutionPlan ? "No disponible" : "Mejorar a Premium"}
                         </button>
                       ) : (
                         <button className="btn btn--muted" disabled>
@@ -278,42 +276,78 @@ export default function PlansScreen() {
             </div>
           </section>
 
-          {/* ── Institutional plans banner ─────────────── */}
-          <section className="instBannerSection">
-            <div className="instBannerContent">
-              <div className="instBannerLeft">
-                <div className="instBannerIcon">🏛️</div>
-                <div>
-                  <h2 className="instBannerTitle">¿Eres una institución educativa?</h2>
-                  <p className="instBannerDesc">
-                    Ofrecemos planes especiales para academias, universidades y centros
-                    educativos, con gestión de grupos, múltiples administradores y
-                    estadísticas avanzadas. También disponemos de precios reducidos para
-                    centros públicos y concertados, integración con Google Classroom y
-                    contratación específica para comunidades corporativas.
-                  </p>
-                  <div className="instBannerFeatures">
-                    <span>👥 Múltiples admins</span>
-                    <span>📊 Estadísticas avanzadas</span>
-                    <span>📚 Google Classroom</span>
-                    <span>🏢 Facturación corporativa</span>
+          {/* ── Institutional plan active ─────────────── */}
+          {hasInstitutionPlan && (
+            <section className="instBannerSection">
+              <div className="instBannerContent">
+                <div className="instBannerLeft">
+                  <div className="instBannerIcon">🏛️</div>
+                  <div>
+                    <h2 className="instBannerTitle">Plan Institucional activo</h2>
+                    <p className="instBannerDesc">
+                      Tienes un plan institucional{myPlan.planCorporativo ? <> <b>{myPlan.planCorporativo}</b></> : ''} a través de <b>{myPlan.institutionNombre}</b>.
+                      Disfruta de todas las ventajas incluidas en tu plan corporativo.
+                    </p>
+                    <div className="instBannerFeatures">
+                      <span>✅ Plan activo</span>
+                      <span>🏫 {myPlan.institutionNombre}</span>
+                      {myPlan.planCorporativo && <span>📋 {myPlan.planCorporativo}</span>}
+                    </div>
                   </div>
                 </div>
               </div>
-              <button
-                className="instBannerBtn"
-                onClick={() => navigate("/planes/instituciones")}
-              >
-                Ver planes institucionales →
-              </button>
-            </div>
-          </section>
+            </section>
+          )}
+
+          {/* ── Institutional plans banner ─────────────── */}
+          {!hasInstitutionPlan && (
+            <section className="instBannerSection">
+              <div className="instBannerContent">
+                <div className="instBannerLeft">
+                  <div className="instBannerIcon">🏛️</div>
+                  <div>
+                    <h2 className="instBannerTitle">¿Eres una institución educativa?</h2>
+                    <p className="instBannerDesc">
+                      Ofrecemos planes especiales para academias, universidades y centros
+                      educativos, con gestión de grupos, múltiples administradores y
+                      estadísticas avanzadas. También disponemos de precios reducidos para
+                      centros públicos y concertados.
+                    </p>
+                    <div className="instBannerFeatures">
+                      <span>👥 Múltiples admins</span>
+                      <span>📊 Estadísticas avanzadas</span>
+                      <span>🏫 Gestión de grupos</span>
+                      <span>💜 Precios especiales</span>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  className="instBannerBtn"
+                  onClick={() => navigate("/planes/instituciones")}
+                >
+                  Ver planes institucionales →
+                </button>
+              </div>
+            </section>
+          )}
 
           {!loading && (
             <section className="plansStatus">
               <h3>Tu suscripción</h3>
 
-              {isPremium ? (
+              {hasInstitutionPlan ? (
+                <div className="statusBox">
+                  <div>
+                    <b>Plan:</b> Institucional{myPlan.planCorporativo ? ` ${myPlan.planCorporativo}` : ''}
+                  </div>
+                  <div>
+                    <b>Institución:</b> {myPlan.institutionNombre}
+                  </div>
+                  <div>
+                    <b>Estado:</b> Activo
+                  </div>
+                </div>
+              ) : isPremium ? (
                 <div className="statusBox">
                   <div>
                     <b>Plan:</b> {myPlan?.plan} {myPlan?.periodo === "ANUAL" ? "(anual)" : "(mensual)"}
@@ -326,14 +360,6 @@ export default function PlansScreen() {
                       <b>Fecha de fin de la suscripción:</b> {myPlan.fechaFin}
                     </div>
                   )}
-
-                  <button
-                    className="btn btn--secondary"
-                    disabled={submitting}
-                    onClick={handleCancel}
-                  >
-                    Cancelar suscripción
-                  </button>
                 </div>
               ) : (
                 <div className="statusBox">No tienes suscripción activa.</div>

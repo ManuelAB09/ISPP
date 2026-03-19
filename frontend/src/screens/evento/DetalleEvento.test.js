@@ -19,6 +19,12 @@ jest.mock('../../api/communities.api', () => ({
     getMyMembership: jest.fn(),
   },
 }));
+jest.mock('../../contexts/SocketContext', () => ({
+    useSocketContext: () => ({
+        socket: { on: jest.fn(), off: jest.fn() },
+        isConnected: true,
+    }),
+}));
 jest.mock('../../components/Header/Header', () => {
   return function MockHeader() {
     return <div data-testid="mock-header">Header</div>;
@@ -102,6 +108,10 @@ describe('DetalleEvento', () => {
 
     const btn = await screen.findByRole('button', { name: /Confirmar asistencia/i });
     fireEvent.click(btn);
+
+    // El botón abre un modal; hay que confirmar en él
+    const modalConfirmBtn = await screen.findAllByRole('button', { name: /Confirmar asistencia/i });
+    fireEvent.click(modalConfirmBtn[modalConfirmBtn.length - 1]);
 
     await waitFor(() => {
       expect(attendEvent).toHaveBeenCalledWith('77');

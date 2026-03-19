@@ -139,4 +139,7 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
             @Param("tarifaMin") BigDecimal tarifaMin,
             @Param("tarifaMax") BigDecimal tarifaMax,
             Pageable pageable);
+
+    /** Busca un tutor por el ID del usuario asociado. */
+    Optional<Tutor> findByUsuarioId(Long usuarioId);
 }

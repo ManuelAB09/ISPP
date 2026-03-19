@@ -103,8 +103,8 @@ describe('VerifiedTeachers', () => {
   test('renderiza los filtros de búsqueda', async () => {
     await renderComponent();
     expect(screen.getByPlaceholderText(/Buscar por especialidad/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/€ mín/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/€ máx/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/€ min/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/€ max/i)).toBeInTheDocument();
   });
 
   test('llama a la API al montar el componente', async () => {

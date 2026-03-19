@@ -177,16 +177,6 @@ describe('PlansScreen', () => {
     expect(screen.getByText('2025-12-31')).toBeInTheDocument();
   });
 
-  test('muestra botón "Cancelar suscripción" para usuario premium', async () => {
-    subscriptionsApi.subscriptionsApi.getMySubscription.mockResolvedValue(mockSubscription);
-    
-    renderScreen();
-    
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Cancelar suscripción/i })).toBeInTheDocument();
-    });
-  });
-
   test('muestra "Plan actual" en tarjeta premium cuando el usuario ya es premium', async () => {
     subscriptionsApi.subscriptionsApi.getMySubscription.mockResolvedValue(mockSubscription);
     
@@ -232,23 +222,6 @@ describe('PlansScreen', () => {
   // ==============================
   // TESTS DE CANCELACIÓN (MOCK)
   // ==============================
-
-  test('muestra mensaje de éxito al cancelar suscripción', async () => {
-    subscriptionsApi.subscriptionsApi.getMySubscription.mockResolvedValue(mockSubscription);
-    subscriptionsApi.subscriptionsApi.cancelSubscription.mockResolvedValue(null);
-    
-    renderScreen();
-    
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Cancelar suscripción/i })).toBeInTheDocument();
-    });
-
-    await userEvent.click(screen.getByRole('button', { name: /Cancelar suscripción/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText(/Suscripción cancelada exitosamente/i)).toBeInTheDocument();
-    });
-  });
 
   // ==============================
   // TESTS DE COMPARACIÓN DE PLANES

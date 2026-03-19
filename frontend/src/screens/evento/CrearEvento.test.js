@@ -122,12 +122,6 @@ describe('CrearEvento', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Online/i }));
-    fireEvent.change(
-      screen.getByPlaceholderText(/https:\/\/meet\.google\.com\/abc-defg-hij/i),
-      {
-        target: { name: 'direccion', value: 'https://meet.google.com/abc-defg-hij' },
-      }
-    );
 
     fireEvent.click(screen.getByRole('button', { name: /Crear Evento/i }));
 
@@ -166,12 +160,6 @@ describe('CrearEvento', () => {
 
   // Online para evitar requerir ubicacionId
   fireEvent.click(screen.getByRole('button', { name: /Online/i }));
-  fireEvent.change(
-    screen.getByPlaceholderText(/https:\/\/meet\.google\.com\/abc-defg-hij/i),
-    {
-      target: { name: 'direccion', value: 'https://meet.google.com/abc-defg-hij' },
-    }
-  );
 
   await screen.findByText(/Rol detectado en esta comunidad:\s*Administrador/i);
 
@@ -183,7 +171,6 @@ describe('CrearEvento', () => {
       expect.objectContaining({
         titulo: 'Evento de prueba',
         esVirtual: true,
-        enlaceVirtual: 'https://meet.google.com/abc-defg-hij',
         aforo: 30,
       })
     );

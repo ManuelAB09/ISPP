@@ -136,33 +136,57 @@ public class EventoController {
     }
 
     /**
-     * Obtiene todos los eventos visibles en el mapa.
+     * Obtiene todos los eventos visibles en el mapa. Opcionalmente filtra por radio de distancia.
      *
+     * @param lat Latitud del centro de búsqueda (opcional).
+     * @param lon Longitud del centro de búsqueda (opcional).
+     * @param radioKm Radio de búsqueda en km (opcional).
      * @return Lista de eventos visibles en mapa.
      */
     @GetMapping("/map")
     @Operation(
             summary = "Obtener eventos en mapa",
-            description = "Devuelve eventos marcados como visibles en el mapa")
-    public ResponseEntity<List<EventSummaryResponse>> obtenerEventosEnMapa() {
+            description =
+                    "Devuelve eventos públicos marcados como visibles en el mapa,"
+                            + " opcionalmente filtrados por radio de distancia")
+    public ResponseEntity<List<EventSummaryResponse>> obtenerEventosEnMapa(
+            @RequestParam(required = false)
+                    @Parameter(description = "Latitud del centro de búsqueda")
+                    final Double lat,
+            @RequestParam(required = false)
+                    @Parameter(description = "Longitud del centro de búsqueda")
+                    final Double lon,
+            @RequestParam(required = false) @Parameter(description = "Radio de búsqueda en km")
+                    final Double radioKm) {
         List<EventSummaryResponse> response =
-                eventoService.obtenerEventosEnMapa().stream()
+                eventoService.obtenerEventosEnMapa(lat, lon, radioKm).stream()
                         .map(Evento::toSummaryDTO)
                         .collect(Collectors.toList());
         return ResponseEntity.ok(response);
     }
 
     /**
-     * Obtiene ubicaciones recomendadas para eventos.
+     * Obtiene ubicaciones recomendadas para eventos dentro de un radio.
      *
+     * @param lat Latitud del centro de búsqueda.
+     * @param lon Longitud del centro de búsqueda.
+     * @param radioKm Radio de búsqueda en km.
      * @return Lista de ubicaciones recomendadas.
      */
     @GetMapping("/recommended-locations")
     @Operation(
             summary = "Ubicaciones recomendadas",
-            description = "Devuelve ubicaciones populares para eventos")
-    public ResponseEntity<List<String>> obtenerUbicacionesRecomendadas() {
-        return ResponseEntity.ok(eventoService.obtenerUbicacionesRecomendadas());
+            description = "Devuelve nombres de ubicaciones con eventos activos dentro del radio")
+    public ResponseEntity<List<String>> obtenerUbicacionesRecomendadas(
+            @RequestParam(required = false)
+                    @Parameter(description = "Latitud del centro de búsqueda")
+                    final Double lat,
+            @RequestParam(required = false)
+                    @Parameter(description = "Longitud del centro de búsqueda")
+                    final Double lon,
+            @RequestParam(required = false) @Parameter(description = "Radio de búsqueda en km")
+                    final Double radioKm) {
+        return ResponseEntity.ok(eventoService.obtenerUbicacionesRecomendadas(lat, lon, radioKm));
     }
 
     // ===============================
@@ -292,6 +316,14 @@ public class EventoController {
         if (evento.getFechaHora() != null && !evento.getFechaHora().isAfter(LocalDateTime.now())) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT, "No se puede cancelar un evento que ya ha comenzado");
+        }
+
+        // Solo se puede cancelar hasta 30 minutos antes del inicio
+        if (evento.getFechaHora() != null
+                && evento.getFechaHora().minusMinutes(30).isBefore(LocalDateTime.now())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Solo se puede cancelar un evento hasta 30 minutos antes de su inicio");
         }
 
         try {

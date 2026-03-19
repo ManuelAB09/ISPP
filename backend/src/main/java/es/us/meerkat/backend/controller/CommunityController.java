@@ -29,6 +29,7 @@ import es.us.meerkat.backend.service.CommunityService;
 import es.us.meerkat.backend.service.EventoService;
 import es.us.meerkat.backend.service.GoogleClassroomService;
 import es.us.meerkat.backend.service.MemberService;
+import es.us.meerkat.backend.service.PaymentService;
 import es.us.meerkat.backend.service.RequestService;
 import es.us.meerkat.backend.service.TutorContratacionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -56,6 +57,7 @@ public class CommunityController {
     private final CategoryService categoryService;
     private final AuthorizationService authorizationService;
     private final TutorContratacionService tutorContratacionService;
+    private final PaymentService paymentService;
     private final EventoService eventoService;
     private final GoogleClassroomService googleClassroomService;
 
@@ -482,6 +484,10 @@ public class CommunityController {
         try {
             memberService.leaveCommunity(usuario.getId(), communityId);
             return ResponseEntity.noContent().build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .header("Content-Type", "text/plain")
+                    .build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
@@ -1218,6 +1224,103 @@ public class CommunityController {
             return ResponseEntity.ok(paymentUrl);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/{communityId}/tutor/{tutorId}/create-payment-intent")
+    @Operation(
+            summary = "Crear PaymentIntent para contratación de tutor",
+            description = "Devuelve clientSecret para usar con Stripe Elements embebido",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> crearHiringPaymentIntent(
+            @PathVariable Long communityId,
+            @PathVariable Long tutorId,
+            @Valid @RequestBody HireTutorRequest request,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            java.util.Map<String, String> result =
+                    paymentService.crearPaymentIntentContratacionTutor(
+                            tutorId,
+                            communityId,
+                            request.getTarifaAcordada(),
+                            usuario.getId(),
+                            usuario.getEmail());
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(
+                            java.util.Map.of(
+                                    "error",
+                                    "Error al crear el intent de pago: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/confirm-tutor-payment")
+    @Operation(
+            summary = "Confirmar pago de contratación de tutor",
+            description = "Verifica el PaymentIntent y activa la contratación",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> confirmarPagoContratacion(
+            @RequestBody java.util.Map<String, String> body,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String paymentIntentId = body.get("paymentIntentId");
+        if (paymentIntentId == null || paymentIntentId.isBlank()) {
+            return ResponseEntity.badRequest()
+                    .body(java.util.Map.of("error", "paymentIntentId requerido"));
+        }
+
+        try {
+            com.stripe.model.PaymentIntent intent =
+                    com.stripe.model.PaymentIntent.retrieve(paymentIntentId);
+
+            if (!"succeeded".equals(intent.getStatus())) {
+                return ResponseEntity.badRequest()
+                        .body(
+                                java.util.Map.of(
+                                        "error",
+                                        "El pago no se ha completado: " + intent.getStatus()));
+            }
+
+            String usuarioIdMeta = intent.getMetadata().get("usuarioId");
+            if (!usuario.getId().toString().equals(usuarioIdMeta)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(
+                                java.util.Map.of(
+                                        "error", "PaymentIntent no válido para este usuario"));
+            }
+
+            java.math.BigDecimal monto =
+                    java.math.BigDecimal.valueOf(intent.getAmount())
+                            .divide(java.math.BigDecimal.valueOf(100));
+
+            paymentService.procesarPagoExitoso(
+                    usuario.getId(),
+                    es.us.meerkat.backend.entity.TipoTransaccion.PAGO_TUTOR,
+                    monto,
+                    "Contratación de tutor completada vía Stripe Elements",
+                    null);
+
+            return ResponseEntity.ok(
+                    java.util.Map.of("mensaje", "Pago de contratación confirmado correctamente"));
+
+        } catch (com.stripe.exception.StripeException e) {
+            return ResponseEntity.internalServerError()
+                    .body(java.util.Map.of("error", "Error Stripe: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(java.util.Map.of("error", e.getMessage()));
         }
     }
 

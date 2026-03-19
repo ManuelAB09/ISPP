@@ -1,0 +1,44 @@
+# ═══════════════════════════════════════════════════
+#  Perfil SPRINT2 — Render + Neon (PostgreSQL serverless)
+#
+#  Activar con: SPRING_PROFILES_ACTIVE=sprint2
+#  Las variables se configuran en Render Dashboard
+#  → Environment → Environment Variables
+#
+#  Base de datos: Neon (instancia dedicada al Sprint 2)
+# ═══════════════════════════════════════════════════
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+      connection-timeout: 20000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+        validator:
+          apply_to_ddl: false
+
+server:
+  port: ${PORT:8080}
+
+logging:
+  level:
+    root: INFO
+    es.us.meerkat: INFO
+
+# ── CORS: orígenes permitidos para este entorno ──
+app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:https://meerkatters-sprint2.onrender.com}

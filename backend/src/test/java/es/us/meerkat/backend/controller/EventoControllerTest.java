@@ -36,10 +36,10 @@ class EventoControllerTest {
     @Test
     void obtenerEventosEnMapaShouldReturnVisibleEventsMappedAsSummary() {
         Evento evento = buildEvento(10L, true);
-        when(eventoService.obtenerEventosEnMapa()).thenReturn(List.of(evento));
+        when(eventoService.obtenerEventosEnMapa(null, null, null)).thenReturn(List.of(evento));
 
         ResponseEntity<List<EventSummaryResponse>> response =
-                eventoController.obtenerEventosEnMapa();
+                eventoController.obtenerEventosEnMapa(null, null, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).hasSize(1);
@@ -49,10 +49,11 @@ class EventoControllerTest {
 
     @Test
     void obtenerUbicacionesRecomendadasShouldReturnRecommendedList() {
-        when(eventoService.obtenerUbicacionesRecomendadas())
+        when(eventoService.obtenerUbicacionesRecomendadas(37.38, -5.99, 10.0))
                 .thenReturn(List.of("Biblioteca Central", "Coworking Norte"));
 
-        ResponseEntity<List<String>> response = eventoController.obtenerUbicacionesRecomendadas();
+        ResponseEntity<List<String>> response =
+                eventoController.obtenerUbicacionesRecomendadas(37.38, -5.99, 10.0);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).containsExactly("Biblioteca Central", "Coworking Norte");

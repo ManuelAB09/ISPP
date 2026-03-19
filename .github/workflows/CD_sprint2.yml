@@ -1,0 +1,77 @@
+name: CD - Despliegue Sprint 2 (sprint2 → Render)
+
+# ════════════════════════════════════════════════════════════
+# Despliegue del Sprint 2 en Render.
+#
+# Se dispara al hacer push a la rama 'sprint2'.
+# Construye la imagen Docker full-stack (React + Spring Boot)
+# y la publica en GHCR con etiqueta :sprint2.
+# Luego dispara un redeploy en Render via Deploy Hook.
+#
+# Una vez finalizado el sprint, la rama se congela
+# (protegida, sin nuevos commits).
+#
+# Base de datos: Neon (PostgreSQL serverless), configurada
+# como variables de entorno en el servicio de Render.
+#
+# Secretos/variables necesarios (a nivel de repositorio):
+#   - secrets.RENDER_DEPLOY_HOOK_URL_SPRINT2  → Deploy Hook del servicio en Render
+#   - vars.RENDER_SPRINT2_URL                 → URL pública (ej: https://meerkatters-sprint2.onrender.com)
+# ════════════════════════════════════════════════════════════
+
+on:
+  push:
+    branches: [sprint2]
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+
+# ────────────────────────────────────────────────────────────
+jobs:
+
+  deploy:
+    name: Desplegar Full-stack (Sprint 2 - Render)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # No usa 'environment' — secretos y variables van a nivel de repo
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── 2. Login en GHCR ────────────────────────────────
+      - name: Login en GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── 3. Nombre de imagen en minúsculas ────────────────
+      - name: Convertir nombre de imagen a minúsculas
+        run: echo "APP_IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}/app" >> $GITHUB_ENV
+
+      # ── 4. Build y push imagen Docker ────────────────────
+      - name: Build y push imagen Docker (Full-stack)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.APP_IMAGE }}:sprint2
+            ${{ env.APP_IMAGE }}:sprint2-${{ github.sha }}
+          build-args: |
+            REACT_APP_API_URL=${{ vars.RENDER_SPRINT2_URL }}
+
+      # ── 5. Disparar redeploy en Render ───────────────────
+      - name: Trigger Render Deploy
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" "${{ secrets.RENDER_DEPLOY_HOOK_URL_SPRINT2 }}"
+          echo ""
+          echo "Deploy hook triggered for Sprint 2 on Render."
