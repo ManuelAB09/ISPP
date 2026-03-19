@@ -10,13 +10,12 @@ import es.us.meerkat.backend.dto.CreateAnuncioRequest;
 import es.us.meerkat.backend.dto.UpdateAnuncioRequest;
 import es.us.meerkat.backend.entity.Anuncio;
 import es.us.meerkat.backend.entity.Comunidad;
+import es.us.meerkat.backend.entity.Notificacion;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.AnuncioRepository;
 import es.us.meerkat.backend.repository.ComunidadRepository;
-import es.us.meerkat.backend.repository.UsuarioRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
-import es.us.meerkat.backend.service.NotificacionService;
-import es.us.meerkat.backend.entity.Notificacion;
+import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
 /** Servicio para la gestión de anuncios en comunidades. */
@@ -35,9 +34,9 @@ public class AnuncioService {
     /**
      * Crea un nuevo anuncio en una comunidad.
      *
-     * @param userId      ID del usuario administrador
+     * @param userId ID del usuario administrador
      * @param communityId ID de la comunidad
-     * @param request     datos del anuncio
+     * @param request datos del anuncio
      * @return el anuncio creado
      * @throws IllegalArgumentException si el usuario no tiene permisos
      */
@@ -48,37 +47,42 @@ public class AnuncioService {
                     "Solo administradores pueden crear anuncios en esta comunidad");
         }
 
-        Usuario usuario = usuarioRepository
-                .findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        Usuario usuario =
+                usuarioRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
-        Comunidad comunidad = comunidadRepository
-                .findById(communityId)
-                .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
+        Comunidad comunidad =
+                comunidadRepository
+                        .findById(communityId)
+                        .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
 
-        Anuncio anuncio = Anuncio.builder()
-                .titulo(request.titulo())
-                .contenido(request.contenido())
-                .usuario(usuario)
-                .comunidad(comunidad)
-                .permitirComentarios(
-                        request.permitirComentarios() != null
-                                ? request.permitirComentarios()
-                                : true)
-                .build();
+        Anuncio anuncio =
+                Anuncio.builder()
+                        .titulo(request.titulo())
+                        .contenido(request.contenido())
+                        .usuario(usuario)
+                        .comunidad(comunidad)
+                        .permitirComentarios(
+                                request.permitirComentarios() != null
+                                        ? request.permitirComentarios()
+                                        : true)
+                        .build();
 
         Anuncio saved = anuncioRepository.save(anuncio);
 
         // Notificar a todos los miembros de la comunidad excepto el creador
-        java.util.List<Usuario> miembros = miembroComunidadRepository
-                .findMiembrosMasAntiguosEnComunidad(comunidad.getId(), usuario.getId());
+        java.util.List<Usuario> miembros =
+                miembroComunidadRepository.findMiembrosMasAntiguosEnComunidad(
+                        comunidad.getId(), usuario.getId());
         for (Usuario miembro : miembros) {
-            Notificacion notif = Notificacion.builder()
-                    .usuario(miembro)
-                    .titulo("Nuevo anuncio en tu comunidad")
-                    .mensaje(saved.getTitulo())
-                    .tipo("ANUNCIO")
-                    .build();
+            Notificacion notif =
+                    Notificacion.builder()
+                            .usuario(miembro)
+                            .titulo("Nuevo anuncio en tu comunidad")
+                            .mensaje(saved.getTitulo())
+                            .tipo("ANUNCIO")
+                            .build();
             notificacionService.crearYNotificar(notif);
         }
         return saved;
@@ -88,14 +92,15 @@ public class AnuncioService {
      * Obtiene los anuncios de una comunidad de forma paginada.
      *
      * @param communityId ID de la comunidad
-     * @param pageable    paginación
+     * @param pageable paginación
      * @return página de anuncios
      */
     @Transactional(readOnly = true)
     public Page<Anuncio> getAnunciosByCommunity(Long communityId, Pageable pageable) {
-        Comunidad comunidad = comunidadRepository
-                .findById(communityId)
-                .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
+        Comunidad comunidad =
+                comunidadRepository
+                        .findById(communityId)
+                        .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
 
         return anuncioRepository.findByComunidadOrderByCreatedAtDesc(comunidad, pageable);
     }
@@ -117,9 +122,9 @@ public class AnuncioService {
     /**
      * Actualiza un anuncio existente.
      *
-     * @param userId    ID del usuario administrador
+     * @param userId ID del usuario administrador
      * @param anuncioId ID del anuncio
-     * @param request   datos a actualizar
+     * @param request datos a actualizar
      * @return el anuncio actualizado
      * @throws IllegalArgumentException si el usuario no tiene permisos
      */
@@ -150,7 +155,7 @@ public class AnuncioService {
     /**
      * Elimina un anuncio.
      *
-     * @param userId    ID del usuario administrador
+     * @param userId ID del usuario administrador
      * @param anuncioId ID del anuncio
      * @throws IllegalArgumentException si el usuario no tiene permisos
      */

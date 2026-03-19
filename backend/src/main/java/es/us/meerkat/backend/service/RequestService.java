@@ -10,19 +10,23 @@ import org.springframework.transaction.annotation.Transactional;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.EstadoSolicitud;
 import es.us.meerkat.backend.entity.MiembroComunidad;
+import es.us.meerkat.backend.entity.PreferenciasNotificacion;
 import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.SolicitudComunidad;
 import es.us.meerkat.backend.entity.TipoGrupo;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.exception.ValidationException;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.SolicitudComunidadRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class RequestService {
 
     private final SolicitudComunidadRepository solicitudComunidadRepository;
@@ -31,28 +35,29 @@ public class RequestService {
     private final UsuarioRepository usuarioRepository;
     private final AuthorizationService authorizationService;
     private final CommunityService communityService;
+    private final PreferenciasNotificacionService preferenciasNotificacionService;
+    private final EmailService emailService;
 
     /** Solicita acceso a una comunidad privada. */
     public SolicitudComunidad requestAccess(Long userId, Long communityId, String mensaje) {
         Usuario usuario =
                 usuarioRepository
                         .findById(userId)
-                        .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+                        .orElseThrow(() -> new ValidationException("Usuario no encontrado"));
 
         Comunidad comunidad =
                 comunidadRepository
                         .findById(communityId)
-                        .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
+                        .orElseThrow(() -> new ValidationException("Comunidad no encontrada"));
 
         // Validar que sea privada
         if (comunidad.getTipoGrupo() == TipoGrupo.COMUNIDAD_PUBLICA) {
-            throw new IllegalArgumentException(
-                    "No necesitas solicitar acceso a una comunidad pública");
+            throw new ValidationException("No necesitas solicitar acceso a una comunidad pública");
         }
 
         // Validar que no sea ya miembro
         if (authorizationService.isMemberOf(userId, communityId)) {
-            throw new IllegalArgumentException("Ya eres miembro de esta comunidad");
+            throw new ValidationException("Ya eres miembro de esta comunidad");
         }
 
         // Validar que no haya solicitud pendiente
@@ -63,8 +68,7 @@ public class RequestService {
                         .orElse(null);
 
         if (existing != null) {
-            throw new IllegalArgumentException(
-                    "Ya tienes una solicitud pendiente para esta comunidad");
+            throw new ValidationException("Ya tienes una solicitud pendiente para esta comunidad");
         }
 
         // Crear solicitud
@@ -76,7 +80,44 @@ public class RequestService {
                         .estado(EstadoSolicitud.PENDIENTE)
                         .build();
 
-        return solicitudComunidadRepository.save(solicitud);
+        SolicitudComunidad solicitudCreada = solicitudComunidadRepository.save(solicitud);
+        notificarNuevaSolicitudAlDueno(comunidad, usuario, mensaje);
+        return solicitudCreada;
+    }
+
+    private void notificarNuevaSolicitudAlDueno(
+            final Comunidad comunidad, final Usuario solicitante, final String mensaje) {
+        final Usuario dueno = comunidad.getCreador();
+        if (dueno == null || dueno.getId() == null || dueno.getEmail() == null) {
+            return;
+        }
+
+        if (solicitante != null
+                && solicitante.getId() != null
+                && solicitante.getId().equals(dueno.getId())) {
+            return;
+        }
+
+        try {
+            final PreferenciasNotificacion preferenciasDueno =
+                    preferenciasNotificacionService.getOrCreate(dueno.getId());
+            final boolean puedeRecibir =
+                    Boolean.TRUE.equals(preferenciasDueno.getEmailsActivados())
+                            && Boolean.TRUE.equals(preferenciasDueno.getNotificarSolicitudAcceso());
+
+            if (!puedeRecibir) {
+                return;
+            }
+
+            emailService.sendCommunityAccessRequestEmail(dueno, comunidad, solicitante, mensaje);
+        } catch (Exception e) {
+            log.warn(
+                    "No se pudo notificar nueva solicitud de acceso de comunidad {} al dueño {}:"
+                            + " {}",
+                    comunidad.getId(),
+                    dueno.getId(),
+                    e.getMessage());
+        }
     }
 
     /** Lista las solicitudes de una comunidad (solo ADMIN). */

@@ -19,6 +19,8 @@ import org.springframework.mock.web.MockMultipartFile;
 import es.us.meerkat.backend.dto.EnviarMensajeComunidadRequest;
 import es.us.meerkat.backend.dto.MensajeComunidadResponse;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.UsuarioRepository;
 import es.us.meerkat.backend.service.ChatFileStorageService;
 import es.us.meerkat.backend.service.MensajeComunidadService;
 
@@ -28,6 +30,8 @@ class MensajeComunidadControllerTest {
     @Mock private MensajeComunidadService mensajeComunidadService;
     @Mock private ChatFileStorageService chatFileStorageService;
     @Mock private org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
+    @Mock private MiembroComunidadRepository miembroComunidadRepository;
+    @Mock private UsuarioRepository usuarioRepository;
     @InjectMocks private MensajeComunidadController controller;
 
     @Test

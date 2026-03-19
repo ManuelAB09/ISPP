@@ -18,39 +18,40 @@ import es.us.meerkat.backend.entity.Usuario;
 @Repository
 public interface MiembroComunidadRepository extends JpaRepository<MiembroComunidad, Long> {
 
-        Optional<MiembroComunidad> findByUsuarioIdAndComunidadId(Long usuarioId, Long comunidadId);
+    Optional<MiembroComunidad> findByUsuarioIdAndComunidadId(Long usuarioId, Long comunidadId);
 
-        Page<MiembroComunidad> findByComunidadId(Long comunidadId, Pageable pageable);
+    Page<MiembroComunidad> findByComunidadId(Long comunidadId, Pageable pageable);
 
-        Page<MiembroComunidad> findByComunidadIdAndRol(
-                        Long comunidadId, RolComunidad rol, Pageable pageable);
+    Page<MiembroComunidad> findByComunidadIdAndRol(
+            Long comunidadId, RolComunidad rol, Pageable pageable);
 
-        List<MiembroComunidad> findByComunidadIdAndRol(Long comunidadId, RolComunidad rol);
+    List<MiembroComunidad> findByComunidadIdAndRol(Long comunidadId, RolComunidad rol);
 
-        Page<MiembroComunidad> findByUsuarioId(Long usuarioId, Pageable pageable);
+    Page<MiembroComunidad> findByUsuarioId(Long usuarioId, Pageable pageable);
 
-        long countByComunidadId(Long comunidadId);
+    long countByComunidadId(Long comunidadId);
 
-        List<MiembroComunidad> findByUsuarioIdAndRol(Long usuarioId, RolComunidad rol);
+    List<MiembroComunidad> findByUsuarioIdAndRol(Long usuarioId, RolComunidad rol);
 
-        void deleteByUsuarioId(Long usuarioId);
+    void deleteByUsuarioId(Long usuarioId);
 
-        long countByComunidadIdAndRol(Long comunidadId, RolComunidad rol);
+    long countByComunidadIdAndRol(Long comunidadId, RolComunidad rol);
 
-        @Query("SELECT m.usuario FROM MiembroComunidad m WHERE m.comunidad.id = :comunidadId AND"
-                        + " m.usuario.id != :creadorId ORDER BY m.fechaIngreso ASC")
-        List<Usuario> findMiembrosMasAntiguosEnComunidad(
-                        @Param("comunidadId") Long comunidadId, @Param("creadorId") Long creadorId);
+    @Query(
+            "SELECT m.usuario FROM MiembroComunidad m WHERE m.comunidad.id = :comunidadId AND"
+                    + " m.usuario.id != :creadorId ORDER BY m.fechaIngreso ASC")
+    List<Usuario> findMiembrosMasAntiguosEnComunidad(
+            @Param("comunidadId") Long comunidadId, @Param("creadorId") Long creadorId);
 
-        @Query("SELECT m.usuario.id FROM MiembroComunidad m WHERE m.comunidad.id = :comunidadId")
-        List<Long> findUsuarioIdsByComunidadId(@Param("comunidadId") Long comunidadId);
+    @Query("SELECT m.usuario.id FROM MiembroComunidad m WHERE m.comunidad.id = :comunidadId")
+    List<Long> findUsuarioIdsByComunidadId(@Param("comunidadId") Long comunidadId);
 
-        /**
-         * Verifica si un usuario es miembro de una comunidad.
-         *
-         * @param usuario   el usuario
-         * @param comunidad la comunidad
-         * @return true si es miembro, false en caso contrario
-         */
-        boolean existsByUsuarioAndComunidad(Usuario usuario, Comunidad comunidad);
+    /**
+     * Verifica si un usuario es miembro de una comunidad.
+     *
+     * @param usuario el usuario
+     * @param comunidad la comunidad
+     * @return true si es miembro, false en caso contrario
+     */
+    boolean existsByUsuarioAndComunidad(Usuario usuario, Comunidad comunidad);
 }

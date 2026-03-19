@@ -16,17 +16,14 @@ import es.us.meerkat.backend.dto.MensajeComunidadResponse;
 import es.us.meerkat.backend.dto.MensajeResponse;
 import es.us.meerkat.backend.entity.Mensaje;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.MensajeRepository;
+import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import es.us.meerkat.backend.service.MensajeComunidadService;
 import es.us.meerkat.backend.service.MensajeService;
 import lombok.RequiredArgsConstructor;
 
-/**
- * Controlador WebSocket STOMP para manejo de mensajes privados y de eventos en
- * tiempo real.
- */
+/** Controlador WebSocket STOMP para manejo de mensajes privados y de eventos en tiempo real. */
 @Controller
 @RequiredArgsConstructor
 public class SocketChatController {
@@ -55,14 +52,16 @@ public class SocketChatController {
             for (final Mensaje msg : messages) {
                 if (msg.getEmisor().getId().equals(userId)
                         || msg.getReceptor().getId().equals(userId)) {
-                    final Long otherId = msg.getEmisor().getId().equals(userId)
-                            ? msg.getReceptor().getId()
-                            : msg.getEmisor().getId();
+                    final Long otherId =
+                            msg.getEmisor().getId().equals(userId)
+                                    ? msg.getReceptor().getId()
+                                    : msg.getEmisor().getId();
 
                     if (!conversationMap.containsKey(otherId)) {
-                        final Usuario otherUser = msg.getEmisor().getId().equals(userId)
-                                ? msg.getReceptor()
-                                : msg.getEmisor();
+                        final Usuario otherUser =
+                                msg.getEmisor().getId().equals(userId)
+                                        ? msg.getReceptor()
+                                        : msg.getEmisor();
                         conversationMap.put(
                                 otherId,
                                 new HashMap<>(
@@ -91,7 +90,7 @@ public class SocketChatController {
     /**
      * Envía un mensaje privado entre dos usuarios.
      *
-     * @param request   datos del mensaje (tutorId, contenido).
+     * @param request datos del mensaje (tutorId, contenido).
      * @param principal usuario autenticado.
      */
     @MessageMapping("/dm.send")
@@ -100,9 +99,10 @@ public class SocketChatController {
             final Usuario usuario = getAuthenticatedUser(principal);
 
             final MensajeResponse response = mensajeService.enviarMensaje(usuario.getId(), request);
-            final Usuario receptor = usuarioRepository
-                    .findById(response.getReceptorId())
-                    .orElseThrow(() -> new RuntimeException("Receptor no encontrado"));
+            final Usuario receptor =
+                    usuarioRepository
+                            .findById(response.getReceptorId())
+                            .orElseThrow(() -> new RuntimeException("Receptor no encontrado"));
 
             broker.convertAndSendToUser(getUserDestinationKey(receptor), "/queue/dm", response);
             broker.convertAndSendToUser(getUserDestinationKey(usuario), "/queue/dm", response);
@@ -114,7 +114,7 @@ public class SocketChatController {
     /**
      * Carga el historial de mensajes privados con un usuario específico.
      *
-     * @param payload   map con el userId del otro usuario.
+     * @param payload map con el userId del otro usuario.
      * @param principal usuario autenticado.
      */
     @MessageMapping("/dm.history")
@@ -131,8 +131,8 @@ public class SocketChatController {
                 return;
             }
 
-            final List<MensajeResponse> history = mensajeService.obtenerConversacionConUsuario(usuario.getId(),
-                    otherUserId);
+            final List<MensajeResponse> history =
+                    mensajeService.obtenerConversacionConUsuario(usuario.getId(), otherUserId);
 
             broker.convertAndSendToUser(
                     getUserDestinationKey(usuario), "/queue/dm_history", history);
@@ -144,7 +144,7 @@ public class SocketChatController {
     /**
      * Elimina un mensaje privado (solo el emisor puede hacerlo).
      *
-     * @param payload   map con messageId.
+     * @param payload map con messageId.
      * @param principal usuario autenticado.
      */
     @MessageMapping("/dm.delete")
@@ -161,9 +161,10 @@ public class SocketChatController {
                 return;
             }
 
-            final Mensaje mensaje = mensajeRepository
-                    .findById(messageId)
-                    .orElseThrow(() -> new RuntimeException("Mensaje no encontrado"));
+            final Mensaje mensaje =
+                    mensajeRepository
+                            .findById(messageId)
+                            .orElseThrow(() -> new RuntimeException("Mensaje no encontrado"));
 
             if (!mensaje.getEmisor().getId().equals(usuario.getId())) {
                 broker.convertAndSendToUser(
@@ -189,7 +190,7 @@ public class SocketChatController {
     /**
      * Envía un mensaje en el chat de una comunidad.
      *
-     * @param request   datos del mensaje (comunidadId, contenido).
+     * @param request datos del mensaje (comunidadId, contenido).
      * @param principal usuario autenticado.
      */
     @MessageMapping("/community.message.send")
@@ -198,7 +199,8 @@ public class SocketChatController {
         try {
             final Usuario usuario = getAuthenticatedUser(principal);
 
-            final MensajeComunidadResponse response = mensajeComunidadService.enviarMensaje(usuario.getId(), request);
+            final MensajeComunidadResponse response =
+                    mensajeComunidadService.enviarMensaje(usuario.getId(), request);
 
             broker.convertAndSend("/topic/community." + request.getComunidadId(), response);
             notifyCommunityMembers(request.getComunidadId(), response, usuario.getId());
@@ -210,7 +212,7 @@ public class SocketChatController {
     /**
      * Obtiene el historial de mensajes de una comunidad.
      *
-     * @param payload   map con comunidadId.
+     * @param payload map con comunidadId.
      * @param principal usuario autenticado.
      */
     @MessageMapping("/community.history")
@@ -228,8 +230,8 @@ public class SocketChatController {
                 return;
             }
 
-            final java.util.List<MensajeComunidadResponse> history = mensajeComunidadService
-                    .obtenerHistorial(comunidadId);
+            final java.util.List<MensajeComunidadResponse> history =
+                    mensajeComunidadService.obtenerHistorial(comunidadId);
 
             broker.convertAndSendToUser(
                     getUserDestinationKey(usuario), "/queue/community_history", history);
@@ -241,7 +243,7 @@ public class SocketChatController {
     /**
      * Edita un mensaje de comunidad (solo el autor puede hacerlo).
      *
-     * @param payload   map con messageId, comunidadId y nuevoContenido.
+     * @param payload map con messageId, comunidadId y nuevoContenido.
      * @param principal usuario autenticado.
      */
     @MessageMapping("/community.message.edit")
@@ -253,8 +255,9 @@ public class SocketChatController {
             final Long comunidadId = Long.parseLong(payload.get("comunidadId").toString());
             final String nuevoContenido = payload.get("nuevoContenido").toString();
 
-            final MensajeComunidadResponse response = mensajeComunidadService.editarMensaje(
-                    usuario.getId(), messageId, nuevoContenido);
+            final MensajeComunidadResponse response =
+                    mensajeComunidadService.editarMensaje(
+                            usuario.getId(), messageId, nuevoContenido);
 
             broker.convertAndSend("/topic/community." + comunidadId, response);
             notifyCommunityMembers(comunidadId, response, usuario.getId());
@@ -266,7 +269,7 @@ public class SocketChatController {
     /**
      * Elimina un mensaje de comunidad (solo el autor puede hacerlo).
      *
-     * @param payload   map con messageId y comunidadId.
+     * @param payload map con messageId y comunidadId.
      * @param principal usuario autenticado.
      */
     @MessageMapping("/community.message.delete")
@@ -312,19 +315,21 @@ public class SocketChatController {
     }
 
     private void notifyCommunityMembers(
-            final Long comunidadId,
-            final MensajeComunidadResponse response,
-            final Long senderId) {
-        List<Long> miembrosIds = miembroComunidadRepository.findUsuarioIdsByComunidadId(comunidadId);
+            final Long comunidadId, final MensajeComunidadResponse response, final Long senderId) {
+        List<Long> miembrosIds =
+                miembroComunidadRepository.findUsuarioIdsByComunidadId(comunidadId);
         for (Long miembroId : miembrosIds) {
             if (miembroId.equals(senderId)) {
                 continue;
             }
-            usuarioRepository.findById(miembroId).ifPresent(
-                    miembro -> broker.convertAndSendToUser(
-                            getUserDestinationKey(miembro),
-                            "/queue/community_message",
-                            response));
+            usuarioRepository
+                    .findById(miembroId)
+                    .ifPresent(
+                            miembro ->
+                                    broker.convertAndSendToUser(
+                                            getUserDestinationKey(miembro),
+                                            "/queue/community_message",
+                                            response));
         }
     }
 

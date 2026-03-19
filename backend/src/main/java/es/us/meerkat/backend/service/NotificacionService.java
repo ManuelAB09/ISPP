@@ -13,21 +13,22 @@ import es.us.meerkat.backend.repository.NotificacionRepository;
 
 @Service
 public class NotificacionService {
-    @Autowired
-    private NotificacionRepository notificacionRepository;
+    @Autowired private NotificacionRepository notificacionRepository;
 
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;
+    @Autowired private SimpMessagingTemplate messagingTemplate;
 
     public List<Notificacion> obtenerNotificaciones(Usuario usuario) {
         return notificacionRepository.findByUsuarioOrderByCreatedAtDesc(usuario);
     }
 
     public void marcarComoLeida(Long id) {
-        notificacionRepository.findById(id).ifPresent(n -> {
-            n.setLeida(true);
-            notificacionRepository.save(n);
-        });
+        notificacionRepository
+                .findById(id)
+                .ifPresent(
+                        n -> {
+                            n.setLeida(true);
+                            notificacionRepository.save(n);
+                        });
     }
 
     @Transactional
@@ -35,9 +36,7 @@ public class NotificacionService {
         Notificacion guardada = notificacionRepository.save(notificacion);
         // Enviar por WebSocket al usuario
         messagingTemplate.convertAndSendToUser(
-                notificacion.getUsuario().getId().toString(),
-                "/queue/notificaciones",
-                guardada);
+                notificacion.getUsuario().getId().toString(), "/queue/notificaciones", guardada);
         return guardada;
     }
 }

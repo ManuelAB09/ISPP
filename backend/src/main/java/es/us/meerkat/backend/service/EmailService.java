@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
 
 import es.us.meerkat.backend.entity.AsistenciaEvento;
+import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.EstadoAsistencia;
 import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.TipoEvento;
@@ -874,6 +875,7 @@ public class EmailService {
             return;
         }
 
+        final String nombreUsuario = usuario.getNombre() != null ? usuario.getNombre() : "";
         final String fecha =
                 evento.getFechaHora() != null ? evento.getFechaHora().format(DATE_FORMATTER) : "";
         final String horaInicio =
@@ -895,7 +897,7 @@ public class EmailService {
                         ? evento.getUbicacion().getNombre()
                         : "";
 
-        final String subject = "🔄 Evento actualizado: " + evento.getTitulo();
+        final String subject = "🔄 Evento actualizado: " + escapeHtml(evento.getTitulo());
         final String body =
                 "<html><body style='font-family:Arial,sans-serif;color:#333'><div"
                     + " style='max-width:600px;margin:0 auto;padding:20px'><div"
@@ -903,15 +905,15 @@ public class EmailService {
                     + " 5px 0 0'><h1>Evento actualizado</h1></div><div"
                     + " style='background:#f9f9f9;padding:20px;border:1px solid #ddd'><p>Hola"
                     + " <strong>"
-                        + (usuario.getNombre() != null ? usuario.getNombre() : "")
+                        + escapeHtml(nombreUsuario)
                         + "</strong>,</p><p>Se han aplicado cambios en un evento al que estás"
                         + " apuntado:</p><div"
                         + " style='background:#e8f4f8;padding:15px;border-left:4px solid"
                         + " #2D3250;margin:20px 0'><strong>"
-                        + evento.getTitulo()
+                        + escapeHtml(evento.getTitulo())
                         + "</strong><br>"
                         + "🏠 Comunidad: "
-                        + comunidad
+                        + escapeHtml(comunidad)
                         + "<br>"
                         + "📅 Fecha: "
                         + fecha
@@ -924,7 +926,7 @@ public class EmailService {
                         + "💻 Modalidad: "
                         + modalidad
                         + (ubicacion != null && !ubicacion.isBlank()
-                                ? "<br>📍 Ubicación: " + ubicacion
+                                ? "<br>📍 Ubicación: " + escapeHtml(ubicacion)
                                 : "")
                         + "</a></p></div><div"
                         + " style='background:#f0f0f0;padding:15px;text-align:center;font-size:12px;border-radius:0"
@@ -933,6 +935,61 @@ public class EmailService {
                         + "</p></div></div></body></html>";
 
         sendHtmlEmailSafe(usuario.getEmail(), subject, body);
+    }
+
+    /**
+     * Email al dueño de una comunidad cuando un usuario solicita acceso a una comunidad privada.
+     *
+     * @param dueno destinatario (creador de la comunidad).
+     * @param comunidad comunidad privada donde se solicita acceso.
+     * @param solicitante usuario que solicita acceso.
+     * @param mensaje mensaje opcional adjunto a la solicitud.
+     */
+    public void sendCommunityAccessRequestEmail(
+            final Usuario dueno,
+            final Comunidad comunidad,
+            final Usuario solicitante,
+            final String mensaje) {
+        if (dueno == null || dueno.getEmail() == null || comunidad == null || solicitante == null) {
+            return;
+        }
+
+        final String nombreDueno = dueno.getNombre() != null ? dueno.getNombre() : "";
+        final String nombreSolicitante =
+                solicitante.getNombre() != null ? solicitante.getNombre() : "Usuario";
+        final String nombreComunidad =
+                comunidad.getNombre() != null ? comunidad.getNombre() : "tu comunidad";
+
+        final String mensajeHtml =
+                mensaje != null && !mensaje.isBlank()
+                        ? "<p style='margin-top:12px'><strong>Mensaje:</strong><br>"
+                                + escapeHtml(mensaje)
+                                + "</p>"
+                        : "";
+
+        final String subject = "📩 Nueva solicitud de acceso: " + nombreComunidad;
+        final String body =
+                "<html><body style='font-family:Arial,sans-serif;color:#333'><div"
+                    + " style='max-width:600px;margin:0 auto;padding:20px'><div"
+                    + " style='background:#2D3250;color:white;padding:20px;text-align:center;border-radius:5px"
+                    + " 5px 0 0'><h1>Nueva solicitud de acceso</h1></div><div"
+                    + " style='background:#f9f9f9;padding:20px;border:1px solid #ddd'><p>Hola"
+                    + " <strong>"
+                        + escapeHtml(nombreDueno)
+                        + "</strong>,</p><p>"
+                        + escapeHtml(nombreSolicitante)
+                        + " ha solicitado unirse a la comunidad <strong>"
+                        + escapeHtml(nombreComunidad)
+                        + "</strong>.</p>"
+                        + mensajeHtml
+                        + "<p style='margin-top:16px'>Puedes revisar y responder la solicitud desde"
+                        + " la pantalla de la comunidad.</p></div><div"
+                        + " style='background:#f0f0f0;padding:15px;text-align:center;font-size:12px;border-radius:0"
+                        + " 0 5px 5px'><p>&copy; "
+                        + appName
+                        + "</p></div></div></body></html>";
+
+        sendHtmlEmailSafe(dueno.getEmail(), subject, body);
     }
 
     private void sendHtmlEmailSafe(String to, String subject, String htmlBody) {

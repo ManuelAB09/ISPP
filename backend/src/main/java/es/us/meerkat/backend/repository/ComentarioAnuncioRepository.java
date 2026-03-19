@@ -1,11 +1,12 @@
 package es.us.meerkat.backend.repository;
 
-import es.us.meerkat.backend.entity.ComentarioAnuncio;
-import es.us.meerkat.backend.entity.Anuncio;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import es.us.meerkat.backend.entity.Anuncio;
+import es.us.meerkat.backend.entity.ComentarioAnuncio;
 
 @Repository
 public interface ComentarioAnuncioRepository extends JpaRepository<ComentarioAnuncio, Long> {

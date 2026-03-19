@@ -41,7 +41,8 @@ public class Notificacion {
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
-        if (this.leida == null)
+        if (this.leida == null) {
             this.leida = false;
+        }
     }
 }

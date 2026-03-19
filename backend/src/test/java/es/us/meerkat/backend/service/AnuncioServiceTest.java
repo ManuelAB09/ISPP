@@ -26,6 +26,7 @@ import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.AnuncioRepository;
 import es.us.meerkat.backend.repository.ComunidadRepository;
+import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,6 +36,8 @@ class AnuncioServiceTest {
     @Mock private ComunidadRepository comunidadRepository;
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private AuthorizationService authorizationService;
+    @Mock private MiembroComunidadRepository miembroComunidadRepository;
+    @Mock private NotificacionService notificacionService;
 
     @InjectMocks private AnuncioService anuncioService;
 
@@ -52,6 +55,8 @@ class AnuncioServiceTest {
         when(comunidadRepository.findById(communityId)).thenReturn(Optional.of(comunidad));
         when(anuncioRepository.save(any(Anuncio.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+        when(miembroComunidadRepository.findMiembrosMasAntiguosEnComunidad(communityId, userId))
+                .thenReturn(java.util.List.of());
 
         Anuncio result = anuncioService.createAnuncio(userId, communityId, request);
 
