@@ -276,6 +276,30 @@ export const NotificationProvider = ({ children }) => {
             const fakeCommunity = { imagen: msg.comunidadImagenUrl, imagenUrl: msg.comunidadImagenUrl, foto: msg.comunidadImagenUrl };
             const communityImage = resolveCommunityImage(fakeCommunity);
 
+            // --- MENCIÓN: notificación push solo si el usuario es mencionado ---
+            if (
+                msg.contenido &&
+                user?.nombre &&
+                new RegExp(`@${user.nombre}(?![\w-])`, 'i').test(msg.contenido) &&
+                Number(msg.usuarioId) !== Number(user.id)
+            ) {
+                const mentionTitle = `Mención en ${msg.comunidadNombre || 'Comunidad'}`;
+                const mentionBody = `${msg.usuarioNombre || 'Alguien'} te mencionó: ${msg.contenido}`;
+                const fakeCommunity = { imagen: msg.comunidadImagenUrl, imagenUrl: msg.comunidadImagenUrl, foto: msg.comunidadImagenUrl };
+                const communityImage = resolveCommunityImage(fakeCommunity);
+                showPrettyNotification(
+                    mentionTitle,
+                    mentionBody,
+                    communityImage,
+                    `mention-${msg.comunidadId}-${msg.id || Date.now()}`,
+                    () => {
+                        navigateRef.current(`/chats?communityId=${msg.comunidadId}`);
+                    }
+                );
+                // No mostrar la notificación normal de mensaje si es mención
+                return;
+            }
+
             showPrettyNotification(
                 title,
                 body,

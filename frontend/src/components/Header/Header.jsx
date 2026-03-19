@@ -86,6 +86,7 @@ export default function Header({ user, page }) {
                 <div className="header-links-desktop">
                     <Link to="/" className={page === 'inicio' ? 'active' : ''}>Inicio</Link>
                     <Link to="/comunidades" className={page === 'comunidades' ? 'active' : ''}>Comunidades</Link>
+                    <Link to="/notificaciones" className={page === 'notificaciones' ? 'active' : ''}>Notificaciones</Link>
                     {isAuthenticated && (
                         <>
                             <Link to="/eventos-mapa" className={page === 'eventos-mapa' ? 'active' : ''}>Mapa de eventos</Link>
@@ -130,6 +131,7 @@ export default function Header({ user, page }) {
                 <div className="header-links-mobile">
                     <Link to="/" className={page === 'inicio' ? 'active' : ''} onClick={closeMenu}>Inicio</Link>
                     <Link to="/comunidades" className={page === 'comunidades' ? 'active' : ''} onClick={closeMenu}>Comunidades</Link>
+                    <Link to="/notificaciones" className={page === 'notificaciones' ? 'active' : ''} onClick={closeMenu}>Notificaciones</Link>
                     {isAuthenticated && (
                         <>
                             <Link to="/eventos-mapa" className={page === 'eventos-mapa' ? 'active' : ''} onClick={closeMenu}>Mapa de eventos</Link>

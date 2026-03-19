@@ -31,8 +31,7 @@ import TeacherProfile from './screens/teacherProfile/TeacherProfile';
 import CrearUbicacionScreen from './screens/ubicaciones/CrearUbicacionScreen';
 import VerifiedTeachers from './screens/verifiedTeachers/VerifiedTeachers';
 import CalendarCallback from './screens/myProfile/CalendarCallback';
-
-
+import NotificationTab from './screens/NotificationTab';
 import Chats from './screens/chat/Chats';
 
 function AppRoutes() {
@@ -75,6 +74,7 @@ function AppRoutes() {
         <Route path="/mis-eventos" element={<MisEventos />} />
         <Route path="/planes/success" element={<PlanesSuccess />} />
         <Route path="/settings/calendar" element={<CalendarCallback />} />
+        <Route path="/notificaciones" element={<NotificationTab />} />
       </>
     )
   }

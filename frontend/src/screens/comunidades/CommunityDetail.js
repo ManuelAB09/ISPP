@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { LuPlus, LuArrowLeft, LuCalendar, LuUsers, LuLogIn, LuLogOut, LuVideo, LuPlay, LuPencil, LuTrash2, LuCheck, LuX, LuUserPlus } from 'react-icons/lu';
 import Header from '../../components/Header/Header';
 import TarjetaEvento from '../../components/Evento/TarjetaEvento';
+import CommunityAnnouncementsTab from './CommunityAnnouncementsTab';
 import CommunityChat from '../chat/CommunityChat';
 import GoogleClassroomButton from '../../components/GoogleClassroomButton/GoogleClassroomButton';
 import EditCommunityModal from '../../components/Comunidad/EditCommunityModal';
@@ -70,6 +71,8 @@ const formatFileSize = (bytes) => {
 };
 
 export default function CommunityDetail() {
+    // Estado para alternar entre pestaña de eventos y anuncios
+    const [showAnnouncementsTab, setShowAnnouncementsTab] = useState(false);
   const { communityId } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -1017,68 +1020,95 @@ export default function CommunityDetail() {
           />
         )}
 
-        {/* Sección de eventos */}
-        <div className="cd-events-section">
-          <div className="cd-events-header">
-            <h2 className="cd-events-title">
-              <LuCalendar /> Eventos
-            </h2>
-            <div className="cd-events-actions">
-              <label className="cd-filter-label">
-                <input
-                  type="checkbox"
-                  checked={filterCancelled}
-                  onChange={(e) => setFilterCancelled(e.target.checked)}
-                />
-                Mostrar cancelados
-              </label>
-              {isMember ? (
-                <button
-                  className="cd-btn cd-btn-create"
-                  onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
-                >
-                  <LuPlus /> Crear evento
-                </button>
-              ) : (
-                <span className="cd-member-hint">Únete a la comunidad para crear eventos</span>
-              )}
-            </div>
-          </div>
 
-          {eventsLoading ? (
-            <p className="cd-loading">Cargando eventos...</p>
-          ) : events.length > 0 ? (
-            <div className="cd-events-list">
-              {events.map(event => (
-                <TarjetaEvento
-                  key={event.id}
-                  event={event}
-                  onAttend={currentUserId && isMember ? handleAttend : null}
-                  onCancelAttendance={currentUserId ? handleCancelAttendance : null}
-                  attendanceLoading={attendanceLoading}
-                  currentUserId={currentUserId}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="cd-empty-events">
-              <LuCalendar className="cd-empty-icon" />
-              <h3>No hay eventos</h3>
-              {isMember ? (
-                <>
-                  <p>Sé el primero en crear un evento para esta comunidad.</p>
-                  <button
-                    className="cd-btn cd-btn-create"
-                    onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
-                  >
-                    <LuPlus /> Crear evento
-                  </button>
-                </>
-              ) : (
-                <p>Únete a la comunidad para poder crear eventos.</p>
-              )}
-            </div>
-          )}
+        {/* Tabs de eventos y anuncios */}
+        <div className="cd-tabs-section">
+          <div className="cd-tabs-header">
+            <button
+              className={`cd-tab-btn${!showAnnouncementsTab ? ' cd-tab-btn-active' : ''}`}
+              onClick={() => setShowAnnouncementsTab(false)}
+              type="button"
+            >
+              <LuCalendar /> Eventos
+            </button>
+            <button
+              className={`cd-tab-btn${showAnnouncementsTab ? ' cd-tab-btn-active' : ''}`}
+              onClick={() => setShowAnnouncementsTab(true)}
+              type="button"
+            >
+              <span role="img" aria-label="Anuncios">📢</span> Anuncios
+            </button>
+          </div>
+          <div className="cd-tabs-content">
+            {!showAnnouncementsTab ? (
+              <div className="cd-events-section">
+                <div className="cd-events-header">
+                  <h2 className="cd-events-title">
+                    <LuCalendar /> Eventos
+                  </h2>
+                  <div className="cd-events-actions">
+                    <label className="cd-filter-label">
+                      <input
+                        type="checkbox"
+                        checked={filterCancelled}
+                        onChange={(e) => setFilterCancelled(e.target.checked)}
+                      />
+                      Mostrar cancelados
+                    </label>
+                    {isMember ? (
+                      <button
+                        className="cd-btn cd-btn-create"
+                        onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
+                      >
+                        <LuPlus /> Crear evento
+                      </button>
+                    ) : (
+                      <span className="cd-member-hint">Únete a la comunidad para crear eventos</span>
+                    )}
+                  </div>
+                </div>
+
+                {eventsLoading ? (
+                  <p className="cd-loading">Cargando eventos...</p>
+                ) : events.length > 0 ? (
+                  <div className="cd-events-list">
+                    {events.map(event => (
+                      <TarjetaEvento
+                        key={event.id}
+                        event={event}
+                        onAttend={currentUserId && isMember ? handleAttend : null}
+                        onCancelAttendance={currentUserId ? handleCancelAttendance : null}
+                        attendanceLoading={attendanceLoading}
+                        currentUserId={currentUserId}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="cd-empty-events">
+                    <LuCalendar className="cd-empty-icon" />
+                    <h3>No hay eventos</h3>
+                    {isMember ? (
+                      <>
+                        <p>Sé el primero en crear un evento para esta comunidad.</p>
+                        <button
+                          className="cd-btn cd-btn-create"
+                          onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
+                        >
+                          <LuPlus /> Crear evento
+                        </button>
+                      </>
+                    ) : (
+                      <p>Únete a la comunidad para poder crear eventos.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="cd-announcements-section">
+                <CommunityAnnouncementsTab communityId={communityId} isAdmin={isAdmin} />
+              </div>
+            )}
+          </div>
         </div>
 
         {currentUserId && isMember && user ? (

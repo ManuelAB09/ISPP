@@ -15,7 +15,7 @@ const DEFAULT_COMMUNITY_IMAGE = 'https://images.unsplash.com/photo-1555066931-43
 const DEFAULT_PROFILE_AVATAR =
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='60' fill='%23E6EAF3'/%3E%3Ccircle cx='60' cy='46' r='22' fill='%2395A1BB'/%3E%3Cpath d='M20 106c6-20 22-32 40-32s34 12 40 32' fill='%2395A1BB'/%3E%3C/svg%3E";
 
-const resolveCommunityImage = (community) => {
+export const resolveCommunityImage = (community) => {
     const raw = community?.imagen || community?.imagenUrl || community?.foto;
 
     if (!raw || !String(raw).trim()) {
