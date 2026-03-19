@@ -22,6 +22,7 @@ import {
 } from '../../utils/communityRoles';
 import { useSocketContext } from '../../contexts/SocketContext';
 import axiosInstance from '../../api/axiosConfig';
+import { getApiBaseUrl } from '../../api/baseUrl';
 import './CommunityDetail.css';
 
 const DEFAULT_MEMBER_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%23E6EAF3'/%3E%3Ccircle cx='40' cy='30' r='14' fill='%2395A1BB'/%3E%3Cpath d='M14 68c5-13 15-21 26-21s21 8 26 21' fill='%2395A1BB'/%3E%3C/svg%3E";
@@ -293,6 +294,18 @@ export default function CommunityDetail() {
       </div>
     );
   };
+  const communityImage = (() => {
+    const raw = community?.imagen || community?.imagenUrl || community?.foto;
+    if (!raw || !String(raw).trim() || String(raw).trim().toLowerCase() === 'empty') {
+      return 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
+    }
+    const value = String(raw).trim();
+    if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
+      return value;
+    }
+    const base = getApiBaseUrl();
+    return value.startsWith('/') ? `${base}${value}` : `${base}/${value}`;
+  })();
 
   const fetchCommunity = useCallback(async () => {
     try {
@@ -484,6 +497,7 @@ export default function CommunityDetail() {
         setActiveMeeting(data);
       }
     };
+    if (!socket) return undefined;
     socket.on(topic, handler);
     return () => socket.off(topic, handler);
   }, [socket, communityId, currentUserId, isMember]);

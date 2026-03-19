@@ -454,21 +454,28 @@ public class SolicitudContratacionService {
             throw new IllegalArgumentException("No se puede reprogramar a una fecha pasada");
         }
 
-        // Solo se puede reprogramar dentro de los 2 días siguientes a la fecha original
-        LocalDate diaBase =
-                solicitud.getDiaOriginal() != null
-                        ? solicitud.getDiaOriginal()
-                        : solicitud.getDia();
-        LocalDate limiteReprogramacion = diaBase.plusDays(2);
-        if (nuevoDia.isAfter(limiteReprogramacion)) {
-            throw new IllegalArgumentException(
-                    "Solo puedes reprogramar hasta 2 días después de la fecha original ("
-                            + limiteReprogramacion
-                            + ")");
-        }
-
-        // Si ya está pagada, la duración debe ser exactamente la misma
+        // Reglas de tiempo dependiendo del estado
         if (solicitud.getEstado() == EstadoSolicitudContratacion.PAGADA) {
+            // Si está pagada:
+            // 1. No se puede reprogramar a una fecha anterior a la que estaba prevista
+            if (nuevoDia.isBefore(solicitud.getDia())) {
+                throw new IllegalArgumentException(
+                        "Las reservas pagadas no se pueden adelantar a una fecha anterior a la"
+                                + " actual ("
+                                + solicitud.getDia()
+                                + ")");
+            }
+            // 2. Solo se puede reprogramar dentro de los 2 días siguientes a la fecha ACTUAL
+            LocalDate limiteReprogramacion = solicitud.getDia().plusDays(2);
+            if (nuevoDia.isAfter(limiteReprogramacion)) {
+                throw new IllegalArgumentException(
+                        "Solo puedes aplazar una reserva pagada un máximo de 2 días desde la fecha"
+                                + " actual ("
+                                + limiteReprogramacion
+                                + ")");
+            }
+
+            // Además, si ya está pagada, la duración debe ser exactamente la misma
             long duracionOriginal =
                     Duration.between(solicitud.getHoraInicio(), solicitud.getHoraFin()).toMinutes();
             long duracionNueva = Duration.between(nuevaHoraInicio, nuevaHoraFin).toMinutes();
@@ -477,6 +484,20 @@ public class SolicitudContratacionService {
                         "La reserva ya está pagada. La duración debe ser la misma ("
                                 + duracionOriginal
                                 + " min). Solo puedes cambiar el horario.");
+            }
+        } else {
+            // Si está solo ACEPTADA:
+            // Solo se puede reprogramar dentro de los 2 días siguientes a la fecha original
+            LocalDate diaBase =
+                    solicitud.getDiaOriginal() != null
+                            ? solicitud.getDiaOriginal()
+                            : solicitud.getDia();
+            LocalDate limiteReprogramacion = diaBase.plusDays(2);
+            if (nuevoDia.isAfter(limiteReprogramacion)) {
+                throw new IllegalArgumentException(
+                        "Solo puedes reprogramar hasta 2 días después de la fecha original ("
+                                + limiteReprogramacion
+                                + ")");
             }
         }
 
