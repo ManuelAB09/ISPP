@@ -66,6 +66,7 @@ const CrearEvento = () => {
     tipoLocalizacion: 'Presencial',
     direccion: '',
     zoomDuration: 60,
+    subirGrabacion: false,
     aforo: '',
     privado: false,
     visibleEnMapa: true,
@@ -340,7 +341,8 @@ const CrearEvento = () => {
       queLlevar: formData.materiales.length > 0 ? formData.materiales.join(', ') : undefined,
       esVirtual,
       privado: formData.privado,
-      visibleEnMapa: formData.visibleEnMapa
+      visibleEnMapa: formData.visibleEnMapa,
+      guardarGrabacionClassroom: formData.subirGrabacion
     };
 
     if (formData.diaFin && formData.mesFin && formData.anioFin) {
@@ -671,9 +673,7 @@ const CrearEvento = () => {
                       <LuVideo className="input-icon" />
                     </div>
                     {validationErrors.zoomDuration && <span className="field-error">{validationErrors.zoomDuration}</span>}
-                    <span className="field-hint">Entre 5 y 480 minutos.</span>
-                  </div>
-                </div>
+                    <span className="field-hint">Entre 5 y 480 minutos.</span></div><div className="input-group checkbox-group" style={{ marginTop: '1rem', background: '#e6f7ff', padding: '10px', borderRadius: '8px', border: '1px solid #91d5ff' }}><input type="checkbox" id="subirGrabacionCheckbox" name="subirGrabacion" checked={formData.subirGrabacion} onChange={(e) => setFormData({ ...formData, subirGrabacion: e.target.checked })} /><label htmlFor="subirGrabacionCheckbox" style={{ marginLeft: '8px', fontWeight: 'bold', color: '#0050b3' }}>Subir grabación automáticamente a Google Classroom al finalizar</label></div></div>
               </div>
             )}
 

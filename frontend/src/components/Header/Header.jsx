@@ -93,6 +93,8 @@ export default function Header({ user, page }) {
                             <Link to="/chats" className={page === 'chats' ? 'active' : ''}>Chats</Link>
                             <Link to="/planes" className={page === 'planes' ? 'active' : ''}>Planes</Link>
                             <Link to="/pagos" className={page === 'pagos' ? 'active' : ''}>Mis pagos</Link>
+                            <Link to="/progreso" className={page === 'progreso' ? 'active' : ''}>Mi Progreso</Link>
+                            <Link to="/cuestionarios/crear" className={page === 'cuestionarios' ? 'active' : ''}>Crear cuestionario</Link>
                             {storedUser?.esTutor && (
                                 <Link to="/ganancias" className={page === 'ganancias' ? 'active' : ''}>Mis ganancias</Link>
                             )}
@@ -137,6 +139,8 @@ export default function Header({ user, page }) {
                             <Link to="/chats" className={page === 'chats' ? 'active' : ''} onClick={closeMenu}>Chats</Link>
                             <Link to="/planes" className={page === 'planes' ? 'active' : ''} onClick={closeMenu}>Planes</Link>
                             <Link to="/pagos" className={page === 'pagos' ? 'active' : ''} onClick={closeMenu}>Mis pagos</Link>
+                            <Link to="/progreso" className={page === 'progreso' ? 'active' : ''} onClick={closeMenu}>Mi Progreso</Link>
+                            <Link to="/cuestionarios/crear" className={page === 'cuestionarios' ? 'active' : ''} onClick={closeMenu}>Crear cuestionario</Link>
                             {storedUser?.esTutor && (
                                 <Link to="/ganancias" className={page === 'ganancias' ? 'active' : ''} onClick={closeMenu}>Mis ganancias</Link>
                             )}
@@ -150,3 +154,5 @@ export default function Header({ user, page }) {
         </>
     );
 }
+
+

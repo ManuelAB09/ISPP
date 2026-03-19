@@ -18,6 +18,7 @@ import {
 } from '../../api/eventEndpoints';
 import { communitiesApi } from '../../api/communities.api';
 import { ZoomApi } from '../../api/zoom.api';
+import { feedbackApi } from '../../api/feedback.api';
 import { getApiBaseUrl } from '../../api/baseUrl';
 import { useSocketContext } from '../../contexts/SocketContext';
 
@@ -112,6 +113,17 @@ const DetalleEvento = () => {
   const [zoomParticipants, setZoomParticipants] = useState([]);
   const [participantsOpen, setParticipantsOpen] = useState(false);
   const activeMeetingRequestInFlightRef = useRef(false);
+
+  // === MÓDULO FEEDBACK Y GRABACIONES ===
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [targetStudentId, setTargetStudentId] = useState(null);
+  const [feedbackRating, setFeedbackRating] = useState(5);
+  const [feedbackComment, setFeedbackComment] = useState('');
+  const [feedbackSaving, setFeedbackSaving] = useState(false);
+
+  const [recordingsOpen, setRecordingsOpen] = useState(false);
+  const [recordings, setRecordings] = useState([]);
+  const [recordingsLoading, setRecordingsLoading] = useState(false);
 
   const currentUserId = localStorage.getItem('userId');
 
@@ -397,6 +409,65 @@ const DetalleEvento = () => {
     } catch (err) {
       setZoomParticipants([]);
       setParticipantsOpen(true);
+    }
+  };
+
+  const handleOpenFeedback = (studentId) => {
+    setTargetStudentId(studentId);
+    setFeedbackRating(5);
+    setFeedbackComment('');
+    setShowFeedbackModal(true);
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (!targetStudentId) return;
+    setFeedbackSaving(true);
+    try {
+      await feedbackApi.createFeedback(event.comunidadId, {
+        eventoId: eventId,
+        studentId: targetStudentId,
+        rating: feedbackRating,
+        comentario: feedbackComment
+      });
+      alert('Feedback enviado correctamente');
+      setShowFeedbackModal(false);
+    } catch(err) {
+      alert('Error enviando feedback');
+    } finally {
+      setFeedbackSaving(false);
+    }
+  };
+
+  const handleToggleRecordings = async () => {
+    if (recordingsOpen) {
+      setRecordingsOpen(false);
+      return;
+    }
+    setRecordingsOpen(true);
+    setRecordingsLoading(true);
+    try {
+      const data = await ZoomApi.listRecordings(event.comunidadId);
+      let list = Array.isArray(data) ? data : (data?.recordings || data?.content || data?.items || []);
+      setRecordings(list);
+    } catch(err) {
+      setRecordings([]);
+    } finally {
+      setRecordingsLoading(false);
+    }
+  };
+
+  const handleDownloadRecording = async (recId) => {
+    try {
+      const { blob, fileName } = await ZoomApi.downloadRecording(event.comunidadId, recId);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch(err) {
+      alert('Error descargando la grabación');
     }
   };
 
@@ -737,6 +808,51 @@ const DetalleEvento = () => {
                           )}
                         </div>
                       )}
+
+                      {/* === SECCIÓN DE GRABACIONES === */}
+                      <div style={{ marginTop: 16 }}>
+                        <button
+                          onClick={handleToggleRecordings}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            padding: '8px 16px', background: '#9c27b0', color: '#fff',
+                            border: 'none', borderRadius: 6, cursor: 'pointer',
+                            fontWeight: 600, fontSize: '0.9rem', marginBottom: '8px'
+                          }}
+                        >
+                          <LuVideo size={16} /> {recordingsOpen ? 'Ocultar Grabaciones' : 'Ver Grabaciones en la Comunidad'}
+                        </button>
+                        {recordingsOpen && (
+                          <div style={{ padding: '12px', background: '#fafafa', borderRadius: 8, border: '1px solid #e0e0e0', marginTop: '8px' }}>
+                            <p style={{ fontWeight: 600, fontSize: '0.9rem', margin: '0 0 10px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              Grabaciones Disponibles
+                            </p>
+                            {recordingsLoading ? (
+                              <p style={{ fontSize: '0.85rem', color: '#666' }}>Cargando grabaciones...</p>
+                            ) : recordings.length > 0 ? (
+                              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {recordings.map(rec => (
+                                  <li key={rec.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', background: '#fff', border: '1px solid #f0f0f0', borderRadius: '4px' }}>
+                                    <div>
+                                      <strong style={{ fontSize: '0.85rem', display: 'block' }}>{rec.topic}</strong>
+                                      <span style={{ fontSize: '0.8rem', color: '#888' }}>{new Date(rec.startTime).toLocaleString()} • {rec.duration} min</span>
+                                    </div>
+                                    <button 
+                                      onClick={() => handleDownloadRecording(rec.id)} 
+                                      style={{ padding: '4px 12px', fontSize: '0.8rem', cursor: 'pointer', background: '#e6f4ff', color: '#1890ff', border: '1px solid #91caff', borderRadius: '4px' }}
+                                    >
+                                      Descargar
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p style={{ fontSize: '0.85rem', color: '#999', margin: 0 }}>No hay grabaciones disponibles.</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
                     </div>
                   </div>
                 ) : (
@@ -980,6 +1096,15 @@ const DetalleEvento = () => {
                         <span className="ed-participant-name">
                           {user.nombre || user.username || 'Usuario'}
                         </span>
+                        {isOrganizer && user.id && user.id.toString() !== currentUserId && (
+                          <button
+                            title="Evaluar a este alumno"
+                            onClick={() => handleOpenFeedback(user.id)}
+                            style={{ marginLeft: 'auto', padding: '4px 8px', fontSize: '0.75rem', background: '#faad14', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                          >
+                            Dar Feedback
+                          </button>
+                        )}
                       </li>
                     );
                   })}
@@ -1053,6 +1178,43 @@ const DetalleEvento = () => {
                   : selectedMinutos.length > 0
                     ? 'Confirmar con alarmas'
                     : 'Confirmar asistencia'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Feedback */}
+      {showFeedbackModal && (
+        <div className="ed-modal-overlay" onClick={() => setShowFeedbackModal(false)}>
+          <div className="ed-modal" onClick={e => e.stopPropagation()}>
+            <h2 className="ed-modal-title">Evaluar Estudiante</h2>
+            <p className="ed-modal-text">Por favor, indica un nivel de valoración de 1 a 5, y un comentario opcional.</p>
+            <div className="ed-modal-field">
+              <label className="ed-modal-label">Puntuación (1-5)</label>
+              <input
+                type="number"
+                min="1" max="5"
+                value={feedbackRating}
+                onChange={e => setFeedbackRating(Number(e.target.value))}
+                style={{ padding: '8px', width: '100%', borderRadius: '4px', border: '1px solid #ccc' }}
+              />
+            </div>
+            <div className="ed-modal-field" style={{ marginTop: '12px' }}>
+              <label className="ed-modal-label">Comentarios</label>
+              <textarea
+                rows="3"
+                value={feedbackComment}
+                onChange={e => setFeedbackComment(e.target.value)}
+                style={{ padding: '8px', width: '100%', borderRadius: '4px', border: '1px solid #ccc' }}
+              />
+            </div>
+            <div className="ed-modal-actions">
+              <button className="ed-btn ed-btn-secondary" onClick={() => setShowFeedbackModal(false)} disabled={feedbackSaving}>
+                Cancelar
+              </button>
+              <button className="ed-btn" onClick={handleSubmitFeedback} disabled={feedbackSaving} style={{ background: '#faad14', color: 'white' }}>
+                {feedbackSaving ? 'Enviando...' : 'Enviar Feedback'}
               </button>
             </div>
           </div>
