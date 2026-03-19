@@ -10,8 +10,8 @@
 
 **Proyecto:** MeerKatters  
 **Documento:** Acta  
-**Sprint:** Sprint 1 / Transición a Sprint 2  
-**Semana:** Semana X  
+**Sprint:** Sprint 2
+**Semana:** Semana 1  
 **Estado:** Aprobado  
 **Fecha:** 09/03/2026  
 **Hora:** 18:00 – 18:20  

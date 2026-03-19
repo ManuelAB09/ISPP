@@ -128,7 +128,7 @@ class AuthServiceTest {
                 .thenReturn(true);
         when(jwtService.generateToken(request.getEmail())).thenReturn("jwt-token");
 
-        AuthResponse response = authService.iniciarSesion(request);
+        AuthResponse response = (AuthResponse) authService.iniciarSesion(request);
 
         assertThat(response.getAccessToken()).isEqualTo("jwt-token");
         assertThat(response.getUser()).isNotNull();

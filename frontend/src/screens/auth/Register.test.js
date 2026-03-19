@@ -21,6 +21,11 @@ jest.mock('../../contexts/AuthContext', () => ({
 
 jest.mock('../../static/images/MeerKatters_logo.png', () => 'logo.png');
 
+jest.mock('@react-oauth/google', () => ({
+  GoogleLogin: () => <div data-testid="google-login-mock" />,
+  GoogleOAuthProvider: ({ children }) => <div>{children}</div>,
+}));
+
 const mockNavigate = jest.fn();
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),

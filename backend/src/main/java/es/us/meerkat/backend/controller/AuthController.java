@@ -15,6 +15,9 @@ import es.us.meerkat.backend.dto.LoginRequest;
 import es.us.meerkat.backend.dto.MessageResponse;
 import es.us.meerkat.backend.dto.RegisterRequest;
 import es.us.meerkat.backend.dto.ResendVerificationRequest;
+import es.us.meerkat.backend.dto.TotpEnableResponse;
+import es.us.meerkat.backend.dto.TotpSetupResponse;
+import es.us.meerkat.backend.dto.TotpVerifyRequest;
 import es.us.meerkat.backend.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -88,8 +91,74 @@ public final class AuthController {
      * @return AuthResponse con token JWT y datos del usuario.
      */
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody final LoginRequest request) {
+    public ResponseEntity<?> login(@RequestBody final LoginRequest request) {
         return ResponseEntity.ok(authService.iniciarSesion(request));
+    }
+
+    /** Completa el login cuando el usuario estaba en desafío 2FA. POST /api/v1/auth/2fa/login */
+    @PostMapping("/2fa/login")
+    public ResponseEntity<AuthResponse> login2fa(
+            @RequestBody final java.util.Map<String, String> body) {
+        String tempToken = body.get("tempToken");
+        String code = body.get("code");
+        return ResponseEntity.ok(authService.completeLoginWith2fa(tempToken, code));
+    }
+
+    /**
+     * Genera una clave TOTP temporal y otpauth URL para el usuario autenticado. POST
+     * /api/v1/auth/2fa/setup
+     */
+    @PostMapping("/2fa/setup")
+    public ResponseEntity<TotpSetupResponse> setup2fa() {
+        return ResponseEntity.ok(authService.generateTotpSetupForCurrentUser());
+    }
+
+    /** Verifica el código TOTP y activa 2FA para el usuario. POST /api/v1/auth/2fa/enable */
+    @PostMapping("/2fa/enable")
+    public ResponseEntity<TotpEnableResponse> enable2fa(
+            @RequestBody final TotpVerifyRequest request) {
+        return ResponseEntity.ok(authService.enableTotpForCurrentUser(request.getCode()));
+    }
+
+    /** Desactiva 2FA tras verificar el código actual. POST /api/v1/auth/2fa/disable */
+    @PostMapping("/2fa/disable")
+    public ResponseEntity<MessageResponse> disable2fa(
+            @RequestBody final TotpVerifyRequest request) {
+        return ResponseEntity.ok(authService.disableTotpForCurrentUser(request.getCode()));
+    }
+
+    /**
+     * Inicia el flujo de autenticación con Google (Redirige a Google). GET
+     * /api/v1/auth/google/authorize
+     */
+    @GetMapping("/google/authorize")
+    public ResponseEntity<java.util.Map<String, String>> authorizeGoogleLogin() {
+        return ResponseEntity.ok(
+                java.util.Map.of("url", authService.getGoogleAuthorizeUrl("login")));
+    }
+
+    /**
+     * Callback de Google OAuth2 para inicio de sesión o registro. GET /api/v1/auth/google/callback
+     */
+    @GetMapping("/google/callback")
+    public ResponseEntity<String> googleLoginCallback(
+            @RequestParam(name = "code", required = false) String code,
+            @RequestParam(name = "error", required = false) String error,
+            @RequestParam(name = "state", required = false) String state) {
+        return authService.processGoogleCallback(code, error, state);
+    }
+
+    /** Vincula la cuenta Google al usuario autenticado. GET /api/v1/auth/google/link/authorize */
+    @GetMapping("/google/link/authorize")
+    public ResponseEntity<java.util.Map<String, String>> authorizeGoogleLink() {
+        return ResponseEntity.ok(
+                java.util.Map.of("url", authService.getGoogleAuthorizeUrl("link")));
+    }
+
+    /** Desvincula la cuenta Google del usuario autenticado. POST /api/v1/auth/google/unlink */
+    @PostMapping("/google/unlink")
+    public ResponseEntity<MessageResponse> unlinkGoogle() {
+        return ResponseEntity.ok(authService.unlinkGoogleFromCurrentUser());
     }
 
     /**
