@@ -11,7 +11,6 @@
 spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL}
-    driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.h2.Driver}
     username: ${SPRING_DATASOURCE_USERNAME:sa}
     password: ${SPRING_DATASOURCE_PASSWORD:}
 
@@ -43,3 +42,6 @@ stripe:
     url: http://localhost:3000/cancel
   price:
     premium: prod_U3x4AB7AnO2JPG
+
+oauth:
+  redirect-uri-login: http://localhost:8080/api/v1/auth/google/callback

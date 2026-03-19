@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import GoogleAuthButton from '../../components/GoogleAuthButton';
 import './Login.css';
 import studyShareLogo from '../../static/images/MeerKatters_logo.png';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, resendVerification, error: authError, clearError, isAuthenticated, loading } = useAuth();
+  const { login, processDirectLogin, login2fa, resendVerification, error: authError, clearError, isAuthenticated, loading } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -18,6 +19,11 @@ const Login = () => {
   const [emailNotVerified, setEmailNotVerified] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState('');
+
+  // 2FA state
+  const [show2FA, setShow2FA] = useState(false);
+  const [totpCode, setTotpCode] = useState('');
+  const [tempToken, setTempToken] = useState('');
 
   // Si ya está autenticado, mostrar mensaje
   if (!loading && isAuthenticated) {
@@ -80,7 +86,12 @@ const Login = () => {
     const result = await login(formData.email, formData.password);
 
     if (result.success) {
-      navigate('/');
+      if (result.twoFactorRequired) {
+        setTempToken(result.tempToken);
+        setShow2FA(true);
+      } else {
+        navigate('/');
+      }
     } else {
       const errorMsg = result.error || 'Error al iniciar sesión';
       // Detectar si el error es por email no verificado
@@ -90,6 +101,41 @@ const Login = () => {
       setError(errorMsg);
     }
 
+    setIsLoading(false);
+  };
+
+  const handle2FASubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
+    const result = await login2fa(tempToken, totpCode);
+    if (result.success) {
+      navigate('/');
+    } else {
+      setError(result.error || 'Código 2FA incorrecto');
+    }
+    setIsLoading(false);
+  };
+
+  const handleGoogleSuccess = async (payload) => {
+    setIsLoading(true);
+    setError('');
+    
+    // AuthResponse format or 2FA challenge from the backend popup
+    const result = processDirectLogin(payload);
+    
+    if (result.success) {
+      if (result.twoFactorRequired) {
+        setTempToken(result.tempToken);
+        setShow2FA(true);
+      } else {
+        navigate('/');
+      }
+    } else {
+      setError(result.error || 'Error al procesar la respuesta de Google');
+    }
+    
     setIsLoading(false);
   };
 
@@ -140,12 +186,45 @@ const Login = () => {
       {/* Right Panel - Form */}
       <div className="login-right-panel">
         <div className="login-form-container">
-          <div className="login-header">
-            <h2>Bienvenido</h2>
-            <p>Por favor, inserte sus datos para iniciar sesión</p>
-          </div>
+          
+          {show2FA ? (
+            <div className="login-2fa-container">
+              <div className="login-header">
+                <h2>Verificación en dos pasos</h2>
+                <p>Introduce el código de tu app de autenticación o un código de respaldo</p>
+              </div>
 
-          <form onSubmit={handleSubmit} className="login-form">
+              <form onSubmit={handle2FASubmit} className="login-form">
+                <div className="form-group">
+                  <label htmlFor="totpCode">Código 2FA o de respaldo</label>
+                  <input
+                    type="text"
+                    id="totpCode"
+                    value={totpCode}
+                    onChange={(e) => setTotpCode(e.target.value.toUpperCase())}
+                    placeholder="000111 o ABCD-EFGH"
+                    maxLength="24"
+                    required
+                    style={{ letterSpacing: '1px', textAlign: 'center', fontSize: '1.2rem' }}
+                  />
+                </div>
+                {error && <div className="login-error-message">{error}</div>}
+                <button type="submit" className="login-button" disabled={isLoading}>
+                  {isLoading ? 'Verificando...' : 'Verificar código'}
+                </button>
+                <button type="button" className="login-button secondary" onClick={() => setShow2FA(false)} style={{ marginTop: '10px', background: 'transparent', border: '1px solid #ccc', color: '#333' }}>
+                  Atrás
+                </button>
+              </form>
+            </div>
+          ) : (
+            <>
+              <div className="login-header">
+                <h2>Bienvenido</h2>
+                <p>Por favor, inserte sus datos para iniciar sesión</p>
+              </div>
+
+              <form onSubmit={handleSubmit} className="login-form">
             <div className="form-group">
               <label htmlFor="email">Correo electrónico</label>
               <input
@@ -253,11 +332,34 @@ const Login = () => {
             </button>
           </form>
 
-          <div className="register-link">
+          {/* Import GoogleLogin inside the component */}
+          <div className="google-auth-container" style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
+            {/* Usamos require en lugar de import estático para evitar problemas si falla la inicialización */}
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', margin: '15px 0', width: '100%' }}>
+                <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                <span style={{ padding: '0 10px', color: '#94a3b8', fontSize: '0.9rem' }}>o continuar con</span>
+                <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+              </div>
+              
+              <GoogleAuthButton
+                onSuccess={handleGoogleSuccess}
+                onError={(err) => {
+                  setError(err || 'Fallo en el inicio de sesión de Google');
+                }}
+                text="Continuar con Google"
+                flowType="login"
+              />
+            </div>
+          </div>
+
+          <div className="register-link" style={{ marginTop: '15px' }}>
             <p>
               No tienes cuenta todavía? <Link to="/register">Crear cuenta</Link>
             </p>
           </div>
+        </>
+        )}
         </div>
       </div>
     </div>

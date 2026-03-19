@@ -69,6 +69,15 @@ public class EventDetailResponse {
     /** Si el evento es privado. */
     private Boolean privado;
 
+    /** ID de la tarea de Google Classroom vinculada. */
+    private String classroomTaskId;
+
+    /** Título de la tarea de Google Classroom vinculada. */
+    private String classroomTaskTitle;
+
+    /** URL de la tarea de Google Classroom vinculada. */
+    private String classroomTaskUrl;
+
     /** ID de la comunidad a la que pertenece el evento. */
     private Long comunidadId;
 
