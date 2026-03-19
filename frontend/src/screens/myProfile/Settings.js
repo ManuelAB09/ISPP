@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import axiosInstance from "../../api/axiosConfig"
 import { apiClient } from "../../api/client"
 import { useAuth } from "../../contexts/AuthContext"
+import { useNotificationContext } from "../../contexts/NotificationContext"
 import "./Settings.css"
 
 const EVENT_TYPES = [
@@ -17,10 +18,30 @@ const EVENT_TYPES = [
 const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNotificationRead }) => {
     const navigate = useNavigate()
     const { logout, user, updateProfile } = useAuth()
+    
+    // Intentar usar el contexto de notificaciones, pero fallback si no está disponible
+    let notificationsEnabled = false
+    let toggleNotifications = () => {}
+    let requestPermission = () => Promise.resolve('denied')
+    let permission = 'denied'
+    let isSupported = false
+    
+    try {
+        const notifContext = useNotificationContext()
+        if (notifContext) {
+            notificationsEnabled = notifContext.notificationsEnabled
+            toggleNotifications = notifContext.toggleNotifications
+            requestPermission = notifContext.requestPermission
+            permission = notifContext.permission
+            isSupported = notifContext.isSupported
+        }
+    } catch (e) {
+        console.warn('NotificationContext no disponible:', e.message)
+    }
 
     // Estados para los toggles y configuraciones
     const [profileVisibility, setProfileVisibility] = useState(true)
-    const [pushNotifications, setPushNotifications] = useState(false)
+    const [localNotificationsEnabled, setLocalNotificationsEnabled] = useState(false)
     const [twoFactorAuth, setTwoFactorAuth] = useState(false)
     const [isSavingPreferences, setIsSavingPreferences] = useState(false)
     const [preferencesError, setPreferencesError] = useState("")
@@ -67,7 +88,6 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
         }
 
         setProfileVisibility(user.visibleEnListados ?? true)
-        setPushNotifications(user.notificacionesPush ?? false)
         setTwoFactorAuth(user.autenticacionDosFactores ?? false)
     }, [user])
 
@@ -76,6 +96,18 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
             .then(res => setEmailRecordatorios(res.data))
             .catch(() => { /* usa valores por defecto */ })
     }, [])
+
+    // Sincronizar estado local de notificaciones con el contexto y con el usuario
+    useEffect(() => {
+        if (!user) return
+        setLocalNotificationsEnabled(user.notificacionesPush ?? false)
+        // También sincronizar con contexto si está disponible
+        if (notificationsEnabled !== user.notificacionesPush) {
+            if (user.notificacionesPush) {
+                toggleNotifications()
+            }
+        }
+    }, [user, notificationsEnabled, toggleNotifications])
 
     useEffect(() => {
         setIsLoadingCalendar(true)
@@ -290,12 +322,35 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
             return
         }
 
-        const newValue = !pushNotifications
-        setPushNotifications(newValue)
+        // Si va a activar notificaciones pero aún no tiene permisos, pedir primero
+        if (!localNotificationsEnabled && !isSupported) {
+            setPreferencesError("Tu navegador no soporta notificaciones push")
+            return
+        }
+
+        if (!localNotificationsEnabled && permission !== 'granted') {
+            const result = await requestPermission()
+            if (result !== 'granted') {
+                setPreferencesError("Necesitas permitir notificaciones en tu navegador para activarlas")
+                return
+            }
+        }
+
+        const newValue = !localNotificationsEnabled
+        setLocalNotificationsEnabled(newValue)
+        
+        // Sincronizar con contexto si está disponible
+        if (toggleNotifications) {
+            toggleNotifications()
+        }
 
         const ok = await savePreferences({ notificacionesPush: newValue })
         if (!ok) {
-            setPushNotifications(!newValue)
+            setLocalNotificationsEnabled(!newValue)
+            // Revertir contexto si está disponible
+            if (toggleNotifications) {
+                toggleNotifications()
+            }
         }
     }
 
@@ -382,7 +437,7 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
                                 Notificaciones push
                             </span>
                             <button
-                                className={`settings-toggle ${pushNotifications ? 'settings-toggle--active' : ''}`}
+                                className={`settings-toggle ${localNotificationsEnabled ? 'settings-toggle--active' : ''}`}
                                 onClick={handleTogglePushNotifications}
                                 disabled={isSavingPreferences}
                             >

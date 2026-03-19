@@ -148,6 +148,7 @@ export const useSocket = (token) => {
                 dm_history: '/user/queue/dm_history',
                 conversations: '/user/queue/conversations',
                 community_history: '/user/queue/community_history',
+                community_message: '/user/queue/community_message',
                 solicitud_contratacion: '/user/queue/solicitud_contratacion',
                 solicitud_contratacion_respuesta: '/user/queue/solicitud_contratacion_respuesta',
                 solicitud_contratacion_pagada: '/user/queue/solicitud_contratacion_pagada',

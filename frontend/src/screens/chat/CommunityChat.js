@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useSocketContext } from '../../contexts/SocketContext';
 import {
     enviarMensajeComunidad,
@@ -52,6 +52,7 @@ const CommunityChat = ({
 }) => {
     const isEmbedded = mode === 'embedded';
     const navigate = useNavigate();
+    const location = useLocation();
     const { socket, isConnected } = useSocketContext();
     const [mensajes, setMensajes] = useState([]);
     const [contenido, setContenido] = useState('');
@@ -151,7 +152,7 @@ const CommunityChat = ({
             socket.off(`/topic/community.${comunidadId}`, handleNewMessage);
             socket.off('error', handleSocketError);
         };
-    }, [socket, isConnected, comunidadId]);
+    }, [socket, isConnected, comunidadId, comunidadNombre, navigate, location.pathname]);
 
     useEffect(() => {
         if (chatAbierto) {

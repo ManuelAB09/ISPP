@@ -28,6 +28,10 @@ public class MensajeComunidadResponse {
 
     private Long comunidadId;
 
+    private String comunidadNombre;
+
+    private String comunidadImagenUrl;
+
     private String archivoUrl;
 
     private String archivoNombre;
