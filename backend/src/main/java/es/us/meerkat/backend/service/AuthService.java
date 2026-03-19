@@ -216,6 +216,13 @@ public class AuthService {
         if (request.getPassword().length() > MAX_PASSWORD_LENGTH) {
             throw new ValidationException("La contraseña no puede tener más de 128 caracteres");
         }
+
+        if (!request.getPassword().matches(".*[A-Z].*")
+                || !request.getPassword().matches(".*[a-z].*")
+                || !request.getPassword().matches(".*[0-9].*")) {
+            throw new ValidationException(
+                    "La contraseña debe contener mayúsculas, minúsculas y números");
+        }
     }
 
     // ===============================

@@ -47,7 +47,7 @@ class AuthServiceTest {
     void registrarShouldCreateUserAndReturnMessageResponse() {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("new.user@meerkat.es");
-        request.setPassword("password123");
+        request.setPassword("Password123");
         request.setNombre("Nuevo Usuario");
 
         when(usuarioRepository.existsByEmail(request.getEmail())).thenReturn(false);
@@ -74,7 +74,7 @@ class AuthServiceTest {
     void registrarShouldThrowConflictWhenEmailAlreadyExists() {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("used@meerkat.es");
-        request.setPassword("password123");
+        request.setPassword("Password123");
         request.setNombre("Usuario Test");
 
         when(usuarioRepository.existsByEmail(request.getEmail())).thenReturn(true);

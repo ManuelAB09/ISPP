@@ -317,6 +317,9 @@ const Register = () => {
                     <li className={passwordRequirements.minLength ? 'requirement-met' : 'requirement-unmet'}>
                       {passwordRequirements.minLength ? '✓' : '✗'} Mínimo 8 caracteres
                     </li>
+                    <li className={passwordRequirements.maxLength ? 'requirement-met' : 'requirement-unmet'}>
+                      {passwordRequirements.maxLength ? '✓' : '✗'} Máximo 128 caracteres
+                    </li>
                     <li className={passwordRequirements.hasUppercase ? 'requirement-met' : 'requirement-unmet'}>
                       {passwordRequirements.hasUppercase ? '✓' : '✗'} Al menos una mayúscula
                     </li>
