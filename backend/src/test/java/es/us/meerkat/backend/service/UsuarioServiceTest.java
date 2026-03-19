@@ -30,6 +30,7 @@ import es.us.meerkat.backend.repository.GoogleClassroomConnectionRepository;
 import es.us.meerkat.backend.repository.InstitutionRepository;
 import es.us.meerkat.backend.repository.MensajeComunidadRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.PreferenciasNotificacionRepository;
 import es.us.meerkat.backend.repository.SolicitudComunidadRepository;
 import es.us.meerkat.backend.repository.SuscripcionRepository;
 import es.us.meerkat.backend.repository.TransaccionPagoRepository;
@@ -62,6 +63,8 @@ class UsuarioServiceTest {
     @Mock private GoogleClassroomConnectionRepository googleClassroomConnectionRepository;
 
     @Mock private InstitutionRepository institutionRepository;
+
+    @Mock private PreferenciasNotificacionRepository preferenciasNotificacionRepository;
 
     @Mock private EntityManager entityManager;
 
