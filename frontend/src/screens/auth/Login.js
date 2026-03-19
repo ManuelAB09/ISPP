@@ -86,7 +86,7 @@ const Login = () => {
     const result = await login(formData.email, formData.password);
 
     if (result.success) {
-      if (result.isTwoFactor) {
+      if (result.twoFactorRequired) {
         setTempToken(result.tempToken);
         setShow2FA(true);
       } else {
@@ -126,7 +126,7 @@ const Login = () => {
     const result = processDirectLogin(payload);
     
     if (result.success) {
-      if (result.isTwoFactor) {
+      if (result.twoFactorRequired) {
         setTempToken(result.tempToken);
         setShow2FA(true);
       } else {

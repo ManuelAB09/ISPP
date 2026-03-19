@@ -112,10 +112,7 @@ public class GoogleClassroomService {
                 "https://www.googleapis.com/auth/classroom.coursework.students.readonly",
                 "https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly"
             };
-            scope =
-                    URLEncoder.encode(
-                            String.join(" ", commonScopes),
-                            StandardCharsets.UTF_8);
+            scope = URLEncoder.encode(String.join(" ", commonScopes), StandardCharsets.UTF_8);
 
             url =
                     "https://accounts.google.com/o/oauth2/v2/auth"

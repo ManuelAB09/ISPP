@@ -15,7 +15,7 @@ const GoogleAuthButton = ({ onSuccess, onError, text = "Continuar con Google", f
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}` // Para el link necesitamos el token actual
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}` // Para el link necesitamos el token actual
         }
       });
       

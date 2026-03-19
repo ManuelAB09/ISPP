@@ -13,6 +13,7 @@ import { listCommunityEvents, attendEvent, cancelAttendance, getMyAttendance } f
 import { useAuth } from '../../contexts/AuthContext';
 import { useSocketContext } from '../../contexts/SocketContext';
 import axiosInstance from '../../api/axiosConfig';
+import { getApiBaseUrl } from '../../api/baseUrl';
 import './CommunityDetail.css';
 
 
@@ -144,7 +145,18 @@ export default function CommunityDetail() {
     foto: user?.foto || null,
     fotoBackgroundColor: user?.fotoBackgroundColor || '#ffffff',
   };
-  const communityImage = community?.imagenUrl !== 'empty' ? community?.imagenUrl : 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
+  const communityImage = (() => {
+    const raw = community?.imagen || community?.imagenUrl || community?.foto;
+    if (!raw || !String(raw).trim() || String(raw).trim().toLowerCase() === 'empty') {
+      return 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
+    }
+    const value = String(raw).trim();
+    if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
+      return value;
+    }
+    const base = getApiBaseUrl();
+    return value.startsWith('/') ? `${base}${value}` : `${base}/${value}`;
+  })();
 
   const fetchCommunity = useCallback(async () => {
     try {
@@ -311,6 +323,7 @@ export default function CommunityDetail() {
         setActiveMeeting(data);
       }
     };
+    if (!socket) return undefined;
     socket.on(topic, handler);
     return () => socket.off(topic, handler);
   }, [socket, communityId, currentUserId, isMember]);

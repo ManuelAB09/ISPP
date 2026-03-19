@@ -460,15 +460,19 @@ public class SolicitudContratacionService {
             // 1. No se puede reprogramar a una fecha anterior a la que estaba prevista
             if (nuevoDia.isBefore(solicitud.getDia())) {
                 throw new IllegalArgumentException(
-                        "Las reservas pagadas no se pueden adelantar a una fecha anterior a la actual ("
-                                + solicitud.getDia() + ")");
+                        "Las reservas pagadas no se pueden adelantar a una fecha anterior a la"
+                                + " actual ("
+                                + solicitud.getDia()
+                                + ")");
             }
             // 2. Solo se puede reprogramar dentro de los 2 días siguientes a la fecha ACTUAL
             LocalDate limiteReprogramacion = solicitud.getDia().plusDays(2);
             if (nuevoDia.isAfter(limiteReprogramacion)) {
                 throw new IllegalArgumentException(
-                        "Solo puedes aplazar una reserva pagada un máximo de 2 días desde la fecha actual ("
-                                + limiteReprogramacion + ")");
+                        "Solo puedes aplazar una reserva pagada un máximo de 2 días desde la fecha"
+                                + " actual ("
+                                + limiteReprogramacion
+                                + ")");
             }
 
             // Además, si ya está pagada, la duración debe ser exactamente la misma
@@ -484,16 +488,18 @@ public class SolicitudContratacionService {
         } else {
             // Si está solo ACEPTADA:
             // Solo se puede reprogramar dentro de los 2 días siguientes a la fecha original
-            LocalDate diaBase = solicitud.getDiaOriginal() != null
-                    ? solicitud.getDiaOriginal() : solicitud.getDia();
+            LocalDate diaBase =
+                    solicitud.getDiaOriginal() != null
+                            ? solicitud.getDiaOriginal()
+                            : solicitud.getDia();
             LocalDate limiteReprogramacion = diaBase.plusDays(2);
             if (nuevoDia.isAfter(limiteReprogramacion)) {
                 throw new IllegalArgumentException(
                         "Solo puedes reprogramar hasta 2 días después de la fecha original ("
-                                + limiteReprogramacion + ")");
+                                + limiteReprogramacion
+                                + ")");
             }
         }
-
 
         // Comprobar conflictos en el nuevo horario
         List<SolicitudContratacionDirecta> conflictos =

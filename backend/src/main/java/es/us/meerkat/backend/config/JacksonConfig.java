@@ -5,9 +5,7 @@ import org.springframework.context.annotation.Configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-/**
- * Configuracion de Jackson para serializacion JSON.
- */
+/** Configuracion de Jackson para serializacion JSON. */
 @Configuration
 public class JacksonConfig {
 

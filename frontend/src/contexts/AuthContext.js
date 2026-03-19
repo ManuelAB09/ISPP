@@ -41,6 +41,7 @@ export const AuthProvider = ({ children }) => {
       notificacionesEmail: extraData.notificacionesEmail ?? userData.notificacionesEmail ?? true,
       notificacionesPush: extraData.notificacionesPush ?? userData.notificacionesPush ?? true,
       createdAt: userData.createdAt,
+      googleLinked: userData.googleLinked ?? false,
       // Campos que la API acepta en PUT pero no devuelve en GET
       universidad: extraData.universidad ?? userData.universidad ?? '',
       grado: extraData.grado ?? userData.grado ?? '',
@@ -125,8 +126,8 @@ export const AuthProvider = ({ children }) => {
       const response = await authApi.login({ email, password });
       
       // Si la respuesta indica que es un desafío 2FA
-      if (response.isTwoFactor) {
-        return { success: true, isTwoFactor: true, tempToken: response.tempToken };
+      if (response.twoFactorRequired) {
+        return { success: true, twoFactorRequired: true, tempToken: response.tempToken };
       }
 
       const { accessToken, user: userData } = response;
@@ -196,8 +197,8 @@ export const AuthProvider = ({ children }) => {
 
       const authResp = response.authResponse;
       
-      if (authResp?.isTwoFactor) {
-        return { success: true, isTwoFactor: true, tempToken: authResp.tempToken };
+      if (authResp?.twoFactorRequired) {
+        return { success: true, twoFactorRequired: true, tempToken: authResp.tempToken };
       }
 
       const { accessToken, user: userData } = authResp;
@@ -217,8 +218,8 @@ export const AuthProvider = ({ children }) => {
   const processDirectLogin = useCallback((payload) => {
     setError(null);
     try {
-      if (payload.isTwoFactor) {
-        return { success: true, isTwoFactor: true, tempToken: payload.tempToken };
+      if (payload.twoFactorRequired || payload.isTwoFactor) {
+        return { success: true, twoFactorRequired: true, tempToken: payload.tempToken };
       }
 
       const { token, accessToken, user: userData } = payload;

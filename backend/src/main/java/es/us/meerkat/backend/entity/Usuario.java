@@ -112,7 +112,9 @@ public class Usuario {
     @Column(length = 128)
     private String totpTempSecret;
 
-    /** Códigos de respaldo (hasheados) para recuperar acceso cuando el usuario no puede usar su app. */
+    /**
+     * Códigos de respaldo (hasheados) para recuperar acceso cuando el usuario no puede usar su app.
+     */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "usuario_backup_codes", joinColumns = @JoinColumn(name = "usuario_id"))
     @Column(name = "codigo_hash", length = 80)

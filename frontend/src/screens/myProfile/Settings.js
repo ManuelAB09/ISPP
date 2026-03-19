@@ -62,6 +62,11 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
     const [isDeletingAccount, setIsDeletingAccount] = useState(false)
     const [deleteError, setDeleteError] = useState("")
 
+    // Google account linking
+    const [isGoogleLinked, setIsGoogleLinked] = useState(user?.googleLinked ?? false)
+    const [isLinkingGoogle, setIsLinkingGoogle] = useState(false)
+    const [googleLinkMsg, setGoogleLinkMsg] = useState(null)
+
     // Estados para cambio de contraseña
     const [currentPassword, setCurrentPassword] = useState("")
     const [newPassword, setNewPassword] = useState("")
@@ -82,6 +87,7 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
         setEmailNotifications(user.notificacionesEmail ?? true)
         setPushNotifications(user.notificacionesPush ?? false)
         setTwoFactorAuth(user.autenticacionDosFactores ?? false)
+        setIsGoogleLinked(user.googleLinked ?? false)
     }, [user])
 
     useEffect(() => {
@@ -326,6 +332,55 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
         }
     }
 
+    const handleLinkGoogle = () => {
+        setIsLinkingGoogle(true)
+        setGoogleLinkMsg(null)
+        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080'
+        fetch(`${API_URL}/api/v1/auth/google/link/authorize`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
+        })
+            .then(res => { if (!res.ok) throw new Error(); return res.json() })
+            .then(data => {
+                if (data.url) {
+                    const w = 500, h = 600
+                    const left = window.screen.width / 2 - w / 2
+                    const top = window.screen.height / 2 - h / 2
+                    window.open(data.url, 'GoogleLink', `width=${w},height=${h},top=${top},left=${left}`)
+                    const listener = (event) => {
+                        if (event.data?.type === 'google-link-success') {
+                            window.removeEventListener('message', listener)
+                            setIsGoogleLinked(true)
+                            setGoogleLinkMsg({ type: 'success', text: 'Cuenta de Google vinculada correctamente.' })
+                            setIsLinkingGoogle(false)
+                        } else if (event.data?.type === 'google-auth-error') {
+                            window.removeEventListener('message', listener)
+                            setGoogleLinkMsg({ type: 'error', text: event.data.error || 'Error al vincular cuenta.' })
+                            setIsLinkingGoogle(false)
+                        }
+                    }
+                    window.addEventListener('message', listener)
+                }
+            })
+            .catch(() => {
+                setGoogleLinkMsg({ type: 'error', text: 'No se pudo iniciar la vinculación.' })
+                setIsLinkingGoogle(false)
+            })
+    }
+
+    const handleUnlinkGoogle = async () => {
+        setIsLinkingGoogle(true)
+        setGoogleLinkMsg(null)
+        try {
+            await authApi.unlinkGoogle()
+            setIsGoogleLinked(false)
+            setGoogleLinkMsg({ type: 'success', text: 'Cuenta de Google desvinculada.' })
+        } catch {
+            setGoogleLinkMsg({ type: 'error', text: 'No se pudo desvincular la cuenta.' })
+        } finally {
+            setIsLinkingGoogle(false)
+        }
+    }
+
     const handleToggleTwoFactorAuth = async () => {
         if (isSavingPreferences) {
             return
@@ -480,6 +535,38 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
                                 <span className="settings-toggle__slider"></span>
                             </button>
                         </div>
+                    </div>
+
+                    {/* Inicio de sesión con Google */}
+                    <div className="settings-subsection">
+                        <h3 className="settings-subsection__title">Inicio de sesión con Google</h3>
+                        <p className="settings-subsection__text">
+                            {isGoogleLinked
+                                ? 'Tu cuenta de Google está vinculada. Puedes iniciar sesión con Google.'
+                                : 'Vincula tu cuenta de Google para poder iniciar sesión con ella.'}
+                        </p>
+                        {googleLinkMsg && (
+                            <div className={googleLinkMsg.type === 'success' ? 'settings-password-success' : 'settings-password-error'} style={{ marginBottom: '8px' }}>
+                                {googleLinkMsg.text}
+                            </div>
+                        )}
+                        {isGoogleLinked ? (
+                            <button
+                                className="settings-btn settings-btn--outline"
+                                onClick={handleUnlinkGoogle}
+                                disabled={isLinkingGoogle}
+                            >
+                                {isLinkingGoogle ? 'Desvinculando...' : 'Desvincular cuenta de Google'}
+                            </button>
+                        ) : (
+                            <button
+                                className="settings-btn settings-btn--gcalendar"
+                                onClick={handleLinkGoogle}
+                                disabled={isLinkingGoogle}
+                            >
+                                {isLinkingGoogle ? 'Vinculando...' : '🔗 Vincular cuenta de Google'}
+                            </button>
+                        )}
                     </div>
 
                     {/* Notificaciones */}

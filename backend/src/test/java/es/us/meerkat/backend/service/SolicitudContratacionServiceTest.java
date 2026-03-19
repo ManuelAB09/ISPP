@@ -379,14 +379,19 @@ class SolicitudContratacionServiceTest {
                         .build();
 
         when(solicitudRepository.findById(100L)).thenReturn(Optional.of(solicitud));
-        when(solicitudRepository.findConflictingBookingsExcluding(any(), any(), any(), any(), any()))
+        when(solicitudRepository.findConflictingBookingsExcluding(
+                        any(), any(), any(), any(), any()))
                 .thenReturn(List.of());
         when(solicitudRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         // Reprogramar 2 días después (día 17) con la misma duración
         SolicitudContratacionResponse result =
                 service.reprogramarSolicitud(
-                        100L, 2L, LocalDate.of(2027, 6, 17), LocalTime.of(10, 0), LocalTime.of(11, 0));
+                        100L,
+                        2L,
+                        LocalDate.of(2027, 6, 17),
+                        LocalTime.of(10, 0),
+                        LocalTime.of(11, 0));
 
         assertThat(solicitud.getDia()).isEqualTo(LocalDate.of(2027, 6, 17));
         assertThat(result.getDia()).isEqualTo(LocalDate.of(2027, 6, 17));
@@ -413,7 +418,11 @@ class SolicitudContratacionServiceTest {
         assertThatThrownBy(
                         () ->
                                 service.reprogramarSolicitud(
-                                        100L, 2L, LocalDate.of(2027, 6, 14), LocalTime.of(10, 0), LocalTime.of(11, 0)))
+                                        100L,
+                                        2L,
+                                        LocalDate.of(2027, 6, 14),
+                                        LocalTime.of(10, 0),
+                                        LocalTime.of(11, 0)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("no se pueden adelantar");
     }
@@ -439,7 +448,11 @@ class SolicitudContratacionServiceTest {
         assertThatThrownBy(
                         () ->
                                 service.reprogramarSolicitud(
-                                        100L, 2L, LocalDate.of(2027, 6, 18), LocalTime.of(10, 0), LocalTime.of(11, 0)))
+                                        100L,
+                                        2L,
+                                        LocalDate.of(2027, 6, 18),
+                                        LocalTime.of(10, 0),
+                                        LocalTime.of(11, 0)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("máximo de 2 días desde la fecha actual");
     }
@@ -464,7 +477,8 @@ class SolicitudContratacionServiceTest {
                         .build();
 
         when(solicitudRepository.findById(100L)).thenReturn(Optional.of(solicitud));
-        when(solicitudRepository.findConflictingBookingsExcluding(any(), any(), any(), any(), any()))
+        when(solicitudRepository.findConflictingBookingsExcluding(
+                        any(), any(), any(), any(), any()))
                 .thenReturn(List.of());
         when(solicitudRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -474,8 +488,13 @@ class SolicitudContratacionServiceTest {
         assertThat(solicitud.getDia()).isEqualTo(LocalDate.of(2027, 6, 17));
 
         // Segundo aplazamiento: +2 días desde el día 17 (Día 19)
-        SolicitudContratacionResponse result2 = service.reprogramarSolicitud(
-                100L, 2L, LocalDate.of(2027, 6, 19), LocalTime.of(10, 0), LocalTime.of(11, 0));
+        SolicitudContratacionResponse result2 =
+                service.reprogramarSolicitud(
+                        100L,
+                        2L,
+                        LocalDate.of(2027, 6, 19),
+                        LocalTime.of(10, 0),
+                        LocalTime.of(11, 0));
 
         assertThat(solicitud.getDia()).isEqualTo(LocalDate.of(2027, 6, 19));
         assertThat(result2.getDia()).isEqualTo(LocalDate.of(2027, 6, 19));
@@ -501,7 +520,8 @@ class SolicitudContratacionServiceTest {
                         .build();
 
         when(solicitudRepository.findById(100L)).thenReturn(Optional.of(solicitud));
-        when(solicitudRepository.findConflictingBookingsExcluding(any(), any(), any(), any(), any()))
+        when(solicitudRepository.findConflictingBookingsExcluding(
+                        any(), any(), any(), any(), any()))
                 .thenReturn(List.of());
         when(solicitudRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -514,7 +534,11 @@ class SolicitudContratacionServiceTest {
         assertThatThrownBy(
                         () ->
                                 service.reprogramarSolicitud(
-                                        100L, 2L, LocalDate.of(2027, 6, 20), LocalTime.of(10, 0), LocalTime.of(11, 0)))
+                                        100L,
+                                        2L,
+                                        LocalDate.of(2027, 6, 20),
+                                        LocalTime.of(10, 0),
+                                        LocalTime.of(11, 0)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("máximo de 2 días desde la fecha actual");
     }

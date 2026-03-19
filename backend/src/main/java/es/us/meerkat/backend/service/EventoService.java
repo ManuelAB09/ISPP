@@ -453,7 +453,7 @@ public class EventoService {
     // ===============================
     // EVENTOS POR COMUNIDAD
     // ===============================
-    
+
     // ===============================
     // VINCULAR TAREA CLASSROOM
     // ===============================
@@ -470,28 +470,29 @@ public class EventoService {
      */
     @Transactional
     public Evento vincularTareaClassroom(
-            final Long eventoId, 
-            final Long usuarioId, 
-            final String taskId, 
-            final String title, 
+            final Long eventoId,
+            final Long usuarioId,
+            final String taskId,
+            final String title,
             final String url) {
         final Evento evento = obtenerEventoInterno(eventoId);
-        
+
         if (!evento.getCreador().getId().equals(usuarioId)) {
             throw new RuntimeException("Solo el creador del evento puede vincular tareas");
         }
-        
+
         if (evento.getComunidad() == null) {
-            throw new RuntimeException("El evento debe pertenecer a una comunidad para vincular una tarea");
+            throw new RuntimeException(
+                    "El evento debe pertenecer a una comunidad para vincular una tarea");
         }
-        
+
         evento.setClassroomTaskId(taskId);
         evento.setClassroomTaskTitle(title);
         evento.setClassroomTaskUrl(url);
-        
+
         return eventoRepository.save(evento);
     }
-    
+
     /**
      * Desvincula una tarea de Google Classroom de un evento.
      *
@@ -502,15 +503,15 @@ public class EventoService {
     @Transactional
     public Evento desvincularTareaClassroom(final Long eventoId, final Long usuarioId) {
         final Evento evento = obtenerEventoInterno(eventoId);
-        
+
         if (!evento.getCreador().getId().equals(usuarioId)) {
             throw new RuntimeException("Solo el creador del evento puede desvincular tareas");
         }
-        
+
         evento.setClassroomTaskId(null);
         evento.setClassroomTaskTitle(null);
         evento.setClassroomTaskUrl(null);
-        
+
         return eventoRepository.save(evento);
     }
 

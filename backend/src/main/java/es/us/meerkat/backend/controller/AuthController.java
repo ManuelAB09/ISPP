@@ -91,7 +91,7 @@ public final class AuthController {
      * @return AuthResponse con token JWT y datos del usuario.
      */
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody final LoginRequest request) {
+    public ResponseEntity<?> login(@RequestBody final LoginRequest request) {
         return ResponseEntity.ok(authService.iniciarSesion(request));
     }
 
@@ -115,7 +115,8 @@ public final class AuthController {
 
     /** Verifica el código TOTP y activa 2FA para el usuario. POST /api/v1/auth/2fa/enable */
     @PostMapping("/2fa/enable")
-    public ResponseEntity<TotpEnableResponse> enable2fa(@RequestBody final TotpVerifyRequest request) {
+    public ResponseEntity<TotpEnableResponse> enable2fa(
+            @RequestBody final TotpVerifyRequest request) {
         return ResponseEntity.ok(authService.enableTotpForCurrentUser(request.getCode()));
     }
 
@@ -127,17 +128,17 @@ public final class AuthController {
     }
 
     /**
-     * Inicia el flujo de autenticación con Google (Redirige a Google).
-     * GET /api/v1/auth/google/authorize
+     * Inicia el flujo de autenticación con Google (Redirige a Google). GET
+     * /api/v1/auth/google/authorize
      */
     @GetMapping("/google/authorize")
     public ResponseEntity<java.util.Map<String, String>> authorizeGoogleLogin() {
-        return ResponseEntity.ok(java.util.Map.of("url", authService.getGoogleAuthorizeUrl("login")));
+        return ResponseEntity.ok(
+                java.util.Map.of("url", authService.getGoogleAuthorizeUrl("login")));
     }
 
     /**
-     * Callback de Google OAuth2 para inicio de sesión o registro.
-     * GET /api/v1/auth/google/callback
+     * Callback de Google OAuth2 para inicio de sesión o registro. GET /api/v1/auth/google/callback
      */
     @GetMapping("/google/callback")
     public ResponseEntity<String> googleLoginCallback(
@@ -147,13 +148,11 @@ public final class AuthController {
         return authService.processGoogleCallback(code, error, state);
     }
 
-    /**
-     * Vincula la cuenta Google al usuario autenticado. 
-     * GET /api/v1/auth/google/link/authorize
-     */
+    /** Vincula la cuenta Google al usuario autenticado. GET /api/v1/auth/google/link/authorize */
     @GetMapping("/google/link/authorize")
     public ResponseEntity<java.util.Map<String, String>> authorizeGoogleLink() {
-        return ResponseEntity.ok(java.util.Map.of("url", authService.getGoogleAuthorizeUrl("link")));
+        return ResponseEntity.ok(
+                java.util.Map.of("url", authService.getGoogleAuthorizeUrl("link")));
     }
 
     /** Desvincula la cuenta Google del usuario autenticado. POST /api/v1/auth/google/unlink */

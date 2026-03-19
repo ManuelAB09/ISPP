@@ -196,7 +196,8 @@ public class GoogleClassroomController {
         try {
             coursesResp = rest.exchange(coursesUrl, HttpMethod.GET, coursesReq, String.class);
         } catch (org.springframework.web.client.HttpClientErrorException e) {
-            if (e.getStatusCode() == HttpStatus.FORBIDDEN || e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
+            if (e.getStatusCode() == HttpStatus.FORBIDDEN
+                    || e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
                 return ResponseEntity.ok()
                         .contentType(MediaType.TEXT_HTML)
                         .body(htmlError("insufficient_scopes"));
@@ -450,8 +451,7 @@ public class GoogleClassroomController {
                     googleClassroomService.listarArchivosCursoVinculado(usuario, communityId);
             return ResponseEntity.ok(resp);
         } catch (org.springframework.web.client.HttpClientErrorException e) {
-            return ResponseEntity.status(e.getStatusCode())
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(e.getStatusCode()).body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", e.getMessage()));
