@@ -14,6 +14,21 @@ import { communitiesApi } from '../../api/communities.api';
 
 // Mocks
 jest.mock('../../api/eventEndpoints');
+jest.mock('../../api/axiosConfig', () => ({
+  __esModule: true,
+  default: {
+    get: jest.fn().mockResolvedValue({ data: [] }),
+    post: jest.fn().mockResolvedValue({ data: {} }),
+    delete: jest.fn().mockResolvedValue({ data: {} }),
+    put: jest.fn().mockResolvedValue({ data: {} }),
+  }
+}));
+jest.mock('../../api/zoom.api', () => ({
+  ZoomApi: {
+    getEventRecordings: jest.fn().mockResolvedValue([]),
+    uploadRecordingToClassroom: jest.fn().mockResolvedValue({}),
+  }
+}));
 jest.mock('../../api/communities.api', () => ({
   communitiesApi: {
     getMyMembership: jest.fn(),
