@@ -305,4 +305,13 @@ export const communitiesApi = {
   uploadPhoto(communityId, formData) {
     return apiClient.post(`/api/v1/communities/${communityId}/photo`, formData);
   },
+
+  /**
+   * GET /api/v1/communities/{communityId}/ranking
+   * Obtener ranking de miembros de comunidad
+   * @param {number} communityId
+   */
+  getRanking(communityId) {
+    return apiClient.get(`/api/v1/communities/${communityId}/ranking`);
+  },
 };

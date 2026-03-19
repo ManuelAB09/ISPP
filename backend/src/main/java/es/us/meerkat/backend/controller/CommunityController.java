@@ -565,6 +565,32 @@ public class CommunityController {
         }
     }
 
+    /** Ranking de miembros por actividad. GET /api/v1/communities/{communityId}/ranking */
+    @GetMapping("/{communityId}/ranking")
+    @Operation(
+            summary = "Ranking de miembros",
+            description = "Devuelve el ranking de actividad de los miembros de la comunidad",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Ranking obtenido"),
+        @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
+        @ApiResponse(responseCode = "403", description = "No eres miembro de la comunidad")
+    })
+    public ResponseEntity<List<CommunityRankingEntryResponse>> getCommunityRanking(
+            @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        if (!authorizationService.isMemberOf(usuario.getId(), communityId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        return ResponseEntity.ok(
+                communityService.getCommunityRanking(communityId, usuario.getId()));
+    }
+
     /**
      * Añade un nuevo administrador a la comunidad (solo comunidades corporativas). POST
      * /api/v1/communities/{communityId}/admins
