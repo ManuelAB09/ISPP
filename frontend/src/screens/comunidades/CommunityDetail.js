@@ -71,11 +71,12 @@ const formatFileSize = (bytes) => {
 };
 
 export default function CommunityDetail() {
-    // Estado para alternar entre pestaña de eventos y anuncios
-    const [showAnnouncementsTab, setShowAnnouncementsTab] = useState(false);
+  // Estado para alternar entre pestaña de eventos y anuncios
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab');
+  const [showAnnouncementsTab, setShowAnnouncementsTab] = useState(initialTab === 'anuncios');
   const { communityId } = useParams();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { socket } = useSocketContext();
   const openChatOnLoad = searchParams.get('chat') === 'open';
@@ -1080,14 +1081,24 @@ export default function CommunityDetail() {
           <div className="cd-tabs-header">
             <button
               className={`cd-tab-btn${!showAnnouncementsTab ? ' cd-tab-btn-active' : ''}`}
-              onClick={() => setShowAnnouncementsTab(false)}
+              onClick={() => {
+                setShowAnnouncementsTab(false);
+                const params = new URLSearchParams(searchParams);
+                params.set('tab', 'eventos');
+                navigate({ search: params.toString() }, { replace: true });
+              }}
               type="button"
             >
               <LuCalendar /> Eventos
             </button>
             <button
               className={`cd-tab-btn${showAnnouncementsTab ? ' cd-tab-btn-active' : ''}`}
-              onClick={() => setShowAnnouncementsTab(true)}
+              onClick={() => {
+                setShowAnnouncementsTab(true);
+                const params = new URLSearchParams(searchParams);
+                params.set('tab', 'anuncios');
+                navigate({ search: params.toString() }, { replace: true });
+              }}
               type="button"
             >
               <span role="img" aria-label="Anuncios">📢</span> Anuncios

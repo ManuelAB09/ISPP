@@ -38,6 +38,19 @@ public class Notificacion {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    // --- NUEVOS CAMPOS PARA ANUNCIOS ---
+    /** Id del anuncio relacionado (si aplica). */
+    private Long anuncioId;
+
+    /** Id de la comunidad relacionada (si aplica). */
+    private Long comunidadId;
+
+    /** Nombre de la comunidad relacionada (si aplica). */
+    private String comunidadNombre;
+
+    /** URL de la imagen de la comunidad relacionada (si aplica). */
+    private String comunidadImagenUrl;
+
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();

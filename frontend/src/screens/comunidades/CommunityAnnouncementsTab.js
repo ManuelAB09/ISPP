@@ -1,7 +1,24 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axiosInstance from '../../api/axiosConfig';
 import { getAnnouncementComments, postAnnouncementComment } from '../../api/announcementComments';
 import './CommunityAnnouncementsTab.css';
+import { getApiBaseUrl } from '../../api/baseUrl';
+
+const DEFAULT_PROFILE_AVATAR =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='60' fill='%23E6EAF3'/%3E%3Ccircle cx='60' cy='46' r='22' fill='%2395A1BB'/%3E%3Cpath d='M20 106c6-20 22-32 40-32s34 12 40 32' fill='%2395A1BB'/%3E%3C/svg%3E";
+
+const toAbsoluteImageUrl = (imageUrl, fallback = DEFAULT_PROFILE_AVATAR) => {
+    const raw = String(imageUrl || '').trim();
+    if (!raw) {
+        return fallback;
+    }
+    if (/^https?:\/\//i.test(raw) || raw.startsWith('data:') || raw.startsWith('blob:')) {
+        return raw;
+    }
+    const base = getApiBaseUrl();
+    return raw.startsWith('/') ? `${base}${raw}` : `${base}/${raw}`;
+};
 
 export default function CommunityAnnouncementsTab({ communityId, isAdmin }) {
   const [announcements, setAnnouncements] = useState([]);
@@ -11,6 +28,8 @@ export default function CommunityAnnouncementsTab({ communityId, isAdmin }) {
   const [form, setForm] = useState({ titulo: '', contenido: '', permitirComentarios: true });
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState(null);
+  const [searchParams] = useSearchParams();
+  const anuncioIdParam = searchParams.get('anuncioId');
 
   useEffect(() => {
     const fetchAnnouncements = async () => {
@@ -91,10 +110,10 @@ export default function CommunityAnnouncementsTab({ communityId, isAdmin }) {
 
       {showModal && (
         <div className="catab-modal-overlay">
-          <div className="catab-modal" style={{maxWidth: 420, borderRadius: 12, boxShadow: '0 4px 24px #0002', background: '#fff', padding: 24}}>
-            <h2 style={{marginTop: 0, marginBottom: 16, fontWeight: 700, fontSize: 22, color: '#333'}}>Crear anuncio</h2>
+          <div className="catab-modal">
+            <h2>Crear anuncio</h2>
             <form onSubmit={handleSubmit}>
-              <label style={{display: 'block', fontWeight: 500, marginBottom: 6}}>Título</label>
+              <label className="catab-label">Título</label>
               <input
                 type="text"
                 name="titulo"
@@ -105,10 +124,9 @@ export default function CommunityAnnouncementsTab({ communityId, isAdmin }) {
                 maxLength={200}
                 required
                 className="catab-input"
-                style={{width: '100%', marginBottom: 12, padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 16}}
                 autoFocus
               />
-              <label style={{display: 'block', fontWeight: 500, marginBottom: 6}}>Contenido</label>
+              <label className="catab-label">Contenido</label>
               <textarea
                 name="contenido"
                 placeholder="Contenido del anuncio"
@@ -118,23 +136,21 @@ export default function CommunityAnnouncementsTab({ communityId, isAdmin }) {
                 maxLength={5000}
                 required
                 className="catab-textarea"
-                style={{width: '100%', marginBottom: 12, padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 15, resize: 'vertical'}} 
                 rows={6}
               />
-              <label style={{display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, fontSize: 15}}>
+              <label className="catab-label catab-checkbox-label">
                 <input
                   type="checkbox"
                   name="permitirComentarios"
                   checked={form.permitirComentarios}
                   onChange={handleChange}
-                  style={{marginRight: 6}}
                 />
                 Permitir comentarios en este anuncio
               </label>
-              {formError && <div className="catab-form-error" style={{color: '#c00', marginBottom: 12}}>{formError}</div>}
-              <div className="catab-modal-actions" style={{display: 'flex', justifyContent: 'flex-end', gap: 10}}>
-                <button type="button" onClick={handleCloseModal} disabled={creating} className="catab-btn-cancel" style={{padding: '8px 18px', borderRadius: 6, border: 'none', background: '#eee', color: '#333', fontWeight: 500, fontSize: 15, cursor: 'pointer'}}>Cancelar</button>
-                <button type="submit" disabled={creating} className="catab-btn-submit" style={{padding: '8px 18px', borderRadius: 6, border: 'none', background: '#2b7cff', color: '#fff', fontWeight: 600, fontSize: 15, cursor: 'pointer'}}>{creating ? 'Creando...' : 'Crear'}</button>
+              {formError && <div className="catab-form-error">{formError}</div>}
+              <div className="catab-modal-actions">
+                <button type="button" onClick={handleCloseModal} disabled={creating} className="catab-btn-cancel">Cancelar</button>
+                <button type="submit" disabled={creating} className="catab-btn-submit">{creating ? 'Creando...' : 'Crear'}</button>
               </div>
             </form>
           </div>
@@ -148,19 +164,26 @@ export default function CommunityAnnouncementsTab({ communityId, isAdmin }) {
       ) : !announcements.length ? (
         <div className="catab-empty">No hay anuncios en esta comunidad.</div>
       ) : (
-        announcements.map(anuncio => (
-          <div key={anuncio.id} className="catab-item">
-            <div className="catab-title">{anuncio.titulo}</div>
-            <div className="catab-meta">
-              <span>{new Date(anuncio.createdAt).toLocaleString('es-ES')}</span>
-              {anuncio.editado && <span className="catab-editado">(editado)</span>}
+        announcements.map(anuncio => {
+          const isHighlighted = anuncioIdParam && String(anuncio.id) === String(anuncioIdParam);
+          return (
+            <div
+              key={anuncio.id}
+              className={`catab-item${isHighlighted ? ' catab-item-highlighted' : ''}`}
+              style={isHighlighted ? { border: '2px solid #2b7cff', background: '#eaf2ff' } : {}}
+            >
+              <div className="catab-title">{anuncio.titulo}</div>
+              <div className="catab-meta">
+                <span>{new Date(anuncio.createdAt).toLocaleString('es-ES')}</span>
+                {anuncio.editado && <span className="catab-editado">(editado)</span>}
+              </div>
+              <div className="catab-content">{anuncio.contenido}</div>
+              {anuncio.permitirComentarios && (
+                <CommentsSection anuncioId={anuncio.id} />
+              )}
             </div>
-            <div className="catab-content">{anuncio.contenido}</div>
-            {anuncio.permitirComentarios && (
-              <CommentsSection anuncioId={anuncio.id} />
-            )}
-          </div>
-        ))
+          );
+        })
       )}
     </div>
   );
@@ -213,8 +236,16 @@ function CommentsSection({ anuncioId }) {
             ) : (
               comments.map(c => (
                 <div key={c.id} className="catab-comment-item">
-                  <span style={{ fontWeight: 500 }}>{c.autor}:</span> {c.texto}
-                  <span style={{ float: 'right', color: '#94a3b8', fontSize: '0.93em' }}>{new Date(c.fecha).toLocaleString('es-ES')}</span>
+                  <img
+                    src={toAbsoluteImageUrl(c.usuario?.avatarUrl, DEFAULT_PROFILE_AVATAR)}
+                    alt={c.usuario?.nombre || 'Usuario'}
+                    className="catab-comment-avatar"
+                  />
+                  <span className="catab-comment-author">{c.usuario?.nombre || 'Usuario'}</span>
+                  {c.texto}
+                  <span style={{ float: 'right', color: '#94a3b8', fontSize: '0.93em' }}>
+                    {c.createdAt ? new Date(c.createdAt).toLocaleString('es-ES') : ''}
+                  </span>
                 </div>
               ))
             )}

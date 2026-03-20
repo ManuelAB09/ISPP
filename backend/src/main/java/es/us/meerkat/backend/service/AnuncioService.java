@@ -30,13 +30,14 @@ public class AnuncioService {
     private final AuthorizationService authorizationService;
     private final MiembroComunidadRepository miembroComunidadRepository;
     private final NotificacionService notificacionService;
+    private final es.us.meerkat.backend.repository.AlertaEventoRepository alertaEventoRepository;
 
     /**
      * Crea un nuevo anuncio en una comunidad.
      *
-     * @param userId ID del usuario administrador
+     * @param userId      ID del usuario administrador
      * @param communityId ID de la comunidad
-     * @param request datos del anuncio
+     * @param request     datos del anuncio
      * @return el anuncio creado
      * @throws IllegalArgumentException si el usuario no tiene permisos
      */
@@ -47,42 +48,46 @@ public class AnuncioService {
                     "Solo administradores pueden crear anuncios en esta comunidad");
         }
 
-        Usuario usuario =
-                usuarioRepository
-                        .findById(userId)
-                        .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        Usuario usuario = usuarioRepository
+                .findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
-        Comunidad comunidad =
-                comunidadRepository
-                        .findById(communityId)
-                        .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
+        Comunidad comunidad = comunidadRepository
+                .findById(communityId)
+                .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
 
-        Anuncio anuncio =
-                Anuncio.builder()
-                        .titulo(request.titulo())
-                        .contenido(request.contenido())
-                        .usuario(usuario)
-                        .comunidad(comunidad)
-                        .permitirComentarios(
-                                request.permitirComentarios() != null
-                                        ? request.permitirComentarios()
-                                        : true)
-                        .build();
+        Anuncio anuncio = Anuncio.builder()
+                .titulo(request.titulo())
+                .contenido(request.contenido())
+                .usuario(usuario)
+                .comunidad(comunidad)
+                .permitirComentarios(
+                        request.permitirComentarios() != null
+                                ? request.permitirComentarios()
+                                : true)
+                .build();
 
         Anuncio saved = anuncioRepository.save(anuncio);
 
         // Notificar a todos los miembros de la comunidad excepto el creador
-        java.util.List<Usuario> miembros =
-                miembroComunidadRepository.findMiembrosMasAntiguosEnComunidad(
-                        comunidad.getId(), usuario.getId());
+        java.util.List<Usuario> miembros = miembroComunidadRepository.findMiembrosMasAntiguosEnComunidad(
+                comunidad.getId(), usuario.getId());
         for (Usuario miembro : miembros) {
-            Notificacion notif =
-                    Notificacion.builder()
-                            .usuario(miembro)
-                            .titulo("Nuevo anuncio en tu comunidad")
-                            .mensaje(saved.getTitulo())
-                            .tipo("ANUNCIO")
-                            .build();
+            // Usar la misma lógica de imagen que en la pestaña de comunidades
+            String imagenUrl = comunidad.getImagenUrl();
+            if (imagenUrl != null && (imagenUrl.equalsIgnoreCase("empty") || imagenUrl.isBlank())) {
+                imagenUrl = null; // O pon aquí una URL por defecto si tienes una
+            }
+            Notificacion notif = Notificacion.builder()
+                    .usuario(miembro)
+                    .titulo("Nuevo anuncio en tu comunidad")
+                    .mensaje(saved.getTitulo())
+                    .tipo("ANUNCIO")
+                    .anuncioId(saved.getId())
+                    .comunidadId(comunidad.getId())
+                    .comunidadNombre(comunidad.getNombre())
+                    .comunidadImagenUrl(imagenUrl)
+                    .build();
             notificacionService.crearYNotificar(notif);
         }
         return saved;
@@ -92,15 +97,14 @@ public class AnuncioService {
      * Obtiene los anuncios de una comunidad de forma paginada.
      *
      * @param communityId ID de la comunidad
-     * @param pageable paginación
+     * @param pageable    paginación
      * @return página de anuncios
      */
     @Transactional(readOnly = true)
     public Page<Anuncio> getAnunciosByCommunity(Long communityId, Pageable pageable) {
-        Comunidad comunidad =
-                comunidadRepository
-                        .findById(communityId)
-                        .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
+        Comunidad comunidad = comunidadRepository
+                .findById(communityId)
+                .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
 
         return anuncioRepository.findByComunidadOrderByCreatedAtDesc(comunidad, pageable);
     }
@@ -122,9 +126,9 @@ public class AnuncioService {
     /**
      * Actualiza un anuncio existente.
      *
-     * @param userId ID del usuario administrador
+     * @param userId    ID del usuario administrador
      * @param anuncioId ID del anuncio
-     * @param request datos a actualizar
+     * @param request   datos a actualizar
      * @return el anuncio actualizado
      * @throws IllegalArgumentException si el usuario no tiene permisos
      */
@@ -155,7 +159,7 @@ public class AnuncioService {
     /**
      * Elimina un anuncio.
      *
-     * @param userId ID del usuario administrador
+     * @param userId    ID del usuario administrador
      * @param anuncioId ID del anuncio
      * @throws IllegalArgumentException si el usuario no tiene permisos
      */
