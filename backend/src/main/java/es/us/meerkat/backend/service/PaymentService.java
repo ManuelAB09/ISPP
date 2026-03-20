@@ -56,10 +56,6 @@ public class PaymentService {
     // -------------------------------------------------------------------------
 
     /** Verificación de tutor → TipoTransaccion.PAGO_VERIFICACION */
-    /** ID del precio de verificación de tutor en Stripe (pago único) */
-    private static final String PRICE_VERIFICACION_TUTOR = "price_1TBeu1KD9Z3Ygfm3nNkMLAmn";
-
-    /** Verificación de tutor → TipoTransaccion.PAGO_VERIFICACION */
     @Transactional
     public PaymentUrlResponse generarPagoVerificacionTutor(Long tutorId, Long usuarioId)
             throws StripeException {

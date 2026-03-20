@@ -53,6 +53,7 @@ class CommunityControllerTest {
 
     @InjectMocks private CommunityController communityController;
 
+    @SuppressWarnings("unchecked")
     @Test
     void createCommunityShouldReturnUnauthorizedWhenUserIsNull() {
         CreateCommunityRequest request =
@@ -66,7 +67,8 @@ class CommunityControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
-    @Test
+    @SuppressWarnings("unchecked")
+@Test
     void createCommunityShouldReturnCreatedWhenServiceSucceeds() {
         Usuario usuario = buildUsuario(1L);
         CreateCommunityRequest request =

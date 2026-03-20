@@ -176,6 +176,16 @@ export const communitiesApi = {
   },
 
   /**
+   * POST /api/v1/communities/{communityId}/admins/{nuevoAdminId}
+   * Añadir un nuevo administrador a la comunidad
+   * @param {number} communityId
+   * @param {number} nuevoAdminId
+   */
+  addAdmin(communityId, nuevoAdminId) {
+    return apiClient.post(`/api/v1/communities/${communityId}/admins/${nuevoAdminId}`, {});
+  },
+
+  /**
    * Activar rol PROFESOR para el usuario autenticado dentro de una comunidad.
    * Nota: se prueban varias rutas por compatibilidad hasta fijar el contrato backend.
    * @param {number} communityId

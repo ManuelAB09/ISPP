@@ -124,9 +124,4 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 
-    private ResponseEntity<ErrorResponse> buildErrorResponse(
-            final HttpStatus status, final String message, final String path) {
-        final ErrorResponse errorResponse = new ErrorResponse(status.value(), message, path);
-        return ResponseEntity.status(status).body(errorResponse);
-    }
 }

@@ -268,7 +268,7 @@ class SolicitudContratacionServiceTest {
         when(solicitudRepository.findById(100L)).thenReturn(Optional.of(solicitud));
         when(solicitudRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        SolicitudContratacionResponse result = service.rechazarSolicitud(100L, 2L, "No disponible");
+        service.rechazarSolicitud(100L, 2L, "No disponible");
 
         assertThat(solicitud.getEstado()).isEqualTo(EstadoSolicitudContratacion.RECHAZADA);
         assertThat(solicitud.getMotivoRechazo()).isEqualTo("No disponible");

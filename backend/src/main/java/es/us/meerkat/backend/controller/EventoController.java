@@ -297,8 +297,7 @@ public class EventoController {
      * @return El evento cancelado.
      */
     @PostMapping(
-            "/{eventId}/cancel") // TODO: Esto debería de ser un PUT o un PATCH pero yo no mando
-    // asiq nos vemo
+            "/{eventId}/cancel")
     @Operation(summary = "Cancelar evento", description = "Cancela un evento y registra el motivo")
     public ResponseEntity<EventDetailResponse> cancelarEvento(
             @PathVariable @Parameter(description = "ID del evento") final Long eventId,

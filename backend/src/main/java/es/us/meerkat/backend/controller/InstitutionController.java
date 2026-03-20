@@ -236,10 +236,7 @@ public class InstitutionController {
                 .planActivo(institution.getPlanActivo())
                 .totalUsuarios((int) institutionService.contarUsuarios(institution.getId()))
                 .totalComunidades(
-                        (int) institutionService.contarComunidades(institution.getId())) // TODO:
-                // calcular
-                // desde
-                // comunidades
+                        (int) institutionService.contarComunidades(institution.getId()))
                 .createdAt(institution.getCreatedAt())
                 .updatedAt(institution.getUpdatedAt())
                 .build();

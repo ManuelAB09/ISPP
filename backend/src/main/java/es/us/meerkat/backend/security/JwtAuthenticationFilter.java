@@ -42,6 +42,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     /** Repositorio para cargar el usuario desde la base de datos. */
     private final UsuarioRepository usuarioRepository;
 
+    @SuppressWarnings("deprecation")
     @Override
     protected void doFilterInternal(
             @NonNull final HttpServletRequest request,

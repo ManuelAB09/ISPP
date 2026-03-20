@@ -44,13 +44,14 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Servicio que gestiona toda la integración con Google Calendar.
  *
- * <p>Responsabilidades:
+ * <p>
+ * Responsabilidades:
  *
  * <ol>
- *   <li>Flujo OAuth: generar URL de autorización y procesar el callback.
- *   <li>Gestión de tokens: renovar accessToken cuando caduca.
- *   <li>CRUD en Google Calendar: crear, actualizar y eliminar eventos.
- *   <li>Gestión de preferencias: qué tipos sincronizar, activar/desactivar.
+ * <li>Flujo OAuth: generar URL de autorización y procesar el callback.
+ * <li>Gestión de tokens: renovar accessToken cuando caduca.
+ * <li>CRUD en Google Calendar: crear, actualizar y eliminar eventos.
+ * <li>Gestión de preferencias: qué tipos sincronizar, activar/desactivar.
  * </ol>
  */
 @Service
@@ -75,54 +76,53 @@ public class GoogleCalendarService {
     // ===============================
 
     /**
-     * Genera la URL de autorización de Google a la que hay que redirigir al usuario. El frontend
+     * Genera la URL de autorización de Google a la que hay que redirigir al
+     * usuario. El frontend
      * recibe esta URL y redirige al usuario (o abre una ventana emergente).
      *
-     * @param usuarioId ID del usuario, se pasa como state para recuperarlo en el callback.
+     * @param usuarioId ID del usuario, se pasa como state para recuperarlo en el
+     *                  callback.
      * @return URL de autorización de Google.
      */
     public String generarUrlAutorizacion(final Long usuarioId) throws Exception {
         final GoogleAuthorizationCodeFlow flow = buildFlow();
-        final GoogleAuthorizationCodeRequestUrl url =
-                flow.newAuthorizationUrl()
-                        .setRedirectUri(calendarConfig.getRedirectUri())
-                        .setState(String.valueOf(usuarioId))
-                        .set("access_type", "offline") // para obtener refreshToken
-                        .set("prompt", "consent"); // fuerza refreshToken en cada autorización
+        final GoogleAuthorizationCodeRequestUrl url = flow.newAuthorizationUrl()
+                .setRedirectUri(calendarConfig.getRedirectUri())
+                .setState(String.valueOf(usuarioId))
+                .set("access_type", "offline") // para obtener refreshToken
+                .set("prompt", "consent"); // fuerza refreshToken en cada autorización
 
         return url.build();
     }
 
     /**
-     * Procesa el callback de Google OAuth. Intercambia el código de autorización por tokens y los
+     * Procesa el callback de Google OAuth. Intercambia el código de autorización
+     * por tokens y los
      * guarda.
      *
-     * @param code Código de autorización recibido de Google.
+     * @param code      Código de autorización recibido de Google.
      * @param usuarioId ID del usuario extraído del state.
      */
     @Transactional
     public void procesarCallback(final String code, final Long usuarioId) throws Exception {
         final GoogleAuthorizationCodeFlow flow = buildFlow();
-        final GoogleTokenResponse tokenResponse =
-                flow.newTokenRequest(code)
-                        .setRedirectUri(calendarConfig.getRedirectUri())
-                        .execute();
+        final GoogleTokenResponse tokenResponse = flow.newTokenRequest(code)
+                .setRedirectUri(calendarConfig.getRedirectUri())
+                .execute();
 
-        final Usuario usuario =
-                usuarioRepository
-                        .findById(usuarioId)
-                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        final Usuario usuario = usuarioRepository
+                .findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         // Buscar token existente o crear uno nuevo
-        final GoogleCalendarToken token =
-                tokenRepository
-                        .findByUsuarioId(usuarioId)
-                        .orElseGet(
-                                () -> {
-                                    final GoogleCalendarToken t = new GoogleCalendarToken();
-                                    t.setUsuario(usuario);
-                                    return t;
-                                });
+        final GoogleCalendarToken token = tokenRepository
+                .findByUsuarioId(usuarioId)
+                .orElseGet(
+                        () -> {
+                            final GoogleCalendarToken t = new GoogleCalendarToken();
+                            t.setUsuario(usuario);
+                            return t;
+                        });
 
         token.setAccessToken(tokenResponse.getAccessToken());
         // Google solo devuelve refreshToken la primera vez (o si se forzó con
@@ -138,7 +138,8 @@ public class GoogleCalendarService {
     }
 
     /**
-     * Desconecta Google Calendar del usuario. Elimina tokens y todos los mapeos de eventos.
+     * Desconecta Google Calendar del usuario. Elimina tokens y todos los mapeos de
+     * eventos.
      *
      * @param usuarioId ID del usuario.
      */
@@ -178,17 +179,16 @@ public class GoogleCalendarService {
      * Actualiza las preferencias de sincronización del usuario.
      *
      * @param usuarioId ID del usuario.
-     * @param request Nuevas preferencias.
+     * @param request   Nuevas preferencias.
      */
     @Transactional
     public GoogleCalendarStatusResponse actualizarPreferencias(
             final Long usuarioId, final UpdateCalendarPreferenciasRequest request) {
 
-        final GoogleCalendarToken token =
-                tokenRepository
-                        .findByUsuarioId(usuarioId)
-                        .orElseThrow(
-                                () -> new RuntimeException("Google Calendar no está conectado"));
+        final GoogleCalendarToken token = tokenRepository
+                .findByUsuarioId(usuarioId)
+                .orElseThrow(
+                        () -> new RuntimeException("Google Calendar no está conectado"));
 
         if (request.getSincronizacionActiva() != null) {
             token.setSincronizacionActiva(request.getSincronizacionActiva());
@@ -211,10 +211,12 @@ public class GoogleCalendarService {
     // ===============================
 
     /**
-     * Crea un evento en Google Calendar para todos los usuarios que tienen la sincronización activa
+     * Crea un evento en Google Calendar para todos los usuarios que tienen la
+     * sincronización activa
      * y quieren sincronizar ese tipo de evento.
      *
-     * <p>Llamado desde {@link EventoService} tras crear un evento.
+     * <p>
+     * Llamado desde {@link EventoService} tras crear un evento.
      *
      * @param evento Evento de la plataforma recién creado.
      */
@@ -235,16 +237,17 @@ public class GoogleCalendarService {
     }
 
     /**
-     * Actualiza un evento en Google Calendar para todos los usuarios que lo tienen sincronizado.
+     * Actualiza un evento en Google Calendar para todos los usuarios que lo tienen
+     * sincronizado.
      *
-     * <p>Llamado desde {@link EventoService} tras editar un evento.
+     * <p>
+     * Llamado desde {@link EventoService} tras editar un evento.
      *
      * @param evento Evento de la plataforma ya actualizado.
      */
     @Transactional
     public void sincronizarActualizacion(final Evento evento) {
-        final List<GoogleCalendarEvento> mapeos =
-                calendarEventoRepository.findByEventoId(evento.getId());
+        final List<GoogleCalendarEvento> mapeos = calendarEventoRepository.findByEventoId(evento.getId());
 
         mapeos.forEach(
                 mapeo -> {
@@ -262,14 +265,14 @@ public class GoogleCalendarService {
     /**
      * Cancela (elimina) un evento en Google Calendar para todos los usuarios.
      *
-     * <p>Llamado desde {@link EventoService} al cancelar un evento.
+     * <p>
+     * Llamado desde {@link EventoService} al cancelar un evento.
      *
      * @param evento Evento cancelado.
      */
     @Transactional
     public void sincronizarCancelacion(final Evento evento) {
-        final List<GoogleCalendarEvento> mapeos =
-                calendarEventoRepository.findByEventoId(evento.getId());
+        final List<GoogleCalendarEvento> mapeos = calendarEventoRepository.findByEventoId(evento.getId());
 
         mapeos.forEach(
                 mapeo -> {
@@ -285,17 +288,18 @@ public class GoogleCalendarService {
     }
 
     /**
-     * Sincroniza un evento en Google Calendar para un usuario concreto. Usado cuando un usuario
-     * confirma asistencia a un evento. Si el usuario no tiene GCal conectado o ya lo tiene
+     * Sincroniza un evento en Google Calendar para un usuario concreto. Usado
+     * cuando un usuario
+     * confirma asistencia a un evento. Si el usuario no tiene GCal conectado o ya
+     * lo tiene
      * sincronizado, no hace nada.
      *
-     * @param evento Evento de la plataforma.
+     * @param evento  Evento de la plataforma.
      * @param usuario Usuario que confirma asistencia.
      */
     @Transactional
     public void sincronizarParaUsuario(final Evento evento, final Usuario usuario) {
-        final Optional<GoogleCalendarToken> tokenOpt =
-                tokenRepository.findByUsuarioId(usuario.getId());
+        final Optional<GoogleCalendarToken> tokenOpt = tokenRepository.findByUsuarioId(usuario.getId());
 
         if (tokenOpt.isEmpty() || !Boolean.TRUE.equals(tokenOpt.get().getSincronizacionActiva())) {
             return;
@@ -319,17 +323,17 @@ public class GoogleCalendarService {
     }
 
     /**
-     * Elimina un evento de Google Calendar para un usuario concreto. Usado cuando un usuario
+     * Elimina un evento de Google Calendar para un usuario concreto. Usado cuando
+     * un usuario
      * cancela su asistencia a un evento.
      *
-     * @param evento Evento de la plataforma.
+     * @param evento  Evento de la plataforma.
      * @param usuario Usuario que cancela asistencia.
      */
     @Transactional
     public void desincronizarParaUsuario(final Evento evento, final Usuario usuario) {
-        final Optional<GoogleCalendarEvento> mapeoOpt =
-                calendarEventoRepository.findByEventoIdAndUsuarioId(
-                        evento.getId(), usuario.getId());
+        final Optional<GoogleCalendarEvento> mapeoOpt = calendarEventoRepository.findByEventoIdAndUsuarioId(
+                evento.getId(), usuario.getId());
 
         if (mapeoOpt.isEmpty()) {
             return;
@@ -353,10 +357,9 @@ public class GoogleCalendarService {
     private void crearEventoParaUsuario(final Evento evento, final Usuario usuario)
             throws Exception {
 
-        final GoogleCalendarToken token =
-                tokenRepository
-                        .findByUsuarioId(usuario.getId())
-                        .orElseThrow(() -> new RuntimeException("Token no encontrado"));
+        final GoogleCalendarToken token = tokenRepository
+                .findByUsuarioId(usuario.getId())
+                .orElseThrow(() -> new RuntimeException("Token no encontrado"));
 
         if (!token.sincronizaTipo(
                 evento.getTipoEvento() != null ? evento.getTipoEvento() : TipoEvento.OTRO)) {
@@ -384,10 +387,9 @@ public class GoogleCalendarService {
     private void actualizarEventoParaUsuario(final Evento evento, final GoogleCalendarEvento mapeo)
             throws Exception {
 
-        final GoogleCalendarToken token =
-                tokenRepository
-                        .findByUsuarioId(mapeo.getUsuario().getId())
-                        .orElseThrow(() -> new RuntimeException("Token no encontrado"));
+        final GoogleCalendarToken token = tokenRepository
+                .findByUsuarioId(mapeo.getUsuario().getId())
+                .orElseThrow(() -> new RuntimeException("Token no encontrado"));
 
         final Calendar calendar = getCalendarClient(token);
         final Event gcalEvent = buildGcalEvent(evento);
@@ -402,10 +404,9 @@ public class GoogleCalendarService {
     }
 
     private void eliminarEventoParaUsuario(final GoogleCalendarEvento mapeo) throws Exception {
-        final GoogleCalendarToken token =
-                tokenRepository
-                        .findByUsuarioId(mapeo.getUsuario().getId())
-                        .orElseThrow(() -> new RuntimeException("Token no encontrado"));
+        final GoogleCalendarToken token = tokenRepository
+                .findByUsuarioId(mapeo.getUsuario().getId())
+                .orElseThrow(() -> new RuntimeException("Token no encontrado"));
 
         final Calendar calendar = getCalendarClient(token);
 
@@ -428,16 +429,15 @@ public class GoogleCalendarService {
     // ===============================
 
     /**
-     * Construye el objeto Event de Google Calendar a partir de un evento de la plataforma. Incluye
+     * Construye el objeto Event de Google Calendar a partir de un evento de la
+     * plataforma. Incluye
      * título, descripción, ubicación/enlace, fechas y recordatorios.
      */
     private Event buildGcalEvent(final Evento evento) {
-        final TipoEvento tipo =
-                evento.getTipoEvento() != null ? evento.getTipoEvento() : TipoEvento.OTRO;
+        final TipoEvento tipo = evento.getTipoEvento() != null ? evento.getTipoEvento() : TipoEvento.OTRO;
 
         // Título con icono y tipo
-        final String titulo =
-                String.format("%s [%s] %s", tipo.getIcono(), tipo.getNombre(), evento.getTitulo());
+        final String titulo = String.format("%s [%s] %s", tipo.getIcono(), tipo.getNombre(), evento.getTitulo());
 
         // Descripción completa
         final StringBuilder desc = new StringBuilder();
@@ -454,8 +454,7 @@ public class GoogleCalendarService {
             desc.append("💻 Enlace: ").append(evento.getEnlaceVirtual());
         }
 
-        final Event gcalEvent =
-                new Event().setSummary(titulo).setDescription(desc.toString().trim());
+        final Event gcalEvent = new Event().setSummary(titulo).setDescription(desc.toString().trim());
 
         // Fechas
         final ZoneId zona = ZoneId.of(ZONA_HORARIA);
@@ -473,18 +472,16 @@ public class GoogleCalendarService {
         if (Boolean.TRUE.equals(evento.getEsVirtual()) && evento.getEnlaceVirtual() != null) {
             gcalEvent.setLocation(evento.getEnlaceVirtual());
         } else if (evento.getUbicacion() != null) {
-            final String loc =
-                    evento.getUbicacion().getDireccion() != null
-                            ? evento.getUbicacion().getNombre()
-                                    + ", "
-                                    + evento.getUbicacion().getDireccion()
-                            : evento.getUbicacion().getNombre();
+            final String loc = evento.getUbicacion().getDireccion() != null
+                    ? evento.getUbicacion().getNombre()
+                            + ", "
+                            + evento.getUbicacion().getDireccion()
+                    : evento.getUbicacion().getNombre();
             gcalEvent.setLocation(loc);
         }
 
         // Recordatorios: 24h y 1h antes (email + popup)
-        final EventReminder reminder24h =
-                new EventReminder().setMethod("email").setMinutes(24 * 60);
+        final EventReminder reminder24h = new EventReminder().setMethod("email").setMinutes(24 * 60);
         final EventReminder reminder1h = new EventReminder().setMethod("popup").setMinutes(60);
         final EventReminder reminder15min = new EventReminder().setMethod("popup").setMinutes(15);
 
@@ -500,7 +497,10 @@ public class GoogleCalendarService {
     // HELPERS
     // ===============================
 
-    /** Renueva el accessToken si ha caducado y devuelve el cliente Calendar listo para usar. */
+    /**
+     * Renueva el accessToken si ha caducado y devuelve el cliente Calendar listo
+     * para usar.
+     */
     private Calendar getCalendarClient(final GoogleCalendarToken token) throws Exception {
         if (token.accessTokenCaducado()) {
             renovarAccessToken(token);
@@ -511,15 +511,13 @@ public class GoogleCalendarService {
     /** Renueva el accessToken usando el refreshToken. */
     @Transactional
     protected void renovarAccessToken(final GoogleCalendarToken token) throws Exception {
-        final GoogleAuthorizationCodeFlow flow = buildFlow();
-        final com.google.api.client.auth.oauth2.TokenResponse response =
-                new com.google.api.client.googleapis.auth.oauth2.GoogleRefreshTokenRequest(
-                                GoogleNetHttpTransport.newTrustedTransport(),
-                                GsonFactory.getDefaultInstance(),
-                                token.getRefreshToken(),
-                                calendarConfig.getClientId(),
-                                calendarConfig.getClientSecret())
-                        .execute();
+        final com.google.api.client.auth.oauth2.TokenResponse response = new com.google.api.client.googleapis.auth.oauth2.GoogleRefreshTokenRequest(
+                GoogleNetHttpTransport.newTrustedTransport(),
+                GsonFactory.getDefaultInstance(),
+                token.getRefreshToken(),
+                calendarConfig.getClientId(),
+                calendarConfig.getClientSecret())
+                .execute();
 
         token.setAccessToken(response.getAccessToken());
         token.setExpiresAt(LocalDateTime.now().plusSeconds(response.getExpiresInSeconds()));
@@ -529,11 +527,11 @@ public class GoogleCalendarService {
 
     private GoogleAuthorizationCodeFlow buildFlow() throws Exception {
         return new GoogleAuthorizationCodeFlow.Builder(
-                        GoogleNetHttpTransport.newTrustedTransport(),
-                        GsonFactory.getDefaultInstance(),
-                        calendarConfig.getClientId(),
-                        calendarConfig.getClientSecret(),
-                        Collections.singletonList(GoogleCalendarConfig.CALENDAR_SCOPE))
+                GoogleNetHttpTransport.newTrustedTransport(),
+                GsonFactory.getDefaultInstance(),
+                calendarConfig.getClientId(),
+                calendarConfig.getClientSecret(),
+                Collections.singletonList(GoogleCalendarConfig.CALENDAR_SCOPE))
                 .setAccessType("offline")
                 .build();
     }
@@ -573,18 +571,19 @@ public class GoogleCalendarService {
     // ===============================
 
     /**
-     * Sincroniza una clase reservada (solicitud pagada) en Google Calendar para un usuario
-     * concreto. Si el usuario no tiene GCal conectado o ya lo tiene sincronizado, no hace nada.
+     * Sincroniza una clase reservada (solicitud pagada) en Google Calendar para un
+     * usuario
+     * concreto. Si el usuario no tiene GCal conectado o ya lo tiene sincronizado,
+     * no hace nada.
      *
      * @param solicitud Solicitud de contratación directa pagada.
-     * @param usuario Usuario (alumno o tutor) para quien crear el evento.
+     * @param usuario   Usuario (alumno o tutor) para quien crear el evento.
      */
     @Transactional
     public void sincronizarBookingParaUsuario(
             final SolicitudContratacionDirecta solicitud, final Usuario usuario) {
 
-        final Optional<GoogleCalendarToken> tokenOpt =
-                tokenRepository.findByUsuarioId(usuario.getId());
+        final Optional<GoogleCalendarToken> tokenOpt = tokenRepository.findByUsuarioId(usuario.getId());
 
         if (tokenOpt.isEmpty() || !Boolean.TRUE.equals(tokenOpt.get().getSincronizacionActiva())) {
             return;
@@ -608,15 +607,15 @@ public class GoogleCalendarService {
     }
 
     /**
-     * Elimina los eventos de Google Calendar de una clase cancelada para todos los usuarios
+     * Elimina los eventos de Google Calendar de una clase cancelada para todos los
+     * usuarios
      * sincronizados.
      *
      * @param solicitud Solicitud cancelada.
      */
     @Transactional
     public void desincronizarBooking(final SolicitudContratacionDirecta solicitud) {
-        final List<GoogleCalendarBooking> mapeos =
-                calendarBookingRepository.findBySolicitudId(solicitud.getId());
+        final List<GoogleCalendarBooking> mapeos = calendarBookingRepository.findBySolicitudId(solicitud.getId());
 
         mapeos.forEach(
                 mapeo -> {
@@ -634,10 +633,9 @@ public class GoogleCalendarService {
     private void crearBookingParaUsuario(
             final SolicitudContratacionDirecta solicitud, final Usuario usuario) throws Exception {
 
-        final GoogleCalendarToken token =
-                tokenRepository
-                        .findByUsuarioId(usuario.getId())
-                        .orElseThrow(() -> new RuntimeException("Token no encontrado"));
+        final GoogleCalendarToken token = tokenRepository
+                .findByUsuarioId(usuario.getId())
+                .orElseThrow(() -> new RuntimeException("Token no encontrado"));
 
         final Calendar calendar = getCalendarClient(token);
         final Event gcalEvent = buildBookingGcalEvent(solicitud, usuario);
@@ -657,10 +655,9 @@ public class GoogleCalendarService {
     }
 
     private void eliminarBookingParaUsuario(final GoogleCalendarBooking mapeo) throws Exception {
-        final GoogleCalendarToken token =
-                tokenRepository
-                        .findByUsuarioId(mapeo.getUsuario().getId())
-                        .orElseThrow(() -> new RuntimeException("Token no encontrado"));
+        final GoogleCalendarToken token = tokenRepository
+                .findByUsuarioId(mapeo.getUsuario().getId())
+                .orElseThrow(() -> new RuntimeException("Token no encontrado"));
 
         final Calendar calendar = getCalendarClient(token);
 
@@ -682,10 +679,9 @@ public class GoogleCalendarService {
             final SolicitudContratacionDirecta solicitud, final Usuario usuario) {
 
         final boolean esAlumno = solicitud.getAlumno().getId().equals(usuario.getId());
-        final String otraParte =
-                esAlumno
-                        ? solicitud.getTutor().getUsuario().getNombre()
-                        : solicitud.getAlumno().getNombre();
+        final String otraParte = esAlumno
+                ? solicitud.getTutor().getUsuario().getNombre()
+                : solicitud.getAlumno().getNombre();
         final String rol = esAlumno ? "con tu profesor" : "con tu alumno";
 
         final String titulo = String.format("📚 Clase particular %s %s", rol, otraParte);
@@ -703,22 +699,19 @@ public class GoogleCalendarService {
             desc.append("📝 Nota: ").append(solicitud.getMensaje()).append("\n");
         }
 
-        final Event gcalEvent =
-                new Event().setSummary(titulo).setDescription(desc.toString().trim());
+        final Event gcalEvent = new Event().setSummary(titulo).setDescription(desc.toString().trim());
 
         // Fechas: usar dia + horaInicio / horaFin
         final ZoneId zona = ZoneId.of(ZONA_HORARIA);
-        final java.time.LocalDateTime inicio =
-                java.time.LocalDateTime.of(solicitud.getDia(), solicitud.getHoraInicio());
-        final java.time.LocalDateTime fin =
-                java.time.LocalDateTime.of(solicitud.getDia(), solicitud.getHoraFin());
+        final java.time.LocalDateTime inicio = java.time.LocalDateTime.of(solicitud.getDia(),
+                solicitud.getHoraInicio());
+        final java.time.LocalDateTime fin = java.time.LocalDateTime.of(solicitud.getDia(), solicitud.getHoraFin());
 
         gcalEvent.setStart(toEventDateTime(inicio, zona));
         gcalEvent.setEnd(toEventDateTime(fin, zona));
 
         // Recordatorios: 24h, 1h y 15 min antes
-        final EventReminder reminder24h =
-                new EventReminder().setMethod("email").setMinutes(24 * 60);
+        final EventReminder reminder24h = new EventReminder().setMethod("email").setMinutes(24 * 60);
         final EventReminder reminder1h = new EventReminder().setMethod("popup").setMinutes(60);
         final EventReminder reminder15min = new EventReminder().setMethod("popup").setMinutes(15);
 

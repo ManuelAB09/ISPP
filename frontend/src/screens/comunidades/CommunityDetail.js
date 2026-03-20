@@ -172,6 +172,7 @@ export default function CommunityDetail() {
   }, []);
 
   const isPrivate = community?.tipoGrupo === 'GRUPO_PRIVADO';
+  const isCorporateCommunity = String(community?.tipoPlan || '').toUpperCase() === 'UNLIMITED';
   const normalizedRole = normalizeCommunityRole(community?.miRol);
   const isAdmin = isAdminRole(normalizedRole);
   const isTeacher = isTeacherRole(normalizedRole);
@@ -254,6 +255,33 @@ export default function CommunityDetail() {
     return () => window.clearTimeout(timeoutId);
   }, [memberToast]);
 
+  const handleMakeAdmin = async (member) => {
+    const memberId = getMemberId(member);
+    const memberName = getMemberName(member);
+    if (!memberId) return;
+    if (!isCorporateCommunity) {
+      setMemberToast({
+        type: 'error',
+        message: 'Solo se pueden añadir administradores en comunidades corporativas.',
+      });
+      return;
+    }
+    if (!window.confirm(`¿Seguro que quieres hacer a ${memberName} administrador?`)) {
+      return;
+    }
+    try {
+      setMembersLoading(true);
+      await communitiesApi.addAdmin(communityId, memberId);
+      setMemberToast({ type: 'success', message: `${memberName} es ahora administrador.` });
+      await fetchMembers();
+    } catch (err) {
+      console.error('Error al hacer administrador:', err);
+      setMemberToast({ type: 'error', message: err?.message || 'No se pudo hacer administrador al miembro.' });
+    } finally {
+      setMembersLoading(false);
+    }
+  };
+
   const renderMemberPills = (list, emptyMessage) => {
     if (!list.length) {
       return <p className="cd-role-empty">{emptyMessage}</p>;
@@ -280,16 +308,28 @@ export default function CommunityDetail() {
                 <span className="cd-member-role">{getCommunityRoleLabel(member?.rol)}</span>
               </span>
             </button>
-            {canExpelMember(member) && (
-              <button
-                type="button"
-                className="cd-member-remove"
-                onClick={() => handleExpelMember(member)}
-                disabled={expellingMemberId === getMemberId(member)}
-              >
-                {expellingMemberId === getMemberId(member) ? 'Expulsando...' : 'Expulsar'}
-              </button>
-            )}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              {isAdmin && isCorporateCommunity && normalizeCommunityRole(member?.rol) !== 'ADMIN' && (
+                <button
+                  type="button"
+                  className="cd-member-remove"
+                  style={{ backgroundColor: '#eef2ff', color: '#4f46e5', borderColor: '#eef2ff' }}
+                  onClick={() => handleMakeAdmin(member)}
+                >
+                  Hacer administrador
+                </button>
+              )}
+              {canExpelMember(member) && (
+                <button
+                  type="button"
+                  className="cd-member-remove"
+                  onClick={() => handleExpelMember(member)}
+                  disabled={expellingMemberId === getMemberId(member)}
+                >
+                  {expellingMemberId === getMemberId(member) ? 'Expulsando...' : 'Expulsar'}
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>

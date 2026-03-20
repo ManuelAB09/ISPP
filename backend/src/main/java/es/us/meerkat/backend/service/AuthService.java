@@ -63,8 +63,11 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Servicio de autenticación.
  *
- * <p>Gestiona el registro de nuevos usuarios y el inicio de sesión, generando tokens JWT reales
- * mediante {@link JwtService}. Corresponde a los endpoints POST /api/v1/auth/register y POST
+ * <p>
+ * Gestiona el registro de nuevos usuarios y el inicio de sesión, generando
+ * tokens JWT reales
+ * mediante {@link JwtService}. Corresponde a los endpoints POST
+ * /api/v1/auth/register y POST
  * /api/v1/auth/login del OpenAPI.
  */
 @Service
@@ -103,8 +106,6 @@ public class AuthService {
     /** Servicio de correo electrónico */
     private final EmailService emailService;
 
-    private final GoogleClassroomService googleClassroomService;
-
     @Value("${google.classroom.client-id}")
     private String googleClientId;
 
@@ -123,7 +124,8 @@ public class AuthService {
     // Temp store for login challenges (2FA). Token -> (userId, expiresAt)
     private final Map<String, TempLogin> tempLoginStore = new ConcurrentHashMap<>();
 
-    private static record TempLogin(Long userId, Instant expiresAt) {}
+    private static record TempLogin(Long userId, Instant expiresAt) {
+    }
 
     // ===============================
     // REGISTRO
@@ -132,13 +134,16 @@ public class AuthService {
     /**
      * Registra un nuevo usuario con email y contraseña.
      *
-     * <p>Valida que el email sea único y que la contraseña tenga al menos 8 caracteres. Genera un
-     * token de verificación y envía un email para que el usuario verifique su cuenta.
+     * <p>
+     * Valida que el email sea único y que la contraseña tenga al menos 8
+     * caracteres. Genera un
+     * token de verificación y envía un email para que el usuario verifique su
+     * cuenta.
      *
      * @param requestParam Datos del nuevo usuario.
      * @return MessageResponse con instrucciones para verificar el email.
      * @throws ValidationException si los datos no son válidos (400).
-     * @throws ConflictException si el email ya está registrado (409).
+     * @throws ConflictException   si el email ya está registrado (409).
      */
     @Transactional
     public MessageResponse registrar(final RegisterRequest requestParam) {
@@ -150,8 +155,7 @@ public class AuthService {
 
         // Generar token de verificación
         final String verificationToken = UUID.randomUUID().toString();
-        final LocalDateTime tokenExpiration =
-                LocalDateTime.now().plusHours(VERIFICATION_TOKEN_HOURS);
+        final LocalDateTime tokenExpiration = LocalDateTime.now().plusHours(VERIFICATION_TOKEN_HOURS);
 
         final Usuario usuario = new Usuario();
         usuario.setEmail(requestParam.getEmail());
@@ -232,21 +236,22 @@ public class AuthService {
     /**
      * Autentica a un usuario con sus credenciales.
      *
-     * <p>Verifica que el email exista, que la contraseña coincida con la almacenada cifrada y que
+     * <p>
+     * Verifica que el email exista, que la contraseña coincida con la almacenada
+     * cifrada y que
      * el email haya sido verificado. Devuelve un token JWT válido.
      *
      * @param requestParam Credenciales del usuario.
      * @return AuthResponse con token JWT y datos del usuario.
-     * @throws ValidationException si las credenciales son incorrectas (400).
+     * @throws ValidationException       si las credenciales son incorrectas (400).
      * @throws EmailNotVerifiedException si el email no ha sido verificado (403).
      */
     public Object iniciarSesion(final LoginRequest requestParam) {
 
-        final Usuario usuario =
-                usuarioRepository
-                        .findByEmail(requestParam.getEmail())
-                        .orElseThrow(
-                                () -> new ValidationException("Este email no está registrado"));
+        final Usuario usuario = usuarioRepository
+                .findByEmail(requestParam.getEmail())
+                .orElseThrow(
+                        () -> new ValidationException("Este email no está registrado"));
 
         if (!passwordEncoder.matches(requestParam.getPassword(), usuario.getPassword())) {
             throw new ValidationException("Credenciales incorrectas");
@@ -301,10 +306,9 @@ public class AuthService {
         if (userId == null) {
             throw new ValidationException("Token temporal inválido o expirado");
         }
-        Usuario usuario =
-                usuarioRepository
-                        .findById(userId)
-                        .orElseThrow(() -> new ValidationException("Usuario no encontrado"));
+        Usuario usuario = usuarioRepository
+                .findById(userId)
+                .orElseThrow(() -> new ValidationException("Usuario no encontrado"));
         if (usuario.getTotpSecret() == null) {
             throw new ValidationException("2FA no configurado para este usuario");
         }
@@ -336,16 +340,15 @@ public class AuthService {
                     "Vinculando Google: Verificando ID Token con Client ID: '{}'",
                     sanitizedClientId);
 
-            GoogleIdTokenVerifier verifier =
-                    new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
-                            .setAudience(java.util.Collections.singletonList(sanitizedClientId))
-                            .build();
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(),
+                    new GsonFactory())
+                    .setAudience(java.util.Collections.singletonList(sanitizedClientId))
+                    .build();
 
             GoogleIdToken idToken = verifier.verify(request.getIdToken());
             if (idToken == null) {
                 try {
-                    GoogleIdToken unverifiedToken =
-                            GoogleIdToken.parse(new GsonFactory(), request.getIdToken());
+                    GoogleIdToken unverifiedToken = GoogleIdToken.parse(new GsonFactory(), request.getIdToken());
                     log.error(
                             "Token fail. Audience del token: {}",
                             unverifiedToken.getPayload().getAudience());
@@ -436,10 +439,9 @@ public class AuthService {
 
         String issuer = "Meerkat";
         String label = issuer + ":" + usuario.getEmail();
-        String otpauth =
-                String.format(
-                        "otpauth://totp/%s?secret=%s&issuer=%s&algorithm=SHA1&digits=6&period=30",
-                        urlEncode(label), secret, urlEncode(issuer));
+        String otpauth = String.format(
+                "otpauth://totp/%s?secret=%s&issuer=%s&algorithm=SHA1&digits=6&period=30",
+                urlEncode(label), secret, urlEncode(issuer));
 
         return new TotpSetupResponse(secret, otpauth);
     }
@@ -515,6 +517,7 @@ public class AuthService {
         return MessageResponse.builder().message("2FA desactivado").build();
     }
 
+    @SuppressWarnings("deprecation")
     private List<String> generateBackupCodes() {
         List<String> backupCodes = new ArrayList<>();
         for (int i = 0; i < BACKUP_CODES_COUNT; i++) {
@@ -595,11 +598,10 @@ public class AuthService {
             mac.init(signKey);
             byte[] hash = mac.doFinal(data);
             int offset = hash[hash.length - 1] & 0xf;
-            int binary =
-                    ((hash[offset] & 0x7f) << 24)
-                            | ((hash[offset + 1] & 0xff) << 16)
-                            | ((hash[offset + 2] & 0xff) << 8)
-                            | (hash[offset + 3] & 0xff);
+            int binary = ((hash[offset] & 0x7f) << 24)
+                    | ((hash[offset + 1] & 0xff) << 16)
+                    | ((hash[offset + 2] & 0xff) << 8)
+                    | (hash[offset + 3] & 0xff);
             int otp = binary % 1000000;
             return String.format("%06d", otp);
         } catch (Exception e) {
@@ -664,7 +666,8 @@ public class AuthService {
     }
 
     /**
-     * Devuelve la URL a la que el frontend debe redirigir al usuario para el inicio de sesión o
+     * Devuelve la URL a la que el frontend debe redirigir al usuario para el inicio
+     * de sesión o
      * vinculación de Google.
      */
     public String getGoogleAuthorizeUrl(String flowType) {
@@ -701,7 +704,8 @@ public class AuthService {
     }
 
     /**
-     * Procesa el código devuelto por Google, obtiene los tokens, el perfil de usuario y deuelve un
+     * Procesa el código devuelto por Google, obtiene los tokens, el perfil de
+     * usuario y deuelve un
      * HTML que envía los datos al frontend.
      */
     @Transactional
@@ -739,8 +743,7 @@ public class AuthService {
             form.add("grant_type", "authorization_code");
 
             HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(form, headers);
-            ResponseEntity<String> tokenResp =
-                    restTemplate.postForEntity(tokenUrl, request, String.class);
+            ResponseEntity<String> tokenResp = restTemplate.postForEntity(tokenUrl, request, String.class);
             if (!tokenResp.getStatusCode().is2xxSuccessful() || tokenResp.getBody() == null) {
                 return ResponseEntity.ok()
                         .contentType(MediaType.TEXT_HTML)
@@ -748,10 +751,9 @@ public class AuthService {
             }
 
             JsonNode tokenJson = objectMapper.readTree(tokenResp.getBody());
-            String accessToken =
-                    tokenJson.hasNonNull("access_token")
-                            ? tokenJson.get("access_token").asText()
-                            : null;
+            String accessToken = tokenJson.hasNonNull("access_token")
+                    ? tokenJson.get("access_token").asText()
+                    : null;
 
             if (accessToken == null) {
                 return ResponseEntity.ok()
@@ -765,8 +767,7 @@ public class AuthService {
             uiHeaders.setBearerAuth(accessToken);
             HttpEntity<Void> uiReq = new HttpEntity<>(uiHeaders);
 
-            ResponseEntity<String> uiResp =
-                    restTemplate.exchange(userInfoUrl, HttpMethod.GET, uiReq, String.class);
+            ResponseEntity<String> uiResp = restTemplate.exchange(userInfoUrl, HttpMethod.GET, uiReq, String.class);
             if (!uiResp.getStatusCode().is2xxSuccessful() || uiResp.getBody() == null) {
                 return ResponseEntity.ok()
                         .contentType(MediaType.TEXT_HTML)
@@ -776,9 +777,6 @@ public class AuthService {
             JsonNode uiJson = objectMapper.readTree(uiResp.getBody());
             String googleId = uiJson.hasNonNull("sub") ? uiJson.get("sub").asText() : null;
             String email = uiJson.hasNonNull("email") ? uiJson.get("email").asText() : null;
-            String name = uiJson.hasNonNull("name") ? uiJson.get("name").asText() : "";
-            boolean emailVerified =
-                    uiJson.hasNonNull("email_verified") && uiJson.get("email_verified").asBoolean();
 
             if (googleId == null || email == null) {
                 return ResponseEntity.ok()
@@ -807,10 +805,9 @@ public class AuthService {
                 usuario.setGoogleId(googleId);
                 usuarioRepository.save(usuario);
 
-                String html =
-                        "<html><head><meta charset=\"UTF-8\"></head><body><script>"
-                                + "window.opener.postMessage({ type: 'google-link-success' }, '*');"
-                                + "window.close();</script></body></html>";
+                String html = "<html><head><meta charset=\"UTF-8\"></head><body><script>"
+                        + "window.opener.postMessage({ type: 'google-link-success' }, '*');"
+                        + "window.close();</script></body></html>";
                 return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
 
             } else {
@@ -842,14 +839,12 @@ public class AuthService {
                             tempToken,
                             new TempLogin(usuario.getId(), Instant.now().plusSeconds(300)));
 
-                    String payloadStr =
-                            "{\"isTwoFactor\": true, \"tempToken\": \"" + tempToken + "\"}";
-                    String html =
-                            "<html><head><meta charset=\"UTF-8\"></head><body><script>window.opener.postMessage({ type:"
-                                    + " 'google-auth-success', payload: "
-                                    + payloadStr
-                                    + " }, '*');"
-                                    + "window.close();</script></body></html>";
+                    String payloadStr = "{\"isTwoFactor\": true, \"tempToken\": \"" + tempToken + "\"}";
+                    String html = "<html><head><meta charset=\"UTF-8\"></head><body><script>window.opener.postMessage({ type:"
+                            + " 'google-auth-success', payload: "
+                            + payloadStr
+                            + " }, '*');"
+                            + "window.close();</script></body></html>";
                     return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
                 }
 
@@ -857,12 +852,11 @@ public class AuthService {
                 AuthResponse authRes = buildAuthResponse(usuario, finalJwt);
                 String payloadStr = objectMapper.writeValueAsString(authRes);
 
-                String html =
-                        "<html><head><meta charset=\"UTF-8\"></head><body><script>window.opener.postMessage({ type:"
-                                + " 'google-auth-success', payload: "
-                                + payloadStr
-                                + " }, '*');"
-                                + "window.close();</script></body></html>";
+                String html = "<html><head><meta charset=\"UTF-8\"></head><body><script>window.opener.postMessage({ type:"
+                        + " 'google-auth-success', payload: "
+                        + payloadStr
+                        + " }, '*');"
+                        + "window.close();</script></body></html>";
                 return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
             }
 
@@ -888,7 +882,8 @@ public class AuthService {
     }
 
     /**
-     * Inicia sesión usando un Google ID Token (MANTENIDO PARA COMPATIBILIDAD PARCIAL SI HACE FALTA
+     * Inicia sesión usando un Google ID Token (MANTENIDO PARA COMPATIBILIDAD
+     * PARCIAL SI HACE FALTA
      * ALGUN DIA, AUNQUE NO SE USE CON EL NUEVO FLUJO).
      */
     @Transactional
@@ -901,16 +896,15 @@ public class AuthService {
             String sanitizedClientId = googleClientId != null ? googleClientId.trim() : "";
             log.info("Login Google: Verificando ID Token con Client ID: '{}'", sanitizedClientId);
 
-            GoogleIdTokenVerifier verifier =
-                    new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
-                            .setAudience(java.util.Collections.singletonList(sanitizedClientId))
-                            .build();
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(),
+                    new GsonFactory())
+                    .setAudience(java.util.Collections.singletonList(sanitizedClientId))
+                    .build();
 
             GoogleIdToken idToken = verifier.verify(request.getIdToken());
             if (idToken == null) {
                 try {
-                    GoogleIdToken unverifiedToken =
-                            GoogleIdToken.parse(new GsonFactory(), request.getIdToken());
+                    GoogleIdToken unverifiedToken = GoogleIdToken.parse(new GsonFactory(), request.getIdToken());
                     log.error(
                             "Token fail. Audience del token: {}",
                             unverifiedToken.getPayload().getAudience());
@@ -998,14 +992,13 @@ public class AuthService {
         final String email = request.getEmail();
 
         try {
-            Usuario usuario =
-                    usuarioRepository
-                            .findByEmail(email)
-                            .orElseThrow(
-                                    () -> {
-                                        // log.warn("Email no existe: {}", email);
-                                        return new NotFoundException();
-                                    });
+            Usuario usuario = usuarioRepository
+                    .findByEmail(email)
+                    .orElseThrow(
+                            () -> {
+                                // log.warn("Email no existe: {}", email);
+                                return new NotFoundException();
+                            });
 
             // Generar contraseña temporal segura
             final String temporaryPassword = generarContrasenaSegura(12);
@@ -1031,6 +1024,7 @@ public class AuthService {
     }
 
     /** Genera una contraseña segura aleatoría. */
+    @SuppressWarnings("deprecation")
     private String generarContrasenaSegura(final int length) {
         return RandomStringUtils.randomAlphanumeric(length).toUpperCase()
                 + RandomStringUtils.randomNumeric(2);
@@ -1044,7 +1038,8 @@ public class AuthService {
      * Verifica el email de un usuario usando el token de verificación.
      *
      * @param token Token de verificación enviado por email.
-     * @return AuthResponse con token JWT y datos del usuario si la verificación es exitosa.
+     * @return AuthResponse con token JWT y datos del usuario si la verificación es
+     *         exitosa.
      * @throws ValidationException si el token es inválido o ha expirado (400).
      */
     @Transactional
@@ -1053,13 +1048,11 @@ public class AuthService {
             throw new ValidationException("Token de verificación inválido");
         }
 
-        final Usuario usuario =
-                usuarioRepository
-                        .findByVerificationToken(token)
-                        .orElseThrow(
-                                () ->
-                                        new ValidationException(
-                                                "Token de verificación inválido o ya utilizado"));
+        final Usuario usuario = usuarioRepository
+                .findByVerificationToken(token)
+                .orElseThrow(
+                        () -> new ValidationException(
+                                "Token de verificación inválido o ya utilizado"));
 
         // Verificar que el token no ha expirado
         if (usuario.getTokenExpiration() == null
@@ -1094,13 +1087,11 @@ public class AuthService {
             throw new ValidationException("El email no puede estar vacío");
         }
 
-        final Usuario usuario =
-                usuarioRepository
-                        .findByEmail(email)
-                        .orElseThrow(
-                                () ->
-                                        new ValidationException(
-                                                "No existe una cuenta con este email"));
+        final Usuario usuario = usuarioRepository
+                .findByEmail(email)
+                .orElseThrow(
+                        () -> new ValidationException(
+                                "No existe una cuenta con este email"));
 
         if (Boolean.TRUE.equals(usuario.getEmailVerificado())) {
             throw new ValidationException("Este email ya ha sido verificado");
@@ -1108,8 +1099,7 @@ public class AuthService {
 
         // Generar nuevo token de verificación
         final String verificationToken = UUID.randomUUID().toString();
-        final LocalDateTime tokenExpiration =
-                LocalDateTime.now().plusHours(VERIFICATION_TOKEN_HOURS);
+        final LocalDateTime tokenExpiration = LocalDateTime.now().plusHours(VERIFICATION_TOKEN_HOURS);
 
         usuario.setVerificationToken(verificationToken);
         usuario.setTokenExpiration(tokenExpiration);
@@ -1141,36 +1131,36 @@ public class AuthService {
     /**
      * Construye un {@link AuthResponse} a partir del usuario y token.
      *
-     * <p>Mantiene la estructura del DTO existente con UserDetailResponse anidado.
+     * <p>
+     * Mantiene la estructura del DTO existente con UserDetailResponse anidado.
      *
      * @param usuario Usuario autenticado.
-     * @param token Token JWT generado.
+     * @param token   Token JWT generado.
      * @return AuthResponse completo con todos los datos del usuario.
      */
     private AuthResponse buildAuthResponse(final Usuario usuario, final String token) {
 
-        final UserDetailResponse userDetail =
-                UserDetailResponse.builder()
-                        .id(usuario.getId())
-                        .email(usuario.getEmail())
-                        .nombre(usuario.getNombre())
-                        .foto(usuario.getFoto())
-                        .fotoBackgroundColor(usuario.getFotoBackgroundColor())
-                        .bio(usuario.getBio())
-                        .universidad(usuario.getUniversidad())
-                        .grado(usuario.getGrado())
-                        .nivelEstudios(usuario.getNivelEstudios())
-                        .baseFormativa(usuario.getBaseFormativa())
-                        .ubicacion(convertToUbicacionResponse(usuario.getUbicacion()))
-                        .intereses(usuario.getIntereses())
-                        .visibleEnListados(usuario.getVisibleEnListados())
-                        .esTutor(usuario.getEsTutor())
-                        .autenticacionDosFactores(usuario.getAutenticacionDosFactores())
-                        .notificacionesEmail(usuario.getNotificacionesEmail())
-                        .notificacionesPush(usuario.getNotificacionesPush())
-                        .createdAt(usuario.getCreatedAt())
-                        .googleLinked(usuario.getGoogleId() != null)
-                        .build();
+        final UserDetailResponse userDetail = UserDetailResponse.builder()
+                .id(usuario.getId())
+                .email(usuario.getEmail())
+                .nombre(usuario.getNombre())
+                .foto(usuario.getFoto())
+                .fotoBackgroundColor(usuario.getFotoBackgroundColor())
+                .bio(usuario.getBio())
+                .universidad(usuario.getUniversidad())
+                .grado(usuario.getGrado())
+                .nivelEstudios(usuario.getNivelEstudios())
+                .baseFormativa(usuario.getBaseFormativa())
+                .ubicacion(convertToUbicacionResponse(usuario.getUbicacion()))
+                .intereses(usuario.getIntereses())
+                .visibleEnListados(usuario.getVisibleEnListados())
+                .esTutor(usuario.getEsTutor())
+                .autenticacionDosFactores(usuario.getAutenticacionDosFactores())
+                .notificacionesEmail(usuario.getNotificacionesEmail())
+                .notificacionesPush(usuario.getNotificacionesPush())
+                .createdAt(usuario.getCreatedAt())
+                .googleLinked(usuario.getGoogleId() != null)
+                .build();
 
         return AuthResponse.builder().accessToken(token).user(userDetail).build();
     }

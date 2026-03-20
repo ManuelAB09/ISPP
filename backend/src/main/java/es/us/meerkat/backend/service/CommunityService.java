@@ -334,6 +334,7 @@ public class CommunityService {
         }
     }
 
+    @SuppressWarnings("null")
     @Transactional(readOnly = true)
     public List<CommunityRankingEntryResponse> getCommunityRanking(
             Long communityId, Long requesterId) {
