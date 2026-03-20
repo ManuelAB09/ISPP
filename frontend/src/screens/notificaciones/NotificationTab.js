@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import Modal from '../../components/Modal/Modal';
+import '../../components/Modal/ModalChanges.css';
 import { useNavigate } from 'react-router-dom';
-import { useNotificationContext } from '../contexts/NotificationContext';
+import { useNotificationContext } from '../../contexts/NotificationContext';
 import './NotificationTab.css';
 import {
   getAllEventAlerts,
@@ -9,12 +11,15 @@ import {
   markAllEventAlertsAsRead,
   markUserNotificationAsRead,
   markAllUserNotificationsAsRead,
-} from '../api/notificationService';
-import Header from '../components/Header/Header';
+} from '../../api/notificationService';
+import Header from '../../components/Header/Header';
 
 export default function NotificationTab() {
   const { notificationsEnabled } = useNotificationContext();
   const [notifications, setNotifications] = useState([]);
+  const [showChangesModal, setShowChangesModal] = useState(false);
+  const [changesContent, setChangesContent] = useState('');
+  const [pendingEventId, setPendingEventId] = useState(null);
   const navigate = useNavigate();
 
   // Lógica para obtener la URL base de la API 
@@ -70,6 +75,7 @@ export default function NotificationTab() {
             source: 'notificacion',
             anuncioId: n.anuncioId,
             comunidadId: n.comunidadId,
+            eventoId: n.eventoId,
             comunidadNombre: n.comunidadNombre,
             comunidadImagenUrl: resolveCommunityImage(communityImageRaw),
           };
@@ -95,12 +101,39 @@ export default function NotificationTab() {
       await handleMarkAsRead(n.id, n.source);
       await new Promise(res => setTimeout(res, 100));
     }
+    // Si es notificación de anuncio
     if (n.source === 'notificacion' && n.type === 'ANUNCIO' && n.anuncioId && n.comunidadId) {
       navigate(`/comunidades/${n.comunidadId}?tab=anuncios&anuncioId=${n.anuncioId}`);
       return;
     }
+    // Si es notificación de evento (tipo EVENTO)
+    if (n.source === 'notificacion' && n.type === 'EVENTO' && n.eventoId && n.message) {
+      // Buscar si el mensaje contiene cambios
+      const cambiosIdx = n.message.indexOf('Cambios:');
+      if (cambiosIdx !== -1) {
+        const cambios = n.message.substring(cambiosIdx + 8).trim();
+        setChangesContent(cambios);
+        setPendingEventId(n.eventoId);
+        setShowChangesModal(true);
+        return;
+      }
+      // Si no hay cambios, navegar directamente
+      if (n.eventoId) {
+        navigate(`/eventos/${n.eventoId}`);
+        return;
+      }
+    }
     if (n.source === 'alerta' && n.eventoId) {
       navigate(`/eventos/${n.eventoId}`);
+    }
+  };
+
+  const handleGoToEvent = () => {
+    if (pendingEventId) {
+      navigate(`/eventos/${pendingEventId}`);
+      setShowChangesModal(false);
+      setChangesContent('');
+      setPendingEventId(null);
     }
   };
 
@@ -111,6 +144,35 @@ export default function NotificationTab() {
     ]);
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
+
+     
+    function renderChangesList(changesText) {
+      if (!changesText) return <em>No hay cambios detectados.</em>;
+      const items = changesText
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+      if (items.length === 0) return <em>No hay cambios detectados.</em>;
+      return (
+        <ul>
+          {items.map((line, idx) => (
+            <li key={idx}>{line}</li>
+          ))}
+        </ul>
+      );
+    }
+
+    function formatDateTime(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleString(undefined, {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+    }
 
   return (
     <>
@@ -133,8 +195,12 @@ export default function NotificationTab() {
               >
                 <div className="notification-title">
                   {n.title}
-                  {n.source === 'notificacion' && <span className="notification-type">[Anuncio]</span>}
-                  {n.source === 'alerta' && <span className="notification-type">[Evento]</span>}
+                  {n.source === 'notificacion' && n.type === 'ANUNCIO' && (
+                    <span className="notification-type">[Anuncio]</span>
+                  )}
+                  {((n.source === 'notificacion' && n.type === 'EVENTO') || (n.source === 'alerta' && n.type === 'EVENTO')) && (
+                    <span className="notification-type">[Evento]</span>
+                  )}
                 </div>
                 {n.comunidadNombre && (
                   <div className="notification-community">
@@ -148,7 +214,7 @@ export default function NotificationTab() {
                   </div>
                 )}
                 <div className="notification-message">{n.message}</div>
-                <div className="notification-date">{new Date(n.createdAt).toLocaleString()}</div>
+                <div className="notification-date">{formatDateTime(n.createdAt)}</div>
                 {!n.read && <span className="notification-unread-dot" title="No leída"></span>}
               </li>
             ))}
@@ -160,6 +226,17 @@ export default function NotificationTab() {
           </button>
         </div>
       </div>
+      {showChangesModal && (
+        <Modal isOpen={showChangesModal} onClose={() => setShowChangesModal(false)}>
+          <div className="modal-changes-title">Cambios en el evento</div>
+          <div className="modal-changes-list">
+            {renderChangesList(changesContent)}
+          </div>
+          <button className="modal-changes-btn" onClick={handleGoToEvent}>
+            Ir al evento
+          </button>
+        </Modal>
+      )}
     </>
   );
 }

@@ -31,8 +31,8 @@ import TeacherProfile from './screens/teacherProfile/TeacherProfile';
 import CrearUbicacionScreen from './screens/ubicaciones/CrearUbicacionScreen';
 import VerifiedTeachers from './screens/verifiedTeachers/VerifiedTeachers';
 import CalendarCallback from './screens/myProfile/CalendarCallback';
-import NotificationTab from './screens/NotificationTab';
 import Chats from './screens/chat/Chats';
+import NotificationTab from './screens/notificaciones/NotificationTab';
 
 function AppRoutes() {
   const { isAuthenticated, loading } = useAuth();

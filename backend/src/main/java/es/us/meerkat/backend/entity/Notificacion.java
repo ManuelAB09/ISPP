@@ -38,9 +38,12 @@ public class Notificacion {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
-    // --- NUEVOS CAMPOS PARA ANUNCIOS ---
+    // --- NUEVOS CAMPOS PARA ANUNCIOS Y EVENTOS ---
     /** Id del anuncio relacionado (si aplica). */
     private Long anuncioId;
+
+    /** Id del evento relacionado (si aplica). */
+    private Long eventoId;
 
     /** Id de la comunidad relacionada (si aplica). */
     private Long comunidadId;

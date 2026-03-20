@@ -99,6 +99,18 @@ export default function CommunityAnnouncementsTab({ communityId, isAdmin }) {
       setLoading(false);
     }
   };
+  
+    function formatDateTime(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleString(undefined, {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+    }
 
   return (
     <div className="catab-list">
@@ -174,7 +186,7 @@ export default function CommunityAnnouncementsTab({ communityId, isAdmin }) {
             >
               <div className="catab-title">{anuncio.titulo}</div>
               <div className="catab-meta">
-                <span>{new Date(anuncio.createdAt).toLocaleString('es-ES')}</span>
+                <span>{formatDateTime(anuncio.createdAt)}</span>
                 {anuncio.editado && <span className="catab-editado">(editado)</span>}
               </div>
               <div className="catab-content">{anuncio.contenido}</div>
@@ -221,6 +233,18 @@ function CommentsSection({ anuncioId }) {
     }
   };
 
+  function formatDateTime(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleString(undefined, {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+    }
+
   return (
     <div className="catab-comments-section">
       <div className="catab-comments-title">Comentarios</div>
@@ -244,7 +268,7 @@ function CommentsSection({ anuncioId }) {
                   <span className="catab-comment-author">{c.usuario?.nombre || 'Usuario'}</span>
                   {c.texto}
                   <span style={{ float: 'right', color: '#94a3b8', fontSize: '0.93em' }}>
-                    {c.createdAt ? new Date(c.createdAt).toLocaleString('es-ES') : ''}
+                    {c.createdAt ? formatDateTime(c.createdAt) : ''}
                   </span>
                 </div>
               ))
