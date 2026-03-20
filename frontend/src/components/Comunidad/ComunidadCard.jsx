@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PersonIcon from '../icons/Person';
 import { communitiesApi } from '../../api/communities.api';
@@ -9,7 +9,7 @@ export default function ComunidadCard({ comunidad, onJoined }) {
     const navigate = useNavigate();
     const [joining, setJoining] = useState(false);
     const [joined, setJoined] = useState(comunidad.esMiembro || false);
-    const [requestSent, setRequestSent] = useState(false);
+    const [requestSent, setRequestSent] = useState(Boolean(comunidad.solicitudPendiente));
     const [error, setError] = useState(null);
     const currentUserId = localStorage.getItem('userId');
     const isPrivate = comunidad.tipoGrupo === 'GRUPO_PRIVADO';
@@ -31,6 +31,36 @@ export default function ComunidadCard({ comunidad, onJoined }) {
 
         return `${base}/${value}`;
     })();
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const loadPendingStatus = async () => {
+            if (!currentUserId || joined || !isPrivate) {
+                if (!cancelled) {
+                    setRequestSent(false);
+                }
+                return;
+            }
+
+            try {
+                const status = await communitiesApi.getMyRequestStatus(comunidad.id);
+                if (!cancelled) {
+                    setRequestSent(Boolean(status?.pending));
+                }
+            } catch {
+                if (!cancelled) {
+                    setRequestSent(false);
+                }
+            }
+        };
+
+        loadPendingStatus();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [comunidad.id, currentUserId, isPrivate, joined]);
 
     const handleJoin = async (e) => {
         e.stopPropagation();

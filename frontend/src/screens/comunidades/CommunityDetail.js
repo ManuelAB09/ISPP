@@ -173,10 +173,17 @@ export default function CommunityDetail() {
           const status = await communitiesApi.getMyRequestStatus(communityId);
           if (status && status.pending) {
             setRequestSent(true);
+          } else if (status && !status.pending) {
+            setRequestSent(false);
           }
-        } catch {
-          // Ignorar error, el usuario simplemente puede solicitar
+          // Si status es undefined o null, no cambiar estado local (mantener lo que había)
+        } catch (err) {
+          // Error al verificar: mantener estado local en lugar de asumir false
+          console.warn('Aviso: No se pudo verificar solicitud pendiente', err);
         }
+      } else if (!data.esMiembro) {
+        // No es privada pero tampoco es miembro: seguro no hay solicitud
+        setRequestSent(false);
       }
     } catch (err) {
       console.error('Error al cargar la comunidad:', err);
@@ -232,9 +239,47 @@ export default function CommunityDetail() {
   }, [communityId]);
 
   useEffect(() => {
-    fetchCommunity();
+      if (!communityId) return;
+    
+      const load = async () => {
+        try {
+          setLoading(true);
+          const data = await communitiesApi.getById(communityId);
+          setCommunity(data);
+        
+          if (data.esMiembro !== undefined) {
+            setIsMember(data.esMiembro);
+          } else if (currentUserId) {
+            try {
+              await communitiesApi.getMyMembership(communityId);
+              setIsMember(true);
+            } catch {
+              setIsMember(false);
+            }
+          }
+
+          // Si es comunidad privada y el usuario no es miembro, comprobar solicitud pendiente
+          if (data.tipoGrupo === 'GRUPO_PRIVADO' && !data.esMiembro && currentUserId) {
+            try {
+              const status = await communitiesApi.getMyRequestStatus(communityId);
+              setRequestSent(status && status.pending);
+            } catch (err) {
+              console.warn('No se pudo verificar solicitud pendiente', err);
+            }
+          } else if (!data.esMiembro) {
+            setRequestSent(false);
+          }
+        } catch (err) {
+          console.error('Error al cargar la comunidad:', err);
+          setError('No se pudo cargar la comunidad.');
+        } finally {
+          setLoading(false);
+        }
+      };
+    
+      load();
     fetchEvents();
-  }, [fetchCommunity, fetchEvents]);
+    }, [communityId, currentUserId]);
 
 
   // Modal de alarmas al confirmar asistencia
@@ -735,7 +780,9 @@ export default function CommunityDetail() {
       setMembershipError(null);
       if (isPrivate) {
         await communitiesApi.requestAccess(communityId);
-        setRequestSent(true);
+        // Refrescar estado desde servidor para asegurar sincronización
+        const status = await communitiesApi.getMyRequestStatus(communityId);
+        setRequestSent(status && status.pending);
       } else {
         await communitiesApi.join(communityId);
         setIsMember(true);
@@ -750,7 +797,14 @@ export default function CommunityDetail() {
         setIsMember(true);
       } else if (err.status === 400) {
         if (isPrivate) {
-          setRequestSent(true);
+          // Aún así, verificar si existe solicitud pendiente en BD
+          try {
+            const status = await communitiesApi.getMyRequestStatus(communityId);
+            setRequestSent(status && status.pending);
+          } catch {
+            // Si falla, asumir que sí hay solicitud
+            setRequestSent(true);
+          }
         } else {
           setMembershipError(err.message || 'Error al unirse a la comunidad');
         }
