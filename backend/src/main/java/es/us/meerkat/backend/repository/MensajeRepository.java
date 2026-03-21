@@ -31,6 +31,20 @@ public interface MensajeRepository extends JpaRepository<Mensaje, Long> {
     List<Mensaje> findByEmisorIdAndReceptorIdOrEmisorIdAndReceptorIdOrderByCreatedAtAsc(
             Long emisor1, Long receptor1, Long emisor2, Long receptor2);
 
+    // Conversación entre dos usuarios con eager loading para evitar lazy loading issues
+    @Query(
+            """
+            SELECT m
+            FROM Mensaje m
+            LEFT JOIN FETCH m.emisor
+            LEFT JOIN FETCH m.receptor
+            WHERE (m.emisor.id = :usuarioId AND m.receptor.id = :otherUserId)
+               OR (m.emisor.id = :otherUserId AND m.receptor.id = :usuarioId)
+            ORDER BY m.createdAt ASC
+            """)
+    List<Mensaje> findConversationBetweenUsers(
+            @Param("usuarioId") Long usuarioId, @Param("otherUserId") Long otherUserId);
+
     // Todos los mensajes donde el usuario es emisor o receptor, ordenados por fecha descendente
     @Query(
             """

@@ -4,12 +4,16 @@ import { useNotifications } from '../hooks/useNotifications';
 import { obtenerConversaciones, obtenerHistorialComunidad } from '../api/mensajeService';
 import { getAllEventAlerts, getAllUserNotifications } from '../api/notificationService';
 import { communitiesApi } from '../api/communities.api';
+import { authApi } from '../api/auth.api';
 import { getApiBaseUrl } from '../api/baseUrl';
 import { resolveCommunityImage } from '../screens/chat/Chats';
 import { useAuth } from './AuthContext';
 import { useSocketContext } from './SocketContext';
 
 const CHAT_MUTE_STORAGE_KEY = 'mutedChatNotificationsByUser';
+
+const DEFAULT_PROFILE_AVATAR =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='60' fill='%23E6EAF3'/%3E%3Ccircle cx='60' cy='46' r='22' fill='%2395A1BB'/%3E%3Cpath d='M20 106c6-20 22-32 40-32s34 12 40 32' fill='%2395A1BB'/%3E%3C/svg%3E";
 
 const normalizeMutedChats = (value) => {
     if (!value || typeof value !== 'object') {
@@ -45,6 +49,8 @@ export const NotificationProvider = ({ children }) => {
     const { socket, isConnected } = useSocketContext();
     const { permission, requestPermission, showNotification, isSupported } = useNotifications();
     const knownConversationsRef = useRef(new Map());
+    const conversationUsersRef = useRef(new Map()); // Mapa de usuarioId -> {nombre, foto}
+    const shownNotificationsRef = useRef(new Set());
     const [hasRequestedPermission, setHasRequestedPermission] = useState(false);
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
     const [mutedChats, setMutedChats] = useState({ private: {}, community: {} });
@@ -52,7 +58,7 @@ export const NotificationProvider = ({ children }) => {
     const [communityUnreadById, setCommunityUnreadById] = useState({});
     const initializedRef = useRef(false);
 
-    const toAbsoluteImageUrl = (imageUrl, fallback = '/favicon.ico') => {
+    const toAbsoluteImageUrl = (imageUrl, fallback = DEFAULT_PROFILE_AVATAR) => {
         const raw = imageUrl || fallback;
         if (!raw) return fallback;
         if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:') || raw.startsWith('blob:')) {
@@ -84,7 +90,7 @@ export const NotificationProvider = ({ children }) => {
             cleanTitle,
             {
                 body: cleanBody,
-                icon: toAbsoluteImageUrl(avatarUrl, '/favicon.ico'),
+                icon: toAbsoluteImageUrl(avatarUrl, DEFAULT_PROFILE_AVATAR),
                 badge: '/favicon.ico',
                 tag,
                 requireInteraction: false,
@@ -175,6 +181,33 @@ export const NotificationProvider = ({ children }) => {
             });
     }, [isAuthenticated]);
 
+    /**
+     * Obtiene datos del usuario desde el mapa de caché o desde la API
+     */
+    const getUserData = useCallback((userId) => {
+        const cacheKey = String(userId);
+        const cached = conversationUsersRef.current.get(cacheKey);
+        
+        if (cached && cached.nombre) {
+            return Promise.resolve(cached);
+        }
+
+        // Si no está cacheado, intentar obtener de la API
+        return authApi.getUserPublicProfile(userId)
+            ?.then((response) => {
+                const userData = {
+                    nombre: response?.data?.nombre || response?.data?.name,
+                    foto: response?.data?.foto || response?.data?.avatarUrl,
+                };
+                conversationUsersRef.current.set(cacheKey, userData);
+                return userData;
+            })
+            .catch(() => {
+                // Si falla la API, devolver un objeto vacío
+                return { nombre: null, foto: null };
+            });
+    }, []);
+
     const shouldSkipNotification = useCallback((senderId) => {
         if (permission !== 'granted' || !notificationsEnabled) return true;
         if (senderId != null && Number(senderId) === Number(user?.id)) return true;
@@ -221,6 +254,11 @@ export const NotificationProvider = ({ children }) => {
                         `user-${conv.usuarioId}`,
                         conv.ultimoMensaje || ''
                     );
+                    // Guardar también los datos del usuario para usarlos en notificaciones
+                    conversationUsersRef.current.set(String(conv.usuarioId), {
+                        nombre: conv.usuarioNombre,
+                        foto: conv.usuarioFoto,
+                    });
                 });
             } catch { /* silent */ }
 
@@ -277,30 +315,71 @@ export const NotificationProvider = ({ children }) => {
         if (!socket || !isConnected || !isAuthenticated) return;
 
         const handleDM = (msg) => {
-            if (!msg) return;
+            if (!msg || !msg.id) return;
             if (shouldSkipNotification(msg.emisorId)) return;
             if (isChatMuted('private', msg.emisorId)) return;
 
-            const key = `user-${msg.emisorId}`;
-            const known = knownConversationsRef.current;
-            const prev = known.get(key);
-            const current = msg.contenido || '';
+            const notificationId = `dm-${msg.id}`;
+            const alreadyShown = shownNotificationsRef.current.has(notificationId);
+            
+            if (alreadyShown) return;
+            shownNotificationsRef.current.add(notificationId);
 
-            if (prev !== undefined && prev === current) return;
-            known.set(key, current);
+            // Buscar nombre del usuario en el mapa de conversaciones
+            const userKey = String(msg.emisorId);
+            const cachedUser = conversationUsersRef.current.get(userKey);
+            const senderName = msg.emisorNombre?.trim() || cachedUser?.nombre;
+            const senderPhoto = msg.emisorFoto || cachedUser?.foto;
+            
+            // Si tenemos nombre (del mensaje o del caché), mostrar inmediatamente
+            if (senderName) {
+                const title = `Mensaje de ${senderName}`;
+                const body = msg.contenido || 'Tienes un nuevo mensaje';
 
-            const title = `${msg.emisorNombre || 'Nuevo mensaje'}`;
-            const body = current || 'Tienes un nuevo mensaje';
+                showPrettyNotification(
+                    title,
+                    body,
+                    senderPhoto,
+                    `msg-${msg.emisorId}-${msg.id}`,
+                    () => {
+                        navigateRef.current(`/chats?userId=${msg.emisorId}`);
+                    }
+                );
+            } else {
+                // Si no tenemos nombre, intentar obtenerlo de la API
+                getUserData(msg.emisorId)
+                    .then((userData) => {
+                        const finalName = userData?.nombre || 'Alguien';
+                        const finalPhoto = userData?.foto || senderPhoto;
+                        const title = `Mensaje de ${finalName}`;
+                        const body = msg.contenido || 'Tienes un nuevo mensaje';
 
-            showPrettyNotification(
-                title,
-                body,
-                msg.emisorFoto,
-                `msg-${msg.emisorId}-${Date.now()}`,
-                () => {
-                    navigateRef.current(`/chats?userId=${msg.emisorId}`);
-                }
-            );
+                        showPrettyNotification(
+                            title,
+                            body,
+                            finalPhoto,
+                            `msg-${msg.emisorId}-${msg.id}`,
+                            () => {
+                                navigateRef.current(`/chats?userId=${msg.emisorId}`);
+                            }
+                        );
+                    })
+                    .catch(() => {
+                        // Si falla todo, mostrar con "Alguien"
+                        const title = 'Mensaje de Alguien';
+                        const body = msg.contenido || 'Tienes un nuevo mensaje';
+
+                        showPrettyNotification(
+                            title,
+                            body,
+                            senderPhoto,
+                            `msg-${msg.emisorId}-${msg.id}`,
+                            () => {
+                                navigateRef.current(`/chats?userId=${msg.emisorId}`);
+                            }
+                        );
+                    });
+            }
         };
 
         // Handler para nuevas solicitudes de contratación
@@ -509,6 +588,7 @@ export const NotificationProvider = ({ children }) => {
         incrementCommunityUnread,
         setPanelNotificationsUnreadCount,
         refreshPanelUnreadCount,
+        getUserData,
     ]);
 
     // Resetear el estado conocido cuando entramos a /chats o /comunidades
@@ -520,6 +600,11 @@ export const NotificationProvider = ({ children }) => {
                     const newMap = knownConversationsRef.current;
                     conversations.forEach((conv) => {
                         newMap.set(`user-${conv.usuarioId}`, conv.ultimoMensaje || '');
+                        // Actualizar también los datos del usuario
+                        conversationUsersRef.current.set(String(conv.usuarioId), {
+                            nombre: conv.usuarioNombre,
+                            foto: conv.usuarioFoto,
+                        });
                     });
                 })
                 .catch(() => {});

@@ -942,7 +942,7 @@ const CommunityChat = ({
                         <label htmlFor={`community-chat-file-${comunidadId}`} className="chat-file-label">
                             {archivoSeleccionado ? 'Archivo listo' : 'Adjuntar'}
                         </label>
-                        <div style={{ position: 'relative', width: '100%', minHeight: 60 }}>
+                        <div style={{ position: 'relative', width: '100%' }}>
                             <input
                                 id="community-chat-input"
                                 type="text"
@@ -972,7 +972,7 @@ const CommunityChat = ({
                             )}
                         </div>
                         <button type="submit" disabled={enviando || (!contenido.trim() && !archivoSeleccionado)}>
-                            {enviando ? 'Enviando...' : 'Enviar'}
+                            {enviando ? '...' : '→'}
                         </button>
                     </form>
                 </aside>

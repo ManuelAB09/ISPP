@@ -215,9 +215,7 @@ public class MensajeService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         List<Mensaje> mensajes =
-                mensajeRepository
-                        .findByEmisorIdAndReceptorIdOrEmisorIdAndReceptorIdOrderByCreatedAtAsc(
-                                usuarioId, otherUserId, otherUserId, usuarioId);
+                mensajeRepository.findConversationBetweenUsers(usuarioId, otherUserId);
 
         return mensajes.stream().map(this::mapToResponse).toList();
     }

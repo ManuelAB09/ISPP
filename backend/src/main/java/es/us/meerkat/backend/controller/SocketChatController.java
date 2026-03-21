@@ -17,7 +17,6 @@ import es.us.meerkat.backend.dto.MensajeResponse;
 import es.us.meerkat.backend.entity.Mensaje;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.MensajeRepository;
-import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import es.us.meerkat.backend.service.MensajeComunidadService;
 import es.us.meerkat.backend.service.MensajeService;
@@ -33,7 +32,6 @@ public class SocketChatController {
     private final MensajeComunidadService mensajeComunidadService;
     private final UsuarioRepository usuarioRepository;
     private final MensajeRepository mensajeRepository;
-    private final MiembroComunidadRepository miembroComunidadRepository;
 
     /**
      * Carga el historial de conversaciones privadas del usuario autenticado.
@@ -188,6 +186,38 @@ public class SocketChatController {
     }
 
     /**
+     * Edita un mensaje privado (solo el emisor puede hacerlo).
+     *
+     * @param payload map con messageId y nuevoContenido.
+     * @param principal usuario autenticado.
+     */
+    @MessageMapping("/dm.edit")
+    public void editDm(@Payload final Map<String, Object> payload, final Principal principal) {
+        try {
+            final Usuario usuario = getAuthenticatedUser(principal);
+            final Long messageId = Long.parseLong(payload.get("messageId").toString());
+            final String nuevoContenido = payload.get("nuevoContenido").toString();
+
+            final MensajeResponse response =
+                    mensajeService.editarMensaje(usuario.getId(), messageId, nuevoContenido);
+
+            final Mensaje mensaje =
+                    mensajeRepository
+                            .findById(messageId)
+                            .orElseThrow(() -> new RuntimeException("Mensaje no encontrado"));
+            final Usuario receptor = mensaje.getReceptor();
+
+            // Notificar a ambos usuarios de la edición
+            broker.convertAndSendToUser(
+                    getUserDestinationKey(usuario), "/queue/dm_update_success", response);
+            broker.convertAndSendToUser(
+                    getUserDestinationKey(receptor), "/queue/dm_update_success", response);
+        } catch (final Exception e) {
+            sendError(principal, "edit_dm_failed", e.getMessage());
+        }
+    }
+
+    /**
      * Envía un mensaje en el chat de una comunidad.
      *
      * @param request datos del mensaje (comunidadId, contenido).
@@ -203,7 +233,6 @@ public class SocketChatController {
                     mensajeComunidadService.enviarMensaje(usuario.getId(), request);
 
             broker.convertAndSend("/topic/community." + request.getComunidadId(), response);
-            notifyCommunityMembers(request.getComunidadId(), response, usuario.getId());
         } catch (final Exception e) {
             sendError(principal, "community_message_failed", e.getMessage());
         }
@@ -260,7 +289,6 @@ public class SocketChatController {
                             usuario.getId(), messageId, nuevoContenido);
 
             broker.convertAndSend("/topic/community." + comunidadId, response);
-            notifyCommunityMembers(comunidadId, response, usuario.getId());
         } catch (final Exception e) {
             sendError(principal, "community_edit_failed", e.getMessage());
         }
@@ -312,25 +340,6 @@ public class SocketChatController {
 
     private String getUserDestinationKey(final Usuario usuario) {
         return usuario.getEmail();
-    }
-
-    private void notifyCommunityMembers(
-            final Long comunidadId, final MensajeComunidadResponse response, final Long senderId) {
-        List<Long> miembrosIds =
-                miembroComunidadRepository.findUsuarioIdsByComunidadId(comunidadId);
-        for (Long miembroId : miembrosIds) {
-            if (miembroId.equals(senderId)) {
-                continue;
-            }
-            usuarioRepository
-                    .findById(miembroId)
-                    .ifPresent(
-                            miembro ->
-                                    broker.convertAndSendToUser(
-                                            getUserDestinationKey(miembro),
-                                            "/queue/community_message",
-                                            response));
-        }
     }
 
     private void sendError(final Principal principal, final String code, final String message) {
