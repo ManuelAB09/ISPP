@@ -3,6 +3,7 @@ package es.us.meerkat.backend.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -23,6 +24,7 @@ import es.us.meerkat.backend.dto.CreateAnuncioRequest;
 import es.us.meerkat.backend.dto.UpdateAnuncioRequest;
 import es.us.meerkat.backend.entity.Anuncio;
 import es.us.meerkat.backend.entity.Comunidad;
+import es.us.meerkat.backend.entity.PreferenciasNotificacion;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.AnuncioRepository;
 import es.us.meerkat.backend.repository.ComunidadRepository;
@@ -38,6 +40,8 @@ class AnuncioServiceTest {
     @Mock private AuthorizationService authorizationService;
     @Mock private MiembroComunidadRepository miembroComunidadRepository;
     @Mock private NotificacionService notificacionService;
+    @Mock private PreferenciasNotificacionService preferenciasNotificacionService;
+    @Mock private EmailService emailService;
 
     @InjectMocks private AnuncioService anuncioService;
 
@@ -66,6 +70,60 @@ class AnuncioServiceTest {
         assertThat(result.getUsuario()).isEqualTo(usuario);
         assertThat(result.getComunidad()).isEqualTo(comunidad);
         verify(anuncioRepository).save(result);
+    }
+
+    @Test
+    void createAnuncioShouldSendEmailWhenMemberHasAnnouncementPreferenceEnabled() {
+        Long userId = 1L;
+        Long communityId = 10L;
+        Usuario autor = buildUsuario(userId);
+        Usuario miembro = buildUsuario(2L);
+        Comunidad comunidad = buildComunidad(communityId);
+        CreateAnuncioRequest request = new CreateAnuncioRequest("Aviso", "Contenido", true);
+
+        PreferenciasNotificacion preferencias = new PreferenciasNotificacion();
+        preferencias.setEmailsActivados(true);
+        preferencias.setNotificarAnuncios(true);
+
+        when(authorizationService.isAdminOf(userId, communityId)).thenReturn(true);
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(autor));
+        when(comunidadRepository.findById(communityId)).thenReturn(Optional.of(comunidad));
+        when(anuncioRepository.save(any(Anuncio.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(miembroComunidadRepository.findMiembrosMasAntiguosEnComunidad(communityId, userId))
+                .thenReturn(java.util.List.of(miembro));
+        when(preferenciasNotificacionService.getOrCreate(miembro.getId())).thenReturn(preferencias);
+
+        anuncioService.createAnuncio(userId, communityId, request);
+
+        verify(emailService).sendCommunityAnnouncementEmail(any(), any(), any(), any());
+    }
+
+    @Test
+    void createAnuncioShouldNotSendEmailWhenMemberHasAnnouncementPreferenceDisabled() {
+        Long userId = 1L;
+        Long communityId = 10L;
+        Usuario autor = buildUsuario(userId);
+        Usuario miembro = buildUsuario(2L);
+        Comunidad comunidad = buildComunidad(communityId);
+        CreateAnuncioRequest request = new CreateAnuncioRequest("Aviso", "Contenido", true);
+
+        PreferenciasNotificacion preferencias = new PreferenciasNotificacion();
+        preferencias.setEmailsActivados(true);
+        preferencias.setNotificarAnuncios(false);
+
+        when(authorizationService.isAdminOf(userId, communityId)).thenReturn(true);
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(autor));
+        when(comunidadRepository.findById(communityId)).thenReturn(Optional.of(comunidad));
+        when(anuncioRepository.save(any(Anuncio.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(miembroComunidadRepository.findMiembrosMasAntiguosEnComunidad(communityId, userId))
+                .thenReturn(java.util.List.of(miembro));
+        when(preferenciasNotificacionService.getOrCreate(miembro.getId())).thenReturn(preferencias);
+
+        anuncioService.createAnuncio(userId, communityId, request);
+
+        verify(emailService, never()).sendCommunityAnnouncementEmail(any(), any(), any(), any());
     }
 
     @Test

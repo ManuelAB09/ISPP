@@ -11,6 +11,7 @@ import es.us.meerkat.backend.dto.UpdateAnuncioRequest;
 import es.us.meerkat.backend.entity.Anuncio;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.Notificacion;
+import es.us.meerkat.backend.entity.PreferenciasNotificacion;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.AnuncioRepository;
 import es.us.meerkat.backend.repository.ComunidadRepository;
@@ -30,7 +31,8 @@ public class AnuncioService {
     private final AuthorizationService authorizationService;
     private final MiembroComunidadRepository miembroComunidadRepository;
     private final NotificacionService notificacionService;
-    private final es.us.meerkat.backend.repository.AlertaEventoRepository alertaEventoRepository;
+    private final PreferenciasNotificacionService preferenciasNotificacionService;
+    private final EmailService emailService;
 
     /**
      * Crea un nuevo anuncio en una comunidad.
@@ -94,8 +96,35 @@ public class AnuncioService {
                             .comunidadImagenUrl(imagenUrl)
                             .build();
             notificacionService.crearYNotificar(notif);
+            notificarAnuncioPorEmail(saved, comunidad, usuario, miembro);
         }
         return saved;
+    }
+
+    private void notificarAnuncioPorEmail(
+            final Anuncio anuncio,
+            final Comunidad comunidad,
+            final Usuario autor,
+            final Usuario miembro) {
+        if (miembro == null || miembro.getId() == null || miembro.getEmail() == null) {
+            return;
+        }
+
+        try {
+            final PreferenciasNotificacion preferencias =
+                    preferenciasNotificacionService.getOrCreate(miembro.getId());
+            final boolean puedeRecibir =
+                    Boolean.TRUE.equals(preferencias.getEmailsActivados())
+                            && Boolean.TRUE.equals(preferencias.getNotificarAnuncios());
+
+            if (!puedeRecibir) {
+                return;
+            }
+
+            emailService.sendCommunityAnnouncementEmail(miembro, comunidad, autor, anuncio);
+        } catch (Exception ignored) {
+            // No interrumpir la creación del anuncio si falla el envío de email.
+        }
     }
 
     /**
