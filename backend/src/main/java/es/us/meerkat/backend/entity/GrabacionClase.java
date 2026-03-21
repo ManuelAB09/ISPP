@@ -28,7 +28,7 @@ public class GrabacionClase {
 
     /** Evento o clase de la que proviene la grabación. */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "evento_id", nullable = false)
+    @JoinColumn(name = "evento_id", nullable = true)
     private Evento evento;
 
     /** Comunidad donde se realizó la clase. */

@@ -5,6 +5,7 @@ import Header from '../../components/Header/Header';
 import TarjetaEvento from '../../components/Evento/TarjetaEvento';
 import CommunityChat from '../chat/CommunityChat';
 import GoogleClassroomButton from '../../components/GoogleClassroomButton/GoogleClassroomButton';
+import ClassroomPanel from '../../components/ClassroomPanel/ClassroomPanel';
 import EditCommunityModal from '../../components/Comunidad/EditCommunityModal';
 import TransferAdminModal from '../../components/Comunidad/TransferAdminModal';
 import { communitiesApi } from '../../api/communities.api';
@@ -960,6 +961,15 @@ export default function CommunityDetail() {
             linkedCourse={community.classroom}
             isAdmin={isAdmin}
             onLinked={fetchCommunity}
+          />
+        )}
+
+        {/* Panel completo de Classroom: tareas, recursos, grabaciones, calificaciones */}
+        {community?.classroom && (
+          <ClassroomPanel
+            comunidadId={Number(communityId)}
+            isAdmin={isAdmin}
+            linkedCourse={community.classroom}
           />
         )}
 
