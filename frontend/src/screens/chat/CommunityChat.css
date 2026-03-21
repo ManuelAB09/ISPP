@@ -136,6 +136,11 @@
     gap: 0.6rem;
 }
 
+.chat-header-extra-actions {
+    display: flex;
+    align-items: center;
+}
+
 .chat-close-button {
     display: inline-flex;
     align-items: center;

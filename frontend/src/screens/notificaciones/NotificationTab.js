@@ -15,7 +15,12 @@ import {
 import Header from '../../components/Header/Header';
 
 export default function NotificationTab() {
-  const { notificationsEnabled } = useNotificationContext();
+  const {
+    notificationsEnabled,
+    markOnePanelNotificationRead,
+    clearPanelNotificationsUnread,
+    setPanelNotificationsUnreadCount,
+  } = useNotificationContext();
   const [notifications, setNotifications] = useState([]);
   const [showChangesModal, setShowChangesModal] = useState(false);
   const [changesContent, setChangesContent] = useState('');
@@ -82,17 +87,25 @@ export default function NotificationTab() {
         });
         const merged = [...alerts, ...notifs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         setNotifications(merged);
+        setPanelNotificationsUnreadCount(merged.filter((n) => !n.read).length);
       })
-      .catch(() => setNotifications([]));
-  }, []);
+      .catch(() => {
+        setNotifications([]);
+        setPanelNotificationsUnreadCount(0);
+      });
+  }, [setPanelNotificationsUnreadCount]);
 
   const handleMarkAsRead = async (id, source) => {
+    const current = notifications.find((n) => n.id === id);
     if (source === 'alerta') {
       await markEventAlertAsRead(id.replace('alerta-', ''));
     } else if (source === 'notificacion') {
       await markUserNotificationAsRead(id.replace('notif-', ''));
     }
     setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
+    if (current && !current.read) {
+      markOnePanelNotificationRead();
+    }
   };
 
   // Navegar al anuncio si es notificación de anuncio
@@ -143,6 +156,7 @@ export default function NotificationTab() {
       markAllUserNotificationsAsRead(),
     ]);
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    clearPanelNotificationsUnread();
   };
 
      

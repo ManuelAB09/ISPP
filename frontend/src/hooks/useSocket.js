@@ -149,6 +149,7 @@ export const useSocket = (token) => {
                 conversations: '/user/queue/conversations',
                 community_history: '/user/queue/community_history',
                 community_message: '/user/queue/community_message',
+                notificaciones: '/user/queue/notificaciones',
                 solicitud_contratacion: '/user/queue/solicitud_contratacion',
                 solicitud_contratacion_respuesta: '/user/queue/solicitud_contratacion_respuesta',
                 solicitud_contratacion_pagada: '/user/queue/solicitud_contratacion_pagada',

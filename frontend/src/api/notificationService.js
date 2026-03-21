@@ -28,7 +28,20 @@ export const markUserNotificationAsRead = async (notificacionId) => {
 };
 
 export const markAllUserNotificationsAsRead = async () => {
-  // TODO: Implementar endpoint PATCH /api/v1/notifications/read-all en backend si se requiere
-  // Por ahora, solo simular
-  return { success: true };
+  try {
+    const response = await axiosInstance.patch('/api/v1/notifications/read-all');
+    return response.data;
+  } catch (error) {
+    // Fallback: si el endpoint masivo no existe en backend,
+    // marcamos una por una las no leidas para persistir el estado.
+    const notifications = await getAllUserNotifications();
+    const unread = (Array.isArray(notifications) ? notifications : []).filter((n) => !n?.leida && n?.id != null);
+
+    if (unread.length === 0) {
+      return { success: true, mode: 'fallback', updated: 0 };
+    }
+
+    await Promise.all(unread.map((n) => axiosInstance.patch(`/api/v1/notifications/${n.id}/read`)));
+    return { success: true, mode: 'fallback', updated: unread.length };
+  }
 };

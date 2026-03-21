@@ -184,6 +184,26 @@
     color: #6B73A1;
 }
 
+.chat-mute-toggle {
+    border: none;
+    border-radius: 999px;
+    background: #EEF1FA;
+    color: #4F5982;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.35rem 0.65rem;
+    cursor: pointer;
+}
+
+.chat-mute-toggle:hover {
+    background: #DFE5F6;
+}
+
+.chat-mute-toggle.muted {
+    background: #FDECEC;
+    color: #C84B4B;
+}
+
 /* Selector móvil (oculto en desktop) */
 .chats-mobile-selector {
     display: none;
@@ -469,4 +489,28 @@
     .chat-list-content p {
         font-size: 0.75rem;
     }
+}
+
+.community-icon-with-badge {
+    position: relative;
+    display: inline-flex;
+}
+
+.community-unread-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #D93F3F;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 20px;
+    text-align: center;
+    border: 2px solid #fff;
+    box-sizing: border-box;
+    z-index: 1;
 }

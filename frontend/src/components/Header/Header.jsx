@@ -4,6 +4,7 @@ import { getApiBaseUrl } from '../../api/baseUrl';
 import GoogleClassroomButton from '../GoogleClassroomButton/GoogleClassroomButton.jsx';
 import PlanExpiryBanner from '../PlanExpiryBanner/PlanExpiryBanner';
 import { useSubscriptionExpiry } from '../../hooks/useSubscriptionExpiry';
+import { useNotificationContext } from '../../contexts/NotificationContext';
 import './Header.css';
 
 const DEFAULT_PROFILE_AVATAR =
@@ -25,6 +26,7 @@ const toAbsoluteImageUrl = (imageUrl, fallback = DEFAULT_PROFILE_AVATAR) => {
 export default function Header({ user, page }) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { showBanner, planName, fechaFin, dismiss } = useSubscriptionExpiry();
+    const { panelUnreadCount } = useNotificationContext();
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
@@ -86,7 +88,10 @@ export default function Header({ user, page }) {
                 <div className="header-links-desktop">
                     <Link to="/" className={page === 'inicio' ? 'active' : ''}>Inicio</Link>
                     <Link to="/comunidades" className={page === 'comunidades' ? 'active' : ''}>Comunidades</Link>
-                    <Link to="/notificaciones" className={page === 'notificaciones' ? 'active' : ''}>Notificaciones</Link>
+                    <Link to="/notificaciones" className={`header-link-with-badge ${page === 'notificaciones' ? 'active' : ''}`}>
+                        Notificaciones
+                        {panelUnreadCount > 0 && <span className="header-notification-badge">{panelUnreadCount}</span>}
+                    </Link>
                     {isAuthenticated && (
                         <>
                             <Link to="/eventos-mapa" className={page === 'eventos-mapa' ? 'active' : ''}>Mapa de eventos</Link>
@@ -131,7 +136,10 @@ export default function Header({ user, page }) {
                 <div className="header-links-mobile">
                     <Link to="/" className={page === 'inicio' ? 'active' : ''} onClick={closeMenu}>Inicio</Link>
                     <Link to="/comunidades" className={page === 'comunidades' ? 'active' : ''} onClick={closeMenu}>Comunidades</Link>
-                    <Link to="/notificaciones" className={page === 'notificaciones' ? 'active' : ''} onClick={closeMenu}>Notificaciones</Link>
+                    <Link to="/notificaciones" className={`header-link-with-badge ${page === 'notificaciones' ? 'active' : ''}`} onClick={closeMenu}>
+                        Notificaciones
+                        {panelUnreadCount > 0 && <span className="header-notification-badge">{panelUnreadCount}</span>}
+                    </Link>
                     {isAuthenticated && (
                         <>
                             <Link to="/eventos-mapa" className={page === 'eventos-mapa' ? 'active' : ''} onClick={closeMenu}>Mapa de eventos</Link>

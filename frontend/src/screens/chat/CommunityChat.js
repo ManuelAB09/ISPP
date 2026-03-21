@@ -50,6 +50,7 @@ const CommunityChat = ({
     onOpenPrivateChat,
     onOpenChange,
     extraActions,
+    headerActions,
 }) => {
     const isEmbedded = mode === 'embedded';
     const navigate = useNavigate();
@@ -795,6 +796,7 @@ const CommunityChat = ({
                             <div className={`status ${isConnected ? 'conectado' : 'desconectado'}`}>
                                 {isConnected ? 'En línea' : 'Fuera de línea'}
                             </div>
+                            {headerActions ? <div className="chat-header-extra-actions">{headerActions}</div> : null}
                             {!isEmbedded && (
                                 <button
                                     type="button"

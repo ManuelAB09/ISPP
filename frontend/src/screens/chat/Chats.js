@@ -7,6 +7,7 @@ import { obtenerConversaciones } from '../../api/mensajeService';
 import Header from '../../components/Header/Header';
 import PageHeader from '../../components/PageHeader';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNotificationContext } from '../../contexts/NotificationContext';
 import './Chats.css';
 import CommunityChat from './CommunityChat';
 import PrivateChat from './PrivateChat';
@@ -58,6 +59,7 @@ export default function Chats() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const { user } = useAuth();
+    const { isChatMuted, toggleChatMuted, communityUnreadById, clearCommunityUnread } = useNotificationContext();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [communities, setCommunities] = useState([]);
@@ -126,7 +128,9 @@ export default function Chats() {
                 setCommunities(collected);
                 if (collected.length > 0) {
                     const existsInList = collected.some((community) => community.id === communityIdFromQuery);
-                    setSelectedCommunityId(existsInList ? communityIdFromQuery : collected[0].id);
+                    const nextSelectedId = existsInList ? communityIdFromQuery : collected[0].id;
+                    setSelectedCommunityId(nextSelectedId);
+                    clearCommunityUnread(nextSelectedId);
                 }
 
                 if (privateUserIdFromQuery) {
@@ -178,7 +182,7 @@ export default function Chats() {
         };
 
         fetchData();
-    }, [navigate, communityIdFromQuery, privateUserIdFromQuery]);
+    }, [navigate, communityIdFromQuery, privateUserIdFromQuery, clearCommunityUnread]);
 
     // Recargar conversaciones cuando se abre la pestaña de privados
     useEffect(() => {
@@ -233,6 +237,30 @@ export default function Chats() {
             fetchConversaciones();
         }
     }, [activeTab, privateTarget]);
+
+    useEffect(() => {
+        if (selectedCommunityId) {
+            clearCommunityUnread(selectedCommunityId);
+        }
+    }, [selectedCommunityId, clearCommunityUnread]);
+
+    const renderMuteButton = (chatType, chatId) => {
+        if (chatId === null || chatId === undefined) return null;
+
+        const muted = isChatMuted(chatType, chatId);
+        const label = muted ? 'Activar notificaciones' : 'Silenciar chat';
+
+        return (
+            <button
+                type="button"
+                className={`chat-mute-toggle ${muted ? 'muted' : ''}`}
+                onClick={() => toggleChatMuted(chatType, chatId)}
+                title={muted ? 'Reactivar notificaciones del chat' : 'Silenciar notificaciones del chat'}
+            >
+                {label}
+            </button>
+        );
+    };
 
     return (
         <>
@@ -300,15 +328,23 @@ export default function Chats() {
                                                     className={`mobile-dropdown-item ${community.id === selectedCommunityId ? 'active' : ''}`}
                                                     onClick={() => {
                                                         setSelectedCommunityId(community.id);
+                                                        clearCommunityUnread(community.id);
                                                         setPrivateTarget(null);
                                                         setIsMobileDropdownOpen(false);
                                                     }}
                                                 >
-                                                    <img
-                                                        src={resolveCommunityImage(community)}
-                                                        alt={community.nombre}
-                                                        className="mobile-dropdown-image"
-                                                    />
+                                                    <div className="community-icon-with-badge">
+                                                        <img
+                                                            src={resolveCommunityImage(community)}
+                                                            alt={community.nombre}
+                                                            className="mobile-dropdown-image"
+                                                        />
+                                                        {communityUnreadById[String(community.id)] > 0 && (
+                                                            <span className="community-unread-badge">
+                                                                {communityUnreadById[String(community.id)]}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <span>{community.nombre}</span>
                                                 </button>
                                             ))}
@@ -326,14 +362,22 @@ export default function Chats() {
                                                 className={`chat-list-item ${isSelected ? 'active' : ''}`}
                                                 onClick={() => {
                                                     setSelectedCommunityId(community.id);
+                                                    clearCommunityUnread(community.id);
                                                     setPrivateTarget(null);
                                                 }}
                                             >
-                                                <img
-                                                    src={resolveCommunityImage(community)}
-                                                    alt={community.nombre}
-                                                    className="chat-list-image"
-                                                />
+                                                <div className="community-icon-with-badge">
+                                                    <img
+                                                        src={resolveCommunityImage(community)}
+                                                        alt={community.nombre}
+                                                        className="chat-list-image"
+                                                    />
+                                                    {communityUnreadById[String(community.id)] > 0 && (
+                                                        <span className="community-unread-badge">
+                                                            {communityUnreadById[String(community.id)]}
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <div className="chat-list-content">
                                                     <h3>{community.nombre}</h3>
                                                     <p>{community.descripcion || 'Sin descripción disponible.'}</p>
@@ -354,6 +398,7 @@ export default function Chats() {
                                             )}
                                             mode="embedded"
                                             initiallyOpen={true}
+                                            headerActions={renderMuteButton('community', selectedCommunityId)}
                                             onOpenPrivateChat={(target) => {
                                                 const id = Number(target.userId);
                                                 const nombre = target.userName;
@@ -515,6 +560,7 @@ export default function Chats() {
                                             tutorId={privateTarget.id}
                                             tutorNombre={privateTarget.nombre}
                                             usuarioActual={currentUser}
+                                            headerActions={renderMuteButton('private', privateTarget.id)}
                                             onClose={() => setPrivateTarget(null)}
                                         />
                                     ) : (
