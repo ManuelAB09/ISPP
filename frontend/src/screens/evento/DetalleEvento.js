@@ -20,6 +20,7 @@ import { communitiesApi } from '../../api/communities.api';
 import { ZoomApi } from '../../api/zoom.api';
 import { getApiBaseUrl } from '../../api/baseUrl';
 import { useSocketContext } from '../../contexts/SocketContext';
+import RatingForm from '../../components/RatingForm';
 
 const OPCIONES_ANTELACION = [
   { label: '2 días antes', value: 2880 },
@@ -73,7 +74,10 @@ const eventIconRed = L.icon({
   shadowSize: [41, 41],
 });
 
+// Valoración de profesor (sin validación de permisos)
+// Mover fuera de la función para evitar acceder a 'event' antes de su inicialización
 const DetalleEvento = () => {
+  const [valorado, setValorado] = useState(false);
   const { eventId } = useParams();
   const navigate = useNavigate();
   const { socket } = useSocketContext();
@@ -1109,6 +1113,36 @@ const DetalleEvento = () => {
                 <p className="ed-no-participants">Aún no hay participantes confirmados.</p>
               )}
             </div>
+
+            {/* Formulario de valoración tras evento finalizado (si hay tutorId o el organizador es tutor) */}
+            {(() => {
+              const tutorId = event.tutorId || (event.creador?.esTutor ? event.creador.id : null);
+              if (!valorado && tutorId) {
+                return (
+                  <div className="ed-rating-card">
+                    <h3 className="ed-card-title">Valora al profesor</h3>
+                    <RatingForm
+                      profesorId={tutorId}
+                      alumnoId={currentUserId}
+                      eventoId={eventId}
+                      onValorado={() => setValorado(true)}
+                    />
+                  </div>
+                );
+              } else if (!valorado && !tutorId) {
+                return (
+                  <div className="ed-rating-card">
+                    <h3 className="ed-card-title">No disponible</h3>
+                    <div className="ed-rating-error">No se puede valorar porque este evento no tiene tutor asignado.</div>
+                  </div>
+                );
+              } else if (valorado) {
+                return (
+                  <div className="ed-rating-success">¡Gracias por valorar al profesor!</div>
+                );
+              }
+              return null;
+            })()}
           </div>
         </div>
       </div>
