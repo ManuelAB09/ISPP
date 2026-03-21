@@ -104,6 +104,8 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers(HttpMethod.GET, "/api/v1/events")
                                         .permitAll()
+                                        .requestMatchers("/api/valoraciones/**")
+                                        .permitAll()
                                         .anyRequest()
                                         .authenticated())
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))

@@ -38,6 +38,10 @@ public class Tutor {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** Nivel de desempeño del tutor (principiante, avanzado, experto). */
+    @Column(nullable = false)
+    private String nivelDesempeno = "principiante";
+
     /** Usuario asociado al tutor. */
     @OneToOne
     @JoinColumn(name = "usuario_id", nullable = false, unique = true)
@@ -174,5 +178,13 @@ public class Tutor {
             }
         }
         return verificados;
+    }
+
+    public String getNivelDesempeno() {
+        return nivelDesempeno;
+    }
+
+    public void setNivelDesempeno(String nivelDesempeno) {
+        this.nivelDesempeno = nivelDesempeno;
     }
 }

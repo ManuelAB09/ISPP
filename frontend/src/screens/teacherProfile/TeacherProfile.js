@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { getProfesorStats } from "../../api/ratings.api";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { getTutorById, getMyTutorProfiles } from "../../api/tutorEndpoints";
@@ -10,6 +11,7 @@ import Settings from "../myProfile/Settings";
 import HireTutorModal from "./HireTutorModal";
 import { getApiBaseUrl } from "../../api/baseUrl";
 import "./TeacherProfile.css";
+import "./TeacherProfile.badges.css";
 
 const toAbsoluteImageUrl = (imageUrl, fallback = '/MeerKatters_logo.png') => {
   const raw = String(imageUrl || '').trim();
@@ -55,6 +57,7 @@ const TeacherProfile = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showHireModal, setShowHireModal] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
+  const [stats, setStats] = useState(null);
 
   // Callback: actualiza estado local tras editar
   const handlePerfilGuardado = (updatedTutor) => {
@@ -89,6 +92,9 @@ const TeacherProfile = () => {
       try {
         const data = await getTutorById(id);
         setTutor(data);
+        // Cargar stats de valoraciones
+        const statsData = await getProfesorStats(id);
+        setStats(statsData);
       } catch (err) {
         console.error("Error al cargar el tutor:", err);
         setError("No se pudo cargar el perfil del tutor.");
@@ -237,14 +243,19 @@ const TeacherProfile = () => {
                     ? `Profesor de ${tutor.especialidades.join(", ")}`
                     : "Profesor"}
                 </p>
-                {tutor.actividad && (
+                {stats && (
                   <div className="tp-header__rating">
-                    <Estrellas valor={tutor.actividad.valoracion} />
+                    <Estrellas valor={stats.media} />
                     <span className="tp-header__rating-num">
-                      {tutor.actividad.valoracion}
+                      {Number(stats.media).toFixed(2)}
                     </span>
                     <span className="tp-header__rating-count">
-                      ({(tutor.opiniones || []).length} reseñas)
+                      ({stats.total} valoraciones)
+                    </span>
+                    <span className={`tp-badge tp-badge--nivel tp-badge--${stats.nivel}`} style={{marginLeft:8}}>
+                      {stats.nivel === 'principiante' && <span>Principiante</span>}
+                      {stats.nivel === 'avanzado' && <span>Avanzado</span>}
+                      {stats.nivel === 'experto' && <span>Experto</span>}
                     </span>
                   </div>
                 )}

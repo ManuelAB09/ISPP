@@ -1,0 +1,65 @@
+/* Estética consistente con la app */
+.rating-form {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  padding: 20px 18px 16px 18px;
+  margin: 10px 0;
+  max-width: 350px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rating-form-stars {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.rating-stars {
+  display: flex;
+  gap: 2px;
+}
+.star {
+  font-size: 2rem;
+  color: #e5e7eb;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.star.selected {
+  color: #fbbf24;
+  text-shadow: 0 1px 4px #fbbf24aa;
+}
+.rating-form-comment textarea {
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  padding: 8px;
+  font-size: 1rem;
+  resize: vertical;
+}
+.rating-form-btn {
+  background: #2d3250a6;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.rating-form-btn:disabled {
+  background: #d1d5db;
+  color: #2d3250a6;
+  cursor: not-allowed;
+}
+.rating-form-error {
+  color: #dc2626;
+  font-size: 0.95rem;
+  margin-top: 4px;
+}
+.rating-form-success {
+  color: #16a34a;
+  font-size: 0.95rem;
+  margin-top: 4px;
+}

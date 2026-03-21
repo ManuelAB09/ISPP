@@ -1,0 +1,27 @@
+/* Badges personalizados para niveles de profesor */
+.tp-badge--nivel {
+  display: inline-block;
+  font-weight: 600;
+  font-size: 0.98rem;
+  border-radius: 16px;
+  padding: 3px 14px;
+  margin-left: 8px;
+  letter-spacing: 0.01em;
+  vertical-align: middle;
+  box-shadow: 0 1px 4px #0001;
+}
+.tp-badge--principiante {
+  background: #f3e8ff;
+  color: #7c3aed;
+  border: 1.5px solid #c4b5fd;
+}
+.tp-badge--avanzado {
+  background: #e0f2fe;
+  color: #0284c7;
+  border: 1.5px solid #7dd3fc;
+}
+.tp-badge--experto {
+  background: #fef9c3;
+  color: #ca8a04;
+  border: 1.5px solid #fde047;
+}

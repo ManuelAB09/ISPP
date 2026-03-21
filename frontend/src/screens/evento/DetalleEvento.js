@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import RatingForm from '../../components/RatingForm';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   LuCalendar, LuMapPin, LuLink, LuUsers, LuUser,
@@ -60,6 +61,7 @@ const DetalleEvento = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelLoading, setCancelLoading] = useState(false);
   const [isMember, setIsMember] = useState(false);
+  const [showRating, setShowRating] = useState(false);
 
   const currentUserId = localStorage.getItem('userId');
 
@@ -103,6 +105,15 @@ const DetalleEvento = () => {
   useEffect(() => {
     fetchEventData();
   }, [fetchEventData]);
+
+  // Mostrar formulario de valoración si el usuario es alumno, el evento ha finalizado y no ha valorado aún
+  useEffect(() => {
+    if (!event || !currentUserId) return;
+    const eventoFinalizado = new Date(event.fechaHora) < new Date();
+    // Aquí deberías consultar al backend si el usuario ya valoró este evento
+    // Por simplicidad, mostramos el formulario si el evento ha finalizado
+    setShowRating(eventoFinalizado);
+  }, [event, currentUserId]);
 
   const isOrganizer = event?.creador?.id?.toString() === currentUserId;
   const isConfirmed = myAttendance?.estado === 'CONFIRMADA';
@@ -480,6 +491,13 @@ const DetalleEvento = () => {
               </div>
             )}
 
+            {/* Formulario de valoración tras evento finalizado */}
+            {showRating && event && event.creador && (
+              <div className="ed-rating-card">
+                <h3 className="ed-card-title">Valora al profesor</h3>
+                <RatingForm profesorId={event.creador.id} eventoId={event.id} onSuccess={() => setShowRating(false)} />
+              </div>
+            )}
             {/* Lista de participantes */}
             <div className="ed-participants-card">
               <h3 className="ed-card-title">
