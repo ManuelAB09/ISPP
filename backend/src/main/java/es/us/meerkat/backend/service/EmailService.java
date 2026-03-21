@@ -992,6 +992,67 @@ public class EmailService {
         sendHtmlEmailSafe(dueno.getEmail(), subject, body);
     }
 
+    /**
+     * Email a un miembro de comunidad cuando se publica un nuevo mensaje en el chat.
+     *
+     * @param destinatario usuario miembro que recibe el aviso.
+     * @param comunidad comunidad donde se ha publicado el mensaje.
+     * @param remitente usuario que publicó el mensaje.
+     * @param contenido contenido del mensaje.
+     */
+    public void sendCommunityMessageEmail(
+            final Usuario destinatario,
+            final Comunidad comunidad,
+            final Usuario remitente,
+            final String contenido) {
+        if (destinatario == null
+                || destinatario.getEmail() == null
+                || destinatario.getEmail().isBlank()
+                || comunidad == null
+                || remitente == null) {
+            return;
+        }
+
+        final String nombreDestinatario =
+                destinatario.getNombre() != null ? destinatario.getNombre() : "";
+        final String nombreComunidad =
+                comunidad.getNombre() != null ? comunidad.getNombre() : "tu comunidad";
+        final String nombreRemitente =
+                remitente.getNombre() != null ? remitente.getNombre() : "Un miembro";
+        final String vistaPrevia =
+                contenido != null && !contenido.isBlank()
+                        ? (contenido.length() > 220
+                                ? contenido.substring(0, 220) + "..."
+                                : contenido)
+                        : "Se ha publicado un nuevo mensaje en la comunidad.";
+
+        final String subject = "💬 Nuevo mensaje en comunidad: " + nombreComunidad;
+        final String body =
+                "<html><body style='font-family:Arial,sans-serif;color:#333'><div"
+                    + " style='max-width:600px;margin:0 auto;padding:20px'><div"
+                    + " style='background:#2D3250;color:white;padding:20px;text-align:center;border-radius:5px"
+                    + " 5px 0 0'><h1>Nuevo mensaje en tu comunidad</h1></div><div"
+                    + " style='background:#f9f9f9;padding:20px;border:1px solid #ddd'><p>Hola"
+                    + " <strong>"
+                        + escapeHtml(nombreDestinatario)
+                        + "</strong>,</p><p><strong>"
+                        + escapeHtml(nombreRemitente)
+                        + "</strong> ha enviado un mensaje en <strong>"
+                        + escapeHtml(nombreComunidad)
+                        + "</strong>.</p><div"
+                        + " style='background:#eef2ff;padding:14px;border-left:4px solid"
+                        + " #2D3250;margin:18px 0;white-space:pre-wrap'>"
+                        + escapeHtml(vistaPrevia)
+                        + "</div><p>Entra en la comunidad para leer y responder en el"
+                        + " chat.</p></div><div"
+                        + " style='background:#f0f0f0;padding:15px;text-align:center;font-size:12px;border-radius:0"
+                        + " 0 5px 5px'><p>&copy; "
+                        + appName
+                        + "</p></div></div></body></html>";
+
+        sendHtmlEmailSafe(destinatario.getEmail(), subject, body);
+    }
+
     private void sendHtmlEmailSafe(String to, String subject, String htmlBody) {
         try {
             MimeMessage message = mailSender.createMimeMessage();

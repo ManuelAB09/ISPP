@@ -3,6 +3,7 @@ package es.us.meerkat.backend.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -19,9 +20,11 @@ import es.us.meerkat.backend.dto.EnviarMensajeComunidadRequest;
 import es.us.meerkat.backend.dto.MensajeComunidadResponse;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.MensajeComunidad;
+import es.us.meerkat.backend.entity.PreferenciasNotificacion;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.MensajeComunidadRepository;
+import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -30,6 +33,9 @@ class MensajeComunidadServiceTest {
     @Mock private MensajeComunidadRepository mensajeComunidadRepository;
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private ComunidadRepository comunidadRepository;
+    @Mock private MiembroComunidadRepository miembroComunidadRepository;
+    @Mock private PreferenciasNotificacionService preferenciasNotificacionService;
+    @Mock private EmailService emailService;
 
     @InjectMocks private MensajeComunidadService service;
 
@@ -57,6 +63,14 @@ class MensajeComunidadServiceTest {
 
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
         when(comunidadRepository.findById(10L)).thenReturn(Optional.of(comunidad));
+        when(miembroComunidadRepository.findUsuarioIdsByComunidadId(10L)).thenReturn(List.of(2L));
+        Usuario miembro = buildUsuario(2L, "Miembro");
+        miembro.setEmail("miembro@test.com");
+        when(usuarioRepository.findById(2L)).thenReturn(Optional.of(miembro));
+        PreferenciasNotificacion preferencias = new PreferenciasNotificacion();
+        preferencias.setEmailsActivados(true);
+        preferencias.setNotificarMensajeComunidad(true);
+        when(preferenciasNotificacionService.getOrCreate(2L)).thenReturn(preferencias);
         when(mensajeComunidadRepository.save(any(MensajeComunidad.class)))
                 .thenAnswer(
                         inv -> {
@@ -69,6 +83,41 @@ class MensajeComunidadServiceTest {
 
         assertThat(response).isNotNull();
         verify(mensajeComunidadRepository).save(any(MensajeComunidad.class));
+        verify(emailService).sendCommunityMessageEmail(any(), any(), any(), any());
+    }
+
+    @Test
+    void enviarMensajeShouldNotSendEmailWhenPreferenceDisabled() {
+        Usuario usuario = buildUsuario(1L, "Test User");
+        Comunidad comunidad = buildComunidad(10L);
+        Usuario miembro = buildUsuario(2L, "Miembro");
+        miembro.setEmail("miembro@test.com");
+
+        EnviarMensajeComunidadRequest request = new EnviarMensajeComunidadRequest();
+        request.setComunidadId(10L);
+        request.setContenido("Hola comunidad");
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(comunidadRepository.findById(10L)).thenReturn(Optional.of(comunidad));
+        when(miembroComunidadRepository.findUsuarioIdsByComunidadId(10L)).thenReturn(List.of(2L));
+        when(usuarioRepository.findById(2L)).thenReturn(Optional.of(miembro));
+
+        PreferenciasNotificacion preferencias = new PreferenciasNotificacion();
+        preferencias.setEmailsActivados(true);
+        preferencias.setNotificarMensajeComunidad(false);
+        when(preferenciasNotificacionService.getOrCreate(2L)).thenReturn(preferencias);
+
+        when(mensajeComunidadRepository.save(any(MensajeComunidad.class)))
+                .thenAnswer(
+                        inv -> {
+                            MensajeComunidad m = inv.getArgument(0);
+                            m.setId(101L);
+                            return m;
+                        });
+
+        service.enviarMensaje(1L, request);
+
+        verify(emailService, never()).sendCommunityMessageEmail(any(), any(), any(), any());
     }
 
     @Test
@@ -128,7 +177,6 @@ class MensajeComunidadServiceTest {
     @Test
     void obtenerArchivoShouldThrowWhenMessageNotInCommunity() {
         Usuario usuario = buildUsuario(1L, "Test");
-        Comunidad comunidad = buildComunidad(10L);
 
         MensajeComunidad mensaje =
                 MensajeComunidad.builder()

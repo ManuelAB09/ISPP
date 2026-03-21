@@ -9,20 +9,27 @@ import es.us.meerkat.backend.dto.EnviarMensajeComunidadRequest;
 import es.us.meerkat.backend.dto.MensajeComunidadResponse;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.MensajeComunidad;
+import es.us.meerkat.backend.entity.PreferenciasNotificacion;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.MensajeComunidadRepository;
+import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /** Servicio para la gestión de mensajes en chats de comunidades. */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MensajeComunidadService {
 
     private final MensajeComunidadRepository mensajeComunidadRepository;
     private final UsuarioRepository usuarioRepository;
     private final ComunidadRepository comunidadRepository;
+    private final MiembroComunidadRepository miembroComunidadRepository;
+    private final PreferenciasNotificacionService preferenciasNotificacionService;
+    private final EmailService emailService;
 
     /**
      * Envía un mensaje en el chat de una comunidad.
@@ -55,6 +62,7 @@ public class MensajeComunidadService {
                         .build();
 
         final MensajeComunidad saved = mensajeComunidadRepository.save(mensaje);
+        notificarMensajeComunidadPorEmail(saved);
         return mapToResponse(saved);
     }
 
@@ -112,6 +120,7 @@ public class MensajeComunidadService {
                         .build();
 
         final MensajeComunidad saved = mensajeComunidadRepository.save(mensaje);
+        notificarMensajeComunidadPorEmail(saved);
         saved.setArchivoUrl(
                 "/api/v1/comunidades/" + comunidadId + "/mensajes/" + saved.getId() + "/archivo");
         mensajeComunidadRepository.save(saved);
@@ -231,6 +240,63 @@ public class MensajeComunidadService {
                 .archivoMimeType(mensaje.getArchivoMimeType())
                 .archivoTamano(mensaje.getArchivoTamano())
                 .build();
+    }
+
+    private void notificarMensajeComunidadPorEmail(final MensajeComunidad mensaje) {
+        if (mensaje == null
+                || mensaje.getUsuario() == null
+                || mensaje.getUsuario().getId() == null
+                || mensaje.getComunidad() == null
+                || mensaje.getComunidad().getId() == null) {
+            return;
+        }
+
+        final Long remitenteId = mensaje.getUsuario().getId();
+        final Long comunidadId = mensaje.getComunidad().getId();
+
+        final List<Long> miembrosIds =
+                miembroComunidadRepository.findUsuarioIdsByComunidadId(comunidadId);
+
+        if (miembrosIds == null || miembrosIds.isEmpty()) {
+            return;
+        }
+
+        for (final Long miembroId : miembrosIds) {
+            if (miembroId == null || miembroId.equals(remitenteId)) {
+                continue;
+            }
+
+            notificarMiembroPorEmail(mensaje, comunidadId, miembroId);
+        }
+    }
+
+    private void notificarMiembroPorEmail(
+            final MensajeComunidad mensaje, final Long comunidadId, final Long miembroId) {
+        final Usuario miembro = usuarioRepository.findById(miembroId).orElse(null);
+        if (miembro == null || miembro.getEmail() == null || miembro.getEmail().isBlank()) {
+            return;
+        }
+        try {
+            if (!puedeRecibirNotificacionDeMensaje(miembro.getId())) {
+                return;
+            }
+            emailService.sendCommunityMessageEmail(
+                    miembro, mensaje.getComunidad(), mensaje.getUsuario(), mensaje.getContenido());
+        } catch (Exception e) {
+            log.warn(
+                    "No se pudo enviar notificacion email de mensaje comunidad {} al usuario {}:"
+                            + " {}",
+                    comunidadId,
+                    miembroId,
+                    e.getMessage());
+        }
+    }
+
+    private boolean puedeRecibirNotificacionDeMensaje(final Long usuarioId) {
+        final PreferenciasNotificacion preferencias =
+                preferenciasNotificacionService.getOrCreate(usuarioId);
+
+        return preferencias.getEmailsActivados() && preferencias.getNotificarMensajeComunidad();
     }
 
     public record MensajeComunidadArchivo(byte[] data, String nombre, String mimeType) {}
