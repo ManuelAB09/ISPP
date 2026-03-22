@@ -6,24 +6,75 @@ import PageHeader from "../../components/PageHeader";
 import CheckoutModal from "../../components/plans/CheckoutModal";
 import "./PlansScreen.css";
 
-const DEFAULT_PLANS = [
+const PLAN_ORDER = ["GRATUITO", "PREMIUM", "PRO"];
+
+const USER_PLAN_CATALOG = [
   {
-    id: 1,
+    id: "GRATUITO",
+    tipo: "GRATUITO",
     nombre: "Gratuito",
-    descripcion: "Acceso básico",
-    caracteristicas: ["Comunidades y eventos", "Funcionalidades esenciales", "Límites estándar"]
+    descripcion: "Ideal para empezar",
+    caracteristicas: ["3 comunidades activas", "30 aforo máx", "1 profesor por comunidad"],
+    precioMensual: "GRATIS",
+    precioAnual: "GRATIS",
   },
   {
-    id: 2,
+    id: "PREMIUM",
+    tipo: "PREMIUM",
     nombre: "PREMIUM",
-    descripcion: "Funciones avanzadas desbloqueadas",
-    caracteristicas: ["Más límites y herramientas", "Mejor experiencia de uso", "Acceso a funcionalidades avanzadas", "Soporte prioritario", "Sin publicidad"]
-  }
+    descripcion: "Más capacidad para crecer",
+    caracteristicas: ["10 comunidades activas", "75 aforo máx", "5 profesores por comunidad"],
+    precioMensual: "4,99€/mes",
+    precioAnual: "50€/año",
+  },
+  {
+    id: "PRO",
+    tipo: "PRO",
+    nombre: "PRO",
+    descripcion: "Para gestión avanzada",
+    caracteristicas: ["25 comunidades activas", "250 aforo máx", "15 profesores por comunidad"],
+    precioMensual: "19,99€/mes",
+    precioAnual: "200€/año",
+  },
 ];
+
+const getPlanType = (plan) => {
+  const raw = (plan?.tipo || plan?.nombre || "").toString().toUpperCase();
+  if (raw.includes("PREMIUM")) return "PREMIUM";
+  if (raw.includes("PRO")) return "PRO";
+  if (raw.includes("GRATUIT") || raw.includes("FREE") || raw.includes("BASIC")) return "GRATUITO";
+  return raw;
+};
+
+const mergeUserPlans = (backendPlans = []) => {
+  const catalogByType = new Map(USER_PLAN_CATALOG.map((plan) => [plan.tipo, plan]));
+  const backendByType = new Map(
+    backendPlans
+      .map((plan) => ({ ...plan, tipo: getPlanType(plan) }))
+      .filter((plan) => PLAN_ORDER.includes(plan.tipo))
+      .map((plan) => [plan.tipo, plan])
+  );
+
+  return PLAN_ORDER.map((tipo) => {
+    const catalogPlan = catalogByType.get(tipo);
+    const backendPlan = backendByType.get(tipo);
+    return {
+      ...catalogPlan,
+      ...backendPlan,
+      id: backendPlan?.id || catalogPlan.id,
+      tipo,
+      nombre: catalogPlan.nombre,
+      descripcion: catalogPlan.descripcion,
+      caracteristicas: catalogPlan.caracteristicas,
+      precioMensual: catalogPlan.precioMensual,
+      precioAnual: catalogPlan.precioAnual,
+    };
+  });
+};
 
 export default function PlansScreen() {
   const navigate = useNavigate();
-  const [plans, setPlans] = useState(DEFAULT_PLANS);
+  const [plans, setPlans] = useState(USER_PLAN_CATALOG);
   const [myPlan, setMyPlan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -42,11 +93,13 @@ export default function PlansScreen() {
         // Intentar cargar planes del backend
         try {
           const plansResponse = await subscriptionsApi.listPlans();
-          const plansData = Array.isArray(plansResponse) ? plansResponse : (plansResponse?.data || DEFAULT_PLANS);
-          setPlans(plansData);
+          const plansData = Array.isArray(plansResponse)
+            ? plansResponse
+            : plansResponse?.data || [];
+          setPlans(mergeUserPlans(plansData));
         } catch (err) {
           console.log("Usando planes por defecto");
-          setPlans(DEFAULT_PLANS);
+          setPlans(USER_PLAN_CATALOG);
         }
 
         // Intentar cargar suscripción actual
@@ -207,7 +260,9 @@ export default function PlansScreen() {
             <div className="cardsGrid">
               {plans && plans.length > 0 ? (
                 plans.map((plan) => {
-                  const isPremiumPlan = plan.nombre === "PREMIUM" || plan.tipo === "PREMIUM";
+                  const planType = getPlanType(plan);
+                  const isPremiumPlan = planType === "PREMIUM";
+                  const isProPlan = planType === "PRO";
                   const isCurrentPlan = myPlan?.plan === plan.nombre;
 
                   return (
@@ -223,15 +278,12 @@ export default function PlansScreen() {
                           <div className="planSub">{plan.descripcion || "Acceso básico"}</div>
                         </div>
                         <div className={isPremiumPlan ? "planPricePremium" : "planPrice"}>
-                          {plan.precio === 0 ? (
+                          {planType === "GRATUITO" ? (
                             "GRATIS"
-                          ) : plan.precio ? (
-                            `$${plan.precio}`
-                          ) : isPremiumPlan ? (
+                          ) : plan.precioMensual && plan.precioAnual ? (
                             <span className="planPriceStack">
-                              <span className="planPriceMain">
-                                2.99€/mes + IVA: {(parseFloat(2.99) * 1.21).toFixed(2)}€
-                              </span> <span className="planPriceSub">25.99€/año + IVA: {(parseFloat(25.99) * 1.21).toFixed(2)}€</span>
+                              <span className="planPriceMain">{plan.precioMensual}</span>
+                              <span className="planPriceSub">{plan.precioAnual}</span>
                             </span>
                           ) : (
                             "GRATIS"
@@ -261,6 +313,10 @@ export default function PlansScreen() {
                           title={hasInstitutionPlan ? "No disponible con plan institucional activo" : ""}
                         >
                           {isPremium ? "Ya eres Premium" : hasInstitutionPlan ? "No disponible" : "Mejorar a Premium"}
+                        </button>
+                      ) : isProPlan ? (
+                        <button className="btn btn--muted" disabled title="Plan disponible próximamente">
+                          Próximamente
                         </button>
                       ) : (
                         <button className="btn btn--muted" disabled>
@@ -309,15 +365,14 @@ export default function PlansScreen() {
                     <h2 className="instBannerTitle">¿Eres una institución educativa?</h2>
                     <p className="instBannerDesc">
                       Ofrecemos planes especiales para academias, universidades y centros
-                      educativos, con gestión de grupos, múltiples administradores y
-                      estadísticas avanzadas. También disponemos de precios reducidos para
-                      centros públicos y concertados.
+                      educativos, con límites escalables de comunidades, aforo y
+                      profesorado para cada tipo de institución.
                     </p>
                     <div className="instBannerFeatures">
-                      <span>👥 Múltiples admins</span>
-                      <span>📊 Estadísticas avanzadas</span>
-                      <span>🏫 Gestión de grupos</span>
-                      <span>💜 Precios especiales</span>
+                      <span>🏫 Plan Academias</span>
+                      <span>🏛️ Plan Colegios</span>
+                      <span>🎓 Plan Universidades</span>
+                      <span>📈 Escalado anual</span>
                     </div>
                   </div>
                 </div>
