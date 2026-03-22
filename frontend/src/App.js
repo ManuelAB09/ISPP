@@ -28,6 +28,7 @@ import PlansScreen from './screens/planes/PlansScreen';
 import PlanesSuccess from './screens/planes/PlanesSuccess';
 import PasarelaPagoTutor from './screens/teacherProfile/PasarelaPagoTutor';
 import TeacherProfile from './screens/teacherProfile/TeacherProfile';
+import MisReservas from './screens/reservas/MisReservas';
 import CrearUbicacionScreen from './screens/ubicaciones/CrearUbicacionScreen';
 import VerifiedTeachers from './screens/verifiedTeachers/VerifiedTeachers';
 import CalendarCallback from './screens/myProfile/CalendarCallback';
@@ -75,6 +76,7 @@ function AppRoutes() {
         <Route path="/cuestionarios/crear" element={<CuestionarioEditor />} />
         <Route path="/planes/success" element={<PlanesSuccess />} />
         <Route path="/settings/calendar" element={<CalendarCallback />} />
+        <Route path="/mis-reservas" element={<MisReservas />} />
       </>
     )
   }

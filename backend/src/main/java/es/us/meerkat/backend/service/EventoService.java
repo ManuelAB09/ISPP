@@ -454,6 +454,67 @@ public class EventoService {
     // EVENTOS POR COMUNIDAD
     // ===============================
 
+    // ===============================
+    // VINCULAR TAREA CLASSROOM
+    // ===============================
+
+    /**
+     * Vincula una tarea de Google Classroom a un evento.
+     *
+     * @param eventoId Identificador del evento.
+     * @param usuarioId Identificador del usuario que solicita.
+     * @param taskId ID de la tarea en Classroom.
+     * @param title Título de la tarea en Classroom.
+     * @param url URL de la tarea en Classroom.
+     * @return El evento actualizado.
+     */
+    @Transactional
+    public Evento vincularTareaClassroom(
+            final Long eventoId,
+            final Long usuarioId,
+            final String taskId,
+            final String title,
+            final String url) {
+        final Evento evento = obtenerEventoInterno(eventoId);
+
+        if (!evento.getCreador().getId().equals(usuarioId)) {
+            throw new RuntimeException("Solo el creador del evento puede vincular tareas");
+        }
+
+        if (evento.getComunidad() == null) {
+            throw new RuntimeException(
+                    "El evento debe pertenecer a una comunidad para vincular una tarea");
+        }
+
+        evento.setClassroomTaskId(taskId);
+        evento.setClassroomTaskTitle(title);
+        evento.setClassroomTaskUrl(url);
+
+        return eventoRepository.save(evento);
+    }
+
+    /**
+     * Desvincula una tarea de Google Classroom de un evento.
+     *
+     * @param eventoId Identificador del evento.
+     * @param usuarioId Identificador del usuario que solicita.
+     * @return El evento actualizado.
+     */
+    @Transactional
+    public Evento desvincularTareaClassroom(final Long eventoId, final Long usuarioId) {
+        final Evento evento = obtenerEventoInterno(eventoId);
+
+        if (!evento.getCreador().getId().equals(usuarioId)) {
+            throw new RuntimeException("Solo el creador del evento puede desvincular tareas");
+        }
+
+        evento.setClassroomTaskId(null);
+        evento.setClassroomTaskTitle(null);
+        evento.setClassroomTaskUrl(null);
+
+        return eventoRepository.save(evento);
+    }
+
     /**
      * Obtiene los eventos de una comunidad, filtrando eventos privados según permisos.
      *
@@ -468,9 +529,10 @@ public class EventoService {
         if (incluirCancelados) {
             eventos = eventoRepository.findByComunidadId(comunidadId);
         } else {
+            final LocalDateTime ahora = LocalDateTime.now();
             eventos =
                     eventoRepository.findByComunidadIdAndCanceladoFalseAndFuture(
-                            comunidadId, LocalDateTime.now());
+                            comunidadId, ahora, ahora.minusHours(2), usuarioId);
         }
         return filtrarEventosPrivados(eventos, usuarioId);
     }

@@ -669,3 +669,66 @@
 .toggle-switch input:checked + .toggle-slider::before {
   transform: translateX(22px);
 }
+
+/* Password Requirements */
+.password-requirements {
+  margin-top: 8px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.password-requirements-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 8px 0;
+}
+
+.password-requirements-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.password-requirements-list li {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.password-requirements-list .requirement-met {
+  color: #16a34a;
+}
+
+.password-requirements-list .requirement-unmet {
+  color: #9ca3af;
+}
+
+/* Terms checkbox warning state */
+.checkbox-group.terms-warning .checkbox-custom {
+  border-color: #dc2626;
+  animation: shake 0.5s ease-in-out;
+}
+
+.checkbox-group.terms-warning .checkbox-text {
+  color: #dc2626;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.terms-error-hint {
+  color: #dc2626;
+  font-size: 12px;
+  margin: 8px 0 0 0;
+  padding-left: 32px;
+}

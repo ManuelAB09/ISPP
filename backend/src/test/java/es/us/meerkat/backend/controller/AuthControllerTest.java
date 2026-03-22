@@ -60,7 +60,7 @@ class AuthControllerTest {
                         .build();
         when(authService.iniciarSesion(request)).thenReturn(serviceResponse);
 
-        ResponseEntity<AuthResponse> response = authController.login(request);
+        ResponseEntity<?> response = authController.login(request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(serviceResponse);

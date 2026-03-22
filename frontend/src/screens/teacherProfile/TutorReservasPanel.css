@@ -1,0 +1,252 @@
+/* TutorReservasPanel — prefijo trp- */
+
+.trp-panel {
+    margin-top: 2rem;
+}
+
+/* Tabs */
+.trp-tabs {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 0;
+}
+
+.trp-tab {
+    padding: 0.5rem 1rem;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.trp-tab:hover { color: #374151; }
+
+.trp-tab--active {
+    color: #6366f1;
+    border-bottom-color: #6366f1;
+}
+
+.trp-tab__count {
+    background: #6366f1;
+    color: #fff;
+    border-radius: 999px;
+    padding: 0.05rem 0.45rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+/* List */
+.trp-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* Card */
+.trp-card {
+    background: #fff;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    transition: box-shadow 0.15s;
+}
+
+.trp-card:hover { box-shadow: 0 2px 12px rgba(99, 102, 241, 0.08); }
+
+.trp-card__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.trp-card__top > div {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.trp-card__alumno {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #111827;
+}
+
+.trp-card__fecha {
+    font-size: 0.82rem;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.trp-card__details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.trp-card__tema {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.trp-card__meta {
+    font-size: 0.8rem;
+    color: #9ca3af;
+}
+
+.trp-card__desc {
+    font-size: 0.83rem;
+    color: #4b5563;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.trp-card__actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.25rem;
+}
+
+/* Badges */
+.trp-badge {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.trp-badge--pending { background: #fef3c7; color: #92400e; }
+.trp-badge--confirmed { background: #dbeafe; color: #1e40af; }
+.trp-badge--done { background: #dcfce7; color: #166534; }
+.trp-badge--cancelled { background: #fee2e2; color: #991b1b; }
+
+/* Buttons */
+.trp-btn {
+    padding: 0.4rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.83rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+}
+
+.trp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.trp-btn--confirm { background: #6366f1; color: #fff; }
+.trp-btn--confirm:hover:not(:disabled) { background: #4f46e5; }
+
+.trp-btn--danger { background: #fee2e2; color: #dc2626; }
+.trp-btn--danger:hover:not(:disabled) { background: #fecaca; }
+
+.trp-btn--secondary { background: #f3f4f6; color: #374151; }
+.trp-btn--secondary:hover:not(:disabled) { background: #e5e7eb; }
+
+/* Loading / empty / error */
+.trp-loading,
+.trp-empty {
+    font-size: 0.88rem;
+    color: #9ca3af;
+    padding: 1.5rem 0;
+    text-align: center;
+}
+
+.trp-success {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    padding: 0.5rem 0.9rem;
+    font-size: 0.85rem;
+    color: #16a34a;
+    margin-bottom: 0.5rem;
+}
+
+.trp-error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 0.5rem 0.9rem;
+    font-size: 0.85rem;
+    color: #dc2626;
+    margin-bottom: 0.5rem;
+}
+
+/* Cancel dialog */
+.trp-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1100;
+    padding: 1rem;
+}
+
+.trp-dialog {
+    background: #fff;
+    border-radius: 14px;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+}
+
+.trp-dialog__title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.trp-dialog__text {
+    font-size: 0.85rem;
+    color: #4b5563;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.trp-dialog__input {
+    padding: 0.6rem 0.75rem;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    color: #111827;
+    font-family: inherit;
+    resize: vertical;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.trp-dialog__input:focus { border-color: #6366f1; }
+
+
+.trp-dialog__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+}

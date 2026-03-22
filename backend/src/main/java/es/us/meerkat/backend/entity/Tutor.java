@@ -38,6 +38,18 @@ public class Tutor {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** Nivel de desempeño del tutor. */
+    @Column(name = "nivel_desempeno", nullable = false)
+    private String nivelDesempeno = "PRINCIPIANTE";
+
+    /** Puntuación media del tutor. */
+    @Column(name = "puntuacion_media", nullable = false)
+    private Double puntuacionMedia = 0.0;
+
+    /** Total de valoraciones del tutor. */
+    @Column(name = "total_valoraciones", nullable = false)
+    private Integer totalValoraciones = 0;
+
     /** Usuario asociado al tutor. */
     @OneToOne
     @JoinColumn(name = "usuario_id", nullable = false, unique = true)
@@ -91,6 +103,15 @@ public class Tutor {
         }
         if (this.classroomConectado == null) {
             this.classroomConectado = false;
+        }
+        if (this.nivelDesempeno == null) {
+            this.nivelDesempeno = "PRINCIPIANTE";
+        }
+        if (this.puntuacionMedia == null) {
+            this.puntuacionMedia = 0.0;
+        }
+        if (this.totalValoraciones == null) {
+            this.totalValoraciones = 0;
         }
     }
 

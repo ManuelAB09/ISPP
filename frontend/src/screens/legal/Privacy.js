@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import './Legal.css';
+import meerkattersLogo from '../../static/images/MeerKatters_logo.png';
 
 const Privacy = () => {
   return (
@@ -7,7 +8,7 @@ const Privacy = () => {
       <div className="legal-content">
         <div className="legal-header">
           <Link to="/" className="legal-logo">
-            <img src="/static/images/MeerKatters_logo.png" alt="MeerKatters Logo" className="legal-logo-img" />
+            <img src={meerkattersLogo} alt="MeerKatters Logo" className="legal-logo-img" />
             <span className="logo-text">MeerKatters</span>
           </Link>
           <h1>Política de Privacidad</h1>

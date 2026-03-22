@@ -7,6 +7,8 @@ import EditProfileModal from "./EditProfileModal";
 import CreateProfileModal from "./CreateProfileModal";
 import VerificacionModal from "./VerificacionModal";
 import Settings from "../myProfile/Settings";
+import HireTutorModal from "./HireTutorModal";
+import BookClassModal from "./BookClassModal";
 import HireDirectModal from "./HireDirectModal";
 import TutorSolicitudes from "./TutorSolicitudes";
 import TutorConversaciones from "./TutorConversaciones";
@@ -14,6 +16,7 @@ import AlumnoSolicitudes from "./AlumnoSolicitudes";
 import PrivateChat from "../chat/PrivateChat";
 import { getApiBaseUrl } from "../../api/baseUrl";
 import "./TeacherProfile.css";
+import { getValoracionesStats } from '../../api/valoraciones.api';
 
 const toAbsoluteImageUrl = (imageUrl, fallback = '/MeerKatters_logo.png') => {
   const raw = String(imageUrl || '').trim();
@@ -58,9 +61,30 @@ const TeacherProfile = () => {
   const [showVerificacion, setShowVerificacion] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showHireModal, setShowHireModal] = useState(false);
+  const [showBookModal, setShowBookModal] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [stripeLoading, setStripeLoading] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
+  const [valoracionesStats, setValoracionesStats] = useState(null);
+
+  // Badge de nivel (detalle): color y texto completo
+  const getNivelBadge = (media, total) => {
+    if (total < 10 || media < 3) return { label: "Principiante", color: "#676F9D", letra: "P" };
+    if (total >= 10 && total <= 50 && media >= 3) return { label: "Avanzado", color: "#52c41a", letra: "A" };
+    if (total > 50 && media >= 4.5) return { label: "Experto", color: "#1890ff", letra: "E" };
+    return null;
+  };
+
+  // Cargar stats de valoraciones
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await getValoracionesStats(tutor.id ?? tutor.userId ?? tutor.usuario?.id);
+        setValoracionesStats(res);
+      } catch {}
+    };
+    if (tutor) fetchStats();
+  }, [tutor]);
 
   // Callback: actualiza estado local tras editar
   const handlePerfilGuardado = (updatedTutor) => {
@@ -298,9 +322,24 @@ const TeacherProfile = () => {
               <div className="tp-header__actions">
                 <button
                   className="tp-btn tp-btn--contact"
-                  onClick={() => setShowChat((prev) => !prev)}
+                  onClick={() => {
+                    const targetUserId = tutor.userId ?? tutor.usuario?.id;
+                    const nombre = tutor.usuario?.nombre || 'Profesor';
+                    if (!targetUserId) return;
+                    const params = new URLSearchParams({
+                      userId: String(targetUserId),
+                      userName: nombre,
+                    });
+                    if (tutor.usuario?.foto) {
+                      params.set('userPhoto', toAbsoluteImageUrl(tutor.usuario.foto));
+                    }
+                    navigate(`/chats?${params.toString()}`);
+                  }}
                 >
                   {showChat ? '✕ Cerrar chat' : '💬 Contactar'}
+                </button>
+                <button className="tp-btn tp-btn--book" onClick={() => setShowBookModal(true)}>
+                  📅 Reservar clase
                 </button>
                 <button className="tp-btn tp-btn--hire" onClick={() => setShowHireModal(true)}>
                   🎓 Contratar
@@ -445,7 +484,7 @@ const TeacherProfile = () => {
                 </div>
               ))}
               {/* Placeholder "Explorar más comunidades" */}
-              <div 
+              <div
                 className="tp-comunidades__card tp-comunidades__card--explore tp-comunidades__card--xl"
                 onClick={() => navigate('/comunidades')}
                 style={{ cursor: 'pointer' }}
@@ -456,7 +495,7 @@ const TeacherProfile = () => {
                   Busca entre miles de comunidades de estudio adaptadas a tus necesidades
                 </span>
               </div>
-              <span 
+              <span
                 className="tp-comunidades__ver-todas tp-comunidades__ver-todas--xl"
                 onClick={() => navigate('/comunidades')}
                 style={{ cursor: 'pointer' }}
@@ -475,7 +514,7 @@ const TeacherProfile = () => {
                 Crea comunidades, une a estudiantes y enseña sobre lo que sabes.
               </p>
               {user?.id === tutor.usuario?.id && (
-                <button 
+                <button
                   className="tp-btn tp-btn--crear tp-btn--crear-xl"
                   onClick={() => navigate('/crear-comunidad')}
                 >+ Crear Nueva</button>
@@ -508,11 +547,33 @@ const TeacherProfile = () => {
             </div>
           </section>
 
+          {/* BADGE DE NIVEL Y VALORACIÓN MEDIA */}
+          {valoracionesStats && (() => {
+            const nivel = getNivelBadge(valoracionesStats.media, valoracionesStats.total);
+            return (
+              <div className="tp-rating-summary" style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '18px 0' }}>
+                {nivel && (
+                  <span className="tp-badge-nivel" style={{ background: nivel.color, color: '#fff', fontWeight: 700, borderRadius: 16, padding: '6px 16px', fontSize: '1.05em', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    {nivel.letra} - {nivel.label}
+                  </span>
+                )}
+                <span className="tp-rating-media">
+                  <Estrellas valor={valoracionesStats.media} />
+                  <span className="tp-rating-num">{valoracionesStats.media?.toFixed(2)}</span>
+                  <span className="tp-rating-count">({valoracionesStats.total} valoraciones)</span>
+                </span>
+              </div>
+            );
+          })()}
+
         </div>{/* cierre tp-content */}
       </div>
 
       {showHireModal && (
         <HireDirectModal tutor={tutor} onClose={() => setShowHireModal(false)} />
+      )}
+      {showBookModal && (
+        <BookClassModal tutor={tutor} onClose={() => setShowBookModal(false)} />
       )}
     </>
   );

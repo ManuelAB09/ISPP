@@ -14,6 +14,7 @@ import { listCommunityEvents, attendEvent, cancelAttendance, getMyAttendance } f
 import { useAuth } from '../../contexts/AuthContext';
 import { useSocketContext } from '../../contexts/SocketContext';
 import axiosInstance from '../../api/axiosConfig';
+import { getApiBaseUrl } from '../../api/baseUrl';
 import './CommunityDetail.css';
 
 
@@ -122,6 +123,9 @@ export default function CommunityDetail() {
   const [cuestionariosLoading, setCuestionariosLoading] = useState(false);
   const [cuestionariosError, setCuestionariosError] = useState(null);
   const [chatOpen, setChatOpen] = useState(openChatOnLoad);
+  const [ranking, setRanking] = useState([]);
+  const [rankingLoading, setRankingLoading] = useState(false);
+  const [rankingError, setRankingError] = useState(null);
   const fileInputRef = useRef(null);
   const activeMeetingRequestInFlightRef = useRef(false);
 
@@ -148,7 +152,18 @@ export default function CommunityDetail() {
     foto: user?.foto || null,
     fotoBackgroundColor: user?.fotoBackgroundColor || '#ffffff',
   };
-  const communityImage = community?.imagenUrl !== 'empty' ? community?.imagenUrl : 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
+  const communityImage = (() => {
+    const raw = community?.imagen || community?.imagenUrl || community?.foto;
+    if (!raw || !String(raw).trim() || String(raw).trim().toLowerCase() === 'empty') {
+      return 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
+    }
+    const value = String(raw).trim();
+    if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
+      return value;
+    }
+    const base = getApiBaseUrl();
+    return value.startsWith('/') ? `${base}${value}` : `${base}/${value}`;
+  })();
 
   const fetchCommunity = useCallback(async () => {
     try {
@@ -264,6 +279,32 @@ export default function CommunityDetail() {
   }, [communityId, currentUserId]);
 
 
+  const fetchRanking = useCallback(async () => {
+    if (!isMember) {
+      setRanking([]);
+      return;
+    }
+
+    try {
+      setRankingLoading(true);
+      setRankingError(null);
+      const data = await communitiesApi.getRanking(communityId);
+      setRanking(Array.isArray(data) ? data : (data?.content || []));
+    } catch (err) {
+      console.error('Error al cargar ranking:', err);
+      setRankingError('No se pudo cargar el ranking.');
+      setRanking([]);
+    } finally {
+      setRankingLoading(false);
+    }
+  }, [communityId, isMember]);
+
+  useEffect(() => {
+    if (isMember) {
+      fetchRanking();
+    }
+  }, [fetchRanking, isMember]);
+
   // Modal de alarmas al confirmar asistencia
   const [showAttendModal, setShowAttendModal] = useState(false);
   const [pendingAttendEventId, setPendingAttendEventId] = useState(null);
@@ -341,6 +382,7 @@ export default function CommunityDetail() {
         setActiveMeeting(data);
       }
     };
+    if (!socket) return undefined;
     socket.on(topic, handler);
     return () => socket.off(topic, handler);
   }, [socket, communityId, currentUserId, isMember]);
@@ -1162,6 +1204,98 @@ export default function CommunityDetail() {
             </div>
           )}
         </div>
+        
+        {isMember && (
+          <div className="cd-ranking-section">
+            <h2 className="cd-ranking-title">
+              <LuUsers /> Ranking de la comunidad
+            </h2>
+
+            {rankingLoading ? (
+              <p className="cd-loading">Cargando ranking...</p>
+            ) : rankingError ? (
+              <p className="cd-ranking-error">{rankingError}</p>
+            ) : ranking.length > 0 ? (
+              <div className="cd-ranking-container">
+                <table className="cd-ranking-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Usuario</th>
+                      <th>Puntos</th>
+                      <th>Mensajes</th>
+                      <th>Eventos</th>
+                      <th>Asistencias</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {ranking.map((item, index) => {
+                      const isMe = item.usuario?.id === Number(currentUserId);
+
+                      return (
+                        <tr
+                          key={item.usuario?.id || index}
+                          className={`
+                            cd-ranking-row 
+                            ${isMe ? 'is-me' : ''}
+                          `}
+                        >
+                          {/* Columna de Posición / Medalla */}
+                          <td>
+                            <div className="cd-ranking-position">
+                              {index === 0 ? '👑' : index + 1}
+                            </div>
+                          </td>
+
+                          {/* Columna de Usuario */}
+                          <td className="cd-ranking-user-cell">
+                            {item.usuario?.avatarUrl ? (
+                              <img
+                                src={item.usuario.avatarUrl}
+                                alt={item.usuario?.nombre || 'Usuario'}
+                                className="cd-ranking-avatar"
+                              />
+                            ) : (
+                              <div className="cd-ranking-avatar cd-ranking-avatar-fallback">
+                                {(item.usuario?.nombre || 'U').charAt(0).toUpperCase()}
+                              </div>
+                            )}
+
+                            <span className="cd-ranking-name">
+                              {item.usuario?.nombre || 'Usuario'}
+                            </span>
+
+                            {isMe && (
+                              <span className="cd-ranking-you-badge">Tú</span>
+                            )}
+                          </td>
+
+                          {/* Columna de Puntos con Badge */}
+                          <td>
+                            <span className="cd-ranking-points">
+                              {item.puntos}
+                            </span>
+                          </td>
+                          
+                          {/* Resto de estadísticas */}
+                          <td>{item.mensajes}</td>
+                          <td>{item.eventosCreados}</td>
+                          <td>{item.asistentesEventos}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="cd-ranking-empty">
+                Aún no hay actividad suficiente.
+              </p>
+            )}
+          </div>
+        )}
+
 
         {currentUserId && isMember && user ? (
           <CommunityChat

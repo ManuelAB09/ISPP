@@ -59,4 +59,12 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
      * @return Optional con el usuario si existe.
      */
     Optional<Usuario> findByVerificationToken(String verificationToken);
+
+    /**
+     * Busca un usuario por su identificador de Google (sub del ID token).
+     *
+     * @param googleId Identificador de Google del usuario.
+     * @return Optional con el usuario si existe.
+     */
+    Optional<Usuario> findByGoogleId(String googleId);
 }
