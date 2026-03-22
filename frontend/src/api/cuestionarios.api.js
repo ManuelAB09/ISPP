@@ -5,6 +5,14 @@ export const cuestionariosApi = {
     const response = await axiosInstance.post('/api/v1/cuestionarios', data);
     return response.data;
   },
+  listMine: async () => {
+    const response = await axiosInstance.get('/api/v1/cuestionarios/mine');
+    return response.data;
+  },
+  listByCommunity: async (communityId) => {
+    const response = await axiosInstance.get(`/api/v1/cuestionarios/community/${communityId}`);
+    return response.data;
+  },
   getById: async (id) => {
     const response = await axiosInstance.get(`/api/v1/cuestionarios/${id}`);
     return response.data;

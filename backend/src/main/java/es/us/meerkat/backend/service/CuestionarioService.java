@@ -53,7 +53,7 @@ public class CuestionarioService {
      * alumnos por sus ids.
      */
     @Transactional
-    public Cuestionario createFromDto(CreateCuestionarioRequest dto) {
+    public Cuestionario createFromDto(CreateCuestionarioRequest dto, Usuario creador) {
         Cuestionario cuestionario = new Cuestionario();
         cuestionario.setTitulo(dto.getTitulo());
         cuestionario.setDescripcion(dto.getDescripcion());
@@ -66,6 +66,7 @@ public class CuestionarioService {
         cuestionario.setTiempoEstimadoMinutos(dto.getTiempoEstimadoMinutos());
         cuestionario.setActivo(dto.getActivo() != null ? dto.getActivo() : true);
         cuestionario.setPublicado(dto.getPublicado() != null ? dto.getPublicado() : false);
+        cuestionario.setCreador(creador);
 
         // preguntas
         if (dto.getPreguntas() != null) {
@@ -109,6 +110,14 @@ public class CuestionarioService {
         }
 
         return cuestionarioRepository.save(cuestionario);
+    }
+
+    public java.util.List<Cuestionario> findByCreadorId(Long creadorId) {
+        return cuestionarioRepository.findByCreadorIdOrderByCreatedAtDesc(creadorId);
+    }
+
+    public java.util.List<Cuestionario> findByComunidadId(Long comunidadId) {
+        return cuestionarioRepository.findDistinctByComunidadesIdOrderByCreatedAtDesc(comunidadId);
     }
 
     /** Registra un intento enviado por un alumno y calcula la puntuación. */
@@ -160,7 +169,9 @@ public class CuestionarioService {
                 }
             }
 
-            if (acertada) correct++;
+            if (acertada) {
+                correct++;
+            }
         }
 
         double score = 0d;

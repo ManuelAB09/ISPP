@@ -5,12 +5,16 @@ import java.util.List;
 import es.us.meerkat.backend.entity.NivelDificultad;
 import es.us.meerkat.backend.entity.TipoPregunta;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /** DTO para crear un Cuestionario. Comunidades y alumnos se pasan como listas de ids. */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class CreateCuestionarioRequest {
 
     @NotBlank private String titulo;
@@ -45,6 +49,8 @@ public class CreateCuestionarioRequest {
 
     @Data
     @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class PreguntaRequest {
         private String enunciado;
         private TipoPregunta tipo;
@@ -54,6 +60,8 @@ public class CreateCuestionarioRequest {
 
     @Data
     @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class OpcionRequest {
         private String texto;
         private Integer orden;

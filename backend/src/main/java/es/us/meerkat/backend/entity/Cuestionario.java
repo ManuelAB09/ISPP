@@ -123,4 +123,9 @@ public class Cuestionario {
             inverseJoinColumns = @JoinColumn(name = "usuario_id"))
     @Builder.Default
     private Set<Usuario> alumnos = new HashSet<>();
+
+    /** Usuario que creo el cuestionario. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "creador_id")
+    private Usuario creador;
 }

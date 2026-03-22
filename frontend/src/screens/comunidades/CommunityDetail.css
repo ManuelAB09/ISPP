@@ -117,6 +117,76 @@
   margin-top: 1rem;
 }
 
+.cd-questionnaires-section {
+  margin-top: 1rem;
+}
+
+.cd-questionnaires-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.cd-questionnaire-card {
+  background: white;
+  border: 1px solid #EAEBF0;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cd-questionnaire-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.cd-questionnaire-card__header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #2E3559;
+}
+
+.cd-questionnaire-card p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6B73A1;
+}
+
+.cd-questionnaire-state {
+  border-radius: 999px;
+  padding: 4px 9px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.cd-questionnaire-state.is-published {
+  background: #e8f7ec;
+  color: #1f7a3d;
+}
+
+.cd-questionnaire-state.is-draft {
+  background: #f2f4fb;
+  color: #5f6688;
+}
+
+.cd-questionnaires-empty {
+  background: white;
+  border: 1px solid #EAEBF0;
+  border-radius: 12px;
+  padding: 1.2rem;
+}
+
+.cd-questionnaires-empty p {
+  margin: 0;
+  color: #848BA8;
+  font-size: 0.9rem;
+}
+
 /* Membership actions */
 .cd-membership-actions {
   margin-top: 1rem;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  LuCalendar, LuMapPin, LuLink, LuUsers, LuUser,
+  LuCalendar, LuMapPin, LuUsers, LuUser,
   LuPencil, LuX, LuArrowLeft, LuPackage,
   LuEye, LuEyeOff, LuMap, LuClock, LuCheck, LuBell, LuTrash2,
   LuVideo, LuPlay
@@ -18,7 +18,6 @@ import {
 } from '../../api/eventEndpoints';
 import { communitiesApi } from '../../api/communities.api';
 import { ZoomApi } from '../../api/zoom.api';
-import { feedbackApi } from '../../api/feedback.api';
 import { getApiBaseUrl } from '../../api/baseUrl';
 import { useSocketContext } from '../../contexts/SocketContext';
 
@@ -113,13 +112,6 @@ const DetalleEvento = () => {
   const [zoomParticipants, setZoomParticipants] = useState([]);
   const [participantsOpen, setParticipantsOpen] = useState(false);
   const activeMeetingRequestInFlightRef = useRef(false);
-
-  // === MÓDULO FEEDBACK Y GRABACIONES ===
-  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-  const [targetStudentId, setTargetStudentId] = useState(null);
-  const [feedbackRating, setFeedbackRating] = useState(5);
-  const [feedbackComment, setFeedbackComment] = useState('');
-  const [feedbackSaving, setFeedbackSaving] = useState(false);
 
   const [recordingsOpen, setRecordingsOpen] = useState(false);
   const [recordings, setRecordings] = useState([]);
@@ -333,7 +325,6 @@ const DetalleEvento = () => {
   const elapsedMs = safeMeetingStartMs ? Math.max(0, meetingNow - safeMeetingStartMs) : 0;
   const durationMinutes = Number(activeMeeting?.durationMinutes);
   const hasFiniteDuration = Number.isFinite(durationMinutes) && durationMinutes > 0;
-  const remainingMs = hasFiniteDuration ? Math.max(0, durationMinutes * 60 * 1000 - elapsedMs) : null;
 
   const formatDuration = (ms) => {
     if (ms == null || !Number.isFinite(ms)) return '--:--';
@@ -409,32 +400,6 @@ const DetalleEvento = () => {
     } catch (err) {
       setZoomParticipants([]);
       setParticipantsOpen(true);
-    }
-  };
-
-  const handleOpenFeedback = (studentId) => {
-    setTargetStudentId(studentId);
-    setFeedbackRating(5);
-    setFeedbackComment('');
-    setShowFeedbackModal(true);
-  };
-
-  const handleSubmitFeedback = async () => {
-    if (!targetStudentId) return;
-    setFeedbackSaving(true);
-    try {
-      await feedbackApi.createFeedback(event.comunidadId, {
-        eventoId: eventId,
-        studentId: targetStudentId,
-        rating: feedbackRating,
-        comentario: feedbackComment
-      });
-      alert('Feedback enviado correctamente');
-      setShowFeedbackModal(false);
-    } catch(err) {
-      alert('Error enviando feedback');
-    } finally {
-      setFeedbackSaving(false);
     }
   };
 
@@ -1096,15 +1061,6 @@ const DetalleEvento = () => {
                         <span className="ed-participant-name">
                           {user.nombre || user.username || 'Usuario'}
                         </span>
-                        {isOrganizer && user.id && user.id.toString() !== currentUserId && (
-                          <button
-                            title="Evaluar a este alumno"
-                            onClick={() => handleOpenFeedback(user.id)}
-                            style={{ marginLeft: 'auto', padding: '4px 8px', fontSize: '0.75rem', background: '#faad14', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                          >
-                            Dar Feedback
-                          </button>
-                        )}
                       </li>
                     );
                   })}
@@ -1178,43 +1134,6 @@ const DetalleEvento = () => {
                   : selectedMinutos.length > 0
                     ? 'Confirmar con alarmas'
                     : 'Confirmar asistencia'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Feedback */}
-      {showFeedbackModal && (
-        <div className="ed-modal-overlay" onClick={() => setShowFeedbackModal(false)}>
-          <div className="ed-modal" onClick={e => e.stopPropagation()}>
-            <h2 className="ed-modal-title">Evaluar Estudiante</h2>
-            <p className="ed-modal-text">Por favor, indica un nivel de valoración de 1 a 5, y un comentario opcional.</p>
-            <div className="ed-modal-field">
-              <label className="ed-modal-label">Puntuación (1-5)</label>
-              <input
-                type="number"
-                min="1" max="5"
-                value={feedbackRating}
-                onChange={e => setFeedbackRating(Number(e.target.value))}
-                style={{ padding: '8px', width: '100%', borderRadius: '4px', border: '1px solid #ccc' }}
-              />
-            </div>
-            <div className="ed-modal-field" style={{ marginTop: '12px' }}>
-              <label className="ed-modal-label">Comentarios</label>
-              <textarea
-                rows="3"
-                value={feedbackComment}
-                onChange={e => setFeedbackComment(e.target.value)}
-                style={{ padding: '8px', width: '100%', borderRadius: '4px', border: '1px solid #ccc' }}
-              />
-            </div>
-            <div className="ed-modal-actions">
-              <button className="ed-btn ed-btn-secondary" onClick={() => setShowFeedbackModal(false)} disabled={feedbackSaving}>
-                Cancelar
-              </button>
-              <button className="ed-btn" onClick={handleSubmitFeedback} disabled={feedbackSaving} style={{ background: '#faad14', color: 'white' }}>
-                {feedbackSaving ? 'Enviando...' : 'Enviar Feedback'}
               </button>
             </div>
           </div>

@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { LuPlus, LuTrash2, LuSave, LuCheck, LuArrowLeft } from 'react-icons/lu';
 import { cuestionariosApi } from '../../api/cuestionarios.api';
+import { communitiesApi } from '../../api/communities.api';
 import './CuestionarioEditor.css';
 import Header from '../../components/Header/Header';
 
-const initialQuestion = {
+const cloneInitialQuestion = () => ({
   enunciado: '',
   tipo: 'TEST',
   opciones: [
@@ -13,12 +14,14 @@ const initialQuestion = {
     { texto: '', correcta: false }
   ],
   respuestasAceptables: []
-};
+});
 
 const CuestionarioEditor = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
-  
+  const [myCommunities, setMyCommunities] = useState([]);
+
   const [formData, setFormData] = useState({
     titulo: '',
     descripcion: '',
@@ -27,8 +30,44 @@ const CuestionarioEditor = () => {
     nivelEducativo: '',
     tiempoEstimadoMinutos: 15,
     publicado: false,
-    preguntas: [ { ...initialQuestion } ]
+    preguntas: [cloneInitialQuestion()]
   });
+
+  const [scope, setScope] = useState('GENERAL');
+  const [selectedCommunityId, setSelectedCommunityId] = useState('');
+  const [studentIdsText, setStudentIdsText] = useState('');
+
+  useEffect(() => {
+    const loadCommunities = async () => {
+      try {
+        const data = await communitiesApi.listMine();
+        const list = Array.isArray(data) ? data : (data?.content || []);
+        setMyCommunities(list);
+
+        const requestedCommunityId = Number(searchParams.get('communityId'));
+        if (!Number.isInteger(requestedCommunityId) || requestedCommunityId <= 0) {
+          return;
+        }
+
+        const belongsToRequestedCommunity = list.some((c) => Number(c.id) === requestedCommunityId);
+        if (belongsToRequestedCommunity) {
+          setScope('COMUNIDAD');
+          setSelectedCommunityId(String(requestedCommunityId));
+        }
+      } catch {
+        setMyCommunities([]);
+      }
+    };
+    loadCommunities();
+  }, [searchParams]);
+
+  const parsedStudentIds = useMemo(
+    () => studentIdsText
+      .split(',')
+      .map((v) => Number(v.trim()))
+      .filter((v) => Number.isInteger(v) && v > 0),
+    [studentIdsText]
+  );
 
   const handleBasicInfoChange = (e) => {
     const { name, value } = e.target;
@@ -38,7 +77,7 @@ const CuestionarioEditor = () => {
   const addQuestion = () => {
     setFormData(prev => ({
       ...prev,
-      preguntas: [...prev.preguntas, { ...initialQuestion }]
+      preguntas: [...prev.preguntas, cloneInitialQuestion()]
     }));
   };
 
@@ -58,6 +97,13 @@ const CuestionarioEditor = () => {
       updated[qIndex].opciones = [
         { texto: 'Verdadero', correcta: true },
         { texto: 'Falso', correcta: false }
+      ];
+    } else if (field === 'tipo' && value === 'RESPUESTA_CORTA') {
+      updated[qIndex].opciones = [{ texto: '', correcta: true }];
+    } else if (field === 'tipo' && value === 'TEST') {
+      updated[qIndex].opciones = [
+        { texto: '', correcta: true },
+        { texto: '', correcta: false }
       ];
     }
     
@@ -89,29 +135,120 @@ const CuestionarioEditor = () => {
   };
 
   const handleSubmit = async (publicar) => {
+    if (!formData.titulo.trim() || !formData.materia.trim()) {
+      alert('Completa al menos título y materia del cuestionario');
+      return;
+    }
+
+    const tiempo = Number(formData.tiempoEstimadoMinutos);
+    if (!Number.isFinite(tiempo) || tiempo <= 0) {
+      alert('El tiempo estimado debe ser un número mayor que 0');
+      return;
+    }
+
+    if (!Array.isArray(formData.preguntas) || formData.preguntas.length === 0) {
+      alert('Debes añadir al menos una pregunta');
+      return;
+    }
+
+    for (let i = 0; i < formData.preguntas.length; i += 1) {
+      const q = formData.preguntas[i];
+      if (!q.enunciado || !q.enunciado.trim()) {
+        alert(`La pregunta ${i + 1} no tiene enunciado`);
+        return;
+      }
+
+      if (q.tipo === 'TEST') {
+        const opcionesConTexto = (q.opciones || []).filter((o) => (o?.texto || '').trim() !== '');
+        const numCorrectas = (q.opciones || []).filter((o) => Boolean(o?.correcta)).length;
+        if (opcionesConTexto.length < 2) {
+          alert(`La pregunta ${i + 1} tipo test necesita al menos 2 opciones con texto`);
+          return;
+        }
+        if (numCorrectas !== 1) {
+          alert(`La pregunta ${i + 1} tipo test debe tener exactamente 1 opción correcta`);
+          return;
+        }
+      }
+
+      if (q.tipo === 'RESPUESTA_CORTA') {
+        const respuestas = (q.opciones || [])
+          .map((o) => (o?.texto || '').trim())
+          .filter(Boolean);
+        if (respuestas.length === 0) {
+          alert(`La pregunta ${i + 1} de respuesta corta necesita una respuesta esperada`);
+          return;
+        }
+      }
+    }
+
+    if (scope === 'COMUNIDAD' && !selectedCommunityId) {
+      alert('Selecciona una comunidad para publicar el cuestionario');
+      return;
+    }
+
+    if (scope === 'PERSONA' && parsedStudentIds.length === 0) {
+      alert('Introduce al menos un ID de alumno para publicar el cuestionario');
+      return;
+    }
+
     try {
       setLoading(true);
+      const isPrivate = scope === 'PRIVADO';
       const payload = {
         ...formData,
-        publicado: publicar,
+        publicado: publicar && !isPrivate,
         numPreguntas: formData.preguntas.length,
         activo: true,
+        titulo: formData.titulo.trim(),
+        materia: formData.materia.trim(),
+        descripcion: (formData.descripcion || '').trim(),
+        nivelEducativo: (formData.nivelEducativo || '').trim(),
+        tiempoEstimadoMinutos: tiempo,
+        dificultad: formData.dificultad || 'INTERMEDIO',
+        comunidadesIds: scope === 'COMUNIDAD' ? [Number(selectedCommunityId)] : [],
+        alumnosIds: scope === 'PERSONA' ? parsedStudentIds : [],
         // Limpiamos los arrays según el tipo
         preguntas: formData.preguntas.map(q => ({
-          enunciado: q.enunciado,
+          enunciado: q.enunciado.trim(),
           tipo: q.tipo,
-          opciones: q.tipo !== 'RESPUESTA_CORTA' ? q.opciones.map((o, idx) => ({ ...o, orden: idx })) : [],
-          respuestasAceptables: q.tipo === 'RESPUESTA_CORTA' ? [q.opciones[0]?.texto] : [] // Simplificación por ahora
+          opciones: q.tipo !== 'RESPUESTA_CORTA'
+            ? q.opciones
+              .filter((o) => (o?.texto || '').trim() !== '')
+              .map((o, idx) => ({ ...o, texto: o.texto.trim(), orden: idx }))
+            : [],
+          respuestasAceptables: q.tipo === 'RESPUESTA_CORTA'
+            ? q.opciones
+              .map((o) => (o?.texto || '').trim())
+              .filter(Boolean)
+            : []
         }))
       };
 
       await cuestionariosApi.createCuestionario(payload);
-      
-      alert(publicar ? 'Cuestionario publicado con éxito' : 'Borrador guardado');
+
+      if (!publicar) {
+        alert('Borrador guardado');
+      } else if (isPrivate) {
+        alert('Cuestionario guardado como privado');
+      } else if (scope === 'GENERAL') {
+        alert('Cuestionario publicado para cualquier usuario');
+      } else if (scope === 'COMUNIDAD') {
+        alert('Cuestionario publicado para la comunidad seleccionada');
+      } else {
+        alert('Cuestionario publicado para los alumnos indicados');
+      }
+
       navigate(-1);
     } catch (error) {
       console.error(error);
-      alert('Error al guardar el cuestionario');
+      const apiMessage =
+        error?.response?.data?.message
+        || error?.response?.data?.error
+        || error?.response?.data?.details
+        || (typeof error?.response?.data === 'string' ? error.response.data : null)
+        || error?.message;
+      alert(apiMessage ? `Error al guardar el cuestionario: ${apiMessage}` : 'Error al guardar el cuestionario');
     } finally {
       setLoading(false);
     }
@@ -173,7 +310,7 @@ const CuestionarioEditor = () => {
             <div className="form-group">
               <label>Dificultad</label>
               <select className="form-control" name="dificultad" value={formData.dificultad} onChange={handleBasicInfoChange}>
-                <option value="PRINCIPIANTE">Principiante</option>
+                <option value="BASICO">Básico</option>
                 <option value="INTERMEDIO">Intermedio</option>
                 <option value="AVANZADO">Avanzado</option>
               </select>
@@ -189,6 +326,51 @@ const CuestionarioEditor = () => {
               />
             </div>
           </div>
+
+          <div className="form-group-row">
+            <div className="form-group">
+              <label>Modo de publicación</label>
+              <select className="form-control" value={scope} onChange={(e) => setScope(e.target.value)}>
+                <option value="GENERAL">Publicado para cualquier usuario</option>
+                <option value="COMUNIDAD">Publicado para una comunidad</option>
+                <option value="PERSONA">Publicado para personas concretas</option>
+                <option value="PRIVADO">Privado (solo tú)</option>
+              </select>
+            </div>
+          </div>
+
+          {scope === 'COMUNIDAD' && (
+            <div className="form-group-row">
+              <div className="form-group">
+                <label>Comunidad destino</label>
+                <select
+                  className="form-control"
+                  value={selectedCommunityId}
+                  onChange={(e) => setSelectedCommunityId(e.target.value)}
+                >
+                  <option value="">Selecciona una comunidad</option>
+                  {myCommunities.map((c) => (
+                    <option key={c.id} value={c.id}>{c.nombre}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {scope === 'PERSONA' && (
+            <div className="form-group-row">
+              <div className="form-group">
+                <label>IDs de alumnos (separados por coma)</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={studentIdsText}
+                  onChange={(e) => setStudentIdsText(e.target.value)}
+                  placeholder="Ej: 12, 45, 78"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="form-section">

@@ -8,6 +8,7 @@ import GoogleClassroomButton from '../../components/GoogleClassroomButton/Google
 import EditCommunityModal from '../../components/Comunidad/EditCommunityModal';
 import TransferAdminModal from '../../components/Comunidad/TransferAdminModal';
 import { communitiesApi } from '../../api/communities.api';
+import { cuestionariosApi } from '../../api/cuestionarios.api';
 import { ZoomApi } from '../../api/zoom.api';
 import { listCommunityEvents, attendEvent, cancelAttendance, getMyAttendance } from '../../api/eventEndpoints';
 import { useAuth } from '../../contexts/AuthContext';
@@ -117,6 +118,9 @@ export default function CommunityDetail() {
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [respondingId, setRespondingId] = useState(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
+  const [communityCuestionarios, setCommunityCuestionarios] = useState([]);
+  const [cuestionariosLoading, setCuestionariosLoading] = useState(false);
+  const [cuestionariosError, setCuestionariosError] = useState(null);
   const [chatOpen, setChatOpen] = useState(openChatOnLoad);
   const fileInputRef = useRef(null);
   const activeMeetingRequestInFlightRef = useRef(false);
@@ -232,6 +236,32 @@ export default function CommunityDetail() {
     fetchCommunity();
     fetchEvents();
   }, [fetchCommunity, fetchEvents]);
+
+  useEffect(() => {
+    if (!currentUserId) {
+      setCommunityCuestionarios([]);
+      setCuestionariosLoading(false);
+      setCuestionariosError(null);
+      return;
+    }
+
+    const fetchCommunityCuestionarios = async () => {
+      setCuestionariosLoading(true);
+      setCuestionariosError(null);
+      try {
+        const data = await cuestionariosApi.listByCommunity(communityId);
+        setCommunityCuestionarios(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Error al cargar cuestionarios de la comunidad:', err);
+        setCommunityCuestionarios([]);
+        setCuestionariosError(err?.response?.data?.message || err?.message || 'No se pudieron cargar los cuestionarios');
+      } finally {
+        setCuestionariosLoading(false);
+      }
+    };
+
+    fetchCommunityCuestionarios();
+  }, [communityId, currentUserId]);
 
 
   // Modal de alarmas al confirmar asistencia
@@ -1018,6 +1048,44 @@ export default function CommunityDetail() {
         )}
 
         {/* Sección de eventos */}
+        <div className="cd-questionnaires-section">
+          <div className="cd-events-header">
+            <h2 className="cd-events-title">
+              <LuCalendar /> Cuestionarios de la comunidad
+            </h2>
+          </div>
+
+          {!currentUserId ? (
+            <div className="cd-questionnaires-empty">
+              <p>Inicia sesión para ver los cuestionarios de esta comunidad.</p>
+            </div>
+          ) : cuestionariosLoading ? (
+            <p className="cd-loading">Cargando cuestionarios...</p>
+          ) : cuestionariosError ? (
+            <div className="cd-error">{cuestionariosError}</div>
+          ) : communityCuestionarios.length > 0 ? (
+            <div className="cd-questionnaires-grid">
+              {communityCuestionarios.map((cuestionario) => (
+                <article key={cuestionario.id} className="cd-questionnaire-card">
+                  <div className="cd-questionnaire-card__header">
+                    <h3>{cuestionario.titulo || 'Cuestionario sin titulo'}</h3>
+                    <span className={`cd-questionnaire-state ${cuestionario.publicado ? 'is-published' : 'is-draft'}`}>
+                      {cuestionario.publicado ? 'Publicado' : 'Borrador'}
+                    </span>
+                  </div>
+                  <p>Materia: {cuestionario.materia || 'Sin materia'}</p>
+                  <p>Preguntas: {cuestionario.numPreguntas || 0}</p>
+                  <p>Creado: {formatDateTime(cuestionario.createdAt)}</p>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="cd-questionnaires-empty">
+              <p>Esta comunidad todavía no tiene cuestionarios publicados o asociados.</p>
+            </div>
+          )}
+        </div>
+
         <div className="cd-events-section">
           <div className="cd-events-header">
             <h2 className="cd-events-title">
@@ -1033,12 +1101,20 @@ export default function CommunityDetail() {
                 Mostrar cancelados
               </label>
               {isMember ? (
-                <button
-                  className="cd-btn cd-btn-create"
-                  onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
-                >
-                  <LuPlus /> Crear evento
-                </button>
+                <>
+                  <button
+                    className="cd-btn cd-btn-create"
+                    onClick={() => navigate(`/cuestionarios/crear?communityId=${communityId}`)}
+                  >
+                    <LuPlus /> Crear cuestionario
+                  </button>
+                  <button
+                    className="cd-btn cd-btn-create"
+                    onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
+                  >
+                    <LuPlus /> Crear evento
+                  </button>
+                </>
               ) : (
                 <span className="cd-member-hint">Únete a la comunidad para crear eventos</span>
               )}
@@ -1067,6 +1143,12 @@ export default function CommunityDetail() {
               {isMember ? (
                 <>
                   <p>Sé el primero en crear un evento para esta comunidad.</p>
+                  <button
+                    className="cd-btn cd-btn-create"
+                    onClick={() => navigate(`/cuestionarios/crear?communityId=${communityId}`)}
+                  >
+                    <LuPlus /> Crear cuestionario
+                  </button>
                   <button
                     className="cd-btn cd-btn-create"
                     onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}

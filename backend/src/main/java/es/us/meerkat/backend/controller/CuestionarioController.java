@@ -1,5 +1,9 @@
 package es.us.meerkat.backend.controller;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -23,6 +27,25 @@ public class CuestionarioController {
 
     private final CuestionarioService cuestionarioService;
 
+    private static Map<String, Object> toResponse(Cuestionario c) {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("id", c.getId());
+        response.put("titulo", c.getTitulo());
+        response.put("descripcion", c.getDescripcion());
+        response.put("imagenUrl", c.getImagenUrl());
+        response.put("materia", c.getMateria());
+        response.put("dificultad", c.getDificultad() != null ? c.getDificultad().name() : null);
+        response.put("nivelEducativo", c.getNivelEducativo());
+        response.put("numPreguntas", c.getNumPreguntas());
+        response.put("tiempoEstimadoMinutos", c.getTiempoEstimadoMinutos());
+        response.put("activo", c.getActivo());
+        response.put("publicado", c.getPublicado());
+        response.put("createdAt", c.getCreatedAt());
+        response.put(
+                "comunidadesIds", c.getComunidades().stream().map(com -> com.getId()).toList());
+        return response;
+    }
+
     /**
      * Crea un cuestionario con preguntas personalizadas (test, verdadero/falso, respuesta corta).
      * Endpoint protegido: alumnos y profesores pueden usarlo.
@@ -36,15 +59,45 @@ public class CuestionarioController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        Cuestionario created = cuestionarioService.createFromDto(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        Cuestionario created = cuestionarioService.createFromDto(request, usuario);
+        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(created));
+    }
+
+    /** Lista cuestionarios creados por el usuario autenticado. */
+    @GetMapping("/mine")
+    public ResponseEntity<?> listMine(@AuthenticationPrincipal Usuario usuario) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        List<Map<String, Object>> items =
+                cuestionarioService.findByCreadorId(usuario.getId()).stream()
+                        .map(CuestionarioController::toResponse)
+                        .toList();
+        return ResponseEntity.ok(items);
+    }
+
+    /** Lista cuestionarios asociados a una comunidad concreta. */
+    @GetMapping("/community/{communityId}")
+    public ResponseEntity<List<Map<String, Object>>> listByCommunity(
+            @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        List<Map<String, Object>> items =
+                cuestionarioService.findByComunidadId(communityId).stream()
+                        .map(CuestionarioController::toResponse)
+                        .toList();
+        return ResponseEntity.ok(items);
     }
 
     /** Obtiene un cuestionario por id. */
     @GetMapping("/{id}")
-    public ResponseEntity<Cuestionario> getById(@PathVariable Long id) {
+    public ResponseEntity<Map<String, Object>> getById(@PathVariable Long id) {
         return cuestionarioService
                 .findById(id)
+                .map(CuestionarioController::toResponse)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -81,7 +134,7 @@ public class CuestionarioController {
 
         try {
             Cuestionario updated = cuestionarioService.updatePublicado(id, true);
-            return ResponseEntity.ok(updated);
+            return ResponseEntity.ok(toResponse(updated));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
         }
@@ -97,7 +150,7 @@ public class CuestionarioController {
 
         try {
             Cuestionario updated = cuestionarioService.updatePublicado(id, false);
-            return ResponseEntity.ok(updated);
+            return ResponseEntity.ok(toResponse(updated));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
         }
