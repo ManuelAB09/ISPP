@@ -488,6 +488,29 @@ export const NotificationProvider = ({ children }) => {
         const handleUserNotification = (notification) => {
             if (!notification) return;
 
+            if (notification?.tipo === 'EVENT_ALERT') {
+                if (permission === 'granted' && notificationsEnabled) {
+                    const title = notification?.comunidadNombre
+                        ? `${notification.comunidadNombre}`
+                        : 'Recordatorio de evento';
+                    const body = notification?.mensaje || `Tienes un evento proximo: ${notification?.eventoTitulo || ''}`;
+
+                    showPrettyNotification(
+                        title,
+                        body,
+                        DEFAULT_PROFILE_AVATAR,
+                        `event-alert-${notification?.eventoId || Date.now()}`,
+                        () => {
+                            if (notification?.eventoId) {
+                                navigateRef.current(`/eventos/${notification.eventoId}`);
+                            } else {
+                                navigateRef.current('/notifications');
+                            }
+                        }
+                    );
+                }
+            }
+
             // El canal "notificaciones" actualiza badge/contador; los popups de chat
             // se manejan en dm_message y community_message para respetar silenciados.
             if (!notification.leida) {

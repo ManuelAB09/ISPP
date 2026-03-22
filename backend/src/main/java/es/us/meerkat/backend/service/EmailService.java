@@ -1054,6 +1054,66 @@ public class EmailService {
     }
 
     /**
+     * Email a un miembro de comunidad cuando se le menciona explícitamente en el chat.
+     *
+     * @param destinatario usuario miembro que recibe el aviso.
+     * @param comunidad comunidad donde ocurrió la mención.
+     * @param remitente usuario que escribió la mención.
+     * @param contenido contenido del mensaje.
+     */
+    public void sendCommunityMentionEmail(
+            final Usuario destinatario,
+            final Comunidad comunidad,
+            final Usuario remitente,
+            final String contenido) {
+        if (destinatario == null
+                || destinatario.getEmail() == null
+                || destinatario.getEmail().isBlank()
+                || comunidad == null
+                || remitente == null) {
+            return;
+        }
+
+        final String nombreDestinatario =
+                destinatario.getNombre() != null ? destinatario.getNombre() : "";
+        final String nombreComunidad =
+                comunidad.getNombre() != null ? comunidad.getNombre() : "tu comunidad";
+        final String nombreRemitente =
+                remitente.getNombre() != null ? remitente.getNombre() : "Un miembro";
+        final String vistaPrevia =
+                contenido != null && !contenido.isBlank()
+                        ? (contenido.length() > 220
+                                ? contenido.substring(0, 220) + "..."
+                                : contenido)
+                        : "Te han mencionado en un mensaje de comunidad.";
+
+        final String subject = "🔔 Te han mencionado en: " + nombreComunidad;
+        final String body =
+                "<html><body style='font-family:Arial,sans-serif;color:#333'><div"
+                    + " style='max-width:600px;margin:0 auto;padding:20px'><div"
+                    + " style='background:#2D3250;color:white;padding:20px;text-align:center;border-radius:5px"
+                    + " 5px 0 0'><h1>Te han mencionado en tu comunidad</h1></div><div"
+                    + " style='background:#f9f9f9;padding:20px;border:1px solid #ddd'><p>Hola"
+                    + " <strong>"
+                        + escapeHtml(nombreDestinatario)
+                        + "</strong>,</p><p><strong>"
+                        + escapeHtml(nombreRemitente)
+                        + "</strong> te ha mencionado en <strong>"
+                        + escapeHtml(nombreComunidad)
+                        + "</strong>.</p><div"
+                        + " style='background:#eef2ff;padding:14px;border-left:4px solid"
+                        + " #2D3250;margin:18px 0;white-space:pre-wrap'>"
+                        + escapeHtml(vistaPrevia)
+                        + "</div><p>Entra en la comunidad para responder en el chat.</p></div><div"
+                        + " style='background:#f0f0f0;padding:15px;text-align:center;font-size:12px;border-radius:0"
+                        + " 0 5px 5px'><p>&copy; "
+                        + appName
+                        + "</p></div></div></body></html>";
+
+        sendHtmlEmailSafe(destinatario.getEmail(), subject, body);
+    }
+
+    /**
      * Email a un miembro de comunidad cuando se publica un nuevo anuncio.
      *
      * @param destinatario usuario miembro que recibe el aviso.

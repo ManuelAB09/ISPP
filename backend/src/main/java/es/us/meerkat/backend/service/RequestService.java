@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.EstadoSolicitud;
 import es.us.meerkat.backend.entity.MiembroComunidad;
+import es.us.meerkat.backend.entity.Notificacion;
 import es.us.meerkat.backend.entity.PreferenciasNotificacion;
 import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.SolicitudComunidad;
@@ -36,6 +37,7 @@ public class RequestService {
     private final AuthorizationService authorizationService;
     private final CommunityService communityService;
     private final PreferenciasNotificacionService preferenciasNotificacionService;
+    private final NotificacionService notificacionService;
     private final EmailService emailService;
 
     /** Solicita acceso a una comunidad privada. */
@@ -101,11 +103,38 @@ public class RequestService {
         try {
             final PreferenciasNotificacion preferenciasDueno =
                     preferenciasNotificacionService.getOrCreate(dueno.getId());
-            final boolean puedeRecibir =
-                    Boolean.TRUE.equals(preferenciasDueno.getEmailsActivados())
-                            && Boolean.TRUE.equals(preferenciasDueno.getNotificarSolicitudAcceso());
+            final boolean tieneActivaCategoria =
+                    Boolean.TRUE.equals(preferenciasDueno.getNotificarSolicitudAcceso());
 
-            if (!puedeRecibir) {
+            if (!tieneActivaCategoria) {
+                return;
+            }
+
+            final String nombreSolicitante =
+                    solicitante != null && solicitante.getNombre() != null
+                            ? solicitante.getNombre()
+                            : "Un usuario";
+
+            Notificacion notificacion =
+                    Notificacion.builder()
+                            .usuario(dueno)
+                            .titulo("Nueva solicitud de acceso")
+                            .mensaje(
+                                    nombreSolicitante
+                                            + " ha solicitado acceso a la comunidad '"
+                                            + comunidad.getNombre()
+                                            + "'.")
+                            .tipo("SOLICITUD_ACCESO")
+                            .leida(false)
+                            .comunidadId(comunidad.getId())
+                            .comunidadNombre(comunidad.getNombre())
+                            .comunidadImagenUrl(comunidad.getImagenUrl())
+                            .build();
+            notificacionService.crearYNotificar(notificacion);
+
+            final boolean puedeRecibirEmail =
+                    Boolean.TRUE.equals(preferenciasDueno.getEmailsActivados());
+            if (!puedeRecibirEmail) {
                 return;
             }
 

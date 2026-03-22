@@ -6,6 +6,20 @@ import { useAuth } from "../../contexts/AuthContext"
 import { useNotificationContext } from "../../contexts/NotificationContext"
 import "./Settings.css"
 
+const DEFAULT_NOTIFICATION_PREFERENCES = {
+    emailsActivados: true,
+    recordatorio24h: true,
+    recordatorio1h: true,
+    recordatorio30min: false,
+    canalAlarmasPorDefecto: 'AMBOS',
+    notificarMensajeComunidad: false,
+    notificarMenciones: false,
+    //notificarInvitaciones: false,
+    notificarAnuncios: false,
+    notificarSolicitudAcceso: false,
+    notificarCambiosDeEventos: false,
+}
+
 const EVENT_TYPES = [
     { value: 'REUNION', label: 'Reuniones' },
     { value: 'EXAMEN', label: 'Exámenes' },
@@ -47,13 +61,7 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
     const [preferencesError, setPreferencesError] = useState("")
 
     // Recordatorios por email + canal alarmas por defecto
-    const [emailRecordatorios, setEmailRecordatorios] = useState({
-        emailsActivados: true,
-        recordatorio24h: true,
-        recordatorio1h: true,
-        recordatorio30min: false,
-        canalAlarmasPorDefecto: 'AMBOS',
-    })
+    const [emailRecordatorios, setEmailRecordatorios] = useState(DEFAULT_NOTIFICATION_PREFERENCES)
     const [isSavingRecordatorios, setIsSavingRecordatorios] = useState(false)
     const [recordatoriosError, setRecordatoriosError] = useState("")
 
@@ -93,7 +101,7 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
 
     useEffect(() => {
         axiosInstance.get('/api/v1/notifications/preferences')
-            .then(res => setEmailRecordatorios(res.data))
+            .then(res => setEmailRecordatorios({ ...DEFAULT_NOTIFICATION_PREFERENCES, ...res.data }))
             .catch(() => { /* usa valores por defecto */ })
     }, [])
 
@@ -537,6 +545,91 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
                                     {label}
                                 </label>
                             ))}
+                        </div>
+                    </div>
+
+                    {/* Notificaciones de actividad en comunidades */}
+                    <div className="settings-subsection">
+                        <h3 className="settings-subsection__title">🗨️ Notificaciones de actividad</h3>
+                        <p className="settings-subsection__text" style={{ marginBottom: '12px' }}>
+                            Elige qué tipos de actividad de comunidades te notificamos.
+                        </p>
+                        {recordatoriosError && (
+                            <p className="settings-password-error" style={{ marginBottom: '8px' }}>{recordatoriosError}</p>
+                        )}
+                        <div className="settings-recordatorios-sub">
+                            <div className="settings-toggle-row">
+                                <span className="settings-toggle-label">
+                                    Mensajes de comunidad
+                                </span>
+                                <button
+                                    className={`settings-toggle ${emailRecordatorios.notificarMensajeComunidad ? 'settings-toggle--active' : ''}`}
+                                    onClick={() => handleToggleRecordatorio('notificarMensajeComunidad')}
+                                    disabled={isSavingRecordatorios}
+                                >
+                                    <span className="settings-toggle__slider"></span>
+                                </button>
+                            </div>
+                            <div className="settings-toggle-row">
+                                <span className="settings-toggle-label">
+                                    Menciones en chat de comunidad
+                                </span>
+                                <button
+                                    className={`settings-toggle ${emailRecordatorios.notificarMenciones ? 'settings-toggle--active' : ''}`}
+                                    onClick={() => handleToggleRecordatorio('notificarMenciones')}
+                                    disabled={isSavingRecordatorios}
+                                >
+                                    <span className="settings-toggle__slider"></span>
+                                </button>
+                            </div>
+                           {/* <div className="settings-toggle-row">
+                                <span className="settings-toggle-label">
+                                    Invitaciones
+                                </span>
+                                <button
+                                    className={`settings-toggle ${emailRecordatorios.notificarInvitaciones ? 'settings-toggle--active' : ''}`}
+                                    onClick={() => handleToggleRecordatorio('notificarInvitaciones')}
+                                    disabled={isSavingRecordatorios}
+                                >
+                                    <span className="settings-toggle__slider"></span>
+                                </button>
+                            </div> */}
+                            <div className="settings-toggle-row">
+                                <span className="settings-toggle-label">
+                                    Anuncios de comunidad
+                                </span>
+                                <button
+                                    className={`settings-toggle ${emailRecordatorios.notificarAnuncios ? 'settings-toggle--active' : ''}`}
+                                    onClick={() => handleToggleRecordatorio('notificarAnuncios')}
+                                    disabled={isSavingRecordatorios}
+                                >
+                                    <span className="settings-toggle__slider"></span>
+                                </button>
+                            </div>
+                            <div className="settings-toggle-row">
+                                <span className="settings-toggle-label">
+                                    Solicitudes de acceso a comunidades privadas
+                                </span>
+                                <button
+                                    className={`settings-toggle ${emailRecordatorios.notificarSolicitudAcceso ? 'settings-toggle--active' : ''}`}
+                                    onClick={() => handleToggleRecordatorio('notificarSolicitudAcceso')}
+                                    disabled={isSavingRecordatorios}
+                                >
+                                    <span className="settings-toggle__slider"></span>
+                                </button>
+                            </div>
+                            <div className="settings-toggle-row">
+                                <span className="settings-toggle-label">
+                                    Cambios en eventos
+                                </span>
+                                <button
+                                    className={`settings-toggle ${emailRecordatorios.notificarCambiosDeEventos ? 'settings-toggle--active' : ''}`}
+                                    onClick={() => handleToggleRecordatorio('notificarCambiosDeEventos')}
+                                    disabled={isSavingRecordatorios}
+                                >
+                                    <span className="settings-toggle__slider"></span>
+                                </button>
+                            </div>
                         </div>
                     </div>
 

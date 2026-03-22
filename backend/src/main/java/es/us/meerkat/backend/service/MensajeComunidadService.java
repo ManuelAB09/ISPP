@@ -1,6 +1,7 @@
 package es.us.meerkat.backend.service;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -277,11 +278,35 @@ public class MensajeComunidadService {
             return;
         }
         try {
-            if (!puedeRecibirNotificacionDeMensaje(miembro.getId())) {
+            final PreferenciasNotificacion preferencias =
+                    preferenciasNotificacionService.getOrCreate(miembro.getId());
+            if (!Boolean.TRUE.equals(preferencias.getEmailsActivados())) {
                 return;
             }
-            emailService.sendCommunityMessageEmail(
-                    miembro, mensaje.getComunidad(), mensaje.getUsuario(), mensaje.getContenido());
+
+            final boolean estaMencionado = estaUsuarioMencionado(miembro, mensaje.getContenido());
+            final boolean puedeRecibir =
+                    estaMencionado
+                            ? Boolean.TRUE.equals(preferencias.getNotificarMenciones())
+                            : Boolean.TRUE.equals(preferencias.getNotificarMensajeComunidad());
+
+            if (!puedeRecibir) {
+                return;
+            }
+
+            if (estaMencionado) {
+                emailService.sendCommunityMentionEmail(
+                        miembro,
+                        mensaje.getComunidad(),
+                        mensaje.getUsuario(),
+                        mensaje.getContenido());
+            } else {
+                emailService.sendCommunityMessageEmail(
+                        miembro,
+                        mensaje.getComunidad(),
+                        mensaje.getUsuario(),
+                        mensaje.getContenido());
+            }
         } catch (Exception e) {
             log.warn(
                     "No se pudo enviar notificacion email de mensaje comunidad {} al usuario {}:"
@@ -292,11 +317,20 @@ public class MensajeComunidadService {
         }
     }
 
-    private boolean puedeRecibirNotificacionDeMensaje(final Long usuarioId) {
-        final PreferenciasNotificacion preferencias =
-                preferenciasNotificacionService.getOrCreate(usuarioId);
+    private boolean estaUsuarioMencionado(final Usuario usuario, final String contenido) {
+        if (usuario == null || usuario.getNombre() == null || contenido == null) {
+            return false;
+        }
 
-        return preferencias.getEmailsActivados() && preferencias.getNotificarMensajeComunidad();
+        final String nombre = usuario.getNombre().trim();
+        if (nombre.isBlank()) {
+            return false;
+        }
+
+        final Pattern mentionPattern =
+                Pattern.compile(
+                        "@" + Pattern.quote(nombre) + "(?![\\w-])", Pattern.CASE_INSENSITIVE);
+        return mentionPattern.matcher(contenido).find();
     }
 
     public record MensajeComunidadArchivo(byte[] data, String nombre, String mimeType) {}
