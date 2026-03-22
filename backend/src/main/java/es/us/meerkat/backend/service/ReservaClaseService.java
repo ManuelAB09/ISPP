@@ -147,6 +147,18 @@ public class ReservaClaseService {
                     "Solo puedes confirmar reservas en estado PENDIENTE");
         }
 
+        // Comprobar conflictos antes de confirmar
+        LocalDateTime fechaFin = reserva.getFechaHora().plusMinutes(reserva.getDuracionMinutos());
+        List<ReservaClase> conflictos =
+                reservaRepository.findReservasConflictivas(
+                        reserva.getTutor().getId(), reserva.getFechaHora(), fechaFin);
+        Long thisReservaId = reserva.getId();
+        boolean hayConflicto = conflictos.stream().anyMatch(c -> !c.getId().equals(thisReservaId));
+        if (hayConflicto) {
+            throw new IllegalArgumentException(
+                    "Ya tienes una reserva confirmada en ese horario. Cancela la otra primero.");
+        }
+
         reserva.setEstado(EstadoReserva.CONFIRMADA);
         reserva.setFechaConfirmacion(LocalDateTime.now());
         reserva = reservaRepository.save(reserva);

@@ -9,7 +9,6 @@ import VerificacionModal from "./VerificacionModal";
 import Settings from "../myProfile/Settings";
 import HireTutorModal from "./HireTutorModal";
 import BookClassModal from "./BookClassModal";
-import TutorReservasPanel from "./TutorReservasPanel";
 import HireDirectModal from "./HireDirectModal";
 import TutorSolicitudes from "./TutorSolicitudes";
 import TutorConversaciones from "./TutorConversaciones";
@@ -526,11 +525,6 @@ const TeacherProfile = () => {
               ))}
             </div>
           </section>
-
-          {/* ═══════════════ PANEL DE RESERVAS (solo propietario del perfil) ═══════════════ */}
-          {user?.id === tutor.usuario?.id && (
-            <TutorReservasPanel tutorId={tutor.id} />
-          )}
 
         </div>{/* cierre tp-content */}
       </div>

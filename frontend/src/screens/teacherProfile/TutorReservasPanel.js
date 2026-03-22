@@ -65,10 +65,12 @@ const CancelDialog = ({ onConfirm, onClose, loading }) => {
 const TutorReservasPanel = ({ tutorId }) => {
     const [reservas, setReservas] = useState([]);
     const [cargando, setCargando] = useState(true);
+    const [esTutor, setEsTutor] = useState(true);
     const [tab, setTab] = useState(0);
     const [actionLoading, setActionLoading] = useState(null);
     const [cancelTarget, setCancelTarget] = useState(null);
     const [error, setError] = useState("");
+    const [successMsg, setSuccessMsg] = useState("");
 
     const cargar = () => {
         setCargando(true);
@@ -76,8 +78,13 @@ const TutorReservasPanel = ({ tutorId }) => {
             .then((data) => {
                 const lista = Array.isArray(data) ? data : data?.content ?? [];
                 setReservas(lista);
+                setEsTutor(true);
             })
-            .catch(() => setReservas([]))
+            .catch((err) => {
+                const status = err?.status || err?.response?.status;
+                if (status === 403) setEsTutor(false);
+                setReservas([]);
+            })
             .finally(() => setCargando(false));
     };
 
@@ -87,9 +94,11 @@ const TutorReservasPanel = ({ tutorId }) => {
 
     const handleConfirmar = async (reservaId) => {
         setError("");
+        setSuccessMsg("");
         setActionLoading(reservaId + "_confirm");
         try {
             await confirmarReserva(reservaId);
+            setSuccessMsg("Reserva confirmada. El alumno ha recibido un email de confirmación.");
             cargar();
         } catch (err) {
             setError(err?.message || "Error al confirmar.");
@@ -100,10 +109,12 @@ const TutorReservasPanel = ({ tutorId }) => {
 
     const handleCancelar = async (motivo) => {
         setError("");
+        setSuccessMsg("");
         setActionLoading(cancelTarget + "_cancel");
         try {
             await cancelarReserva(cancelTarget, motivo);
             setCancelTarget(null);
+            setSuccessMsg("Reserva cancelada. El alumno ha sido notificado por email.");
             cargar();
         } catch (err) {
             setError(err?.message || "Error al cancelar.");
@@ -120,6 +131,8 @@ const TutorReservasPanel = ({ tutorId }) => {
 
     const grupos = [pendientes, confirmadas, historial];
     const lista = grupos[tab];
+
+    if (!esTutor) return null;
 
     return (
         <section className="trp-panel">
@@ -144,6 +157,7 @@ const TutorReservasPanel = ({ tutorId }) => {
             </div>
 
             {error && <p className="trp-error">⚠️ {error}</p>}
+            {successMsg && <p className="trp-success">✓ {successMsg}</p>}
 
             {cargando ? (
                 <p className="trp-loading">Cargando reservas…</p>

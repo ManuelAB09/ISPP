@@ -171,6 +171,16 @@
     text-align: center;
 }
 
+.trp-success {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    padding: 0.5rem 0.9rem;
+    font-size: 0.85rem;
+    color: #16a34a;
+    margin-bottom: 0.5rem;
+}
+
 .trp-error {
     background: #fef2f2;
     border: 1px solid #fecaca;

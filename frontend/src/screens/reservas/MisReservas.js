@@ -70,6 +70,7 @@ const MisReservas = () => {
     const [reservas, setReservas] = useState([]);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState("");
+    const [successMsg, setSuccessMsg] = useState("");
     const [cancelTarget, setCancelTarget] = useState(null);
     const [cancelLoading, setCancelLoading] = useState(false);
 
@@ -90,9 +91,12 @@ const MisReservas = () => {
 
     const handleCancelar = async (motivo) => {
         setCancelLoading(true);
+        setError("");
+        setSuccessMsg("");
         try {
             await cancelarReserva(cancelTarget, motivo);
             setCancelTarget(null);
+            setSuccessMsg("Reserva cancelada. El profesor ha sido notificado por email.");
             cargar();
         } catch (err) {
             setError(err?.response?.data?.message || err?.message || "No se pudo cancelar la reserva.");
@@ -118,6 +122,7 @@ const MisReservas = () => {
                     </div>
 
                     {error && <p className="mr-error">⚠️ {error}</p>}
+                    {successMsg && <p className="mr-success">✓ {successMsg}</p>}
 
                     {cargando ? (
                         <p className="mr-loading">Cargando tus reservas…</p>
