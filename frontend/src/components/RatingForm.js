@@ -25,7 +25,13 @@ const RatingForm = ({ profesorId, alumnoId, eventoId, onValorado }) => {
       setExito(true);
       if (onValorado) onValorado();
     } catch (err) {
-      setError("Error al enviar la valoración");
+      let msg = "Error al enviar la valoración";
+      if (err?.response?.data?.message) {
+        msg = err.response.data.message;
+      } else if (err?.message) {
+        msg = err.message;
+      }
+      setError(msg);
     } finally {
       setEnviando(false);
     }
