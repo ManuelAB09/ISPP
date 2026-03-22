@@ -70,8 +70,11 @@ public class MisEventosService {
         final LocalDateTime ahora = LocalDateTime.now();
         final List<Evento> eventos =
                 eventoRepository.findProximosEventosByUsuarioId(
-                        usuarioId, ahora, ahora.minusHours(2));
-
+                        usuarioId,
+                        ahora,
+                        ahora.minusHours(
+                                2)); // Incluir eventos que comenzaron hace hasta 2 horas para
+        // mostrar recientes
         return eventos.stream()
                 .map(e -> mapToMisEventosItem(e, usuarioId, ahora))
                 .collect(Collectors.toList());
