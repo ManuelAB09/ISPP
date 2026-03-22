@@ -18,8 +18,9 @@ import {
 } from '../../api/eventEndpoints';
 import { communitiesApi } from '../../api/communities.api';
 import { ZoomApi } from '../../api/zoom.api';
+import { checkAlreadyRated } from '../../api/valoraciones.api';
 import { getApiBaseUrl } from '../../api/baseUrl';
-import { canCreateCommunityEvent, normalizeCommunityRole } from '../../utils/communityRoles';
+import { normalizeCommunityRole } from '../../utils/communityRoles';
 import { useSocketContext } from '../../contexts/SocketContext';
 import RatingForm from '../../components/RatingForm';
 
@@ -79,11 +80,12 @@ const eventIconRed = L.icon({
 // Mover fuera de la función para evitar acceder a 'event' antes de su inicialización
 const DetalleEvento = () => {
   const { eventId } = useParams();
-  // Persist valorado per event in localStorage
+  // Persist valorado per user+event in localStorage
   const [valorado, setValorado] = useState(() => {
     try {
+      const userId = localStorage.getItem('userId');
       const ratedEvents = JSON.parse(localStorage.getItem('ratedEvents') || '{}');
-      return !!ratedEvents[eventId];
+      return !!ratedEvents[`${userId}_${eventId}`];
     } catch {
       return false;
     }
@@ -92,8 +94,9 @@ const DetalleEvento = () => {
   useEffect(() => {
     if (valorado) {
       try {
+        const userId = localStorage.getItem('userId');
         const ratedEvents = JSON.parse(localStorage.getItem('ratedEvents') || '{}');
-        ratedEvents[eventId] = true;
+        ratedEvents[`${userId}_${eventId}`] = true;
         localStorage.setItem('ratedEvents', JSON.stringify(ratedEvents));
       } catch {}
     }
@@ -184,6 +187,16 @@ const DetalleEvento = () => {
         } catch {
           setAlarms([]);
         }
+
+        // Verificar si ya valoré este evento en el backend
+        try {
+          const checkResp = await checkAlreadyRated(currentUserId, eventId);
+          if (checkResp?.rated || checkResp?.data?.rated) {
+            setValorado(true);
+          }
+        } catch {
+          // Si falla, respetar el estado de localStorage
+        }
       }
     } catch (err) {
       console.error('Error al cargar el evento:', err);
@@ -198,7 +211,10 @@ const DetalleEvento = () => {
   }, [fetchEventData]);
 
   const isOrganizer = event?.creador?.id?.toString() === currentUserId;
-  const canEditEvent = event?.comunidadId ? canCreateCommunityEvent(communityRole) : isOrganizer;
+  // For community events: only ADMIN/PROFESOR can edit. For non-community: organizer can edit.
+  const canEditEvent = communityRole
+    ? (communityRole === 'ADMIN' || communityRole === 'PROFESOR')
+    : isOrganizer;
   const isConfirmed = myAttendance?.estado === 'CONFIRMADA';
   const isFull = event && event.aforo && (event.asistentesConfirmados || 0) >= event.aforo;
   const isCancelled = event?.cancelado;
@@ -528,13 +544,19 @@ const DetalleEvento = () => {
   // Estado y efecto para obtener el id real de tutor para la valoración
   const [realTutorId, setRealTutorId] = React.useState(null);
   const [buscandoTutor, setBuscandoTutor] = useState(false);
-  const [tutorError, setTutorError] = useState(null);
+  const [, setTutorError] = useState(null);
+
+  // Determinar si el creador es profesor en la comunidad del evento
+  const creadorEsProfesorEnComunidad = event?.creadorRolComunidad === 'PROFESOR';
+
   React.useEffect(() => {
     let cancelled = false;
     async function fetchTutorId() {
       setBuscandoTutor(false);
       setTutorError(null);
-      if (event && !event.tutorId && event.creador?.esTutor && event.creador?.id) {
+      if (event && creadorEsProfesorEnComunidad && event.creador?.tutorId) {
+        setRealTutorId(event.creador.tutorId);
+      } else if (event && creadorEsProfesorEnComunidad && event.creador?.id) {
         setBuscandoTutor(true);
         try {
           const resp = await axiosInstance.get(`/api/v1/tutors/user/${event.creador.id}`);
@@ -552,15 +574,13 @@ const DetalleEvento = () => {
         } finally {
           if (!cancelled) setBuscandoTutor(false);
         }
-      } else if (event && event.tutorId) {
-        setRealTutorId(event.tutorId);
       } else {
         setRealTutorId(null);
       }
     }
     fetchTutorId();
     return () => { cancelled = true; };
-  }, [event]);
+  }, [event, creadorEsProfesorEnComunidad]);
 
   if (loading) {
     return (
@@ -970,7 +990,7 @@ const DetalleEvento = () => {
                         <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Tarea vinculada a este evento</span>
                       </div>
                     </div>
-                    {isOrganizer && !isCancelled && !isStarted && (
+                    {canEditEvent && !isCancelled && !isStarted && (
                       <button
                         onClick={handleUnlinkTask}
                         disabled={taskLinking}
@@ -1179,33 +1199,26 @@ const DetalleEvento = () => {
               )}
             </div>
 
-            {/* Formulario de valoración tras evento finalizado (si hay tutorId o el organizador es tutor) */}
-            {!isOrganizer && (
-              !valorado && buscandoTutor ? (
+            {/* Formulario de valoración tras evento finalizado (solo si el creador es PROFESOR en la comunidad y soy asistente confirmado) */}
+            {!isOrganizer && isConfirmed && creadorEsProfesorEnComunidad && isStarted && !isCancelled && (
+              valorado ? (
+                <div className="ed-rating-success">¡Gracias por valorar al profesor!</div>
+              ) : buscandoTutor ? (
                 <div className="ed-rating-card">
                   <h3 className="ed-card-title">Buscando tutor...</h3>
                   <div className="ed-rating-error">Buscando el tutor asociado al organizador del evento...</div>
                 </div>
-              ) : !valorado && (realTutorId || event?.tutorId) ? (
+              ) : realTutorId ? (
                 <div className="ed-rating-card">
                   <h3 className="ed-card-title">Valora al profesor</h3>
                   <RatingForm
-                    profesorId={realTutorId || event.tutorId}
+                    profesorId={realTutorId}
                     alumnoId={currentUserId}
                     eventoId={eventId}
                     onValorado={() => setValorado(true)}
                     alreadyRated={valorado}
                   />
                 </div>
-              ) : !valorado && !(realTutorId || event?.tutorId) ? (
-                <div className="ed-rating-card">
-                  <h3 className="ed-card-title">No disponible</h3>
-                  <div className="ed-rating-error">
-                    {tutorError ? tutorError : 'No se puede valorar porque este evento no tiene tutor asignado.'}
-                  </div>
-                </div>
-              ) : valorado ? (
-                <div className="ed-rating-success">¡Gracias por valorar al profesor!</div>
               ) : null
             )}
           </div>

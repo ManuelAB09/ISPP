@@ -217,8 +217,8 @@ export const communitiesApi = {
    * @param {number} communityId
    * @param {string} mensaje
    */
-  requestAccess(communityId, mensaje = '') {
-    return apiClient.post(`/api/v1/communities/${communityId}/requests`, { mensaje });
+  requestAccess(communityId, mensaje = '', rolDeseado = 'ALUMNO') {
+    return apiClient.post(`/api/v1/communities/${communityId}/requests`, { mensaje, rolDeseado });
   },
 
   /**

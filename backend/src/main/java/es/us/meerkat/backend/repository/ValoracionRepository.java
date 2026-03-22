@@ -10,6 +10,8 @@ import es.us.meerkat.backend.entity.Valoracion;
 public interface ValoracionRepository extends JpaRepository<Valoracion, Long> {
     List<Valoracion> findByProfesorId(Long profesorId);
 
+    boolean existsByAlumnoIdAndEventoId(Long alumnoId, Long eventoId);
+
     @Query("SELECT AVG(v.puntuacion) FROM Valoracion v WHERE v.profesor.id = :profesorId")
     Double findMediaByProfesorId(Long profesorId);
 

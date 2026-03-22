@@ -14,6 +14,13 @@ export const isAdminRole = (role) => normalizeCommunityRole(role) === 'ADMIN';
 export const isTeacherRole = (role) => normalizeCommunityRole(role) === 'PROFESOR';
 
 export const canCreateCommunityEvent = (role) => {
+  // Only admins and professors can create events
+  const normalizedRole = normalizeCommunityRole(role);
+  return normalizedRole === 'ADMIN' || normalizedRole === 'PROFESOR';
+};
+
+export const canManageCommunityEvents = (role) => {
+  // Only admins/professors can edit or cancel other people's events
   const normalizedRole = normalizeCommunityRole(role);
   return normalizedRole === 'ADMIN' || normalizedRole === 'PROFESOR';
 };

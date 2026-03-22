@@ -982,7 +982,7 @@ export default function CommunityDetail() {
       return;
     }
 
-    if (!isPrivate && hasTeacherProfile) {
+    if (hasTeacherProfile) {
       setShowJoinRoleChooser(true);
       setMembershipError(null);
       return;
@@ -1001,8 +1001,9 @@ export default function CommunityDetail() {
       setJoinLoading(true);
       setMembershipError(null);
       if (isPrivate) {
-        await communitiesApi.requestAccess(communityId);
+        await communitiesApi.requestAccess(communityId, '', role || 'ALUMNO');
         setRequestSent(true);
+        setShowJoinRoleChooser(false);
       } else {
         await communitiesApi.join(communityId, role || 'ALUMNO');
         setIsMember(true);
@@ -1255,23 +1256,29 @@ export default function CommunityDetail() {
                     <button className="cd-btn cd-btn-pending" disabled>
                       Solicitud de acceso enviada
                     </button>
-                  ) : showJoinRoleChooser && !isPrivate && hasTeacherProfile ? (
+                  ) : showJoinRoleChooser && hasTeacherProfile ? (
                     <div className="cd-join-role-picker">
-                      <p className="cd-join-role-title">Elige cómo quieres unirte:</p>
+                      <p className="cd-join-role-title">
+                        {isPrivate ? 'Elige cómo quieres solicitar acceso:' : 'Elige cómo quieres unirte:'}
+                      </p>
                       <div className="cd-join-role-actions">
                         <button
                           className="cd-btn cd-btn-join"
                           onClick={() => handleJoinWithRole('PROFESOR')}
                           disabled={joinLoading}
                         >
-                          <LuLogIn /> {joinLoading ? 'Uniendose...' : 'Unirme como profesor'}
+                          <LuLogIn /> {joinLoading
+                            ? (isPrivate ? 'Solicitando...' : 'Uniendose...')
+                            : (isPrivate ? 'Solicitar como profesor' : 'Unirme como profesor')}
                         </button>
                         <button
                           className="cd-btn cd-btn-join"
                           onClick={() => handleJoinWithRole('ALUMNO')}
                           disabled={joinLoading}
                         >
-                          <LuLogIn /> {joinLoading ? 'Uniendose...' : 'Unirme como alumno'}
+                          <LuLogIn /> {joinLoading
+                            ? (isPrivate ? 'Solicitando...' : 'Uniendose...')
+                            : (isPrivate ? 'Solicitar como alumno' : 'Unirme como alumno')}
                         </button>
                         <button
                           className="cd-btn cd-btn-leave"

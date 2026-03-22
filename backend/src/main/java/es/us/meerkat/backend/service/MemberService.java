@@ -10,11 +10,13 @@ import es.us.meerkat.backend.entity.ComunidadClassroom;
 import es.us.meerkat.backend.entity.MiembroComunidad;
 import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.TipoGrupo;
+import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
 import es.us.meerkat.backend.repository.ComunidadClassroomRepository;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.TutorRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -28,6 +30,7 @@ public class MemberService {
     private final ComunidadClassroomRepository comunidadClassroomRepository;
     private final UsuarioRepository usuarioRepository;
     private final AsistenciaEventoRepository asistenciaEventoRepository;
+    private final TutorRepository tutorRepository;
     private final AuthorizationService authorizationService;
     private final CommunityService communityService;
     private final GoogleClassroomService googleClassroomService;
@@ -69,11 +72,29 @@ public class MemberService {
         // Determinar rol deseado (por defecto ALUMNO)
         RolComunidad rolFinal = desiredRol != null ? desiredRol : RolComunidad.ALUMNO;
 
-        // Si solicita ser PROFESOR, validar que el usuario sea tutor
-        if (rolFinal == RolComunidad.PROFESOR
-                && (usuario.getEsTutor() == null || !usuario.getEsTutor())) {
-            throw new IllegalArgumentException(
-                    "Solo los usuarios tutores pueden unirse como profesor");
+        // Si solicita ser PROFESOR, validar que el usuario sea tutor con perfil configurado
+        if (rolFinal == RolComunidad.PROFESOR) {
+            if (usuario.getEsTutor() == null || !usuario.getEsTutor()) {
+                throw new IllegalArgumentException(
+                        "Solo los usuarios tutores pueden unirse como profesor");
+            }
+            Tutor tutor =
+                    tutorRepository
+                            .findByUsuario(usuario)
+                            .orElseThrow(
+                                    () ->
+                                            new IllegalArgumentException(
+                                                    "Debes completar tu perfil de tutor antes de"
+                                                            + " unirte como profesor"));
+            if (tutor.getEspecialidades() == null
+                    || tutor.getEspecialidades().isEmpty()
+                    || tutor.getTarifaHora() == null
+                    || tutor.getBio() == null
+                    || tutor.getBio().isBlank()) {
+                throw new IllegalArgumentException(
+                        "Debes completar tu perfil de tutor (especialidades, tarifa y bio)"
+                                + " antes de unirte como profesor");
+            }
         }
 
         // Crear membresía
@@ -105,19 +126,20 @@ public class MemberService {
                                         new IllegalArgumentException(
                                                 "No eres miembro de esta comunidad"));
 
+        // Si es el último miembro, eliminar la comunidad directamente
+        long totalMembers = miembroComunidadRepository.countByComunidadId(communityId);
+        if (totalMembers <= 1) {
+            Comunidad comunidad = miembro.getComunidad();
+            comunidadRepository.delete(comunidad);
+            return;
+        }
+
         // Si es ADMIN, verificar que haya otros ADMINs
         if (miembro.getRol() == RolComunidad.ADMIN) {
             long adminCount =
                     miembroComunidadRepository.countByComunidadIdAndRol(
                             communityId, RolComunidad.ADMIN);
             if (adminCount <= 1) {
-                long totalMembers = miembroComunidadRepository.countByComunidadId(communityId);
-                if (totalMembers <= 1) {
-                    // Único admin y único miembro: eliminar la comunidad
-                    Comunidad comunidad = miembro.getComunidad();
-                    comunidadRepository.delete(comunidad);
-                    return;
-                }
                 throw new IllegalArgumentException(
                         "No puedes abandonar siendo el único admin. Transfiere la administración"
                                 + " primero.");
@@ -181,6 +203,10 @@ public class MemberService {
         // Desincronizar de Google Classroom
         desincronizarDeClassroom(targetUsuario, comunidad);
 
+        // Cancelar asistencias a eventos futuros de la comunidad
+        asistenciaEventoRepository.deleteFutureAttendancesInCommunity(
+                targetUserId, communityId, java.time.LocalDateTime.now());
+
         miembroComunidadRepository.delete(targetMiembro);
     }
 
@@ -226,7 +252,12 @@ public class MemberService {
 
         // Cambiar roles
         usuarioActual.setRol(nuevoRolOrigen != null ? nuevoRolOrigen : RolComunidad.ALUMNO);
+        // Preservar rol docente original al promover a ADMIN
+        RolComunidad rolPrevio = nuevoAdmin.getRol();
         nuevoAdmin.setRol(RolComunidad.ADMIN);
+        if (rolPrevio == RolComunidad.PROFESOR && nuevoAdmin.getRolDocente() == null) {
+            nuevoAdmin.setRolDocente(RolComunidad.PROFESOR);
+        }
 
         miembroComunidadRepository.save(usuarioActual);
         return miembroComunidadRepository.save(nuevoAdmin);
@@ -264,7 +295,12 @@ public class MemberService {
             throw new IllegalArgumentException("El usuario ya es administrador");
         }
 
+        // Preservar rol docente original al promover a ADMIN
+        RolComunidad rolPrevio = targetMiembro.getRol();
         targetMiembro.setRol(RolComunidad.ADMIN);
+        if (rolPrevio == RolComunidad.PROFESOR && targetMiembro.getRolDocente() == null) {
+            targetMiembro.setRolDocente(RolComunidad.PROFESOR);
+        }
         MiembroComunidad saved = miembroComunidadRepository.save(targetMiembro);
 
         return saved;

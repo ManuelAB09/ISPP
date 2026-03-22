@@ -153,7 +153,8 @@ const CrearEvento = () => {
               const membership = await communitiesApi.getMyMembership(data.comunidad.id);
               const normalizedRole = normalizeCommunityRole(membership?.rol);
               setSelectedCommunityRole(normalizedRole || null);
-              canEdit = canCreateCommunityEvent(normalizedRole);
+              // Only ADMIN or PROFESOR can edit community events
+              canEdit = normalizedRole === 'ADMIN' || normalizedRole === 'PROFESOR';
             } catch {
               canEdit = false;
             }
@@ -161,7 +162,7 @@ const CrearEvento = () => {
 
           if (!canEdit) {
             setError(data.comunidad?.id
-              ? 'No tienes permiso para editar este evento. Solo un administrador o un profesor de la comunidad pueden hacerlo.'
+              ? 'Solo un administrador o un profesor de la comunidad pueden hacerlo.'
               : 'No tienes permiso para editar este evento. Solo el creador puede hacerlo.');
             setLoading(false);
             return;
@@ -222,8 +223,7 @@ const CrearEvento = () => {
           setSelectedCommunityRole(normalizedRole || null);
 
           if (!canCreateCommunityEvent(normalizedRole)) {
-            const roleLabel = getCommunityRoleLabel(normalizedRole);
-            setError(`No puedes crear eventos con rol ${roleLabel.toLowerCase()}. Solo administradores y profesores pueden hacerlo.`);
+            setError('Solo administradores y profesores pueden hacerlo.');
             return;
           }
 
@@ -421,7 +421,7 @@ const CrearEvento = () => {
           return;
         }
         if (!canCreateCommunityEvent(selectedCommunityRole)) {
-          setError('Solo administradores y profesores pueden crear eventos en esta comunidad.');
+          setError('No puedes crear eventos en una comunidad a la que no perteneces.');
           return;
         }
         await createEvent(selectedCommunityId, payload);

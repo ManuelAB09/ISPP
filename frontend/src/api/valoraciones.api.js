@@ -13,4 +13,8 @@ export const crearValoracion = async (valoracion) => {
   return await apiClient.post(`/api/valoraciones`, valoracion);
 };
 
+export const checkAlreadyRated = async (alumnoId, eventoId) => {
+  return await apiClient.get(`/api/valoraciones/check?alumnoId=${alumnoId}&eventoId=${eventoId}`);
+};
+
 

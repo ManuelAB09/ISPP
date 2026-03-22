@@ -46,18 +46,27 @@ export default function ComunidadCard({ comunidad, onJoined }) {
         setJoining(true);
         setError(null);
         try {
-            await communitiesApi.join(comunidad.id, role);
-            setJoined(true);
-            setShowRolePicker(false);
-            if (onJoined) onJoined(comunidad.id);
+            if (isPrivate) {
+                await communitiesApi.requestAccess(comunidad.id, '', role);
+                setRequestSent(true);
+                setShowRolePicker(false);
+            } else {
+                await communitiesApi.join(comunidad.id, role);
+                setJoined(true);
+                setShowRolePicker(false);
+                if (onJoined) onJoined(comunidad.id);
+            }
         } catch (err) {
             if (err.message?.includes('401') || err.status === 401) {
                 navigate('/login');
             } else if (err.message?.includes('409') || err.status === 409) {
-                setJoined(true);
+                if (isPrivate) setRequestSent(true); else setJoined(true);
                 setShowRolePicker(false);
+            } else if (err.status === 400) {
+                if (isPrivate) setRequestSent(true);
+                else setError(err?.message || 'Error al unirse');
             } else {
-                setError(err?.message || 'Error al unirse');
+                setError(isPrivate ? 'Error al solicitar acceso' : 'Error al unirse');
             }
         } finally {
             setJoining(false);
@@ -72,40 +81,13 @@ export default function ComunidadCard({ comunidad, onJoined }) {
             return;
         }
 
-        if (!isPrivate && hasTeacherProfile) {
+        if (hasTeacherProfile) {
             setShowRolePicker(true);
             return;
         }
 
-        setJoining(true);
-        setError(null);
-        try {
-            if (isPrivate) {
-                await communitiesApi.requestAccess(comunidad.id);
-                setRequestSent(true);
-            } else {
-                await communitiesApi.join(comunidad.id, 'ALUMNO');
-                setJoined(true);
-                setShowRolePicker(false);
-                if (onJoined) onJoined(comunidad.id);
-            }
-        } catch (err) {
-            if (err.message?.includes('401') || err.status === 401) {
-                navigate('/login');
-            } else if (err.message?.includes('409') || err.status === 409) {
-                setJoined(true);
-            } else if (err.status === 400) {
-                if (isPrivate) {
-                    setRequestSent(true);
-                } else {
-                    setError(err?.message || 'Error al unirse');
-                }
-            } else {
-                setError(isPrivate ? 'Error al solicitar acceso' : 'Error al unirse');
-            }
-        } finally {
-            setJoining(false);
-        }
+        // Sin perfil de tutor: siempre ALUMNO
+        await performJoin('ALUMNO');
     };
 
     return (
@@ -142,7 +124,9 @@ export default function ComunidadCard({ comunidad, onJoined }) {
                     {currentUserId && !joined && !requestSent && (
                         showRolePicker ? (
                             <div className="join-role-picker" onClick={(e) => e.stopPropagation()}>
-                                <p className="join-role-picker__title">Elige cómo quieres unirte</p>
+                                <p className="join-role-picker__title">
+                                    {isPrivate ? 'Elige cómo quieres solicitar acceso' : 'Elige cómo quieres unirte'}
+                                </p>
                                 <div className="join-role-picker__actions">
                                     <button
                                         className="join-button"
@@ -152,7 +136,9 @@ export default function ComunidadCard({ comunidad, onJoined }) {
                                         }}
                                         disabled={joining}
                                     >
-                                        {joining ? 'Uniéndose...' : 'Unirme como profesor'}
+                                        {joining
+                                            ? (isPrivate ? 'Solicitando...' : 'Uniéndose...')
+                                            : (isPrivate ? 'Solicitar como profesor' : 'Unirme como profesor')}
                                     </button>
                                     <button
                                         className="join-button join-button--request"
@@ -162,7 +148,9 @@ export default function ComunidadCard({ comunidad, onJoined }) {
                                         }}
                                         disabled={joining}
                                     >
-                                        {joining ? 'Uniéndose...' : 'Unirme como alumno'}
+                                        {joining
+                                            ? (isPrivate ? 'Solicitando...' : 'Uniéndose...')
+                                            : (isPrivate ? 'Solicitar como alumno' : 'Unirme como alumno')}
                                     </button>
                                 </div>
                             </div>

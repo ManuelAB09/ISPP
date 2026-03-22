@@ -4,9 +4,11 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import CrearComunidad from './CrearComunidad';
 import { communitiesApi } from '../../api/communities.api';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Mocks
 jest.mock('../../api/communities.api');
+jest.mock('../../contexts/AuthContext');
 jest.mock('../../components/Header/Header', () => {
   return function MockHeader() {
     return <div data-testid="mock-header">Header</div>;
@@ -23,6 +25,7 @@ describe('CrearComunidad', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     communitiesApi.create.mockResolvedValue({ id: 123 });
+    useAuth.mockReturnValue({ user: { id: 1, nombre: 'Test', esTutor: false } });
   });
 
   const renderComponent = () => {
@@ -193,8 +196,9 @@ describe('CrearComunidad', () => {
   });
 
   test('muestra estado de carga mientras se crea', async () => {
+    let resolveCreate;
     communitiesApi.create.mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve({ id: 1 }), 100))
+      () => new Promise((resolve) => { resolveCreate = resolve; })
     );
     renderComponent();
 
@@ -205,6 +209,8 @@ describe('CrearComunidad', () => {
     userEvent.click(createButton);
 
     await screen.findByRole('button', { name: /Creando/i });
+
+    resolveCreate({ id: 1 });
   });
 
   test('muestra error cuando falla la creación', async () => {

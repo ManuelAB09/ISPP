@@ -13,10 +13,12 @@ import es.us.meerkat.backend.entity.MiembroComunidad;
 import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.SolicitudComunidad;
 import es.us.meerkat.backend.entity.TipoGrupo;
+import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.SolicitudComunidadRepository;
+import es.us.meerkat.backend.repository.TutorRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -29,11 +31,13 @@ public class RequestService {
     private final ComunidadRepository comunidadRepository;
     private final MiembroComunidadRepository miembroComunidadRepository;
     private final UsuarioRepository usuarioRepository;
+    private final TutorRepository tutorRepository;
     private final AuthorizationService authorizationService;
     private final CommunityService communityService;
 
     /** Solicita acceso a una comunidad privada. */
-    public SolicitudComunidad requestAccess(Long userId, Long communityId, String mensaje) {
+    public SolicitudComunidad requestAccess(
+            Long userId, Long communityId, String mensaje, RolComunidad rolDeseado) {
         Usuario usuario =
                 usuarioRepository
                         .findById(userId)
@@ -67,12 +71,41 @@ public class RequestService {
                     "Ya tienes una solicitud pendiente para esta comunidad");
         }
 
+        // Determinar rol deseado (por defecto ALUMNO)
+        RolComunidad rolFinal = rolDeseado != null ? rolDeseado : RolComunidad.ALUMNO;
+
+        // Si solicita PROFESOR, validar que tenga perfil de tutor configurado
+        if (rolFinal == RolComunidad.PROFESOR) {
+            if (usuario.getEsTutor() == null || !usuario.getEsTutor()) {
+                throw new IllegalArgumentException(
+                        "Solo los usuarios tutores pueden solicitar acceso como profesor");
+            }
+            Tutor tutor =
+                    tutorRepository
+                            .findByUsuario(usuario)
+                            .orElseThrow(
+                                    () ->
+                                            new IllegalArgumentException(
+                                                    "Debes completar tu perfil de tutor antes de"
+                                                            + " solicitar acceso como profesor"));
+            if (tutor.getEspecialidades() == null
+                    || tutor.getEspecialidades().isEmpty()
+                    || tutor.getTarifaHora() == null
+                    || tutor.getBio() == null
+                    || tutor.getBio().isBlank()) {
+                throw new IllegalArgumentException(
+                        "Debes completar tu perfil de tutor (especialidades, tarifa y bio)"
+                                + " antes de solicitar acceso como profesor");
+            }
+        }
+
         // Crear solicitud
         SolicitudComunidad solicitud =
                 SolicitudComunidad.builder()
                         .solicitante(usuario)
                         .comunidad(comunidad)
                         .mensaje(mensaje)
+                        .rolDeseado(rolFinal)
                         .estado(EstadoSolicitud.PENDIENTE)
                         .build();
 
@@ -136,12 +169,17 @@ public class RequestService {
 
             solicitud.setEstado(EstadoSolicitud.ACEPTADA);
 
-            // Crear membresía
+            // Crear membresía con el rol deseado por el solicitante
+            RolComunidad rolMiembro =
+                    solicitud.getRolDeseado() != null
+                            ? solicitud.getRolDeseado()
+                            : RolComunidad.ALUMNO;
+
             MiembroComunidad miembro =
                     MiembroComunidad.builder()
                             .usuario(solicitud.getSolicitante())
                             .comunidad(solicitud.getComunidad())
-                            .rol(RolComunidad.ALUMNO)
+                            .rol(rolMiembro)
                             .build();
 
             miembroComunidadRepository.save(miembro);

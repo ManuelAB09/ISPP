@@ -139,6 +139,14 @@ public class CommunityController {
         }
 
         try {
+            RolComunidad rolInicial = null;
+            if (request.rolInicial() != null && !request.rolInicial().isBlank()) {
+                try {
+                    rolInicial = RolComunidad.valueOf(request.rolInicial().toUpperCase());
+                } catch (IllegalArgumentException ignored) {
+                    rolInicial = null;
+                }
+            }
             Comunidad comunidad =
                     communityService.createCommunity(
                             usuario.getId(),
@@ -148,7 +156,9 @@ public class CommunityController {
                                     ? es.us.meerkat.backend.entity.TipoGrupo.valueOf(
                                             request.tipoGrupo())
                                     : es.us.meerkat.backend.entity.TipoGrupo.COMUNIDAD_PUBLICA,
-                            request.imagenUrl());
+                            request.imagenUrl(),
+                            null,
+                            rolInicial);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(entityToDetailResponse(comunidad, usuario.getId()));
         } catch (IllegalArgumentException e) {
@@ -707,8 +717,17 @@ public class CommunityController {
         }
 
         try {
+            RolComunidad rolDeseado = RolComunidad.ALUMNO;
+            if (request.rolDeseado() != null && !request.rolDeseado().isBlank()) {
+                try {
+                    rolDeseado = RolComunidad.valueOf(request.rolDeseado());
+                } catch (IllegalArgumentException ignored) {
+                    // Si el valor no es válido, mantener ALUMNO
+                }
+            }
             SolicitudComunidad solicitud =
-                    requestService.requestAccess(usuario.getId(), communityId, request.mensaje());
+                    requestService.requestAccess(
+                            usuario.getId(), communityId, request.mensaje(), rolDeseado);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(entityToRequestResponse(solicitud));
         } catch (IllegalArgumentException e) {
@@ -1196,6 +1215,7 @@ public class CommunityController {
                 convertUserToSimple(solicitud.getSolicitante()),
                 solicitud.getEstado().name(),
                 solicitud.getMensaje(),
+                solicitud.getRolDeseado() != null ? solicitud.getRolDeseado().name() : "ALUMNO",
                 solicitud.getFechaSolicitud(),
                 solicitud.getRespondidaPor() != null
                         ? convertUserToSimple(solicitud.getRespondidaPor())

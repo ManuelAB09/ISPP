@@ -58,7 +58,7 @@ class CommunityControllerTest {
     void createCommunityShouldReturnUnauthorizedWhenUserIsNull() {
         CreateCommunityRequest request =
                 new CreateCommunityRequest(
-                        "Comunidad Java", "Descripción", "COMUNIDAD_PUBLICA", null);
+                        "Comunidad Java", "Descripción", "COMUNIDAD_PUBLICA", null, null);
 
         ResponseEntity<CommunityDetailResponse> response =
                 (ResponseEntity<CommunityDetailResponse>)
@@ -73,7 +73,7 @@ class CommunityControllerTest {
         Usuario usuario = buildUsuario(1L);
         CreateCommunityRequest request =
                 new CreateCommunityRequest(
-                        "Comunidad Java", "Descripción", "COMUNIDAD_PUBLICA", "img.png");
+                        "Comunidad Java", "Descripción", "COMUNIDAD_PUBLICA", "img.png", null);
         Comunidad comunidad =
                 buildComunidad(10L, usuario, TipoGrupo.COMUNIDAD_PUBLICA, TipoPlanComunidad.FREE);
 
@@ -82,7 +82,9 @@ class CommunityControllerTest {
                         request.nombre(),
                         request.descripcion(),
                         TipoGrupo.COMUNIDAD_PUBLICA,
-                        request.imagenUrl()))
+                        request.imagenUrl(),
+                        null,
+                        null))
                 .thenReturn(comunidad);
         when(communityService.countMembers(comunidad.getId())).thenReturn(1L);
         when(authorizationService.getUserRoleInCommunityAsString(
@@ -104,14 +106,16 @@ class CommunityControllerTest {
         Usuario usuario = buildUsuario(1L);
         CreateCommunityRequest request =
                 new CreateCommunityRequest(
-                        "Comunidad Java", "Descripción", "COMUNIDAD_PUBLICA", null);
+                        "Comunidad Java", "Descripción", "COMUNIDAD_PUBLICA", null, null);
 
         when(communityService.createCommunity(
                         usuario.getId(),
                         request.nombre(),
                         request.descripcion(),
                         TipoGrupo.COMUNIDAD_PUBLICA,
-                        request.imagenUrl()))
+                        request.imagenUrl(),
+                        null,
+                        null))
                 .thenThrow(new IllegalArgumentException("límite alcanzado"));
 
         ResponseEntity<?> response = communityController.createCommunity(request, usuario);
@@ -166,12 +170,13 @@ class CommunityControllerTest {
                         .mensaje("Quiero entrar")
                         .build();
 
-        when(requestService.requestAccess(usuario.getId(), 100L, "Quiero entrar"))
+        when(requestService.requestAccess(
+                        usuario.getId(), 100L, "Quiero entrar", RolComunidad.ALUMNO))
                 .thenReturn(solicitud);
 
         ResponseEntity<RequestResponse> response =
                 communityController.requestAccess(
-                        100L, new AccessRequestBody("Quiero entrar"), usuario);
+                        100L, new AccessRequestBody("Quiero entrar", null), usuario);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isNotNull();
