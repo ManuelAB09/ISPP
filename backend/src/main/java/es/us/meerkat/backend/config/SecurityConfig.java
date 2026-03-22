@@ -3,6 +3,7 @@ package es.us.meerkat.backend.config;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -122,7 +123,7 @@ public class SecurityConfig {
      */
     @Bean
     public FilterRegistrationBean<JwtAuthenticationFilter> jwtFilterRegistration(
-            final JwtAuthenticationFilter filter) {
+            @Lazy final JwtAuthenticationFilter filter) {
         final FilterRegistrationBean<JwtAuthenticationFilter> registration =
                 new FilterRegistrationBean<>(filter);
         registration.setEnabled(false);

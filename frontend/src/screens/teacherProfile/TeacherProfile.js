@@ -7,6 +7,8 @@ import EditProfileModal from "./EditProfileModal";
 import CreateProfileModal from "./CreateProfileModal";
 import VerificacionModal from "./VerificacionModal";
 import Settings from "../myProfile/Settings";
+import HireTutorModal from "./HireTutorModal";
+import BookClassModal from "./BookClassModal";
 import HireDirectModal from "./HireDirectModal";
 import TutorSolicitudes from "./TutorSolicitudes";
 import TutorConversaciones from "./TutorConversaciones";
@@ -59,6 +61,7 @@ const TeacherProfile = () => {
   const [showVerificacion, setShowVerificacion] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showHireModal, setShowHireModal] = useState(false);
+  const [showBookModal, setShowBookModal] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [stripeLoading, setStripeLoading] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
@@ -319,9 +322,24 @@ const TeacherProfile = () => {
               <div className="tp-header__actions">
                 <button
                   className="tp-btn tp-btn--contact"
-                  onClick={() => setShowChat((prev) => !prev)}
+                  onClick={() => {
+                    const targetUserId = tutor.userId ?? tutor.usuario?.id;
+                    const nombre = tutor.usuario?.nombre || 'Profesor';
+                    if (!targetUserId) return;
+                    const params = new URLSearchParams({
+                      userId: String(targetUserId),
+                      userName: nombre,
+                    });
+                    if (tutor.usuario?.foto) {
+                      params.set('userPhoto', toAbsoluteImageUrl(tutor.usuario.foto));
+                    }
+                    navigate(`/chats?${params.toString()}`);
+                  }}
                 >
                   {showChat ? '✕ Cerrar chat' : '💬 Contactar'}
+                </button>
+                <button className="tp-btn tp-btn--book" onClick={() => setShowBookModal(true)}>
+                  📅 Reservar clase
                 </button>
                 <button className="tp-btn tp-btn--hire" onClick={() => setShowHireModal(true)}>
                   🎓 Contratar
@@ -553,6 +571,9 @@ const TeacherProfile = () => {
 
       {showHireModal && (
         <HireDirectModal tutor={tutor} onClose={() => setShowHireModal(false)} />
+      )}
+      {showBookModal && (
+        <BookClassModal tutor={tutor} onClose={() => setShowBookModal(false)} />
       )}
     </>
   );

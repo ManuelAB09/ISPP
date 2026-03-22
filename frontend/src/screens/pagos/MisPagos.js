@@ -52,7 +52,6 @@ const MisPagos = () => {
     setError(null);
     try {
       const data = await paymentsApi.getHistory({ page: p, size: PAGE_SIZE });
-      // Response may be Page<TransactionResponse> or an array
       if (data?.content) {
         setTransacciones(data.content);
         setTotalPages(data.totalPages ?? 1);
@@ -73,7 +72,6 @@ const MisPagos = () => {
     cargarPagos(page);
   }, [cargarPagos, page]);
 
-  /* ── Resumen estadístico ── */
   const totalGastado = transacciones
     .filter((t) => t.estado === "COMPLETADO")
     .reduce((acc, t) => acc + (t.monto ?? 0), 0);
@@ -88,7 +86,7 @@ const MisPagos = () => {
         <div className="mp-container">
           {/* Page title */}
           <div className="mp-page-header">
-            <PageHeader 
+            <PageHeader
               title="Mis pagos"
               subtitle="Historial de transacciones de tu cuenta y resumen de actividad financiera"
             />
