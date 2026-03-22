@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { crearValoracion } from "../api/valoraciones.api";
 import "./RatingForm.css";
 
-const RatingForm = ({ profesorId, alumnoId, eventoId, onValorado }) => {
+const RatingForm = ({ profesorId, alumnoId, eventoId, onValorado, alreadyRated }) => {
   const [puntuacion, setPuntuacion] = useState(0);
   const [comentario, setComentario] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -37,6 +37,9 @@ const RatingForm = ({ profesorId, alumnoId, eventoId, onValorado }) => {
     }
   };
 
+  if (alreadyRated) {
+    return <div className="rating-form__success">¡Gracias por tu valoración!</div>;
+  }
   return (
     <form className="rating-form" onSubmit={handleSubmit}>
       <div className="rating-form__stars">

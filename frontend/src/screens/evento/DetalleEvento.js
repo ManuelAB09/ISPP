@@ -77,8 +77,26 @@ const eventIconRed = L.icon({
 // Valoración de profesor (sin validación de permisos)
 // Mover fuera de la función para evitar acceder a 'event' antes de su inicialización
 const DetalleEvento = () => {
-  const [valorado, setValorado] = useState(false);
   const { eventId } = useParams();
+  // Persist valorado per event in localStorage
+  const [valorado, setValorado] = useState(() => {
+    try {
+      const ratedEvents = JSON.parse(localStorage.getItem('ratedEvents') || '{}');
+      return !!ratedEvents[eventId];
+    } catch {
+      return false;
+    }
+  });
+  // When valorado changes to true, persist in localStorage
+  useEffect(() => {
+    if (valorado) {
+      try {
+        const ratedEvents = JSON.parse(localStorage.getItem('ratedEvents') || '{}');
+        ratedEvents[eventId] = true;
+        localStorage.setItem('ratedEvents', JSON.stringify(ratedEvents));
+      } catch {}
+    }
+  }, [valorado, eventId]);
   const navigate = useNavigate();
   const { socket } = useSocketContext();
 
@@ -1165,6 +1183,7 @@ const DetalleEvento = () => {
                   alumnoId={currentUserId}
                   eventoId={eventId}
                   onValorado={() => setValorado(true)}
+                  alreadyRated={valorado}
                 />
               </div>
             ) : !valorado && !(realTutorId || event?.tutorId) ? (
