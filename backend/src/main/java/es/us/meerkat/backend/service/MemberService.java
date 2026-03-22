@@ -197,7 +197,8 @@ public class MemberService {
     }
 
     /** Transfiere el rol ADMIN a otro miembro (solo ADMIN actual). */
-    public MiembroComunidad transferAdmin(Long userId, Long communityId, Long newAdminId, RolComunidad nuevoRolOrigen) {
+    public MiembroComunidad transferAdmin(
+            Long userId, Long communityId, Long newAdminId, RolComunidad nuevoRolOrigen) {
         if (!authorizationService.isAdminOf(userId, communityId)) {
             throw new IllegalArgumentException("Solo admins pueden transferir administración");
         }

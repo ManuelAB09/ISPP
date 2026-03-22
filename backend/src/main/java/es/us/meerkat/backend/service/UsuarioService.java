@@ -529,6 +529,7 @@ public class UsuarioService {
                                 : null)
                 .intereses(usuario.getIntereses())
                 .esTutor(usuario.getEsTutor())
+                .tutorId(usuario.getTutor() != null ? usuario.getTutor().getId() : null)
                 .build();
     }
 

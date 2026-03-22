@@ -21,6 +21,7 @@ import { ZoomApi } from '../../api/zoom.api';
 import { getApiBaseUrl } from '../../api/baseUrl';
 import { canCreateCommunityEvent, normalizeCommunityRole } from '../../utils/communityRoles';
 import { useSocketContext } from '../../contexts/SocketContext';
+import RatingForm from '../../components/RatingForm';
 
 const OPCIONES_ANTELACION = [
   { label: '2 días antes', value: 2880 },
@@ -74,8 +75,29 @@ const eventIconRed = L.icon({
   shadowSize: [41, 41],
 });
 
+// Valoración de profesor (sin validación de permisos)
+// Mover fuera de la función para evitar acceder a 'event' antes de su inicialización
 const DetalleEvento = () => {
   const { eventId } = useParams();
+  // Persist valorado per event in localStorage
+  const [valorado, setValorado] = useState(() => {
+    try {
+      const ratedEvents = JSON.parse(localStorage.getItem('ratedEvents') || '{}');
+      return !!ratedEvents[eventId];
+    } catch {
+      return false;
+    }
+  });
+  // When valorado changes to true, persist in localStorage
+  useEffect(() => {
+    if (valorado) {
+      try {
+        const ratedEvents = JSON.parse(localStorage.getItem('ratedEvents') || '{}');
+        ratedEvents[eventId] = true;
+        localStorage.setItem('ratedEvents', JSON.stringify(ratedEvents));
+      } catch {}
+    }
+  }, [valorado, eventId]);
   const navigate = useNavigate();
   const { socket } = useSocketContext();
 
@@ -181,6 +203,11 @@ const DetalleEvento = () => {
   const isFull = event && event.aforo && (event.asistentesConfirmados || 0) >= event.aforo;
   const isCancelled = event?.cancelado;
   const isStarted = event?.fechaHora ? new Date(event.fechaHora).getTime() <= Date.now() : false;
+  const isEnded = event?.fechaFin
+    ? new Date(event.fechaFin).getTime() <= Date.now()
+    : isStarted && event?.fechaHora
+      ? Date.now() - new Date(event.fechaHora).getTime() > 2 * 60 * 60 * 1000
+      : false;
 
   // Abre el modal de confirmación de asistencia
   const handleAttend = () => {
@@ -498,6 +525,43 @@ const DetalleEvento = () => {
     });
   };
 
+  // Estado y efecto para obtener el id real de tutor para la valoración
+  const [realTutorId, setRealTutorId] = React.useState(null);
+  const [buscandoTutor, setBuscandoTutor] = useState(false);
+  const [tutorError, setTutorError] = useState(null);
+  React.useEffect(() => {
+    let cancelled = false;
+    async function fetchTutorId() {
+      setBuscandoTutor(false);
+      setTutorError(null);
+      if (event && !event.tutorId && event.creador?.esTutor && event.creador?.id) {
+        setBuscandoTutor(true);
+        try {
+          const resp = await axiosInstance.get(`/api/v1/tutors/user/${event.creador.id}`);
+          if (!cancelled && resp.data && resp.data.id) {
+            setRealTutorId(resp.data.id);
+          } else if (!cancelled) {
+            setRealTutorId(null);
+            setTutorError('No se encontró tutor para el organizador.');
+          }
+        } catch (e) {
+          if (!cancelled) {
+            setRealTutorId(null);
+            setTutorError('No se encontró tutor para el organizador.');
+          }
+        } finally {
+          if (!cancelled) setBuscandoTutor(false);
+        }
+      } else if (event && event.tutorId) {
+        setRealTutorId(event.tutorId);
+      } else {
+        setRealTutorId(null);
+      }
+    }
+    fetchTutorId();
+    return () => { cancelled = true; };
+  }, [event]);
+
   if (loading) {
     return (
       <div className="ed-page">
@@ -548,7 +612,7 @@ const DetalleEvento = () => {
               {isCancelled && (
                 <span className="ed-badge ed-badge-cancelled">❌ Cancelado</span>
               )}
-              {event.visibleMapa && !isCancelled && (
+              {event.visibleMapa && !isCancelled && !event.esVirtual && (
                 <span className="ed-badge ed-badge-map"><LuMap /> Visible en mapa</span>
               )}
               {isStarted && !isCancelled && (
@@ -978,13 +1042,13 @@ const DetalleEvento = () => {
                   </span>
                 </div>
 
-                {isFull && !isConfirmed && (
+                {isFull && !isConfirmed && !isStarted && (
                   <div className="ed-full-message">
                     <LuUsers /> Aforo completo
                   </div>
                 )}
 
-                {!isMember && currentUserId && !isConfirmed && (
+                {!isMember && currentUserId && !isConfirmed && !isStarted && (
                   <div className="ed-full-message">
                     Debes ser miembro de la comunidad para apuntarte
                   </div>
@@ -997,7 +1061,7 @@ const DetalleEvento = () => {
                     </div>
                     {isOrganizer ? (
                       <span style={{ fontSize: '0.85rem', color: '#888' }}>Eres el organizador de este evento</span>
-                    ) : (
+                    ) : !isEnded ? (
                       <button
                         className="ed-btn ed-btn-cancel-attendance"
                         onClick={handleCancelAttendance}
@@ -1005,9 +1069,9 @@ const DetalleEvento = () => {
                       >
                         {attendanceLoading ? 'Cancelando...' : 'Cancelar asistencia'}
                       </button>
-                    )}
+                    ) : null}
                   </div>
-                ) : (
+                ) : !isStarted ? (
                   <button
                     className="ed-btn ed-btn-attend"
                     onClick={handleAttend}
@@ -1016,7 +1080,7 @@ const DetalleEvento = () => {
                   >
                     {attendanceLoading ? 'Confirmando...' : 'Confirmar asistencia'}
                   </button>
-                )}
+                ) : null}
 
                 {/* Alarmas rápidas (solo si confirmado) */}
                 {isConfirmed && currentUserId && (
@@ -1114,6 +1178,36 @@ const DetalleEvento = () => {
                 <p className="ed-no-participants">Aún no hay participantes confirmados.</p>
               )}
             </div>
+
+            {/* Formulario de valoración tras evento finalizado (si hay tutorId o el organizador es tutor) */}
+            {!isOrganizer && (
+              !valorado && buscandoTutor ? (
+                <div className="ed-rating-card">
+                  <h3 className="ed-card-title">Buscando tutor...</h3>
+                  <div className="ed-rating-error">Buscando el tutor asociado al organizador del evento...</div>
+                </div>
+              ) : !valorado && (realTutorId || event?.tutorId) ? (
+                <div className="ed-rating-card">
+                  <h3 className="ed-card-title">Valora al profesor</h3>
+                  <RatingForm
+                    profesorId={realTutorId || event.tutorId}
+                    alumnoId={currentUserId}
+                    eventoId={eventId}
+                    onValorado={() => setValorado(true)}
+                    alreadyRated={valorado}
+                  />
+                </div>
+              ) : !valorado && !(realTutorId || event?.tutorId) ? (
+                <div className="ed-rating-card">
+                  <h3 className="ed-card-title">No disponible</h3>
+                  <div className="ed-rating-error">
+                    {tutorError ? tutorError : 'No se puede valorar porque este evento no tiene tutor asignado.'}
+                  </div>
+                </div>
+              ) : valorado ? (
+                <div className="ed-rating-success">¡Gracias por valorar al profesor!</div>
+              ) : null
+            )}
           </div>
         </div>
       </div>

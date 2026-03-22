@@ -68,7 +68,7 @@ class CommunityControllerTest {
     }
 
     @SuppressWarnings("unchecked")
-@Test
+    @Test
     void createCommunityShouldReturnCreatedWhenServiceSucceeds() {
         Usuario usuario = buildUsuario(1L);
         CreateCommunityRequest request =

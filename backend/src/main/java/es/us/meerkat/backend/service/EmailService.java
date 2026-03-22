@@ -47,6 +47,7 @@ public class EmailService {
     @SuppressWarnings("deprecation")
     private static final DateTimeFormatter DATE_FORMATTER =
             DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM 'de' yyyy", new Locale("es", "ES"));
+
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
     // ===============================

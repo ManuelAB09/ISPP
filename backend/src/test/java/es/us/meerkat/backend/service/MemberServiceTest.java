@@ -132,49 +132,50 @@ class MemberServiceTest {
         when(miembroComunidadRepository.save(any(MiembroComunidad.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        MiembroComunidad result = memberService.transferAdmin(adminId, communityId, newAdminId, null);
+        MiembroComunidad result =
+                memberService.transferAdmin(adminId, communityId, newAdminId, null);
 
         assertThat(actual.getRol()).isEqualTo(RolComunidad.ALUMNO);
         assertThat(nuevo.getRol()).isEqualTo(RolComunidad.ADMIN);
         assertThat(result.getRol()).isEqualTo(RolComunidad.ADMIN);
     }
 
-        @Test
-        void addAdminShouldFailWhenCommunityIsNotCorporate() {
-                Long adminId = 1L;
-                Long targetUserId = 2L;
-                Long communityId = 10L;
+    @Test
+    void addAdminShouldFailWhenCommunityIsNotCorporate() {
+        Long adminId = 1L;
+        Long targetUserId = 2L;
+        Long communityId = 10L;
 
-                when(authorizationService.isAdminOf(adminId, communityId)).thenReturn(true);
-                when(communityService.isCommunityCorporate(communityId)).thenReturn(false);
+        when(authorizationService.isAdminOf(adminId, communityId)).thenReturn(true);
+        when(communityService.isCommunityCorporate(communityId)).thenReturn(false);
 
-                assertThatThrownBy(() -> memberService.addAdmin(adminId, communityId, targetUserId))
-                                .isInstanceOf(IllegalArgumentException.class)
-                                .hasMessageContaining("comunidades corporativas");
+        assertThatThrownBy(() -> memberService.addAdmin(adminId, communityId, targetUserId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("comunidades corporativas");
 
-                verify(miembroComunidadRepository, never()).save(any(MiembroComunidad.class));
-        }
+        verify(miembroComunidadRepository, never()).save(any(MiembroComunidad.class));
+    }
 
-        @Test
-        void addAdminShouldPromoteMemberWhenCommunityIsCorporate() {
-                Long adminId = 1L;
-                Long targetUserId = 2L;
-                Long communityId = 10L;
+    @Test
+    void addAdminShouldPromoteMemberWhenCommunityIsCorporate() {
+        Long adminId = 1L;
+        Long targetUserId = 2L;
+        Long communityId = 10L;
 
-                MiembroComunidad targetMember = MiembroComunidad.builder().rol(RolComunidad.ALUMNO).build();
+        MiembroComunidad targetMember = MiembroComunidad.builder().rol(RolComunidad.ALUMNO).build();
 
-                when(authorizationService.isAdminOf(adminId, communityId)).thenReturn(true);
-                when(communityService.isCommunityCorporate(communityId)).thenReturn(true);
-                when(miembroComunidadRepository.findByUsuarioIdAndComunidadId(targetUserId, communityId))
-                                .thenReturn(Optional.of(targetMember));
-                when(miembroComunidadRepository.save(any(MiembroComunidad.class)))
-                                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(authorizationService.isAdminOf(adminId, communityId)).thenReturn(true);
+        when(communityService.isCommunityCorporate(communityId)).thenReturn(true);
+        when(miembroComunidadRepository.findByUsuarioIdAndComunidadId(targetUserId, communityId))
+                .thenReturn(Optional.of(targetMember));
+        when(miembroComunidadRepository.save(any(MiembroComunidad.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
-                MiembroComunidad result = memberService.addAdmin(adminId, communityId, targetUserId);
+        MiembroComunidad result = memberService.addAdmin(adminId, communityId, targetUserId);
 
-                assertThat(result.getRol()).isEqualTo(RolComunidad.ADMIN);
-                verify(miembroComunidadRepository).save(targetMember);
-        }
+        assertThat(result.getRol()).isEqualTo(RolComunidad.ADMIN);
+        verify(miembroComunidadRepository).save(targetMember);
+    }
 
     private Usuario buildUsuario(final Long id) {
         Usuario usuario = new Usuario();

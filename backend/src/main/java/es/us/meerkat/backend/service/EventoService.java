@@ -529,9 +529,10 @@ public class EventoService {
         if (incluirCancelados) {
             eventos = eventoRepository.findByComunidadId(comunidadId);
         } else {
+            final LocalDateTime ahora = LocalDateTime.now();
             eventos =
                     eventoRepository.findByComunidadIdAndCanceladoFalseAndFuture(
-                            comunidadId, LocalDateTime.now());
+                            comunidadId, ahora, ahora.minusHours(2), usuarioId);
         }
         return filtrarEventosPrivados(eventos, usuarioId);
     }

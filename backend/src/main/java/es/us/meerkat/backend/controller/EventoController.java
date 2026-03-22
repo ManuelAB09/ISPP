@@ -296,8 +296,7 @@ public class EventoController {
      * @param motivo Motivo de la cancelación.
      * @return El evento cancelado.
      */
-    @PostMapping(
-            "/{eventId}/cancel")
+    @PostMapping("/{eventId}/cancel")
     @Operation(summary = "Cancelar evento", description = "Cancela un evento y registra el motivo")
     public ResponseEntity<EventDetailResponse> cancelarEvento(
             @PathVariable @Parameter(description = "ID del evento") final Long eventId,

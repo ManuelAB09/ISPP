@@ -50,8 +50,7 @@ public class GoogleClassroomService {
     @Value("${google.classroom.redirect-uri}")
     private String redirectUri;
 
-    public static record OAuthCtx(Long userId, Long communityId, Long requestId) {
-    }
+    public static record OAuthCtx(Long userId, Long communityId, Long requestId) {}
 
     public final Map<String, OAuthCtx> oauthStateStore = new ConcurrentHashMap<>();
     private final SecureRandom secureRandom = new SecureRandom();
@@ -63,14 +62,13 @@ public class GoogleClassroomService {
     }
 
     /**
-     * Genera una URL de autorización de Google OAuth para Classroom y guarda el
-     * estado para
+     * Genera una URL de autorización de Google OAuth para Classroom y guarda el estado para
      * asociarlo al usuario cuando Google llame al callback.
      *
-     * @param userId      id del usuario local
+     * @param userId id del usuario local
      * @param communityId id de comunidad opcional
-     * @param requestId   id de request opcional
-     * @param management  si true, genera la URL para scopes de gestión
+     * @param requestId id de request opcional
+     * @param management si true, genera la URL para scopes de gestión
      * @return URL completa de autorización
      */
     public String buildAuthorizeUrlForUser(
@@ -86,46 +84,48 @@ public class GoogleClassroomService {
         String url;
         if (management) {
             String[] scopes = {
-                    "https://www.googleapis.com/auth/classroom.profile.emails",
-                    "https://www.googleapis.com/auth/classroom.profile.photos",
-                    "https://www.googleapis.com/auth/classroom.rosters"
+                "https://www.googleapis.com/auth/classroom.profile.emails",
+                "https://www.googleapis.com/auth/classroom.profile.photos",
+                "https://www.googleapis.com/auth/classroom.rosters"
             };
             scope = URLEncoder.encode(String.join(" ", scopes), StandardCharsets.UTF_8);
 
-            url = "https://accounts.google.com/o/oauth2/v2/auth"
-                    + "?client_id="
-                    + clientId
-                    + "&redirect_uri="
-                    + URLEncoder.encode(redirectUri, StandardCharsets.UTF_8)
-                    + "&response_type=code"
-                    + "&scope="
-                    + scope
-                    + "&access_type=offline"
-                    + "&prompt=consent"
-                    + "&state="
-                    + URLEncoder.encode(state, StandardCharsets.UTF_8);
+            url =
+                    "https://accounts.google.com/o/oauth2/v2/auth"
+                            + "?client_id="
+                            + clientId
+                            + "&redirect_uri="
+                            + URLEncoder.encode(redirectUri, StandardCharsets.UTF_8)
+                            + "&response_type=code"
+                            + "&scope="
+                            + scope
+                            + "&access_type=offline"
+                            + "&prompt=consent"
+                            + "&state="
+                            + URLEncoder.encode(state, StandardCharsets.UTF_8);
 
         } else {
             String[] commonScopes = {
-                    "https://www.googleapis.com/auth/classroom.courses.readonly",
-                    "https://www.googleapis.com/auth/classroom.coursework.me.readonly",
-                    "https://www.googleapis.com/auth/classroom.coursework.students.readonly",
-                    "https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly"
+                "https://www.googleapis.com/auth/classroom.courses.readonly",
+                "https://www.googleapis.com/auth/classroom.coursework.me.readonly",
+                "https://www.googleapis.com/auth/classroom.coursework.students.readonly",
+                "https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly"
             };
             scope = URLEncoder.encode(String.join(" ", commonScopes), StandardCharsets.UTF_8);
 
-            url = "https://accounts.google.com/o/oauth2/v2/auth"
-                    + "?client_id="
-                    + clientId
-                    + "&redirect_uri="
-                    + URLEncoder.encode(redirectUri, StandardCharsets.UTF_8)
-                    + "&response_type=code"
-                    + "&scope="
-                    + scope
-                    + "&access_type=offline"
-                    + "&prompt=consent"
-                    + "&state="
-                    + URLEncoder.encode(state, StandardCharsets.UTF_8);
+            url =
+                    "https://accounts.google.com/o/oauth2/v2/auth"
+                            + "?client_id="
+                            + clientId
+                            + "&redirect_uri="
+                            + URLEncoder.encode(redirectUri, StandardCharsets.UTF_8)
+                            + "&response_type=code"
+                            + "&scope="
+                            + scope
+                            + "&access_type=offline"
+                            + "&prompt=consent"
+                            + "&state="
+                            + URLEncoder.encode(state, StandardCharsets.UTF_8);
         }
 
         return url;
@@ -141,9 +141,10 @@ public class GoogleClassroomService {
 
         Instant expiresAt = Instant.now().plusSeconds(expiresInSeconds);
 
-        GoogleClassroomConnection connection = connectionRepository
-                .findByUsuario(usuario)
-                .orElse(GoogleClassroomConnection.builder().usuario(usuario).build());
+        GoogleClassroomConnection connection =
+                connectionRepository
+                        .findByUsuario(usuario)
+                        .orElse(GoogleClassroomConnection.builder().usuario(usuario).build());
 
         connection.setAccessToken(accessToken);
         if (refreshToken != null && !refreshToken.isEmpty()) {
@@ -157,11 +158,13 @@ public class GoogleClassroomService {
 
     /** Devuelve el access token válido del usuario. */
     public String getAccessTokenValido(Usuario usuario) {
-        GoogleClassroomConnection connection = connectionRepository
-                .findByUsuario(usuario)
-                .orElseThrow(
-                        () -> new RuntimeException(
-                                "Conexión de Google Classroom no encontrada"));
+        GoogleClassroomConnection connection =
+                connectionRepository
+                        .findByUsuario(usuario)
+                        .orElseThrow(
+                                () ->
+                                        new RuntimeException(
+                                                "Conexión de Google Classroom no encontrada"));
 
         if (connection.estaExpirado()) {
             refrescarAccessToken(connection);
@@ -170,7 +173,7 @@ public class GoogleClassroomService {
     }
 
     /** Refresca el access token usando el refresh token. */
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void refrescarAccessToken(GoogleClassroomConnection connection) {
         String tokenUrl = "https://oauth2.googleapis.com/token";
 
@@ -207,14 +210,16 @@ public class GoogleClassroomService {
 
     /** Vincula un curso de Google Classroom a una comunidad. */
     public ComunidadClassroom vincularCurso(Long comunidadId, String courseId, String courseName) {
-        Comunidad comunidad = comunidadRepository
-                .findById(comunidadId)
-                .orElseThrow(() -> new RuntimeException("Comunidad no encontrada"));
+        Comunidad comunidad =
+                comunidadRepository
+                        .findById(comunidadId)
+                        .orElseThrow(() -> new RuntimeException("Comunidad no encontrada"));
 
         // Si ya existe una vinculación, la actualizamos
-        ComunidadClassroom cc = comunidadClassroomRepository
-                .findByComunidad(comunidad)
-                .orElse(ComunidadClassroom.builder().comunidad(comunidad).build());
+        ComunidadClassroom cc =
+                comunidadClassroomRepository
+                        .findByComunidad(comunidad)
+                        .orElse(ComunidadClassroom.builder().comunidad(comunidad).build());
 
         cc.setClassroomCourseId(courseId);
         cc.setClassroomCourseName(courseName);
@@ -226,11 +231,13 @@ public class GoogleClassroomService {
     /** Desvincula el curso de Google Classroom de una comunidad. */
     @Transactional
     public void desvincularCurso(Long comunidadId) {
-        ComunidadClassroom cc = comunidadClassroomRepository
-                .findByComunidadId(comunidadId)
-                .orElseThrow(
-                        () -> new RuntimeException(
-                                "No hay curso vinculado a esta comunidad"));
+        ComunidadClassroom cc =
+                comunidadClassroomRepository
+                        .findByComunidadId(comunidadId)
+                        .orElseThrow(
+                                () ->
+                                        new RuntimeException(
+                                                "No hay curso vinculado a esta comunidad"));
         comunidadClassroomRepository.delete(cc);
     }
 
@@ -242,18 +249,18 @@ public class GoogleClassroomService {
     /**
      * Lista archivos/materiales del curso vinculado a la comunidad.
      *
-     * @param usuario     Usuario que realizará la petición (debe tener conexión
-     *                    OAuth activa)
+     * @param usuario Usuario que realizará la petición (debe tener conexión OAuth activa)
      * @param comunidadId ID de la comunidad
-     * @return Map con claves "materials" y "courseWork" con la información obtenida
-     *         de Classroom
+     * @return Map con claves "materials" y "courseWork" con la información obtenida de Classroom
      */
     public Map<String, Object> listarArchivosCursoVinculado(Usuario usuario, Long comunidadId) {
-        ComunidadClassroom vinculacion = comunidadClassroomRepository
-                .findByComunidadId(comunidadId)
-                .orElseThrow(
-                        () -> new RuntimeException(
-                                "No hay curso vinculado a la comunidad"));
+        ComunidadClassroom vinculacion =
+                comunidadClassroomRepository
+                        .findByComunidadId(comunidadId)
+                        .orElseThrow(
+                                () ->
+                                        new RuntimeException(
+                                                "No hay curso vinculado a la comunidad"));
 
         String courseId = vinculacion.getClassroomCourseId();
 
@@ -263,11 +270,15 @@ public class GoogleClassroomService {
         headers.setBearerAuth(accessToken);
         HttpEntity<Void> req = new HttpEntity<>(headers);
 
-        String materialsUrl = "https://classroom.googleapis.com/v1/courses/" + courseId + "/courseWorkMaterials";
-        String courseworkUrl = "https://classroom.googleapis.com/v1/courses/" + courseId + "/courseWork";
+        String materialsUrl =
+                "https://classroom.googleapis.com/v1/courses/" + courseId + "/courseWorkMaterials";
+        String courseworkUrl =
+                "https://classroom.googleapis.com/v1/courses/" + courseId + "/courseWork";
 
-        ResponseEntity<String> matResp = restTemplate.exchange(materialsUrl, HttpMethod.GET, req, String.class);
-        ResponseEntity<String> workResp = restTemplate.exchange(courseworkUrl, HttpMethod.GET, req, String.class);
+        ResponseEntity<String> matResp =
+                restTemplate.exchange(materialsUrl, HttpMethod.GET, req, String.class);
+        ResponseEntity<String> workResp =
+                restTemplate.exchange(courseworkUrl, HttpMethod.GET, req, String.class);
 
         try {
             Map<String, Object> result = new java.util.HashMap<>();
@@ -291,18 +302,18 @@ public class GoogleClassroomService {
     }
 
     /**
-     * Obtiene estadísticas básicas de los alumnos del curso vinculado a la
-     * comunidad. Retorna un
-     * Map con claves como "studentCount" y "students" (lista cruda devuelta por
-     * Classroom).
+     * Obtiene estadísticas básicas de los alumnos del curso vinculado a la comunidad. Retorna un
+     * Map con claves como "studentCount" y "students" (lista cruda devuelta por Classroom).
      */
     @SuppressWarnings("rawtypes")
     public Map<String, Object> obtenerEstadisticasAlumnos(Usuario usuario, Long comunidadId) {
-        ComunidadClassroom vinculacion = comunidadClassroomRepository
-                .findByComunidadId(comunidadId)
-                .orElseThrow(
-                        () -> new RuntimeException(
-                                "No hay curso vinculado a la comunidad"));
+        ComunidadClassroom vinculacion =
+                comunidadClassroomRepository
+                        .findByComunidadId(comunidadId)
+                        .orElseThrow(
+                                () ->
+                                        new RuntimeException(
+                                                "No hay curso vinculado a la comunidad"));
 
         String courseId = vinculacion.getClassroomCourseId();
 
@@ -312,18 +323,21 @@ public class GoogleClassroomService {
         headers.setBearerAuth(accessToken);
         HttpEntity<Void> req = new HttpEntity<>(headers);
 
-        String studentsUrl = "https://classroom.googleapis.com/v1/courses/" + courseId + "/students";
+        String studentsUrl =
+                "https://classroom.googleapis.com/v1/courses/" + courseId + "/students";
 
-        ResponseEntity<String> studentsResp = restTemplate.exchange(studentsUrl, HttpMethod.GET, req, String.class);
+        ResponseEntity<String> studentsResp =
+                restTemplate.exchange(studentsUrl, HttpMethod.GET, req, String.class);
 
         try {
             Map<String, Object> result = new java.util.HashMap<>();
 
             if (studentsResp.getStatusCode().is2xxSuccessful() && studentsResp.getBody() != null) {
                 Map parsed = objectMapper.readValue(studentsResp.getBody(), Map.class);
-                java.util.List students = parsed.containsKey("students")
-                        ? (java.util.List) parsed.get("students")
-                        : java.util.List.of();
+                java.util.List students =
+                        parsed.containsKey("students")
+                                ? (java.util.List) parsed.get("students")
+                                : java.util.List.of();
                 result.put("studentCount", students.size());
                 result.put("students", students);
             } else {
@@ -344,11 +358,9 @@ public class GoogleClassroomService {
     /**
      * Crea un estudiante en un curso de Google Classroom.
      *
-     * @param usuario     Usuario que realiza la acción (debe tener OAuth
-     *                    autorizado)
-     * @param courseId    ID del curso en Google Classroom
-     * @param studentData Datos del estudiante (JSON con userId, enrollmentCode,
-     *                    etc.)
+     * @param usuario Usuario que realiza la acción (debe tener OAuth autorizado)
+     * @param courseId ID del curso en Google Classroom
+     * @param studentData Datos del estudiante (JSON con userId, enrollmentCode, etc.)
      * @return Respuesta de Google Classroom con los datos del estudiante creado
      */
     public ClassroomUserResponse crearEstudiante(
@@ -363,7 +375,8 @@ public class GoogleClassroomService {
 
         HttpEntity<String> request = new HttpEntity<>(studentData, headers);
 
-        ResponseEntity<String> response = restTemplate.postForEntity(studentUrl, request, String.class);
+        ResponseEntity<String> response =
+                restTemplate.postForEntity(studentUrl, request, String.class);
 
         if (!response.getStatusCode().is2xxSuccessful()) {
             throw new RuntimeException(
@@ -383,9 +396,8 @@ public class GoogleClassroomService {
     /**
      * Crea un profesor en un curso de Google Classroom.
      *
-     * @param usuario     Usuario que realiza la acción (debe tener OAuth
-     *                    autorizado)
-     * @param courseId    ID del curso en Google Classroom
+     * @param usuario Usuario que realiza la acción (debe tener OAuth autorizado)
+     * @param courseId ID del curso en Google Classroom
      * @param teacherData Datos del profesor (JSON con userId, etc.)
      * @return Respuesta de Google Classroom con los datos del profesor creado
      */
@@ -401,7 +413,8 @@ public class GoogleClassroomService {
 
         HttpEntity<String> request = new HttpEntity<>(teacherData, headers);
 
-        ResponseEntity<String> response = restTemplate.postForEntity(teacherUrl, request, String.class);
+        ResponseEntity<String> response =
+                restTemplate.postForEntity(teacherUrl, request, String.class);
 
         if (!response.getStatusCode().is2xxSuccessful()) {
             throw new RuntimeException(
@@ -421,24 +434,26 @@ public class GoogleClassroomService {
     /**
      * Elimina un estudiante de un curso de Google Classroom.
      *
-     * @param usuario  Usuario que realiza la acción (debe tener OAuth autorizado)
+     * @param usuario Usuario que realiza la acción (debe tener OAuth autorizado)
      * @param courseId ID del curso en Google Classroom
-     * @param userId   Email o ID del usuario a eliminar
+     * @param userId Email o ID del usuario a eliminar
      */
     public void eliminarEstudiante(Usuario usuario, String courseId, String userId) {
         String accessToken = getAccessTokenValido(usuario);
 
-        String studentUrl = "https://classroom.googleapis.com/v1/courses/"
-                + courseId
-                + "/students/"
-                + URLEncoder.encode(userId, java.nio.charset.StandardCharsets.UTF_8);
+        String studentUrl =
+                "https://classroom.googleapis.com/v1/courses/"
+                        + courseId
+                        + "/students/"
+                        + URLEncoder.encode(userId, java.nio.charset.StandardCharsets.UTF_8);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
 
         HttpEntity<Void> request = new HttpEntity<>(headers);
 
-        ResponseEntity<Void> response = restTemplate.exchange(studentUrl, HttpMethod.DELETE, request, Void.class);
+        ResponseEntity<Void> response =
+                restTemplate.exchange(studentUrl, HttpMethod.DELETE, request, Void.class);
 
         if (!response.getStatusCode().is2xxSuccessful()) {
             throw new RuntimeException("Error al eliminar estudiante: " + response.getStatusCode());
@@ -448,24 +463,26 @@ public class GoogleClassroomService {
     /**
      * Elimina un profesor de un curso de Google Classroom.
      *
-     * @param usuario  Usuario que realiza la acción (debe tener OAuth autorizado)
+     * @param usuario Usuario que realiza la acción (debe tener OAuth autorizado)
      * @param courseId ID del curso en Google Classroom
-     * @param userId   Email o ID del usuario a eliminar
+     * @param userId Email o ID del usuario a eliminar
      */
     public void eliminarProfesor(Usuario usuario, String courseId, String userId) {
         String accessToken = getAccessTokenValido(usuario);
 
-        String teacherUrl = "https://classroom.googleapis.com/v1/courses/"
-                + courseId
-                + "/teachers/"
-                + URLEncoder.encode(userId, java.nio.charset.StandardCharsets.UTF_8);
+        String teacherUrl =
+                "https://classroom.googleapis.com/v1/courses/"
+                        + courseId
+                        + "/teachers/"
+                        + URLEncoder.encode(userId, java.nio.charset.StandardCharsets.UTF_8);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
 
         HttpEntity<Void> request = new HttpEntity<>(headers);
 
-        ResponseEntity<Void> response = restTemplate.exchange(teacherUrl, HttpMethod.DELETE, request, Void.class);
+        ResponseEntity<Void> response =
+                restTemplate.exchange(teacherUrl, HttpMethod.DELETE, request, Void.class);
 
         if (!response.getStatusCode().is2xxSuccessful()) {
             throw new RuntimeException("Error al eliminar profesor: " + response.getStatusCode());
