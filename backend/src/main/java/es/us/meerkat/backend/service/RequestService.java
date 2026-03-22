@@ -100,21 +100,31 @@ public class RequestService {
             return;
         }
 
+        final PreferenciasNotificacion preferenciasDueno;
         try {
-            final PreferenciasNotificacion preferenciasDueno =
-                    preferenciasNotificacionService.getOrCreate(dueno.getId());
-            final boolean tieneActivaCategoria =
-                    Boolean.TRUE.equals(preferenciasDueno.getNotificarSolicitudAcceso());
+            preferenciasDueno = preferenciasNotificacionService.getOrCreate(dueno.getId());
+        } catch (Exception e) {
+            log.warn(
+                    "No se pudo cargar preferencias para notificar solicitud de acceso de"
+                            + " comunidad {} al dueño {}: {}",
+                    comunidad.getId(),
+                    dueno.getId(),
+                    e.getMessage());
+            return;
+        }
 
-            if (!tieneActivaCategoria) {
-                return;
-            }
+        final boolean tieneActivaCategoria =
+                Boolean.TRUE.equals(preferenciasDueno.getNotificarSolicitudAcceso());
+        if (!tieneActivaCategoria) {
+            return;
+        }
 
-            final String nombreSolicitante =
-                    solicitante != null && solicitante.getNombre() != null
-                            ? solicitante.getNombre()
-                            : "Un usuario";
+        final String nombreSolicitante =
+                solicitante != null && solicitante.getNombre() != null
+                        ? solicitante.getNombre()
+                        : "Un usuario";
 
+        try {
             Notificacion notificacion =
                     Notificacion.builder()
                             .usuario(dueno)
@@ -131,17 +141,26 @@ public class RequestService {
                             .comunidadImagenUrl(comunidad.getImagenUrl())
                             .build();
             notificacionService.crearYNotificar(notificacion);
+        } catch (Exception e) {
+            log.warn(
+                    "No se pudo crear notificación in-app de solicitud de acceso de comunidad"
+                            + " {} al dueño {}: {}",
+                    comunidad.getId(),
+                    dueno.getId(),
+                    e.getMessage());
+        }
 
-            final boolean puedeRecibirEmail =
-                    Boolean.TRUE.equals(preferenciasDueno.getEmailsActivados());
-            if (!puedeRecibirEmail) {
-                return;
-            }
+        final boolean puedeRecibirEmail =
+                Boolean.TRUE.equals(preferenciasDueno.getEmailsActivados());
+        if (!puedeRecibirEmail) {
+            return;
+        }
 
+        try {
             emailService.sendCommunityAccessRequestEmail(dueno, comunidad, solicitante, mensaje);
         } catch (Exception e) {
             log.warn(
-                    "No se pudo notificar nueva solicitud de acceso de comunidad {} al dueño {}:"
+                    "No se pudo enviar email de solicitud de acceso de comunidad {} al dueño {}:"
                             + " {}",
                     comunidad.getId(),
                     dueno.getId(),
