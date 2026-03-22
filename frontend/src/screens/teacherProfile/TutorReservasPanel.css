@@ -234,6 +234,7 @@
 
 .trp-dialog__input:focus { border-color: #6366f1; }
 
+
 .trp-dialog__footer {
     display: flex;
     justify-content: flex-end;

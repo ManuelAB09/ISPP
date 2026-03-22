@@ -83,4 +83,23 @@ public interface ReservaClaseRepository extends JpaRepository<ReservaClase, Long
     /** Obtiene reservas de un alumno con estado específico. */
     Page<ReservaClase> findByAlumnoIdAndEstado(
             Long alumnoId, EstadoReserva estado, Pageable pageable);
+
+    /** Obtiene reservas activas de un tutor en un día concreto (para mostrar horarios ocupados). */
+    @Query(
+            """
+            SELECT r FROM ReservaClase r
+            WHERE r.tutor.id = :tutorId
+            AND r.estado NOT IN (
+                es.us.meerkat.backend.entity.EstadoReserva.CANCELADA_ALUMNO,
+                es.us.meerkat.backend.entity.EstadoReserva.CANCELADA_TUTOR,
+                es.us.meerkat.backend.entity.EstadoReserva.NO_ASISTIDA
+            )
+            AND r.fechaHora >= :inicioDia
+            AND r.fechaHora < :finDia
+            ORDER BY r.fechaHora ASC
+            """)
+    List<ReservaClase> findReservasByTutorAndDate(
+            @Param("tutorId") Long tutorId,
+            @Param("inicioDia") LocalDateTime inicioDia,
+            @Param("finDia") LocalDateTime finDia);
 }

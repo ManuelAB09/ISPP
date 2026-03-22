@@ -1,6 +1,8 @@
 package es.us.meerkat.backend.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.dto.CalificarReservaRequest;
 import es.us.meerkat.backend.dto.CreateReservaClaseRequest;
+import es.us.meerkat.backend.dto.HorarioOcupadoResponse;
 import es.us.meerkat.backend.dto.PaymentUrlResponse;
 import es.us.meerkat.backend.dto.ReservaClaseDetailResponse;
 import es.us.meerkat.backend.entity.EstadoReserva;
@@ -267,6 +270,23 @@ public class ReservaClaseService {
         return mapToResponse(reserva);
     }
 
+    /** Devuelve las franjas horarias ocupadas de un tutor en un día concreto. */
+    @Transactional(readOnly = true)
+    public List<HorarioOcupadoResponse> getHorariosOcupados(Long tutorId, LocalDate fecha) {
+        LocalDateTime inicioDia = fecha.atStartOfDay();
+        LocalDateTime finDia = fecha.plusDays(1).atStartOfDay();
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("HH:mm");
+        return reservaRepository.findReservasByTutorAndDate(tutorId, inicioDia, finDia).stream()
+                .map(
+                        r ->
+                                new HorarioOcupadoResponse(
+                                        r.getFechaHora().format(fmt),
+                                        r.getFechaHora()
+                                                .plusMinutes(r.getDuracionMinutos())
+                                                .format(fmt)))
+                .collect(Collectors.toList());
+    }
+
     /** Obtiene próximas reservas de un tutor. */
     @Transactional(readOnly = true)
     public List<ReservaClaseDetailResponse> getProximasReservasTutor(
@@ -366,8 +386,16 @@ public class ReservaClaseService {
                                                     "dd/MM/yyyy HH:mm"))
                             + ".\n\n"
                             + (reserva.getModalidad().equals("VIRTUAL")
-                                    ? "Enlace de la clase: " + reserva.getEnlaceVirtual() + "\n\n"
-                                    : "Ubicación: " + reserva.getUbicacion() + "\n\n")
+                                    ? "Enlace de la clase: "
+                                            + (reserva.getEnlaceVirtual() != null
+                                                    ? reserva.getEnlaceVirtual()
+                                                    : "El tutor te enviará el enlace próximamente.")
+                                            + "\n\n"
+                                    : "Ubicación: "
+                                            + (reserva.getUbicacion() != null
+                                                    ? reserva.getUbicacion()
+                                                    : "Por confirmar con el tutor.")
+                                            + "\n\n")
                             + "Saludos,\nEl equipo de MeerKatters");
             mailSender.send(message);
         } catch (Exception e) {
@@ -378,6 +406,10 @@ public class ReservaClaseService {
     private void enviarEmailCancelacionReserva(
             Usuario destinatario, ReservaClase reserva, String quienCancelo) {
         try {
+            String nombreQuienCancelo =
+                    quienCancelo.equals("tutor")
+                            ? reserva.getTutor().getUsuario().getNombre()
+                            : reserva.getAlumno().getNombre();
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(destinatario.getEmail());
             message.setSubject(
@@ -393,7 +425,7 @@ public class ReservaClaseService {
                             + "La clase sobre "
                             + reserva.getTema()
                             + " ha sido cancelada por "
-                            + quienCancelo
+                            + nombreQuienCancelo
                             + ".\n\n"
                             + (reserva.getMotivoCancelacion() != null
                                     ? "Motivo: " + reserva.getMotivoCancelacion() + "\n\n"

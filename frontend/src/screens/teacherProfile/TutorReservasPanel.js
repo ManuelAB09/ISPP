@@ -92,7 +92,7 @@ const TutorReservasPanel = ({ tutorId }) => {
             await confirmarReserva(reservaId);
             cargar();
         } catch (err) {
-            setError(err?.response?.data?.message || err?.message || "Error al confirmar.");
+            setError(err?.message || "Error al confirmar.");
         } finally {
             setActionLoading(null);
         }
@@ -106,7 +106,7 @@ const TutorReservasPanel = ({ tutorId }) => {
             setCancelTarget(null);
             cargar();
         } catch (err) {
-            setError(err?.response?.data?.message || err?.message || "Error al cancelar.");
+            setError(err?.message || "Error al cancelar.");
         } finally {
             setActionLoading(null);
         }
@@ -178,7 +178,7 @@ const TutorReservasPanel = ({ tutorId }) => {
                                 <div className="trp-card__actions">
                                     <button
                                         className="trp-btn trp-btn--confirm"
-                                        disabled={actionLoading === r.id + "_confirm"}
+                                        disabled={!!actionLoading}
                                         onClick={() => handleConfirmar(r.id)}
                                     >
                                         {actionLoading === r.id + "_confirm" ? "Confirmando…" : "Confirmar"}

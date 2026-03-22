@@ -71,6 +71,15 @@ export const getDisponibilidadTutor = (tutorId) =>
     apiClient.get(`/api/v1/tutors/${tutorId}/disponibilidad`);
 
 /**
+ * GET /api/v1/tutors/{tutorId}/horarios-ocupados
+ * Franjas ya reservadas (PENDIENTE/CONFIRMADA) en una fecha.
+ * @param {number|string} tutorId
+ * @param {string} fecha  YYYY-MM-DD
+ */
+export const getHorariosOcupados = (tutorId, fecha) =>
+    apiClient.get(`/api/v1/tutors/${tutorId}/horarios-ocupados?fecha=${encodeURIComponent(fecha)}`);
+
+/**
  * GET /api/v1/tutors/{tutorId}/disponibilidad-fecha
  * Disponibilidad del tutor para una fecha concreta.
  * @param {number|string} tutorId

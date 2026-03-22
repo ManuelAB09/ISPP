@@ -15,6 +15,7 @@ import es.us.meerkat.backend.dto.CalificarReservaRequest;
 import es.us.meerkat.backend.dto.CreateDisponibilidadRequest;
 import es.us.meerkat.backend.dto.CreateReservaClaseRequest;
 import es.us.meerkat.backend.dto.DisponibilidadTutorResponse;
+import es.us.meerkat.backend.dto.HorarioOcupadoResponse;
 import es.us.meerkat.backend.dto.PaymentUrlResponse;
 import es.us.meerkat.backend.dto.ReservaClaseDetailResponse;
 import es.us.meerkat.backend.entity.Usuario;
@@ -122,6 +123,24 @@ public class ReservaClaseController {
         List<DisponibilidadTutorResponse> disponibilidades =
                 disponibilidadService.getDisponibilidadesPorFecha(tutorId, fechaParsed);
         return ResponseEntity.ok(disponibilidades);
+    }
+
+    @GetMapping("/tutors/{tutorId}/horarios-ocupados")
+    @Operation(
+            summary = "Horarios ocupados de un tutor en una fecha",
+            description =
+                    "Devuelve las franjas ya reservadas (PENDIENTE/CONFIRMADA) para bloquearlas en"
+                            + " el selector")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Lista de franjas ocupadas"),
+        @ApiResponse(responseCode = "404", description = "Tutor no encontrado")
+    })
+    public ResponseEntity<List<HorarioOcupadoResponse>> getHorariosOcupados(
+            @Parameter(description = "ID del tutor") @PathVariable Long tutorId,
+            @Parameter(description = "Fecha (YYYY-MM-DD)") @RequestParam String fecha) {
+
+        LocalDate fechaParsed = LocalDate.parse(fecha);
+        return ResponseEntity.ok(reservaService.getHorariosOcupados(tutorId, fechaParsed));
     }
 
     @PutMapping("/disponibilidad/{disponibilidadId}")

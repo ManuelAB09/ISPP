@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
     crearReserva,
     getDisponibilidadTutorFecha,
+    getHorariosOcupados,
 } from "../../api/reservas.api";
 import "./BookClassModal.css";
 
@@ -25,6 +26,7 @@ const BookClassModal = ({ tutor, onClose }) => {
     const [fecha, setFecha] = useState("");
     const [hora, setHora] = useState("");
     const [franjas, setFranjas] = useState([]);
+    const [ocupados, setOcupados] = useState([]);
     const [cargandoFranjas, setCargandoFranjas] = useState(false);
     const [franjaSeleccionada, setFranjaSeleccionada] = useState(null);
 
@@ -46,19 +48,47 @@ const BookClassModal = ({ tutor, onClose }) => {
     useEffect(() => {
         if (!fecha) {
             setFranjas([]);
+            setOcupados([]);
             return;
         }
         setCargandoFranjas(true);
         setFranjaSeleccionada(null);
         setHora("");
-        getDisponibilidadTutorFecha(tutor.id, fecha)
-            .then((data) => {
-                const lista = Array.isArray(data) ? data : data?.content ?? [];
-                setFranjas(lista.filter((f) => f.activa !== false));
-            })
-            .catch(() => setFranjas([]))
-            .finally(() => setCargandoFranjas(false));
+        Promise.all([
+            getDisponibilidadTutorFecha(tutor.id, fecha).catch(() => []),
+            getHorariosOcupados(tutor.id, fecha).catch(() => []),
+        ]).then(([dispData, ocupData]) => {
+            const lista = Array.isArray(dispData) ? dispData : dispData?.content ?? [];
+            setFranjas(lista.filter((f) => f.activa !== false));
+            setOcupados(Array.isArray(ocupData) ? ocupData : []);
+        }).finally(() => setCargandoFranjas(false));
     }, [fecha, tutor.id]);
+
+    const toMinutes = (hhmm) => {
+        const [h, m] = (hhmm || "00:00").split(":").map(Number);
+        return h * 60 + (m || 0);
+    };
+
+    const horaEsOcupada = (h) => {
+        if (!h || ocupados.length === 0) return false;
+        const hMin = toMinutes(h);
+        return ocupados.some((o) => {
+            const oStart = toMinutes(o.horaInicio);
+            const oEnd = toMinutes(o.horaFin);
+            return hMin >= oStart && hMin < oEnd;
+        });
+    };
+
+    const franjaEsOcupada = (franja) => {
+        if (ocupados.length === 0) return false;
+        const fStart = toMinutes(franja.horaInicio);
+        const fEnd = toMinutes(franja.horaFin);
+        return ocupados.some((o) => {
+            const oStart = toMinutes(o.horaInicio);
+            const oEnd = toMinutes(o.horaFin);
+            return fStart < oEnd && fEnd > oStart;
+        });
+    };
 
     const horaFinal = franjaSeleccionada ? franjaSeleccionada.horaInicio : hora;
 
@@ -95,7 +125,11 @@ const BookClassModal = ({ tutor, onClose }) => {
 
             const res = await crearReserva(tutor.id, payload);
 
-            if (res?.paymentUrl) {
+            // El backend devuelve sessionId real de Stripe (cs_test_xxx o cs_live_xxx)
+            // o simulado ("session_<id>"). Solo redirigir si es una sesión real.
+            const isRealStripeSession = res?.sessionId &&
+                (res.sessionId.startsWith("cs_test_") || res.sessionId.startsWith("cs_live_"));
+            if (isRealStripeSession && res.paymentUrl) {
                 window.location.href = res.paymentUrl;
             } else {
                 setPaso(3);
@@ -167,16 +201,21 @@ const BookClassModal = ({ tutor, onClose }) => {
                                     <div className="bcm-field">
                                         <label className="bcm-label">Franjas disponibles</label>
                                         <div className="bcm-slots">
-                                            {franjas.map((f) => (
-                                                <button
-                                                    key={f.id}
-                                                    className={`bcm-slot ${franjaSeleccionada?.id === f.id ? "bcm-slot--selected" : ""}`}
-                                                    onClick={() => { setFranjaSeleccionada(f); setHora(""); }}
-                                                >
-                                                    {f.horaInicio} – {f.horaFin}
-                                                    {f.modalidad && <span className="bcm-slot__mode"> ({f.modalidad})</span>}
-                                                </button>
-                                            ))}
+                                            {franjas.map((f) => {
+                                                const ocupada = franjaEsOcupada(f);
+                                                return (
+                                                    <button
+                                                        key={f.id}
+                                                        className={`bcm-slot ${franjaSeleccionada?.id === f.id ? "bcm-slot--selected" : ""} ${ocupada ? "bcm-slot--ocupada" : ""}`}
+                                                        disabled={ocupada}
+                                                        onClick={() => { setFranjaSeleccionada(f); setHora(""); }}
+                                                    >
+                                                        {f.horaInicio} – {f.horaFin}
+                                                        {f.modalidad && <span className="bcm-slot__mode"> ({f.modalidad})</span>}
+                                                        {ocupada && <span className="bcm-slot__tag"> · Ocupado</span>}
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 ) : (
@@ -191,6 +230,11 @@ const BookClassModal = ({ tutor, onClose }) => {
                                             value={hora}
                                             onChange={(e) => { setHora(e.target.value); setFranjaSeleccionada(null); }}
                                         />
+                                        {hora && horaEsOcupada(hora) && (
+                                            <p className="bcm-slot-warning">
+                                                Esta hora ya está reservada. Elige otro horario.
+                                            </p>
+                                        )}
                                     </div>
                                 )}
                             </>
@@ -202,7 +246,7 @@ const BookClassModal = ({ tutor, onClose }) => {
                             </button>
                             <button
                                 className="bcm-btn bcm-btn--primary"
-                                disabled={!fecha || (!franjaSeleccionada && !hora)}
+                                disabled={!fecha || (!franjaSeleccionada && !hora) || (hora && horaEsOcupada(hora))}
                                 onClick={() => setPaso(2)}
                             >
                                 Continuar →
