@@ -82,7 +82,11 @@ export default function PlansScreen() {
   const [showCheckout, setShowCheckout] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const isPremium = myPlan?.activa && myPlan?.plan === "PREMIUM";
+  const currentPlanType = myPlan?.activa
+    ? getPlanType({ tipo: myPlan?.plan, nombre: myPlan?.plan })
+    : "GRATUITO";
+  const isPremium = currentPlanType === "PREMIUM";
+  const isPro = currentPlanType === "PRO";
   const hasInstitutionPlan = myPlan?.planCorporativoActivo && myPlan?.institutionNombre;
 
   useEffect(() => {
@@ -234,8 +238,8 @@ export default function PlansScreen() {
         <main className="plansContent">
           <section className="plansSection">
             <div className="sectionHead">
-              <h2>Pásate a Premium</h2>
-              <p>Desbloquea funcionalidades avanzadas y mejora tu experiencia en MeerKatters.</p>
+              <h2>Elige tu plan individual</h2>
+              <p>Escala de Gratuito a Premium o Pro según la capacidad que necesites.</p>
             </div>
 
             {error && <div className="plansError">⚠️ {error}</div>}
@@ -308,19 +312,30 @@ export default function PlansScreen() {
                       ) : isPremiumPlan ? (
                         <button
                           className="btn btn--primary"
-                          disabled={isPremium || hasInstitutionPlan || submitting}
-                          onClick={() => navigate("/planes/pasarela")}
+                          disabled={isPremium || isPro || hasInstitutionPlan || submitting}
+                          onClick={() => navigate("/planes/pasarela?plan=PREMIUM")}
                           title={hasInstitutionPlan ? "No disponible con plan institucional activo" : ""}
                         >
-                          {isPremium ? "Ya eres Premium" : hasInstitutionPlan ? "No disponible" : "Mejorar a Premium"}
+                          {isPremium
+                            ? "Ya eres Premium"
+                            : isPro
+                            ? "Ya tienes Pro"
+                            : hasInstitutionPlan
+                            ? "No disponible"
+                            : "Mejorar a Premium"}
                         </button>
                       ) : isProPlan ? (
-                        <button className="btn btn--muted" disabled title="Plan disponible próximamente">
-                          Próximamente
+                        <button
+                          className="btn btn--primary"
+                          disabled={isPro || hasInstitutionPlan || submitting}
+                          onClick={() => navigate("/planes/pasarela?plan=PRO")}
+                          title={hasInstitutionPlan ? "No disponible con plan institucional activo" : ""}
+                        >
+                          {isPro ? "Ya eres Pro" : hasInstitutionPlan ? "No disponible" : "Mejorar a Pro"}
                         </button>
                       ) : (
                         <button className="btn btn--muted" disabled>
-                          {isPremium ? "Incluido" : "Plan actual"}
+                          {isPremium || isPro ? "Incluido" : "Plan actual"}
                         </button>
                       )}
                     </article>

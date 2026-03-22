@@ -6,7 +6,12 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
@@ -87,10 +92,12 @@ public class SuscripcionController {
         }
 
         try {
+                        TipoPlan planSolicitado = resolvePlan(request.getPlanId());
             PaymentUrlResponse paymentUrl =
-                    paymentService.generarPagoSuscripcion(
-                            usuario, TipoPlan.PREMIUM, request.getPeriodo());
+                                        paymentService.generarPagoSuscripcion(usuario, planSolicitado, request.getPeriodo());
             return ResponseEntity.status(HttpStatus.CREATED).body(paymentUrl);
+                } catch (IllegalArgumentException e) {
+                        return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (StripeException e) {
 
             return ResponseEntity.internalServerError()
@@ -192,8 +199,13 @@ public class SuscripcionController {
                                     .divide(BigDecimal.valueOf(100))
                             : BigDecimal.valueOf(2.99);
 
+            TipoPlan planSolicitado =
+                    resolvePlan(session.getMetadata().getOrDefault("plan", TipoPlan.PREMIUM.name()));
+            String periodo = session.getMetadata().getOrDefault("periodo", "mensual");
+
             log.info("Llamando activarSuscripcionTrasStripe con monto: {}", monto);
-            suscripcionService.activarSuscripcionTrasStripe(usuario.getId(), monto);
+            suscripcionService.activarSuscripcionTrasStripe(
+                    usuario.getId(), monto, periodo, planSolicitado);
             log.info("=== SUSCRIPCION ACTIVADA CORRECTAMENTE ===");
 
             return ResponseEntity.ok(Map.of("mensaje", "Suscripcion activada correctamente"));
@@ -248,7 +260,9 @@ public class SuscripcionController {
             BigDecimal monto =
                     BigDecimal.valueOf(intent.getAmount()).divide(BigDecimal.valueOf(100));
             String periodo = intent.getMetadata().get("periodo");
-            suscripcionService.activarSuscripcionTrasStripe(usuario.getId(), monto, periodo);
+            TipoPlan planSolicitado = resolvePlan(intent.getMetadata().get("plan"));
+            suscripcionService.activarSuscripcionTrasStripe(
+                    usuario.getId(), monto, periodo, planSolicitado);
 
             return ResponseEntity.ok(Map.of("mensaje", "Suscripcion activada correctamente"));
 
@@ -279,13 +293,29 @@ public class SuscripcionController {
         }
 
         try {
+                        TipoPlan planSolicitado = resolvePlan(request.getPlanId());
             Map<String, String> result =
-                    paymentService.crearPaymentIntentSuscripcion(
-                            usuario, TipoPlan.PREMIUM, request.getPeriodo());
+                                        paymentService.crearPaymentIntentSuscripcion(
+                                                        usuario, planSolicitado, request.getPeriodo());
             return ResponseEntity.ok(result);
+                } catch (IllegalArgumentException e) {
+                        return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (StripeException e) {
             return ResponseEntity.internalServerError()
                     .body(Map.of("error", "Error al crear el intent de pago: " + e.getMessage()));
         }
     }
+
+        private TipoPlan resolvePlan(String planId) {
+                String normalized = (planId == null || planId.isBlank()) ? "PREMIUM" : planId.trim().toUpperCase();
+                try {
+                        TipoPlan plan = TipoPlan.valueOf(normalized);
+                        if (plan == TipoPlan.FREE) {
+                                throw new IllegalArgumentException("El plan FREE no es contratable");
+                        }
+                        return plan;
+                } catch (IllegalArgumentException e) {
+                        throw new IllegalArgumentException("Plan no válido: " + planId + ". Usa PREMIUM o PRO");
+                }
+        }
 }

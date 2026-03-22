@@ -186,16 +186,18 @@ public class SuscripcionService {
         return renovada;
     }
 
-    /**
-     * Activa la suscripción PREMIUM tras confirmación de pago por Stripe. Crea la Suscripcion,
-     * registra la TransaccionPago y actualiza el plan del Usuario.
+        /**
+         * Activa la suscripción individual tras confirmación de pago por Stripe. Crea o reactiva la
+         * Suscripcion, registra la TransaccionPago y actualiza el plan del Usuario.
      *
      * @param usuarioId ID del usuario extraído de los metadata de Stripe
      * @param monto monto cobrado (ya convertido de centavos a euros)
      * @param periodo periodo de la suscripción ("mensual" o "anual")
+     * @param plan plan individual contratado (PREMIUM o PRO)
      */
     @Transactional
-    public void activarSuscripcionTrasStripe(Long usuarioId, BigDecimal monto, String periodo) {
+    public void activarSuscripcionTrasStripe(
+            Long usuarioId, BigDecimal monto, String periodo, TipoPlan plan) {
         Usuario usuario =
                 usuarioRepository
                         .findById(usuarioId)
@@ -210,6 +212,9 @@ public class SuscripcionService {
                     "No se puede activar suscripción individual con plan institucional activo");
         }
 
+        TipoPlan planSolicitado =
+                (plan == null || plan == TipoPlan.FREE) ? TipoPlan.PREMIUM : plan;
+
         // 1. Crear o reutilizar suscripción
         Optional<Suscripcion> existente = suscripcionRepository.findByUsuarioId(usuarioId);
         Suscripcion suscripcion;
@@ -218,11 +223,11 @@ public class SuscripcionService {
             // Ya tenía una suscripción anterior (cancelada o expirada): reactivar
             suscripcion = existente.get();
             suscripcion.setPeriodo(periodo != null ? periodo.toUpperCase() : "MENSUAL");
-            suscripcion.renovar();
+                        suscripcion.renovar(planSolicitado);
 
         } else {
             // Primera vez
-            suscripcion = Suscripcion.suscribir(periodo);
+                        suscripcion = Suscripcion.suscribir(periodo, planSolicitado);
             suscripcion.setUsuario(usuario);
         }
         suscripcionRepository.save(suscripcion);
@@ -232,18 +237,24 @@ public class SuscripcionService {
                 usuarioId,
                 TipoTransaccion.SUSCRIPCION,
                 monto,
-                "Suscripción PREMIUM activada vía Stripe",
+                                "Suscripción " + planSolicitado.name() + " activada vía Stripe",
                 null);
 
         // 3. Actualizar plan del usuario
-        usuario.setPlan(TipoPlan.PREMIUM);
+                usuario.setPlan(planSolicitado);
         usuarioRepository.save(usuario);
     }
+
+        /** Compatibilidad: activa suscripción asumiendo plan PREMIUM. */
+        @Transactional
+        public void activarSuscripcionTrasStripe(Long usuarioId, BigDecimal monto, String periodo) {
+                activarSuscripcionTrasStripe(usuarioId, monto, periodo, TipoPlan.PREMIUM);
+        }
 
     /** Sobrecarga sin periodo para compatibilidad con webhooks que no pasan periodo. */
     @Transactional
     public void activarSuscripcionTrasStripe(Long usuarioId, BigDecimal monto) {
-        activarSuscripcionTrasStripe(usuarioId, monto, "MENSUAL");
+                activarSuscripcionTrasStripe(usuarioId, monto, "MENSUAL", TipoPlan.PREMIUM);
     }
 
     /**
@@ -255,6 +266,18 @@ public class SuscripcionService {
      */
     @Transactional
     public void renovarSuscripcionTrasStripe(Long usuarioId, BigDecimal monto) {
+                renovarSuscripcionTrasStripe(usuarioId, monto, TipoPlan.PREMIUM);
+        }
+
+        /**
+         * Renueva la suscripción individual tras cobro recurrente exitoso de Stripe para el plan
+         * indicado.
+         */
+        @Transactional
+        public void renovarSuscripcionTrasStripe(Long usuarioId, BigDecimal monto, TipoPlan plan) {
+                TipoPlan planSolicitado =
+                                (plan == null || plan == TipoPlan.FREE) ? TipoPlan.PREMIUM : plan;
+
         // 1. Renovar suscripción
         Suscripcion suscripcion =
                 suscripcionRepository
@@ -265,15 +288,25 @@ public class SuscripcionService {
                                                 "No se encontró suscripción para renovar. Usuario: "
                                                         + usuarioId));
 
-        suscripcion.renovar();
+        suscripcion.renovar(planSolicitado);
         suscripcionRepository.save(suscripcion);
+
+        Usuario usuario =
+                usuarioRepository
+                        .findById(usuarioId)
+                        .orElseThrow(
+                                () ->
+                                        new IllegalArgumentException(
+                                                "Usuario no encontrado: " + usuarioId));
+        usuario.setPlan(planSolicitado);
+        usuarioRepository.save(usuario);
 
         // 2. Registrar transacción de pago
         paymentService.procesarPagoExitoso(
                 usuarioId,
                 TipoTransaccion.SUSCRIPCION,
                 monto,
-                "Renovación PREMIUM vía Stripe",
+                "Renovación " + planSolicitado.name() + " vía Stripe",
                 null);
     }
 }
