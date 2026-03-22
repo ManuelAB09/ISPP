@@ -218,28 +218,45 @@ const VerifiedTeachers = () => {
   // Estado para stats de valoraciones por tutorId
   const [valoracionesStats, setValoracionesStats] = useState({});
 
-  // Cargar stats de valoraciones para todos los profesores listados
+  // Cargar stats de valoraciones para los profesores listados, con cache en estado
   useEffect(() => {
     const fetchStats = async () => {
-      const statsObj = {};
+      // Obtener los IDs de los profesores actualmente visibles
+      const idsVisibles = profesores
+        .map((tutor) => tutor.id ?? tutor.userId ?? tutor.usuario?.id)
+        .filter((id) => !!id);
+      // Filtrar solo los IDs que aún no tienen stats en cache
+      const idsFaltantes = idsVisibles.filter(
+        (id) => valoracionesStats[id] === undefined
+      );
+      if (idsFaltantes.length === 0) {
+        return;
+      }
+      const nuevosStats = {};
       await Promise.all(
-        profesores.map(async (tutor) => {
+        idsFaltantes.map(async (id) => {
           try {
-            const id = tutor.id ?? tutor.userId ?? tutor.usuario?.id;
-            if (!id) return;
             const res = await getValoracionesStats(id);
             // Espera que la respuesta tenga { media, total }
-            statsObj[id] = res;
+            nuevosStats[id] = res;
           } catch (e) {
             // Si falla, ignora
           }
         })
       );
-      setValoracionesStats(statsObj);
+      if (Object.keys(nuevosStats).length > 0) {
+        setValoracionesStats((prev) => ({
+          ...prev,
+          ...nuevosStats,
+        }));
+      }
     };
-    if (profesores.length > 0) fetchStats();
-  }, [profesores]);
+    if (profesores.length > 0) {
+      fetchStats();
+    }
+  }, [profesores, valoracionesStats]);
 
+  
   // Función para determinar el nivel
   // Badge compacto: solo letra y color igual que badge de distancia
   const getNivelBadge = (media, total) => {

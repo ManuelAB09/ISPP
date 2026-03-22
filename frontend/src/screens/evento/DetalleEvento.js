@@ -77,8 +77,26 @@ const eventIconRed = L.icon({
 // Valoración de profesor (sin validación de permisos)
 // Mover fuera de la función para evitar acceder a 'event' antes de su inicialización
 const DetalleEvento = () => {
-  const [valorado, setValorado] = useState(false);
   const { eventId } = useParams();
+  // Persist valorado per event in localStorage
+  const [valorado, setValorado] = useState(() => {
+    try {
+      const ratedEvents = JSON.parse(localStorage.getItem('ratedEvents') || '{}');
+      return !!ratedEvents[eventId];
+    } catch {
+      return false;
+    }
+  });
+  // When valorado changes to true, persist in localStorage
+  useEffect(() => {
+    if (valorado) {
+      try {
+        const ratedEvents = JSON.parse(localStorage.getItem('ratedEvents') || '{}');
+        ratedEvents[eventId] = true;
+        localStorage.setItem('ratedEvents', JSON.stringify(ratedEvents));
+      } catch {}
+    }
+  }, [valorado, eventId]);
   const navigate = useNavigate();
   const { socket } = useSocketContext();
 
@@ -501,6 +519,43 @@ const DetalleEvento = () => {
       minute: '2-digit'
     });
   };
+
+  // Estado y efecto para obtener el id real de tutor para la valoración
+  const [realTutorId, setRealTutorId] = React.useState(null);
+  const [buscandoTutor, setBuscandoTutor] = useState(false);
+  const [tutorError, setTutorError] = useState(null);
+  React.useEffect(() => {
+    let cancelled = false;
+    async function fetchTutorId() {
+      setBuscandoTutor(false);
+      setTutorError(null);
+      if (event && !event.tutorId && event.creador?.esTutor && event.creador?.id) {
+        setBuscandoTutor(true);
+        try {
+          const resp = await axiosInstance.get(`/api/v1/tutors/user/${event.creador.id}`);
+          if (!cancelled && resp.data && resp.data.id) {
+            setRealTutorId(resp.data.id);
+          } else if (!cancelled) {
+            setRealTutorId(null);
+            setTutorError('No se encontró tutor para el organizador.');
+          }
+        } catch (e) {
+          if (!cancelled) {
+            setRealTutorId(null);
+            setTutorError('No se encontró tutor para el organizador.');
+          }
+        } finally {
+          if (!cancelled) setBuscandoTutor(false);
+        }
+      } else if (event && event.tutorId) {
+        setRealTutorId(event.tutorId);
+      } else {
+        setRealTutorId(null);
+      }
+    }
+    fetchTutorId();
+    return () => { cancelled = true; };
+  }, [event]);
 
   if (loading) {
     return (
@@ -1120,37 +1175,34 @@ const DetalleEvento = () => {
             </div>
 
             {/* Formulario de valoración tras evento finalizado (si hay tutorId o el organizador es tutor) */}
-            {(() => {
-              const tutorId = event.creador?.tutorId || null;
-              if (isOrganizer) {
-                return null;
-              }
-              if (!valorado && tutorId) {
-                return (
-                  <div className="ed-rating-card">
-                    <h3 className="ed-card-title">Valora al profesor</h3>
-                    <RatingForm
-                      profesorId={tutorId}
-                      alumnoId={currentUserId}
-                      eventoId={eventId}
-                      onValorado={() => setValorado(true)}
-                    />
+            {!isOrganizer && (
+              !valorado && buscandoTutor ? (
+                <div className="ed-rating-card">
+                  <h3 className="ed-card-title">Buscando tutor...</h3>
+                  <div className="ed-rating-error">Buscando el tutor asociado al organizador del evento...</div>
+                </div>
+              ) : !valorado && (realTutorId || event?.tutorId) ? (
+                <div className="ed-rating-card">
+                  <h3 className="ed-card-title">Valora al profesor</h3>
+                  <RatingForm
+                    profesorId={realTutorId || event.tutorId}
+                    alumnoId={currentUserId}
+                    eventoId={eventId}
+                    onValorado={() => setValorado(true)}
+                    alreadyRated={valorado}
+                  />
+                </div>
+              ) : !valorado && !(realTutorId || event?.tutorId) ? (
+                <div className="ed-rating-card">
+                  <h3 className="ed-card-title">No disponible</h3>
+                  <div className="ed-rating-error">
+                    {tutorError ? tutorError : 'No se puede valorar porque este evento no tiene tutor asignado.'}
                   </div>
-                );
-              } else if (!valorado && !tutorId) {
-                return (
-                  <div className="ed-rating-card">
-                    <h3 className="ed-card-title">No disponible</h3>
-                    <div className="ed-rating-error">No se puede valorar porque este evento no tiene tutor asignado.</div>
-                  </div>
-                );
-              } else if (valorado) {
-                return (
-                  <div className="ed-rating-success">¡Gracias por valorar al profesor!</div>
-                );
-              }
-              return null;
-            })()}
+                </div>
+              ) : valorado ? (
+                <div className="ed-rating-success">¡Gracias por valorar al profesor!</div>
+              ) : null
+            )}
           </div>
         </div>
       </div>

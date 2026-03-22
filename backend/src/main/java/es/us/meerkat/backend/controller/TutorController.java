@@ -45,6 +45,23 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Tag(name = "Tutores", description = "Gestión de perfiles de tutor y verificación")
 public class TutorController {
+    /**
+     * Obtiene el tutor por el id de usuario asociado.
+     *
+     * @param usuarioId id del usuario
+     * @return TutorResponse con el id del tutor o 404 si no existe
+     */
+    @GetMapping("/user/{usuarioId}")
+    @Operation(
+            summary = "Obtener tutor por usuarioId",
+            description =
+                    "Devuelve el tutor asociado a un usuarioId (id de usuario) o 404 si no existe")
+    public ResponseEntity<TutorResponse> getTutorByUsuarioId(@PathVariable Long usuarioId) {
+        return tutorService
+                .obtenerTutorPorUsuarioId(usuarioId)
+                .map(tutor -> ResponseEntity.ok(toTutorResponse(tutor)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
 
     private final TutorService tutorService;
     private final PaymentService paymentService;

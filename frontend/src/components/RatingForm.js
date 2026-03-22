@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { crearValoracion } from "../api/valoraciones.api";
 import "./RatingForm.css";
 
-const RatingForm = ({ profesorId, alumnoId, eventoId, onValorado }) => {
+const RatingForm = ({ profesorId, alumnoId, eventoId, onValorado, alreadyRated }) => {
   const [puntuacion, setPuntuacion] = useState(0);
   const [comentario, setComentario] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -25,12 +25,21 @@ const RatingForm = ({ profesorId, alumnoId, eventoId, onValorado }) => {
       setExito(true);
       if (onValorado) onValorado();
     } catch (err) {
-      setError("Error al enviar la valoración");
+      let msg = "Error al enviar la valoración";
+      if (err?.response?.data?.message) {
+        msg = err.response.data.message;
+      } else if (err?.message) {
+        msg = err.message;
+      }
+      setError(msg);
     } finally {
       setEnviando(false);
     }
   };
 
+  if (alreadyRated) {
+    return <div className="rating-form__success">¡Gracias por tu valoración!</div>;
+  }
   return (
     <form className="rating-form" onSubmit={handleSubmit}>
       <div className="rating-form__stars">
