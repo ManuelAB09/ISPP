@@ -44,8 +44,10 @@ const CommunityChat = ({
     comunidadNombre,
     comunidadImagen,
     initiallyOpen = false,
+    isOpen,
     mode = 'floating',
     onOpenPrivateChat,
+    onOpenChange,
     extraActions,
 }) => {
     const isEmbedded = mode === 'embedded';
@@ -56,7 +58,9 @@ const CommunityChat = ({
     const [cargandoHistorial, setCargandoHistorial] = useState(false);
     const [enviando, setEnviando] = useState(false);
     const [error, setError] = useState(null);
-    const [chatAbierto, setChatAbierto] = useState(isEmbedded ? true : initiallyOpen);
+    const [chatAbierto, setChatAbierto] = useState(
+        isEmbedded ? true : (typeof isOpen === 'boolean' ? isOpen : initiallyOpen)
+    );
     const [editandoId, setEditandoId] = useState(null);
     const [contenidoEditado, setContenidoEditado] = useState('');
     const [procesandoId, setProcesandoId] = useState(null);
@@ -160,8 +164,22 @@ const CommunityChat = ({
             setChatAbierto(true);
             return;
         }
+        if (typeof isOpen === 'boolean') {
+            setChatAbierto(isOpen);
+            return;
+        }
         setChatAbierto(initiallyOpen);
-    }, [initiallyOpen, isEmbedded]);
+    }, [initiallyOpen, isEmbedded, isOpen]);
+
+    const updateOpenState = (nextOpen) => {
+        if (isEmbedded) {
+            return;
+        }
+        setChatAbierto(nextOpen);
+        if (onOpenChange) {
+            onOpenChange(nextOpen);
+        }
+    };
 
     useEffect(() => {
         previewsByMessageIdRef.current = previewsByMessageId;
@@ -669,18 +687,7 @@ const CommunityChat = ({
             return;
         }
 
-        const params = new URLSearchParams({
-            communityId: String(comunidadId),
-            userId: String(targetId),
-            userName: payload.userName,
-        });
-        if (payload.userPhoto) {
-            params.set('userPhoto', payload.userPhoto);
-        }
-        if (payload.userPhotoBg) {
-            params.set('userPhotoBg', payload.userPhotoBg);
-        }
-        navigate(`/chats?${params.toString()}`);
+        navigate(`/chats?communityId=${comunidadId}&userId=${targetId}`);
     };
 
     return (
@@ -691,7 +698,7 @@ const CommunityChat = ({
                     <button
                         type="button"
                         className="chat-toggle-button"
-                        onClick={() => setChatAbierto((prev) => !prev)}
+                        onClick={() => updateOpenState(!chatAbierto)}
                         aria-expanded={chatAbierto}
                         aria-label="Abrir chat de comunidad"
                     >
@@ -734,7 +741,7 @@ const CommunityChat = ({
                                 <button
                                     type="button"
                                     className="chat-close-button"
-                                    onClick={() => setChatAbierto(false)}
+                                    onClick={() => updateOpenState(false)}
                                     aria-label="Cerrar chat"
                                 >
                                     <LuX size={18} />

@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { getApiBaseUrl } from '../../api/baseUrl';
 import GoogleClassroomButton from '../GoogleClassroomButton/GoogleClassroomButton.jsx';
+import PlanExpiryBanner from '../PlanExpiryBanner/PlanExpiryBanner';
+import { useSubscriptionExpiry } from '../../hooks/useSubscriptionExpiry';
 import './Header.css';
 
 const DEFAULT_PROFILE_AVATAR =
@@ -22,6 +24,7 @@ const toAbsoluteImageUrl = (imageUrl, fallback = DEFAULT_PROFILE_AVATAR) => {
 
 export default function Header({ user, page }) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const { showBanner, planName, fechaFin, dismiss } = useSubscriptionExpiry();
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
@@ -108,6 +111,10 @@ export default function Header({ user, page }) {
                 </button>
             </div>
 
+            {showBanner && (
+                <PlanExpiryBanner planName={planName} fechaFin={fechaFin} onDismiss={dismiss} />
+            )}
+
             {/* Modal móvil */}
             <div className={`header-menu-overlay ${isMenuOpen ? 'open' : ''}`} onClick={closeMenu}></div>
             <div className={`header-menu-sidebar ${isMenuOpen ? 'open' : ''}`}>
@@ -129,9 +136,9 @@ export default function Header({ user, page }) {
                     <Link to="/chats" className={page === 'chats' ? 'active' : ''} onClick={closeMenu}>Chats</Link>
                     <Link to="/planes" className={page === 'planes' ? 'active' : ''} onClick={closeMenu}>Planes</Link>
                     <Link to="/pagos" className={page === 'pagos' ? 'active' : ''} onClick={closeMenu}>Mis pagos</Link>
-                    {!isAuthenticated && (
+ (
                         <Link to="/login" onClick={closeMenu}>Iniciar sesión</Link>
-                    )}
+                    )
                 </div>
             </div >
         </>

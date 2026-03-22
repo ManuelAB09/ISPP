@@ -4,6 +4,7 @@ import { useNotifications } from '../hooks/useNotifications';
 import { obtenerConversaciones, obtenerHistorialComunidad } from '../api/mensajeService';
 import { communitiesApi } from '../api/communities.api';
 import { useAuth } from './AuthContext';
+import { useSocketContext } from './SocketContext';
 
 /**
  * Contexto para manejar notificaciones push de mensajes en toda la aplicación.
@@ -13,17 +14,18 @@ const NotificationContext = createContext(null);
 /**
  * Provider de notificaciones push que funciona en toda la aplicación.
  * - Solicita permisos de notificaciones al usuario
- * - Hace polling de mensajes cuando el usuario está fuera de /chats
- * - Muestra notificaciones push cuando llegan mensajes nuevos
+ * - Usa WebSocket para detectar mensajes nuevos en tiempo real
+ * - Muestra notificaciones push cuando llegan mensajes mientras el usuario está fuera de /chats
  */
 export const NotificationProvider = ({ children }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const { isAuthenticated } = useAuth();
+    const { socket, isConnected } = useSocketContext();
     const { permission, requestPermission, showNotification, isSupported } = useNotifications();
     const knownConversationsRef = useRef(new Map());
     const [hasRequestedPermission, setHasRequestedPermission] = useState(false);
-    const pollingIntervalRef = useRef(null);
+    const initializedRef = useRef(false);
     const DEFAULT_COMMUNITY_IMAGE = 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
 
     const toAbsoluteImageUrl = (imageUrl, fallback = '/favicon.ico') => {
@@ -42,10 +44,18 @@ export const NotificationProvider = ({ children }) => {
     // Determinar si estamos en la ruta de chats
     const isInChatRoute = location.pathname === '/chats';
 
+    // Refs for volatile values used inside the WS handler — avoids
+    // unsubscribing/resubscribing every time these change.
+    const isInChatRouteRef = useRef(isInChatRoute);
+    isInChatRouteRef.current = isInChatRoute;
+    const navigateRef = useRef(navigate);
+    navigateRef.current = navigate;
+    const showNotificationRef = useRef(showNotification);
+    showNotificationRef.current = showNotification;
+
     // Solicitar permisos de notificación cuando el usuario esté autenticado
     useEffect(() => {
         if (isAuthenticated && isSupported && !hasRequestedPermission && permission === 'default') {
-            // Esperar 2 segundos después de la autenticación para solicitar permisos
             const timer = setTimeout(() => {
                 requestPermission().then(() => {
                     setHasRequestedPermission(true);
@@ -56,166 +66,90 @@ export const NotificationProvider = ({ children }) => {
         }
     }, [isAuthenticated, isSupported, hasRequestedPermission, permission, requestPermission]);
 
-    // Polling de mensajes cuando NO estamos en la ruta de chats
+    // Seed the known-conversations map on mount so the first real-time message
+    // doesn't trigger a spurious notification
     useEffect(() => {
-        if (!isAuthenticated || isInChatRoute || permission !== 'granted') {
-            // Limpiar polling si existe
-            if (pollingIntervalRef.current) {
-                clearInterval(pollingIntervalRef.current);
-                pollingIntervalRef.current = null;
-            }
-            return;
-        }
+        if (!isAuthenticated || initializedRef.current) return;
+        initializedRef.current = true;
 
-        // Función para verificar nuevos mensajes (privados + comunidades)
-        const checkNewMessages = async () => {
+        const seedKnown = async () => {
             try {
-                // Obtener conversaciones privadas
                 const { data: privateData } = await obtenerConversaciones();
-                const privateConversations = Array.isArray(privateData) ? privateData : [];
-
-                // Obtener comunidades del usuario
-                let communityConversations = [];
-                try {
-                    const { content: communities } = await communitiesApi.listMine({ page: 0, size: 100 });
-
-                    // Para cada comunidad, obtener el último mensaje
-                    const communityPromises = (communities || []).map(async (community) => {
-                        try {
-                            const { data: messages } = await obtenerHistorialComunidad(community.id);
-                            const lastMessage = messages && messages.length > 0 ? messages[messages.length - 1] : null;
-
-                            if (lastMessage) {
-                                return {
-                                    isCommunity: true,
-                                    comunidadId: community.id,
-                                    comunidadNombre: community.nombre || 'Comunidad',
-                                    comunidadFoto: toAbsoluteImageUrl(
-                                        community.imagenUrl
-                                        || community.imagen
-                                        || community.foto,
-                                        DEFAULT_COMMUNITY_IMAGE
-                                    ),
-                                    ultimoMensaje: lastMessage.contenido,
-                                    emisorNombre:
-                                        lastMessage.usuarioNombre
-                                        || lastMessage.emisorNombre
-                                        || 'Usuario',
-                                    ultimaFecha: lastMessage.createdAt
-                                };
-                            }
-                            return null;
-                        } catch {
-                            return null;
-                        }
-                    });
-
-                    const results = await Promise.all(communityPromises);
-                    communityConversations = results.filter(c => c !== null);
-                } catch {
-                    // Error obteniendo comunidades - silenciado
-                }
-
-                // Marcar conversaciones privadas
-                const markedPrivate = privateConversations.map(conv => ({ ...conv, isCommunity: false }));
-
-                // Combinar ambos tipos
-                const allConversations = [...markedPrivate, ...communityConversations];
-
-                // Detectar conversaciones nuevas o actualizadas
-                const newMessages = [];
-                const knownConversations = knownConversationsRef.current;
-
-                allConversations.forEach((conv) => {
-                    // Crear key única: privado usa usuarioId, comunidad usa comunidadId con prefijo
-                    const key = conv.isCommunity ? `community-${conv.comunidadId}` : `user-${conv.usuarioId}`;
-                    const previousState = knownConversations.get(key);
-
-                    // Nueva conversación o mensaje actualizado
-                    const currentMessage = conv.ultimoMensaje || '';
-
-                    if (!previousState) {
-                        // Conversación nueva - solo notificar si ya habíamos inicializado (no en primera carga)
-                        if (knownConversations.size > 0 && currentMessage) {
-                            newMessages.push(conv);
-                        }
-                    } else if (previousState !== currentMessage && currentMessage) {
-                        // Mensaje actualizado
-                        newMessages.push(conv);
-                    }
-                });
-
-                // Actualizar el mapa de conversaciones conocidas
-                const newMap = new Map();
-                allConversations.forEach((conv) => {
-                    const key = conv.isCommunity ? `community-${conv.comunidadId}` : `user-${conv.usuarioId}`;
-                    newMap.set(key, conv.ultimoMensaje || '');
-                });
-                knownConversationsRef.current = newMap;
-
-                // Mostrar notificaciones para mensajes nuevos
-                newMessages.forEach((conv) => {
-                    let title, body, icon, tag, clickHandler;
-
-                    if (conv.isCommunity) {
-                        // Notificación de mensaje de comunidad
-                        const communityName = conv.comunidadNombre || 'Comunidad';
-                        const senderName = conv.emisorNombre || conv.usuarioNombre || 'Usuario';
-                        const messageText = conv.ultimoMensaje || 'Nuevo mensaje';
-                        title = `${communityName}`;
-                        body = `${senderName}: ${messageText}`;
-                        icon = toAbsoluteImageUrl(conv.comunidadFoto, DEFAULT_COMMUNITY_IMAGE);
-                        tag = `community-${conv.comunidadId}-${Date.now()}`;
-                        clickHandler = () => {
-                            // Navegar al detalle de la comunidad
-                            navigate(`/comunidades/${conv.comunidadId}`);
-                        };
-                    } else {
-                        // Notificación de mensaje privado
-                        title = conv.usuarioNombre || 'Nuevo mensaje';
-                        body = conv.ultimoMensaje || 'Tienes un nuevo mensaje';
-                        icon = toAbsoluteImageUrl(conv.usuarioFoto, '/favicon.ico');
-                        tag = `msg-${conv.usuarioId}-${Date.now()}`;
-                        clickHandler = () => {
-                            navigate(`/chats?userId=${conv.usuarioId}&userName=${encodeURIComponent(conv.usuarioNombre)}`);
-                        };
-                    }
-
-                    showNotification(
-                        title,
-                        {
-                            body: body.length > 100 ? body.substring(0, 100) + '...' : body,
-                            icon: icon,
-                            badge: icon,
-                            tag: tag,
-                            requireInteraction: true,
-                        },
-                        clickHandler
+                const conversations = Array.isArray(privateData) ? privateData : [];
+                conversations.forEach((conv) => {
+                    knownConversationsRef.current.set(
+                        `user-${conv.usuarioId}`,
+                        conv.ultimoMensaje || ''
                     );
                 });
-            } catch {
-                // Error al verificar nuevos mensajes - silenciado
-            }
+            } catch { /* silent */ }
+
+            try {
+                const { content: communities } = await communitiesApi.listMine({ page: 0, size: 100 });
+                for (const community of (communities || [])) {
+                    try {
+                        const { data: messages } = await obtenerHistorialComunidad(community.id);
+                        const lastMessage = messages && messages.length > 0 ? messages[messages.length - 1] : null;
+                        if (lastMessage) {
+                            knownConversationsRef.current.set(
+                                `community-${community.id}`,
+                                lastMessage.contenido || ''
+                            );
+                        }
+                    } catch { /* silent */ }
+                }
+            } catch { /* silent */ }
         };
 
-        // Cargar el estado inicial inmediatamente
-        checkNewMessages();
+        seedKnown();
+    }, [isAuthenticated]);
 
-        // Hacer polling cada 5 segundos (más frecuente para mejor detección)
-        pollingIntervalRef.current = setInterval(checkNewMessages, 5000);
+    // Listen for real-time private messages via WebSocket
+    useEffect(() => {
+        if (!socket || !isConnected || !isAuthenticated || permission !== 'granted') return;
+
+        const handleDM = (msg) => {
+            if (isInChatRouteRef.current || !msg) return;
+
+            const key = `user-${msg.emisorId}`;
+            const known = knownConversationsRef.current;
+            const prev = known.get(key);
+            const current = msg.contenido || '';
+
+            if (prev !== undefined && prev === current) return;
+            known.set(key, current);
+
+            // Don't notify for first-time seed
+            if (prev === undefined && known.size <= 1) return;
+
+            const title = msg.emisorNombre || 'Nuevo mensaje';
+            const body = current || 'Tienes un nuevo mensaje';
+
+            showNotificationRef.current(
+                title,
+                {
+                    body: body.length > 100 ? body.substring(0, 100) + '...' : body,
+                    icon: toAbsoluteImageUrl(msg.emisorFoto, '/favicon.ico'),
+                    badge: '/favicon.ico',
+                    tag: `msg-${msg.emisorId}-${Date.now()}`,
+                    requireInteraction: true,
+                },
+                () => {
+                    navigateRef.current(`/chats?userId=${msg.emisorId}`);
+                }
+            );
+        };
+
+        socket.on('dm_message', handleDM);
 
         return () => {
-            if (pollingIntervalRef.current) {
-                clearInterval(pollingIntervalRef.current);
-                pollingIntervalRef.current = null;
-            }
+            socket.off('dm_message', handleDM);
         };
-    }, [isAuthenticated, isInChatRoute, permission, navigate, showNotification]);
+    }, [socket, isConnected, isAuthenticated, permission]);
 
     // Resetear el estado conocido cuando entramos a /chats o /comunidades
     useEffect(() => {
         if ((isInChatRoute || location.pathname.startsWith('/comunidades/')) && isAuthenticated) {
-            // Actualizar conversaciones privadas
             obtenerConversaciones()
                 .then(({ data }) => {
                     const conversations = Array.isArray(data) ? data : [];
@@ -223,24 +157,6 @@ export const NotificationProvider = ({ children }) => {
                     conversations.forEach((conv) => {
                         newMap.set(`user-${conv.usuarioId}`, conv.ultimoMensaje || '');
                     });
-                })
-                .catch(() => {});
-
-            // Actualizar mensajes de comunidades
-            communitiesApi.listMine({ page: 0, size: 100 })
-                .then(async ({ content: communities }) => {
-                    const newMap = knownConversationsRef.current;
-                    for (const community of (communities || [])) {
-                        try {
-                            const { data: messages } = await obtenerHistorialComunidad(community.id);
-                            const lastMessage = messages && messages.length > 0 ? messages[messages.length - 1] : null;
-                            if (lastMessage) {
-                                newMap.set(`community-${community.id}`, lastMessage.contenido || '');
-                            }
-                        } catch {
-                            // Error actualizando comunidad - silenciado
-                        }
-                    }
                 })
                 .catch(() => {});
         }

@@ -2,8 +2,12 @@ package es.us.meerkat.backend.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,8 +20,10 @@ import es.us.meerkat.backend.entity.TipoPlanCorporativo;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.InstitutionRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
+import lombok.extern.slf4j.Slf4j;
 
 /** Servicio para manejar operaciones de instituciones educativas y planes corporativos. */
+@Slf4j
 @Service
 public class InstitutionService {
 
@@ -26,6 +32,13 @@ public class InstitutionService {
     @Autowired private UsuarioRepository usuarioRepository;
 
     @Autowired private PaymentService paymentService;
+
+    @Autowired private EmailService emailService;
+
+    @Autowired private PasswordEncoder passwordEncoder;
+
+    @Value("${app.frontend.url:http://localhost:3000}")
+    private String frontendUrl;
 
     // ===============================
     // OPERACIONES CRUD
@@ -161,6 +174,15 @@ public class InstitutionService {
             Long institutionId, Long usuarioId, CorporatePlanRequest request) {
         Institution institution = obtenerInstitucion(institutionId, usuarioId);
 
+        // Verificar si la institución ya tiene un plan activo y vigente
+        if (institution.getPlanActivo()
+                && (institution.getFechaFinPlan() == null
+                        || institution.getFechaFinPlan().isAfter(LocalDateTime.now()))) {
+            throw new IllegalArgumentException(
+                    "Esta institución ya tiene un plan corporativo activo. "
+                            + "Espera a que expire o cancélalo antes de contratar uno nuevo.");
+        }
+
         TipoPlanCorporativo tipoPlan = TipoPlanCorporativo.valueOf(request.getTipoPlan());
 
         if (tipoPlan == TipoPlanCorporativo.REDUCIDO_PUBLICA
@@ -235,13 +257,16 @@ public class InstitutionService {
     }
 
     /**
-     * Activa un plan corporativo después de que el pago se completa.
+     * Activa un plan corporativo después de que el pago se completa. También gestiona la creación o
+     * vinculación de la cuenta del email de contacto.
      *
      * @param institutionId ID de la institución
      * @param duracionMeses Duración del plan en meses
+     * @param emailContacto Email del contacto institucional
      */
     @Transactional
-    public void activarPlanCorporativo(Long institutionId, Integer duracionMeses) {
+    public void activarPlanCorporativo(
+            Long institutionId, Integer duracionMeses, String emailContacto) {
         Institution institution =
                 institutionRepository
                         .findById(institutionId)
@@ -253,6 +278,73 @@ public class InstitutionService {
         institution.setFechaFinPlan(LocalDateTime.now().plusMonths(duracionMeses));
 
         institutionRepository.save(institution);
+
+        // Gestionar la cuenta del email de contacto
+        if (emailContacto != null && !emailContacto.isBlank()) {
+            asignarPlanInstitucionalAUsuario(emailContacto, institution);
+        }
+    }
+
+    /** Sobrecarga sin emailContacto para compatibilidad. */
+    @Transactional
+    public void activarPlanCorporativo(Long institutionId, Integer duracionMeses) {
+        Institution institution =
+                institutionRepository
+                        .findById(institutionId)
+                        .orElseThrow(
+                                () -> new IllegalArgumentException("Institución no encontrada"));
+        activarPlanCorporativo(institutionId, duracionMeses, institution.getEmailContacto());
+    }
+
+    /** Busca o crea un usuario por email y le asigna el plan institucional. */
+    private void asignarPlanInstitucionalAUsuario(String email, Institution institution) {
+        Optional<Usuario> existente = usuarioRepository.findByEmail(email);
+        boolean isNewAccount = existente.isEmpty();
+        Usuario usuario;
+
+        if (isNewAccount) {
+            // Crear cuenta nueva
+            usuario = new Usuario();
+            usuario.setEmail(email);
+            usuario.setNombre("Usuario Institucional");
+            usuario.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+            usuario.setEmailVerificado(false);
+            usuario.setVisibleEnListados(true);
+            usuario.setEsTutor(false);
+            usuario.setAutenticacionDosFactores(false);
+            usuario.setNotificacionesEmail(true);
+            usuario.setNotificacionesPush(false);
+
+            String verificationToken = UUID.randomUUID().toString();
+            usuario.setVerificationToken(verificationToken);
+            usuario.setTokenExpiration(LocalDateTime.now().plusHours(48));
+        } else {
+            usuario = existente.get();
+        }
+
+        // Vincular a la institución (NO cambiar a PREMIUM de estudiante)
+        usuario.setInstitution(institution);
+        usuarioRepository.save(usuario);
+
+        // Enviar email de invitación
+        String planName =
+                institution.getPlanCorporativo() != null
+                        ? institution.getPlanCorporativo().name()
+                        : "Institucional";
+        try {
+            emailService.sendInstitutionInviteEmail(
+                    email,
+                    institution.getNombre(),
+                    planName,
+                    isNewAccount,
+                    isNewAccount ? usuario.getVerificationToken() : null,
+                    frontendUrl);
+        } catch (Exception e) {
+            log.error(
+                    "Error enviando email de invitación institucional a {}: {}",
+                    email,
+                    e.getMessage());
+        }
     }
 
     /**

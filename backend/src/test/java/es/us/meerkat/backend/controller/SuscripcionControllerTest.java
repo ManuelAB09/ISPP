@@ -5,7 +5,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import java.time.LocalDate;
-import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -87,7 +86,16 @@ class SuscripcionControllerTest {
     @DisplayName("GET /me - Debe devolver la suscripción del usuario autenticado")
     void testObtenerMiSuscripcion_RetornaSuscripcion() {
         // Given
-        when(suscripcionService.obtenerMiSuscripcion(1L)).thenReturn(Optional.of(suscripcion));
+        SubscriptionResponse subscriptionResponse =
+                SubscriptionResponse.builder()
+                        .id(1L)
+                        .plan(TipoPlan.PREMIUM)
+                        .fechaInicio(LocalDate.now())
+                        .fechaFin(LocalDate.now().plusMonths(1))
+                        .activa(true)
+                        .autoRenovar(true)
+                        .build();
+        when(suscripcionService.obtenerMiSuscripcionCompleta(1L)).thenReturn(subscriptionResponse);
 
         // When
         ResponseEntity<SubscriptionResponse> response =
@@ -100,14 +108,23 @@ class SuscripcionControllerTest {
         assertEquals(1L, response.getBody().getId());
         assertEquals(TipoPlan.PREMIUM, response.getBody().getPlan());
         assertTrue(response.getBody().getActiva());
-        verify(suscripcionService).obtenerMiSuscripcion(1L);
+        verify(suscripcionService).obtenerMiSuscripcionCompleta(1L);
     }
 
     @Test
-    @DisplayName("GET /me - Debe devolver 404 si no hay suscripción activa")
+    @DisplayName("GET /me - Debe devolver plan FREE si no hay suscripción activa")
     void testObtenerMiSuscripcion_NoEncontrada() {
         // Given
-        when(suscripcionService.obtenerMiSuscripcion(1L)).thenReturn(Optional.empty());
+        SubscriptionResponse freeResponse =
+                SubscriptionResponse.builder()
+                        .plan(TipoPlan.FREE)
+                        .fechaInicio(LocalDate.now())
+                        .fechaFin(LocalDate.now())
+                        .activa(true)
+                        .autoRenovar(false)
+                        .enPeriodoGracia(false)
+                        .build();
+        when(suscripcionService.obtenerMiSuscripcionCompleta(1L)).thenReturn(freeResponse);
 
         // When
         ResponseEntity<SubscriptionResponse> response =
@@ -119,7 +136,7 @@ class SuscripcionControllerTest {
         assertNotNull(response.getBody());
         assertEquals(TipoPlan.FREE, response.getBody().getPlan());
         assertTrue(response.getBody().getActiva());
-        verify(suscripcionService).obtenerMiSuscripcion(1L);
+        verify(suscripcionService).obtenerMiSuscripcionCompleta(1L);
     }
 
     @Test

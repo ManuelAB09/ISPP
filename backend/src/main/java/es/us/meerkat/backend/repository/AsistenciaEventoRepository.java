@@ -110,4 +110,24 @@ public interface AsistenciaEventoRepository extends JpaRepository<AsistenciaEven
     @Modifying
     @Query("DELETE FROM AsistenciaEvento a WHERE a.evento.creador.id = :usuarioId")
     void deleteByEventoCreadorId(@Param("usuarioId") Long usuarioId);
+
+    /** Elimina todas las asistencias de un evento. */
+    @Modifying
+    @Query("DELETE FROM AsistenciaEvento a WHERE a.evento.id = :eventoId")
+    void deleteByEventoId(@Param("eventoId") Long eventoId);
+
+    /**
+     * Cuenta las asistencias confirmadas de un usuario a eventos futuros activos de una comunidad.
+     */
+    @Query(
+            "SELECT COUNT(a) FROM AsistenciaEvento a "
+                    + "WHERE a.usuario.id = :usuarioId "
+                    + "AND a.evento.comunidad.id = :comunidadId "
+                    + "AND a.estado = es.us.meerkat.backend.entity.EstadoAsistencia.CONFIRMADA "
+                    + "AND a.evento.cancelado = false "
+                    + "AND a.evento.fechaHora >= :ahora")
+    long countActiveEventAttendances(
+            @Param("usuarioId") Long usuarioId,
+            @Param("comunidadId") Long comunidadId,
+            @Param("ahora") java.time.LocalDateTime ahora);
 }

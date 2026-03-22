@@ -50,9 +50,13 @@ public class AsistenciaEventoController {
             @PathVariable @Parameter(description = "ID del evento") final Long eventId,
             @Parameter(description = "ID del usuario") @RequestParam final Long usuarioId) {
 
-        final AsistenciaEvento asistencia =
-                asistenciaService.confirmarAsistencia(eventId, usuarioId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(asistencia.toDTO());
+        try {
+            final AsistenciaEvento asistencia =
+                    asistenciaService.confirmarAsistencia(eventId, usuarioId);
+            return ResponseEntity.status(HttpStatus.CREATED).body(asistencia.toDTO());
+        } catch (final IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
     }
 
     // ===============================
@@ -101,6 +105,10 @@ public class AsistenciaEventoController {
         try {
             asistenciaService.cancelarAsistencia(eventId, usuarioId);
             return ResponseEntity.noContent().build();
+        } catch (final IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .header("Content-Type", "application/json")
+                    .body(null);
         } catch (final RuntimeException e) {
             if ("Asistencia no encontrada".equals(e.getMessage())) {
                 return ResponseEntity.noContent().build();

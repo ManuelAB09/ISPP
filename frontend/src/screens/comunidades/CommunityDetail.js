@@ -11,7 +11,9 @@ import { communitiesApi } from '../../api/communities.api';
 import { ZoomApi } from '../../api/zoom.api';
 import { listCommunityEvents, attendEvent, cancelAttendance, getMyAttendance } from '../../api/eventEndpoints';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSocketContext } from '../../contexts/SocketContext';
 import axiosInstance from '../../api/axiosConfig';
+import { getApiBaseUrl } from '../../api/baseUrl';
 import './CommunityDetail.css';
 
 
@@ -73,6 +75,8 @@ export default function CommunityDetail() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const { socket } = useSocketContext();
+  const openChatOnLoad = searchParams.get('chat') === 'open';
 
   const [community, setCommunity] = useState(null);
   const [events, setEvents] = useState([]);
@@ -114,21 +118,48 @@ export default function CommunityDetail() {
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [respondingId, setRespondingId] = useState(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
+  const [chatOpen, setChatOpen] = useState(openChatOnLoad);
+  const [ranking, setRanking] = useState([]);
+  const [rankingLoading, setRankingLoading] = useState(false);
+  const [rankingError, setRankingError] = useState(null);
   const fileInputRef = useRef(null);
   const activeMeetingRequestInFlightRef = useRef(false);
+
+  const closeAllOverlays = useCallback(({ keepChat = false } = {}) => {
+    setShowMeetingForm(false);
+    setParticipantsOpen(false);
+    setMeetingsOpen(false);
+    setRecordingsOpen(false);
+    setSelectedRecordingMeetingId(null);
+    setShowEditModal(false);
+    setShowTransferModal(false);
+    if (!keepChat) {
+      setChatOpen(false);
+    }
+  }, []);
 
   const isPrivate = community?.tipoGrupo === 'GRUPO_PRIVADO';
   const isAdmin = community?.miRol === 'ADMIN';
 
   const currentUserId = localStorage.getItem('userId');
-  const openChatOnLoad = searchParams.get('chat') === 'open';
   const currentUser = {
     id: Number(currentUserId),
     nombre: user?.nombre || 'Usuario',
     foto: user?.foto || null,
     fotoBackgroundColor: user?.fotoBackgroundColor || '#ffffff',
   };
-  const communityImage = community?.imagenUrl !== 'empty' ? community?.imagenUrl : 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
+  const communityImage = (() => {
+    const raw = community?.imagen || community?.imagenUrl || community?.foto;
+    if (!raw || !String(raw).trim() || String(raw).trim().toLowerCase() === 'empty') {
+      return 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
+    }
+    const value = String(raw).trim();
+    if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
+      return value;
+    }
+    const base = getApiBaseUrl();
+    return value.startsWith('/') ? `${base}${value}` : `${base}/${value}`;
+  })();
 
   const fetchCommunity = useCallback(async () => {
     try {
@@ -218,6 +249,32 @@ export default function CommunityDetail() {
   }, [fetchCommunity, fetchEvents]);
 
 
+  const fetchRanking = useCallback(async () => {
+    if (!isMember) {
+      setRanking([]);
+      return;
+    }
+
+    try {
+      setRankingLoading(true);
+      setRankingError(null);
+      const data = await communitiesApi.getRanking(communityId);
+      setRanking(Array.isArray(data) ? data : (data?.content || []));
+    } catch (err) {
+      console.error('Error al cargar ranking:', err);
+      setRankingError('No se pudo cargar el ranking.');
+      setRanking([]);
+    } finally {
+      setRankingLoading(false);
+    }
+  }, [communityId, isMember]);
+
+  useEffect(() => {
+    if (isMember) {
+      fetchRanking();
+    }
+  }, [fetchRanking, isMember]);
+
   // Modal de alarmas al confirmar asistencia
   const [showAttendModal, setShowAttendModal] = useState(false);
   const [pendingAttendEventId, setPendingAttendEventId] = useState(null);
@@ -283,16 +340,22 @@ export default function CommunityDetail() {
   }, [fetchActiveMeeting]);
 
   useEffect(() => {
-    if (!currentUserId || !isMember) {
+    if (!currentUserId || !isMember || !communityId) {
       return undefined;
     }
 
-    const pollId = setInterval(() => {
-      fetchActiveMeeting({ silent: true });
-    }, 1000);
-
-    return () => clearInterval(pollId);
-  }, [fetchActiveMeeting, currentUserId, isMember]);
+    const topic = `/topic/community.${communityId}.meeting`;
+    const handler = (data) => {
+      if (!data || data === '') {
+        setActiveMeeting(null);
+      } else {
+        setActiveMeeting(data);
+      }
+    };
+    if (!socket) return undefined;
+    socket.on(topic, handler);
+    return () => socket.off(topic, handler);
+  }, [socket, communityId, currentUserId, isMember]);
 
   useEffect(() => {
     if (!activeMeeting) {
@@ -415,8 +478,14 @@ export default function CommunityDetail() {
       return;
     }
 
+    if (showMeetingForm) {
+      setShowMeetingForm(false);
+      return;
+    }
+
+    closeAllOverlays();
     setMeetingError(null);
-    setShowMeetingForm((prev) => !prev);
+    setShowMeetingForm(true);
   };
 
   const handleToggleParticipants = async () => {
@@ -425,6 +494,7 @@ export default function CommunityDetail() {
       return;
     }
 
+    closeAllOverlays();
     setParticipantsOpen(true);
 
     try {
@@ -448,6 +518,8 @@ export default function CommunityDetail() {
       setSelectedRecordingMeetingId(null);
       return;
     }
+
+    closeAllOverlays();
 
     try {
       setMeetingsLoading(true);
@@ -603,6 +675,23 @@ export default function CommunityDetail() {
     setSelectedRecordingMeetingId(null);
   }, [communityId]);
 
+  const handleOpenEditModal = () => {
+    closeAllOverlays();
+    setShowEditModal(true);
+  };
+
+  const handleOpenTransferModal = () => {
+    closeAllOverlays();
+    setShowTransferModal(true);
+  };
+
+  const handleChatOpenChange = (nextOpen) => {
+    if (nextOpen) {
+      closeAllOverlays({ keepChat: true });
+    }
+    setChatOpen(nextOpen);
+  };
+
   const visibleRecordings = selectedRecordingMeetingId
     ? recordings.filter((recording) => recording?.zoomMeetingId === selectedRecordingMeetingId)
     : recordings;
@@ -666,6 +755,10 @@ export default function CommunityDetail() {
       await fetchEvents();
     } catch (err) {
       console.error('Error al cancelar asistencia:', err);
+      const status = err?.response?.status;
+      if (status === 403) {
+        alert('El organizador del evento no puede cancelar su asistencia. Cancela el evento en su lugar.');
+      }
     } finally {
       setAttendanceLoading(false);
     }
@@ -725,7 +818,9 @@ export default function CommunityDetail() {
     } catch (err) {
       console.error('Error al abandonar la comunidad:', err);
       const status = err.status || err.response?.status;
-      if (status === 400) {
+      if (status === 409) {
+        setMembershipError('No puedes abandonar la comunidad mientras tengas asistencia confirmada a eventos activos. Cancela tu asistencia primero.');
+      } else if (status === 400) {
         setMembershipError('No puedes abandonar siendo el único admin. Transfiere la administración primero.');
       } else {
         setMembershipError(err.message || 'Error al abandonar la comunidad');
@@ -802,6 +897,7 @@ export default function CommunityDetail() {
 
         <input
           ref={fileInputRef}
+          data-testid="recording-file-input"
           type="file"
           accept=".mp4,.mov,.webm,.m4a,video/mp4,video/quicktime,video/webm,audio/mp4"
           onChange={handleRecordingFileChange}
@@ -838,7 +934,7 @@ export default function CommunityDetail() {
                 {isAdmin && (
                   <button
                     className="cd-btn cd-btn-edit"
-                    onClick={() => setShowEditModal(true)}
+                    onClick={handleOpenEditModal}
                   >
                     <LuPencil /> Editar comunidad
                   </button>
@@ -846,7 +942,7 @@ export default function CommunityDetail() {
                 {isAdmin && (
                   <button
                     className="cd-btn cd-btn-transfer"
-                    onClick={() => setShowTransferModal(true)}
+                    onClick={handleOpenTransferModal}
                   >
                     <LuUsers /> Transferir administración
                   </button>
@@ -1002,6 +1098,7 @@ export default function CommunityDetail() {
                   onAttend={currentUserId && isMember ? handleAttend : null}
                   onCancelAttendance={currentUserId ? handleCancelAttendance : null}
                   attendanceLoading={attendanceLoading}
+                  currentUserId={currentUserId}
                 />
               ))}
             </div>
@@ -1025,6 +1122,98 @@ export default function CommunityDetail() {
             </div>
           )}
         </div>
+        
+        {isMember && (
+          <div className="cd-ranking-section">
+            <h2 className="cd-ranking-title">
+              <LuUsers /> Ranking de la comunidad
+            </h2>
+
+            {rankingLoading ? (
+              <p className="cd-loading">Cargando ranking...</p>
+            ) : rankingError ? (
+              <p className="cd-ranking-error">{rankingError}</p>
+            ) : ranking.length > 0 ? (
+              <div className="cd-ranking-container">
+                <table className="cd-ranking-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Usuario</th>
+                      <th>Puntos</th>
+                      <th>Mensajes</th>
+                      <th>Eventos</th>
+                      <th>Asistencias</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {ranking.map((item, index) => {
+                      const isMe = item.usuario?.id === Number(currentUserId);
+
+                      return (
+                        <tr
+                          key={item.usuario?.id || index}
+                          className={`
+                            cd-ranking-row 
+                            ${isMe ? 'is-me' : ''}
+                          `}
+                        >
+                          {/* Columna de Posición / Medalla */}
+                          <td>
+                            <div className="cd-ranking-position">
+                              {index === 0 ? '👑' : index + 1}
+                            </div>
+                          </td>
+
+                          {/* Columna de Usuario */}
+                          <td className="cd-ranking-user-cell">
+                            {item.usuario?.avatarUrl ? (
+                              <img
+                                src={item.usuario.avatarUrl}
+                                alt={item.usuario?.nombre || 'Usuario'}
+                                className="cd-ranking-avatar"
+                              />
+                            ) : (
+                              <div className="cd-ranking-avatar cd-ranking-avatar-fallback">
+                                {(item.usuario?.nombre || 'U').charAt(0).toUpperCase()}
+                              </div>
+                            )}
+
+                            <span className="cd-ranking-name">
+                              {item.usuario?.nombre || 'Usuario'}
+                            </span>
+
+                            {isMe && (
+                              <span className="cd-ranking-you-badge">Tú</span>
+                            )}
+                          </td>
+
+                          {/* Columna de Puntos con Badge */}
+                          <td>
+                            <span className="cd-ranking-points">
+                              {item.puntos}
+                            </span>
+                          </td>
+                          
+                          {/* Resto de estadísticas */}
+                          <td>{item.mensajes}</td>
+                          <td>{item.eventosCreados}</td>
+                          <td>{item.asistentesEventos}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="cd-ranking-empty">
+                Aún no hay actividad suficiente.
+              </p>
+            )}
+          </div>
+        )}
+
 
         {currentUserId && isMember && user ? (
           <CommunityChat
@@ -1033,6 +1222,8 @@ export default function CommunityDetail() {
             comunidadNombre={community?.nombre}
             comunidadImagen={communityImage}
             initiallyOpen={openChatOnLoad}
+            isOpen={chatOpen}
+            onOpenChange={handleChatOpenChange}
 extraActions={(
   <div className="cd-floating-tools">
     <div className="cd-floating-toolbar">

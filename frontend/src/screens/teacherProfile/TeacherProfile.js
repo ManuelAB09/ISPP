@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { getTutorById, getMyTutorProfiles } from "../../api/tutorEndpoints";
+import { getTutorById, getMyTutorProfiles, iniciarOnboardingStripe } from "../../api/tutorEndpoints";
 import Header from "../../components/Header/Header";
 import EditProfileModal from "./EditProfileModal";
 import CreateProfileModal from "./CreateProfileModal";
@@ -10,6 +10,11 @@ import Settings from "../myProfile/Settings";
 import HireTutorModal from "./HireTutorModal";
 import BookClassModal from "./BookClassModal";
 import TutorReservasPanel from "./TutorReservasPanel";
+import HireDirectModal from "./HireDirectModal";
+import TutorSolicitudes from "./TutorSolicitudes";
+import TutorConversaciones from "./TutorConversaciones";
+import AlumnoSolicitudes from "./AlumnoSolicitudes";
+import PrivateChat from "../chat/PrivateChat";
 import { getApiBaseUrl } from "../../api/baseUrl";
 import "./TeacherProfile.css";
 
@@ -57,6 +62,8 @@ const TeacherProfile = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showHireModal, setShowHireModal] = useState(false);
   const [showBookModal, setShowBookModal] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [stripeLoading, setStripeLoading] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
 
   // Callback: actualiza estado local tras editar
@@ -270,6 +277,23 @@ const TeacherProfile = () => {
                 >
                   {tutor.verificado ? "🏅 Verificado" : "Promocionarse"}
                 </button>
+                <button
+                  className={`tp-btn ${tutor.stripeConfigured ? 'tp-btn--edit' : 'tp-btn--hire'}`}
+                  disabled={stripeLoading}
+                  onClick={async () => {
+                    setStripeLoading(true);
+                    try {
+                      const returnUrl = window.location.href;
+                      const res = await iniciarOnboardingStripe(returnUrl);
+                      window.location.href = res.url;
+                    } catch (e) {
+                      alert('Error al iniciar la configuración de pagos: ' + (e?.response?.data?.error || e.message));
+                      setStripeLoading(false);
+                    }
+                  }}
+                >
+                  {tutor.stripeConfigured ? '✅ Pagos configurados' : '💳 Configurar pagos'}
+                </button>
               </div>
             )}
 
@@ -292,7 +316,7 @@ const TeacherProfile = () => {
                     navigate(`/chats?${params.toString()}`);
                   }}
                 >
-                  💬 Contactar
+                  {showChat ? '✕ Cerrar chat' : '💬 Contactar'}
                 </button>
                 <button className="tp-btn tp-btn--book" onClick={() => setShowBookModal(true)}>
                   📅 Reservar clase
@@ -305,8 +329,45 @@ const TeacherProfile = () => {
           </header>
         </div>
 
+        {/* Chat privado embebido en el perfil del profesor */}
+        {showChat && user?.id !== tutor.usuario?.id && (
+          <div className="tp-chat-embed">
+            <PrivateChat
+              tutorId={tutor.userId ?? tutor.usuario?.id}
+              tutorNombre={tutor.usuario?.nombre || 'Profesor'}
+              usuarioActual={{
+                id: Number(user?.id),
+                nombre: user?.nombre || 'Usuario',
+                foto: user?.foto || null,
+              }}
+              onClose={() => setShowChat(false)}
+            />
+          </div>
+        )}
+
         {/* ═══════════════ CONTENIDO PRINCIPAL (fondo blanco plano) ═══════════════ */}
         <div className="tp-content">
+
+          {/* Solicitudes de contratación (solo visible para el dueño del perfil) */}
+          {user?.id === tutor.usuario?.id && user?.esTutor && (
+            <TutorSolicitudes />
+          )}
+
+          {/* Solicitudes del alumno visitante */}
+          {user && user?.id !== tutor.usuario?.id && (
+            <AlumnoSolicitudes tutorId={tutor.id} />
+          )}
+
+          {/* Conversaciones privadas (solo visible para el dueño del perfil) */}
+          {user?.id === tutor.usuario?.id && user?.esTutor && (
+            <TutorConversaciones
+              usuarioActual={{
+                id: Number(user?.id),
+                nombre: user?.nombre || 'Usuario',
+                foto: user?.foto || null,
+              }}
+            />
+          )}
 
           {/* Solicitudes de vinculación Google Classroom (solo propietario del perfil) 
       /*
@@ -403,7 +464,7 @@ const TeacherProfile = () => {
                 </div>
               ))}
               {/* Placeholder "Explorar más comunidades" */}
-              <div 
+              <div
                 className="tp-comunidades__card tp-comunidades__card--explore tp-comunidades__card--xl"
                 onClick={() => navigate('/comunidades')}
                 style={{ cursor: 'pointer' }}
@@ -414,7 +475,7 @@ const TeacherProfile = () => {
                   Busca entre miles de comunidades de estudio adaptadas a tus necesidades
                 </span>
               </div>
-              <span 
+              <span
                 className="tp-comunidades__ver-todas tp-comunidades__ver-todas--xl"
                 onClick={() => navigate('/comunidades')}
                 style={{ cursor: 'pointer' }}
@@ -433,7 +494,7 @@ const TeacherProfile = () => {
                 Crea comunidades, une a estudiantes y enseña sobre lo que sabes.
               </p>
               {user?.id === tutor.usuario?.id && (
-                <button 
+                <button
                   className="tp-btn tp-btn--crear tp-btn--crear-xl"
                   onClick={() => navigate('/crear-comunidad')}
                 >+ Crear Nueva</button>
@@ -475,7 +536,7 @@ const TeacherProfile = () => {
       </div>
 
       {showHireModal && (
-        <HireTutorModal tutor={tutor} onClose={() => setShowHireModal(false)} />
+        <HireDirectModal tutor={tutor} onClose={() => setShowHireModal(false)} />
       )}
       {showBookModal && (
         <BookClassModal tutor={tutor} onClose={() => setShowBookModal(false)} />

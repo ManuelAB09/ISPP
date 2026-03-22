@@ -72,6 +72,9 @@ public class Tutor {
     /** Email de Google Classroom del tutor. */
     private String emailClassroom;
 
+    /** ID de la cuenta conectada de Stripe (Express) para recibir pagos. */
+    private String stripeAccountId;
+
     /** Fecha de creación del registro. */
     private LocalDateTime createdAt;
 

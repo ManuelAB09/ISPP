@@ -94,6 +94,22 @@ export const communitiesApi = {
   },
 
   /**
+   * POST /api/v1/communities/{communityId}/tutor/{tutorId}/create-payment-intent
+   * Crea un PaymentIntent para contratación de tutor (Stripe Elements embebido)
+   */
+  createHiringPaymentIntent(communityId, tutorId, data) {
+    return apiClient.post(`/api/v1/communities/${communityId}/tutor/${tutorId}/create-payment-intent`, data);
+  },
+
+  /**
+   * POST /api/v1/communities/confirm-tutor-payment
+   * Confirma el pago de contratación de tutor tras Stripe Elements
+   */
+  confirmTutorPayment(paymentIntentId) {
+    return apiClient.post('/api/v1/communities/confirm-tutor-payment', { paymentIntentId });
+  },
+
+  /**
    * GET /api/v1/communities/{communityId}/tutor
    * Obtener tutor actualmente contratado por la comunidad
    * @param {number} communityId
@@ -251,5 +267,14 @@ export const communitiesApi = {
    */
   uploadPhoto(communityId, formData) {
     return apiClient.post(`/api/v1/communities/${communityId}/photo`, formData);
+  },
+
+  /**
+   * GET /api/v1/communities/{communityId}/ranking
+   * Obtener ranking de miembros de comunidad
+   * @param {number} communityId
+   */
+  getRanking(communityId) {
+    return apiClient.get(`/api/v1/communities/${communityId}/ranking`);
   },
 };

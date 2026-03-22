@@ -7,10 +7,12 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import es.us.meerkat.backend.entity.AsistenciaEvento;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.Ubicacion;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.EventoRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
@@ -29,6 +31,9 @@ public class EventoService {
 
     /** Repositorio para acceder a la información de eventos. */
     private final EventoRepository eventoRepository;
+
+    /** Repositorio para acceder a la información de asistencia a eventos. */
+    private final AsistenciaEventoRepository asistenciaEventoRepository;
 
     /** Repositorio para acceder a la información de usuarios. */
     private final UsuarioRepository usuarioRepository;
@@ -137,10 +142,20 @@ public class EventoService {
             evento.setUbicacion(ubicacion);
         }
         final Evento savedEvento = eventoRepository.save(evento);
+
+        // Auto-unir al creador como asistente confirmado
+        final AsistenciaEvento asistencia = new AsistenciaEvento();
+        asistencia.setEvento(savedEvento);
+        asistencia.setUsuario(creador);
+        asistencia.confirmarAsistencia();
+        asistencia.setCreatedAt(LocalDateTime.now());
+        asistenciaEventoRepository.save(asistencia);
+        savedEvento.setAsistentesConfirmados(1);
+        eventoRepository.save(savedEvento);
+
         try {
             googleCalendarService.sincronizarCreacion(savedEvento);
         } catch (Exception e) {
-
             // No propagamos el error: el evento se crea aunque GCal falle
         }
         return savedEvento;
@@ -328,26 +343,95 @@ public class EventoService {
      * @return Lista de eventos públicos.
      */
     public List<Evento> obtenerEventosPublicos() {
-        return eventoRepository.findPublicEvents();
+        return eventoRepository.findPublicEvents(LocalDateTime.now());
     }
 
     /**
-     * Obtiene todos los eventos visibles en el mapa.
+     * Obtiene todos los eventos visibles en el mapa (públicos, no cancelados). Opcionalmente filtra
+     * por radio de distancia respecto a una ubicación.
      *
+     * @param lat Latitud del centro de búsqueda (opcional).
+     * @param lon Longitud del centro de búsqueda (opcional).
+     * @param radioKm Radio de búsqueda en kilómetros (opcional).
      * @return Lista de eventos visibles en mapa.
      */
-    public List<Evento> obtenerEventosEnMapa() {
-        return eventoRepository.findVisibleOnMap();
+    public List<Evento> obtenerEventosEnMapa(
+            final Double lat, final Double lon, final Double radioKm) {
+        List<Evento> eventos = eventoRepository.findVisibleOnMap(LocalDateTime.now());
+        if (lat == null || lon == null || radioKm == null) {
+            return eventos;
+        }
+        return eventos.stream()
+                .filter(
+                        evento -> {
+                            Ubicacion ubicacion = evento.getUbicacion();
+                            if (ubicacion == null
+                                    || ubicacion.getLatitud() == null
+                                    || ubicacion.getLongitud() == null) {
+                                return false;
+                            }
+                            double distancia =
+                                    calcularDistanciaKm(
+                                            lat,
+                                            lon,
+                                            ubicacion.getLatitud(),
+                                            ubicacion.getLongitud());
+                            return distancia <= radioKm;
+                        })
+                .collect(Collectors.toList());
     }
 
     /**
-     * Obtiene los eventos recomendados basados en ubicaciones populares.
+     * Obtiene los nombres de ubicaciones con eventos activos dentro de un radio dado.
      *
-     * @return Lista de ubicaciones populares.
+     * @param lat Latitud del centro de búsqueda.
+     * @param lon Longitud del centro de búsqueda.
+     * @param radioKm Radio de búsqueda en kilómetros.
+     * @return Lista de nombres de ubicaciones recomendadas.
      */
-    public List<String> obtenerUbicacionesRecomendadas() {
-        // TODO: Implementar lógica de ubicaciones recomendadas
-        return List.of();
+    @Transactional(readOnly = true)
+    public List<String> obtenerUbicacionesRecomendadas(
+            final Double lat, final Double lon, final Double radioKm) {
+        if (lat == null || lon == null || radioKm == null) {
+            return List.of();
+        }
+        List<Evento> eventos = eventoRepository.findVisibleOnMap(LocalDateTime.now());
+        return eventos.stream()
+                .filter(
+                        e ->
+                                e.getUbicacion() != null
+                                        && e.getUbicacion().getLatitud() != null
+                                        && e.getUbicacion().getLongitud() != null)
+                .filter(
+                        e ->
+                                calcularDistanciaKm(
+                                                lat,
+                                                lon,
+                                                e.getUbicacion().getLatitud(),
+                                                e.getUbicacion().getLongitud())
+                                        <= radioKm)
+                .map(e -> e.getUbicacion().getNombre())
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Calcula la distancia en kilómetros entre dos puntos geográficos usando la fórmula de
+     * Haversine.
+     */
+    private double calcularDistanciaKm(
+            final double lat1, final double lon1, final double lat2, final double lon2) {
+        final double radioTierra = 6371.0;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                        + Math.cos(Math.toRadians(lat1))
+                                * Math.cos(Math.toRadians(lat2))
+                                * Math.sin(dLon / 2)
+                                * Math.sin(dLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return radioTierra * c;
     }
 
     /**
@@ -370,6 +454,67 @@ public class EventoService {
     // EVENTOS POR COMUNIDAD
     // ===============================
 
+    // ===============================
+    // VINCULAR TAREA CLASSROOM
+    // ===============================
+
+    /**
+     * Vincula una tarea de Google Classroom a un evento.
+     *
+     * @param eventoId Identificador del evento.
+     * @param usuarioId Identificador del usuario que solicita.
+     * @param taskId ID de la tarea en Classroom.
+     * @param title Título de la tarea en Classroom.
+     * @param url URL de la tarea en Classroom.
+     * @return El evento actualizado.
+     */
+    @Transactional
+    public Evento vincularTareaClassroom(
+            final Long eventoId,
+            final Long usuarioId,
+            final String taskId,
+            final String title,
+            final String url) {
+        final Evento evento = obtenerEventoInterno(eventoId);
+
+        if (!evento.getCreador().getId().equals(usuarioId)) {
+            throw new RuntimeException("Solo el creador del evento puede vincular tareas");
+        }
+
+        if (evento.getComunidad() == null) {
+            throw new RuntimeException(
+                    "El evento debe pertenecer a una comunidad para vincular una tarea");
+        }
+
+        evento.setClassroomTaskId(taskId);
+        evento.setClassroomTaskTitle(title);
+        evento.setClassroomTaskUrl(url);
+
+        return eventoRepository.save(evento);
+    }
+
+    /**
+     * Desvincula una tarea de Google Classroom de un evento.
+     *
+     * @param eventoId Identificador del evento.
+     * @param usuarioId Identificador del usuario que solicita.
+     * @return El evento actualizado.
+     */
+    @Transactional
+    public Evento desvincularTareaClassroom(final Long eventoId, final Long usuarioId) {
+        final Evento evento = obtenerEventoInterno(eventoId);
+
+        if (!evento.getCreador().getId().equals(usuarioId)) {
+            throw new RuntimeException("Solo el creador del evento puede desvincular tareas");
+        }
+
+        evento.setClassroomTaskId(null);
+        evento.setClassroomTaskTitle(null);
+        evento.setClassroomTaskUrl(null);
+
+        return eventoRepository.save(evento);
+    }
+
     /**
      * Obtiene los eventos de una comunidad, filtrando eventos privados según permisos.
      *
@@ -384,7 +529,9 @@ public class EventoService {
         if (incluirCancelados) {
             eventos = eventoRepository.findByComunidadId(comunidadId);
         } else {
-            eventos = eventoRepository.findByComunidadIdAndCanceladoFalse(comunidadId);
+            eventos =
+                    eventoRepository.findByComunidadIdAndCanceladoFalseAndFuture(
+                            comunidadId, LocalDateTime.now());
         }
         return filtrarEventosPrivados(eventos, usuarioId);
     }

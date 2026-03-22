@@ -18,6 +18,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import es.us.meerkat.backend.dto.CorporatePlanRequest;
 import es.us.meerkat.backend.dto.CreateInstitutionRequest;
@@ -35,6 +36,8 @@ class InstitutionServiceTest {
     @Mock private InstitutionRepository institutionRepository;
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private PaymentService paymentService;
+    @Mock private EmailService emailService;
+    @Mock private PasswordEncoder passwordEncoder;
 
     @InjectMocks private InstitutionService institutionService;
 

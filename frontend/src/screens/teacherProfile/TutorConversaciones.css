@@ -1,0 +1,112 @@
+/* Panel de conversaciones privadas del tutor */
+
+.tc-panel {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.tc-panel__title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 16px;
+}
+
+.tc-loading,
+.tc-empty {
+  color: #6b7280;
+  font-size: 14px;
+  text-align: center;
+  padding: 12px 0;
+}
+
+.tc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tc-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: box-shadow 0.2s, background 0.15s;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.tc-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background: #f3f4f6;
+}
+
+.tc-item__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.tc-item__info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tc-item__name {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tc-item__last {
+  color: #6b7280;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.tc-chat-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tc-back-btn {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: #6366f1;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+  font-family: inherit;
+}
+
+.tc-back-btn:hover {
+  text-decoration: underline;
+}
+
+.tc-chat-wrapper .private-chat-container {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  max-height: 500px;
+  overflow-y: auto;
+}

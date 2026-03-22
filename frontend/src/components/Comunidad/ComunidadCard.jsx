@@ -13,6 +13,7 @@ export default function ComunidadCard({ comunidad, onJoined }) {
     const [error, setError] = useState(null);
     const currentUserId = localStorage.getItem('userId');
     const isPrivate = comunidad.tipoGrupo === 'GRUPO_PRIVADO';
+    const isMember = comunidad.esMiembro || false;
     const communityImageRaw = comunidad.imagen || comunidad.imagenUrl || comunidad.foto;
     const communityImage = (() => {
         if (!communityImageRaw || !String(communityImageRaw).trim() || String(communityImageRaw).trim().toLowerCase() === 'empty') {
@@ -69,7 +70,13 @@ export default function ComunidadCard({ comunidad, onJoined }) {
         <div
             key={comunidad.id}
             className="comunidad-card"
-            onClick={() => navigate(`/comunidades/${comunidad.id}`)}
+            onClick={() => {
+                if (isPrivate && !isMember) {
+                    setError('No puedes ver una comunidad privada a la que no estás unido.');
+                    return;
+                }
+                navigate(`/comunidades/${comunidad.id}`);
+            }}
             style={{ cursor: 'pointer' }}
         >
             <img src={communityImage} alt={comunidad.nombre} className="comunidad-image" />
