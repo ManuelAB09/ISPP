@@ -29,11 +29,11 @@ public interface ReservaClaseRepository extends JpaRepository<ReservaClase, Long
     @Query(
             value =
                     """
-                    SELECT r FROM reserva_clase r
+                    SELECT r.* FROM reserva_clase r
                     WHERE r.tutor_id = :tutorId
                     AND r.estado NOT IN ('CANCELADA_ALUMNO', 'CANCELADA_TUTOR', 'NO_ASISTIDA')
                     AND r.fecha_hora <= :fechaHoraFin
-                    AND DATE_ADD(r.fecha_hora, INTERVAL r.duracion_minutos MINUTE) >= :fechaHora
+                    AND r.fecha_hora + (r.duracion_minutos * INTERVAL '1 minute') >= :fechaHora
                     """,
             nativeQuery = true)
     List<ReservaClase> findReservasConflictivas(

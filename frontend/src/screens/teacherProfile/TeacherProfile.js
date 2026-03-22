@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { getTutorById, getMyTutorProfiles } from "../../api/tutorEndpoints";
@@ -316,13 +316,6 @@ const TeacherProfile = () => {
         </div>
       )}
       */}
-          {/* ═══════════════ PANEL RESERVAS (solo propietario) ═══════════════ */}
-          {user?.id === tutor.usuario?.id && (
-            <div style={{ marginBottom: '1.5rem' }}>
-              <TutorReservasPanel />
-            </div>
-          )}
-
           {/* ═══════════════ FILA: MIS DATOS + ACTIVIDAD ═══════════════ */}
           <div className="tp-row tp-row--datos-actividad">
             {/* — Mis datos — */}
@@ -472,6 +465,11 @@ const TeacherProfile = () => {
               ))}
             </div>
           </section>
+
+          {/* ═══════════════ PANEL DE RESERVAS (solo propietario del perfil) ═══════════════ */}
+          {user?.id === tutor.usuario?.id && (
+            <TutorReservasPanel tutorId={tutor.id} />
+          )}
 
         </div>{/* cierre tp-content */}
       </div>

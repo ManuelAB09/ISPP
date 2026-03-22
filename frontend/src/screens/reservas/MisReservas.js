@@ -1,303 +1,222 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Header from '../../components/Header/Header';
-import {
-  getMisReservasAlumno,
-  cancelarReserva,
-  calificarReserva,
-} from '../../api/reservas.api';
-import './MisReservas.css';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Header from "../../components/Header/Header";
+import { cancelarReserva, getMisReservasAlumno } from "../../api/reservas.api";
+import "./MisReservas.css";
 
 const ESTADO_LABEL = {
-  PENDIENTE: { label: 'Pendiente', cls: 'mr-badge--pending' },
-  CONFIRMADA: { label: 'Confirmada', cls: 'mr-badge--confirmed' },
-  COMPLETADA: { label: 'Completada', cls: 'mr-badge--done' },
-  CANCELADA_ALUMNO: { label: 'Cancelada por ti', cls: 'mr-badge--cancelled' },
-  CANCELADA_TUTOR: { label: 'Cancelada por el tutor', cls: 'mr-badge--cancelled' },
-  NO_ASISTIDA: { label: 'No asistida', cls: 'mr-badge--absent' },
+    PENDIENTE: "Pendiente",
+    CONFIRMADA: "Confirmada",
+    COMPLETADA: "Completada",
+    CANCELADA_ALUMNO: "Cancelada",
+    CANCELADA_TUTOR: "Cancelada por tutor",
+    NO_ASISTIDA: "No asistida",
 };
 
-const formatDT = (dt) => {
-  if (!dt) return '—';
-  const d = new Date(dt);
-  return d.toLocaleString('es-ES', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  });
+const ESTADO_COLOR = {
+    PENDIENTE: "mr-badge--pending",
+    CONFIRMADA: "mr-badge--confirmed",
+    COMPLETADA: "mr-badge--done",
+    CANCELADA_ALUMNO: "mr-badge--cancelled",
+    CANCELADA_TUTOR: "mr-badge--cancelled",
+    NO_ASISTIDA: "mr-badge--cancelled",
+};
+
+const formatFecha = (fechaHora) => {
+    if (!fechaHora) return "—";
+    const d = new Date(fechaHora);
+    return d.toLocaleString("es-ES", {
+        weekday: "long",
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+};
+
+const CancelDialog = ({ onConfirm, onClose, loading }) => {
+    const [motivo, setMotivo] = useState("");
+    return (
+        <div className="mr-dialog-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+            <div className="mr-dialog">
+                <h3 className="mr-dialog__title">Cancelar reserva</h3>
+                <p className="mr-dialog__text">
+                    Indica el motivo de cancelación (opcional). El tutor será notificado.
+                    Recuerda que las cancelaciones con menos de 24h de antelación pueden tener penalizaciones.
+                </p>
+                <textarea
+                    className="mr-dialog__input"
+                    rows={3}
+                    placeholder="Motivo de cancelación…"
+                    value={motivo}
+                    onChange={(e) => setMotivo(e.target.value)}
+                />
+                <div className="mr-dialog__footer">
+                    <button className="mr-btn mr-btn--secondary" onClick={onClose} disabled={loading}>
+                        Volver
+                    </button>
+                    <button className="mr-btn mr-btn--danger" onClick={() => onConfirm(motivo)} disabled={loading}>
+                        {loading ? "Cancelando…" : "Confirmar cancelación"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 const MisReservas = () => {
-  const navigate = useNavigate();
-  const [reservas, setReservas] = useState([]);
-  const [cargando, setCargando] = useState(true);
-  const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
+    const navigate = useNavigate();
+    const [reservas, setReservas] = useState([]);
+    const [cargando, setCargando] = useState(true);
+    const [error, setError] = useState("");
+    const [cancelTarget, setCancelTarget] = useState(null);
+    const [cancelLoading, setCancelLoading] = useState(false);
 
-  // Cancelar
-  const [cancelando, setCancelando] = useState(null);
-  const [motivo, setMotivo] = useState('');
-  const [accionando, setAccionando] = useState(null);
+    const cargar = () => {
+        setCargando(true);
+        getMisReservasAlumno({ size: 100 })
+            .then((data) => {
+                const lista = Array.isArray(data) ? data : data?.content ?? [];
+                // Ordenar: primeras las más próximas
+                lista.sort((a, b) => new Date(a.fechaHora) - new Date(b.fechaHora));
+                setReservas(lista);
+            })
+            .catch(() => setReservas([]))
+            .finally(() => setCargando(false));
+    };
 
-  // Calificar
-  const [calificando, setCalificando] = useState(null);
-  const [estrellas, setEstrellas] = useState(5);
-  const [comentario, setComentario] = useState('');
+    useEffect(() => { cargar(); }, []);
 
-  const cargar = async (p = 0) => {
-    setCargando(true);
-    try {
-      const data = await getMisReservasAlumno(p, 10);
-      setReservas(data?.content ?? []);
-      setTotalPages(data?.totalPages ?? 0);
-      setPage(p);
-    } catch {
-      setReservas([]);
-    } finally {
-      setCargando(false);
-    }
-  };
+    const handleCancelar = async (motivo) => {
+        setCancelLoading(true);
+        try {
+            await cancelarReserva(cancelTarget, motivo);
+            setCancelTarget(null);
+            cargar();
+        } catch (err) {
+            setError(err?.response?.data?.message || err?.message || "No se pudo cancelar la reserva.");
+        } finally {
+            setCancelLoading(false);
+        }
+    };
 
-  useEffect(() => { cargar(0); }, []);
+    const proximas = reservas.filter((r) => ["PENDIENTE", "CONFIRMADA"].includes(r.estado));
+    const pasadas = reservas.filter((r) => !["PENDIENTE", "CONFIRMADA"].includes(r.estado));
 
-  const handleCancelar = async () => {
-    if (!cancelando) return;
-    setAccionando(cancelando);
-    try {
-      await cancelarReserva(cancelando, motivo);
-      setCancelando(null);
-      setMotivo('');
-      await cargar(page);
-    } catch (e) {
-      alert(e?.message || 'No se pudo cancelar la reserva.');
-    } finally {
-      setAccionando(null);
-    }
-  };
-
-  const handleCalificar = async () => {
-    if (!calificando) return;
-    setAccionando(calificando);
-    try {
-      await calificarReserva(calificando, estrellas, comentario);
-      setCalificando(null);
-      setComentario('');
-      setEstrellas(5);
-      await cargar(page);
-    } catch (e) {
-      alert(e?.message || 'No se pudo enviar la valoración.');
-    } finally {
-      setAccionando(null);
-    }
-  };
-
-  return (
-    <>
-      <Header page="mis-reservas" />
-      <div className="mr-page">
-        <div className="mr-container">
-          <div className="mr-top">
-            <h1 className="mr-title">Mis reservas</h1>
-          </div>
-
-          {cargando ? (
-            <p className="mr-loading">Cargando reservas…</p>
-          ) : reservas.length === 0 ? (
-            <div className="mr-empty">
-              <p className="mr-empty__icon">📅</p>
-              <p className="mr-empty__text">Todavía no tienes reservas.</p>
-              <button
-                className="mr-btn mr-btn--primary"
-                onClick={() => navigate('/profesores')}
-              >
-                Buscar profesores
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="mr-list">
-                {reservas.map((r) => {
-                  const estadoInfo = ESTADO_LABEL[r.estado] ?? { label: r.estado, cls: '' };
-                  const puedeCancelar = r.puedeSerCancelada &&
-                    (r.estado === 'PENDIENTE' || r.estado === 'CONFIRMADA');
-                  const puedeCalificar = (r.estado === 'COMPLETADA' || r.estado === 'CONFIRMADA') &&
-                    r.calificacion == null;
-
-                  return (
-                    <div key={r.id} className="mr-card">
-                      <div className="mr-card__top">
-                        <div className="mr-card__info">
-                          <span className="mr-card__tutor">
-                            Con <strong>{r.tutorNombre}</strong>
-                          </span>
-                          <span className="mr-card__fecha">{formatDT(r.fechaHora)}</span>
-                          <span className="mr-card__tema">{r.tema}</span>
-                          <span className="mr-card__detalle">
-                            {r.duracionMinutos} min ·{' '}
-                            {r.modalidad === 'VIRTUAL' ? 'Online' : 'Presencial'}
-                            {r.tarifa ? ` · ${r.tarifa} €/h` : ''}
-                          </span>
-                        </div>
-                        <span className={`mr-badge ${estadoInfo.cls}`}>
-                          {estadoInfo.label}
-                        </span>
-                      </div>
-
-                      {r.motivoCancelacion && (
-                        <p className="mr-card__cancel-reason">
-                          Motivo: {r.motivoCancelacion}
-                        </p>
-                      )}
-
-                      {r.estado === 'CONFIRMADA' && r.modalidad === 'VIRTUAL' && r.enlaceVirtual && (
-                        <a
-                          className="mr-link-virtual"
-                          href={r.enlaceVirtual}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          🔗 Unirse a la clase
-                        </a>
-                      )}
-
-                      {r.calificacion != null && (
-                        <div className="mr-card__rating">
-                          {'★'.repeat(r.calificacion)}{'☆'.repeat(5 - r.calificacion)}
-                          {r.comentarioAlumno && (
-                            <span className="mr-card__comment"> "{r.comentarioAlumno}"</span>
-                          )}
-                        </div>
-                      )}
-
-                      <div className="mr-card__actions">
-                        {puedeCancelar && (
-                          <button
-                            className="mr-btn mr-btn--cancel"
-                            onClick={() => { setCancelando(r.id); setMotivo(''); }}
-                          >
-                            Cancelar reserva
-                          </button>
-                        )}
-                        {puedeCalificar && (
-                          <button
-                            className="mr-btn mr-btn--rate"
-                            onClick={() => { setCalificando(r.id); setEstrellas(5); setComentario(''); }}
-                          >
-                            ★ Valorar clase
-                          </button>
-                        )}
-                        <button
-                          className="mr-btn mr-btn--secondary"
-                          onClick={() => navigate(`/profesores/${r.tutorId}`)}
-                        >
-                          Ver perfil del tutor
+    return (
+        <>
+            <Header page="mis-reservas" />
+            <div className="mr-page">
+                <div className="mr-container">
+                    <div className="mr-hero">
+                        <h1 className="mr-hero__title">Mis reservas de clase</h1>
+                        <p className="mr-hero__sub">Consulta y gestiona tus clases reservadas con tutores.</p>
+                        <button className="mr-btn mr-btn--primary" onClick={() => navigate("/profesores")}>
+                            + Reservar nueva clase
                         </button>
-                      </div>
                     </div>
-                  );
-                })}
-              </div>
 
-              {totalPages > 1 && (
-                <div className="mr-pagination">
-                  <button
-                    className="mr-page-btn"
-                    disabled={page === 0}
-                    onClick={() => cargar(page - 1)}
-                  >← Anterior</button>
-                  <span className="mr-page-info">{page + 1} / {totalPages}</span>
-                  <button
-                    className="mr-page-btn"
-                    disabled={page >= totalPages - 1}
-                    onClick={() => cargar(page + 1)}
-                  >Siguiente →</button>
+                    {error && <p className="mr-error">⚠️ {error}</p>}
+
+                    {cargando ? (
+                        <p className="mr-loading">Cargando tus reservas…</p>
+                    ) : reservas.length === 0 ? (
+                        <div className="mr-empty">
+                            <span className="mr-empty__icon">📅</span>
+                            <p className="mr-empty__title">Aún no tienes reservas</p>
+                            <p className="mr-empty__sub">Busca un tutor y reserva tu primera clase.</p>
+                            <button className="mr-btn mr-btn--primary" onClick={() => navigate("/profesores")}>
+                                Explorar tutores
+                            </button>
+                        </div>
+                    ) : (
+                        <>
+                            {proximas.length > 0 && (
+                                <section className="mr-section">
+                                    <h2 className="mr-section__title">Próximas clases</h2>
+                                    <div className="mr-list">
+                                        {proximas.map((r) => (
+                                            <ReservaCard
+                                                key={r.id}
+                                                reserva={r}
+                                                onCancelar={() => setCancelTarget(r.id)}
+                                            />
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+
+                            {pasadas.length > 0 && (
+                                <section className="mr-section">
+                                    <h2 className="mr-section__title">Historial</h2>
+                                    <div className="mr-list">
+                                        {pasadas.map((r) => (
+                                            <ReservaCard key={r.id} reserva={r} />
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+                        </>
+                    )}
                 </div>
-              )}
-            </>
-          )}
-        </div>
-      </div>
+            </div>
 
-      {/* Modal cancelar */}
-      {cancelando && (
-        <div className="mr-overlay" onClick={(e) => e.target === e.currentTarget && setCancelando(null)}>
-          <div className="mr-dialog">
-            <h3 className="mr-dialog__title">Cancelar reserva</h3>
-            <p className="mr-dialog__text">
-              ¿Seguro que quieres cancelar esta reserva?
-              Recuerda que debes hacerlo con al menos 24 horas de antelación.
-            </p>
-            <div className="mr-field">
-              <label className="mr-label">Motivo (opcional)</label>
-              <textarea
-                className="mr-textarea"
-                rows={3}
-                placeholder="¿Por qué cancelas?"
-                value={motivo}
-                onChange={(e) => setMotivo(e.target.value)}
-              />
-            </div>
-            <div className="mr-dialog__actions">
-              <button
-                className="mr-btn mr-btn--secondary"
-                onClick={() => setCancelando(null)}
-              >Volver</button>
-              <button
-                className="mr-btn mr-btn--cancel"
-                disabled={accionando === cancelando}
-                onClick={handleCancelar}
-              >
-                {accionando === cancelando ? 'Cancelando…' : 'Sí, cancelar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal calificar */}
-      {calificando && (
-        <div className="mr-overlay" onClick={(e) => e.target === e.currentTarget && setCalificando(null)}>
-          <div className="mr-dialog">
-            <h3 className="mr-dialog__title">Valorar clase</h3>
-            <div className="mr-stars">
-              {[1, 2, 3, 4, 5].map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  className={`mr-star-btn ${n <= estrellas ? 'mr-star-btn--active' : ''}`}
-                  onClick={() => setEstrellas(n)}
-                >
-                  ★
-                </button>
-              ))}
-            </div>
-            <div className="mr-field">
-              <label className="mr-label">Comentario (opcional)</label>
-              <textarea
-                className="mr-textarea"
-                rows={3}
-                placeholder="¿Cómo fue la clase?"
-                value={comentario}
-                onChange={(e) => setComentario(e.target.value)}
-              />
-            </div>
-            <div className="mr-dialog__actions">
-              <button
-                className="mr-btn mr-btn--secondary"
-                onClick={() => setCalificando(null)}
-              >Cancelar</button>
-              <button
-                className="mr-btn mr-btn--primary"
-                disabled={accionando === calificando}
-                onClick={handleCalificar}
-              >
-                {accionando === calificando ? 'Enviando…' : 'Enviar valoración'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
+            {cancelTarget && (
+                <CancelDialog
+                    onConfirm={handleCancelar}
+                    onClose={() => setCancelTarget(null)}
+                    loading={cancelLoading}
+                />
+            )}
+        </>
+    );
 };
+
+const ReservaCard = ({ reserva: r, onCancelar }) => (
+    <div className="mr-card">
+        <div className="mr-card__header">
+            <div className="mr-card__tutor">
+                <span className="mr-card__tutor-name">{r.tutorNombre || `Tutor #${r.tutorId}`}</span>
+                <span className={`mr-badge ${ESTADO_COLOR[r.estado] || ""}`}>
+                    {ESTADO_LABEL[r.estado] || r.estado}
+                </span>
+            </div>
+            <span className="mr-card__fecha">{formatFecha(r.fechaHora)}</span>
+        </div>
+
+        <div className="mr-card__body">
+            <p className="mr-card__tema">{r.tema}</p>
+            <p className="mr-card__meta">
+                {r.modalidad} · {r.duracionMinutos} min
+                {r.tarifa != null && <> · <strong>{r.tarifa}€</strong></>}
+            </p>
+            {r.descripcion && <p className="mr-card__desc">{r.descripcion}</p>}
+            {r.enlaceVirtual && (
+                <a
+                    className="mr-card__link"
+                    href={r.enlaceVirtual}
+                    target="_blank"
+                    rel="noreferrer"
+                >
+                    🔗 Enlace a la clase virtual
+                </a>
+            )}
+            {r.motivoCancelacion && (
+                <p className="mr-card__motivo">
+                    Motivo de cancelación: <em>{r.motivoCancelacion}</em>
+                </p>
+            )}
+        </div>
+
+        {r.estado === "PENDIENTE" && onCancelar && (
+            <div className="mr-card__actions">
+                <button className="mr-btn mr-btn--danger-outline" onClick={onCancelar}>
+                    Cancelar reserva
+                </button>
+            </div>
+        )}
+    </div>
+);
 
 export default MisReservas;

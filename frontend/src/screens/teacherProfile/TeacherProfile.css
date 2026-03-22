@@ -398,13 +398,14 @@
 
 /* Reservar clase */
 .tp-btn--book {
-  background: #059669;
-  color: #fff;
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1.5px solid #86efac;
   font-weight: 700;
 }
 
 .tp-btn--book:hover {
-  background: #047857;
+  background: #dcfce7;
 }
 
 /* Contratar */
