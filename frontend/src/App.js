@@ -21,6 +21,7 @@ import Privacy from './screens/legal/Privacy';
 import Terms from './screens/legal/Terms';
 import Profile from './screens/myProfile/Profile';
 import MisPagos from './screens/pagos/MisPagos';
+import MisGanancias from './screens/ganancias/MisGanancias';
 import PagoExitoso from './screens/pagos/PagoExitoso';
 import InstitutionPlansScreen from './screens/planes/InstitutionPlansScreen';
 import PasarelaPago from './screens/planes/PasarelaPago';
@@ -73,6 +74,7 @@ function AppRoutes() {
         <Route path="/planes/pasarela" element={<PasarelaPago />} />
         <Route path="/planes/instituciones" element={<InstitutionPlansScreen />} />
         <Route path="/pagos" element={<MisPagos />} />
+        <Route path="/ganancias" element={<MisGanancias />} />
         <Route path="/eventos/:eventId" element={<DetalleEvento />} />
         <Route path="/eventos-mapa" element={<EventosMapaScreen />} />
         <Route path="/mis-eventos" element={<MisEventos />} />
@@ -84,6 +86,7 @@ function AppRoutes() {
 
   return (
     <SocketProvider token={socketToken}>
+      <NotificationProvider>
       <Routes>
         {/* Ruta principal - muestra landing page si no está autenticado */}
         <Route path="/" element={
@@ -127,6 +130,7 @@ function AppRoutes() {
         {/* Catch-all: redirige rutas no encontradas a inicio */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </NotificationProvider>
     </SocketProvider>
   );
 }
@@ -134,9 +138,7 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <NotificationProvider>
-        <AppRoutes />
-      </NotificationProvider>
+      <AppRoutes />
     </AuthProvider>
   );
 }

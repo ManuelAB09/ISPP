@@ -17,4 +17,12 @@ public interface ZoomMeetingRepository extends JpaRepository<ZoomMeeting, Long> 
     List<ZoomMeeting> findByComunidadIdOrderByCreatedAtDesc(Long comunidadId);
 
     Optional<ZoomMeeting> findByZoomMeetingId(String zoomMeetingId);
+
+    Optional<ZoomMeeting> findFirstByEventoIdAndStatusOrderByCreatedAtDesc(
+            Long eventoId, ZoomMeetingStatus status);
+
+    List<ZoomMeeting> findByEventoIdOrderByCreatedAtDesc(Long eventoId);
+
+    /** Elimina todas las reuniones Zoom de un evento. */
+    void deleteByEventoId(Long eventoId);
 }

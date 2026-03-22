@@ -1,6 +1,10 @@
+import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
 import { useState } from "react";
 import { institutionsApi } from "../../api/institutions.api";
 import "./InstitutionPlanModal.css";
+
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLIC_KEY);
 
 /* ── Helpers ──────────────────────────────────────── */
 const getUserEmail = () => {
@@ -17,14 +21,15 @@ const extractDomain = (email) => {
   return parts.length === 2 ? parts[1].toLowerCase().trim() : "";
 };
 
-const STEPS_WITH_ELIGIBILITY = ["eligibility", "details", "config", "confirm"];
-const STEPS_WITHOUT_ELIGIBILITY = ["details", "config", "confirm"];
+const STEPS_WITH_ELIGIBILITY = ["eligibility", "details", "config", "confirm", "payment"];
+const STEPS_WITHOUT_ELIGIBILITY = ["details", "config", "confirm", "payment"];
 
 const STEP_LABELS = {
   eligibility: "Elegibilidad",
   details: "Institución",
   config: "Configuración",
   confirm: "Confirmar",
+  payment: "Pago",
 };
 
 const DURACION_OPTIONS = [
@@ -86,8 +91,13 @@ export default function InstitutionPlanModal({ plan, onClose }) {
   const [duracionMeses, setDuracionMeses] = useState(12);
   const [aceptarTerminos, setAceptarTerminos] = useState(false);
 
+  /* Stripe Elements state */
+  const [clientSecret, setClientSecret] = useState(null);
+  const [institutionId, setInstitutionId] = useState(null);
+
   const currentStep = steps[stepIndex];
-  const isLastStep = stepIndex === steps.length - 1;
+  const isPaymentStep = currentStep === "payment";
+  const isConfirmStep = currentStep === "confirm";
 
   /* ── Validation ─────────────────────────── */
   const validateStep = () => {
@@ -126,9 +136,59 @@ export default function InstitutionPlanModal({ plan, onClose }) {
   };
 
   /* ── Navigation ──────────────────────────── */
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!validateStep()) return;
     setError("");
+
+    // When leaving confirm step, create institution + get PaymentIntent
+    if (isConfirmStep) {
+      setLoading(true);
+      try {
+        // 1. Create institution
+        const institution = await institutionsApi.create({
+          nombre: nombre.trim(),
+          descripcion: descripcion.trim() || undefined,
+          emailContacto: emailContacto.trim(),
+          telefonoContacto: telefono.trim() || undefined,
+          dominioEmail: dominioEmail.trim(),
+          ubicacion: ubicacion.trim() || undefined,
+          sitioweb: sitioweb.trim() || undefined,
+        });
+
+        setInstitutionId(institution.id);
+
+        // 2. Create PaymentIntent for the corporate plan
+        const intentRes = await institutionsApi.createPlanPaymentIntent(institution.id, {
+          tipoPlan: plan.id,
+          numUsuarios,
+          duracionMeses,
+          aceptarTerminos: true,
+          periodo: duracionMeses >= 12 ? "anual" : "mensual",
+          documentacionEligibilidad:
+            plan.requiereEligibilidad && documentacion.trim()
+              ? documentacion.trim()
+              : undefined,
+        });
+
+        const data = intentRes.data || intentRes;
+        setClientSecret(data.clientSecret);
+        setStepIndex((i) => i + 1);
+      } catch (e) {
+        if (e?.status === 403) {
+          setError("Debes iniciar sesión para contratar un plan institucional.");
+        } else if (e?.status === 409) {
+          setError(
+            "Ya existe una institución con ese dominio de email. Si crees que es un error, contacta con soporte."
+          );
+        } else {
+          setError(e?.message || "Error al procesar la solicitud. Inténtalo de nuevo.");
+        }
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     setStepIndex((i) => i + 1);
   };
 
@@ -188,6 +248,12 @@ export default function InstitutionPlanModal({ plan, onClose }) {
     } finally {
       setLoading(false);
     }
+  };
+  
+  /* ── Submit (no longer used — payment is handled by Stripe Elements) ── */
+  const handlePaymentSuccess = () => {
+    onClose();
+    window.location.href = "/planes/success?tipo=institucional";
   };
 
   /* ── Render ──────────────────────────────── */
@@ -298,12 +364,29 @@ export default function InstitutionPlanModal({ plan, onClose }) {
               setAceptarTerminos={setAceptarTerminos}
             />
           )}
+          {currentStep === "payment" && clientSecret && (
+            <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: "stripe" } }}>
+              <StepPayment
+                plan={plan}
+                duracionMeses={duracionMeses}
+                institutionId={institutionId}
+                onSuccess={handlePaymentSuccess}
+                onError={setError}
+              />
+            </Elements>
+          )}
+          {currentStep === "payment" && !clientSecret && (
+            <div className="instStepContent">
+              <p>Cargando formulario de pago...</p>
+            </div>
+          )}
         </div>
 
         {/* Error */}
         {error && <div className="instModalError">⚠️ {error}</div>}
 
         {/* Actions */}
+        {!isPaymentStep && (
         <div className="instModalActions">
           {stepIndex > 0 && (
             <button
@@ -321,24 +404,15 @@ export default function InstitutionPlanModal({ plan, onClose }) {
           >
             Cancelar
           </button>
-          {!isLastStep ? (
-            <button
-              className="instModalBtnNext"
-              onClick={handleNext}
-              disabled={loading}
-            >
-              Siguiente →
-            </button>
-          ) : (
-            <button
-              className="instModalBtnSubmit"
-              onClick={handleSubmit}
-              disabled={loading}
-            >
-              {loading ? "Procesando..." : "Confirmar y pagar"}
-            </button>
-          )}
+          <button
+            className="instModalBtnNext"
+            onClick={handleNext}
+            disabled={loading}
+          >
+            {loading ? "Procesando..." : (isConfirmStep ? "Continuar al pago →" : "Siguiente →")}
+          </button>
         </div>
+        )}
       </div>
     </div>
   );
@@ -603,7 +677,7 @@ function StepConfirm({
     <div className="instStepContent">
       <h3>Resumen y confirmación</h3>
       <p className="instStepDesc">
-        Revisa los datos antes de proceder al pago. Serás redirigido a la plataforma segura de pago.
+        Revisa los datos antes de proceder al pago.
       </p>
 
       <div className="instSummaryCard">
@@ -665,6 +739,88 @@ function StepConfirm({
           de los planes institucionales de MeerKatters.
         </span>
       </label>
+    </div>
+  );
+}
+
+/* ── Step: Payment (Stripe Elements) ──────────────── */
+function StepPayment({ plan, duracionMeses, institutionId, onSuccess, onError }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [processing, setProcessing] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+
+    setProcessing(true);
+    onError("");
+
+    try {
+      const { error: submitError } = await elements.submit();
+      if (submitError) {
+        onError(submitError.message);
+        setProcessing(false);
+        return;
+      }
+
+      const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: window.location.origin + "/planes/success?tipo=institucional",
+        },
+        redirect: "if_required",
+      });
+
+      if (confirmError) {
+        onError(confirmError.message);
+        setProcessing(false);
+        return;
+      }
+
+      if (paymentIntent && paymentIntent.status === "succeeded") {
+        await institutionsApi.confirmPlanPayment(paymentIntent.id);
+        onSuccess();
+      }
+    } catch (err) {
+      onError(
+        err?.response?.data?.error ||
+          err?.data?.error ||
+          "Error al procesar el pago. Intenta de nuevo."
+      );
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <div className="instStepContent">
+      <h3>Pago seguro</h3>
+      <p className="instStepDesc">
+        Introduce los datos de tu tarjeta para completar la contratación del plan{" "}
+        <strong>{plan.nombre}</strong>.
+      </p>
+
+      <form onSubmit={handleSubmit}>
+        <PaymentElement />
+
+        <div className="instModalActions" style={{ marginTop: 20 }}>
+          <button
+            type="submit"
+            className="instModalBtnSubmit"
+            disabled={processing || !stripe}
+          >
+            {processing
+              ? "Procesando..."
+              : `Pagar ${duracionMeses >= 12 ? plan.precioAnual : plan.precio}`}
+          </button>
+        </div>
+      </form>
+
+      <div style={{ marginTop: 12, fontSize: "0.85rem", color: "#666", display: "flex", alignItems: "center", gap: 6 }}>
+        <span>🔒</span>
+        <span>Tu información está protegida. El pago se procesa de forma segura a través de Stripe.</span>
+      </div>
     </div>
   );
 }

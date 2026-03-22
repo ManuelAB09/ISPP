@@ -37,6 +37,9 @@ public class AsistenciaEventoService {
     /** Repositorio para acceder a la información de miembros de comunidad. */
     private final MiembroComunidadRepository miembroRepository;
 
+    /** Servicio para sincronizar eventos con Google Calendar. */
+    private final GoogleCalendarService googleCalendarService;
+
     // ===============================
     // CONFIRMAR ASISTENCIA
     // ===============================
@@ -55,6 +58,11 @@ public class AsistenciaEventoService {
                 eventoRepository
                         .findById(eventoIdParam)
                         .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
+
+        // Verificar que el evento no haya comenzado ya
+        if (evento.getFechaHora() != null && !evento.getFechaHora().isAfter(LocalDateTime.now())) {
+            throw new IllegalStateException("No puedes unirte a un evento que ya ha comenzado");
+        }
 
         final Usuario usuario =
                 usuarioRepository
@@ -88,6 +96,8 @@ public class AsistenciaEventoService {
                 evento.setAsistentesConfirmados(evento.contarAsistentes() + 1);
                 eventoRepository.save(evento);
             }
+            // Sincronizar con Google Calendar del usuario
+            googleCalendarService.sincronizarParaUsuario(evento, usuario);
             return asistenciaRepository.save(asistencia);
         }
 
@@ -101,6 +111,9 @@ public class AsistenciaEventoService {
         // Actualizar contador de asistentes en el evento
         evento.setAsistentesConfirmados(evento.contarAsistentes() + 1);
         eventoRepository.save(evento);
+
+        // Sincronizar con Google Calendar del usuario
+        googleCalendarService.sincronizarParaUsuario(evento, usuario);
 
         return asistenciaRepository.save(asistencia);
     }
@@ -122,6 +135,13 @@ public class AsistenciaEventoService {
                         .findByEventoAndUsuario(eventoIdParam, usuarioIdParam)
                         .orElseThrow(() -> new RuntimeException("Asistencia no encontrada"));
 
+        // El creador del evento no puede cancelar su asistencia
+        if (asistencia.getEvento().getCreador().getId().equals(usuarioIdParam)) {
+            throw new IllegalStateException(
+                    "El creador del evento no puede cancelar su asistencia. Cancela el evento en su"
+                            + " lugar.");
+        }
+
         final boolean estabaConfirmada = EstadoAsistencia.CONFIRMADA.equals(asistencia.getEstado());
         asistencia.cancelarAsistencia();
         asistenciaRepository.save(asistencia);
@@ -134,6 +154,13 @@ public class AsistenciaEventoService {
                             .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
             evento.setAsistentesConfirmados(Math.max(evento.contarAsistentes() - 1, 0));
             eventoRepository.save(evento);
+
+            // Eliminar evento de Google Calendar del usuario
+            final Usuario usuario =
+                    usuarioRepository
+                            .findById(usuarioIdParam)
+                            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            googleCalendarService.desincronizarParaUsuario(evento, usuario);
         }
     }
 

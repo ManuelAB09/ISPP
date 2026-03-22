@@ -20,6 +20,12 @@ jest.mock('../../contexts/AuthContext', () => ({
     }),
 }));
 
+jest.mock('../../api/auth.api', () => ({
+    authApi: {
+        getUserPublicProfile: jest.fn().mockResolvedValue({ data: { id: 1, nombre: 'Test', foto: null } }),
+    },
+}));
+
 jest.mock('../../api/communities.api', () => ({
     communitiesApi: {
         getMyMemberships: jest.fn().mockResolvedValue([]),

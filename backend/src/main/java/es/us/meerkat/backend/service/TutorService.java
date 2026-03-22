@@ -197,6 +197,8 @@ public class TutorService {
                 .bio(tutor.getBio())
                 .verificado(tutor.getVerificado())
                 .classroomConectado(tutor.getClassroomConectado())
+                .stripeConfigured(
+                        tutor.getStripeAccountId() != null && !tutor.getStripeAccountId().isBlank())
                 .ubicacion(
                         tutor.getUsuario().getUbicacion() != null
                                 ? UbicacionResponse.builder()

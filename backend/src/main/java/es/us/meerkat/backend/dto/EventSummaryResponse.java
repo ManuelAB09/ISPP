@@ -46,6 +46,15 @@ public class EventSummaryResponse {
     /** Si el evento está cancelado. */
     private Boolean cancelado;
 
+    /** ID de la tarea de Google Classroom vinculada. */
+    private String classroomTaskId;
+
+    /** Título de la tarea de Google Classroom vinculada. */
+    private String classroomTaskTitle;
+
+    /** URL de la tarea de Google Classroom vinculada. */
+    private String classroomTaskUrl;
+
     /** Identificador de la comunidad a la que pertenece. */
     private Long comunidadId;
 
@@ -58,5 +67,8 @@ public class EventSummaryResponse {
     //
     // /** Icono emoji del tipo de evento (ej: "📝", "👥"). */
     private String iconoEvento;
+
+    /** Identificador del creador del evento. */
+    private Long creadorId;
     //
 }

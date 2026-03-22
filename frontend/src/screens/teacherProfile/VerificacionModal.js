@@ -1,135 +1,171 @@
-import { useState } from 'react';
-import { verificarTutor } from '../../api/tutorEndpoints';
-import './TutorModals.css';
+import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
+import { useEffect, useState } from "react";
+import { confirmVerificationPayment, createVerificationPaymentIntent } from "../../api/tutorEndpoints";
+import "./TutorModals.css";
 
-const VerificacionModal = ({ verificado, onClose, onVerificado }) => {
-  const [solicitando, setSolicitando] = useState(false);
-  const [errorMsg, setErrorMsg] = useState(null);
-  const [mostrarPago, setMostrarPago] = useState(false);
-  const [pagoRealizado, setPagoRealizado] = useState(false);
-  const [pagoError, setPagoError] = useState(null);
-  const [pagoForm, setPagoForm] = useState({
-    nombre: '',
-    numero: '',
-    caducidad: '',
-    cvc: '',
-  });
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLIC_KEY);
 
-  const handlePagoSubmit = async (e) => {
+/**
+ * Formulario de pago real con Stripe Elements para verificación de tutor.
+ */
+const VerificacionPaymentForm = ({ onPaymentSuccess, onCancel }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setPagoError(null);
-    setErrorMsg(null);
-    setSolicitando(true);
+    if (!stripe || !elements) return;
+
+    setProcessing(true);
+    setError(null);
 
     try {
-      await verificarTutor();
-      setPagoRealizado(true);
-      if (typeof onVerificado === 'function') {
-        onVerificado();
+      const { error: submitError } = await elements.submit();
+      if (submitError) {
+        setError(submitError.message);
+        setProcessing(false);
+        return;
+      }
+
+      const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: window.location.origin + "/success?tipo=verificacion",
+        },
+        redirect: "if_required",
+      });
+
+      if (confirmError) {
+        setError(confirmError.message);
+        setProcessing(false);
+        return;
+      }
+
+      if (paymentIntent && paymentIntent.status === "succeeded") {
+        await confirmVerificationPayment(paymentIntent.id);
+        onPaymentSuccess();
       }
     } catch (err) {
-      console.error('Error al verificar tutor:', err);
-      setPagoError('No se pudo completar la verificación. Inténtalo de nuevo.');
+      setError(
+        err?.response?.data?.error ||
+          err?.data?.error ||
+          "Error al procesar el pago. Inténtalo de nuevo."
+      );
     } finally {
-      setSolicitando(false);
+      setProcessing(false);
     }
   };
 
+  return (
+    <form className="tm-pago-form" onSubmit={handleSubmit}>
+      <div className="tm-pago-form__titulo">Pago de verificación</div>
+      <PaymentElement />
+      {error && <div className="tm-error tm-pago-form__error" style={{ marginTop: 12 }}>{error}</div>}
+      <button
+        className="tm-btn tm-btn--primary tm-btn--full"
+        type="submit"
+        disabled={processing || !stripe}
+        style={{ marginTop: 16 }}
+      >
+        {processing ? "Procesando..." : "Pagar y solicitar verificación"}
+      </button>
+      <button
+        type="button"
+        className="tm-btn tm-btn--secondary tm-btn--full"
+        style={{ marginTop: 8 }}
+        onClick={onCancel}
+        disabled={processing}
+      >
+        Cancelar
+      </button>
+    </form>
+  );
+};
+
+/**
+ * Modal de verificación del perfil de tutor.
+ * Muestra el estado actual y permite solicitar la verificación (€19,99)
+ * con pago real a través de Stripe Elements embebido.
+ *
+ * Props:
+ *   - tutorId: Long
+ *   - verificado: Boolean (valor ya conocido del perfil)
+ *   - onClose: callback
+ *   - onVerificado: callback() → actualiza el tutor en el padre tras solicitar
+ */
+const VerificacionModal = ({ tutorId, verificado, onClose, onVerificado }) => {
+  const [estado, setEstado] = useState(verificado ? "VERIFICADO" : null);
+  const [cargando, setCargando] = useState(!verificado);
+  const [errorMsg, setErrorMsg] = useState(null);
+  const [exito, setExito] = useState(false);
+  // Stripe Elements state
+  const [mostrarPago, setMostrarPago] = useState(false);
+  const [clientSecret, setClientSecret] = useState(null);
+  const [loadingIntent, setLoadingIntent] = useState(false);
+
+  // Cargar estado inicial
+  useEffect(() => {
+    if (verificado) {
+      setEstado("VERIFICADO");
+      setCargando(false);
+    } else {
+      setEstado("SIN_SOLICITUD");
+      setCargando(false);
+    }
+  }, [tutorId, verificado]);
+
+  // Crear PaymentIntent cuando el usuario quiere pagar
+  const handleIniciarPago = async () => {
+    setLoadingIntent(true);
+    setErrorMsg(null);
+
+    try {
+      const res = await createVerificationPaymentIntent();
+      const data = res.data || res;
+      setClientSecret(data.clientSecret);
+      setMostrarPago(true);
+    } catch (err) {
+      setErrorMsg(
+        err?.response?.data?.error || "Error al conectar con la pasarela de pago. Inténtalo de nuevo."
+      );
+    } finally {
+      setLoadingIntent(false);
+    }
+  };
+  
+  const handlePaymentSuccess = () => {
+    setMostrarPago(false);
+    setEstado("VERIFICADO");
+    setExito(true);
+    onVerificado && onVerificado();
+  };
+
+  const elementsOptions = clientSecret
+    ? { clientSecret, appearance: { theme: "stripe" } }
+    : undefined;
+
+  /* ─── Contenido según estado ─── */
   const renderContenido = () => {
-    if (mostrarPago && !pagoRealizado) {
+    // Stripe Elements payment form
+    if (mostrarPago && clientSecret && elementsOptions) {
       return (
-        <form className="tm-pago-form" onSubmit={handlePagoSubmit} autoComplete="off">
-          <div className="tm-pago-form__titulo">Pago de verificación</div>
-
-          <div className="tm-pago-form__row">
-            <label>Nombre en la tarjeta</label>
-            <input
-              type="text"
-              value={pagoForm.nombre}
-              onChange={(e) => setPagoForm((f) => ({ ...f, nombre: e.target.value }))}
-              placeholder="Nombre completo"
-              autoFocus
-            />
-          </div>
-
-          <div className="tm-pago-form__row">
-            <label>Número de tarjeta</label>
-            <input
-              type="text"
-              value={pagoForm.numero}
-              onChange={(e) => {
-                const digits = e.target.value.replace(/\D/g, '').substring(0, 16);
-                const formatted = digits.replace(/(\d{4})(?=\d)/g, '$1 ');
-                setPagoForm((f) => ({ ...f, numero: formatted }));
-              }}
-              placeholder="1234 5678 9012 3456"
-              maxLength={19}
-              inputMode="numeric"
-            />
-          </div>
-
-          <div className="tm-pago-form__row tm-pago-form__row--split">
-            <div>
-              <label>Caducidad</label>
-              <input
-                type="text"
-                value={pagoForm.caducidad}
-                onChange={(e) => {
-                  const digits = e.target.value.replace(/\D/g, '').substring(0, 4);
-                  const formatted =
-                    digits.length >= 3
-                      ? `${digits.substring(0, 2)}/${digits.substring(2)}`
-                      : digits;
-                  setPagoForm((f) => ({ ...f, caducidad: formatted }));
-                }}
-                placeholder="MM/AA"
-                maxLength={5}
-                inputMode="numeric"
-              />
-            </div>
-            <div>
-              <label>CVC</label>
-              <input
-                type="text"
-                value={pagoForm.cvc}
-                onChange={(e) => {
-                  const digits = e.target.value.replace(/\D/g, '').substring(0, 3);
-                  setPagoForm((f) => ({ ...f, cvc: digits }));
-                }}
-                placeholder="123"
-                maxLength={3}
-                inputMode="numeric"
-              />
-            </div>
-          </div>
-
-          {pagoError && <div className="tm-error tm-pago-form__error">{pagoError}</div>}
-
-          <button className="tm-btn tm-btn--primary tm-btn--full" type="submit" disabled={solicitando}>
-            {solicitando ? 'Procesando pago...' : 'Pagar y solicitar verificación'}
-          </button>
-
-          <button
-            type="button"
-            className="tm-btn tm-btn--secondary tm-btn--full"
-            style={{ marginTop: 8 }}
-            onClick={() => setMostrarPago(false)}
-            disabled={solicitando}
-          >
-            Cancelar
-          </button>
-        </form>
+        <Elements stripe={stripePromise} options={elementsOptions}>
+          <VerificacionPaymentForm
+            onPaymentSuccess={handlePaymentSuccess}
+            onCancel={() => setMostrarPago(false)}
+          />
+        </Elements>
       );
     }
 
-    if (mostrarPago && pagoRealizado) {
-      return (
-        <div className="tm-verificacion tm-verificacion--pago-ok">
-          <div className="tm-verificacion__icon tm-verificacion__icon--ok">✓</div>
-          <h3 className="tm-verificacion__heading">Pago realizado</h3>
-        </div>
-      );
+    if (loadingIntent) {
+      return <p className="tm-status tm-status--loading">Cargando pasarela de pago...</p>;
     }
+
+    if (cargando) return <p className="tm-status tm-status--loading">Comprobando estado…</p>;
 
     if (verificado) {
       return (
@@ -163,10 +199,10 @@ const VerificacionModal = ({ verificado, onClose, onVerificado }) => {
         </p>
         <button
           className="tm-btn tm-btn--primary tm-btn--full"
-          onClick={() => setMostrarPago(true)}
-          disabled={solicitando}
+          onClick={handleIniciarPago}
+          disabled={loadingIntent}
         >
-          Iniciar pago y solicitud
+          {loadingIntent ? "Cargando..." : "Iniciar pago y solicitud"}
         </button>
       </div>
     );

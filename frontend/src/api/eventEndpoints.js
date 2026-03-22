@@ -2,9 +2,19 @@ import axiosInstance from './axiosConfig';
 /**
  * Lista eventos visibles en el mapa
  * GET /events/map
+ * @param {Object} options - Opciones de filtrado (opcional)
+ * @param {number} options.lat - Latitud del centro de búsqueda
+ * @param {number} options.lon - Longitud del centro de búsqueda
+ * @param {number} options.radioKm - Radio de búsqueda en km
  */
-export const listMapEvents = async () => {
-  const response = await axiosInstance.get('/api/v1/events/map');
+export const listMapEvents = async ({ lat, lon, radioKm } = {}) => {
+  const params = {};
+  if (lat != null && lon != null && radioKm != null) {
+    params.lat = lat;
+    params.lon = lon;
+    params.radioKm = radioKm;
+  }
+  const response = await axiosInstance.get('/api/v1/events/map', { params });
   return response.data;
 };
 
@@ -157,5 +167,23 @@ export const getConfirmedAttendees = async (eventId) => {
  */
 export const getAttendanceCount = async (eventId) => {
   const response = await axiosInstance.get(`/api/v1/events/${eventId}/attendance/count`);
+  return response.data;
+};
+
+/**
+ * Vincula una tarea de Google Classroom a un evento
+ * POST /events/{eventId}/classroom-task
+ */
+export const linkClassroomTask = async (eventId, taskData) => {
+  const response = await axiosInstance.post(`/api/v1/events/${eventId}/classroom-task`, taskData);
+  return response.data;
+};
+
+/**
+ * Desvincula una tarea de Google Classroom de un evento
+ * DELETE /events/{eventId}/classroom-task
+ */
+export const unlinkClassroomTask = async (eventId) => {
+  const response = await axiosInstance.delete(`/api/v1/events/${eventId}/classroom-task`);
   return response.data;
 };

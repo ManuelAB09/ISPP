@@ -58,6 +58,31 @@ jest.mock('./VerificacionModal', () => {
     );
   };
 });
+jest.mock('./HireDirectModal', () => {
+  return function MockHireDirectModal({ onClose }) {
+    return <div data-testid="hire-modal"><button onClick={onClose}>Mock Cerrar</button></div>;
+  };
+});
+jest.mock('./TutorSolicitudes', () => {
+  return function MockTutorSolicitudes() {
+    return <div data-testid="tutor-solicitudes" />;
+  };
+});
+jest.mock('./TutorConversaciones', () => {
+  return function MockTutorConversaciones() {
+    return <div data-testid="tutor-conversaciones" />;
+  };
+});
+jest.mock('./AlumnoSolicitudes', () => {
+  return function MockAlumnoSolicitudes() {
+    return <div data-testid="alumno-solicitudes" />;
+  };
+});
+jest.mock('../chat/PrivateChat', () => {
+  return function MockPrivateChat() {
+    return <div data-testid="private-chat" />;
+  };
+});
 
 describe('TeacherProfile', () => {
   const mockTutor = {

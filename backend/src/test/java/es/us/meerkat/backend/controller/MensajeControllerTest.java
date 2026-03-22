@@ -12,11 +12,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 
 import es.us.meerkat.backend.dto.EnviarMensajeRequest;
 import es.us.meerkat.backend.dto.MensajeResponse;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.UsuarioRepository;
 import es.us.meerkat.backend.service.ChatFileStorageService;
 import es.us.meerkat.backend.service.MensajeService;
 
@@ -25,6 +27,8 @@ class MensajeControllerTest {
 
     @Mock private MensajeService mensajeService;
     @Mock private ChatFileStorageService chatFileStorageService;
+    @Mock private SimpMessagingTemplate broker;
+    @Mock private UsuarioRepository usuarioRepository;
     @InjectMocks private MensajeController controller;
 
     @Test
@@ -75,6 +79,10 @@ class MensajeControllerTest {
     void eliminarMensaje_ok() {
         Usuario u = new Usuario();
         u.setId(1L);
+        u.setEmail("test@test.com");
+        MensajeResponse deleted =
+                MensajeResponse.builder().emisorId(1L).receptorId(2L).contenido("msg").build();
+        when(mensajeService.obtenerMensaje(10L)).thenReturn(deleted);
         ResponseEntity<?> r = controller.eliminarMensaje(u, 10L);
         assertThat(r.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
     }
@@ -83,7 +91,9 @@ class MensajeControllerTest {
     void editarMensaje_ok() {
         Usuario u = new Usuario();
         u.setId(1L);
-        MensajeResponse resp = MensajeResponse.builder().contenido("Editado").build();
+        u.setEmail("test@test.com");
+        MensajeResponse resp =
+                MensajeResponse.builder().contenido("Editado").emisorId(1L).receptorId(2L).build();
         when(mensajeService.editarMensaje(1L, 5L, "Editado")).thenReturn(resp);
 
         ResponseEntity<?> r =

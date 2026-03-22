@@ -988,3 +988,74 @@
     height: 120px;
   }
 }
+
+/* ── Chat embebido en perfil de profesor ─────────────────────── */
+.tp-chat-embed {
+  max-width: 900px;
+  margin: 0 auto 24px;
+  padding: 0 24px;
+}
+
+.tp-chat-embed .private-chat-container {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  max-height: 500px;
+}
+
+.tp-rating-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+}
+.tp-badge-nivel {
+  font-weight: bold;
+  font-size: 1.1rem;
+  padding: 4px 12px;
+  border-radius: 16px;
+  background: #f3f4f6;
+  color: #333;
+  border: 1.5px solid #e5e7eb;
+  margin-right: 8px;
+}
+.tp-badge-nivel--experto {
+  background: #fffbe6;
+  color: #bfa100;
+  border-color: #ffe066;
+}
+.tp-badge-nivel--avanzado {
+  background: #e6f0ff;
+  color: #1d4ed8;
+  border-color: #60a5fa;
+}
+.tp-badge-nivel--principiante {
+  background: #e6ffed;
+  color: #059669;
+  border-color: #6ee7b7;
+}
+.tp-rating-media {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1.1rem;
+}
+.tp-rating-num {
+  font-weight: 600;
+  margin-left: 2px;
+}
+.tp-rating-count {
+  color: #888;
+  font-size: 0.98rem;
+  margin-left: 4px;
+}
+.tp-estrellas {
+  color: #fbbf24;
+  font-size: 1.2rem;
+}
+.tp-star {
+  color: #e5e7eb;
+}
+.tp-star--filled {
+  color: #fbbf24;
+}

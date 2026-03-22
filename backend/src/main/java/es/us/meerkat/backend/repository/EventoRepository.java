@@ -27,14 +27,14 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
     List<Evento> findByCanceladoFalse();
 
     /**
-     * Obtiene todos los eventos visibles en el mapa.
+     * Obtiene todos los eventos visibles en el mapa (solo públicos de comunidades públicas).
      *
      * @return Lista de eventos visibles en mapa.
      */
     @Query(
             "SELECT e FROM Evento e WHERE e.visibleMapa = true AND e.cancelado = false AND"
-                    + " e.privado = false")
-    List<Evento> findVisibleOnMap();
+                    + " e.privado = false AND e.fechaHora >= :ahora")
+    List<Evento> findVisibleOnMap(@Param("ahora") LocalDateTime ahora);
 
     /**
      * Obtiene todos los eventos públicos de una comunidad.
@@ -42,8 +42,10 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
      * @param comunidadCount Identificador de la comunidad.
      * @return Lista de eventos públicos.
      */
-    @Query("SELECT e FROM Evento e WHERE e.privado = false AND e.cancelado = false")
-    List<Evento> findPublicEvents();
+    @Query(
+            "SELECT e FROM Evento e WHERE e.privado = false AND e.cancelado = false AND e.fechaHora"
+                    + " >= :ahora")
+    List<Evento> findPublicEvents(@Param("ahora") LocalDateTime ahora);
 
     /**
      * Obtiene todos los eventos privados de una comunidad.
@@ -79,28 +81,73 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
      */
     List<Evento> findByComunidadIdAndCanceladoFalse(Long comunidadId);
 
+    /**
+     * Obtiene los eventos no cancelados y futuros de una comunidad.
+     *
+     * @param comunidadId Identificador de la comunidad.
+     * @param ahora Momento actual para filtrar eventos futuros.
+     * @return Lista de eventos activos futuros de la comunidad.
+     */
+    @Query(
+            "SELECT e FROM Evento e WHERE e.comunidad.id = :comunidadId"
+                    + " AND e.cancelado = false"
+                    + " AND ("
+                    + "   e.fechaHora >= :ahora"
+                    + "   OR ("
+                    + "     e.fechaHora < :ahora"
+                    + "     AND ((e.fechaFin IS NOT NULL AND e.fechaFin >= :ahora)"
+                    + "          OR (e.fechaFin IS NULL AND e.fechaHora >= :limiteMargen))"
+                    + "     AND (:usuarioId IS NOT NULL"
+                    + "          AND (e.creador.id = :usuarioId"
+                    + "               OR EXISTS (SELECT ae FROM AsistenciaEvento ae"
+                    + "                          WHERE ae.evento.id = e.id"
+                    + "                          AND ae.usuario.id = :usuarioId"
+                    + "                          AND ae.estado = 'CONFIRMADA')))"
+                    + "   )"
+                    + ")")
+    List<Evento> findByComunidadIdAndCanceladoFalseAndFuture(
+            @Param("comunidadId") Long comunidadId,
+            @Param("ahora") LocalDateTime ahora,
+            @Param("limiteMargen") LocalDateTime limiteMargen,
+            @Param("usuarioId") Long usuarioId);
+
     // -----------------------------------------------
     // NUEVAS CONSULTAS: Mis Eventos
     // -----------------------------------------------
 
     /**
-     * Obtiene todos los eventos futuros de las comunidades a las que pertenece el usuario,
-     * incluyendo tanto eventos públicos como privados de esas comunidades. Ordena por fecha
-     * ascendente para mostrar primero los más próximos.
+     * Obtiene todos los eventos activos de las comunidades a las que pertenece el usuario: eventos
+     * futuros, eventos en curso (fechaFin no ha pasado) y eventos sin fecha de fin que empezaron
+     * hace menos de 2 horas. Ordena por fecha ascendente.
      *
      * @param usuarioId Identificador del usuario.
-     * @param ahora Momento actual para filtrar eventos futuros.
-     * @return Lista de eventos próximos del usuario.
+     * @param ahora Momento actual.
+     * @param limiteMargen Momento actual menos el margen (ahora - 2h) para eventos sin fechaFin.
+     * @return Lista de eventos próximos y en curso del usuario.
      */
     @Query(
             "SELECT DISTINCT e FROM Evento e "
                     + "JOIN MiembroComunidad mc ON mc.comunidad.id = e.comunidad.id "
                     + "WHERE mc.usuario.id = :usuarioId "
                     + "AND e.cancelado = false "
-                    + "AND e.fechaHora >= :ahora "
+                    + "AND ("
+                    + "  e.fechaHora >= :ahora "
+                    + "  OR ("
+                    + "    e.fechaHora < :ahora "
+                    + "    AND ((e.fechaFin IS NOT NULL AND e.fechaFin >= :ahora)"
+                    + "         OR (e.fechaFin IS NULL AND e.fechaHora >= :limiteMargen))"
+                    + "    AND (e.creador.id = :usuarioId"
+                    + "         OR EXISTS (SELECT ae FROM AsistenciaEvento ae"
+                    + "                    WHERE ae.evento.id = e.id"
+                    + "                    AND ae.usuario.id = :usuarioId"
+                    + "                    AND ae.estado = 'CONFIRMADA'))"
+                    + "  )"
+                    + ") "
                     + "ORDER BY e.fechaHora ASC")
     List<Evento> findProximosEventosByUsuarioId(
-            @Param("usuarioId") Long usuarioId, @Param("ahora") LocalDateTime ahora);
+            @Param("usuarioId") Long usuarioId,
+            @Param("ahora") LocalDateTime ahora,
+            @Param("limiteMargen") LocalDateTime limiteMargen);
 
     /**
      * Obtiene todos los eventos (pasados y futuros) de las comunidades del usuario. Incluye
@@ -152,11 +199,11 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
             @Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
 
     /**
-     * Obtiene eventos a los que el usuario ha confirmado asistencia y están próximos.
+     * Obtiene eventos a los que el usuario ha confirmado asistencia y están próximos o en curso.
      *
      * @param usuarioId Identificador del usuario.
      * @param ahora Momento actual.
-     * @return Lista de eventos con asistencia confirmada y próximos.
+     * @return Lista de eventos con asistencia confirmada y próximos o en curso.
      */
     @Query(
             "SELECT e FROM Evento e "
@@ -164,7 +211,8 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
                     + "WHERE ae.usuario.id = :usuarioId "
                     + "AND ae.estado = 'CONFIRMADA' "
                     + "AND e.cancelado = false "
-                    + "AND e.fechaHora >= :ahora "
+                    + "AND (e.fechaHora >= :ahora "
+                    + "     OR (e.fechaFin IS NOT NULL AND e.fechaFin >= :ahora)) "
                     + "ORDER BY e.fechaHora ASC")
     List<Evento> findConfirmedEventosByUsuarioId(
             @Param("usuarioId") Long usuarioId, @Param("ahora") LocalDateTime ahora);
@@ -176,4 +224,17 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
     @Modifying
     @Query("DELETE FROM Evento e WHERE e.creador.id = :usuarioId")
     void deleteByUsuarioId(@Param("usuarioId") Long usuarioId);
+
+    /**
+     * Obtiene todos los eventos cuya fecha de fin (o fechaHora si no tiene fin) es anterior a la
+     * fecha límite proporcionada. Usado para borrado automático.
+     *
+     * @param limite Fecha límite (ahora - 24h).
+     * @return Lista de eventos pasados a eliminar.
+     */
+    @Query(
+            "SELECT e FROM Evento e "
+                    + "WHERE (e.fechaFin IS NOT NULL AND e.fechaFin < :limite) "
+                    + "OR (e.fechaFin IS NULL AND e.fechaHora < :limite)")
+    List<Evento> findEventosPasadosParaEliminar(@Param("limite") LocalDateTime limite);
 }

@@ -1,6 +1,21 @@
 # Wrapper script to ensure PostgreSQL is running before starting the Spring Boot backend
 # Usage: run this script instead of calling ./mvnw spring-boot:run directly.
 
+# ── Load .env file into process environment variables ──
+$envFile = Join-Path $PSScriptRoot '.env'
+if (Test-Path $envFile) {
+    Get-Content $envFile | ForEach-Object {
+        $line = $_.Trim()
+        if ($line -and -not $line.StartsWith('#')) {
+            $parts = $line -split '=', 2
+            if ($parts.Length -eq 2) {
+                [System.Environment]::SetEnvironmentVariable($parts[0].Trim(), $parts[1].Trim(), 'Process')
+            }
+        }
+    }
+    Write-Host ".env file loaded."
+}
+
 # path to Postgres data directory (adjust version if needed)
 $pgData = 'C:\Program Files\PostgreSQL\18\data'
 $pgCtl = 'C:\Program Files\PostgreSQL\18\bin\pg_ctl.exe'

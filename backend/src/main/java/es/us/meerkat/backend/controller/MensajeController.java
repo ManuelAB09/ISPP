@@ -6,6 +6,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import es.us.meerkat.backend.dto.EnviarMensajeRequest;
 import es.us.meerkat.backend.dto.MensajeResponse;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.UsuarioRepository;
 import es.us.meerkat.backend.service.ChatFileStorageService;
 import es.us.meerkat.backend.service.MensajeService;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +34,8 @@ public class MensajeController {
 
     private final MensajeService mensajeService;
     private final ChatFileStorageService chatFileStorageService;
+    private final SimpMessagingTemplate broker;
+    private final UsuarioRepository usuarioRepository;
 
     @PostMapping
     public ResponseEntity<?> enviarMensaje(
@@ -42,6 +46,7 @@ public class MensajeController {
 
         try {
             MensajeResponse response = mensajeService.enviarMensaje(usuario.getId(), request);
+            broadcastDm(usuario, response);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -112,7 +117,22 @@ public class MensajeController {
         }
 
         try {
+            MensajeResponse deleted = mensajeService.obtenerMensaje(mensajeId);
+            Long otherUserId =
+                    deleted.getEmisorId().equals(usuario.getId())
+                            ? deleted.getReceptorId()
+                            : deleted.getEmisorId();
             mensajeService.eliminarMensaje(usuario.getId(), mensajeId);
+            // Notify both parties
+            broker.convertAndSendToUser(usuario.getEmail(), "/queue/dm_delete_success", mensajeId);
+            usuarioRepository
+                    .findById(otherUserId)
+                    .ifPresent(
+                            other ->
+                                    broker.convertAndSendToUser(
+                                            other.getEmail(),
+                                            "/queue/dm_delete_success",
+                                            mensajeId));
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -135,6 +155,7 @@ public class MensajeController {
             MensajeResponse response =
                     mensajeService.editarMensaje(
                             usuario.getId(), mensajeId, request.getContenido());
+            broadcastDmUpdate(usuario, response);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -170,6 +191,7 @@ public class MensajeController {
                             validatedFile.sizeBytes(),
                             validatedFile.content());
 
+            broadcastDm(usuario, response);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -208,6 +230,39 @@ public class MensajeController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al descargar archivo: " + e.getMessage());
+        }
+    }
+
+    /** Broadcasts a new/file message to both sender and receiver via WebSocket. */
+    private void broadcastDm(Usuario sender, MensajeResponse response) {
+        broker.convertAndSendToUser(sender.getEmail(), "/queue/dm", response);
+        Long receiverId = response.getReceptorId();
+        if (receiverId != null && !receiverId.equals(sender.getId())) {
+            usuarioRepository
+                    .findById(receiverId)
+                    .ifPresent(
+                            receiver ->
+                                    broker.convertAndSendToUser(
+                                            receiver.getEmail(), "/queue/dm", response));
+        }
+    }
+
+    /** Broadcasts a message update to both parties via WebSocket. */
+    private void broadcastDmUpdate(Usuario sender, MensajeResponse response) {
+        broker.convertAndSendToUser(sender.getEmail(), "/queue/dm_update_success", response);
+        Long otherUserId =
+                response.getEmisorId().equals(sender.getId())
+                        ? response.getReceptorId()
+                        : response.getEmisorId();
+        if (otherUserId != null) {
+            usuarioRepository
+                    .findById(otherUserId)
+                    .ifPresent(
+                            other ->
+                                    broker.convertAndSendToUser(
+                                            other.getEmail(),
+                                            "/queue/dm_update_success",
+                                            response));
         }
     }
 }

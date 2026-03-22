@@ -11,6 +11,7 @@ import es.us.meerkat.backend.entity.MiembroComunidad;
 import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.TipoGrupo;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
 import es.us.meerkat.backend.repository.ComunidadClassroomRepository;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
@@ -26,6 +27,7 @@ public class MemberService {
     private final ComunidadRepository comunidadRepository;
     private final ComunidadClassroomRepository comunidadClassroomRepository;
     private final UsuarioRepository usuarioRepository;
+    private final AsistenciaEventoRepository asistenciaEventoRepository;
     private final AuthorizationService authorizationService;
     private final CommunityService communityService;
     private final GoogleClassroomService googleClassroomService;
@@ -106,6 +108,16 @@ public class MemberService {
                         "No puedes abandonar siendo el único admin. Transfiere la administración"
                                 + " primero.");
             }
+        }
+
+        // Verificar si tiene asistencias confirmadas a eventos futuros activos
+        long eventosActivos =
+                asistenciaEventoRepository.countActiveEventAttendances(
+                        userId, communityId, java.time.LocalDateTime.now());
+        if (eventosActivos > 0) {
+            throw new IllegalStateException(
+                    "No puedes abandonar la comunidad mientras tengas asistencia confirmada a"
+                            + " eventos activos. Cancela tu asistencia primero.");
         }
 
         Usuario usuario = miembro.getUsuario();

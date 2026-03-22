@@ -69,4 +69,7 @@ public class UserDetailResponse {
 
     /** Fecha de creación de la cuenta. */
     private LocalDateTime createdAt;
+
+    /** Indica si el usuario tiene una cuenta de Google vinculada. */
+    private Boolean googleLinked;
 }

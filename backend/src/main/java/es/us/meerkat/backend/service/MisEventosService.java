@@ -5,6 +5,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,6 +49,7 @@ public class MisEventosService {
     private final UsuarioRepository usuarioRepository;
     private final AlertaEventoRepository alertaEventoRepository;
     private final AsistenciaEventoRepository asistenciaEventoRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     // ===============================
     // MIS EVENTOS
@@ -67,8 +69,12 @@ public class MisEventosService {
 
         final LocalDateTime ahora = LocalDateTime.now();
         final List<Evento> eventos =
-                eventoRepository.findProximosEventosByUsuarioId(usuarioId, ahora);
-
+                eventoRepository.findProximosEventosByUsuarioId(
+                        usuarioId,
+                        ahora,
+                        ahora.minusHours(
+                                2)); // Incluir eventos que comenzaron hace hasta 2 horas para
+        // mostrar recientes
         return eventos.stream()
                 .map(e -> mapToMisEventosItem(e, usuarioId, ahora))
                 .collect(Collectors.toList());
@@ -160,7 +166,9 @@ public class MisEventosService {
         }
 
         alerta.marcarComoLeida();
-        return mapToAlertaResponse(alertaEventoRepository.save(alerta));
+        AlertaEventoResponse response = mapToAlertaResponse(alertaEventoRepository.save(alerta));
+        broadcastAlertCount(usuarioId, alerta.getUsuario().getEmail());
+        return response;
     }
 
     /**
@@ -170,8 +178,12 @@ public class MisEventosService {
      */
     @Transactional
     public void marcarTodasComoLeidas(final Long usuarioId) {
-        validarUsuario(usuarioId);
+        Usuario usuario =
+                usuarioRepository
+                        .findById(usuarioId)
+                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         alertaEventoRepository.markAllAsReadByUsuarioId(usuarioId, LocalDateTime.now());
+        broadcastAlertCount(usuarioId, usuario.getEmail());
     }
 
     // ===============================
@@ -235,6 +247,7 @@ public class MisEventosService {
                         alerta.setEvento(evento);
                         alerta.setUsuario(usuario);
                         alertaEventoRepository.save(alerta);
+                        broadcastAlertCount(usuario.getId(), usuario.getEmail());
                         log.info(
                                 "Alerta {} generada para usuario {} en evento {}",
                                 tipoAlerta,
@@ -242,6 +255,22 @@ public class MisEventosService {
                                 evento.getId());
                     }
                 });
+    }
+
+    // ===============================
+    // BROADCAST WEBSOCKET
+    // ===============================
+
+    private void broadcastAlertCount(final Long usuarioId, final String email) {
+        try {
+            Long count = alertaEventoRepository.countUnreadByUsuarioId(usuarioId);
+            messagingTemplate.convertAndSendToUser(email, "/queue/alerts_count", count);
+        } catch (Exception e) {
+            log.warn(
+                    "No se pudo enviar alert count por WS al usuario {}: {}",
+                    usuarioId,
+                    e.getMessage());
+        }
     }
 
     // ===============================

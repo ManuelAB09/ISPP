@@ -1,5 +1,9 @@
 package es.us.meerkat.backend.config;
 
+import java.sql.SQLException;
+
+import javax.sql.DataSource;
+
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -14,11 +18,16 @@ import lombok.extern.slf4j.Slf4j;
 public class DatabaseSchemaFixRunner implements ApplicationRunner {
 
     private final JdbcTemplate jdbcTemplate;
+    private final DataSource dataSource;
 
     // Este runner se ejecutará al iniciar la aplicación y aplicará las correcciones
     // necesarias
     @Override
     public void run(ApplicationArguments args) {
+        if (!isPostgres()) {
+            log.info("Schema fix skipped: not running on PostgreSQL");
+            return;
+        }
         jdbcTemplate.execute(
                 """
                 ALTER TABLE usuario
@@ -52,5 +61,15 @@ public class DatabaseSchemaFixRunner implements ApplicationRunner {
         log.info(
                 "Schema check applied: constraint de rol de miembros normalizado a"
                         + " ADMIN/PROFESOR/ALUMNO");
+    }
+
+    private boolean isPostgres() {
+        try {
+            String url = dataSource.getConnection().getMetaData().getURL();
+            return url != null && url.startsWith("jdbc:postgresql");
+        } catch (SQLException e) {
+            log.warn("Could not determine database type, skipping schema fix", e);
+            return false;
+        }
     }
 }

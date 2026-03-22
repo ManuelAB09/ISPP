@@ -19,8 +19,10 @@ import es.us.meerkat.backend.dto.InstitutionResponse;
 import es.us.meerkat.backend.dto.PaymentUrlResponse;
 import es.us.meerkat.backend.dto.UpdateInstitutionRequest;
 import es.us.meerkat.backend.entity.Institution;
+import es.us.meerkat.backend.entity.TipoPlanCorporativo;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.InstitutionService;
+import es.us.meerkat.backend.service.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -42,6 +44,7 @@ import lombok.extern.slf4j.Slf4j;
 public class InstitutionController {
 
     @Autowired private InstitutionService institutionService;
+    @Autowired private PaymentService paymentService;
 
     // ===============================
     // CRUD OPERATIONS
@@ -260,6 +263,98 @@ public class InstitutionController {
                 .build();
     }
 
+    @PostMapping("/{institutionId}/create-plan-payment-intent")
+    @Operation(
+            summary = "Crear PaymentIntent para plan corporativo",
+            description = "Devuelve el clientSecret para usar con Stripe Elements embebido")
+    public ResponseEntity<?> crearPlanPaymentIntent(
+            @PathVariable Long institutionId,
+            @AuthenticationPrincipal Usuario usuario,
+            @Valid @RequestBody CorporatePlanRequest request) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            Institution institution =
+                    institutionService.obtenerInstitucion(institutionId, usuario.getId());
+
+            TipoPlanCorporativo tipoPlan = TipoPlanCorporativo.valueOf(request.getTipoPlan());
+            String periodo = request.getPeriodo();
+            Integer duracionMeses = request.getDuracionMeses();
+
+            institution.setNumUsuariosPermitidos(request.getNumUsuarios());
+            institution.setPlanCorporativo(tipoPlan);
+
+            Map<String, String> result =
+                    paymentService.crearPaymentIntentPlanCorporativo(
+                            institutionId,
+                            tipoPlan,
+                            periodo,
+                            institution.getEmailContacto(),
+                            duracionMeses);
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error creando PaymentIntent corporativo: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Error al crear el intent de pago: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/confirm-plan-payment")
+    @Operation(
+            summary = "Confirmar pago de plan corporativo con Stripe Elements",
+            description = "Verifica el PaymentIntent y activa el plan institucional")
+    public ResponseEntity<?> confirmarPagoPlan(@RequestBody Map<String, String> body) {
+
+        String paymentIntentId = body.get("paymentIntentId");
+        if (paymentIntentId == null || paymentIntentId.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "paymentIntentId requerido"));
+        }
+
+        try {
+            com.stripe.model.PaymentIntent intent =
+                    com.stripe.model.PaymentIntent.retrieve(paymentIntentId);
+
+            if (!"succeeded".equals(intent.getStatus())) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "El pago no está completado: " + intent.getStatus()));
+            }
+
+            Map<String, String> metadata = intent.getMetadata();
+            String institucionIdStr = metadata.get("institucionId");
+            String duracionStr = metadata.get("duracionMeses");
+            String emailContacto = metadata.get("emailContacto");
+
+            if (institucionIdStr == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "PaymentIntent sin institucionId en metadata"));
+            }
+
+            Long institucionId = Long.parseLong(institucionIdStr);
+            Integer duracionMeses = duracionStr != null ? Integer.parseInt(duracionStr) : 12;
+
+            institutionService.activarPlanCorporativo(institucionId, duracionMeses, emailContacto);
+            log.info(
+                    "Plan corporativo activado para institución {} vía Stripe Elements",
+                    institucionId);
+
+            return ResponseEntity.ok(
+                    Map.of("mensaje", "Plan institucional activado correctamente"));
+
+        } catch (StripeException e) {
+            log.error("StripeException confirmando pago corporativo: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Error Stripe: " + e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error activando plan corporativo: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @PostMapping("/verify-session")
     public ResponseEntity<?> verificarSesionCorporativa(@RequestBody Map<String, String> body) {
 
@@ -287,6 +382,7 @@ public class InstitutionController {
             Map<String, String> metadata = session.getMetadata();
             String institucionIdStr = metadata.get("institucionId");
             String duracionStr = metadata.get("duracionMeses");
+            String emailContacto = metadata.get("emailContacto");
 
             if (institucionIdStr == null) {
                 return ResponseEntity.badRequest()
@@ -296,7 +392,7 @@ public class InstitutionController {
             Long institucionId = Long.parseLong(institucionIdStr);
             Integer duracionMeses = duracionStr != null ? Integer.parseInt(duracionStr) : 12;
 
-            institutionService.activarPlanCorporativo(institucionId, duracionMeses);
+            institutionService.activarPlanCorporativo(institucionId, duracionMeses, emailContacto);
             log.info("Plan corporativo activado para institución {}", institucionId);
 
             return ResponseEntity.ok(

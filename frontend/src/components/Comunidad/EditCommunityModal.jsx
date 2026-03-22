@@ -32,7 +32,7 @@ export default function EditCommunityModal({ community, onClose, onSaved }) {
   };
 
   return (
-    <div className="ecm-overlay" onClick={onClose}>
+    <div className="ecm-overlay" data-testid="ecm-overlay" onClick={onClose}>
       <div className="ecm-modal" onClick={(e) => e.stopPropagation()}>
         <div className="ecm-header">
           <h2>Editar comunidad</h2>

@@ -1,5 +1,6 @@
 package es.us.meerkat.backend.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -34,4 +35,11 @@ public interface TransaccionPagoRepository extends JpaRepository<TransaccionPago
     void deleteByUsuarioId(Long usuarioId);
 
     Page<TransaccionPago> findByTutorIdOrderByIniciadoAtDesc(Long tutorId, Pageable pageable);
+    /** Obtiene todas las transacciones completadas asociadas a un tutor (para ganancias). */
+    List<TransaccionPago> findByTutorIdAndTipoAndEstadoOrderByCompletadoAtDesc(
+            Long tutorId, TipoTransaccion tipo, EstadoTransaccion estado);
+
+    /** Obtiene transacciones paginadas de un tutor por tipo y estado. */
+    Page<TransaccionPago> findByTutorIdAndTipoAndEstadoOrderByCompletadoAtDesc(
+            Long tutorId, TipoTransaccion tipo, EstadoTransaccion estado, Pageable pageable);
 }

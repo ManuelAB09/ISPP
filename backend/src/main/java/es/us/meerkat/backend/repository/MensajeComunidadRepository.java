@@ -43,4 +43,9 @@ public interface MensajeComunidadRepository extends JpaRepository<MensajeComunid
     @Modifying
     @Query("DELETE FROM MensajeComunidad m WHERE m.usuario.id = :usuarioId")
     void deleteByUsuarioId(@Param("usuarioId") Long usuarioId);
+
+    @Query(
+            "SELECT m.usuario.id, COUNT(m) FROM MensajeComunidad m WHERE m.comunidad.id ="
+                    + " :comunidadId GROUP BY m.usuario.id")
+    List<Object[]> countMensajesByComunidad(@Param("comunidadId") Long comunidadId);
 }

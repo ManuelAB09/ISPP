@@ -1,15 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { getTutorById, getMyTutorProfiles } from "../../api/tutorEndpoints";
+import { getTutorById, getMyTutorProfiles, iniciarOnboardingStripe } from "../../api/tutorEndpoints";
 import Header from "../../components/Header/Header";
 import EditProfileModal from "./EditProfileModal";
 import CreateProfileModal from "./CreateProfileModal";
 import VerificacionModal from "./VerificacionModal";
 import Settings from "../myProfile/Settings";
-import HireTutorModal from "./HireTutorModal";
+import HireDirectModal from "./HireDirectModal";
+import TutorSolicitudes from "./TutorSolicitudes";
+import TutorConversaciones from "./TutorConversaciones";
+import AlumnoSolicitudes from "./AlumnoSolicitudes";
+import PrivateChat from "../chat/PrivateChat";
 import { getApiBaseUrl } from "../../api/baseUrl";
 import "./TeacherProfile.css";
+import { getValoracionesStats } from '../../api/valoraciones.api';
 
 const toAbsoluteImageUrl = (imageUrl, fallback = '/MeerKatters_logo.png') => {
   const raw = String(imageUrl || '').trim();
@@ -54,7 +59,29 @@ const TeacherProfile = () => {
   const [showVerificacion, setShowVerificacion] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showHireModal, setShowHireModal] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [stripeLoading, setStripeLoading] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
+  const [valoracionesStats, setValoracionesStats] = useState(null);
+
+  // Badge de nivel (detalle): color y texto completo
+  const getNivelBadge = (media, total) => {
+    if (total < 10 || media < 3) return { label: "Principiante", color: "#676F9D", letra: "P" };
+    if (total >= 10 && total <= 50 && media >= 3) return { label: "Avanzado", color: "#52c41a", letra: "A" };
+    if (total > 50 && media >= 4.5) return { label: "Experto", color: "#1890ff", letra: "E" };
+    return null;
+  };
+
+  // Cargar stats de valoraciones
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await getValoracionesStats(tutor.id ?? tutor.userId ?? tutor.usuario?.id);
+        setValoracionesStats(res);
+      } catch {}
+    };
+    if (tutor) fetchStats();
+  }, [tutor]);
 
   // Callback: actualiza estado local tras editar
   const handlePerfilGuardado = (updatedTutor) => {
@@ -267,6 +294,23 @@ const TeacherProfile = () => {
                 >
                   {tutor.verificado ? "🏅 Verificado" : "Promocionarse"}
                 </button>
+                <button
+                  className={`tp-btn ${tutor.stripeConfigured ? 'tp-btn--edit' : 'tp-btn--hire'}`}
+                  disabled={stripeLoading}
+                  onClick={async () => {
+                    setStripeLoading(true);
+                    try {
+                      const returnUrl = window.location.href;
+                      const res = await iniciarOnboardingStripe(returnUrl);
+                      window.location.href = res.url;
+                    } catch (e) {
+                      alert('Error al iniciar la configuración de pagos: ' + (e?.response?.data?.error || e.message));
+                      setStripeLoading(false);
+                    }
+                  }}
+                >
+                  {tutor.stripeConfigured ? '✅ Pagos configurados' : '💳 Configurar pagos'}
+                </button>
               </div>
             )}
 
@@ -275,22 +319,9 @@ const TeacherProfile = () => {
               <div className="tp-header__actions">
                 <button
                   className="tp-btn tp-btn--contact"
-
-                  onClick={() => {
-                    const targetUserId = tutor.userId ?? tutor.usuario?.id;
-                    const nombre = tutor.usuario?.nombre || 'Profesor';
-                    if (!targetUserId) return;
-                    const params = new URLSearchParams({
-                      userId: String(targetUserId),
-                      userName: nombre,
-                    });
-                    if (tutor.usuario?.foto) {
-                      params.set('userPhoto', toAbsoluteImageUrl(tutor.usuario.foto));
-                    }
-                    navigate(`/chats?${params.toString()}`);
-                  }}
+                  onClick={() => setShowChat((prev) => !prev)}
                 >
-                  💬 Contactar
+                  {showChat ? '✕ Cerrar chat' : '💬 Contactar'}
                 </button>
                 <button className="tp-btn tp-btn--hire" onClick={() => setShowHireModal(true)}>
                   🎓 Contratar
@@ -300,8 +331,45 @@ const TeacherProfile = () => {
           </header>
         </div>
 
+        {/* Chat privado embebido en el perfil del profesor */}
+        {showChat && user?.id !== tutor.usuario?.id && (
+          <div className="tp-chat-embed">
+            <PrivateChat
+              tutorId={tutor.userId ?? tutor.usuario?.id}
+              tutorNombre={tutor.usuario?.nombre || 'Profesor'}
+              usuarioActual={{
+                id: Number(user?.id),
+                nombre: user?.nombre || 'Usuario',
+                foto: user?.foto || null,
+              }}
+              onClose={() => setShowChat(false)}
+            />
+          </div>
+        )}
+
         {/* ═══════════════ CONTENIDO PRINCIPAL (fondo blanco plano) ═══════════════ */}
         <div className="tp-content">
+
+          {/* Solicitudes de contratación (solo visible para el dueño del perfil) */}
+          {user?.id === tutor.usuario?.id && user?.esTutor && (
+            <TutorSolicitudes />
+          )}
+
+          {/* Solicitudes del alumno visitante */}
+          {user && user?.id !== tutor.usuario?.id && (
+            <AlumnoSolicitudes tutorId={tutor.id} />
+          )}
+
+          {/* Conversaciones privadas (solo visible para el dueño del perfil) */}
+          {user?.id === tutor.usuario?.id && user?.esTutor && (
+            <TutorConversaciones
+              usuarioActual={{
+                id: Number(user?.id),
+                nombre: user?.nombre || 'Usuario',
+                foto: user?.foto || null,
+              }}
+            />
+          )}
 
           {/* Solicitudes de vinculación Google Classroom (solo propietario del perfil) 
       /*
@@ -398,7 +466,7 @@ const TeacherProfile = () => {
                 </div>
               ))}
               {/* Placeholder "Explorar más comunidades" */}
-              <div 
+              <div
                 className="tp-comunidades__card tp-comunidades__card--explore tp-comunidades__card--xl"
                 onClick={() => navigate('/comunidades')}
                 style={{ cursor: 'pointer' }}
@@ -409,7 +477,7 @@ const TeacherProfile = () => {
                   Busca entre miles de comunidades de estudio adaptadas a tus necesidades
                 </span>
               </div>
-              <span 
+              <span
                 className="tp-comunidades__ver-todas tp-comunidades__ver-todas--xl"
                 onClick={() => navigate('/comunidades')}
                 style={{ cursor: 'pointer' }}
@@ -428,7 +496,7 @@ const TeacherProfile = () => {
                 Crea comunidades, une a estudiantes y enseña sobre lo que sabes.
               </p>
               {user?.id === tutor.usuario?.id && (
-                <button 
+                <button
                   className="tp-btn tp-btn--crear tp-btn--crear-xl"
                   onClick={() => navigate('/crear-comunidad')}
                 >+ Crear Nueva</button>
@@ -461,11 +529,30 @@ const TeacherProfile = () => {
             </div>
           </section>
 
+          {/* BADGE DE NIVEL Y VALORACIÓN MEDIA */}
+          {valoracionesStats && (() => {
+            const nivel = getNivelBadge(valoracionesStats.media, valoracionesStats.total);
+            return (
+              <div className="tp-rating-summary" style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '18px 0' }}>
+                {nivel && (
+                  <span className="tp-badge-nivel" style={{ background: nivel.color, color: '#fff', fontWeight: 700, borderRadius: 16, padding: '6px 16px', fontSize: '1.05em', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    {nivel.letra} - {nivel.label}
+                  </span>
+                )}
+                <span className="tp-rating-media">
+                  <Estrellas valor={valoracionesStats.media} />
+                  <span className="tp-rating-num">{valoracionesStats.media?.toFixed(2)}</span>
+                  <span className="tp-rating-count">({valoracionesStats.total} valoraciones)</span>
+                </span>
+              </div>
+            );
+          })()}
+
         </div>{/* cierre tp-content */}
       </div>
 
       {showHireModal && (
-        <HireTutorModal tutor={tutor} onClose={() => setShowHireModal(false)} />
+        <HireDirectModal tutor={tutor} onClose={() => setShowHireModal(false)} />
       )}
     </>
   );
