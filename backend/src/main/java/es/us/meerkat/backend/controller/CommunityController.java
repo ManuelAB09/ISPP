@@ -10,10 +10,45 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import es.us.meerkat.backend.dto.*;
+import es.us.meerkat.backend.dto.AccessRequestBody;
+import es.us.meerkat.backend.dto.CategoryListResponse;
+import es.us.meerkat.backend.dto.CategoryResponse;
+import es.us.meerkat.backend.dto.ClassroomInfoResponse;
+import es.us.meerkat.backend.dto.CommunityDetailResponse;
+import es.us.meerkat.backend.dto.CommunityListResponse;
+import es.us.meerkat.backend.dto.CommunityRankingEntryResponse;
+import es.us.meerkat.backend.dto.CreateCategoryRequest;
+import es.us.meerkat.backend.dto.CreateCommunityRequest;
+import es.us.meerkat.backend.dto.CreateEventRequest;
+import es.us.meerkat.backend.dto.EventDetailResponse;
+import es.us.meerkat.backend.dto.EventSummaryResponse;
+import es.us.meerkat.backend.dto.HireTutorRequest;
+import es.us.meerkat.backend.dto.LinkClassroomRequest;
+import es.us.meerkat.backend.dto.MemberListResponse;
+import es.us.meerkat.backend.dto.MemberResponse;
+import es.us.meerkat.backend.dto.MessageResponse;
+import es.us.meerkat.backend.dto.PaymentUrlResponse;
+import es.us.meerkat.backend.dto.PrivacyRequest;
+import es.us.meerkat.backend.dto.ReorderCategoriesRequest;
+import es.us.meerkat.backend.dto.RequestListResponse;
+import es.us.meerkat.backend.dto.RequestResponse;
+import es.us.meerkat.backend.dto.RespondRequestBody;
+import es.us.meerkat.backend.dto.TransferAdminRequest;
+import es.us.meerkat.backend.dto.UpdateCategoryRequest;
+import es.us.meerkat.backend.dto.UpdateCommunityRequest;
+import es.us.meerkat.backend.dto.UpgradeCommunityRequest;
+import es.us.meerkat.backend.dto.UserSimpleResponse;
 import es.us.meerkat.backend.entity.Categoria;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.ComunidadClassroom;
@@ -147,7 +182,8 @@ public class CommunityController {
                                     ? es.us.meerkat.backend.entity.TipoGrupo.valueOf(
                                             request.tipoGrupo())
                                     : es.us.meerkat.backend.entity.TipoGrupo.COMUNIDAD_PUBLICA,
-                            request.imagenUrl());
+                        request.imagenUrl(),
+                        request.maxMiembros());
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(entityToDetailResponse(comunidad, usuario.getId()));
         } catch (IllegalArgumentException e) {

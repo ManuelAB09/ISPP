@@ -51,8 +51,11 @@ public class CommunityService {
     private final EventoRepository eventoRepository;
 
     private static final int MAX_FREE_COMMUNITIES = 3;
-    private static final int FREE_MAX_MEMBERS = 50;
-    private static final int PREMIUM_MAX_MEMBERS = 200;
+    private static final int MAX_PREMIUM_COMMUNITIES = 10;
+    private static final int MAX_PRO_COMMUNITIES = 25;
+    private static final int FREE_MAX_MEMBERS = 30;
+    private static final int PREMIUM_MAX_MEMBERS = 75;
+    private static final int PRO_MAX_MEMBERS = 250;
 
     /** Crea una nueva comunidad verificando límites de plan. */
     public Comunidad createCommunity(
@@ -61,7 +64,8 @@ public class CommunityService {
             String descripcion,
             TipoGrupo tipoGrupo,
             String imagenUrl,
-            Long institutionId) {
+            Long institutionId,
+            Integer maxMiembrosSolicitado) {
         // Validar que el usuario exista
         Usuario usuario =
                 usuarioRepository
@@ -71,27 +75,48 @@ public class CommunityService {
         // Si es una comunidad institucional, no aplicar límites de FREE
         es.us.meerkat.backend.entity.Institution institution = null;
         TipoPlanComunidad tipoPlan = TipoPlanComunidad.FREE;
-        Integer maxMiembros = FREE_MAX_MEMBERS;
+        Integer maxMiembros;
 
         if (institutionId != null) {
             institution = obtenerInstitucion(institutionId);
 
             // Comunidades institucionales obtienen plan UNLIMITED
             tipoPlan = TipoPlanComunidad.UNLIMITED;
-            maxMiembros = null; // Sin límite
+            maxMiembros = maxMiembrosSolicitado; // Sin límites de suscripción individual
         } else {
-            // Validar límite de comunidades gratuitas para usuarios individuales
-            long freeCommunities =
-                    comunidadRepository.countByCreadorIdAndTipoPlan(userId, TipoPlanComunidad.FREE);
-
             Optional<Suscripcion> suscripcionOpt = suscripcionService.obtenerMiSuscripcion(userId);
             TipoPlan userPlan = suscripcionOpt.map(Suscripcion::getPlan).orElse(TipoPlan.FREE);
+            long totalCommunities = comunidadRepository.countByCreadorIdAndInstitutionIsNull(userId);
 
-            if (userPlan == TipoPlan.FREE && freeCommunities >= MAX_FREE_COMMUNITIES) {
+            int maxCommunities = getMaxCommunitiesByPlan(userPlan);
+            if (totalCommunities >= maxCommunities) {
                 throw new IllegalArgumentException(
-                        "Se ha alcanzado el límite de 3 comunidades gratuitas. Actualiza a Premium"
-                                + " para crear más.");
+                        "Has alcanzado el límite de "
+                                + maxCommunities
+                                + " comunidades para el plan "
+                                + userPlan.name()
+                                + ".");
             }
+
+            int maxAllowedMembers = getMaxMembersByPlan(userPlan);
+            if (maxMiembrosSolicitado != null) {
+                if (maxMiembrosSolicitado < 1) {
+                    throw new IllegalArgumentException(
+                            "El máximo de miembros debe ser mayor que 0.");
+                }
+                if (maxMiembrosSolicitado > maxAllowedMembers) {
+                    throw new IllegalArgumentException(
+                            "El máximo de miembros para tu plan "
+                                    + userPlan.name()
+                                    + " es "
+                                    + maxAllowedMembers
+                                    + ".");
+                }
+            }
+
+            maxMiembros =
+                    maxMiembrosSolicitado != null ? maxMiembrosSolicitado : maxAllowedMembers;
+            tipoPlan = userPlan == TipoPlan.FREE ? TipoPlanComunidad.FREE : TipoPlanComunidad.PREMIUM;
         }
 
         // Crear comunidad
@@ -126,7 +151,40 @@ public class CommunityService {
     /** Crea una nueva comunidad verificando límites de plan (sin institutionId). */
     public Comunidad createCommunity(
             Long userId, String nombre, String descripcion, TipoGrupo tipoGrupo, String imagenUrl) {
-        return createCommunity(userId, nombre, descripcion, tipoGrupo, imagenUrl, null);
+        return createCommunity(userId, nombre, descripcion, tipoGrupo, imagenUrl, null, null);
+    }
+
+    public Comunidad createCommunity(
+            Long userId,
+            String nombre,
+            String descripcion,
+            TipoGrupo tipoGrupo,
+            String imagenUrl,
+            Integer maxMiembrosSolicitado) {
+        return createCommunity(
+                userId, nombre, descripcion, tipoGrupo, imagenUrl, null, maxMiembrosSolicitado);
+    }
+
+    private int getMaxCommunitiesByPlan(TipoPlan plan) {
+        if (plan == null) {
+            return MAX_FREE_COMMUNITIES;
+        }
+        return switch (plan) {
+            case FREE -> MAX_FREE_COMMUNITIES;
+            case PREMIUM -> MAX_PREMIUM_COMMUNITIES;
+            case PRO -> MAX_PRO_COMMUNITIES;
+        };
+    }
+
+    private int getMaxMembersByPlan(TipoPlan plan) {
+        if (plan == null) {
+            return FREE_MAX_MEMBERS;
+        }
+        return switch (plan) {
+            case FREE -> FREE_MAX_MEMBERS;
+            case PREMIUM -> PREMIUM_MAX_MEMBERS;
+            case PRO -> PRO_MAX_MEMBERS;
+        };
     }
 
     /** Obtiene la institución del repositorio. */

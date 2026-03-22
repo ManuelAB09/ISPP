@@ -1,9 +1,16 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { communitiesApi } from "../../api/communities.api";
+import { subscriptionsApi } from "../../api/subscriptions.api";
 import Header from "../../components/Header/Header";
 import PageHeader from "../../components/PageHeader";
 import "./CrearComunidad.css";
+
+const PLAN_LIMITS = {
+    FREE: { planLabel: "Gratuito", maxCommunities: 3, maxMembers: 30 },
+    PREMIUM: { planLabel: "Premium", maxCommunities: 10, maxMembers: 75 },
+    PRO: { planLabel: "Pro", maxCommunities: 25, maxMembers: 250 },
+};
 
 export default function CrearComunidad() {
     const navigate = useNavigate();
@@ -14,9 +21,17 @@ export default function CrearComunidad() {
     const [categoriaInput, setCategoriaInput] = useState("");
     const [categorias, setCategorias] = useState([]);
     const [tipoComunidad, setTipoComunidad] = useState("COMUNIDAD_PUBLICA"); // Debe ser enum del backend
+    const [maxMiembros, setMaxMiembros] = useState(30);
+    const [planLimits, setPlanLimits] = useState(PLAN_LIMITS.FREE);
+    const [myCommunitiesCount, setMyCommunitiesCount] = useState(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
+
+    const maxMembersAllowed = planLimits.maxMembers;
+    const maxCommunitiesAllowed = planLimits.maxCommunities;
+    const communitiesRemaining = Math.max(0, maxCommunitiesAllowed - myCommunitiesCount);
+    const reachedCommunityLimit = myCommunitiesCount >= maxCommunitiesAllowed;
 
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
@@ -46,6 +61,7 @@ export default function CrearComunidad() {
             nombre: nombre.trim(),
             descripcion: descripcion.trim(),
             tipoComunidad,
+            maxMiembros,
             categorias,
             imagenPreview // store preview data URL, file cannot be stored
         };
@@ -71,12 +87,60 @@ export default function CrearComunidad() {
                 if (draft.nombre) setNombre(draft.nombre);
                 if (draft.descripcion) setDescripcion(draft.descripcion);
                 if (draft.tipoComunidad) setTipoComunidad(draft.tipoComunidad);
+                if (draft.maxMiembros) setMaxMiembros(draft.maxMiembros);
                 if (Array.isArray(draft.categorias)) setCategorias(draft.categorias);
                 if (draft.imagenPreview) setImagenPreview(draft.imagenPreview);
             }
         } catch (err) {
             console.error('Error cargando borrador:', err);
         }
+    }, []);
+
+    useEffect(() => {
+        const resolveLimits = (subscription) => {
+            const planKey = (subscription?.plan || "FREE").toUpperCase();
+            if (PLAN_LIMITS[planKey]) {
+                return PLAN_LIMITS[planKey];
+            }
+            return PLAN_LIMITS.FREE;
+        };
+
+        const loadLimitsAndCount = async () => {
+            try {
+                const [subscription, myCommunities] = await Promise.all([
+                    subscriptionsApi.getMySubscription(),
+                    communitiesApi.listMine({ page: 0, size: 1 }),
+                ]);
+
+                const limits = resolveLimits(subscription);
+                setPlanLimits(limits);
+
+                const total =
+                    typeof myCommunities?.page?.totalElements === "number"
+                        ? myCommunities.page.totalElements
+                        : Array.isArray(myCommunities?.content)
+                        ? myCommunities.content.length
+                        : 0;
+                setMyCommunitiesCount(total);
+
+                setMaxMiembros((prev) => {
+                    const parsed = Number(prev);
+                    if (!Number.isFinite(parsed) || parsed < 1) return limits.maxMembers;
+                    return Math.min(parsed, limits.maxMembers);
+                });
+            } catch (err) {
+                console.error("Error cargando límites de plan/comunidades:", err);
+                setPlanLimits(PLAN_LIMITS.FREE);
+                setMyCommunitiesCount(0);
+                setMaxMiembros((prev) => {
+                    const parsed = Number(prev);
+                    if (!Number.isFinite(parsed) || parsed < 1) return PLAN_LIMITS.FREE.maxMembers;
+                    return Math.min(parsed, PLAN_LIMITS.FREE.maxMembers);
+                });
+            }
+        };
+
+        loadLimitsAndCount();
     }, []);
 
     const handleCrearComunidad = async () => {
@@ -96,6 +160,13 @@ export default function CrearComunidad() {
             return;
         }
 
+        if (reachedCommunityLimit) {
+            setError(
+                `Has alcanzado el límite de ${maxCommunitiesAllowed} comunidades para tu plan ${planLimits.planLabel}.`
+            );
+            return;
+        }
+
         setLoading(true);
         setError(null);
         setSuccess(null);
@@ -106,7 +177,8 @@ export default function CrearComunidad() {
                 nombre: nombre.trim(),
                 descripcion: descripcion.trim(),
                 tipoGrupo: tipoComunidad,
-                imagenUrl: 'empty'
+                imagenUrl: 'empty',
+                maxMiembros,
             };
 
             // Llamar API para crear comunidad
@@ -244,9 +316,32 @@ export default function CrearComunidad() {
                                 <span>Privada (requiere solicitud)</span>
                             </label>
                         </div>
-                        <p style={{ fontSize: '12px', color: '#666', marginTop: '10px' }}>
-                            La capacidad máxima dependerá de tu plan de suscripción.
-                        </p>
+                        <div className="plan-limit-box">
+                            <p><strong>Plan actual:</strong> {planLimits.planLabel}</p>
+                            <p><strong>Comunidades creadas:</strong> {myCommunitiesCount} / {maxCommunitiesAllowed}</p>
+                            <p><strong>Comunidades restantes:</strong> {communitiesRemaining}</p>
+                        </div>
+
+                        <div className="capacity-slider-group">
+                            <label htmlFor="max-miembros-slider">Máx. miembros de la comunidad</label>
+                            <input
+                                id="max-miembros-slider"
+                                type="range"
+                                min="1"
+                                max={maxMembersAllowed}
+                                value={maxMiembros}
+                                onChange={(e) => setMaxMiembros(Number(e.target.value))}
+                                className="capacity-slider"
+                            />
+                            <div className="capacity-slider-values">
+                                <span>1</span>
+                                <strong>{maxMiembros} miembros</strong>
+                                <span>{maxMembersAllowed}</span>
+                            </div>
+                            <p className="capacity-help-text">
+                                El máximo depende de tu plan y no puede superar {maxMembersAllowed} miembros.
+                            </p>
+                        </div>
                     </div>
                </div>
                <div>
@@ -274,7 +369,7 @@ export default function CrearComunidad() {
                         <button 
                             onClick={handleCrearComunidad} 
                             className="btn btn-primary"
-                            disabled={loading || !nombre.trim()}
+                            disabled={loading || !nombre.trim() || reachedCommunityLimit}
                         >
                             {loading ? "Creando..." : "Crear Comunidad"}
                         </button>

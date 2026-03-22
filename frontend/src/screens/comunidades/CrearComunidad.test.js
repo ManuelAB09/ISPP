@@ -1,12 +1,13 @@
-import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import CrearComunidad from './CrearComunidad';
 import { communitiesApi } from '../../api/communities.api';
+import { subscriptionsApi } from '../../api/subscriptions.api';
+import CrearComunidad from './CrearComunidad';
 
 // Mocks
 jest.mock('../../api/communities.api');
+jest.mock('../../api/subscriptions.api');
 jest.mock('../../components/Header/Header', () => {
   return function MockHeader() {
     return <div data-testid="mock-header">Header</div>;
@@ -23,6 +24,8 @@ describe('CrearComunidad', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     communitiesApi.create.mockResolvedValue({ id: 123 });
+    communitiesApi.listMine.mockResolvedValue({ content: [], page: { totalElements: 0 } });
+    subscriptionsApi.getMySubscription.mockResolvedValue({ plan: 'FREE', activa: true });
   });
 
   const renderComponent = () => {
@@ -176,6 +179,7 @@ describe('CrearComunidad', () => {
         descripcion: 'Una descripción de prueba',
         tipoGrupo: 'COMUNIDAD_PUBLICA',
         imagenUrl: 'empty',
+        maxMiembros: 30,
       });
     });
   });
@@ -237,6 +241,16 @@ describe('CrearComunidad', () => {
 
   test('muestra información sobre capacidad según plan', () => {
     renderComponent();
-    expect(screen.getByText(/La capacidad máxima dependerá de tu plan/i)).toBeInTheDocument();
+    expect(screen.getByText(/Máx\. miembros de la comunidad/i)).toBeInTheDocument();
+  });
+
+  test('ajusta el máximo del slider según plan Pro', async () => {
+    subscriptionsApi.getMySubscription.mockResolvedValue({ plan: 'PRO', activa: true });
+    renderComponent();
+
+    const slider = await screen.findByLabelText(/Máx\. miembros de la comunidad/i);
+    await waitFor(() => {
+      expect(slider).toHaveAttribute('max', '250');
+    });
   });
 });
