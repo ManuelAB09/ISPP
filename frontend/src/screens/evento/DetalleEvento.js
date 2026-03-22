@@ -180,6 +180,11 @@ const DetalleEvento = () => {
   const isFull = event && event.aforo && (event.asistentesConfirmados || 0) >= event.aforo;
   const isCancelled = event?.cancelado;
   const isStarted = event?.fechaHora ? new Date(event.fechaHora).getTime() <= Date.now() : false;
+  const isEnded = event?.fechaFin
+    ? new Date(event.fechaFin).getTime() <= Date.now()
+    : isStarted && event?.fechaHora
+      ? Date.now() - new Date(event.fechaHora).getTime() > 2 * 60 * 60 * 1000
+      : false;
 
   // Abre el modal de confirmación de asistencia
   const handleAttend = () => {
@@ -547,7 +552,7 @@ const DetalleEvento = () => {
               {isCancelled && (
                 <span className="ed-badge ed-badge-cancelled">❌ Cancelado</span>
               )}
-              {event.visibleMapa && !isCancelled && (
+              {event.visibleMapa && !isCancelled && !event.esVirtual && (
                 <span className="ed-badge ed-badge-map"><LuMap /> Visible en mapa</span>
               )}
               {isStarted && !isCancelled && (
@@ -977,13 +982,13 @@ const DetalleEvento = () => {
                   </span>
                 </div>
 
-                {isFull && !isConfirmed && (
+                {isFull && !isConfirmed && !isStarted && (
                   <div className="ed-full-message">
                     <LuUsers /> Aforo completo
                   </div>
                 )}
 
-                {!isMember && currentUserId && !isConfirmed && (
+                {!isMember && currentUserId && !isConfirmed && !isStarted && (
                   <div className="ed-full-message">
                     Debes ser miembro de la comunidad para apuntarte
                   </div>
@@ -996,7 +1001,7 @@ const DetalleEvento = () => {
                     </div>
                     {isOrganizer ? (
                       <span style={{ fontSize: '0.85rem', color: '#888' }}>Eres el organizador de este evento</span>
-                    ) : (
+                    ) : !isEnded ? (
                       <button
                         className="ed-btn ed-btn-cancel-attendance"
                         onClick={handleCancelAttendance}
@@ -1004,9 +1009,9 @@ const DetalleEvento = () => {
                       >
                         {attendanceLoading ? 'Cancelando...' : 'Cancelar asistencia'}
                       </button>
-                    )}
+                    ) : null}
                   </div>
-                ) : (
+                ) : !isStarted ? (
                   <button
                     className="ed-btn ed-btn-attend"
                     onClick={handleAttend}
@@ -1015,7 +1020,7 @@ const DetalleEvento = () => {
                   >
                     {attendanceLoading ? 'Confirmando...' : 'Confirmar asistencia'}
                   </button>
-                )}
+                ) : null}
 
                 {/* Alarmas rápidas (solo si confirmado) */}
                 {isConfirmed && currentUserId && (
@@ -1116,7 +1121,10 @@ const DetalleEvento = () => {
 
             {/* Formulario de valoración tras evento finalizado (si hay tutorId o el organizador es tutor) */}
             {(() => {
-              const tutorId = event.tutorId || (event.creador?.esTutor ? event.creador.id : null);
+              const tutorId = event.creador?.tutorId || null;
+              if (isOrganizer) {
+                return null;
+              }
               if (!valorado && tutorId) {
                 return (
                   <div className="ed-rating-card">

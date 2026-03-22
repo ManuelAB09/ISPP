@@ -5,14 +5,27 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Valoracion;
+import es.us.meerkat.backend.repository.TutorRepository;
 import es.us.meerkat.backend.repository.ValoracionRepository;
 
 @Service
 public class ValoracionService {
     @Autowired private ValoracionRepository valoracionRepository;
+    @Autowired private TutorRepository tutorRepository;
 
     public Valoracion guardarValoracion(Valoracion valoracion) {
+        // Validar que el alumno no sea el propio tutor
+        if (valoracion.getProfesor() != null && valoracion.getAlumno() != null) {
+            Tutor tutor =
+                    tutorRepository
+                            .findById(valoracion.getProfesor().getId())
+                            .orElseThrow(() -> new IllegalArgumentException("Tutor no encontrado"));
+            if (tutor.getUsuario().getId().equals(valoracion.getAlumno().getId())) {
+                throw new IllegalArgumentException("No puedes valorarte a ti mismo");
+            }
+        }
         return valoracionRepository.save(valoracion);
     }
 

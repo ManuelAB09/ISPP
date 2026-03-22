@@ -203,6 +203,13 @@ textarea.input-box {
   color: #5B6392;
 }
 
+.toggle-btn--disabled,
+.toggle-btn--disabled:hover {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .toggle-icon {
   margin-right: 0.4rem;
   font-size: 1rem;

@@ -340,7 +340,7 @@ const CrearEvento = () => {
       queLlevar: formData.materiales.length > 0 ? formData.materiales.join(', ') : undefined,
       esVirtual,
       privado: formData.privado,
-      visibleEnMapa: formData.visibleEnMapa
+      visibleEnMapa: esVirtual ? false : formData.visibleEnMapa
     };
 
     if (formData.diaFin && formData.mesFin && formData.anioFin) {
@@ -596,19 +596,24 @@ const CrearEvento = () => {
               <div className="toggle-container">
                 <button
                   type="button"
-                  onClick={() => setFormData({ ...formData, visibleEnMapa: true })}
-                  className={`toggle-btn ${formData.visibleEnMapa ? 'active' : 'inactive'}`}
+                  onClick={() => !formData.tipoLocalizacion !== 'Online' && setFormData({ ...formData, visibleEnMapa: true })}
+                  className={`toggle-btn ${formData.visibleEnMapa && formData.tipoLocalizacion !== 'Online' ? 'active' : 'inactive'} ${formData.tipoLocalizacion === 'Online' ? 'toggle-btn--disabled' : ''}`}
+                  disabled={formData.tipoLocalizacion === 'Online'}
                 >
                   <LuMap className="toggle-icon" /> Sí
                 </button>
                 <button
                   type="button"
-                  onClick={() => setFormData({ ...formData, visibleEnMapa: false })}
-                  className={`toggle-btn ${!formData.visibleEnMapa ? 'active' : 'inactive'}`}
+                  onClick={() => formData.tipoLocalizacion !== 'Online' && setFormData({ ...formData, visibleEnMapa: false })}
+                  className={`toggle-btn ${(!formData.visibleEnMapa || formData.tipoLocalizacion === 'Online') ? 'active' : 'inactive'} ${formData.tipoLocalizacion === 'Online' ? 'toggle-btn--disabled' : ''}`}
+                  disabled={formData.tipoLocalizacion === 'Online'}
                 >
                   <LuMapPinOff className="toggle-icon" /> No
                 </button>
               </div>
+              {formData.tipoLocalizacion === 'Online' && (
+                <span className="field-hint">Los eventos online no se muestran en el mapa</span>
+              )}
             </div>
           </div>
         </div>

@@ -16,9 +16,13 @@ public class ValoracionController {
     @Autowired private ValoracionService valoracionService;
 
     @PostMapping
-    public ResponseEntity<Valoracion> crearValoracion(@RequestBody Valoracion valoracion) {
-        Valoracion guardada = valoracionService.guardarValoracion(valoracion);
-        return ResponseEntity.ok(guardada);
+    public ResponseEntity<?> crearValoracion(@RequestBody Valoracion valoracion) {
+        try {
+            Valoracion guardada = valoracionService.guardarValoracion(valoracion);
+            return ResponseEntity.ok(guardada);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @GetMapping("/profesor/{profesorId}")
