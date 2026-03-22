@@ -27,13 +27,15 @@ import lombok.ToString;
 /**
  * Entidad que representa un usuario en la plataforma.
  *
- * <p>Contiene información de login, rol de tutor y relación con tutores.
+ * <p>
+ * Contiene información de login, rol de tutor y relación con tutores.
  */
 @Entity
 @Data
-@ToString(exclude = {"intereses", "tutor", "institution"})
+@ToString(exclude = { "intereses", "tutor", "institution" })
 @NoArgsConstructor
 @AllArgsConstructor
+@lombok.Builder
 public class Usuario {
 
     /** Identificador único del usuario. */
@@ -52,7 +54,9 @@ public class Usuario {
     /** Nombre completo del usuario. */
     private String nombre;
 
-    /** URL/ruta de la foto de perfil del usuario. Puede ser nula si no tiene foto. */
+    /**
+     * URL/ruta de la foto de perfil del usuario. Puede ser nula si no tiene foto.
+     */
     @Column(columnDefinition = "TEXT")
     private String foto;
 
@@ -90,7 +94,8 @@ public class Usuario {
     private String googleId;
 
     /**
-     * Indica si el perfil del usuario es visible en listados públicos y resultados de búsqueda. Por
+     * Indica si el perfil del usuario es visible en listados públicos y resultados
+     * de búsqueda. Por
      * defecto es visible.
      */
     @Column(nullable = false)
@@ -100,7 +105,9 @@ public class Usuario {
     @Column(nullable = false)
     private Boolean esTutor = false;
 
-    /** Indica si la autenticación de dos factores está habilitada para el usuario. */
+    /**
+     * Indica si la autenticación de dos factores está habilitada para el usuario.
+     */
     @Column(nullable = false)
     private Boolean autenticacionDosFactores = false;
 
@@ -129,11 +136,7 @@ public class Usuario {
     private LocalDateTime createdAt;
 
     /** Perfil de tutor del usuario (null si no es tutor). */
-    @OneToOne(
-            mappedBy = "usuario",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true,
-            fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Tutor tutor;
 
     /** Institución a la que pertenece el usuario (puede ser null). */

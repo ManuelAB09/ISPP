@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getApiBaseUrl } from '../../api/baseUrl';
 import GoogleClassroomButton from '../GoogleClassroomButton/GoogleClassroomButton.jsx';
@@ -26,7 +26,16 @@ const toAbsoluteImageUrl = (imageUrl, fallback = DEFAULT_PROFILE_AVATAR) => {
 export default function Header({ user, page }) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { showBanner, planName, fechaFin, dismiss } = useSubscriptionExpiry();
-    const { panelUnreadCount } = useNotificationContext();
+    const { panelUnreadCount, communityUnreadById } = useNotificationContext();
+    // Calcular total de no leídos de chats privados y comunidades
+    const [privateUnread, setPrivateUnread] = useState(0);
+    useEffect(() => {
+        // Obtener de localStorage o API si es necesario, aquí solo ejemplo simple
+        const conversaciones = JSON.parse(localStorage.getItem('conversacionesNoLeidas') || '[]');
+        setPrivateUnread(conversaciones.reduce((acc, c) => acc + (c.noLeidos || 0), 0));
+    }, []);
+    const communityUnread = Object.values(communityUnreadById || {}).reduce((acc, n) => acc + (n || 0), 0);
+    const totalChatsUnread = privateUnread + communityUnread;
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
@@ -96,7 +105,12 @@ export default function Header({ user, page }) {
                         <>
                             <Link to="/eventos-mapa" className={page === 'eventos-mapa' ? 'active' : ''}>Mapa de eventos</Link>
                             <Link to="/profesores" className={page === 'profesores' ? 'active' : ''}>Profesores</Link>
-                            <Link to="/chats" className={page === 'chats' ? 'active' : ''}>Chats</Link>
+                            <Link to="/chats" className={page === 'chats' ? 'active' : ''}>
+                                Chats
+                                {totalChatsUnread > 0 && (
+                                    <span className="header-notification-badge">{totalChatsUnread}</span>
+                                )}
+                            </Link>
                             <Link to="/planes" className={page === 'planes' ? 'active' : ''}>Planes</Link>
                             <Link to="/pagos" className={page === 'pagos' ? 'active' : ''}>Mis pagos</Link>
                             {storedUser?.esTutor && (

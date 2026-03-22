@@ -39,6 +39,23 @@
     margin-bottom: -2px;
 }
 
+.chats-tab-badge {
+    display: inline-block;
+    min-width: 18px;
+    padding: 0 6px;
+    height: 18px;
+    border-radius: 999px;
+    background: #e74c3c;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    margin-left: 8px;
+    vertical-align: middle;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+
 .chats-loading,
 .chats-error {
     margin-top: 1.5rem;
@@ -513,4 +530,20 @@
     border: 2px solid #fff;
     box-sizing: border-box;
     z-index: 1;
+}
+
+.private-unread-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #e74c3c;
+  color: #fff;
+  border-radius: 50%;
+  padding: 2px 7px;
+  font-size: 0.8em;
+  font-weight: bold;
+  min-width: 20px;
+  text-align: center;
+  z-index: 2;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }

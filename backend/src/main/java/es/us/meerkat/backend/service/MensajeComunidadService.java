@@ -10,6 +10,7 @@ import es.us.meerkat.backend.dto.EnviarMensajeComunidadRequest;
 import es.us.meerkat.backend.dto.MensajeComunidadResponse;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.MensajeComunidad;
+import es.us.meerkat.backend.entity.MensajeComunidadLeido;
 import es.us.meerkat.backend.entity.PreferenciasNotificacion;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.ComunidadRepository;
@@ -25,6 +26,55 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MensajeComunidadService {
 
+    /**
+     * Marca todos los mensajes de una comunidad como leídos para el usuario.
+     */
+    @Transactional
+    public void marcarComunidadComoLeida(Long usuarioId, Long comunidadId) {
+        java.util.List<MensajeComunidad> mensajes = mensajeComunidadRepository
+                .findByComunidadIdOrderByCreatedAtAsc(comunidadId);
+        for (MensajeComunidad m : mensajes) {
+            if (!mensajeComunidadLeidoRepository
+                    .findByMensajeComunidadAndUsuario(m, Usuario.builder().id(usuarioId).build()).isPresent()) {
+                MensajeComunidadLeido ml = MensajeComunidadLeido.builder()
+                        .mensajeComunidad(m)
+                        .usuario(Usuario.builder().id(usuarioId).build())
+                        .leidoAt(java.time.LocalDateTime.now())
+                        .build();
+                mensajeComunidadLeidoRepository.save(ml);
+            }
+        }
+    }
+
+    private final es.us.meerkat.backend.repository.MensajeComunidadLeidoRepository mensajeComunidadLeidoRepository;
+
+    /**
+     * Devuelve el número de mensajes no leídos por comunidad para el usuario.
+     * 
+     * @param usuarioId ID del usuario autenticado
+     * @return Map comunidadId -> count no leídos
+     */
+    @Transactional(readOnly = true)
+    public java.util.Map<Long, Integer> obtenerNoLeidosPorComunidad(Long usuarioId) {
+        // Buscar todos los mensajes de comunidades donde el usuario es miembro
+        java.util.List<MensajeComunidad> todos = mensajeComunidadRepository.findAll();
+        java.util.Map<Long, java.util.List<MensajeComunidad>> porComunidad = new java.util.HashMap<>();
+        for (MensajeComunidad m : todos) {
+            porComunidad.computeIfAbsent(m.getComunidad().getId(), k -> new java.util.ArrayList<>()).add(m);
+        }
+        java.util.Map<Long, Integer> resultado = new java.util.HashMap<>();
+        for (var entry : porComunidad.entrySet()) {
+            Long comunidadId = entry.getKey();
+            java.util.List<MensajeComunidad> mensajes = entry.getValue();
+            java.util.List<Long> ids = mensajes.stream().map(MensajeComunidad::getId).toList();
+            java.util.List<Long> idsLeidos = ids.isEmpty() ? java.util.List.of()
+                    : mensajeComunidadLeidoRepository.findMensajeIdsLeidosByUsuario(usuarioId, ids);
+            int noLeidos = ids.size() - idsLeidos.size();
+            resultado.put(comunidadId, noLeidos);
+        }
+        return resultado;
+    }
+
     private final MensajeComunidadRepository mensajeComunidadRepository;
     private final UsuarioRepository usuarioRepository;
     private final ComunidadRepository comunidadRepository;
@@ -36,7 +86,7 @@ public class MensajeComunidadService {
      * Envía un mensaje en el chat de una comunidad.
      *
      * @param usuarioId ID del usuario que envía el mensaje.
-     * @param request datos del mensaje (comunidadId, contenido).
+     * @param request   datos del mensaje (comunidadId, contenido).
      * @return respuesta con la información del mensaje guardado.
      * @throws RuntimeException si el usuario o comunidad no existen.
      */
@@ -44,23 +94,20 @@ public class MensajeComunidadService {
     public MensajeComunidadResponse enviarMensaje(
             final Long usuarioId, final EnviarMensajeComunidadRequest request) {
 
-        final Usuario usuario =
-                usuarioRepository
-                        .findById(usuarioId)
-                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        final Usuario usuario = usuarioRepository
+                .findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        final Comunidad comunidad =
-                comunidadRepository
-                        .findById(request.getComunidadId())
-                        .orElseThrow(() -> new RuntimeException("Comunidad no encontrada"));
+        final Comunidad comunidad = comunidadRepository
+                .findById(request.getComunidadId())
+                .orElseThrow(() -> new RuntimeException("Comunidad no encontrada"));
 
-        final MensajeComunidad mensaje =
-                MensajeComunidad.builder()
-                        .contenido(request.getContenido())
-                        .usuario(usuario)
-                        .comunidad(comunidad)
-                        .editado(false)
-                        .build();
+        final MensajeComunidad mensaje = MensajeComunidad.builder()
+                .contenido(request.getContenido())
+                .usuario(usuario)
+                .comunidad(comunidad)
+                .editado(false)
+                .build();
 
         final MensajeComunidad saved = mensajeComunidadRepository.save(mensaje);
         notificarMensajeComunidadPorEmail(saved);
@@ -70,13 +117,13 @@ public class MensajeComunidadService {
     /**
      * Envía un archivo en el chat de una comunidad.
      *
-     * @param usuarioId ID del usuario que envía el archivo.
-     * @param comunidadId ID de la comunidad destino.
-     * @param contenido texto opcional del mensaje.
-     * @param archivoUrl URL del archivo subido.
-     * @param archivoNombre nombre original del archivo.
+     * @param usuarioId       ID del usuario que envía el archivo.
+     * @param comunidadId     ID de la comunidad destino.
+     * @param contenido       texto opcional del mensaje.
+     * @param archivoUrl      URL del archivo subido.
+     * @param archivoNombre   nombre original del archivo.
      * @param archivoMimeType tipo MIME del archivo.
-     * @param archivoTamano tamaño del archivo en bytes.
+     * @param archivoTamano   tamaño del archivo en bytes.
      * @return respuesta con el mensaje creado.
      */
     @Transactional
@@ -93,32 +140,28 @@ public class MensajeComunidadService {
             throw new IllegalArgumentException("El contenido del archivo es obligatorio");
         }
 
-        final Usuario usuario =
-                usuarioRepository
-                        .findById(usuarioId)
-                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        final Usuario usuario = usuarioRepository
+                .findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        final Comunidad comunidad =
-                comunidadRepository
-                        .findById(comunidadId)
-                        .orElseThrow(() -> new RuntimeException("Comunidad no encontrada"));
+        final Comunidad comunidad = comunidadRepository
+                .findById(comunidadId)
+                .orElseThrow(() -> new RuntimeException("Comunidad no encontrada"));
 
-        final String contenidoFinal =
-                (contenido == null || contenido.isBlank())
-                        ? "[Adjunto] " + archivoNombre
-                        : contenido;
+        final String contenidoFinal = (contenido == null || contenido.isBlank())
+                ? "[Adjunto] " + archivoNombre
+                : contenido;
 
-        final MensajeComunidad mensaje =
-                MensajeComunidad.builder()
-                        .contenido(contenidoFinal)
-                        .archivoNombre(archivoNombre)
-                        .archivoMimeType(archivoMimeType)
-                        .archivoTamano(archivoTamano)
-                        .archivoData(archivoData)
-                        .usuario(usuario)
-                        .comunidad(comunidad)
-                        .editado(false)
-                        .build();
+        final MensajeComunidad mensaje = MensajeComunidad.builder()
+                .contenido(contenidoFinal)
+                .archivoNombre(archivoNombre)
+                .archivoMimeType(archivoMimeType)
+                .archivoTamano(archivoTamano)
+                .archivoData(archivoData)
+                .usuario(usuario)
+                .comunidad(comunidad)
+                .editado(false)
+                .build();
 
         final MensajeComunidad saved = mensajeComunidadRepository.save(mensaje);
         notificarMensajeComunidadPorEmail(saved);
@@ -136,10 +179,9 @@ public class MensajeComunidadService {
                 .findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        final MensajeComunidad mensaje =
-                mensajeComunidadRepository
-                        .findById(mensajeId)
-                        .orElseThrow(() -> new RuntimeException("Mensaje no encontrado"));
+        final MensajeComunidad mensaje = mensajeComunidadRepository
+                .findById(mensajeId)
+                .orElseThrow(() -> new RuntimeException("Mensaje no encontrado"));
 
         if (!mensaje.getComunidad().getId().equals(comunidadId)) {
             throw new IllegalArgumentException("El mensaje no pertenece a la comunidad indicada");
@@ -162,8 +204,8 @@ public class MensajeComunidadService {
     @Transactional(readOnly = true)
     public List<MensajeComunidadResponse> obtenerHistorial(final Long comunidadId) {
 
-        final List<MensajeComunidad> mensajes =
-                mensajeComunidadRepository.findByComunidadIdOrderByCreatedAtAsc(comunidadId);
+        final List<MensajeComunidad> mensajes = mensajeComunidadRepository
+                .findByComunidadIdOrderByCreatedAtAsc(comunidadId);
 
         return mensajes.stream().map(this::mapToResponse).toList();
     }
@@ -171,8 +213,8 @@ public class MensajeComunidadService {
     /**
      * Edita un mensaje de comunidad (solo el autor puede hacerlo).
      *
-     * @param usuarioId ID del usuario que intenta editar.
-     * @param mensajeId ID del mensaje a editar.
+     * @param usuarioId      ID del usuario que intenta editar.
+     * @param mensajeId      ID del mensaje a editar.
      * @param nuevoContenido nuevo contenido del mensaje.
      * @return respuesta con la información del mensaje actualizado.
      * @throws RuntimeException si el mensaje no existe o el usuario no es el autor.
@@ -181,10 +223,9 @@ public class MensajeComunidadService {
     public MensajeComunidadResponse editarMensaje(
             final Long usuarioId, final Long mensajeId, final String nuevoContenido) {
 
-        final MensajeComunidad mensaje =
-                mensajeComunidadRepository
-                        .findById(mensajeId)
-                        .orElseThrow(() -> new RuntimeException("Mensaje no encontrado"));
+        final MensajeComunidad mensaje = mensajeComunidadRepository
+                .findById(mensajeId)
+                .orElseThrow(() -> new RuntimeException("Mensaje no encontrado"));
 
         if (!mensaje.getUsuario().getId().equals(usuarioId)) {
             throw new RuntimeException("No tienes permiso para editar este mensaje");
@@ -205,10 +246,9 @@ public class MensajeComunidadService {
     @Transactional
     public void eliminarMensaje(final Long usuarioId, final Long mensajeId) {
 
-        final MensajeComunidad mensaje =
-                mensajeComunidadRepository
-                        .findById(mensajeId)
-                        .orElseThrow(() -> new RuntimeException("Mensaje no encontrado"));
+        final MensajeComunidad mensaje = mensajeComunidadRepository
+                .findById(mensajeId)
+                .orElseThrow(() -> new RuntimeException("Mensaje no encontrado"));
 
         if (!mensaje.getUsuario().getId().equals(usuarioId)) {
             throw new RuntimeException("No tienes permiso para eliminar este mensaje");
@@ -255,8 +295,7 @@ public class MensajeComunidadService {
         final Long remitenteId = mensaje.getUsuario().getId();
         final Long comunidadId = mensaje.getComunidad().getId();
 
-        final List<Long> miembrosIds =
-                miembroComunidadRepository.findUsuarioIdsByComunidadId(comunidadId);
+        final List<Long> miembrosIds = miembroComunidadRepository.findUsuarioIdsByComunidadId(comunidadId);
 
         if (miembrosIds == null || miembrosIds.isEmpty()) {
             return;
@@ -278,17 +317,15 @@ public class MensajeComunidadService {
             return;
         }
         try {
-            final PreferenciasNotificacion preferencias =
-                    preferenciasNotificacionService.getOrCreate(miembro.getId());
+            final PreferenciasNotificacion preferencias = preferenciasNotificacionService.getOrCreate(miembro.getId());
             if (!Boolean.TRUE.equals(preferencias.getEmailsActivados())) {
                 return;
             }
 
             final boolean estaMencionado = estaUsuarioMencionado(miembro, mensaje.getContenido());
-            final boolean puedeRecibir =
-                    estaMencionado
-                            ? Boolean.TRUE.equals(preferencias.getNotificarMenciones())
-                            : Boolean.TRUE.equals(preferencias.getNotificarMensajeComunidad());
+            final boolean puedeRecibir = estaMencionado
+                    ? Boolean.TRUE.equals(preferencias.getNotificarMenciones())
+                    : Boolean.TRUE.equals(preferencias.getNotificarMensajeComunidad());
 
             if (!puedeRecibir) {
                 return;
@@ -327,11 +364,11 @@ public class MensajeComunidadService {
             return false;
         }
 
-        final Pattern mentionPattern =
-                Pattern.compile(
-                        "@" + Pattern.quote(nombre) + "(?![\\w-])", Pattern.CASE_INSENSITIVE);
+        final Pattern mentionPattern = Pattern.compile(
+                "@" + Pattern.quote(nombre) + "(?![\\w-])", Pattern.CASE_INSENSITIVE);
         return mentionPattern.matcher(contenido).find();
     }
 
-    public record MensajeComunidadArchivo(byte[] data, String nombre, String mimeType) {}
+    public record MensajeComunidadArchivo(byte[] data, String nombre, String mimeType) {
+    }
 }

@@ -42,15 +42,13 @@ public class RequestService {
 
     /** Solicita acceso a una comunidad privada. */
     public SolicitudComunidad requestAccess(Long userId, Long communityId, String mensaje) {
-        Usuario usuario =
-                usuarioRepository
-                        .findById(userId)
-                        .orElseThrow(() -> new ValidationException("Usuario no encontrado"));
+        Usuario usuario = usuarioRepository
+                .findById(userId)
+                .orElseThrow(() -> new ValidationException("Usuario no encontrado"));
 
-        Comunidad comunidad =
-                comunidadRepository
-                        .findById(communityId)
-                        .orElseThrow(() -> new ValidationException("Comunidad no encontrada"));
+        Comunidad comunidad = comunidadRepository
+                .findById(communityId)
+                .orElseThrow(() -> new ValidationException("Comunidad no encontrada"));
 
         // Validar que sea privada
         if (comunidad.getTipoGrupo() == TipoGrupo.COMUNIDAD_PUBLICA) {
@@ -63,24 +61,22 @@ public class RequestService {
         }
 
         // Validar que no haya solicitud pendiente
-        SolicitudComunidad existing =
-                solicitudComunidadRepository
-                        .findBySolicitanteIdAndComunidadIdAndEstado(
-                                userId, communityId, EstadoSolicitud.PENDIENTE)
-                        .orElse(null);
+        SolicitudComunidad existing = solicitudComunidadRepository
+                .findBySolicitanteIdAndComunidadIdAndEstado(
+                        userId, communityId, EstadoSolicitud.PENDIENTE)
+                .orElse(null);
 
         if (existing != null) {
             throw new ValidationException("Ya tienes una solicitud pendiente para esta comunidad");
         }
 
         // Crear solicitud
-        SolicitudComunidad solicitud =
-                SolicitudComunidad.builder()
-                        .solicitante(usuario)
-                        .comunidad(comunidad)
-                        .mensaje(mensaje)
-                        .estado(EstadoSolicitud.PENDIENTE)
-                        .build();
+        SolicitudComunidad solicitud = SolicitudComunidad.builder()
+                .solicitante(usuario)
+                .comunidad(comunidad)
+                .mensaje(mensaje)
+                .estado(EstadoSolicitud.PENDIENTE)
+                .build();
 
         SolicitudComunidad solicitudCreada = solicitudComunidadRepository.save(solicitud);
         notificarNuevaSolicitudAlDueno(comunidad, usuario, mensaje);
@@ -113,33 +109,30 @@ public class RequestService {
             return;
         }
 
-        final boolean tieneActivaCategoria =
-                Boolean.TRUE.equals(preferenciasDueno.getNotificarSolicitudAcceso());
+        final boolean tieneActivaCategoria = Boolean.TRUE.equals(preferenciasDueno.getNotificarSolicitudAcceso());
         if (!tieneActivaCategoria) {
             return;
         }
 
-        final String nombreSolicitante =
-                solicitante != null && solicitante.getNombre() != null
-                        ? solicitante.getNombre()
-                        : "Un usuario";
+        final String nombreSolicitante = solicitante != null && solicitante.getNombre() != null
+                ? solicitante.getNombre()
+                : "Un usuario";
 
         try {
-            Notificacion notificacion =
-                    Notificacion.builder()
-                            .usuario(dueno)
-                            .titulo("Nueva solicitud de acceso")
-                            .mensaje(
-                                    nombreSolicitante
-                                            + " ha solicitado acceso a la comunidad '"
-                                            + comunidad.getNombre()
-                                            + "'.")
-                            .tipo("SOLICITUD_ACCESO")
-                            .leida(false)
-                            .comunidadId(comunidad.getId())
-                            .comunidadNombre(comunidad.getNombre())
-                            .comunidadImagenUrl(comunidad.getImagenUrl())
-                            .build();
+            Notificacion notificacion = Notificacion.builder()
+                    .usuario(dueno)
+                    .titulo("Nueva solicitud de acceso")
+                    .mensaje(
+                            nombreSolicitante
+                                    + " ha solicitado acceso a la comunidad '"
+                                    + comunidad.getNombre()
+                                    + "'.")
+                    .tipo("SOLICITUD_ACCESO")
+                    .leida(false)
+                    .comunidadId(comunidad.getId())
+                    .comunidadNombre(comunidad.getNombre())
+                    .comunidadImagenUrl(comunidad.getImagenUrl())
+                    .build();
             notificacionService.crearYNotificar(notificacion);
         } catch (Exception e) {
             log.warn(
@@ -150,8 +143,7 @@ public class RequestService {
                     e.getMessage());
         }
 
-        final boolean puedeRecibirEmail =
-                Boolean.TRUE.equals(preferenciasDueno.getEmailsActivados());
+        final boolean puedeRecibirEmail = Boolean.TRUE.equals(preferenciasDueno.getEmailsActivados());
         if (!puedeRecibirEmail) {
             return;
         }
@@ -191,10 +183,9 @@ public class RequestService {
             throw new IllegalArgumentException("Solo admins pueden responder solicitudes");
         }
 
-        SolicitudComunidad solicitud =
-                solicitudComunidadRepository
-                        .findById(requestId)
-                        .orElseThrow(() -> new IllegalArgumentException("Solicitud no encontrada"));
+        SolicitudComunidad solicitud = solicitudComunidadRepository
+                .findById(requestId)
+                .orElseThrow(() -> new IllegalArgumentException("Solicitud no encontrada"));
 
         // Validar que la solicitud pertenezca a esta comunidad
         if (!solicitud.getComunidad().getId().equals(communityId)) {
@@ -206,10 +197,9 @@ public class RequestService {
             throw new IllegalArgumentException("Esta solicitud ya fue respondida");
         }
 
-        Usuario admin =
-                usuarioRepository
-                        .findById(userId)
-                        .orElseThrow(() -> new IllegalArgumentException("Admin no encontrado"));
+        Usuario admin = usuarioRepository
+                .findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Admin no encontrado"));
 
         solicitud.setRespondidaPor(admin);
         solicitud.setFechaRespuesta(LocalDateTime.now());
@@ -226,16 +216,34 @@ public class RequestService {
             solicitud.setEstado(EstadoSolicitud.ACEPTADA);
 
             // Crear membresía
-            MiembroComunidad miembro =
-                    MiembroComunidad.builder()
-                            .usuario(solicitud.getSolicitante())
-                            .comunidad(solicitud.getComunidad())
-                            .rol(RolComunidad.ALUMNO)
-                            .build();
+            MiembroComunidad miembro = MiembroComunidad.builder()
+                    .usuario(solicitud.getSolicitante())
+                    .comunidad(solicitud.getComunidad())
+                    .rol(RolComunidad.ALUMNO)
+                    .build();
 
             miembroComunidadRepository.save(miembro);
         } else {
             solicitud.setEstado(EstadoSolicitud.RECHAZADA);
+        }
+
+        // Notificar al solicitante sobre la respuesta
+        try {
+            String estadoMsg = aceptado ? "aprobada" : "rechazada";
+            Notificacion notificacion = Notificacion.builder()
+                    .usuario(solicitud.getSolicitante())
+                    .titulo("Respuesta a tu solicitud de acceso")
+                    .mensaje("Tu solicitud ha sido " + estadoMsg + " para la comunidad '"
+                            + solicitud.getComunidad().getNombre() + "'.")
+                    .tipo("RESPUESTA_SOLICITUD_ACCESO")
+                    .leida(false)
+                    .comunidadId(solicitud.getComunidad().getId())
+                    .comunidadNombre(solicitud.getComunidad().getNombre())
+                    .comunidadImagenUrl(solicitud.getComunidad().getImagenUrl())
+                    .build();
+            notificacionService.crearYNotificar(notificacion);
+        } catch (Exception e) {
+            log.warn("No se pudo notificar al solicitante sobre la respuesta de su solicitud: {}", e.getMessage());
         }
 
         return solicitudComunidadRepository.save(solicitud);

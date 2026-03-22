@@ -22,6 +22,25 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class MensajeService {
+    @Transactional
+    public void marcarConversacionComoLeida(Long usuarioId, Long otherUserId) {
+        // Buscar todos los mensajes recibidos por el usuario autenticado de la otra
+        // persona
+        List<Mensaje> mensajes = mensajeRepository.findConversationBetweenUsers(usuarioId, otherUserId);
+        for (Mensaje m : mensajes) {
+            if (m.getReceptor().getId().equals(usuarioId)) {
+                if (!mensajeLeidoRepository.findByMensajeAndUsuario(m, m.getReceptor()).isPresent()) {
+                    es.us.meerkat.backend.entity.MensajeLeido ml = es.us.meerkat.backend.entity.MensajeLeido.builder()
+                            .mensaje(m)
+                            .usuario(m.getReceptor())
+                            .leidoAt(java.time.LocalDateTime.now())
+                            .build();
+                    mensajeLeidoRepository.save(ml);
+                }
+            }
+        }
+    }
+
     /** Repositorio para acceder a la información de tutores. */
     private final TutorRepository tutorRepository;
 
@@ -30,6 +49,8 @@ public class MensajeService {
 
     private final MensajeRepository mensajeRepository;
     private final JdbcTemplate jdbcTemplate;
+
+    private final es.us.meerkat.backend.repository.MensajeLeidoRepository mensajeLeidoRepository;
 
     @PostConstruct
     void ensureTutorColumnNullable() {
@@ -50,25 +71,22 @@ public class MensajeService {
             throw new IllegalArgumentException("El contenido del mensaje es obligatorio");
         }
 
-        Usuario emisor =
-                usuarioRepository
-                        .findById(usuarioId)
-                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        Usuario emisor = usuarioRepository
+                .findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         Usuario receptor;
         Tutor tutor = null;
 
         if (request.getUserId() != null) {
-            receptor =
-                    usuarioRepository
-                            .findById(request.getUserId())
-                            .orElseThrow(
-                                    () -> new RuntimeException("Usuario receptor no encontrado"));
+            receptor = usuarioRepository
+                    .findById(request.getUserId())
+                    .orElseThrow(
+                            () -> new RuntimeException("Usuario receptor no encontrado"));
         } else if (request.getTutorId() != null) {
-            tutor =
-                    tutorRepository
-                            .findById(request.getTutorId())
-                            .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
+            tutor = tutorRepository
+                    .findById(request.getTutorId())
+                    .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
 
             if (!Boolean.TRUE.equals(tutor.getVerificado())) {
                 throw new RuntimeException("No puedes contactar un tutor no verificado");
@@ -83,13 +101,12 @@ public class MensajeService {
             throw new IllegalArgumentException("No puedes enviarte mensajes a ti mismo");
         }
 
-        Mensaje mensaje =
-                Mensaje.builder()
-                        .contenido(request.getContenido())
-                        .emisor(emisor)
-                        .receptor(receptor)
-                        .tutor(tutor)
-                        .build();
+        Mensaje mensaje = Mensaje.builder()
+                .contenido(request.getContenido())
+                .emisor(emisor)
+                .receptor(receptor)
+                .tutor(tutor)
+                .build();
 
         mensajeRepository.save(mensaje);
 
@@ -110,25 +127,22 @@ public class MensajeService {
             throw new IllegalArgumentException("El contenido del archivo es obligatorio");
         }
 
-        Usuario emisor =
-                usuarioRepository
-                        .findById(usuarioId)
-                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        Usuario emisor = usuarioRepository
+                .findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         Usuario receptor;
         Tutor tutor = null;
 
         if (userId != null) {
-            receptor =
-                    usuarioRepository
-                            .findById(userId)
-                            .orElseThrow(
-                                    () -> new RuntimeException("Usuario receptor no encontrado"));
+            receptor = usuarioRepository
+                    .findById(userId)
+                    .orElseThrow(
+                            () -> new RuntimeException("Usuario receptor no encontrado"));
         } else if (tutorId != null) {
-            tutor =
-                    tutorRepository
-                            .findById(tutorId)
-                            .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
+            tutor = tutorRepository
+                    .findById(tutorId)
+                    .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
 
             if (!Boolean.TRUE.equals(tutor.getVerificado())) {
                 throw new RuntimeException("No puedes contactar un tutor no verificado");
@@ -143,22 +157,20 @@ public class MensajeService {
             throw new IllegalArgumentException("No puedes enviarte mensajes a ti mismo");
         }
 
-        String contenidoFinal =
-                (contenido == null || contenido.isBlank())
-                        ? "[Adjunto] " + archivoNombre
-                        : contenido;
+        String contenidoFinal = (contenido == null || contenido.isBlank())
+                ? "[Adjunto] " + archivoNombre
+                : contenido;
 
-        Mensaje mensaje =
-                Mensaje.builder()
-                        .contenido(contenidoFinal)
-                        .archivoNombre(archivoNombre)
-                        .archivoMimeType(archivoMimeType)
-                        .archivoTamano(archivoTamano)
-                        .archivoData(archivoData)
-                        .emisor(emisor)
-                        .receptor(receptor)
-                        .tutor(tutor)
-                        .build();
+        Mensaje mensaje = Mensaje.builder()
+                .contenido(contenidoFinal)
+                .archivoNombre(archivoNombre)
+                .archivoMimeType(archivoMimeType)
+                .archivoTamano(archivoTamano)
+                .archivoData(archivoData)
+                .emisor(emisor)
+                .receptor(receptor)
+                .tutor(tutor)
+                .build();
 
         mensajeRepository.save(mensaje);
         mensaje.setArchivoUrl("/api/v1/mensajes/" + mensaje.getId() + "/archivo");
@@ -168,14 +180,12 @@ public class MensajeService {
 
     @Transactional(readOnly = true)
     public MensajeArchivo obtenerArchivo(final Long usuarioId, final Long mensajeId) {
-        final Mensaje mensaje =
-                mensajeRepository
-                        .findById(mensajeId)
-                        .orElseThrow(() -> new IllegalArgumentException("Mensaje no encontrado"));
+        final Mensaje mensaje = mensajeRepository
+                .findById(mensajeId)
+                .orElseThrow(() -> new IllegalArgumentException("Mensaje no encontrado"));
 
-        final boolean autorizado =
-                mensaje.getEmisor().getId().equals(usuarioId)
-                        || mensaje.getReceptor().getId().equals(usuarioId);
+        final boolean autorizado = mensaje.getEmisor().getId().equals(usuarioId)
+                || mensaje.getReceptor().getId().equals(usuarioId);
         if (!autorizado) {
             throw new IllegalArgumentException("No tienes permiso para acceder a este archivo");
         }
@@ -191,15 +201,13 @@ public class MensajeService {
     @Transactional(readOnly = true)
     public List<MensajeResponse> obtenerConversacion(Long usuarioId, Long tutorId) {
 
-        Tutor tutor =
-                tutorRepository
-                        .findById(tutorId)
-                        .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
+        Tutor tutor = tutorRepository
+                .findById(tutorId)
+                .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
 
         Long tutorUserId = tutor.getUsuario().getId();
 
-        List<Mensaje> mensajes =
-                mensajeRepository.findConversationWithTutor(tutorId, usuarioId, tutorUserId);
+        List<Mensaje> mensajes = mensajeRepository.findConversationWithTutor(tutorId, usuarioId, tutorUserId);
 
         return mensajes.stream().map(this::mapToResponse).toList();
     }
@@ -214,8 +222,7 @@ public class MensajeService {
                 .findById(otherUserId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        List<Mensaje> mensajes =
-                mensajeRepository.findConversationBetweenUsers(usuarioId, otherUserId);
+        List<Mensaje> mensajes = mensajeRepository.findConversationBetweenUsers(usuarioId, otherUserId);
 
         return mensajes.stream().map(this::mapToResponse).toList();
     }
@@ -231,38 +238,48 @@ public class MensajeService {
         List<Mensaje> messages = mensajeRepository.findAllConversations(usuarioId);
         log.info("Total de mensajes encontrados: {}", messages.size());
 
-        java.util.Map<Long, java.util.Map<String, Object>> conversationMap =
-                new java.util.LinkedHashMap<>();
+        java.util.Map<Long, java.util.Map<String, Object>> conversationMap = new java.util.LinkedHashMap<>();
 
+        // Agrupar mensajes por otro usuario
+        java.util.Map<Long, java.util.List<Mensaje>> mensajesPorOtroUsuario = new java.util.HashMap<>();
         for (Mensaje msg : messages) {
-            try {
-                // Validar que emisor y receptor no sean nulos
-                if (msg.getEmisor() == null || msg.getReceptor() == null) {
-                    log.warn("Mensaje {} tiene emisor o receptor nulo, omitiendo", msg.getId());
-                    continue;
-                }
+            if (msg.getEmisor() == null || msg.getReceptor() == null)
+                continue;
+            Long otherId = msg.getEmisor().getId().equals(usuarioId) ? msg.getReceptor().getId()
+                    : msg.getEmisor().getId();
+            mensajesPorOtroUsuario.computeIfAbsent(otherId, k -> new java.util.ArrayList<>()).add(msg);
+        }
 
-                Long otherId =
-                        msg.getEmisor().getId().equals(usuarioId)
-                                ? msg.getReceptor().getId()
-                                : msg.getEmisor().getId();
-                Usuario otherUser =
-                        msg.getEmisor().getId().equals(usuarioId)
-                                ? msg.getReceptor()
-                                : msg.getEmisor();
-
-                if (!conversationMap.containsKey(otherId)) {
-                    java.util.Map<String, Object> convData = new java.util.HashMap<>();
-                    convData.put("usuarioId", otherId);
-                    convData.put("usuarioNombre", otherUser.getNombre());
-                    convData.put("usuarioFoto", otherUser.getFoto());
-                    convData.put("ultimoMensaje", msg.getContenido());
-                    convData.put("ultimaFecha", msg.getCreatedAt());
-                    conversationMap.put(otherId, convData);
-                }
-            } catch (Exception e) {
-                log.error("Error procesando mensaje {}: {}", msg.getId(), e.getMessage(), e);
+        for (var entry : mensajesPorOtroUsuario.entrySet()) {
+            Long otherId = entry.getKey();
+            java.util.List<Mensaje> convMsgs = entry.getValue();
+            if (convMsgs.isEmpty())
+                continue;
+            Mensaje ultimo = convMsgs.get(0);
+            for (Mensaje m : convMsgs) {
+                if (m.getCreatedAt().isAfter(ultimo.getCreatedAt()))
+                    ultimo = m;
             }
+            Usuario otherUser = ultimo.getEmisor().getId().equals(usuarioId) ? ultimo.getReceptor()
+                    : ultimo.getEmisor();
+
+            // Mensajes recibidos no leídos
+            java.util.List<Long> idsRecibidos = convMsgs.stream()
+                    .filter(m -> m.getReceptor().getId().equals(usuarioId))
+                    .map(Mensaje::getId)
+                    .toList();
+            java.util.List<Long> idsLeidos = idsRecibidos.isEmpty() ? java.util.List.of()
+                    : mensajeLeidoRepository.findMensajeIdsLeidosByUsuario(usuarioId, idsRecibidos);
+            int noLeidos = idsRecibidos.size() - idsLeidos.size();
+
+            java.util.Map<String, Object> convData = new java.util.HashMap<>();
+            convData.put("usuarioId", otherId);
+            convData.put("usuarioNombre", otherUser.getNombre());
+            convData.put("usuarioFoto", otherUser.getFoto());
+            convData.put("ultimoMensaje", ultimo.getContenido());
+            convData.put("ultimaFecha", ultimo.getCreatedAt());
+            convData.put("noLeidos", noLeidos);
+            conversationMap.put(otherId, convData);
         }
 
         log.info("Total de conversaciones únicas: {}", conversationMap.size());
@@ -271,10 +288,9 @@ public class MensajeService {
 
     @Transactional
     public void eliminarMensaje(Long usuarioId, Long mensajeId) {
-        Mensaje mensaje =
-                mensajeRepository
-                        .findById(mensajeId)
-                        .orElseThrow(() -> new IllegalArgumentException("Mensaje no encontrado"));
+        Mensaje mensaje = mensajeRepository
+                .findById(mensajeId)
+                .orElseThrow(() -> new IllegalArgumentException("Mensaje no encontrado"));
 
         if (!mensaje.getEmisor().getId().equals(usuarioId)) {
             throw new IllegalArgumentException("No tienes permiso para eliminar este mensaje");
@@ -289,10 +305,9 @@ public class MensajeService {
             throw new IllegalArgumentException("El contenido del mensaje no puede estar vacío");
         }
 
-        Mensaje mensaje =
-                mensajeRepository
-                        .findById(mensajeId)
-                        .orElseThrow(() -> new IllegalArgumentException("Mensaje no encontrado"));
+        Mensaje mensaje = mensajeRepository
+                .findById(mensajeId)
+                .orElseThrow(() -> new IllegalArgumentException("Mensaje no encontrado"));
 
         if (!mensaje.getEmisor().getId().equals(usuarioId)) {
             throw new IllegalArgumentException("No tienes permiso para editar este mensaje");
@@ -323,12 +338,12 @@ public class MensajeService {
     /** Obtiene un mensaje por su ID y lo devuelve como DTO. */
     @Transactional(readOnly = true)
     public MensajeResponse obtenerMensaje(Long mensajeId) {
-        Mensaje mensaje =
-                mensajeRepository
-                        .findById(mensajeId)
-                        .orElseThrow(() -> new IllegalArgumentException("Mensaje no encontrado"));
+        Mensaje mensaje = mensajeRepository
+                .findById(mensajeId)
+                .orElseThrow(() -> new IllegalArgumentException("Mensaje no encontrado"));
         return mapToResponse(mensaje);
     }
 
-    public record MensajeArchivo(byte[] data, String nombre, String mimeType) {}
+    public record MensajeArchivo(byte[] data, String nombre, String mimeType) {
+    }
 }

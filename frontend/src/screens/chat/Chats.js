@@ -3,7 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authApi } from '../../api/auth.api';
 import { getApiBaseUrl } from '../../api/baseUrl';
 import { communitiesApi } from '../../api/communities.api';
-import { obtenerConversaciones } from '../../api/mensajeService';
+import { obtenerConversaciones, marcarConversacionComoLeida } from '../../api/mensajeService';
+import { obtenerNoLeidosPorComunidad, marcarComunidadComoLeida } from '../../api/mensajeService';
 import Header from '../../components/Header/Header';
 import PageHeader from '../../components/PageHeader';
 import { useAuth } from '../../contexts/AuthContext';
@@ -61,6 +62,7 @@ const resolveUserImage = (rawPhoto) => {
 };
 
 export default function Chats() {
+
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const { user } = useAuth();
@@ -81,11 +83,8 @@ export default function Chats() {
         searchParams.get('userId') ? 'private' : 'communities'
     );
     const [isMobileDropdownOpen, setIsMobileDropdownOpen] = useState(false);
+    const [communityUnreadMap, setCommunityUnreadMap] = useState({});
 
-    const communityIdFromQuery = Number(searchParams.get('communityId'));
-    const privateUserIdFromQuery = Number(searchParams.get('userId'));
-    const privateUserNameFromQuery = searchParams.get('userName');
-    const privateUserPhotoFromQuery = searchParams.get('userPhoto');
 
     const currentUser = {
         id: Number(localStorage.getItem('userId')),
@@ -94,44 +93,24 @@ export default function Chats() {
         fotoBackgroundColor: user?.fotoBackgroundColor || '#ffffff',
     };
 
+    let privateUnread = 0;
+    let communityUnread = 0;
+    if (Array.isArray(conversaciones)) {
+        // Sumar todos los noLeidos de las conversaciones privadas
+        privateUnread = conversaciones.reduce((acc, c) => acc + (c.noLeidos || 0), 0);
+    }
+    if (communityUnreadById && typeof communityUnreadById === 'object') {
+        communityUnread = Object.values(communityUnreadById).reduce((acc, n) => acc + (n || 0), 0);
+    }
+
+    const communityIdFromQuery = Number(searchParams.get('communityId'));
+    const privateUserIdFromQuery = Number(searchParams.get('userId'));
+    const privateUserNameFromQuery = searchParams.get('userName');
+    const privateUserPhotoFromQuery = searchParams.get('userPhoto');
+
     const sidebarConversations = useMemo(() => {
-        if (conversaciones.length > 0) {
-            const exists =
-                privateTarget &&
-                conversaciones.some((c) => Number(c.usuarioId) === Number(privateTarget.id));
-
-            if (!privateTarget || exists) {
-                return conversaciones;
-            }
-
-            return [
-                ...conversaciones,
-                {
-                    usuarioId: privateTarget.id,
-                    usuarioNombre: privateTarget.nombre,
-                    usuarioFoto: privateTarget.foto || null,
-                    usuarioFotoBackgroundColor:
-                        privateTarget.fotoBackgroundColor || '#ffffff',
-                    ultimoMensaje: '',
-                },
-            ];
-        }
-
-        if (privateTarget) {
-            return [
-                {
-                    usuarioId: privateTarget.id,
-                    usuarioNombre: privateTarget.nombre,
-                    usuarioFoto: privateTarget.foto || null,
-                    usuarioFotoBackgroundColor:
-                        privateTarget.fotoBackgroundColor || '#ffffff',
-                    ultimoMensaje: '',
-                },
-            ];
-        }
-
-        return [];
-    }, [conversaciones, privateTarget]);
+        return conversaciones;
+    }, [conversaciones]);
 
     const hasPrivateSidebar = sidebarConversations.length > 0;
 
@@ -330,7 +309,7 @@ export default function Chats() {
         );
     };
 
-    const openPrivateChat = (target) => {
+    const openPrivateChat = async (target) => {
         const id = Number(target.userId ?? target.id);
         const nombre = target.userName ?? target.nombre ?? `Usuario ${id}`;
         const foto = target.userPhoto ?? target.foto ?? null;
@@ -348,22 +327,36 @@ export default function Chats() {
         setActiveTab('private');
         setIsMobileDropdownOpen(false);
 
-        setConversaciones((prev) => {
-            if (prev.some((c) => Number(c.usuarioId) === id)) {
-                return prev;
+        // Marcar la conversación como leída al abrirla y refrescar siempre las conversaciones
+        try {
+            await marcarConversacionComoLeida(id);
+        } catch (e) {
+            console.error('No se pudo marcar la conversación como leída', e);
+        } finally {
+            try {
+                const { data } = await obtenerConversaciones();
+                setConversaciones(prev => {
+                    const convs = Array.isArray(data) ? data : [];
+                    return convs;
+                });
+            } catch (err) {
+                setConversaciones([]);
             }
+        }
+    };
 
-            return [
-                ...prev,
-                {
-                    usuarioId: id,
-                    usuarioNombre: nombre,
-                    usuarioFoto: foto,
-                    usuarioFotoBackgroundColor: fotoBackgroundColor,
-                    ultimoMensaje: '',
-                },
-            ];
-        });
+    const openCommunityChat = async (community) => {
+        setSelectedCommunityId(community.id);
+        setPrivateTarget(null);
+        // Marcar como leída la comunidad
+        try {
+            await marcarComunidadComoLeida(community.id);
+            // Refrescar contadores
+            const { data } = await obtenerNoLeidosPorComunidad();
+            setCommunityUnreadMap(data || {});
+        } catch (e) {
+            // No bloquear la UI si falla
+        }
     };
 
     const selectedCommunity = communities.find((c) => c.id === selectedCommunityId);
@@ -392,6 +385,9 @@ export default function Chats() {
                         }}
                     >
                         Comunidades
+                        {communityUnread > 0 && (
+                            <span className="chats-tab-badge">{communityUnread}</span>
+                        )}
                     </button>
 
                     <button
@@ -405,6 +401,9 @@ export default function Chats() {
                         }}
                     >
                         Privados
+                        {privateUnread > 0 && (
+                            <span className="chats-tab-badge">{privateUnread}</span>
+                        )}
                     </button>
                 </div>
 
@@ -531,18 +530,8 @@ export default function Chats() {
                                             <button
                                                 key={community.id}
                                                 type="button"
-                                                className={`chat-list-item ${
-                                                    isSelected ? 'active' : ''
-                                                }`}
-                                                onClick={() => {
-                                                    setSelectedCommunityId(
-                                                        community.id
-                                                    );
-                                                    clearCommunityUnread(
-                                                        community.id
-                                                    );
-                                                    setPrivateTarget(null);
-                                                }}
+                                                className={`chat-list-item ${isSelected ? 'active' : ''}`}
+                                                onClick={() => openCommunityChat(community)}
                                             >
                                                 <div className="community-icon-with-badge">
                                                     <img
@@ -556,13 +545,9 @@ export default function Chats() {
                                                         String(community.id)
                                                     ] > 0 && (
                                                         <span className="community-unread-badge">
-                                                            {
-                                                                communityUnreadById[
-                                                                    String(
-                                                                        community.id
-                                                                    )
-                                                                ]
-                                                            }
+                                                            {communityUnreadById[
+                                                                String(community.id)
+                                                            ]}
                                                         </span>
                                                     )}
                                                 </div>
@@ -686,53 +671,43 @@ export default function Chats() {
 
                                         {isMobileDropdownOpen && (
                                             <div className="mobile-selector-dropdown">
-                                                {sidebarConversations.map(
-                                                    (conv, idx) => (
+                                                {sidebarConversations.map((conv, idx) => {
+                                                    const isSelected =
+                                                        privateTarget?.id === conv.usuarioId;
+                                                    return (
                                                         <button
                                                             key={`${conv.usuarioId}-${idx}`}
                                                             type="button"
-                                                            className={`mobile-dropdown-item ${
-                                                                privateTarget?.id ===
-                                                                conv.usuarioId
-                                                                    ? 'active'
-                                                                    : ''
-                                                            }`}
-                                                            onClick={() => {
-                                                                setPrivateTarget({
-                                                                    id: conv.usuarioId,
-                                                                    nombre: conv.usuarioNombre,
-                                                                    foto:
-                                                                        conv.usuarioFoto ||
-                                                                        null,
-                                                                    fotoBackgroundColor:
-                                                                        conv.usuarioFotoBackgroundColor ||
-                                                                        '#ffffff',
-                                                                });
-                                                                setIsMobileDropdownOpen(
-                                                                    false
-                                                                );
-                                                            }}
+                                                            className={`chat-list-item ${isSelected ? 'active' : ''}`}
+                                                            onClick={() => openPrivateChat({
+                                                                id: conv.usuarioId,
+                                                                nombre: conv.usuarioNombre,
+                                                                foto: conv.usuarioFoto || null,
+                                                                fotoBackgroundColor: conv.usuarioFotoBackgroundColor || '#ffffff',
+                                                            })}
                                                         >
-                                                            <img
-                                                                src={resolveUserImage(
-                                                                    conv.usuarioFoto
+                                                            <div style={{ position: 'relative' }}>
+                                                                <img
+                                                                    src={resolveUserImage(conv.usuarioFoto)}
+                                                                    alt={conv.usuarioNombre}
+                                                                    className="chat-list-image"
+                                                                    style={{
+                                                                        backgroundColor: conv.usuarioFotoBackgroundColor || '#ffffff',
+                                                                    }}
+                                                                />
+                                                                {conv.noLeidos > 0 && (
+                                                                    <span className="private-unread-badge">
+                                                                        {conv.noLeidos}
+                                                                    </span>
                                                                 )}
-                                                                alt={
-                                                                    conv.usuarioNombre
-                                                                }
-                                                                className="mobile-dropdown-image"
-                                                                style={{
-                                                                    backgroundColor:
-                                                                        conv.usuarioFotoBackgroundColor ||
-                                                                        '#ffffff',
-                                                                }}
-                                                            />
-                                                            <span>
-                                                                {conv.usuarioNombre}
-                                                            </span>
+                                                            </div>
+                                                            <div className="chat-list-content">
+                                                                <h3>{conv.usuarioNombre}</h3>
+                                                                <p className="last-message">{conv.ultimoMensaje}</p>
+                                                            </div>
                                                         </button>
-                                                    )
-                                                )}
+                                                    );
+                                                })}
                                             </div>
                                         )}
                                     </div>
@@ -742,43 +717,34 @@ export default function Chats() {
                                     <aside className="chats-sidebar">
                                         {sidebarConversations.map((conv, idx) => {
                                             const isSelected =
-                                                privateTarget?.id ===
-                                                conv.usuarioId;
-
+                                                privateTarget?.id === conv.usuarioId;
                                             return (
                                                 <button
                                                     key={`${conv.usuarioId}-${idx}`}
                                                     type="button"
-                                                    className={`chat-list-item ${
-                                                        isSelected ? 'active' : ''
-                                                    }`}
-                                                    onClick={() =>
-                                                        setPrivateTarget({
-                                                            id: conv.usuarioId,
-                                                            nombre:
-                                                                conv.usuarioNombre,
-                                                            foto:
-                                                                conv.usuarioFoto ||
-                                                                null,
-                                                            fotoBackgroundColor:
-                                                                conv.usuarioFotoBackgroundColor ||
-                                                                '#ffffff',
-                                                        })
-                                                    }
+                                                    className={`chat-list-item ${isSelected ? 'active' : ''}`}
+                                                    onClick={() => openPrivateChat({
+                                                        id: conv.usuarioId,
+                                                        nombre: conv.usuarioNombre,
+                                                        foto: conv.usuarioFoto || null,
+                                                        fotoBackgroundColor: conv.usuarioFotoBackgroundColor || '#ffffff',
+                                                    })}
                                                 >
-                                                    <img
-                                                        src={resolveUserImage(
-                                                            conv.usuarioFoto
+                                                    <div style={{ position: 'relative' }}>
+                                                        <img
+                                                            src={resolveUserImage(conv.usuarioFoto)}
+                                                            alt={conv.usuarioNombre}
+                                                            className="chat-list-image"
+                                                            style={{
+                                                                backgroundColor: conv.usuarioFotoBackgroundColor || '#ffffff',
+                                                            }}
+                                                        />
+                                                        {conv.noLeidos > 0 && (
+                                                            <span className="private-unread-badge">
+                                                                {conv.noLeidos}
+                                                            </span>
                                                         )}
-                                                        alt={conv.usuarioNombre}
-                                                        className="chat-list-image"
-                                                        style={{
-                                                            backgroundColor:
-                                                                conv.usuarioFotoBackgroundColor ||
-                                                                '#ffffff',
-                                                        }}
-                                                    />
-
+                                                    </div>
                                                     <div className="chat-list-content">
                                                         <h3>{conv.usuarioNombre}</h3>
                                                         <p className="last-message">

@@ -114,6 +114,22 @@ export default function NotificationTab() {
       await handleMarkAsRead(n.id, n.source);
       await new Promise(res => setTimeout(res, 100));
     }
+    // Redirigir a la pestaña de solicitudes si es notificación de solicitud de acceso
+    if (n.source === 'notificacion' && n.type === 'SOLICITUD_ACCESO' && n.comunidadId) {
+      navigate(`/comunidades/${n.comunidadId}?tab=solicitudes`);
+      return;
+    }
+    // Redirigir a la comunidad solo si la solicitud fue aprobada
+    if (
+      n.source === 'notificacion' &&
+      n.type === 'RESPUESTA_SOLICITUD_ACCESO' &&
+      n.comunidadId &&
+      n.message &&
+      n.message.toLowerCase().includes('aprobada')
+    ) {
+      navigate(`/comunidades/${n.comunidadId}`);
+      return;
+    }
     // Si es notificación de anuncio
     if (n.source === 'notificacion' && n.type === 'ANUNCIO' && n.anuncioId && n.comunidadId) {
       navigate(`/comunidades/${n.comunidadId}?tab=anuncios&anuncioId=${n.anuncioId}`);
