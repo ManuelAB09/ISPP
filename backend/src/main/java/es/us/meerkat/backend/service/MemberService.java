@@ -170,14 +170,9 @@ public class MemberService {
                                         new IllegalArgumentException(
                                                 "El usuario no es miembro de esta comunidad"));
 
-        // No se puede expulsar al único admin
+        // No se puede expulsar al único admin ni a otro admin
         if (targetMiembro.getRol() == RolComunidad.ADMIN) {
-            long adminCount =
-                    miembroComunidadRepository.countByComunidadIdAndRol(
-                            communityId, RolComunidad.ADMIN);
-            if (adminCount <= 1) {
-                throw new IllegalArgumentException("No puedes expulsar al único admin");
-            }
+            throw new IllegalArgumentException("No puedes expulsar a otro administrador");
         }
 
         Usuario targetUsuario = targetMiembro.getUsuario();
@@ -202,7 +197,7 @@ public class MemberService {
     }
 
     /** Transfiere el rol ADMIN a otro miembro (solo ADMIN actual). */
-    public MiembroComunidad transferAdmin(Long userId, Long communityId, Long newAdminId) {
+    public MiembroComunidad transferAdmin(Long userId, Long communityId, Long newAdminId, RolComunidad nuevoRolOrigen) {
         if (!authorizationService.isAdminOf(userId, communityId)) {
             throw new IllegalArgumentException("Solo admins pueden transferir administración");
         }
@@ -229,7 +224,7 @@ public class MemberService {
                                                 "No eres miembro de esta comunidad"));
 
         // Cambiar roles
-        usuarioActual.setRol(RolComunidad.ALUMNO);
+        usuarioActual.setRol(nuevoRolOrigen != null ? nuevoRolOrigen : RolComunidad.ALUMNO);
         nuevoAdmin.setRol(RolComunidad.ADMIN);
 
         miembroComunidadRepository.save(usuarioActual);

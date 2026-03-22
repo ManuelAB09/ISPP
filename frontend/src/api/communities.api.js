@@ -171,8 +171,8 @@ export const communitiesApi = {
    * @param {number} communityId
    * @param {number} nuevoAdminId
    */
-  transferAdmin(communityId, nuevoAdminId) {
-    return apiClient.post(`/api/v1/communities/${communityId}/admin/transfer`, { nuevoAdminId });
+  transferAdmin(communityId, nuevoAdminId, nuevoRolOrigen) {
+    return apiClient.post(`/api/v1/communities/${communityId}/admin/transfer`, { nuevoAdminId, nuevoRolOrigen });
   },
 
   /**

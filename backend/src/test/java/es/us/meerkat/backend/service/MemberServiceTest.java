@@ -132,7 +132,7 @@ class MemberServiceTest {
         when(miembroComunidadRepository.save(any(MiembroComunidad.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        MiembroComunidad result = memberService.transferAdmin(adminId, communityId, newAdminId);
+        MiembroComunidad result = memberService.transferAdmin(adminId, communityId, newAdminId, null);
 
         assertThat(actual.getRol()).isEqualTo(RolComunidad.ALUMNO);
         assertThat(nuevo.getRol()).isEqualTo(RolComunidad.ADMIN);

@@ -511,8 +511,9 @@ public class GoogleCalendarService {
     /** Renueva el accessToken usando el refreshToken. */
     @Transactional
     protected void renovarAccessToken(final GoogleCalendarToken token) throws Exception {
-        final com.google.api.client.auth.oauth2.TokenResponse response = new com.google.api.client.googleapis.auth.oauth2.GoogleRefreshTokenRequest(
-                GoogleNetHttpTransport.newTrustedTransport(),
+        final com.google.api.client.auth.oauth2.TokenResponse response =
+                new com.google.api.client.googleapis.auth.oauth2.GoogleRefreshTokenRequest(
+                        GoogleNetHttpTransport.newTrustedTransport(),
                 GsonFactory.getDefaultInstance(),
                 token.getRefreshToken(),
                 calendarConfig.getClientId(),

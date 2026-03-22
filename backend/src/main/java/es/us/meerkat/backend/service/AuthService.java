@@ -840,7 +840,8 @@ public class AuthService {
                             new TempLogin(usuario.getId(), Instant.now().plusSeconds(300)));
 
                     String payloadStr = "{\"isTwoFactor\": true, \"tempToken\": \"" + tempToken + "\"}";
-                    String html = "<html><head><meta charset=\"UTF-8\"></head><body><script>window.opener.postMessage({ type:"
+                    String html = "<html><head><meta charset=\"UTF-8\"></head>"
+                            + "<body><script>window.opener.postMessage({ type:"
                             + " 'google-auth-success', payload: "
                             + payloadStr
                             + " }, '*');"
@@ -852,7 +853,8 @@ public class AuthService {
                 AuthResponse authRes = buildAuthResponse(usuario, finalJwt);
                 String payloadStr = objectMapper.writeValueAsString(authRes);
 
-                String html = "<html><head><meta charset=\"UTF-8\"></head><body><script>window.opener.postMessage({ type:"
+                String html = "<html><head><meta charset=\"UTF-8\"></head>"
+                        + "<body><script>window.opener.postMessage({ type:"
                         + " 'google-auth-success', payload: "
                         + payloadStr
                         + " }, '*');"

@@ -1860,6 +1860,7 @@ extraActions={(
           <TransferAdminModal
             communityId={communityId}
             currentUserId={currentUserId}
+            hasTeacherProfile={hasTeacherProfile}
             onClose={() => setShowTransferModal(false)}
             onTransferred={() => {
               setShowTransferModal(false);

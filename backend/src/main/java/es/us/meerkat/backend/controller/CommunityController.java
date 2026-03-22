@@ -556,9 +556,18 @@ public class CommunityController {
         }
 
         try {
+            RolComunidad rol = null;
+            if (request.nuevoRolOrigen() != null) {
+                try {
+                    rol = RolComunidad.valueOf(request.nuevoRolOrigen().toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    return ResponseEntity.badRequest().build();
+                }
+            }
+
             MiembroComunidad newAdmin =
                     memberService.transferAdmin(
-                            usuario.getId(), communityId, request.nuevoAdminId());
+                            usuario.getId(), communityId, request.nuevoAdminId(), rol);
             return ResponseEntity.ok(entityToMemberResponse(newAdmin));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
