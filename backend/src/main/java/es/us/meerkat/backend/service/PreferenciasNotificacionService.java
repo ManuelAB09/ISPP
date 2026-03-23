@@ -61,6 +61,30 @@ public class PreferenciasNotificacionService {
             prefs.setCanalAlarmasPorDefecto(request.getCanalAlarmasPorDefecto());
         }
 
+        if (request.getNotificarMensajeComunidad() != null) {
+            prefs.setNotificarMensajeComunidad(request.getNotificarMensajeComunidad());
+        }
+
+        if (request.getNotificarMenciones() != null) {
+            prefs.setNotificarMenciones(request.getNotificarMenciones());
+        }
+
+        if (request.getNotificarInvitaciones() != null) {
+            prefs.setNotificarInvitaciones(request.getNotificarInvitaciones());
+        }
+
+        if (request.getNotificarAnuncios() != null) {
+            prefs.setNotificarAnuncios(request.getNotificarAnuncios());
+        }
+
+        if (request.getNotificarSolicitudAcceso() != null) {
+            prefs.setNotificarSolicitudAcceso(request.getNotificarSolicitudAcceso());
+        }
+
+        if (request.getNotificarCambiosDeEventos() != null) {
+            prefs.setNotificarCambiosDeEventos(request.getNotificarCambiosDeEventos());
+        }
+
         return toResponse(preferenciasRepository.save(prefs));
     }
 
@@ -102,6 +126,12 @@ public class PreferenciasNotificacionService {
                 .recordatorio1h(prefs.getRecordatorio1h())
                 .recordatorio30min(prefs.getRecordatorio30min())
                 .canalAlarmasPorDefecto(prefs.getCanalAlarmasPorDefecto())
+                .notificarMensajeComunidad(prefs.getNotificarMensajeComunidad())
+                .notificarMenciones(prefs.getNotificarMenciones())
+                .notificarInvitaciones(prefs.getNotificarInvitaciones())
+                .notificarAnuncios(prefs.getNotificarAnuncios())
+                .notificarSolicitudAcceso(prefs.getNotificarSolicitudAcceso())
+                .notificarCambiosDeEventos(prefs.getNotificarCambiosDeEventos())
                 .build();
     }
 }

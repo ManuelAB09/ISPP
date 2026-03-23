@@ -3,6 +3,7 @@ package es.us.meerkat.backend.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -17,9 +18,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.EstadoSolicitud;
 import es.us.meerkat.backend.entity.MiembroComunidad;
+import es.us.meerkat.backend.entity.PreferenciasNotificacion;
+import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.SolicitudComunidad;
 import es.us.meerkat.backend.entity.TipoGrupo;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.exception.ValidationException;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.SolicitudComunidadRepository;
@@ -34,6 +38,8 @@ class RequestServiceTest {
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private AuthorizationService authorizationService;
     @Mock private CommunityService communityService;
+    @Mock private PreferenciasNotificacionService preferenciasNotificacionService;
+    @Mock private EmailService emailService;
 
     @InjectMocks private RequestService requestService;
 
@@ -63,13 +69,74 @@ class RequestServiceTest {
     }
 
     @Test
+    void requestAccessShouldNotifyOwnerWhenSolicitudAccessAndEmailsAreEnabled() {
+        Long userId = 1L;
+        Long ownerId = 7L;
+        Long communityId = 10L;
+
+        Usuario solicitante = buildUsuario(userId);
+        Usuario dueno = buildUsuario(ownerId);
+        Comunidad comunidad = buildComunidad(communityId, TipoGrupo.GRUPO_PRIVADO);
+        comunidad.setCreador(dueno);
+
+        PreferenciasNotificacion preferenciasDueno = new PreferenciasNotificacion();
+        preferenciasDueno.setEmailsActivados(true);
+        preferenciasDueno.setNotificarSolicitudAcceso(true);
+
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(solicitante));
+        when(comunidadRepository.findById(communityId)).thenReturn(Optional.of(comunidad));
+        when(authorizationService.isMemberOf(userId, communityId)).thenReturn(false);
+        when(solicitudComunidadRepository.findBySolicitanteIdAndComunidadIdAndEstado(
+                        userId, communityId, EstadoSolicitud.PENDIENTE))
+                .thenReturn(Optional.empty());
+        when(solicitudComunidadRepository.save(any(SolicitudComunidad.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(preferenciasNotificacionService.getOrCreate(ownerId)).thenReturn(preferenciasDueno);
+
+        requestService.requestAccess(userId, communityId, "Quiero entrar", RolComunidad.ALUMNO);
+
+        verify(emailService)
+                .sendCommunityAccessRequestEmail(dueno, comunidad, solicitante, "Quiero entrar");
+    }
+
+    @Test
+    void requestAccessShouldNotNotifyOwnerWhenSolicitudAccessPreferenceIsDisabled() {
+        Long userId = 1L;
+        Long ownerId = 7L;
+        Long communityId = 10L;
+
+        Usuario solicitante = buildUsuario(userId);
+        Usuario dueno = buildUsuario(ownerId);
+        Comunidad comunidad = buildComunidad(communityId, TipoGrupo.GRUPO_PRIVADO);
+        comunidad.setCreador(dueno);
+
+        PreferenciasNotificacion preferenciasDueno = new PreferenciasNotificacion();
+        preferenciasDueno.setEmailsActivados(true);
+        preferenciasDueno.setNotificarSolicitudAcceso(false);
+
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(solicitante));
+        when(comunidadRepository.findById(communityId)).thenReturn(Optional.of(comunidad));
+        when(authorizationService.isMemberOf(userId, communityId)).thenReturn(false);
+        when(solicitudComunidadRepository.findBySolicitanteIdAndComunidadIdAndEstado(
+                        userId, communityId, EstadoSolicitud.PENDIENTE))
+                .thenReturn(Optional.empty());
+        when(solicitudComunidadRepository.save(any(SolicitudComunidad.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(preferenciasNotificacionService.getOrCreate(ownerId)).thenReturn(preferenciasDueno);
+
+        requestService.requestAccess(userId, communityId, "Quiero entrar", RolComunidad.ALUMNO);
+
+        verify(emailService, never()).sendCommunityAccessRequestEmail(any(), any(), any(), any());
+    }
+
+    @Test
     void requestAccessShouldFailForPublicCommunity() {
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(buildUsuario(1L)));
         when(comunidadRepository.findById(10L))
                 .thenReturn(Optional.of(buildComunidad(10L, TipoGrupo.COMUNIDAD_PUBLICA)));
 
-        assertThatThrownBy(() -> requestService.requestAccess(1L, 10L, "hola", null))
-                .isInstanceOf(IllegalArgumentException.class)
+        assertThatThrownBy(() -> requestService.requestAccess(1L, 10L, "hola", RolComunidad.ALUMNO))
+                .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("comunidad pública");
     }
 

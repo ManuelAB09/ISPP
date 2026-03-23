@@ -23,6 +23,7 @@ import es.us.meerkat.backend.entity.MiembroComunidad;
 import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.SolicitudComunidad;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.exception.ValidationException;
 import es.us.meerkat.backend.service.AuthorizationService;
 import es.us.meerkat.backend.service.CategoryService;
 import es.us.meerkat.backend.service.CommunityService;
@@ -730,7 +731,7 @@ public class CommunityController {
                             usuario.getId(), communityId, request.mensaje(), rolDeseado);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(entityToRequestResponse(solicitud));
-        } catch (IllegalArgumentException e) {
+        } catch (ValidationException e) {
             return ResponseEntity.badRequest().build();
         }
     }

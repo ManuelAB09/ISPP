@@ -149,14 +149,20 @@ class EventoServiceTest {
     void editarEventoShouldUpdateLocationAndClearItForVirtualEvents() {
         Long eventId = 10L;
         Long ubicacionId = 5L;
+        Long comunidadId = 2L;
+        Long creadorId = 1L;
 
         Evento evento = new Evento();
         evento.setId(eventId);
         evento.setUbicacion(buildUbicacion(9L));
+        evento.setComunidad(buildComunidad(comunidadId));
+        evento.setCreador(buildUsuario(creadorId));
 
         when(eventoRepository.findById(eventId)).thenReturn(Optional.of(evento));
         when(ubicacionRepository.findById(ubicacionId))
                 .thenReturn(Optional.of(buildUbicacion(ubicacionId)));
+        when(miembroComunidadRepository.findUsuarioIdsByComunidadId(comunidadId))
+                .thenReturn(List.of());
         when(eventoRepository.save(any(Evento.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 

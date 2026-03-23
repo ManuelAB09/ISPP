@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { LuPlus, LuArrowLeft, LuCalendar, LuUsers, LuLogIn, LuLogOut, LuVideo, LuPlay, LuPencil, LuTrash2, LuCheck, LuX, LuUserPlus } from 'react-icons/lu';
 import Header from '../../components/Header/Header';
 import TarjetaEvento from '../../components/Evento/TarjetaEvento';
+import CommunityAnnouncementsTab from './CommunityAnnouncementsTab';
 import CommunityChat from '../chat/CommunityChat';
 import GoogleClassroomButton from '../../components/GoogleClassroomButton/GoogleClassroomButton';
 import EditCommunityModal from '../../components/Comunidad/EditCommunityModal';
@@ -99,9 +100,12 @@ const formatFileSize = (bytes) => {
 };
 
 export default function CommunityDetail() {
+  // Estado para alternar entre pestaña de eventos y anuncios
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab');
+  const [showAnnouncementsTab, setShowAnnouncementsTab] = useState(initialTab === 'anuncios');
   const { communityId } = useParams();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { socket } = useSocketContext();
   const openChatOnLoad = searchParams.get('chat') === 'open';
@@ -380,10 +384,17 @@ export default function CommunityDetail() {
           const status = await communitiesApi.getMyRequestStatus(communityId);
           if (status && status.pending) {
             setRequestSent(true);
+          } else if (status && !status.pending) {
+            setRequestSent(false);
           }
-        } catch {
-          // Ignorar error, el usuario simplemente puede solicitar
+          // Si status es undefined o null, no cambiar estado local (mantener lo que había)
+        } catch (err) {
+          // Error al verificar: mantener estado local en lugar de asumir false
+          console.warn('Aviso: No se pudo verificar solicitud pendiente', err);
         }
+      } else if (!data.esMiembro) {
+        // No es privada pero tampoco es miembro: seguro no hay solicitud
+        setRequestSent(false);
       }
     } catch (err) {
       console.error('Error al cargar la comunidad:', err);
@@ -453,9 +464,47 @@ export default function CommunityDetail() {
   }, [communityId]);
 
   useEffect(() => {
-    fetchCommunity();
+      if (!communityId) return;
+    
+      const load = async () => {
+        try {
+          setLoading(true);
+          const data = await communitiesApi.getById(communityId);
+          setCommunity(data);
+        
+          if (data.esMiembro !== undefined) {
+            setIsMember(data.esMiembro);
+          } else if (currentUserId) {
+            try {
+              await communitiesApi.getMyMembership(communityId);
+              setIsMember(true);
+            } catch {
+              setIsMember(false);
+            }
+          }
+
+          // Si es comunidad privada y el usuario no es miembro, comprobar solicitud pendiente
+          if (data.tipoGrupo === 'GRUPO_PRIVADO' && !data.esMiembro && currentUserId) {
+            try {
+              const status = await communitiesApi.getMyRequestStatus(communityId);
+              setRequestSent(status && status.pending);
+            } catch (err) {
+              console.warn('No se pudo verificar solicitud pendiente', err);
+            }
+          } else if (!data.esMiembro) {
+            setRequestSent(false);
+          }
+        } catch (err) {
+          console.error('Error al cargar la comunidad:', err);
+          setError('No se pudo cargar la comunidad.');
+        } finally {
+          setLoading(false);
+        }
+      };
+    
+      load();
     fetchEvents();
-  }, [fetchCommunity, fetchEvents]);
+    }, [communityId, currentUserId]);
 
   useEffect(() => {
     fetchMembers();
@@ -1002,7 +1051,9 @@ export default function CommunityDetail() {
       setMembershipError(null);
       if (isPrivate) {
         await communitiesApi.requestAccess(communityId, '', role || 'ALUMNO');
-        setRequestSent(true);
+        // Refrescar estado desde servidor para asegurar sincronización
+        const status = await communitiesApi.getMyRequestStatus(communityId);
+        setRequestSent(status && status.pending);
         setShowJoinRoleChooser(false);
       } else {
         await communitiesApi.join(communityId, role || 'ALUMNO');
@@ -1020,7 +1071,14 @@ export default function CommunityDetail() {
         setShowJoinRoleChooser(false);
       } else if (err.status === 400) {
         if (isPrivate) {
-          setRequestSent(true);
+          // Aún así, verificar si existe solicitud pendiente en BD
+          try {
+            const status = await communitiesApi.getMyRequestStatus(communityId);
+            setRequestSent(status && status.pending);
+          } catch {
+            // Si falla, asumir que sí hay solicitud
+            setRequestSent(true);
+          }
         } else {
           setMembershipError(err.message || 'Error al unirse a la comunidad');
         }
@@ -1433,72 +1491,109 @@ export default function CommunityDetail() {
           />
         )}
 
-        {/* Sección de eventos */}
-        <div className="cd-events-section">
-          <div className="cd-events-header">
-            <h2 className="cd-events-title">
-              <LuCalendar /> Eventos
-            </h2>
-            <div className="cd-events-actions">
-              <label className="cd-filter-label">
-                <input
-                  type="checkbox"
-                  checked={filterCancelled}
-                  onChange={(e) => setFilterCancelled(e.target.checked)}
-                />
-                Mostrar cancelados
-              </label>
-              {isMember && canCreateEvent ? (
-                <button
-                  className="cd-btn cd-btn-create"
-                  onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
-                >
-                  <LuPlus /> Crear evento
-                </button>
-              ) : isMember ? (
-                <span className="cd-member-hint">Solo administradores y profesores pueden crear eventos</span>
-              ) : (
-                <span className="cd-member-hint">Únete a la comunidad para crear eventos</span>
-              )}
-            </div>
-          </div>
 
-          {eventsLoading ? (
-            <p className="cd-loading">Cargando eventos...</p>
-          ) : events.length > 0 ? (
-            <div className="cd-events-list">
-              {events.map(event => (
-                <TarjetaEvento
-                  key={event.id}
-                  event={event}
-                  onAttend={currentUserId && isMember ? handleAttend : null}
-                  onCancelAttendance={currentUserId ? handleCancelAttendance : null}
-                  attendanceLoading={attendanceLoading}
-                  currentUserId={currentUserId}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="cd-empty-events">
-              <LuCalendar className="cd-empty-icon" />
-              <h3>No hay eventos</h3>
-              {isMember && canCreateEvent ? (
-                <>
-                  <p>Sé el primero en crear un evento para esta comunidad.</p>
-                  <button
-                    className="cd-btn cd-btn-create"
-                    onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
-                  >
-                    <LuPlus /> Crear evento
-                  </button>
-                </>
-              ) : isMember ? (
-                <p>Solo administradores y profesores pueden crear eventos en esta comunidad.</p>
-              ) : (
-                <p>Únete a la comunidad para poder crear eventos.</p>
-              )}
-            </div>
-          )}
+        {/* Tabs de eventos y anuncios */}
+        <div className="cd-tabs-section">
+          <div className="cd-tabs-header">
+            <button
+              className={`cd-tab-btn${!showAnnouncementsTab ? ' cd-tab-btn-active' : ''}`}
+              onClick={() => {
+                setShowAnnouncementsTab(false);
+                const params = new URLSearchParams(searchParams);
+                params.set('tab', 'eventos');
+                navigate({ search: params.toString() }, { replace: true });
+              }}
+              type="button"
+            >
+              <LuCalendar /> Eventos
+            </button>
+            <button
+              className={`cd-tab-btn${showAnnouncementsTab ? ' cd-tab-btn-active' : ''}`}
+              onClick={() => {
+                setShowAnnouncementsTab(true);
+                const params = new URLSearchParams(searchParams);
+                params.set('tab', 'anuncios');
+                navigate({ search: params.toString() }, { replace: true });
+              }}
+              type="button"
+            >
+              <span role="img" aria-label="Anuncios">📢</span> Anuncios
+            </button>
+          </div>
+          <div className="cd-tabs-content">
+            {!showAnnouncementsTab ? (
+              <div className="cd-events-section">
+                <div className="cd-events-header">
+                  <h2 className="cd-events-title">
+                    <LuCalendar /> Eventos
+                  </h2>
+                  <div className="cd-events-actions">
+                    <label className="cd-filter-label">
+                      <input
+                        type="checkbox"
+                        checked={filterCancelled}
+                        onChange={(e) => setFilterCancelled(e.target.checked)}
+                      />
+                      Mostrar cancelados
+                    </label>
+                    {isMember && canCreateEvent ? (
+                      <button
+                        className="cd-btn cd-btn-create"
+                        onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
+                      >
+                        <LuPlus /> Crear evento
+                      </button>
+                    ) : isMember ? (
+                      <span className="cd-member-hint">Solo administradores y profesores pueden crear eventos</span>
+                    ) : (
+                      <span className="cd-member-hint">Únete a la comunidad para crear eventos</span>
+                    )}
+                  </div>
+                </div>
+
+                {eventsLoading ? (
+                  <p className="cd-loading">Cargando eventos...</p>
+                ) : events.length > 0 ? (
+                  <div className="cd-events-list">
+                    {events.map(event => (
+                      <TarjetaEvento
+                        key={event.id}
+                        event={event}
+                        onAttend={currentUserId && isMember ? handleAttend : null}
+                        onCancelAttendance={currentUserId ? handleCancelAttendance : null}
+                        attendanceLoading={attendanceLoading}
+                        currentUserId={currentUserId}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="cd-empty-events">
+                    <LuCalendar className="cd-empty-icon" />
+                    <h3>No hay eventos</h3>
+                    {isMember && canCreateEvent ?  (
+                      <>
+                        <p>Sé el primero en crear un evento para esta comunidad.</p>
+                        <button
+                          className="cd-btn cd-btn-create"
+                          onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
+                        >
+                          <LuPlus /> Crear evento
+                        </button>
+                      </>
+                    ) : isMember ? (
+                      <p>Solo administradores y profesores pueden crear eventos en esta comunidad.</p>
+                    ) : (
+                      <p>Únete a la comunidad para poder crear eventos.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="cd-announcements-section">
+                <CommunityAnnouncementsTab communityId={communityId} isAdmin={isAdmin} />
+              </div>
+            )}
+          </div>
         </div>
         
         {isMember && (

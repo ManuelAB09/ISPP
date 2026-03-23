@@ -2,8 +2,10 @@ package es.us.meerkat.backend.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +49,7 @@ public class AlarmaPersonalizadaService {
     private final AlertaEventoRepository alertaEventoRepository;
     private final PreferenciasNotificacionService preferenciasService;
     private final EmailService emailService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     // ===============================
     // CREAR ALARMAS
@@ -228,6 +231,33 @@ public class AlarmaPersonalizadaService {
             alerta.setEvento(evento);
             alerta.setUsuario(usuario);
             alertaEventoRepository.save(alerta);
+
+            final long unreadCount = alertaEventoRepository.countUnreadByUsuarioId(usuario.getId());
+            messagingTemplate.convertAndSendToUser(
+                    usuario.getEmail(), "/queue/alerts_count", unreadCount);
+
+            messagingTemplate.convertAndSendToUser(
+                    usuario.getEmail(),
+                    "/queue/notificaciones",
+                    Map.of(
+                            "tipo",
+                            "EVENT_ALERT",
+                            "mensaje",
+                            alerta.getMensaje(),
+                            "eventoId",
+                            evento.getId(),
+                            "eventoTitulo",
+                            evento.getTitulo(),
+                            "eventoFechaHora",
+                            evento.getFechaHora() != null ? evento.getFechaHora().toString() : null,
+                            "comunidadNombre",
+                            evento.getComunidad() != null
+                                    ? evento.getComunidad().getNombre()
+                                    : null,
+                            "icono",
+                            evento.getTipoEvento() != null
+                                    ? evento.getTipoEvento().getIcono()
+                                    : TipoEvento.OTRO.getIcono()));
         }
 
         // Email

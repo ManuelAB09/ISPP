@@ -35,6 +35,7 @@ describe('ComunidadCard', () => {
     jest.clearAllMocks();
     localStorage.clear();
     communitiesApi.join.mockResolvedValue({});
+    communitiesApi.getMyRequestStatus.mockResolvedValue({ pending: false });
   });
 
   const renderComponent = (comunidad = mockComunidad, onJoined = jest.fn()) => {
@@ -243,5 +244,15 @@ describe('ComunidadCard', () => {
   test('renderiza el icono de persona', () => {
     renderComponent();
     expect(screen.getByTestId('person-icon')).toBeInTheDocument();
+  });
+
+  test('muestra solicitud enviada para comunidad privada con solicitud pendiente', async () => {
+    localStorage.setItem('userId', '100');
+    localStorage.setItem('accessToken', 'test-token');
+    communitiesApi.getMyRequestStatus.mockResolvedValue({ pending: true });
+
+    renderComponent({ ...mockComunidad, tipoGrupo: 'GRUPO_PRIVADO' });
+
+    await screen.findByRole('button', { name: /Solicitud enviada/i });
   });
 });
