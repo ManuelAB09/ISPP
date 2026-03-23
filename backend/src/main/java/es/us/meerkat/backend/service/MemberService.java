@@ -192,9 +192,15 @@ public class MemberService {
                                         new IllegalArgumentException(
                                                 "El usuario no es miembro de esta comunidad"));
 
-        // No se puede expulsar al único admin ni a otro admin
+        // No se puede expulsar al único admin (la comunidad quedaría sin administrador)
         if (targetMiembro.getRol() == RolComunidad.ADMIN) {
-            throw new IllegalArgumentException("No puedes expulsar a otro administrador");
+            long adminCount =
+                    miembroComunidadRepository.countByComunidadIdAndRol(
+                            communityId, RolComunidad.ADMIN);
+            if (adminCount <= 1) {
+                throw new IllegalArgumentException(
+                        "No puedes expulsar al único administrador de la comunidad");
+            }
         }
 
         Usuario targetUsuario = targetMiembro.getUsuario();

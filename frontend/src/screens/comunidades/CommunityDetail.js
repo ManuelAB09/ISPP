@@ -1485,6 +1485,7 @@ export default function CommunityDetail() {
                 )}
                 {currentUserId ? (
                   isMember ? (
+                    community?.miembrosActuales > 1 && (
                     <button
                       className="cd-btn cd-btn-leave"
                       onClick={handleLeaveCommunity}
@@ -1492,6 +1493,7 @@ export default function CommunityDetail() {
                     >
                       <LuLogOut /> {joinLoading ? 'Saliendo...' : 'Abandonar comunidad'}
                     </button>
+                    )
                   ) : requestSent ? (
                     <button className="cd-btn cd-btn-pending" disabled>
                       Solicitud de acceso enviada
