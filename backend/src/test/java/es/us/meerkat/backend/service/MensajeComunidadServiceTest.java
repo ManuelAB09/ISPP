@@ -66,7 +66,7 @@ class MensajeComunidadServiceTest {
         when(miembroComunidadRepository.findUsuarioIdsByComunidadId(10L)).thenReturn(List.of(2L));
         Usuario miembro = buildUsuario(2L, "Miembro");
         miembro.setEmail("miembro@test.com");
-        when(usuarioRepository.findById(2L)).thenReturn(Optional.of(miembro));
+        when(usuarioRepository.findAllById(List.of(2L))).thenReturn(List.of(miembro));
         PreferenciasNotificacion preferencias = new PreferenciasNotificacion();
         preferencias.setEmailsActivados(true);
         preferencias.setNotificarMensajeComunidad(true);
@@ -100,7 +100,7 @@ class MensajeComunidadServiceTest {
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
         when(comunidadRepository.findById(10L)).thenReturn(Optional.of(comunidad));
         when(miembroComunidadRepository.findUsuarioIdsByComunidadId(10L)).thenReturn(List.of(2L));
-        when(usuarioRepository.findById(2L)).thenReturn(Optional.of(miembro));
+        when(usuarioRepository.findAllById(List.of(2L))).thenReturn(List.of(miembro));
 
         PreferenciasNotificacion preferencias = new PreferenciasNotificacion();
         preferencias.setEmailsActivados(true);
