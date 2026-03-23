@@ -39,9 +39,13 @@ public class NotificacionController {
     public ResponseEntity<Void> markAsRead(
             @org.springframework.web.bind.annotation.PathVariable Long id,
             @AuthenticationPrincipal Usuario usuario) {
-        // Opcional: podrías comprobar que la notificación pertenece al usuario
-        // autenticado
-        notificacionService.marcarComoLeida(id);
+        if (usuario == null) {
+            return ResponseEntity.status(401).build();
+        }
+        boolean marcada = notificacionService.marcarComoLeida(id, usuario.getId());
+        if (!marcada) {
+            return ResponseEntity.notFound().build();
+        }
         return ResponseEntity.ok().build();
     }
 

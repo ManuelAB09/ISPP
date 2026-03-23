@@ -1,7 +1,10 @@
 package es.us.meerkat.backend.service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +32,11 @@ public class MensajeComunidadService {
     /** Marca todos los mensajes de una comunidad como leídos para el usuario. */
     @Transactional
     public void marcarComunidadComoLeida(Long usuarioId, Long comunidadId) {
+        if (!miembroComunidadRepository
+                .findByUsuarioIdAndComunidadId(usuarioId, comunidadId)
+                .isPresent()) {
+            throw new IllegalArgumentException("No perteneces a esta comunidad");
+        }
         java.util.List<MensajeComunidad> mensajes =
                 mensajeComunidadRepository.findByComunidadIdOrderByCreatedAtAsc(comunidadId);
         for (MensajeComunidad m : mensajes) {
@@ -57,27 +65,13 @@ public class MensajeComunidadService {
      */
     @Transactional(readOnly = true)
     public java.util.Map<Long, Integer> obtenerNoLeidosPorComunidad(Long usuarioId) {
-        // Buscar todos los mensajes de comunidades donde el usuario es miembro
-        java.util.List<MensajeComunidad> todos = mensajeComunidadRepository.findAll();
-        java.util.Map<Long, java.util.List<MensajeComunidad>> porComunidad =
-                new java.util.HashMap<>();
-        for (MensajeComunidad m : todos) {
-            porComunidad
-                    .computeIfAbsent(m.getComunidad().getId(), k -> new java.util.ArrayList<>())
-                    .add(m);
-        }
         java.util.Map<Long, Integer> resultado = new java.util.HashMap<>();
-        for (var entry : porComunidad.entrySet()) {
-            Long comunidadId = entry.getKey();
-            java.util.List<MensajeComunidad> mensajes = entry.getValue();
-            java.util.List<Long> ids = mensajes.stream().map(MensajeComunidad::getId).toList();
-            java.util.List<Long> idsLeidos =
-                    ids.isEmpty()
-                            ? java.util.List.of()
-                            : mensajeComunidadLeidoRepository.findMensajeIdsLeidosByUsuario(
-                                    usuarioId, ids);
-            int noLeidos = ids.size() - idsLeidos.size();
-            resultado.put(comunidadId, noLeidos);
+        java.util.List<Object[]> conteos =
+                mensajeComunidadRepository.countNoLeidosByComunidadParaUsuario(usuarioId);
+        for (Object[] fila : conteos) {
+            Long comunidadId = (Long) fila[0];
+            Long noLeidos = (Long) fila[1];
+            resultado.put(comunidadId, noLeidos.intValue());
         }
         return resultado;
     }
@@ -319,18 +313,30 @@ public class MensajeComunidadService {
             return;
         }
 
+        final Map<Long, Usuario> miembrosPorId =
+                usuarioRepository.findAllById(miembrosIds).stream()
+                        .filter(u -> u.getId() != null)
+                        .collect(
+                                Collectors.toMap(Usuario::getId, Function.identity(), (a, b) -> a));
+
         for (final Long miembroId : miembrosIds) {
             if (miembroId == null || miembroId.equals(remitenteId)) {
                 continue;
             }
 
-            notificarMiembroPorEmail(mensaje, comunidadId, miembroId);
+            final Usuario miembro = miembrosPorId.get(miembroId);
+            if (miembro == null) {
+                continue;
+            }
+            notificarMiembroPorEmail(mensaje, comunidadId, miembroId, miembro);
         }
     }
 
     private void notificarMiembroPorEmail(
-            final MensajeComunidad mensaje, final Long comunidadId, final Long miembroId) {
-        final Usuario miembro = usuarioRepository.findById(miembroId).orElse(null);
+            final MensajeComunidad mensaje,
+            final Long comunidadId,
+            final Long miembroId,
+            final Usuario miembro) {
         if (miembro == null || miembro.getEmail() == null || miembro.getEmail().isBlank()) {
             return;
         }

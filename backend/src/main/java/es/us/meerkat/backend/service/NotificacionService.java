@@ -21,14 +21,17 @@ public class NotificacionService {
         return notificacionRepository.findByUsuarioOrderByCreatedAtDesc(usuario);
     }
 
-    public void marcarComoLeida(Long id) {
-        notificacionRepository
-                .findById(id)
-                .ifPresent(
+    @Transactional
+    public boolean marcarComoLeida(Long id, Long usuarioId) {
+        return notificacionRepository
+                .findByIdAndUsuarioId(id, usuarioId)
+                .map(
                         n -> {
                             n.setLeida(true);
                             notificacionRepository.save(n);
-                        });
+                            return true;
+                        })
+                .orElse(false);
     }
 
     @Transactional
