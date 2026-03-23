@@ -14,6 +14,12 @@ jest.mock('react-router-dom', () => ({
 // Mock de la API de suscripciones
 jest.mock('../../api/subscriptions.api');
 
+jest.mock('../../contexts/NotificationContext', () => ({
+  useNotificationContext: () => ({
+    panelUnreadCount: 0,
+  }),
+}));
+
 describe('PlansScreen', () => {
   const mockPlans = [
     {

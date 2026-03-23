@@ -1,3 +1,45 @@
+/* Tabs de eventos y anuncios */
+.cd-tabs-section {
+  margin-top: 1.5rem;
+  background: white;
+  border-radius: 1rem;
+  border: 1px solid #EAEBF0;
+  padding: 1.5rem 1.5rem 2rem 1.5rem;
+}
+
+.cd-tabs-header {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1.5px solid #f0f1f5;
+}
+
+.cd-tab-btn {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #6B73A1;
+  padding: 0.7rem 1.5rem 0.7rem 1.5rem;
+  border-radius: 1rem 1rem 0 0;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  outline: none;
+}
+
+.cd-tab-btn-active {
+  background: #f7f8fa;
+  color: #2E3559;
+  border-bottom: 2.5px solid #6B73A1;
+}
+
+.cd-tabs-content {
+  padding-top: 1.5rem;
+}
+
+.cd-announcements-section {
+  /* Puedes personalizar más si lo deseas */
+}
 /* CommunityDetail.css */
 
 .cd-container {

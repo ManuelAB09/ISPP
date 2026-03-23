@@ -32,6 +32,21 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MensajeController {
 
+    @PostMapping("/marcar-leida/{otherUserId}")
+    public ResponseEntity<?> marcarConversacionComoLeida(
+            @AuthenticationPrincipal Usuario usuario, @PathVariable Long otherUserId) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado");
+        }
+        try {
+            mensajeService.marcarConversacionComoLeida(usuario.getId(), otherUserId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al marcar como leída: " + e.getMessage());
+        }
+    }
+
     private final MensajeService mensajeService;
     private final ChatFileStorageService chatFileStorageService;
     private final SimpMessagingTemplate broker;

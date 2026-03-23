@@ -158,7 +158,6 @@ public class AuthService {
         usuario.setEsTutor(Boolean.TRUE.equals(requestParam.getEsTutor()));
         usuario.setVisibleEnListados(true);
         usuario.setAutenticacionDosFactores(false);
-        usuario.setNotificacionesEmail(true);
         usuario.setNotificacionesPush(true);
         usuario.setIntereses(new ArrayList<>());
         usuario.setEmailVerificado(false);
@@ -1165,7 +1164,6 @@ public class AuthService {
                         .visibleEnListados(usuario.getVisibleEnListados())
                         .esTutor(usuario.getEsTutor())
                         .autenticacionDosFactores(usuario.getAutenticacionDosFactores())
-                        .notificacionesEmail(usuario.getNotificacionesEmail())
                         .notificacionesPush(usuario.getNotificacionesPush())
                         .createdAt(usuario.getCreatedAt())
                         .googleLinked(usuario.getGoogleId() != null)
@@ -1210,10 +1208,6 @@ public class AuthService {
         }
         if (usuario.getAutenticacionDosFactores() == null) {
             usuario.setAutenticacionDosFactores(false);
-            changed = true;
-        }
-        if (usuario.getNotificacionesEmail() == null) {
-            usuario.setNotificacionesEmail(true);
             changed = true;
         }
         if (usuario.getNotificacionesPush() == null) {
