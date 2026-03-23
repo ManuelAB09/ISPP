@@ -1,11 +1,8 @@
 package es.us.meerkat.backend.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 import java.util.Optional;
 
@@ -20,6 +17,8 @@ import es.us.meerkat.backend.entity.MiembroComunidad;
 import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.TipoGrupo;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
+import es.us.meerkat.backend.repository.ComunidadClassroomRepository;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
@@ -29,9 +28,12 @@ class MemberServiceTest {
 
     @Mock private MiembroComunidadRepository miembroComunidadRepository;
     @Mock private ComunidadRepository comunidadRepository;
+        @Mock private ComunidadClassroomRepository comunidadClassroomRepository;
     @Mock private UsuarioRepository usuarioRepository;
+        @Mock private AsistenciaEventoRepository asistenciaEventoRepository;
     @Mock private AuthorizationService authorizationService;
     @Mock private CommunityService communityService;
+        @Mock private GoogleClassroomService googleClassroomService;
 
     @InjectMocks private MemberService memberService;
 
@@ -141,6 +143,45 @@ class MemberServiceTest {
     }
 
     @Test
+    void promoteToAdminShouldSetTargetRoleToAdmin() {
+        Long adminId = 1L;
+        Long targetUserId = 2L;
+        Long communityId = 10L;
+
+        MiembroComunidad target = MiembroComunidad.builder().rol(RolComunidad.ALUMNO).build();
+
+        when(authorizationService.isAdminOf(adminId, communityId)).thenReturn(true);
+        when(miembroComunidadRepository.findByUsuarioIdAndComunidadId(targetUserId, communityId))
+                .thenReturn(Optional.of(target));
+        when(miembroComunidadRepository.save(any(MiembroComunidad.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        MiembroComunidad result = memberService.promoteToAdmin(adminId, communityId, targetUserId);
+
+        assertThat(target.getRol()).isEqualTo(RolComunidad.ADMIN);
+        assertThat(result.getRol()).isEqualTo(RolComunidad.ADMIN);
+    }
+
+    @Test
+    void promoteToAdminShouldFailWhenTargetAlreadyAdmin() {
+        Long adminId = 1L;
+        Long targetUserId = 2L;
+        Long communityId = 10L;
+
+        MiembroComunidad target = MiembroComunidad.builder().rol(RolComunidad.ADMIN).build();
+
+        when(authorizationService.isAdminOf(adminId, communityId)).thenReturn(true);
+        when(miembroComunidadRepository.findByUsuarioIdAndComunidadId(targetUserId, communityId))
+                .thenReturn(Optional.of(target));
+
+        assertThatThrownBy(() -> memberService.promoteToAdmin(adminId, communityId, targetUserId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("ya es admin");
+
+        verify(miembroComunidadRepository, never()).save(any(MiembroComunidad.class));
+    }
+
+    @Test
     void addAdminShouldFailWhenCommunityIsNotCorporate() {
         Long adminId = 1L;
         Long targetUserId = 2L;
@@ -176,7 +217,6 @@ class MemberServiceTest {
         assertThat(result.getRol()).isEqualTo(RolComunidad.ADMIN);
         verify(miembroComunidadRepository).save(targetMember);
     }
-
     private Usuario buildUsuario(final Long id) {
         Usuario usuario = new Usuario();
         usuario.setId(id);

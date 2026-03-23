@@ -1,17 +1,52 @@
-import { useState, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
-import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { subscriptionsApi } from "../../api/subscriptions.api";
 import Header from "../../components/Header/Header";
 import "./PasarelaPago.css";
 
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLIC_KEY);
 
+const PLAN_CONFIG = {
+  PREMIUM: {
+    id: "PREMIUM",
+    badge: "PREMIUM",
+    name: "Plan Premium",
+    description: "Más capacidad para crecer en MeerKatters",
+    prices: {
+      mensual: 4.99,
+      anual: 50,
+    },
+    features: [
+      "10 comunidades activas",
+      "75 aforo máx",
+      "5 profesores por comunidad",
+    ],
+  },
+  PRO: {
+    id: "PRO",
+    badge: "PRO",
+    name: "Plan Pro",
+    description: "Capacidad avanzada para equipos con mayor actividad",
+    prices: {
+      mensual: 19.99,
+      anual: 200,
+    },
+    features: [
+      "25 comunidades activas",
+      "250 aforo máx",
+      "15 profesores por comunidad",
+    ],
+  },
+};
+
+const VALID_PLANS = Object.keys(PLAN_CONFIG);
+
 /**
  * Formulario de pago real con Stripe Elements.
  */
-function CheckoutForm({ selectedPeriod, prices }) {
+function CheckoutForm({ selectedPlan, selectedPeriod, total }) {
   const navigate = useNavigate();
   const stripe = useStripe();
   const elements = useElements();
@@ -49,7 +84,7 @@ function CheckoutForm({ selectedPeriod, prices }) {
 
       if (paymentIntent && paymentIntent.status === "succeeded") {
         await subscriptionsApi.confirmEmbeddedPayment(paymentIntent.id);
-        navigate("/planes/success?embedded=true");
+        navigate(`/planes/success?embedded=true&plan=${selectedPlan}&periodo=${selectedPeriod}`);
       }
     } catch (err) {
       console.error("Error al procesar el pago:", err);
@@ -95,7 +130,7 @@ function CheckoutForm({ selectedPeriod, prices }) {
               <span className="pasarela-spinner" /> 
             </>
           ) : (
-            `Pagar ${(parseFloat(prices[selectedPeriod]) * 1.21).toFixed(2)}€`
+            `Pagar ${total.toFixed(2)}€`
           )}
         </button>
       </div>
@@ -116,18 +151,30 @@ function CheckoutForm({ selectedPeriod, prices }) {
  * con Stripe Elements incrustado.
  */
 export default function PasarelaPago() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const planFromUrl = (searchParams.get("plan") || "PREMIUM").toUpperCase();
+  const initialPlan = VALID_PLANS.includes(planFromUrl) ? planFromUrl : "PREMIUM";
+
+  const [selectedPlan, setSelectedPlan] = useState(initialPlan);
   const [selectedPeriod, setSelectedPeriod] = useState("mensual");
   const [clientSecret, setClientSecret] = useState(null);
   const [loadingIntent, setLoadingIntent] = useState(false);
   const [intentError, setIntentError] = useState(null);
 
-  const prices = useMemo(
-    () => ({
-      mensual: "2.99",
-      anual: "25.99",
-    }),
-    []
-  );
+  const selectedPlanConfig = useMemo(() => PLAN_CONFIG[selectedPlan], [selectedPlan]);
+  const monthlyPrice = selectedPlanConfig.prices.mensual;
+  const yearlyPrice = selectedPlanConfig.prices.anual;
+  const total = selectedPlanConfig.prices[selectedPeriod];
+  const savingPercent = useMemo(() => {
+    const fullYearMonthly = monthlyPrice * 12;
+    return Math.max(0, Math.round((1 - yearlyPrice / fullYearMonthly) * 100));
+  }, [monthlyPrice, yearlyPrice]);
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("plan", selectedPlan);
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, selectedPlan, setSearchParams]);
 
   // Crear PaymentIntent al montar y al cambiar de periodo
   useEffect(() => {
@@ -138,7 +185,7 @@ export default function PasarelaPago() {
       setClientSecret(null);
       try {
         const res = await subscriptionsApi.createPaymentIntent({
-          planId: "PREMIUM",
+          planId: selectedPlan,
           aceptarTerminos: true,
           periodo: selectedPeriod,
         });
@@ -155,7 +202,7 @@ export default function PasarelaPago() {
     };
     fetchIntent();
     return () => { cancelled = true; };
-  }, [selectedPeriod]);
+  }, [selectedPeriod, selectedPlan]);
 
   const elementsOptions = clientSecret
     ? { clientSecret, appearance: { theme: "stripe" } }
@@ -171,19 +218,34 @@ export default function PasarelaPago() {
             <h2 className="pasarela-summary-title">Resumen del pedido</h2>
 
             <div className="pasarela-plan-card">
-              <div className="pasarela-plan-badge">PREMIUM</div>
-              <h3 className="pasarela-plan-name">Plan Premium</h3>
+              <div className="pasarela-plan-badge">{selectedPlanConfig.badge}</div>
+              <h3 className="pasarela-plan-name">{selectedPlanConfig.name}</h3>
               <p className="pasarela-plan-description">
-                Desbloquea todas las funcionalidades avanzadas de MeerKatters
+                {selectedPlanConfig.description}
               </p>
 
               <ul className="pasarela-features-list">
-                <li>Mas limites y herramientas</li>
-                <li>Mejor experiencia de uso</li>
-                <li>Acceso a funcionalidades avanzadas</li>
-                <li>Soporte prioritario</li>
-                <li>Sin publicidad</li>
+                {selectedPlanConfig.features.map((feature) => (
+                  <li key={feature}>{feature}</li>
+                ))}
               </ul>
+            </div>
+
+            <div className="pasarela-period-selector" style={{ marginTop: 16 }}>
+              <h4 className="pasarela-period-title">Selecciona tu plan</h4>
+              <div className="pasarela-period-options">
+                {VALID_PLANS.map((planId) => (
+                  <button
+                    key={planId}
+                    type="button"
+                    className={`pasarela-period-btn ${selectedPlan === planId ? "pasarela-period-btn--active" : ""}`}
+                    onClick={() => setSelectedPlan(planId)}
+                  >
+                    <div className="pasarela-period-label">{PLAN_CONFIG[planId].name}</div>
+                    <div className="pasarela-period-price">{PLAN_CONFIG[planId].prices.mensual.toFixed(2)}€/mes</div>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Selector de periodo */}
@@ -200,7 +262,7 @@ export default function PasarelaPago() {
                   onClick={() => setSelectedPeriod("mensual")}
                 >
                   <div className="pasarela-period-label">Mensual</div>
-                  <div className="pasarela-period-price">2.99€/mes</div>
+                  <div className="pasarela-period-price">{monthlyPrice.toFixed(2)}€/mes</div>
                 </button>
 
                 <button
@@ -213,8 +275,8 @@ export default function PasarelaPago() {
                   onClick={() => setSelectedPeriod("anual")}
                 >
                   <div className="pasarela-period-label">Anual</div>
-                  <div className="pasarela-period-price">25.99€/año</div>
-                  <div className="pasarela-period-save">Ahorra 28%</div>
+                  <div className="pasarela-period-price">{yearlyPrice.toFixed(2)}€/año</div>
+                  <div className="pasarela-period-save">Ahorra {savingPercent}%</div>
                 </button>
               </div>
             </div>
@@ -223,20 +285,12 @@ export default function PasarelaPago() {
             <div className="pasarela-total">
               <div className="pasarela-total-row">
                 <span>Subtotal</span>
-                <span>{prices[selectedPeriod]}€</span>
-              </div>
-              <div className="pasarela-total-row">
-                <span>IVA (21%)</span>
-                <span>
-                  {(parseFloat(prices[selectedPeriod]) * 0.21).toFixed(2)}€
-                </span>
+                <span>{total.toFixed(2)}€</span>
               </div>
               <div className="pasarela-total-divider"></div>
               <div className="pasarela-total-row pasarela-total-final">
                 <span>Total</span>
-                <span>
-                  {(parseFloat(prices[selectedPeriod]) * 1.21).toFixed(2)}€
-                </span>
+                <span>{total.toFixed(2)}€</span>
               </div>
             </div>
           </div>
@@ -261,7 +315,7 @@ export default function PasarelaPago() {
             )}
             {clientSecret && elementsOptions && (
               <Elements stripe={stripePromise} options={elementsOptions}>
-                <CheckoutForm selectedPeriod={selectedPeriod} prices={prices} />
+                <CheckoutForm selectedPlan={selectedPlan} selectedPeriod={selectedPeriod} total={total} />
               </Elements>
             )}
           </div>
