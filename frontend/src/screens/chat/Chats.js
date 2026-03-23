@@ -3,8 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authApi } from '../../api/auth.api';
 import { getApiBaseUrl } from '../../api/baseUrl';
 import { communitiesApi } from '../../api/communities.api';
-import { obtenerConversaciones, marcarConversacionComoLeida } from '../../api/mensajeService';
-import { obtenerNoLeidosPorComunidad, marcarComunidadComoLeida } from '../../api/mensajeService';
+import { marcarComunidadComoLeida, marcarConversacionComoLeida, obtenerConversaciones, obtenerNoLeidosPorComunidad } from '../../api/mensajeService';
 import Header from '../../components/Header/Header';
 import PageHeader from '../../components/PageHeader';
 import { useAuth } from '../../contexts/AuthContext';
@@ -83,7 +82,7 @@ export default function Chats() {
         searchParams.get('userId') ? 'private' : 'communities'
     );
     const [isMobileDropdownOpen, setIsMobileDropdownOpen] = useState(false);
-    const [communityUnreadMap, setCommunityUnreadMap] = useState({});
+    const [, setCommunityUnreadMap] = useState({});
 
 
     const currentUser = {

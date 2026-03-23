@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  LuArrowLeft,
-  LuCalendar,
-  LuCheck,
-  LuChevronDown,
-  LuChevronUp,
-  LuLogIn,
-  LuLogOut,
-  LuPencil,
-  LuPlay,
-  LuPlus,
-  LuTrash2,
-  LuUserPlus,
-  LuUsers,
-  LuVideo,
-  LuX,
+    LuArrowLeft,
+    LuCalendar,
+    LuCheck,
+    LuChevronDown,
+    LuChevronUp,
+    LuLogIn,
+    LuLogOut,
+    LuPencil,
+    LuPlay,
+    LuPlus,
+    LuTrash2,
+    LuUserPlus,
+    LuUsers,
+    LuVideo,
+    LuX,
 } from 'react-icons/lu';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import axiosInstance from '../../api/axiosConfig';
@@ -31,12 +31,12 @@ import Header from '../../components/Header/Header';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSocketContext } from '../../contexts/SocketContext';
 import {
-  canCreateCommunityEvent,
-  getCommunityRoleCapabilities,
-  getCommunityRoleLabel,
-  isAdminRole,
-  isTeacherRole,
-  normalizeCommunityRole,
+    canCreateCommunityEvent,
+    getCommunityRoleCapabilities,
+    getCommunityRoleLabel,
+    isAdminRole,
+    isTeacherRole,
+    normalizeCommunityRole,
 } from '../../utils/communityRoles';
 import CommunityChat from '../chat/CommunityChat';
 import CommunityAnnouncementsTab from './CommunityAnnouncementsTab';
@@ -176,8 +176,6 @@ export default function CommunityDetail() {
   const [communityCuestionarios, setCommunityCuestionarios] = useState([]);
   const [cuestionariosLoading, setCuestionariosLoading] = useState(false);
   const [cuestionariosError, setCuestionariosError] = useState(null);
-  const [members, setMembers] = useState([]);
-  const [membersLoading, setMembersLoading] = useState(false);
   const [expellingMemberId, setExpellingMemberId] = useState(null);
   const [memberToast, setMemberToast] = useState(null);
   const [showJoinRoleChooser, setShowJoinRoleChooser] = useState(false);
@@ -530,7 +528,7 @@ export default function CommunityDetail() {
     
       load();
     fetchEvents();
-    }, [communityId, currentUserId]);
+    }, [communityId, currentUserId, fetchEvents]);
 
   useEffect(() => {
     fetchMembers();
