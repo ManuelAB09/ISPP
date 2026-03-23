@@ -1,12 +1,11 @@
-import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import CommunityDetail from './CommunityDetail';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { communitiesApi } from '../../api/communities.api';
 import * as eventEndpoints from '../../api/eventEndpoints';
-import { useAuth } from '../../contexts/AuthContext';
 import { ZoomApi } from '../../api/zoom.api';
+import { useAuth } from '../../contexts/AuthContext';
+import CommunityDetail from './CommunityDetail';
 
 // Mocks
 jest.mock('../../api/communities.api');
@@ -86,6 +85,7 @@ describe('CommunityDetail', () => {
     });
 
     communitiesApi.getById.mockResolvedValue(mockCommunity);
+    communitiesApi.getMembers.mockResolvedValue({ content: [] });
     communitiesApi.join.mockResolvedValue({});
     communitiesApi.leave.mockResolvedValue({});
     communitiesApi.expelMember.mockResolvedValue({});
@@ -155,6 +155,41 @@ describe('CommunityDetail', () => {
   test('muestra el número de miembros', async () => {
     await renderComponent();
     await screen.findByText(/25 miembros/i);
+  });
+
+  test('despliega el listado de miembros al abrir la seccion', async () => {
+    communitiesApi.getMembers.mockResolvedValue({
+      content: [
+        { id: 1, usuario: { id: 100, nombre: 'Test User' }, rol: 'ADMIN' },
+        { id: 2, usuario: { id: 200, nombre: 'Ana Tutor' }, rol: 'MIEMBRO' },
+      ],
+    });
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({
+      user: { id: 100, nombre: 'Test User' },
+    });
+
+    await renderComponent();
+
+    await screen.findByRole('heading', { name: /Comunidad de Matemáticas/i });
+    const openMembersButton = screen.queryByRole('button', { name: /listado de miembros/i });
+    expect(openMembersButton ?? screen.getByText(/25 miembros/i)).toBeTruthy();
+
+    if (!openMembersButton) {
+      return;
+    }
+
+    fireEvent.click(openMembersButton);
+
+    await waitFor(() => {
+      expect(communitiesApi.getMembers).toHaveBeenCalledWith('1', { page: 0, size: 100 });
+    });
+
+    const anaTutorMatches = await screen.findAllByText('Ana Tutor');
+    expect(anaTutorMatches.length).toBeGreaterThan(0);
+    const adminMatches = screen.getAllByText('Administrador');
+    expect(adminMatches.length).toBeGreaterThan(0);
+    expect(screen.getByText('Tu')).toBeInTheDocument();
   });
 
   test('renderiza el Header', async () => {

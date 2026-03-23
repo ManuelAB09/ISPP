@@ -55,7 +55,7 @@ public class SubscriptionExpirationScheduler {
 
             // Revertir plan del usuario a FREE
             Usuario usuario = suscripcion.getUsuario();
-            if (usuario != null && usuario.getPlan() == TipoPlan.PREMIUM) {
+            if (usuario != null && usuario.getPlan() != TipoPlan.FREE) {
                 usuario.setPlan(TipoPlan.FREE);
                 usuarioRepository.save(usuario);
                 log.info("Usuario {} revertido a FREE (suscripción expirada)", usuario.getId());

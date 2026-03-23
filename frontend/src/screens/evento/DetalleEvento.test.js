@@ -1,19 +1,23 @@
-import React from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import DetalleEvento from './DetalleEvento';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import axiosInstance from '../../api/axiosConfig';
+import { communitiesApi } from '../../api/communities.api';
 import {
-  getEventById,
-  cancelEvent,
   attendEvent,
   cancelAttendance,
+  cancelEvent,
   getConfirmedAttendees,
+  getEventById,
   getMyAttendance,
 } from '../../api/eventEndpoints';
-import { communitiesApi } from '../../api/communities.api';
+import { checkAlreadyRated } from '../../api/valoraciones.api';
+import DetalleEvento from './DetalleEvento';
 
 // Mocks
 jest.mock('../../api/eventEndpoints');
+jest.mock('../../api/valoraciones.api', () => ({
+  checkAlreadyRated: jest.fn(),
+}));
 jest.mock('../../api/axiosConfig', () => ({
   __esModule: true,
   default: {
@@ -64,6 +68,10 @@ describe('DetalleEvento', () => {
     });
 
     communitiesApi.getMyMembership.mockResolvedValue({});
+    axiosInstance.get.mockResolvedValue({ data: [] });
+    axiosInstance.post.mockResolvedValue({ data: {} });
+    axiosInstance.delete.mockResolvedValue({});
+    checkAlreadyRated.mockResolvedValue({ rated: false });
     getConfirmedAttendees.mockResolvedValue([
       { id: 201, usuario: { id: 20, nombre: 'Ana' } },
       { id: 202, usuario: { id: 21, nombre: 'Luis' } },
