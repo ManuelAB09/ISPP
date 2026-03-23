@@ -725,7 +725,7 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
                                 type="password" 
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
-                                placeholder="Introduce la nueva contraseña"
+                                placeholder="Introduce la nueva contraseña (min 8 caracteres)"
                                 required
                             />
                         </div>
