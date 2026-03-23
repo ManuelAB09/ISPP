@@ -2,8 +2,13 @@ package es.us.meerkat.backend.service;
 
 import java.io.IOException;
 import java.util.Base64;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,18 +16,25 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import es.us.meerkat.backend.dto.CommunityRankingEntryResponse;
+import es.us.meerkat.backend.dto.UserSimpleResponse;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.EstadoComunidad;
+import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.MiembroComunidad;
 import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.Suscripcion;
 import es.us.meerkat.backend.entity.TipoGrupo;
 import es.us.meerkat.backend.entity.TipoPlan;
 import es.us.meerkat.backend.entity.TipoPlanComunidad;
+import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.ComunidadRepository;
+import es.us.meerkat.backend.repository.EventoRepository;
 import es.us.meerkat.backend.repository.InstitutionRepository;
+import es.us.meerkat.backend.repository.MensajeComunidadRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.TutorRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -37,6 +49,9 @@ public class CommunityService {
     private final InstitutionRepository institutionRepository;
     private final AuthorizationService authorizationService;
     private final SuscripcionService suscripcionService;
+    private final MensajeComunidadRepository mensajeComunidadRepository;
+    private final EventoRepository eventoRepository;
+    private final TutorRepository tutorRepository;
 
     private static final int MAX_FREE_COMMUNITIES = 3;
     private static final int FREE_MAX_MEMBERS = 50;
@@ -111,10 +126,58 @@ public class CommunityService {
         return savedComunidad;
     }
 
-    /** Crea una nueva comunidad verificando límites de plan (sin institutionId). */
+    /** Crea una nueva comunidad con rol inicial personalizado para el creador. */
     public Comunidad createCommunity(
-            Long userId, String nombre, String descripcion, TipoGrupo tipoGrupo, String imagenUrl) {
-        return createCommunity(userId, nombre, descripcion, tipoGrupo, imagenUrl, null);
+            Long userId,
+            String nombre,
+            String descripcion,
+            TipoGrupo tipoGrupo,
+            String imagenUrl,
+            Long institutionId,
+            RolComunidad rolInicial) {
+        // Validar perfil de tutor si el creador quiere rol PROFESOR
+        if (rolInicial == RolComunidad.PROFESOR) {
+            Usuario usuario =
+                    usuarioRepository
+                            .findById(userId)
+                            .orElseThrow(
+                                    () -> new IllegalArgumentException("Usuario no encontrado"));
+            if (usuario.getEsTutor() == null || !usuario.getEsTutor()) {
+                throw new IllegalArgumentException(
+                        "Solo los usuarios tutores pueden crear una comunidad como profesor");
+            }
+            Tutor tutor =
+                    tutorRepository
+                            .findByUsuario(usuario)
+                            .orElseThrow(
+                                    () ->
+                                            new IllegalArgumentException(
+                                                    "Debes completar tu perfil de tutor antes de"
+                                                        + " crear una comunidad como profesor"));
+            if (tutor.getEspecialidades() == null
+                    || tutor.getEspecialidades().isEmpty()
+                    || tutor.getTarifaHora() == null
+                    || tutor.getBio() == null
+                    || tutor.getBio().isBlank()) {
+                throw new IllegalArgumentException(
+                        "Debes completar tu perfil de tutor (especialidades, tarifa y bio)"
+                                + " antes de crear una comunidad como profesor");
+            }
+        }
+        Comunidad savedComunidad =
+                createCommunity(userId, nombre, descripcion, tipoGrupo, imagenUrl, institutionId);
+        // Si se especificó un rol docente (PROFESOR/ALUMNO), guardarlo en rolDocente
+        // El creador SIEMPRE mantiene rol=ADMIN; rolDocente indica su identidad de contenido
+        if (rolInicial != null && rolInicial != RolComunidad.ADMIN) {
+            miembroComunidadRepository
+                    .findByUsuarioIdAndComunidadId(userId, savedComunidad.getId())
+                    .ifPresent(
+                            m -> {
+                                m.setRolDocente(rolInicial);
+                                miembroComunidadRepository.save(m);
+                            });
+        }
+        return savedComunidad;
     }
 
     /** Obtiene la institución del repositorio. */
@@ -122,6 +185,20 @@ public class CommunityService {
         return institutionRepository
                 .findById(institutionId)
                 .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada"));
+    }
+
+    /**
+     * Indica si una comunidad está vinculada a una institución (es corporativa/institucional).
+     *
+     * @param communityId ID de la comunidad
+     * @return true si la comunidad tiene una institución asociada, false en caso contrario
+     */
+    @Transactional(readOnly = true)
+    public boolean isCommunityCorporate(Long communityId) {
+        return comunidadRepository
+                .findById(communityId)
+                .map(c -> c.getInstitution() != null)
+                .orElse(false);
     }
 
     /** Obtiene una comunidad por ID. Comunidades privadas solo son visibles para miembros. */
@@ -176,10 +253,17 @@ public class CommunityService {
                         .findById(communityId)
                         .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
 
+        // Desvincular eventos antes de eliminar para evitar violación de FK
+        eventoRepository.disassociateFromComunidad(communityId);
         comunidadRepository.delete(comunidad);
     }
 
-    /** Lista comunidades activas (públicas y privadas) con filtros opcionales. */
+    /** Crea una nueva comunidad verificando límites de plan (sin institutionId). */
+    public Comunidad createCommunity(
+            Long userId, String nombre, String descripcion, TipoGrupo tipoGrupo, String imagenUrl) {
+        return createCommunity(userId, nombre, descripcion, tipoGrupo, imagenUrl, null);
+    }
+
     @Transactional(readOnly = true)
     public Page<Comunidad> listActiveCommunities(String search, Pageable pageable) {
         if (search != null && !search.isBlank()) {
@@ -306,5 +390,72 @@ public class CommunityService {
         } catch (IOException e) {
             throw new IllegalStateException("No se pudo procesar la imagen", e);
         }
+    }
+
+    @SuppressWarnings("null")
+    @Transactional(readOnly = true)
+    public List<CommunityRankingEntryResponse> getCommunityRanking(
+            Long communityId, Long requesterId) {
+        if (!authorizationService.isMemberOf(requesterId, communityId)) {
+            throw new IllegalArgumentException("No eres miembro de esta comunidad");
+        }
+
+        List<MiembroComunidad> miembros =
+                miembroComunidadRepository
+                        .findByComunidadId(communityId, Pageable.unpaged())
+                        .getContent();
+
+        Map<Long, Long> mensajesPorUsuario =
+                mensajeComunidadRepository.countMensajesByComunidad(communityId).stream()
+                        .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
+
+        List<Evento> eventos = eventoRepository.findByComunidadId(communityId);
+        Map<Long, Long> eventosCreados = new HashMap<>();
+        Map<Long, Long> asistentesPorCreador = new HashMap<>();
+
+        for (Evento evento : eventos) {
+            if (evento.getCreador() == null) {
+                continue;
+            }
+            Long creadorId = evento.getCreador().getId();
+            eventosCreados.merge(creadorId, 1L, Long::sum);
+
+            long asistentes =
+                    evento.getAsistentesConfirmados() != null
+                            ? evento.getAsistentesConfirmados()
+                            : 0L;
+            asistentesPorCreador.merge(creadorId, asistentes, Long::sum);
+        }
+
+        return miembros.stream()
+                .map(
+                        miembro -> {
+                            var usuario = miembro.getUsuario();
+                            long mensajes = mensajesPorUsuario.getOrDefault(usuario.getId(), 0L);
+                            long eventosCount = eventosCreados.getOrDefault(usuario.getId(), 0L);
+                            long asistentes =
+                                    asistentesPorCreador.getOrDefault(usuario.getId(), 0L);
+
+                            long puntos = mensajes + (asistentes * 5);
+
+                            return new CommunityRankingEntryResponse(
+                                    toUserSimple(usuario),
+                                    mensajes,
+                                    eventosCount,
+                                    asistentes,
+                                    puntos);
+                        })
+                .sorted(
+                        Comparator.comparingLong(CommunityRankingEntryResponse::puntos)
+                                .reversed()
+                                .thenComparing(
+                                        r -> r.usuario().nombre(),
+                                        Comparator.nullsLast(String::compareToIgnoreCase)))
+                .toList();
+    }
+
+    private UserSimpleResponse toUserSimple(Usuario usuario) {
+        return new UserSimpleResponse(
+                usuario.getId(), usuario.getNombre(), usuario.getEmail(), usuario.getFoto());
     }
 }

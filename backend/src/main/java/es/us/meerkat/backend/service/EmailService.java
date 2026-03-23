@@ -45,8 +45,10 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final AsistenciaEventoRepository asistenciaEventoRepository;
 
+    @SuppressWarnings("deprecation")
     private static final DateTimeFormatter DATE_FORMATTER =
             DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM 'de' yyyy", new Locale("es", "ES"));
+
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
     // ===============================
@@ -727,6 +729,100 @@ public class EmailService {
                         + "</p></div></div></body></html>";
 
         sendHtmlEmailSafe(alumnoEmail, subject, body);
+    }
+
+    /** Email al alumno confirmando que ÉL ha cancelado la clase. */
+    public void sendAlumnoCancelledConfirmationEmail(
+            String alumnoEmail,
+            String alumnoNombre,
+            String tutorNombre,
+            LocalDate dia,
+            LocalTime horaInicio,
+            LocalTime horaFin,
+            String motivo) {
+
+        String fecha = dia.format(DATE_FMT);
+        String horario = horaInicio.format(TIME_FMT) + " \u2013 " + horaFin.format(TIME_FMT);
+        String motivoHtml =
+                motivo != null && !motivo.isBlank()
+                        ? "<p><strong>Motivo:</strong> " + motivo + "</p>"
+                        : "";
+
+        String subject = appName + " - Has cancelado tu clase";
+        String body =
+                "<html><body style='font-family:Arial,sans-serif;color:#333'><div"
+                    + " style='max-width:600px;margin:0 auto;padding:20px'><div"
+                    + " style='background:#c0392b;color:white;padding:20px;text-align:center;border-radius:5px"
+                    + " 5px 0 0'><h1>Clase cancelada</h1></div><div"
+                    + " style='background:#f9f9f9;padding:20px;border:1px solid #ddd'><p>Hola"
+                    + " <strong>"
+                        + alumnoNombre
+                        + "</strong>,</p>"
+                        + "<p>Has cancelado tu clase con <strong>"
+                        + tutorNombre
+                        + "</strong> prevista para:</p><div"
+                        + " style='background:#fdecea;padding:15px;border-left:4px solid"
+                        + " #c0392b;margin:20px 0'>\uD83D\uDCC5 "
+                        + fecha
+                        + "<br>"
+                        + "\uD83D\uDD50 "
+                        + horario
+                        + "</div>"
+                        + motivoHtml
+                        + "<p>Puedes reservar una nueva clase cuando quieras.</p></div><div"
+                        + " style='background:#f0f0f0;padding:15px;text-align:center;font-size:12px;border-radius:0"
+                        + " 0 5px 5px'><p>&copy; "
+                        + appName
+                        + "</p></div></div></body></html>";
+
+        sendHtmlEmailSafe(alumnoEmail, subject, body);
+    }
+
+    /** Email al tutor notificando que su alumno ha cancelado la clase. */
+    public void sendTutorNotificationAlumnoCancelledEmail(
+            String tutorEmail,
+            String tutorNombre,
+            String alumnoNombre,
+            LocalDate dia,
+            LocalTime horaInicio,
+            LocalTime horaFin,
+            String motivo) {
+
+        String fecha = dia.format(DATE_FMT);
+        String horario = horaInicio.format(TIME_FMT) + " \u2013 " + horaFin.format(TIME_FMT);
+        String motivoHtml =
+                motivo != null && !motivo.isBlank()
+                        ? "<p><strong>Motivo:</strong> " + motivo + "</p>"
+                        : "";
+
+        String subject = appName + " - Tu alumno ha cancelado la clase";
+        String body =
+                "<html><body style='font-family:Arial,sans-serif;color:#333'><div"
+                    + " style='max-width:600px;margin:0 auto;padding:20px'><div"
+                    + " style='background:#c0392b;color:white;padding:20px;text-align:center;border-radius:5px"
+                    + " 5px 0 0'><h1>Clase cancelada por el alumno</h1></div><div"
+                    + " style='background:#f9f9f9;padding:20px;border:1px solid #ddd'><p>Hola"
+                    + " <strong>"
+                        + tutorNombre
+                        + "</strong>,</p>"
+                        + "<p>Tu alumno <strong>"
+                        + alumnoNombre
+                        + "</strong> ha cancelado la clase prevista para:</p><div"
+                        + " style='background:#fdecea;padding:15px;border-left:4px solid"
+                        + " #c0392b;margin:20px 0'>\uD83D\uDCC5 "
+                        + fecha
+                        + "<br>"
+                        + "\uD83D\uDD50 "
+                        + horario
+                        + "</div>"
+                        + motivoHtml
+                        + "</div><div"
+                        + " style='background:#f0f0f0;padding:15px;text-align:center;font-size:12px;border-radius:0"
+                        + " 0 5px 5px'><p>&copy; "
+                        + appName
+                        + "</p></div></div></body></html>";
+
+        sendHtmlEmailSafe(tutorEmail, subject, body);
     }
 
     /** Email de reprogramación de reserva (al alumno). */

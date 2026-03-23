@@ -18,6 +18,8 @@ public interface ComunidadClassroomRepository extends JpaRepository<ComunidadCla
 
     Optional<ComunidadClassroom> findByComunidadId(Long comunidadId);
 
+    Optional<ComunidadClassroom> findByClassroomCourseId(String classroomCourseId);
+
     boolean existsByComunidadId(Long comunidadId);
 
     void deleteByComunidadId(Long comunidadId);

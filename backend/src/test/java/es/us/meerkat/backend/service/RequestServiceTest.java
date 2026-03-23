@@ -19,6 +19,7 @@ import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.EstadoSolicitud;
 import es.us.meerkat.backend.entity.MiembroComunidad;
 import es.us.meerkat.backend.entity.PreferenciasNotificacion;
+import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.SolicitudComunidad;
 import es.us.meerkat.backend.entity.TipoGrupo;
 import es.us.meerkat.backend.entity.Usuario;
@@ -60,7 +61,7 @@ class RequestServiceTest {
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         SolicitudComunidad solicitud =
-                requestService.requestAccess(userId, communityId, "Quiero entrar");
+                requestService.requestAccess(userId, communityId, "Quiero entrar", null);
 
         verify(solicitudComunidadRepository).save(any(SolicitudComunidad.class));
         assertThat(solicitud.getEstado()).isEqualTo(EstadoSolicitud.PENDIENTE);
@@ -92,7 +93,7 @@ class RequestServiceTest {
                 .thenAnswer(invocation -> invocation.getArgument(0));
         when(preferenciasNotificacionService.getOrCreate(ownerId)).thenReturn(preferenciasDueno);
 
-        requestService.requestAccess(userId, communityId, "Quiero entrar");
+        requestService.requestAccess(userId, communityId, "Quiero entrar", RolComunidad.ALUMNO);
 
         verify(emailService)
                 .sendCommunityAccessRequestEmail(dueno, comunidad, solicitante, "Quiero entrar");
@@ -123,7 +124,7 @@ class RequestServiceTest {
                 .thenAnswer(invocation -> invocation.getArgument(0));
         when(preferenciasNotificacionService.getOrCreate(ownerId)).thenReturn(preferenciasDueno);
 
-        requestService.requestAccess(userId, communityId, "Quiero entrar");
+        requestService.requestAccess(userId, communityId, "Quiero entrar", RolComunidad.ALUMNO);
 
         verify(emailService, never()).sendCommunityAccessRequestEmail(any(), any(), any(), any());
     }
@@ -134,7 +135,7 @@ class RequestServiceTest {
         when(comunidadRepository.findById(10L))
                 .thenReturn(Optional.of(buildComunidad(10L, TipoGrupo.COMUNIDAD_PUBLICA)));
 
-        assertThatThrownBy(() -> requestService.requestAccess(1L, 10L, "hola"))
+        assertThatThrownBy(() -> requestService.requestAccess(1L, 10L, "hola", RolComunidad.ALUMNO))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("comunidad pública");
     }

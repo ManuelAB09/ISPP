@@ -41,4 +41,8 @@ public interface TransaccionPagoRepository extends JpaRepository<TransaccionPago
     /** Obtiene transacciones paginadas de un tutor por tipo y estado. */
     Page<TransaccionPago> findByTutorIdAndTipoAndEstadoOrderByCompletadoAtDesc(
             Long tutorId, TipoTransaccion tipo, EstadoTransaccion estado, Pageable pageable);
+
+    /** Obtiene la última transacción completada entre un usuario y un tutor. */
+    Optional<TransaccionPago> findTopByUsuarioIdAndTutorIdAndTipoAndEstadoOrderByCompletadoAtDesc(
+            Long usuarioId, Long tutorId, TipoTransaccion tipo, EstadoTransaccion estado);
 }

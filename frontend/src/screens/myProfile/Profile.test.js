@@ -1,106 +1,203 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import Profile from './Profile';
+import { useAuth } from '../../contexts/AuthContext';
+import { authApi } from '../../api/auth.api';
+import { communitiesApi } from '../../api/communities.api';
+import { getMyTutorProfiles, getVerifiedTutors } from '../../api/tutorEndpoints';
 
+jest.mock('../../contexts/AuthContext');
+jest.mock('../../api/auth.api', () => ({
+  authApi: {
+    getUserById: jest.fn(),
+  },
+}));
 jest.mock('../../api/communities.api', () => ({
   communitiesApi: {
     listMine: jest.fn(),
   },
 }));
-
 jest.mock('../../api/tutorEndpoints', () => ({
   getMyTutorProfiles: jest.fn(),
+  getVerifiedTutors: jest.fn(),
 }));
-
-jest.mock('../../api/client', () => ({
-  apiClient: {
-    get: jest.fn(),
-    post: jest.fn(),
-  },
-}));
-
-jest.mock('../../api/baseUrl', () => ({
-  getApiBaseUrl: () => 'http://localhost:8080',
-}));
-
 jest.mock('../../components/Header/Header', () => {
   return function MockHeader() {
     return <div data-testid="mock-header">Header</div>;
   };
 });
-
-jest.mock('../../contexts/AuthContext', () => ({
-  useAuth: () => ({
-    isAuthenticated: true,
-    loading: false,
-    user: {
-      id: 1,
-      nombre: 'Test User',
-      email: 'test@example.com',
-      bio: 'Test bio',
-    },
-    updateProfile: jest.fn(),
-    logout: jest.fn(),
-  }),
-}));
-
 jest.mock('../teacherProfile/CreateProfileModal', () => {
   return function MockCreateProfileModal() {
-    return null;
+    return <div data-testid="mock-create-tutor-modal" />;
   };
 });
-
 jest.mock('./EditProfile', () => {
   return function MockEditProfile() {
-    return null;
+    return <div data-testid="mock-edit-profile" />;
   };
 });
-
 jest.mock('./Settings', () => {
   return function MockSettings() {
-    return null;
+    return <div data-testid="mock-settings" />;
   };
 });
 
-const { communitiesApi } = require('../../api/communities.api');
-const { getMyTutorProfiles } = require('../../api/tutorEndpoints');
+const mockNavigate = jest.fn();
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => mockNavigate,
+}));
 
-// Dynamic import to ensure mocks are set up first
-let MyProfile;
-beforeAll(() => {
-  MyProfile = require('./Profile').default;
-});
-
-describe('MyProfile', () => {
+describe('Profile public view', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    localStorage.clear();
+    localStorage.setItem('userId', '1');
+
+    useAuth.mockReturnValue({
+      isAuthenticated: true,
+      loading: false,
+      user: {
+        id: 1,
+        nombre: 'Owner User',
+        email: 'owner@example.com',
+        esTutor: false,
+        bio: 'Bio privada',
+      },
+      updateProfile: jest.fn(),
+      logout: jest.fn(),
+    });
+
     communitiesApi.listMine.mockResolvedValue({ content: [] });
-    getMyTutorProfiles.mockResolvedValue(null);
+    getMyTutorProfiles.mockResolvedValue([]);
+    getVerifiedTutors.mockResolvedValue({ content: [] });
   });
 
-  const renderComponent = () =>
+  const renderRoute = (initialEntry = '/perfil/12') =>
     render(
-      <MemoryRouter>
-        <MyProfile />
+      <MemoryRouter initialEntries={[initialEntry]}>
+        <Routes>
+          <Route path="/perfil" element={<Profile />} />
+          <Route path="/perfil/:userId" element={<Profile />} />
+        </Routes>
       </MemoryRouter>
     );
 
-  test('renders header', async () => {
-    renderComponent();
-    expect(screen.getByTestId('mock-header')).toBeInTheDocument();
+  test('carga y muestra el perfil público de otro usuario ocultando controles privados', async () => {
+    authApi.getUserById.mockResolvedValue({
+      id: 12,
+      nombre: 'Paula Profe',
+      foto: null,
+      bio: 'Profesora de matemáticas',
+      universidad: 'Universidad de Sevilla',
+      grado: 'Matemáticas',
+      ubicacion: { nombre: 'Sevilla' },
+      intereses: ['Álgebra', 'Didáctica'],
+      esTutor: true,
+    });
+    getVerifiedTutors.mockResolvedValue({
+      content: [
+        {
+          id: 44,
+          userId: 12,
+          verificado: true,
+          especialidades: ['Álgebra', 'Didáctica'],
+        },
+      ],
+    });
+
+    renderRoute('/perfil/12');
+
+    await waitFor(() => {
+      expect(authApi.getUserById).toHaveBeenCalledWith('12');
+    });
+
+    expect(await screen.findByRole('heading', { name: 'Paula Profe' })).toBeInTheDocument();
+    expect(screen.getByText(/Profesora de matemáticas/i)).toBeInTheDocument();
+    expect(screen.getByText('Universidad de Sevilla')).toBeInTheDocument();
+    expect(screen.getByText('Matemáticas')).toBeInTheDocument();
+    expect(screen.getByText('Sevilla')).toBeInTheDocument();
+    expect(screen.getAllByText('Álgebra').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Didáctica').length).toBeGreaterThan(0);
+    expect(screen.getByTitle(/Tutor verificado/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Ver perfil de profesor/i })).toBeInTheDocument();
+
+    expect(screen.queryByRole('button', { name: /Editar Perfil/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Configuración/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Cerrar Sesión/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Mis comunidades/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/EMAIL/i)).not.toBeInTheDocument();
   });
 
-  test('displays user name', async () => {
-    renderComponent();
-    await waitFor(() => {
-      expect(screen.getAllByText('Test User').length).toBeGreaterThan(0);
+  test('permite ir al perfil de profesor desde el perfil público verificado', async () => {
+    authApi.getUserById.mockResolvedValue({
+      id: 12,
+      nombre: 'Paula Profe',
+      foto: null,
+      bio: 'Profesora de matemáticas',
+      universidad: 'Universidad de Sevilla',
+      grado: 'Matemáticas',
+      ubicacion: { nombre: 'Sevilla' },
+      intereses: ['Álgebra'],
+      esTutor: true,
     });
+    getVerifiedTutors.mockResolvedValue({
+      content: [
+        {
+          id: 44,
+          userId: 12,
+          verificado: true,
+          especialidades: ['Álgebra'],
+        },
+      ],
+    });
+
+    renderRoute('/perfil/12');
+
+    const teacherProfileButton = await screen.findByRole('button', { name: /Ver perfil de profesor/i });
+    userEvent.click(teacherProfileButton);
+
+    expect(mockNavigate).toHaveBeenCalledWith('/profesores/44');
   });
 
-  test('displays user email', async () => {
-    renderComponent();
-    await waitFor(() => {
-      expect(screen.getByText('test@example.com')).toBeInTheDocument();
+  test('si el usuario público no está verificado como tutor, no muestra la insignia visible', async () => {
+    authApi.getUserById.mockResolvedValue({
+      id: 12,
+      nombre: 'Paula Profe',
+      foto: null,
+      bio: 'Profesora de matemáticas',
+      universidad: 'Universidad de Sevilla',
+      grado: 'Matemáticas',
+      ubicacion: { nombre: 'Sevilla' },
+      intereses: ['Álgebra'],
+      esTutor: true,
     });
+    getVerifiedTutors.mockResolvedValue({ content: [] });
+
+    renderRoute('/perfil/12');
+
+    expect(await screen.findByRole('heading', { name: 'Paula Profe' })).toBeInTheDocument();
+    expect(screen.queryByText(/Tutor verificado/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Ver perfil de profesor/i })).not.toBeInTheDocument();
+  });
+
+  test('muestra estado de error si no se puede cargar el perfil público', async () => {
+    authApi.getUserById.mockRejectedValue(new Error('not found'));
+
+    renderRoute('/perfil/99');
+
+    expect(await screen.findByText(/Perfil no disponible/i)).toBeInTheDocument();
+    expect(screen.getByText(/No se pudo cargar este perfil/i)).toBeInTheDocument();
+  });
+
+  test('en el perfil propio no llama al endpoint público y mantiene controles de propietario', async () => {
+    renderRoute('/perfil');
+
+    expect(screen.getByRole('button', { name: /Editar Perfil/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Configuración/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Cerrar Sesión/i })).toBeInTheDocument();
+    expect(authApi.getUserById).not.toHaveBeenCalled();
   });
 });

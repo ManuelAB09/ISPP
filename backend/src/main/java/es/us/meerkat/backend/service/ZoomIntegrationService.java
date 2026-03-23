@@ -87,6 +87,14 @@ public class ZoomIntegrationService {
     @Value("${zoom.recordings.retention-days:30}")
     private long zoomRecordingsRetentionDays;
 
+    /**
+     * Crea una reunión Zoom simple (sin vincular a comunidad). Devuelve un Map con las claves
+     * "join_url", "start_url" y "password".
+     */
+    public Map<String, Object> crearReunionSimple(String topic, Integer durationMinutes) {
+        return createZoomMeeting(topic, durationMinutes);
+    }
+
     /** Crea una reunion privada para una comunidad o devuelve la activa. */
     @Transactional
     public ZoomMeeting createOrGetActiveMeeting(
@@ -853,6 +861,7 @@ public class ZoomIntegrationService {
         throw new RuntimeException("Formato no permitido. Solo MP4, MOV, WEBM o M4A");
     }
 
+    @SuppressWarnings("unchecked")
     private Map<String, Object> createZoomMeeting(
             final String topic, final Integer durationMinutes) {
         String token = getZoomAccessToken();
@@ -877,6 +886,7 @@ public class ZoomIntegrationService {
         headers.setBearerAuth(token);
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+        @SuppressWarnings("rawtypes")
         ResponseEntity<Map> response =
                 restTemplate.postForEntity(
                         zoomApiBaseUrl + "/users/me/meetings", request, Map.class);
@@ -909,6 +919,7 @@ public class ZoomIntegrationService {
                 "https://zoom.us/oauth/token?grant_type=account_credentials&account_id="
                         + zoomAccountId;
 
+        @SuppressWarnings("rawtypes")
         ResponseEntity<Map> response =
                 restTemplate.exchange(tokenUrl, HttpMethod.POST, entity, Map.class);
 
@@ -975,7 +986,6 @@ public class ZoomIntegrationService {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> getMap(final Map<String, Object> source, final String key) {
         Object value = source.get(key);
         if (value instanceof Map<?, ?> map) {

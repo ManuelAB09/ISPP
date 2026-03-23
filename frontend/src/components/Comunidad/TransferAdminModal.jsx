@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { communitiesApi } from '../../api/communities.api';
 import './TransferAdminModal.css';
 
-export default function TransferAdminModal({ communityId, currentUserId, onClose, onTransferred }) {
+export default function TransferAdminModal({ communityId, currentUserId, hasTeacherProfile, onClose, onTransferred }) {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [transferring, setTransferring] = useState(false);
   const [error, setError] = useState(null);
   const [confirmStep, setConfirmStep] = useState(false);
+  const [selectedRole, setSelectedRole] = useState(hasTeacherProfile ? 'PROFESOR' : 'ALUMNO');
 
   useEffect(() => {
     const fetchMembers = async () => {
@@ -44,7 +45,7 @@ export default function TransferAdminModal({ communityId, currentUserId, onClose
     try {
       setTransferring(true);
       setError(null);
-      await communitiesApi.transferAdmin(communityId, selectedUserId);
+      await communitiesApi.transferAdmin(communityId, selectedUserId, selectedRole);
       onTransferred();
     } catch (err) {
       console.error('Error al transferir administración:', err);
@@ -110,7 +111,32 @@ export default function TransferAdminModal({ communityId, currentUserId, onClose
               ¿Estás seguro de que quieres transferir la administración a{' '}
               <strong>{selectedMember?.usuario?.nombre}</strong>?
             </p>
-            <p className="tam-confirm-warning">
+            {hasTeacherProfile && (
+              <div className="tam-role-selection" style={{ marginTop: '15px' }}>
+                <p>Elige tu nuevo rol en la comunidad:</p>
+                <label style={{ display: 'block', marginTop: '10px' }}>
+                  <input
+                    type="radio"
+                    name="newRole"
+                    value="PROFESOR"
+                    checked={selectedRole === 'PROFESOR'}
+                    onChange={(e) => setSelectedRole(e.target.value)}
+                  />
+                  {' '}Profesor
+                </label>
+                <label style={{ display: 'block', marginTop: '10px' }}>
+                  <input
+                    type="radio"
+                    name="newRole"
+                    value="ALUMNO"
+                    checked={selectedRole === 'ALUMNO'}
+                    onChange={(e) => setSelectedRole(e.target.value)}
+                  />
+                  {' '}Alumno
+                </label>
+              </div>
+            )}
+            <p className="tam-confirm-warning" style={{ marginTop: '15px' }}>
               Perderás tus privilegios de administrador y pasarás a ser un miembro normal.
               Esta acción no se puede deshacer directamente.
             </p>

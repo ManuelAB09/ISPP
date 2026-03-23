@@ -119,7 +119,7 @@ class SolicitudContratacionControllerTest {
     void marcarComoPagadaShouldReturnOkOnSuccess() {
         Usuario usuario = buildUsuario(1L);
         SolicitudContratacionResponse mockResponse = new SolicitudContratacionResponse();
-        when(solicitudService.marcarComoPagada(100L, 1L)).thenReturn(mockResponse);
+        when(solicitudService.marcarComoPagada(100L, 1L, null)).thenReturn(mockResponse);
 
         ResponseEntity<?> response = controller.marcarComoPagada(usuario, 100L);
 

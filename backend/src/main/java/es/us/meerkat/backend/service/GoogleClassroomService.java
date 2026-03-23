@@ -1,9 +1,13 @@
 package es.us.meerkat.backend.service;
 
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -23,6 +27,7 @@ import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.ComunidadClassroomRepository;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.GoogleClassroomConnectionRepository;
+import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -34,6 +39,7 @@ public class GoogleClassroomService {
     private final ComunidadRepository comunidadRepository;
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final UsuarioRepository usuarioRepository;
 
     @Value("${google.classroom.client-id}")
     private String clientId;
@@ -43,6 +49,91 @@ public class GoogleClassroomService {
 
     @Value("${google.classroom.redirect-uri}")
     private String redirectUri;
+
+    public static record OAuthCtx(Long userId, Long communityId, Long requestId) {}
+
+    public final Map<String, OAuthCtx> oauthStateStore = new ConcurrentHashMap<>();
+    private final SecureRandom secureRandom = new SecureRandom();
+
+    public String generateState() {
+        byte[] bytes = new byte[32];
+        secureRandom.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    /**
+     * Genera una URL de autorización de Google OAuth para Classroom y guarda el estado para
+     * asociarlo al usuario cuando Google llame al callback.
+     *
+     * @param userId id del usuario local
+     * @param communityId id de comunidad opcional
+     * @param requestId id de request opcional
+     * @param management si true, genera la URL para scopes de gestión
+     * @return URL completa de autorización
+     */
+    public String buildAuthorizeUrlForUser(
+            Long userId, Long communityId, Long requestId, boolean management) {
+        usuarioRepository
+                .findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        String state = generateState();
+        oauthStateStore.put(state, new OAuthCtx(userId, communityId, requestId));
+
+        String scope;
+        String url;
+        if (management) {
+            String[] scopes = {
+                "https://www.googleapis.com/auth/classroom.profile.emails",
+                "https://www.googleapis.com/auth/classroom.profile.photos",
+                "https://www.googleapis.com/auth/classroom.rosters"
+            };
+            scope = URLEncoder.encode(String.join(" ", scopes), StandardCharsets.UTF_8);
+
+            url =
+                    "https://accounts.google.com/o/oauth2/v2/auth"
+                            + "?client_id="
+                            + clientId
+                            + "&redirect_uri="
+                            + URLEncoder.encode(redirectUri, StandardCharsets.UTF_8)
+                            + "&response_type=code"
+                            + "&scope="
+                            + scope
+                            + "&access_type=offline"
+                            + "&prompt=consent"
+                            + "&state="
+                            + URLEncoder.encode(state, StandardCharsets.UTF_8);
+
+        } else {
+            String[] commonScopes = {
+                "https://www.googleapis.com/auth/classroom.courses.readonly",
+                "https://www.googleapis.com/auth/classroom.coursework.me.readonly",
+                "https://www.googleapis.com/auth/classroom.coursework.students.readonly",
+                "https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly"
+            };
+            scope = URLEncoder.encode(String.join(" ", commonScopes), StandardCharsets.UTF_8);
+
+            url =
+                    "https://accounts.google.com/o/oauth2/v2/auth"
+                            + "?client_id="
+                            + clientId
+                            + "&redirect_uri="
+                            + URLEncoder.encode(redirectUri, StandardCharsets.UTF_8)
+                            + "&response_type=code"
+                            + "&scope="
+                            + scope
+                            + "&access_type=offline"
+                            + "&prompt=consent"
+                            + "&state="
+                            + URLEncoder.encode(state, StandardCharsets.UTF_8);
+        }
+
+        return url;
+    }
+
+    public OAuthCtx consumeState(String state) {
+        return oauthStateStore.remove(state);
+    }
 
     /** Guarda o actualiza la conexión OAuth del usuario. */
     public void guardarConexionOAuth(
@@ -56,7 +147,9 @@ public class GoogleClassroomService {
                         .orElse(GoogleClassroomConnection.builder().usuario(usuario).build());
 
         connection.setAccessToken(accessToken);
-        connection.setRefreshToken(refreshToken);
+        if (refreshToken != null && !refreshToken.isEmpty()) {
+            connection.setRefreshToken(refreshToken);
+        }
         connection.setExpiresAt(expiresAt);
         connection.setActiva(true);
 
@@ -80,6 +173,7 @@ public class GoogleClassroomService {
     }
 
     /** Refresca el access token usando el refresh token. */
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void refrescarAccessToken(GoogleClassroomConnection connection) {
         String tokenUrl = "https://oauth2.googleapis.com/token";
 
@@ -199,6 +293,56 @@ public class GoogleClassroomService {
                 result.put("courseWork", objectMapper.readValue(workResp.getBody(), Map.class));
             } else {
                 result.put("courseWork", Map.of());
+            }
+
+            return result;
+        } catch (Exception e) {
+            throw new RuntimeException("Error al parsear respuesta de Classroom", e);
+        }
+    }
+
+    /**
+     * Obtiene estadísticas básicas de los alumnos del curso vinculado a la comunidad. Retorna un
+     * Map con claves como "studentCount" y "students" (lista cruda devuelta por Classroom).
+     */
+    @SuppressWarnings("rawtypes")
+    public Map<String, Object> obtenerEstadisticasAlumnos(Usuario usuario, Long comunidadId) {
+        ComunidadClassroom vinculacion =
+                comunidadClassroomRepository
+                        .findByComunidadId(comunidadId)
+                        .orElseThrow(
+                                () ->
+                                        new RuntimeException(
+                                                "No hay curso vinculado a la comunidad"));
+
+        String courseId = vinculacion.getClassroomCourseId();
+
+        String accessToken = getAccessTokenValido(usuario);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        HttpEntity<Void> req = new HttpEntity<>(headers);
+
+        String studentsUrl =
+                "https://classroom.googleapis.com/v1/courses/" + courseId + "/students";
+
+        ResponseEntity<String> studentsResp =
+                restTemplate.exchange(studentsUrl, HttpMethod.GET, req, String.class);
+
+        try {
+            Map<String, Object> result = new java.util.HashMap<>();
+
+            if (studentsResp.getStatusCode().is2xxSuccessful() && studentsResp.getBody() != null) {
+                Map parsed = objectMapper.readValue(studentsResp.getBody(), Map.class);
+                java.util.List students =
+                        parsed.containsKey("students")
+                                ? (java.util.List) parsed.get("students")
+                                : java.util.List.of();
+                result.put("studentCount", students.size());
+                result.put("students", students);
+            } else {
+                result.put("studentCount", 0);
+                result.put("students", java.util.List.of());
             }
 
             return result;

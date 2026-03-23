@@ -36,6 +36,7 @@ import es.us.meerkat.backend.repository.GoogleClassroomConnectionRepository;
 import es.us.meerkat.backend.repository.InstitutionRepository;
 import es.us.meerkat.backend.repository.MensajeComunidadRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.PreferenciasNotificacionRepository;
 import es.us.meerkat.backend.repository.SolicitudComunidadRepository;
 import es.us.meerkat.backend.repository.SuscripcionRepository;
 import es.us.meerkat.backend.repository.TransaccionPagoRepository;
@@ -116,6 +117,9 @@ public class UsuarioService {
 
     /** Repositorio para gestionar instituciones. */
     private final InstitutionRepository institutionRepository;
+
+    /** Repositorio para gestionar preferencias de notificación. */
+    private final PreferenciasNotificacionRepository preferenciasNotificacionRepository;
 
     /** EntityManager para operaciones de limpieza de sesión. */
     private final EntityManager entityManager;
@@ -342,7 +346,12 @@ public class UsuarioService {
         suscripcionRepository.deleteByUsuarioId(usuarioId);
         miembroComunidadRepository.deleteByUsuarioId(usuarioId);
 
-        // PASO 5: Eliminar el usuario
+        // PASO 5: Eliminar preferencias de notificación
+        preferenciasNotificacionRepository
+                .findByUsuarioId(usuarioId)
+                .ifPresent(preferenciasNotificacionRepository::delete);
+
+        // PASO 6: Eliminar el usuario
         usuarioRepository.delete(usuario);
     }
 
@@ -484,6 +493,7 @@ public class UsuarioService {
                 .autenticacionDosFactores(usuario.getAutenticacionDosFactores())
                 .notificacionesPush(usuario.getNotificacionesPush())
                 .createdAt(usuario.getCreatedAt())
+                .googleLinked(usuario.getGoogleId() != null)
                 .build();
     }
 
@@ -515,6 +525,7 @@ public class UsuarioService {
                                 : null)
                 .intereses(usuario.getIntereses())
                 .esTutor(usuario.getEsTutor())
+                .tutorId(usuario.getTutor() != null ? usuario.getTutor().getId() : null)
                 .build();
     }
 

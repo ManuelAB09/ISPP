@@ -99,7 +99,7 @@ public class BookingReminderScheduler {
                 pendientesVencidas.size());
 
         for (SolicitudContratacionDirecta solicitud : aceptadasVencidas) {
-            solicitud.setEstado(EstadoSolicitudContratacion.CANCELADA);
+            solicitud.setEstado(EstadoSolicitudContratacion.CANCELADA_TUTOR);
             solicitud.setMotivoRechazo(
                     "Expirada automáticamente: la fecha de la clase pasó sin realizarse el pago.");
             solicitudRepository.save(solicitud);
@@ -121,7 +121,7 @@ public class BookingReminderScheduler {
         }
 
         for (SolicitudContratacionDirecta solicitud : pendientesVencidas) {
-            solicitud.setEstado(EstadoSolicitudContratacion.CANCELADA);
+            solicitud.setEstado(EstadoSolicitudContratacion.CANCELADA_TUTOR);
             solicitud.setMotivoRechazo(
                     "Expirada automáticamente: la fecha de la clase pasó sin respuesta.");
             solicitudRepository.save(solicitud);

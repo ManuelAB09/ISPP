@@ -1,5 +1,57 @@
 /* MisPagos.css */
 
+/* ── Tabs ─────────────────────────────────────── */
+.mp-tabs {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 2px solid var(--alabasterGray);
+  padding-bottom: 0;
+}
+
+.mp-tab {
+  padding: 0.65rem 1.4rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.mp-tab:hover { color: #374151; }
+.mp-tab--active { color: var(--spaceIndigo); border-bottom-color: var(--spaceIndigo); }
+
+/* ── Reservas tab ─────────────────────────────── */
+.mp-reservas-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.mp-reservas-alumno__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.mp-reservas-alumno__title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--spaceIndigo);
+  margin: 0;
+}
+
+.mp-reservas-tutor {
+  border-top: 2px solid var(--alabasterGray);
+  padding-top: 2rem;
+}
+
 .mp-page {
   min-height: 100vh;
   background: var(--whiteSmoke);

@@ -4,7 +4,7 @@ import {
   LuCalendar, LuMapPin, LuLink, LuUsers, LuUser,
   LuPencil, LuX, LuArrowLeft, LuPackage,
   LuEye, LuEyeOff, LuMap, LuClock, LuCheck, LuBell, LuTrash2,
-  LuVideo, LuPlay
+  LuVideo, LuPlay, LuBookOpen
 } from 'react-icons/lu';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -14,12 +14,15 @@ import Header from '../../components/Header/Header';
 import axiosInstance from '../../api/axiosConfig';
 import {
   getEventById, cancelEvent, attendEvent, cancelAttendance,
-  getConfirmedAttendees, getMyAttendance
+  getConfirmedAttendees, getMyAttendance, linkClassroomTask, unlinkClassroomTask
 } from '../../api/eventEndpoints';
 import { communitiesApi } from '../../api/communities.api';
 import { ZoomApi } from '../../api/zoom.api';
+import { checkAlreadyRated } from '../../api/valoraciones.api';
 import { getApiBaseUrl } from '../../api/baseUrl';
+import { normalizeCommunityRole } from '../../utils/communityRoles';
 import { useSocketContext } from '../../contexts/SocketContext';
+import RatingForm from '../../components/RatingForm';
 
 const OPCIONES_ANTELACION = [
   { label: '2 días antes', value: 2880 },
@@ -73,8 +76,31 @@ const eventIconRed = L.icon({
   shadowSize: [41, 41],
 });
 
+// Valoración de profesor (sin validación de permisos)
+// Mover fuera de la función para evitar acceder a 'event' antes de su inicialización
 const DetalleEvento = () => {
   const { eventId } = useParams();
+  // Persist valorado per user+event in localStorage
+  const [valorado, setValorado] = useState(() => {
+    try {
+      const userId = localStorage.getItem('userId');
+      const ratedEvents = JSON.parse(localStorage.getItem('ratedEvents') || '{}');
+      return !!ratedEvents[`${userId}_${eventId}`];
+    } catch {
+      return false;
+    }
+  });
+  // When valorado changes to true, persist in localStorage
+  useEffect(() => {
+    if (valorado) {
+      try {
+        const userId = localStorage.getItem('userId');
+        const ratedEvents = JSON.parse(localStorage.getItem('ratedEvents') || '{}');
+        ratedEvents[`${userId}_${eventId}`] = true;
+        localStorage.setItem('ratedEvents', JSON.stringify(ratedEvents));
+      } catch {}
+    }
+  }, [valorado, eventId]);
   const navigate = useNavigate();
   const { socket } = useSocketContext();
 
@@ -88,6 +114,7 @@ const DetalleEvento = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelLoading, setCancelLoading] = useState(false);
   const [isMember, setIsMember] = useState(false);
+  const [communityRole, setCommunityRole] = useState(null);
 
   // Alarmas
   const [alarms, setAlarms] = useState([]);
@@ -113,6 +140,13 @@ const DetalleEvento = () => {
   const [participantsOpen, setParticipantsOpen] = useState(false);
   const activeMeetingRequestInFlightRef = useRef(false);
 
+  // Classroom Task State
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [classroomTasks, setClassroomTasks] = useState([]);
+  const [tasksLoading, setTasksLoading] = useState(false);
+  const [taskError, setTaskError] = useState(null);
+  const [taskLinking, setTaskLinking] = useState(false);
+
   const currentUserId = localStorage.getItem('userId');
 
   const fetchEventData = useCallback(async () => {
@@ -128,10 +162,12 @@ const DetalleEvento = () => {
       // Verificar si soy miembro de la comunidad del evento
       if (currentUserId && eventData.comunidadId) {
         try {
-          await communitiesApi.getMyMembership(eventData.comunidadId);
+          const membership = await communitiesApi.getMyMembership(eventData.comunidadId);
           setIsMember(true);
+          setCommunityRole(normalizeCommunityRole(membership?.rol));
         } catch {
           setIsMember(false);
+          setCommunityRole(null);
         }
       }
 
@@ -151,6 +187,16 @@ const DetalleEvento = () => {
         } catch {
           setAlarms([]);
         }
+
+        // Verificar si ya valoré este evento en el backend
+        try {
+          const checkResp = await checkAlreadyRated(currentUserId, eventId);
+          if (checkResp?.rated || checkResp?.data?.rated) {
+            setValorado(true);
+          }
+        } catch {
+          // Si falla, respetar el estado de localStorage
+        }
       }
     } catch (err) {
       console.error('Error al cargar el evento:', err);
@@ -165,10 +211,19 @@ const DetalleEvento = () => {
   }, [fetchEventData]);
 
   const isOrganizer = event?.creador?.id?.toString() === currentUserId;
+  // For community events: only ADMIN/PROFESOR can edit. For non-community: organizer can edit.
+  const canEditEvent = communityRole
+    ? (communityRole === 'ADMIN' || communityRole === 'PROFESOR')
+    : isOrganizer;
   const isConfirmed = myAttendance?.estado === 'CONFIRMADA';
   const isFull = event && event.aforo && (event.asistentesConfirmados || 0) >= event.aforo;
   const isCancelled = event?.cancelado;
   const isStarted = event?.fechaHora ? new Date(event.fechaHora).getTime() <= Date.now() : false;
+  const isEnded = event?.fechaFin
+    ? new Date(event.fechaFin).getTime() <= Date.now()
+    : isStarted && event?.fechaHora
+      ? Date.now() - new Date(event.fechaHora).getTime() > 2 * 60 * 60 * 1000
+      : false;
 
   // Abre el modal de confirmación de asistencia
   const handleAttend = () => {
@@ -321,7 +376,6 @@ const DetalleEvento = () => {
   const elapsedMs = safeMeetingStartMs ? Math.max(0, meetingNow - safeMeetingStartMs) : 0;
   const durationMinutes = Number(activeMeeting?.durationMinutes);
   const hasFiniteDuration = Number.isFinite(durationMinutes) && durationMinutes > 0;
-  const remainingMs = hasFiniteDuration ? Math.max(0, durationMinutes * 60 * 1000 - elapsedMs) : null;
 
   const formatDuration = (ms) => {
     if (ms == null || !Number.isFinite(ms)) return '--:--';
@@ -400,6 +454,73 @@ const DetalleEvento = () => {
     }
   };
 
+  const handleOpenTaskModal = async () => {
+    setShowTaskModal(true);
+    setTasksLoading(true);
+    setTaskError(null);
+    try {
+      const resp = await axiosInstance.get(`/oauth2/communities/${event.comunidadId}/files`);
+      if (resp.data && resp.data.courseWork && resp.data.courseWork.courseWork) {
+        setClassroomTasks(resp.data.courseWork.courseWork);
+      } else if (resp.data && Array.isArray(resp.data.courseWork)) {
+        setClassroomTasks(resp.data.courseWork);
+      } else {
+        setClassroomTasks([]);
+      }
+    } catch (err) {
+      if (err.response?.status === 403) {
+        setTaskError('missing_scopes');
+      } else {
+        setTaskError(err.response?.data?.error || 'Error al cargar las tareas de Classroom');
+      }
+    } finally {
+      setTasksLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleMessage = (e) => {
+      if (e.data && (e.data.courses || e.data.success || e.data.error)) {
+        if (showTaskModal && taskError === 'missing_scopes' && !e.data.error) {
+          handleOpenTaskModal(); // Re-fetch automatically
+        }
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showTaskModal, taskError]);
+
+  const handleLinkTask = async (task) => {
+    try {
+      setTaskLinking(true);
+      await linkClassroomTask(eventId, {
+        taskId: task.id,
+        title: task.title,
+        url: task.alternateLink
+      });
+      setShowTaskModal(false);
+      await fetchEventData();
+    } catch (err) {
+      setTaskError(err.response?.data?.message || 'Error al vincular la tarea');
+    } finally {
+      setTaskLinking(false);
+    }
+  };
+
+  const handleUnlinkTask = async () => {
+    if (!window.confirm('¿Seguro que quieres desvincular esta tarea?')) return;
+    try {
+      setTaskLinking(true);
+      await unlinkClassroomTask(eventId);
+      await fetchEventData();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error al desvincular la tarea');
+    } finally {
+      setTaskLinking(false);
+    }
+  };
+
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
     const date = new Date(dateStr);
@@ -419,6 +540,47 @@ const DetalleEvento = () => {
       minute: '2-digit'
     });
   };
+
+  // Estado y efecto para obtener el id real de tutor para la valoración
+  const [realTutorId, setRealTutorId] = React.useState(null);
+  const [buscandoTutor, setBuscandoTutor] = useState(false);
+  const [, setTutorError] = useState(null);
+
+  // Determinar si el creador es profesor en la comunidad del evento
+  const creadorEsProfesorEnComunidad = event?.creadorRolComunidad === 'PROFESOR';
+
+  React.useEffect(() => {
+    let cancelled = false;
+    async function fetchTutorId() {
+      setBuscandoTutor(false);
+      setTutorError(null);
+      if (event && creadorEsProfesorEnComunidad && event.creador?.tutorId) {
+        setRealTutorId(event.creador.tutorId);
+      } else if (event && creadorEsProfesorEnComunidad && event.creador?.id) {
+        setBuscandoTutor(true);
+        try {
+          const resp = await axiosInstance.get(`/api/v1/tutors/user/${event.creador.id}`);
+          if (!cancelled && resp.data && resp.data.id) {
+            setRealTutorId(resp.data.id);
+          } else if (!cancelled) {
+            setRealTutorId(null);
+            setTutorError('No se encontró tutor para el organizador.');
+          }
+        } catch (e) {
+          if (!cancelled) {
+            setRealTutorId(null);
+            setTutorError('No se encontró tutor para el organizador.');
+          }
+        } finally {
+          if (!cancelled) setBuscandoTutor(false);
+        }
+      } else {
+        setRealTutorId(null);
+      }
+    }
+    fetchTutorId();
+    return () => { cancelled = true; };
+  }, [event, creadorEsProfesorEnComunidad]);
 
   if (loading) {
     return (
@@ -470,7 +632,7 @@ const DetalleEvento = () => {
               {isCancelled && (
                 <span className="ed-badge ed-badge-cancelled">❌ Cancelado</span>
               )}
-              {event.visibleMapa && !isCancelled && (
+              {event.visibleMapa && !isCancelled && !event.esVirtual && (
                 <span className="ed-badge ed-badge-map"><LuMap /> Visible en mapa</span>
               )}
               {isStarted && !isCancelled && (
@@ -498,7 +660,7 @@ const DetalleEvento = () => {
           </div>
 
           {/* Acciones del organizador */}
-          {isOrganizer && !isCancelled && !isStarted && (
+          {canEditEvent && !isCancelled && !isStarted && (
             <div className="ed-organizer-actions">
               <button
                 className="ed-btn ed-btn-edit"
@@ -808,6 +970,54 @@ const DetalleEvento = () => {
               </div>
             </div>
 
+            {/* Tarea de Classroom vinculada */}
+            {(event.classroomTaskId || (isOrganizer && event.comunidadId)) && (
+              <div className="ed-section">
+                <h2 className="ed-section-title">
+                  <LuBookOpen className="ed-section-icon" /> Tarea de Google Classroom
+                </h2>
+
+                {event.classroomTaskId ? (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8f9fa', padding: '12px 16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ padding: '8px', background: '#e6f4ff', borderRadius: '6px', color: '#1890ff' }}>
+                        <LuBookOpen size={20} />
+                      </div>
+                      <div>
+                        <a href={event.classroomTaskUrl} target="_blank" rel="noopener noreferrer" style={{ fontWeight: '600', color: '#1890ff', textDecoration: 'none', display: 'block' }}>
+                          {event.classroomTaskTitle}
+                        </a>
+                        <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Tarea vinculada a este evento</span>
+                      </div>
+                    </div>
+                    {canEditEvent && !isCancelled && !isStarted && (
+                      <button
+                        onClick={handleUnlinkTask}
+                        disabled={taskLinking}
+                        style={{ border: 'none', background: 'transparent', color: '#ef4444', cursor: 'pointer', padding: '6px', display: 'flex', alignItems: 'center', borderRadius: '4px' }}
+                        title="Desvincular tarea"
+                      >
+                        <LuTrash2 size={18} />
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '16px', border: '1px dashed #cbd5e1', borderRadius: '8px' }}>
+                    <p style={{ margin: '0 0 12px 0', color: '#64748b', fontSize: '0.9rem' }}>
+                      No hay ninguna tarea vinculada a este evento.
+                    </p>
+                    <button
+                      className="ed-btn"
+                      onClick={handleOpenTaskModal}
+                      style={{ background: '#fff', color: '#1890ff', border: '1px solid #1890ff', margin: '0 auto', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '6px', fontWeight: '500', cursor: 'pointer' }}
+                    >
+                      <LuLink size={18} /> Vincular Tarea
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Materiales necesarios */}
             {event.queLlevar && (
               <div className="ed-section">
@@ -852,13 +1062,13 @@ const DetalleEvento = () => {
                   </span>
                 </div>
 
-                {isFull && !isConfirmed && (
+                {isFull && !isConfirmed && !isStarted && (
                   <div className="ed-full-message">
                     <LuUsers /> Aforo completo
                   </div>
                 )}
 
-                {!isMember && currentUserId && !isConfirmed && (
+                {!isMember && currentUserId && !isConfirmed && !isStarted && (
                   <div className="ed-full-message">
                     Debes ser miembro de la comunidad para apuntarte
                   </div>
@@ -871,7 +1081,7 @@ const DetalleEvento = () => {
                     </div>
                     {isOrganizer ? (
                       <span style={{ fontSize: '0.85rem', color: '#888' }}>Eres el organizador de este evento</span>
-                    ) : (
+                    ) : !isEnded ? (
                       <button
                         className="ed-btn ed-btn-cancel-attendance"
                         onClick={handleCancelAttendance}
@@ -879,9 +1089,9 @@ const DetalleEvento = () => {
                       >
                         {attendanceLoading ? 'Cancelando...' : 'Cancelar asistencia'}
                       </button>
-                    )}
+                    ) : null}
                   </div>
-                ) : (
+                ) : !isStarted ? (
                   <button
                     className="ed-btn ed-btn-attend"
                     onClick={handleAttend}
@@ -890,7 +1100,7 @@ const DetalleEvento = () => {
                   >
                     {attendanceLoading ? 'Confirmando...' : 'Confirmar asistencia'}
                   </button>
-                )}
+                ) : null}
 
                 {/* Alarmas rápidas (solo si confirmado) */}
                 {isConfirmed && currentUserId && (
@@ -988,6 +1198,29 @@ const DetalleEvento = () => {
                 <p className="ed-no-participants">Aún no hay participantes confirmados.</p>
               )}
             </div>
+
+            {/* Formulario de valoración tras evento finalizado (solo si el creador es PROFESOR en la comunidad y soy asistente confirmado) */}
+            {!isOrganizer && isConfirmed && creadorEsProfesorEnComunidad && isStarted && !isCancelled && (
+              valorado ? (
+                <div className="ed-rating-success">¡Gracias por valorar al profesor!</div>
+              ) : buscandoTutor ? (
+                <div className="ed-rating-card">
+                  <h3 className="ed-card-title">Buscando tutor...</h3>
+                  <div className="ed-rating-error">Buscando el tutor asociado al organizador del evento...</div>
+                </div>
+              ) : realTutorId ? (
+                <div className="ed-rating-card">
+                  <h3 className="ed-card-title">Valora al profesor</h3>
+                  <RatingForm
+                    profesorId={realTutorId}
+                    alumnoId={currentUserId}
+                    eventoId={eventId}
+                    onValorado={() => setValorado(true)}
+                    alreadyRated={valorado}
+                  />
+                </div>
+              ) : null
+            )}
           </div>
         </div>
       </div>
@@ -1053,6 +1286,93 @@ const DetalleEvento = () => {
                   : selectedMinutos.length > 0
                     ? 'Confirmar con alarmas'
                     : 'Confirmar asistencia'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Tareas de Classroom */}
+      {showTaskModal && (
+        <div className="ed-modal-overlay" onClick={() => setShowTaskModal(false)}>
+          <div className="ed-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <h2 className="ed-modal-title">Vincular tarea de Classroom</h2>
+            <p className="ed-modal-text">
+              Selecciona una tarea del curso asociado a la comunidad para vincularla al evento.
+            </p>
+
+            {taskError === 'missing_scopes' ? (
+              <div style={{ textAlign: 'center', padding: '20px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', marginBottom: '20px' }}>
+                <p style={{ color: '#b91c1c', marginBottom: '16px', fontWeight: '500', fontSize: '0.95rem' }}>
+                  No tienes los permisos necesarios para leer las tareas de Google Classroom.
+                </p>
+                <button
+                  className="ed-btn"
+                  onClick={async () => {
+                    try {
+                      const width = 600, height = 700;
+                      const left = window.screenX + (window.innerWidth - width) / 2;
+                      const top = window.screenY + (window.innerHeight - height) / 2;
+                      const token = localStorage.getItem('accessToken');
+                      const resp = await fetch(`${getApiBaseUrl()}/oauth2/authorize/google-classroom-url?communityId=${event.comunidadId}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                      });
+                      const data = await resp.json();
+                      if (resp.ok) {
+                        window.open(data.url, 'google_classroom_tasks', `width=${width},height=${height},left=${left},top=${top}`);
+                      }
+                    } catch (e) {
+                      console.error("Error obteniendo URL", e);
+                    }
+                  }}
+                  style={{ background: '#1890ff', color: '#fff', border: 'none', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '6px' }}
+                >
+                  <LuBookOpen size={18} /> Conceder permisos
+                </button>
+              </div>
+            ) : taskError ? (
+              <div className="ed-error" style={{ marginBottom: '16px' }}>{taskError}</div>
+            ) : null}
+
+            {taskError !== 'missing_scopes' && (
+              <div style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: '20px' }}>
+                {tasksLoading ? (
+                  <p style={{ textAlign: 'center', color: '#888', padding: '20px 0' }}>Cargando tareas...</p>
+                ) : classroomTasks.length > 0 ? (
+                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {classroomTasks.map(task => (
+                      <li key={task.id}>
+                        <button
+                          onClick={() => handleLinkTask(task)}
+                          disabled={taskLinking}
+                          style={{
+                            width: '100%', textAlign: 'left', padding: '12px', background: '#f8f9fa',
+                            border: '1px solid #e9ecef', borderRadius: '6px', cursor: taskLinking ? 'not-allowed' : 'pointer',
+                            display: 'flex', alignItems: 'center', gap: '10px', transition: 'background 0.2s',
+                            fontSize: '0.95rem'
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.background = '#e2e8f0'}
+                          onMouseOut={(e) => e.currentTarget.style.background = '#f8f9fa'}
+                        >
+                          <LuBookOpen style={{ color: '#1890ff', minWidth: '18px' }} size={18} />
+                          <span style={{ fontWeight: 500, color: '#334155' }}>{task.title}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p style={{ textAlign: 'center', color: '#888', padding: '20px 0' }}>No se encontraron tareas en este curso.</p>
+                )}
+              </div>
+            )}
+
+            <div className="ed-modal-actions">
+              <button
+                className="ed-btn ed-btn-secondary"
+                onClick={() => setShowTaskModal(false)}
+                disabled={taskLinking}
+              >
+                Cancelar
               </button>
             </div>
           </div>

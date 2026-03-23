@@ -2,6 +2,7 @@ package es.us.meerkat.backend.entity;
 
 import java.time.LocalDateTime;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -38,6 +39,11 @@ public class SolicitudComunidad {
 
     @Size(max = 500, message = "El mensaje no puede exceder 500 caracteres")
     private String mensaje;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "rol_deseado")
+    @Builder.Default
+    private RolComunidad rolDeseado = RolComunidad.ALUMNO;
 
     @ManyToOne private Usuario respondidaPor;
 

@@ -40,4 +40,7 @@ public class UserPublicResponse {
 
     /** Indica si el usuario tiene perfil de tutor. */
     private Boolean esTutor;
+
+    /** ID del perfil de tutor (null si no es tutor). */
+    private Long tutorId;
 }

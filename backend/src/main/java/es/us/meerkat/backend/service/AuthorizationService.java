@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.entity.MiembroComunidad;
 import es.us.meerkat.backend.entity.RolComunidad;
+import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -14,12 +15,24 @@ import lombok.RequiredArgsConstructor;
 public class AuthorizationService {
 
     private final MiembroComunidadRepository miembroComunidadRepository;
+    private final ComunidadRepository comunidadRepository;
 
-    /** Verifica si un usuario es administrador de una comunidad específica. */
+    /**
+     * Verifica si un usuario es administrador de una comunidad específica. Devuelve true si tiene
+     * rol ADMIN en la membresía O si es el creador de la comunidad.
+     */
     public boolean isAdminOf(Long userId, Long communityId) {
-        return miembroComunidadRepository
-                .findByUsuarioIdAndComunidadId(userId, communityId)
-                .map(m -> m.getRol() == RolComunidad.ADMIN)
+        boolean adminPorRol =
+                miembroComunidadRepository
+                        .findByUsuarioIdAndComunidadId(userId, communityId)
+                        .map(m -> m.getRol() == RolComunidad.ADMIN)
+                        .orElse(false);
+        if (adminPorRol) {
+            return true;
+        }
+        return comunidadRepository
+                .findById(communityId)
+                .map(c -> c.getCreador() != null && c.getCreador().getId().equals(userId))
                 .orElse(false);
     }
 
@@ -52,5 +65,17 @@ public class AuthorizationService {
     public String getUserRoleInCommunityAsString(Long userId, Long communityId) {
         RolComunidad rol = getUserRoleInCommunity(userId, communityId);
         return rol != null ? rol.name() : null;
+    }
+
+    /** Verifica si un usuario es ADMIN o PROFESOR en una comunidad. */
+    public boolean isAdminOrProfesor(Long userId, Long communityId) {
+        return miembroComunidadRepository
+                .findByUsuarioIdAndComunidadId(userId, communityId)
+                .map(
+                        m -> {
+                            RolComunidad r = m.getRol();
+                            return r == RolComunidad.ADMIN || r == RolComunidad.PROFESOR;
+                        })
+                .orElse(false);
     }
 }

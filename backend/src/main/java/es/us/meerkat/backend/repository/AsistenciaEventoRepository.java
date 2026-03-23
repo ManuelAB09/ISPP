@@ -130,4 +130,16 @@ public interface AsistenciaEventoRepository extends JpaRepository<AsistenciaEven
             @Param("usuarioId") Long usuarioId,
             @Param("comunidadId") Long comunidadId,
             @Param("ahora") java.time.LocalDateTime ahora);
+
+    /** Elimina las asistencias futuras de un usuario en una comunidad (al expulsarlo). */
+    @Modifying
+    @Query(
+            "DELETE FROM AsistenciaEvento a WHERE a.usuario.id = :usuarioId"
+                    + " AND a.evento.comunidad.id = :comunidadId"
+                    + " AND a.evento.cancelado = false"
+                    + " AND a.evento.fechaHora > :ahora")
+    void deleteFutureAttendancesInCommunity(
+            @Param("usuarioId") Long usuarioId,
+            @Param("comunidadId") Long comunidadId,
+            @Param("ahora") java.time.LocalDateTime ahora);
 }

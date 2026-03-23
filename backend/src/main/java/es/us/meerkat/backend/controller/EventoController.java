@@ -2,11 +2,13 @@ package es.us.meerkat.backend.controller;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,7 +23,10 @@ import es.us.meerkat.backend.dto.CreateEventRequest;
 import es.us.meerkat.backend.dto.EventDetailResponse;
 import es.us.meerkat.backend.dto.EventSummaryResponse;
 import es.us.meerkat.backend.entity.Evento;
+import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.MiembroComunidadRepository;
+import es.us.meerkat.backend.service.AuthorizationService;
 import es.us.meerkat.backend.service.EventoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -37,6 +42,10 @@ public class EventoController {
 
     /** Servicio para operaciones de evento. */
     private final EventoService eventoService;
+
+    private final AuthorizationService authorizationService;
+
+    private final MiembroComunidadRepository miembroComunidadRepository;
 
     // ===============================
     // CREAR EVENTO
@@ -61,6 +70,12 @@ public class EventoController {
 
         if (usuario == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado");
+        }
+
+        if (!authorizationService.isAdminOrProfesor(usuario.getId(), comunidadId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "No tienes permisos para crear eventos en esta comunidad");
         }
 
         final Evento evento;
@@ -106,7 +121,27 @@ public class EventoController {
             @PathVariable @Parameter(description = "ID del evento") final Long eventId,
             @AuthenticationPrincipal Usuario usuario) {
         Long usuarioId = usuario != null ? usuario.getId() : null;
-        return ResponseEntity.ok(eventoService.obtenerEvento(eventId, usuarioId).toDTO());
+        Evento evento = eventoService.obtenerEvento(eventId, usuarioId);
+        EventDetailResponse dto = evento.toDTO();
+
+        // Resolver el rol del creador en la comunidad del evento
+        if (evento.getCreador() != null && evento.getComunidad() != null) {
+            miembroComunidadRepository
+                    .findByUsuarioIdAndComunidadId(
+                            evento.getCreador().getId(), evento.getComunidad().getId())
+                    .ifPresent(
+                            m -> {
+                                // Si tiene rolDocente (ADMIN que eligió ser profesor/alumno), usar
+                                // ese
+                                // Si no, usar su rol principal (PROFESOR o ALUMNO de miembro
+                                // normal)
+                                RolComunidad rolEfectivo =
+                                        m.getRolDocente() != null ? m.getRolDocente() : m.getRol();
+                                dto.setCreadorRolComunidad(rolEfectivo.name());
+                            });
+        }
+
+        return ResponseEntity.ok(dto);
     }
 
     /**
@@ -230,7 +265,12 @@ public class EventoController {
         }
 
         final Evento evento = eventoService.obtenerEventoInterno(eventId);
-        if (!evento.getCreador().getId().equals(usuario.getId())) {
+        boolean isCreatorEdit = evento.getCreador().getId().equals(usuario.getId());
+        boolean isComunidadAdminEdit =
+                evento.getComunidad() != null
+                        && authorizationService.isAdminOf(
+                                usuario.getId(), evento.getComunidad().getId());
+        if (!isCreatorEdit && !isComunidadAdminEdit) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN, "Solo el creador del evento puede editarlo");
         }
@@ -285,9 +325,7 @@ public class EventoController {
      * @param motivo Motivo de la cancelación.
      * @return El evento cancelado.
      */
-    @PostMapping(
-            "/{eventId}/cancel") // TODO: Esto debería de ser un PUT o un PATCH pero yo no mando
-    // asiq nos vemo
+    @PostMapping("/{eventId}/cancel")
     @Operation(summary = "Cancelar evento", description = "Cancela un evento y registra el motivo")
     public ResponseEntity<EventDetailResponse> cancelarEvento(
             @PathVariable @Parameter(description = "ID del evento") final Long eventId,
@@ -299,7 +337,12 @@ public class EventoController {
         }
 
         final Evento evento = eventoService.obtenerEventoInterno(eventId);
-        if (!evento.getCreador().getId().equals(usuario.getId())) {
+        boolean isCreatorCancel = evento.getCreador().getId().equals(usuario.getId());
+        boolean isComunidadAdminCancel =
+                evento.getComunidad() != null
+                        && authorizationService.isAdminOf(
+                                usuario.getId(), evento.getComunidad().getId());
+        if (!isCreatorCancel && !isComunidadAdminCancel) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN, "Solo el creador del evento puede cancelarlo");
         }
@@ -321,6 +364,83 @@ public class EventoController {
             return ResponseEntity.ok(eventoService.cancelarEvento(eventId, motivo).toDTO());
         } catch (IllegalStateException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+        }
+    }
+
+    // ===============================
+    // CLASSROOM TASK
+    // ===============================
+
+    /**
+     * Vincula una tarea de Google Classroom a un evento.
+     *
+     * @param eventId Identificador del evento.
+     * @param request Cuerpo con la info de la tarea (taskId, title, url).
+     * @param usuario Usuario autenticado.
+     * @return El evento actualizado.
+     */
+    @PostMapping("/{eventId}/classroom-task")
+    @Operation(
+            summary = "Vincular tarea de Classroom",
+            description = "Vincula una tarea de Google Classroom a un evento")
+    public ResponseEntity<EventDetailResponse> vincularTareaClassroom(
+            @PathVariable @Parameter(description = "ID del evento") final Long eventId,
+            @RequestBody final Map<String, String> request,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado");
+        }
+
+        String taskId = request.get("taskId");
+        String title = request.get("title");
+        String url = request.get("url");
+
+        if (taskId == null || title == null || url == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Faltan datos de la tarea");
+        }
+
+        try {
+            Evento eventoEditado =
+                    eventoService.vincularTareaClassroom(
+                            eventId, usuario.getId(), taskId, title, url);
+            return ResponseEntity.ok(eventoEditado.toDTO());
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("creador")) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+            }
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    /**
+     * Desvincula una tarea de Google Classroom de un evento.
+     *
+     * @param eventId Identificador del evento.
+     * @param usuario Usuario autenticado.
+     * @return El evento actualizado.
+     */
+    @DeleteMapping("/{eventId}/classroom-task")
+    @Operation(
+            summary = "Desvincular tarea de Classroom",
+            description = "Desvincula una tarea de Google Classroom de un evento")
+    public ResponseEntity<EventDetailResponse> desvincularTareaClassroom(
+            @PathVariable @Parameter(description = "ID del evento") final Long eventId,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado");
+        }
+
+        try {
+            Evento eventoEditado =
+                    eventoService.desvincularTareaClassroom(eventId, usuario.getId());
+            return ResponseEntity.ok(eventoEditado.toDTO());
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("creador")) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+            }
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
 }

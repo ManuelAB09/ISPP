@@ -21,6 +21,11 @@ jest.mock('../../contexts/AuthContext', () => ({
 
 jest.mock('../../static/images/MeerKatters_logo.png', () => 'logo.png');
 
+jest.mock('@react-oauth/google', () => ({
+  GoogleLogin: () => <div data-testid="google-login-mock" />,
+  GoogleOAuthProvider: ({ children }) => <div>{children}</div>,
+}));
+
 const mockNavigate = jest.fn();
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
@@ -49,12 +54,13 @@ describe('Register', () => {
     renderComponent();
     const nameInput = screen.getByPlaceholderText('Nombre Apellidos');
     const emailInput = screen.getByPlaceholderText('tu@correo.com');
-    const passInputs = screen.getAllByPlaceholderText('(Al menos 8 caracteres)');
+    const passwordInput = screen.getByLabelText('Contraseña');
+    const confirmPasswordInput = screen.getByLabelText('Repetir contraseña');
 
     await userEvent.type(nameInput, 'Test User');
     await userEvent.type(emailInput, 'user@test.com');
-    await userEvent.type(passInputs[0], 'password123');
-    await userEvent.type(passInputs[1], 'password123');
+    await userEvent.type(passwordInput, 'Password123');
+    await userEvent.type(confirmPasswordInput, 'Password123');
 
     const submitBtn = screen.getByRole('button', { name: /registrar cuenta/i });
     await userEvent.click(submitBtn);
@@ -68,12 +74,13 @@ describe('Register', () => {
     renderComponent();
     const nameInput = screen.getByPlaceholderText('Nombre Apellidos');
     const emailInput = screen.getByPlaceholderText('tu@correo.com');
-    const passInputs = screen.getAllByPlaceholderText('(Al menos 8 caracteres)');
+    const passwordInput = screen.getByLabelText('Contraseña');
+    const confirmPasswordInput = screen.getByLabelText('Repetir contraseña');
 
     await userEvent.type(nameInput, 'Test User');
     await userEvent.type(emailInput, 'user@test.com');
-    await userEvent.type(passInputs[0], 'password123');
-    await userEvent.type(passInputs[1], 'different456');
+    await userEvent.type(passwordInput, 'Password123');
+    await userEvent.type(confirmPasswordInput, 'Different456');
 
     // Check the terms checkbox - there are multiple checkboxes (terms + tutor toggle)
     const checkboxes = screen.getAllByRole('checkbox');
@@ -91,12 +98,13 @@ describe('Register', () => {
   test('shows error for invalid email format', async () => {
     renderComponent();
     const emailInput = screen.getByPlaceholderText('tu@correo.com');
-    const passInputs = screen.getAllByPlaceholderText('(Al menos 8 caracteres)');
+    const passwordInput = screen.getByLabelText('Contraseña');
+    const confirmPasswordInput = screen.getByLabelText('Repetir contraseña');
 
     await userEvent.type(screen.getByPlaceholderText('Nombre Apellidos'), 'User');
     await userEvent.type(emailInput, 'bademail');
-    await userEvent.type(passInputs[0], 'password123');
-    await userEvent.type(passInputs[1], 'password123');
+    await userEvent.type(passwordInput, 'Password123');
+    await userEvent.type(confirmPasswordInput, 'Password123');
 
     const checkboxes = screen.getAllByRole('checkbox');
     const termsCheckbox = checkboxes.find(cb => cb.name === 'acceptTerms') || checkboxes[checkboxes.length - 1];

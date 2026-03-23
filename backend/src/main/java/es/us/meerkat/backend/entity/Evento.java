@@ -79,6 +79,15 @@ public class Evento {
     /** Indica si el evento es privado. */
     private Boolean privado;
 
+    /** ID de la tarea de Google Classroom vinculada (si aplica). */
+    private String classroomTaskId;
+
+    /** Título de la tarea de Google Classroom vinculada (si aplica). */
+    private String classroomTaskTitle;
+
+    /** URL de la tarea de Google Classroom vinculada (si aplica). */
+    private String classroomTaskUrl;
+
     /**
      * Tipo de evento: REUNION, EXAMEN, CUESTIONARIO, TUTORIA, CLASE u OTRO. Determina el icono y la
      * categoría visual en el panel "Mis Eventos".
@@ -298,6 +307,9 @@ public class Evento {
                         .cancelado(this.cancelado)
                         .motivoCancelacion(this.motivoCancelacion)
                         .privado(this.privado)
+                        .classroomTaskId(this.classroomTaskId)
+                        .classroomTaskTitle(this.classroomTaskTitle)
+                        .classroomTaskUrl(this.classroomTaskUrl)
                         .tipoEvento(tipo)
                         .iconoEvento(tipo.getIcono())
                         .createdAt(this.createdAt)
@@ -314,6 +326,10 @@ public class Evento {
                             .bio(this.creador.getBio())
                             .intereses(this.creador.getIntereses())
                             .esTutor(this.creador.getEsTutor())
+                            .tutorId(
+                                    this.creador.getTutor() != null
+                                            ? this.creador.getTutor().getId()
+                                            : null)
                             .build());
         }
 
@@ -348,6 +364,9 @@ public class Evento {
                         .asistentesConfirmados(this.asistentesConfirmados)
                         .esVirtual(this.esVirtual)
                         .cancelado(this.cancelado)
+                        .classroomTaskId(this.classroomTaskId)
+                        .classroomTaskTitle(this.classroomTaskTitle)
+                        .classroomTaskUrl(this.classroomTaskUrl)
                         .tipoEvento(tipo)
                         .iconoEvento(tipo.getIcono())
                         .comunidadId(this.comunidad != null ? this.comunidad.getId() : null)

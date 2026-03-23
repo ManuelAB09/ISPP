@@ -7,6 +7,7 @@ public record RequestResponse(
         UserSimpleResponse solicitante,
         String estado,
         String mensaje,
+        String rolDeseado,
         LocalDateTime fechaSolicitud,
         UserSimpleResponse respondidaPor,
         LocalDateTime fechaRespuesta) {}

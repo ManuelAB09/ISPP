@@ -20,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
+import es.us.meerkat.backend.dto.DisponibilidadTutorResponse;
 import es.us.meerkat.backend.dto.SolicitudContratacionRequest;
 import es.us.meerkat.backend.dto.SolicitudContratacionResponse;
 import es.us.meerkat.backend.entity.EstadoSolicitudContratacion;
@@ -38,6 +39,9 @@ class SolicitudContratacionServiceTest {
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private SimpMessagingTemplate broker;
     @Mock private EmailService emailService;
+    @Mock private GoogleCalendarService googleCalendarService;
+    @Mock private PaymentService paymentService;
+    @Mock private DisponibilidadService disponibilidadService;
 
     @InjectMocks private SolicitudContratacionService service;
 
@@ -59,12 +63,20 @@ class SolicitudContratacionServiceTest {
 
     private SolicitudContratacionRequest buildRequest() {
         SolicitudContratacionRequest req = new SolicitudContratacionRequest();
-        req.setDia(LocalDate.of(2025, 6, 15));
+        req.setDia(LocalDate.of(2027, 6, 15));
         req.setHoraInicio(LocalTime.of(10, 0));
         req.setHoraFin(LocalTime.of(11, 0));
         req.setModalidad("ONLINE");
         req.setMensaje("Test message");
         return req;
+    }
+
+    private DisponibilidadTutorResponse buildDisponibilidad(LocalTime inicio, LocalTime fin) {
+        return DisponibilidadTutorResponse.builder()
+                .horaInicio(inicio)
+                .horaFin(fin)
+                .modalidad("ONLINE")
+                .build();
     }
 
     @Test
@@ -78,6 +90,8 @@ class SolicitudContratacionServiceTest {
         when(tutorRepository.findById(10L)).thenReturn(Optional.of(tutor));
         when(solicitudRepository.findConflictingBookings(eq(10L), any(), any(), any()))
                 .thenReturn(List.of());
+        when(disponibilidadService.getDisponibilidadesPorFecha(eq(10L), any()))
+                .thenReturn(List.of(buildDisponibilidad(LocalTime.of(9, 0), LocalTime.of(12, 0))));
         when(solicitudRepository.save(any(SolicitudContratacionDirecta.class)))
                 .thenAnswer(
                         inv -> {
@@ -185,7 +199,7 @@ class SolicitudContratacionServiceTest {
                         .id(100L)
                         .alumno(alumno)
                         .tutor(tutor)
-                        .dia(LocalDate.of(2025, 6, 15))
+                        .dia(LocalDate.of(2027, 6, 15))
                         .horaInicio(LocalTime.of(10, 0))
                         .horaFin(LocalTime.of(11, 0))
                         .estado(EstadoSolicitudContratacion.PENDIENTE)
@@ -258,7 +272,7 @@ class SolicitudContratacionServiceTest {
                         .alumno(alumno)
                         .tutor(tutor)
                         .estado(EstadoSolicitudContratacion.PENDIENTE)
-                        .dia(LocalDate.of(2025, 6, 15))
+                        .dia(LocalDate.of(2027, 6, 15))
                         .horaInicio(LocalTime.of(10, 0))
                         .horaFin(LocalTime.of(11, 0))
                         .importeTotal(BigDecimal.valueOf(20))
@@ -268,7 +282,7 @@ class SolicitudContratacionServiceTest {
         when(solicitudRepository.findById(100L)).thenReturn(Optional.of(solicitud));
         when(solicitudRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        SolicitudContratacionResponse result = service.rechazarSolicitud(100L, 2L, "No disponible");
+        service.rechazarSolicitud(100L, 2L, "No disponible");
 
         assertThat(solicitud.getEstado()).isEqualTo(EstadoSolicitudContratacion.RECHAZADA);
         assertThat(solicitud.getMotivoRechazo()).isEqualTo("No disponible");
@@ -296,7 +310,7 @@ class SolicitudContratacionServiceTest {
         when(solicitudRepository.findById(100L)).thenReturn(Optional.of(solicitud));
         when(solicitudRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        service.marcarComoPagada(100L, 1L);
+        service.marcarComoPagada(100L, 1L, null);
 
         assertThat(solicitud.getEstado()).isEqualTo(EstadoSolicitudContratacion.PAGADA);
         verify(broker)
@@ -316,7 +330,7 @@ class SolicitudContratacionServiceTest {
 
         when(solicitudRepository.findById(100L)).thenReturn(Optional.of(solicitud));
 
-        assertThatThrownBy(() -> service.marcarComoPagada(100L, 99L))
+        assertThatThrownBy(() -> service.marcarComoPagada(100L, 99L, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("No tienes permiso");
     }
@@ -333,7 +347,7 @@ class SolicitudContratacionServiceTest {
 
         when(solicitudRepository.findById(100L)).thenReturn(Optional.of(solicitud));
 
-        assertThatThrownBy(() -> service.marcarComoPagada(100L, 1L))
+        assertThatThrownBy(() -> service.marcarComoPagada(100L, 1L, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("aceptada para poder pagarla");
     }
@@ -356,5 +370,196 @@ class SolicitudContratacionServiceTest {
 
         List<SolicitudContratacionResponse> result = service.obtenerSolicitudesDelAlumno(1L);
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    void reprogramarSolicitudShouldAllowUpToTwoDaysForPagada() {
+        Usuario alumno = buildUsuario(1L, "alumno@test.es");
+        Usuario tutorUsuario = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUsuario);
+
+        // Clase original el día 15
+        SolicitudContratacionDirecta solicitud =
+                SolicitudContratacionDirecta.builder()
+                        .id(100L)
+                        .alumno(alumno)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.PAGADA)
+                        .dia(LocalDate.of(2027, 6, 15))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .importeTotal(BigDecimal.valueOf(20))
+                        .tarifaHora(BigDecimal.valueOf(20))
+                        .build();
+
+        when(solicitudRepository.findById(100L)).thenReturn(Optional.of(solicitud));
+        when(solicitudRepository.findConflictingBookingsExcluding(
+                        any(), any(), any(), any(), any()))
+                .thenReturn(List.of());
+        when(disponibilidadService.getDisponibilidadesPorFecha(eq(10L), any()))
+                .thenReturn(List.of(buildDisponibilidad(LocalTime.of(9, 0), LocalTime.of(12, 0))));
+        when(solicitudRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        // Reprogramar 2 días después (día 17) con la misma duración
+        SolicitudContratacionResponse result =
+                service.reprogramarSolicitud(
+                        100L,
+                        2L,
+                        LocalDate.of(2027, 6, 17),
+                        LocalTime.of(10, 0),
+                        LocalTime.of(11, 0));
+
+        assertThat(solicitud.getDia()).isEqualTo(LocalDate.of(2027, 6, 17));
+        assertThat(result.getDia()).isEqualTo(LocalDate.of(2027, 6, 17));
+    }
+
+    @Test
+    void reprogramarSolicitudShouldThrowWhenPagadaGoesBackInTime() {
+        Usuario tutorUsuario = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUsuario);
+
+        SolicitudContratacionDirecta solicitud =
+                SolicitudContratacionDirecta.builder()
+                        .id(100L)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.PAGADA)
+                        .dia(LocalDate.of(2027, 6, 15))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .build();
+
+        when(solicitudRepository.findById(100L)).thenReturn(Optional.of(solicitud));
+
+        // Intentar reprogramar 1 día antes
+        assertThatThrownBy(
+                        () ->
+                                service.reprogramarSolicitud(
+                                        100L,
+                                        2L,
+                                        LocalDate.of(2027, 6, 14),
+                                        LocalTime.of(10, 0),
+                                        LocalTime.of(11, 0)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("no se pueden adelantar");
+    }
+
+    @Test
+    void reprogramarSolicitudShouldThrowWhenPagadaExceedsTwoDays() {
+        Usuario tutorUsuario = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUsuario);
+
+        SolicitudContratacionDirecta solicitud =
+                SolicitudContratacionDirecta.builder()
+                        .id(100L)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.PAGADA)
+                        .dia(LocalDate.of(2027, 6, 15))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .build();
+
+        when(solicitudRepository.findById(100L)).thenReturn(Optional.of(solicitud));
+
+        // Intentar reprogramar 3 días después
+        assertThatThrownBy(
+                        () ->
+                                service.reprogramarSolicitud(
+                                        100L,
+                                        2L,
+                                        LocalDate.of(2027, 6, 18),
+                                        LocalTime.of(10, 0),
+                                        LocalTime.of(11, 0)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("máximo de 2 días desde la fecha actual");
+    }
+
+    @Test
+    void reprogramarSolicitudShouldAllowMultipleConsecutiveValidReschedules() {
+        Usuario alumno = buildUsuario(1L, "alumno@test.es");
+        Usuario tutorUsuario = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUsuario);
+
+        SolicitudContratacionDirecta solicitud =
+                SolicitudContratacionDirecta.builder()
+                        .id(100L)
+                        .alumno(alumno)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.PAGADA)
+                        .dia(LocalDate.of(2027, 6, 15))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .importeTotal(BigDecimal.valueOf(20))
+                        .tarifaHora(BigDecimal.valueOf(20))
+                        .build();
+
+        when(solicitudRepository.findById(100L)).thenReturn(Optional.of(solicitud));
+        when(solicitudRepository.findConflictingBookingsExcluding(
+                        any(), any(), any(), any(), any()))
+                .thenReturn(List.of());
+        when(disponibilidadService.getDisponibilidadesPorFecha(eq(10L), any()))
+                .thenReturn(List.of(buildDisponibilidad(LocalTime.of(9, 0), LocalTime.of(12, 0))));
+        when(solicitudRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        // Primer aplazamiento: +2 días (Día 17)
+        service.reprogramarSolicitud(
+                100L, 2L, LocalDate.of(2027, 6, 17), LocalTime.of(10, 0), LocalTime.of(11, 0));
+        assertThat(solicitud.getDia()).isEqualTo(LocalDate.of(2027, 6, 17));
+
+        // Segundo aplazamiento: +2 días desde el día 17 (Día 19)
+        SolicitudContratacionResponse result2 =
+                service.reprogramarSolicitud(
+                        100L,
+                        2L,
+                        LocalDate.of(2027, 6, 19),
+                        LocalTime.of(10, 0),
+                        LocalTime.of(11, 0));
+
+        assertThat(solicitud.getDia()).isEqualTo(LocalDate.of(2027, 6, 19));
+        assertThat(result2.getDia()).isEqualTo(LocalDate.of(2027, 6, 19));
+    }
+
+    @Test
+    void reprogramarSolicitudShouldThrowOnSecondRescheduleIfExceedsTwoDays() {
+        Usuario alumno = buildUsuario(1L, "alumno@test.es");
+        Usuario tutorUsuario = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUsuario);
+
+        SolicitudContratacionDirecta solicitud =
+                SolicitudContratacionDirecta.builder()
+                        .id(100L)
+                        .alumno(alumno)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.PAGADA)
+                        .dia(LocalDate.of(2027, 6, 15))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .importeTotal(BigDecimal.valueOf(20))
+                        .tarifaHora(BigDecimal.valueOf(20))
+                        .build();
+
+        when(solicitudRepository.findById(100L)).thenReturn(Optional.of(solicitud));
+        when(solicitudRepository.findConflictingBookingsExcluding(
+                        any(), any(), any(), any(), any()))
+                .thenReturn(List.of());
+        when(disponibilidadService.getDisponibilidadesPorFecha(eq(10L), any()))
+                .thenReturn(List.of(buildDisponibilidad(LocalTime.of(9, 0), LocalTime.of(12, 0))));
+        when(solicitudRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        // Primer aplazamiento: +2 días (Día 17) -> Legal
+        service.reprogramarSolicitud(
+                100L, 2L, LocalDate.of(2027, 6, 17), LocalTime.of(10, 0), LocalTime.of(11, 0));
+        assertThat(solicitud.getDia()).isEqualTo(LocalDate.of(2027, 6, 17));
+
+        // Segundo aplazamiento: +3 días desde el día 17 (Día 20) -> Ilegal
+        assertThatThrownBy(
+                        () ->
+                                service.reprogramarSolicitud(
+                                        100L,
+                                        2L,
+                                        LocalDate.of(2027, 6, 20),
+                                        LocalTime.of(10, 0),
+                                        LocalTime.of(11, 0)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("máximo de 2 días desde la fecha actual");
     }
 }

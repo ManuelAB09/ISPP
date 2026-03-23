@@ -15,9 +15,11 @@ const INSTITUTION_PLANS = [
     maxUsuarios: 50,
     features: [
       "Hasta 50 usuarios activos",
+      "Hasta 10 comunidades activas",
       "Gestión de grupos de estudio",
       "Perfil institucional verificado",
       "Estadísticas básicas de uso",
+      "Facturación corporativa",
       "Soporte por email",
     ],
     destacado: false,
@@ -35,7 +37,9 @@ const INSTITUTION_PLANS = [
       "Múltiples administradores",
       "Gestión avanzada de grupos",
       "Estadísticas detalladas de uso",
+      "Integración con Google Classroom",
       "Eventos y comunidades sin límite",
+      "Múltiples métodos de pago corporativos",
       "Soporte prioritario",
     ],
     destacado: true,
@@ -50,10 +54,14 @@ const INSTITUTION_PLANS = [
     maxUsuarios: null,
     features: [
       "Usuarios ilimitados",
+      "Comunidades ilimitadas",
       "Administradores ilimitados",
+      "Aforo sin restricciones",
+      "Integración completa con Google Classroom",
       "Estadísticas avanzadas y exportación",
       "Personalización de marca",
       "Gestor de cuenta dedicado",
+      "Facturación centralizada para empresa",
       "SLA garantizado 99,9%",
       "API de integración",
     ],
@@ -75,6 +83,7 @@ const SPECIAL_PLANS = [
       "Hasta 300 usuarios activos",
       "Múltiples administradores",
       "Gestión de grupos de estudio",
+      "Integración con Google Classroom",
       "Estadísticas de uso detalladas",
       "Soporte prioritario",
     ],
@@ -95,6 +104,7 @@ const SPECIAL_PLANS = [
       "Hasta 200 usuarios activos",
       "Múltiples administradores",
       "Gestión avanzada de grupos",
+      "Integración con Google Classroom",
       "Estadísticas de uso detalladas",
       "Soporte prioritario",
     ],
@@ -156,17 +166,17 @@ export default function InstitutionPlansScreen() {
               </div>
             </div>
             <div className="instFeatureItem">
-              <div className="instFeatureIcon">🏫</div>
+              <div className="instFeatureIcon">📚</div>
               <div>
-                <strong>Gestión de grupos</strong>
-                <p>Organiza usuarios en grupos y clases</p>
+                <strong>Google Classroom</strong>
+                <p>Conecta clases y materiales en un único flujo</p>
               </div>
             </div>
             <div className="instFeatureItem">
-              <div className="instFeatureIcon">✅</div>
+              <div className="instFeatureIcon">🏢</div>
               <div>
-                <strong>Perfil verificado</strong>
-                <p>Distintivo oficial para tu institución</p>
+                <strong>Facturación corporativa</strong>
+                <p>Contratación adaptada a entidades educativas</p>
               </div>
             </div>
           </section>
@@ -177,7 +187,7 @@ export default function InstitutionPlansScreen() {
               <h2>Planes Institucionales</h2>
               <p>
                 Elige el plan que mejor se adapte al tamaño y necesidades de tu
-                institución.
+                institución, incluyendo comunidades corporativas con capacidades premium.
               </p>
             </div>
 
