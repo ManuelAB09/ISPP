@@ -87,6 +87,14 @@ public class ZoomIntegrationService {
     @Value("${zoom.recordings.retention-days:30}")
     private long zoomRecordingsRetentionDays;
 
+    /**
+     * Crea una reunión Zoom simple (sin vincular a comunidad). Devuelve un Map con las claves
+     * "join_url", "start_url" y "password".
+     */
+    public Map<String, Object> crearReunionSimple(String topic, Integer durationMinutes) {
+        return createZoomMeeting(topic, durationMinutes);
+    }
+
     /** Crea una reunion privada para una comunidad o devuelve la activa. */
     @Transactional
     public ZoomMeeting createOrGetActiveMeeting(

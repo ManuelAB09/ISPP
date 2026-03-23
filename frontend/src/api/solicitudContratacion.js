@@ -75,3 +75,38 @@ export const cancelarSolicitud = (solicitudId, motivo) => {
 export const reprogramarSolicitud = (solicitudId, { dia, horaInicio, horaFin }) => {
     return api.post(`/solicitudes-contratacion/${solicitudId}/reprogramar`, { dia, horaInicio, horaFin });
 };
+
+/** Cancelar solicitud como alumno (regla 24h si pagada). */
+export const cancelarSolicitudAlumno = (solicitudId, motivo) => {
+    return api.post(`/solicitudes-contratacion/${solicitudId}/cancelar-alumno`, { motivo });
+};
+
+/** Calificar una clase completada (alumno, 1-5 + comentario). */
+export const calificarSolicitud = (solicitudId, calificacion, comentario) => {
+    return api.post(`/solicitudes-contratacion/${solicitudId}/calificar`, { calificacion, comentario });
+};
+
+/** Alumno aprueba reprogramación propuesta por el tutor. */
+export const aprobarReprogramacion = (solicitudId) => {
+    return api.post(`/solicitudes-contratacion/${solicitudId}/aprobar-reprogramacion`);
+};
+
+/** Alumno rechaza reprogramación propuesta por el tutor. */
+export const rechazarReprogramacion = (solicitudId) => {
+    return api.post(`/solicitudes-contratacion/${solicitudId}/rechazar-reprogramacion`);
+};
+
+/** Obtener horarios ocupados del tutor en una fecha (contrataciones activas). */
+export const getHorariosOcupadosContratacion = (tutorId, fecha) => {
+    return api.get(`/solicitudes-contratacion/tutor/${tutorId}/horarios-ocupados?fecha=${encodeURIComponent(fecha)}`);
+};
+
+/** Obtener disponibilidad del tutor para una fecha. */
+export const getDisponibilidadTutorFecha = (tutorId, fecha) => {
+    return api.get(`/solicitudes-contratacion/tutor/${tutorId}/disponibilidad?fecha=${encodeURIComponent(fecha)}`);
+};
+
+/** Crear reunión Zoom para una clase online pagada (tutor). */
+export const crearZoomSolicitud = (solicitudId) => {
+    return api.post(`/solicitudes-contratacion/${solicitudId}/crear-zoom`);
+};

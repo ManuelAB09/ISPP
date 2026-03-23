@@ -14,16 +14,22 @@ const TIPO_LABEL = {
 
 const ESTADO_CLASS = {
   COMPLETADO: "mp-badge mp-badge--success",
+  COMPLETADA: "mp-badge mp-badge--success",
   PENDIENTE: "mp-badge mp-badge--warning",
   FALLIDO: "mp-badge mp-badge--error",
+  FALLIDA: "mp-badge mp-badge--error",
   REEMBOLSADO: "mp-badge mp-badge--info",
+  REEMBOLSADA: "mp-badge mp-badge--info",
 };
 
 const ESTADO_LABEL = {
   COMPLETADO: "Completado",
+  COMPLETADA: "Completado",
   PENDIENTE: "Pendiente",
   FALLIDO: "Fallido",
+  FALLIDA: "Fallido",
   REEMBOLSADO: "Reembolsado",
+  REEMBOLSADA: "Reembolsado",
 };
 
 const fmt = (amount) =>
@@ -52,11 +58,12 @@ const MisPagos = () => {
     setError(null);
     try {
       const data = await paymentsApi.getHistory({ page: p, size: PAGE_SIZE });
+      const filtrar = (items) => items.filter(t => t.estado !== "REEMBOLSADA" && t.estado !== "REEMBOLSADO");
       if (data?.content) {
-        setTransacciones(data.content);
+        setTransacciones(filtrar(data.content));
         setTotalPages(data.totalPages ?? 1);
       } else if (Array.isArray(data)) {
-        setTransacciones(data);
+        setTransacciones(filtrar(data));
         setTotalPages(1);
       } else {
         setTransacciones([]);
@@ -73,10 +80,10 @@ const MisPagos = () => {
   }, [cargarPagos, page]);
 
   const totalGastado = transacciones
-    .filter((t) => t.estado === "COMPLETADO")
+    .filter((t) => t.estado === "COMPLETADO" || t.estado === "COMPLETADA")
     .reduce((acc, t) => acc + (t.monto ?? 0), 0);
   const totalComisiones = transacciones
-    .filter((t) => t.tipo === "COMISION" && t.estado === "COMPLETADO")
+    .filter((t) => t.tipo === "COMISION" && (t.estado === "COMPLETADO" || t.estado === "COMPLETADA"))
     .reduce((acc, t) => acc + (t.monto ?? 0), 0);
 
   return (

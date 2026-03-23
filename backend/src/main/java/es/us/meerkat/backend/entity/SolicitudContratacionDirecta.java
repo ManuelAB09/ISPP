@@ -79,6 +79,42 @@ public class SolicitudContratacionDirecta {
     @Column(length = 500)
     private String motivoRechazo;
 
+    /** ID del PaymentIntent de Stripe (se guarda al confirmar pago para poder reembolsar). */
+    @Column(length = 100)
+    private String stripePaymentIntentId;
+
+    /** Ubicación elegida por el alumno para clases presenciales (dirección o coordenadas). */
+    @Column(length = 500)
+    private String ubicacionClase;
+
+    /** URL de Zoom para que el alumno se una a la clase (join URL). */
+    @Column(length = 2048)
+    private String zoomJoinUrl;
+
+    /** URL de Zoom para que el tutor inicie la clase (start URL). */
+    @Column(length = 2048)
+    private String zoomStartUrl;
+
+    /** Calificación que el alumno da después de la clase (1-5). */
+    private Integer calificacion;
+
+    /** Comentario del alumno después de la clase. */
+    @Column(columnDefinition = "TEXT")
+    private String comentarioAlumno;
+
+    /** Estado anterior antes de REPROGRAMACION_PENDIENTE (para poder restaurar). */
+    @Enumerated(EnumType.STRING)
+    private EstadoSolicitudContratacion estadoAnterior;
+
+    /** Día propuesto para reprogramación (pendiente de aprobación del alumno). */
+    private LocalDate reprogramacionDia;
+
+    /** Hora inicio propuesta para reprogramación. */
+    private LocalTime reprogramacionHoraInicio;
+
+    /** Hora fin propuesta para reprogramación. */
+    private LocalTime reprogramacionHoraFin;
+
     /** Fecha de creación. */
     @Builder.Default
     @Column(nullable = false)
@@ -90,5 +126,24 @@ public class SolicitudContratacionDirecta {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    /** Verifica si la fecha/hora de la clase ya pasó. */
+    public boolean yaEnPasado() {
+        return LocalDateTime.of(dia, horaInicio).isBefore(LocalDateTime.now());
+    }
+
+    /** Verifica si se puede cancelar (estado adecuado + 24h de antelación). */
+    public boolean puedeSerCanceladaPorAlumno() {
+        if (estado != EstadoSolicitudContratacion.PENDIENTE
+                && estado != EstadoSolicitudContratacion.ACEPTADA
+                && estado != EstadoSolicitudContratacion.PAGADA) {
+            return false;
+        }
+        if (yaEnPasado()) {
+            return false;
+        }
+        LocalDateTime limite = LocalDateTime.of(dia, horaInicio).minusHours(24);
+        return LocalDateTime.now().isBefore(limite);
     }
 }

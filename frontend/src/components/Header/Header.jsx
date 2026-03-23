@@ -95,6 +95,9 @@ export default function Header({ user, page }) {
                     <Link to="/chats" className={page === 'chats' ? 'active' : ''}>Chats</Link>
                     <Link to="/planes" className={page === 'planes' ? 'active' : ''}>Planes</Link>
                     <Link to="/pagos" className={page === 'pagos' ? 'active' : ''}>Mis pagos</Link>
+                    {isAuthenticated && storedUser?.esTutor && (
+                        <Link to="/ganancias" className={page === 'ganancias' ? 'active' : ''}>Mis ganancias</Link>
+                    )}
                     {!isAuthenticated && (
                         <Link to="/login">Iniciar sesión</Link>
                     )}
@@ -136,6 +139,9 @@ export default function Header({ user, page }) {
                     <Link to="/chats" className={page === 'chats' ? 'active' : ''} onClick={closeMenu}>Chats</Link>
                     <Link to="/planes" className={page === 'planes' ? 'active' : ''} onClick={closeMenu}>Planes</Link>
                     <Link to="/pagos" className={page === 'pagos' ? 'active' : ''} onClick={closeMenu}>Mis pagos</Link>
+                    {isAuthenticated && storedUser?.esTutor && (
+                        <Link to="/ganancias" className={page === 'ganancias' ? 'active' : ''} onClick={closeMenu}>Mis ganancias</Link>
+                    )}
  (
                         <Link to="/login" onClick={closeMenu}>Iniciar sesión</Link>
                     )
