@@ -106,11 +106,11 @@ describe('PlansScreen', () => {
     });
   });
 
-  test('renderiza la sección "Pásate a Premium"', async () => {
+  test('renderiza la sección de planes individuales', async () => {
     renderScreen();
     
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /Pásate a Premium/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /Elige tu plan individual/i })).toBeInTheDocument();
     });
   });
 
@@ -126,10 +126,10 @@ describe('PlansScreen', () => {
     renderScreen();
     
     await waitFor(() => {
-      expect(screen.getByText('Comunidades y eventos')).toBeInTheDocument();
+      expect(screen.getByText('3 comunidades activas')).toBeInTheDocument();
     });
-    expect(screen.getByText('Funcionalidades esenciales')).toBeInTheDocument();
-    expect(screen.getByText('Más límites y herramientas')).toBeInTheDocument();
+    expect(screen.getByText('10 comunidades activas')).toBeInTheDocument();
+    expect(screen.getByText('25 comunidades activas')).toBeInTheDocument();
   });
 
   test('muestra botón "Mejorar a Premium" para usuario sin suscripción', async () => {
@@ -203,7 +203,7 @@ describe('PlansScreen', () => {
     const upgradeBtn = screen.getByRole('button', { name: /Mejorar a Premium/i });
     await userEvent.click(upgradeBtn);
 
-    expect(mockNavigate).toHaveBeenCalledWith('/planes/pasarela');
+    expect(mockNavigate).toHaveBeenCalledWith('/planes/pasarela?plan=PREMIUM');
   });
 
   test('navega a planes institucionales al hacer clic en su botón', async () => {

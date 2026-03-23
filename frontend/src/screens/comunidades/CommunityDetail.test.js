@@ -1,12 +1,11 @@
-import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import CommunityDetail from './CommunityDetail';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { communitiesApi } from '../../api/communities.api';
 import * as eventEndpoints from '../../api/eventEndpoints';
-import { useAuth } from '../../contexts/AuthContext';
 import { ZoomApi } from '../../api/zoom.api';
+import { useAuth } from '../../contexts/AuthContext';
+import CommunityDetail from './CommunityDetail';
 
 // Mocks
 jest.mock('../../api/communities.api');
@@ -86,6 +85,7 @@ describe('CommunityDetail', () => {
     });
 
     communitiesApi.getById.mockResolvedValue(mockCommunity);
+    communitiesApi.getMembers.mockResolvedValue({ content: [] });
     communitiesApi.join.mockResolvedValue({});
     communitiesApi.leave.mockResolvedValue({});
     communitiesApi.getMyMembership.mockRejectedValue({ status: 404 });
@@ -153,6 +153,32 @@ describe('CommunityDetail', () => {
   test('muestra el número de miembros', async () => {
     await renderComponent();
     await screen.findByText(/25 miembros/i);
+  });
+
+  test('despliega el listado de miembros al abrir la seccion', async () => {
+    communitiesApi.getMembers.mockResolvedValue({
+      content: [
+        { id: 1, usuario: { id: 100, nombre: 'Test User' }, rol: 'ADMIN' },
+        { id: 2, usuario: { id: 200, nombre: 'Ana Tutor' }, rol: 'MIEMBRO' },
+      ],
+    });
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({
+      user: { id: 100, nombre: 'Test User' },
+    });
+
+    await renderComponent();
+
+    const openMembersButton = await screen.findByRole('button', { name: /Ver listado de miembros/i });
+    fireEvent.click(openMembersButton);
+
+    await waitFor(() => {
+      expect(communitiesApi.getMembers).toHaveBeenCalledWith('1', { page: 0, size: 100 });
+    });
+
+    await screen.findByText('Ana Tutor');
+    expect(screen.getByText('Administrador')).toBeInTheDocument();
+    expect(screen.getByText('Tu')).toBeInTheDocument();
   });
 
   test('renderiza el Header', async () => {
