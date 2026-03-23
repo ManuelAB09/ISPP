@@ -94,7 +94,8 @@ public class SuscripcionController {
         try {
                         TipoPlan planSolicitado = resolvePlan(request.getPlanId());
             PaymentUrlResponse paymentUrl =
-                                        paymentService.generarPagoSuscripcion(usuario, planSolicitado, request.getPeriodo());
+                    paymentService.generarPagoSuscripcion(
+                            usuario, planSolicitado, request.getPeriodo());
             return ResponseEntity.status(HttpStatus.CREATED).body(paymentUrl);
                 } catch (IllegalArgumentException e) {
                         return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
