@@ -142,21 +142,30 @@ const MyProfile = () => {
             return
         }
 
-        const fetchMisCuestionarios = async () => {
+        const fetchCuestionarios = async () => {
             setLoadingMisCuestionarios(true)
             try {
-                const data = await cuestionariosApi.listMine()
-                setMisCuestionarios(Array.isArray(data) ? data : [])
+                if (isOwner) {
+                    const data = await cuestionariosApi.listMine()
+                    setMisCuestionarios(Array.isArray(data) ? data : [])
+                } else if (publicProfile?.id) {
+                    const data = await cuestionariosApi.listPublicByUserId(publicProfile.id)
+                    setMisCuestionarios(Array.isArray(data) ? data : [])
+                } else {
+                    setMisCuestionarios([])
+                }
             } catch (err) {
-                console.error('Error al cargar mis cuestionarios:', err)
+                console.error('Error al cargar cuestionarios:', err)
                 setMisCuestionarios([])
             } finally {
                 setLoadingMisCuestionarios(false)
             }
         }
 
-        fetchMisCuestionarios()
-    }, [isAuthenticated, loading])
+        if (isOwner || publicProfile) {
+            fetchCuestionarios()
+        }
+    }, [isAuthenticated, loading, isOwner, publicProfile])
 
     // Abrir modal de edición/configuración cuando se navega con estado desde otras pantallas.
     useEffect(() => {
@@ -594,43 +603,43 @@ const MyProfile = () => {
                     }
                 </section >}
 
-                {isOwner && (
-                    <section className="my-questionnaires-section">
-                        <h2 className="section-title">Mis cuestionarios</h2>
-                        {loadingMisCuestionarios ? (
-                            <div className="loading-communities">Cargando cuestionarios...</div>
-                        ) : misCuestionarios.length > 0 ? (
-                            <div className="my-questionnaires-list">
-                                {misCuestionarios.map((cuestionario) => (
-                                    <article key={cuestionario.id} className="my-questionnaire-card">
-                                        <div className="my-questionnaire-card__header">
-                                            <h3>{cuestionario.titulo || 'Cuestionario sin titulo'}</h3>
-                                            <span className={`my-questionnaire-status ${cuestionario.publicado ? 'is-published' : 'is-draft'}`}>
-                                                {cuestionario.publicado ? 'Publicado' : 'Borrador'}
-                                            </span>
-                                        </div>
-                                        <p className="my-questionnaire-card__meta">
-                                            Materia: {cuestionario.materia || 'Sin materia'}
-                                        </p>
-                                        <p className="my-questionnaire-card__meta">
-                                            Preguntas: {cuestionario.numPreguntas || 0}
-                                        </p>
-                                        <p className="my-questionnaire-card__meta">
-                                            Creado: {formatCuestionarioDate(cuestionario.createdAt)}
-                                        </p>
-                                    </article>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="no-communities-created">
-                                <p>Todavía no has creado cuestionarios.</p>
+                <section className="my-questionnaires-section">
+                    <h2 className="section-title">{isOwner ? 'Mis cuestionarios' : 'Cuestionarios públicos'}</h2>
+                    {loadingMisCuestionarios ? (
+                        <div className="loading-communities">Cargando cuestionarios...</div>
+                    ) : misCuestionarios.length > 0 ? (
+                        <div className="my-questionnaires-list">
+                            {misCuestionarios.map((cuestionario) => (
+                                <article key={cuestionario.id} className="my-questionnaire-card">
+                                    <div className="my-questionnaire-card__header">
+                                        <h3>{cuestionario.titulo || 'Cuestionario sin titulo'}</h3>
+                                        <span className={`my-questionnaire-status ${cuestionario.publicado ? 'is-published' : 'is-draft'}`}>
+                                            {cuestionario.publicado ? 'Publicado' : 'Borrador'}
+                                        </span>
+                                    </div>
+                                    <p className="my-questionnaire-card__meta">
+                                        Materia: {cuestionario.materia || 'Sin materia'}
+                                    </p>
+                                    <p className="my-questionnaire-card__meta">
+                                        Preguntas: {cuestionario.numPreguntas || 0}
+                                    </p>
+                                    <p className="my-questionnaire-card__meta">
+                                        Creado: {formatCuestionarioDate(cuestionario.createdAt)}
+                                    </p>
+                                </article>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="no-communities-created">
+                            <p>{isOwner ? 'Todavía no has creado cuestionarios.' : 'Aún no hay cuestionarios públicos.'}</p>
+                            {isOwner && (
                                 <button className="btn-create-first" onClick={() => navigate('/cuestionarios/crear')}>
                                     Crear mi primer cuestionario
                                 </button>
-                            </div>
-                        )}
-                    </section>
-                )}
+                            )}
+                        </div>
+                    )}
+                </section>
 
                 {/* Sección Perfil de Profesor / Convertirse en tutor */}
                 {isOwner &&

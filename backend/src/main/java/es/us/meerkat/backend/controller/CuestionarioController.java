@@ -92,6 +92,17 @@ public class CuestionarioController {
         return ResponseEntity.ok(items);
     }
 
+    /** Lista cuestionarios públicos creados por un usuario específico (para visitar su perfil). */
+    @GetMapping("/user/{userId}/public")
+    public ResponseEntity<List<Map<String, Object>>> listPublicByUserId(@PathVariable Long userId) {
+        List<Map<String, Object>> items =
+                cuestionarioService.findByCreadorId(userId).stream()
+                        .filter(c -> Boolean.TRUE.equals(c.getPublicado()))
+                        .map(CuestionarioController::toResponse)
+                        .toList();
+        return ResponseEntity.ok(items);
+    }
+
     /** Obtiene un cuestionario por id. */
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable Long id) {
