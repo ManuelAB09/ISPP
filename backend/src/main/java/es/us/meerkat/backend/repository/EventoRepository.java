@@ -73,6 +73,10 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
      */
     List<Evento> findByComunidadId(Long comunidadId);
 
+    @Modifying
+    @Query("UPDATE Evento e SET e.comunidad = null WHERE e.comunidad.id = :comunidadId")
+    void disassociateFromComunidad(@Param("comunidadId") Long comunidadId);
+
     /**
      * Obtiene los eventos no cancelados de una comunidad.
      *

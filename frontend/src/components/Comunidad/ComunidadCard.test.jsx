@@ -112,7 +112,38 @@ describe('ComunidadCard', () => {
     userEvent.click(joinButton);
 
     await waitFor(() => {
-      expect(communitiesApi.join).toHaveBeenCalledWith(1);
+      expect(communitiesApi.join).toHaveBeenCalledWith(1, 'ALUMNO');
+    });
+  });
+
+  test('si tiene perfil docente, muestra opciones de rol al unirse', async () => {
+    localStorage.setItem('userId', '100');
+    localStorage.setItem('accessToken', 'test-token');
+    localStorage.setItem('userProfile', JSON.stringify({ esTutor: true }));
+    renderComponent();
+
+    const joinButton = screen.getByRole('button', { name: /Unirse/i });
+    userEvent.click(joinButton);
+
+    await screen.findByText(/Elige cómo quieres unirte/i);
+    expect(screen.getByRole('button', { name: /Unirme como profesor/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Unirme como alumno/i })).toBeInTheDocument();
+  });
+
+  test('si tiene perfil docente, puede unirse como profesor', async () => {
+    localStorage.setItem('userId', '100');
+    localStorage.setItem('accessToken', 'test-token');
+    localStorage.setItem('userProfile', JSON.stringify({ esTutor: true }));
+    renderComponent();
+
+    const joinButton = screen.getByRole('button', { name: /Unirse/i });
+    userEvent.click(joinButton);
+
+    const joinAsTeacher = await screen.findByRole('button', { name: /Unirme como profesor/i });
+    userEvent.click(joinAsTeacher);
+
+    await waitFor(() => {
+      expect(communitiesApi.join).toHaveBeenCalledWith(1, 'PROFESOR');
     });
   });
 

@@ -73,10 +73,9 @@ public class GoogleClassroomService {
      */
     public String buildAuthorizeUrlForUser(
             Long userId, Long communityId, Long requestId, boolean management) {
-        Usuario usuario =
-                usuarioRepository
-                        .findById(userId)
-                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        usuarioRepository
+                .findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         String state = generateState();
         oauthStateStore.put(state, new OAuthCtx(userId, communityId, requestId));
@@ -174,6 +173,7 @@ public class GoogleClassroomService {
     }
 
     /** Refresca el access token usando el refresh token. */
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void refrescarAccessToken(GoogleClassroomConnection connection) {
         String tokenUrl = "https://oauth2.googleapis.com/token";
 
@@ -293,6 +293,56 @@ public class GoogleClassroomService {
                 result.put("courseWork", objectMapper.readValue(workResp.getBody(), Map.class));
             } else {
                 result.put("courseWork", Map.of());
+            }
+
+            return result;
+        } catch (Exception e) {
+            throw new RuntimeException("Error al parsear respuesta de Classroom", e);
+        }
+    }
+
+    /**
+     * Obtiene estadísticas básicas de los alumnos del curso vinculado a la comunidad. Retorna un
+     * Map con claves como "studentCount" y "students" (lista cruda devuelta por Classroom).
+     */
+    @SuppressWarnings("rawtypes")
+    public Map<String, Object> obtenerEstadisticasAlumnos(Usuario usuario, Long comunidadId) {
+        ComunidadClassroom vinculacion =
+                comunidadClassroomRepository
+                        .findByComunidadId(comunidadId)
+                        .orElseThrow(
+                                () ->
+                                        new RuntimeException(
+                                                "No hay curso vinculado a la comunidad"));
+
+        String courseId = vinculacion.getClassroomCourseId();
+
+        String accessToken = getAccessTokenValido(usuario);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        HttpEntity<Void> req = new HttpEntity<>(headers);
+
+        String studentsUrl =
+                "https://classroom.googleapis.com/v1/courses/" + courseId + "/students";
+
+        ResponseEntity<String> studentsResp =
+                restTemplate.exchange(studentsUrl, HttpMethod.GET, req, String.class);
+
+        try {
+            Map<String, Object> result = new java.util.HashMap<>();
+
+            if (studentsResp.getStatusCode().is2xxSuccessful() && studentsResp.getBody() != null) {
+                Map parsed = objectMapper.readValue(studentsResp.getBody(), Map.class);
+                java.util.List students =
+                        parsed.containsKey("students")
+                                ? (java.util.List) parsed.get("students")
+                                : java.util.List.of();
+                result.put("studentCount", students.size());
+                result.put("students", students);
+            } else {
+                result.put("studentCount", 0);
+                result.put("students", java.util.List.of());
             }
 
             return result;

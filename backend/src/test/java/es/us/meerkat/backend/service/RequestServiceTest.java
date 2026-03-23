@@ -55,7 +55,7 @@ class RequestServiceTest {
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         SolicitudComunidad solicitud =
-                requestService.requestAccess(userId, communityId, "Quiero entrar");
+                requestService.requestAccess(userId, communityId, "Quiero entrar", null);
 
         verify(solicitudComunidadRepository).save(any(SolicitudComunidad.class));
         assertThat(solicitud.getEstado()).isEqualTo(EstadoSolicitud.PENDIENTE);
@@ -68,7 +68,7 @@ class RequestServiceTest {
         when(comunidadRepository.findById(10L))
                 .thenReturn(Optional.of(buildComunidad(10L, TipoGrupo.COMUNIDAD_PUBLICA)));
 
-        assertThatThrownBy(() -> requestService.requestAccess(1L, 10L, "hola"))
+        assertThatThrownBy(() -> requestService.requestAccess(1L, 10L, "hola", null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("comunidad pública");
     }

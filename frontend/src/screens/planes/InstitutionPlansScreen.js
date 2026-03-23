@@ -104,14 +104,14 @@ export default function InstitutionPlansScreen() {
               </div>
             </div>
             <div className="instFeatureItem">
-              <div className="instFeatureIcon">🏫</div>
+              <div className="instFeatureIcon">📚</div>
               <div>
                 <strong>Comunidades escalables</strong>
                 <p>Desde 30 comunidades hasta ilimitadas</p>
               </div>
             </div>
             <div className="instFeatureItem">
-              <div className="instFeatureIcon">✅</div>
+              <div className="instFeatureIcon">🏢</div>
               <div>
                 <strong>Plan anual disponible</strong>
                 <p>Ahorra con facturación anual en cada categoría</p>

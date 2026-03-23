@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import es.us.meerkat.backend.dto.AccessRequestBody;
 import es.us.meerkat.backend.dto.CommunityDetailResponse;
 import es.us.meerkat.backend.dto.CreateCommunityRequest;
+import es.us.meerkat.backend.dto.JoinCommunityRequest;
 import es.us.meerkat.backend.dto.MemberResponse;
 import es.us.meerkat.backend.dto.PrivacyRequest;
 import es.us.meerkat.backend.dto.RequestResponse;
@@ -51,11 +52,18 @@ class CommunityControllerTest {
 
     @InjectMocks private CommunityController communityController;
 
+    @SuppressWarnings("unchecked")
     @Test
     void createCommunityShouldReturnUnauthorizedWhenUserIsNull() {
         CreateCommunityRequest request =
                 new CreateCommunityRequest(
-                        "Comunidad Java", "Descripción", "COMUNIDAD_PUBLICA", null, null, null);
+                                                "Comunidad Java",
+                                                "Descripción",
+                                                "COMUNIDAD_PUBLICA",
+                                                null,
+                                                null,
+                                                null,
+                                                null);
 
         ResponseEntity<CommunityDetailResponse> response =
                 (ResponseEntity<CommunityDetailResponse>)
@@ -64,6 +72,7 @@ class CommunityControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void createCommunityShouldReturnCreatedWhenServiceSucceeds() {
         Usuario usuario = buildUsuario(1L);
@@ -73,6 +82,7 @@ class CommunityControllerTest {
                         "Descripción",
                         "COMUNIDAD_PUBLICA",
                         "img.png",
+                        null,
                         null,
                         null);
         Comunidad comunidad =
@@ -85,7 +95,8 @@ class CommunityControllerTest {
                         TipoGrupo.COMUNIDAD_PUBLICA,
                         request.imagenUrl(),
                         request.institutionId(),
-                        request.maxMiembros()))
+                        request.maxMiembros(),
+                        null))
                 .thenReturn(comunidad);
         when(communityService.countMembers(comunidad.getId())).thenReturn(1L);
         when(authorizationService.getUserRoleInCommunityAsString(
@@ -107,7 +118,13 @@ class CommunityControllerTest {
         Usuario usuario = buildUsuario(1L);
         CreateCommunityRequest request =
                 new CreateCommunityRequest(
-                        "Comunidad Java", "Descripción", "COMUNIDAD_PUBLICA", null, null, null);
+                        "Comunidad Java",
+                        "Descripción",
+                        "COMUNIDAD_PUBLICA",
+                        null,
+                        null,
+                        null,
+                        null);
 
         when(communityService.createCommunity(
                         usuario.getId(),
@@ -116,7 +133,8 @@ class CommunityControllerTest {
                         TipoGrupo.COMUNIDAD_PUBLICA,
                         request.imagenUrl(),
                         request.institutionId(),
-                        request.maxMiembros()))
+                        request.maxMiembros(),
+                        null))
                 .thenThrow(new IllegalArgumentException("límite alcanzado"));
 
         ResponseEntity<?> response = communityController.createCommunity(request, usuario);
@@ -146,17 +164,18 @@ class CommunityControllerTest {
                         .rol(RolComunidad.ALUMNO)
                         .build();
 
-        when(memberService.joinPublicCommunity(usuario.getId(), 100L)).thenReturn(miembro);
+        when(memberService.joinPublicCommunity(usuario.getId(), 100L, null)).thenReturn(miembro);
 
         @SuppressWarnings("unchecked")
         ResponseEntity<MemberResponse> response =
                 (ResponseEntity<MemberResponse>)
-                        communityController.joinPublicCommunity(100L, usuario);
+                        communityController.joinPublicCommunity(
+                                100L, new JoinCommunityRequest(null), usuario);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().id()).isEqualTo(50L);
-        verify(memberService).joinPublicCommunity(usuario.getId(), 100L);
+        verify(memberService).joinPublicCommunity(usuario.getId(), 100L, null);
     }
 
     @Test
@@ -170,12 +189,13 @@ class CommunityControllerTest {
                         .mensaje("Quiero entrar")
                         .build();
 
-        when(requestService.requestAccess(usuario.getId(), 100L, "Quiero entrar"))
+        when(requestService.requestAccess(
+                        usuario.getId(), 100L, "Quiero entrar", RolComunidad.ALUMNO))
                 .thenReturn(solicitud);
 
         ResponseEntity<RequestResponse> response =
                 communityController.requestAccess(
-                        100L, new AccessRequestBody("Quiero entrar"), usuario);
+                        100L, new AccessRequestBody("Quiero entrar", null), usuario);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isNotNull();

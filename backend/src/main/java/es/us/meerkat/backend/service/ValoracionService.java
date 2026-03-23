@@ -26,7 +26,18 @@ public class ValoracionService {
                 throw new IllegalArgumentException("No puedes valorarte a ti mismo");
             }
         }
+        // Validar que el alumno no haya valorado ya este evento
+        if (valoracion.getAlumno() != null && valoracion.getEvento() != null) {
+            if (valoracionRepository.existsByAlumnoIdAndEventoId(
+                    valoracion.getAlumno().getId(), valoracion.getEvento().getId())) {
+                throw new IllegalArgumentException("Ya has valorado este evento");
+            }
+        }
         return valoracionRepository.save(valoracion);
+    }
+
+    public boolean isAlreadyRated(Long alumnoId, Long eventoId) {
+        return valoracionRepository.existsByAlumnoIdAndEventoId(alumnoId, eventoId);
     }
 
     public List<Valoracion> obtenerValoracionesPorProfesor(Long profesorId) {

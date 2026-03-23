@@ -10,9 +10,18 @@ export default function ComunidadCard({ comunidad, onJoined }) {
     const [joining, setJoining] = useState(false);
     const [joined, setJoined] = useState(comunidad.esMiembro || false);
     const [requestSent, setRequestSent] = useState(false);
+    const [showRolePicker, setShowRolePicker] = useState(false);
     const [error, setError] = useState(null);
     const currentUserId = localStorage.getItem('userId');
     const isPrivate = comunidad.tipoGrupo === 'GRUPO_PRIVADO';
+    const userProfileRaw = localStorage.getItem('userProfile');
+    let userProfile = null;
+    try {
+        userProfile = userProfileRaw ? JSON.parse(userProfileRaw) : null;
+    } catch {
+        userProfile = null;
+    }
+    const hasTeacherProfile = Boolean(userProfile?.esTutor || userProfile?.esProfesor);
     const isMember = comunidad.esMiembro || false;
     const communityImageRaw = comunidad.imagen || comunidad.imagenUrl || comunidad.foto;
     const communityImage = (() => {
@@ -33,6 +42,37 @@ export default function ComunidadCard({ comunidad, onJoined }) {
         return `${base}/${value}`;
     })();
 
+    const performJoin = async (role) => {
+        setJoining(true);
+        setError(null);
+        try {
+            if (isPrivate) {
+                await communitiesApi.requestAccess(comunidad.id, '', role);
+                setRequestSent(true);
+                setShowRolePicker(false);
+            } else {
+                await communitiesApi.join(comunidad.id, role);
+                setJoined(true);
+                setShowRolePicker(false);
+                if (onJoined) onJoined(comunidad.id);
+            }
+        } catch (err) {
+            if (err.message?.includes('401') || err.status === 401) {
+                navigate('/login');
+            } else if (err.message?.includes('409') || err.status === 409) {
+                if (isPrivate) setRequestSent(true); else setJoined(true);
+                setShowRolePicker(false);
+            } else if (err.status === 400) {
+                if (isPrivate) setRequestSent(true);
+                else setError(err?.message || 'Error al unirse');
+            } else {
+                setError(isPrivate ? 'Error al solicitar acceso' : 'Error al unirse');
+            }
+        } finally {
+            setJoining(false);
+        }
+    };
+
     const handleJoin = async (e) => {
         e.stopPropagation();
         const token = localStorage.getItem('accessToken');
@@ -40,30 +80,14 @@ export default function ComunidadCard({ comunidad, onJoined }) {
             navigate('/login');
             return;
         }
-        setJoining(true);
-        setError(null);
-        try {
-            if (isPrivate) {
-                await communitiesApi.requestAccess(comunidad.id);
-                setRequestSent(true);
-            } else {
-                await communitiesApi.join(comunidad.id);
-                setJoined(true);
-                if (onJoined) onJoined(comunidad.id);
-            }
-        } catch (err) {
-            if (err.message?.includes('401') || err.status === 401) {
-                navigate('/login');
-            } else if (err.message?.includes('409') || err.status === 409) {
-                setJoined(true);
-            } else if (err.status === 400) {
-                setRequestSent(true);
-            } else {
-                setError(isPrivate ? 'Error al solicitar acceso' : 'Error al unirse');
-            }
-        } finally {
-            setJoining(false);
+
+        if (hasTeacherProfile) {
+            setShowRolePicker(true);
+            return;
         }
+
+        // Sin perfil de tutor: siempre ALUMNO
+        await performJoin('ALUMNO');
     };
 
     return (
@@ -98,15 +122,49 @@ export default function ComunidadCard({ comunidad, onJoined }) {
                     </div>
                     {error && <span style={{ color: 'red', fontSize: '0.8rem' }}>{error}</span>}
                     {currentUserId && !joined && !requestSent && (
-                        <button
-                            className={`join-button${isPrivate ? ' join-button--request' : ''}`}
-                            onClick={handleJoin}
-                            disabled={joining}
-                        >
-                            {joining
-                                ? (isPrivate ? 'Solicitando...' : 'Uniéndose...')
-                                : (isPrivate ? 'Solicitar acceso' : 'Unirse')}
-                        </button>
+                        showRolePicker ? (
+                            <div className="join-role-picker" onClick={(e) => e.stopPropagation()}>
+                                <p className="join-role-picker__title">
+                                    {isPrivate ? 'Elige cómo quieres solicitar acceso' : 'Elige cómo quieres unirte'}
+                                </p>
+                                <div className="join-role-picker__actions">
+                                    <button
+                                        className="join-button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            performJoin('PROFESOR');
+                                        }}
+                                        disabled={joining}
+                                    >
+                                        {joining
+                                            ? (isPrivate ? 'Solicitando...' : 'Uniéndose...')
+                                            : (isPrivate ? 'Solicitar como profesor' : 'Unirme como profesor')}
+                                    </button>
+                                    <button
+                                        className="join-button join-button--request"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            performJoin('ALUMNO');
+                                        }}
+                                        disabled={joining}
+                                    >
+                                        {joining
+                                            ? (isPrivate ? 'Solicitando...' : 'Uniéndose...')
+                                            : (isPrivate ? 'Solicitar como alumno' : 'Unirme como alumno')}
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <button
+                                className={`join-button${isPrivate ? ' join-button--request' : ''}`}
+                                onClick={handleJoin}
+                                disabled={joining}
+                            >
+                                {joining
+                                    ? (isPrivate ? 'Solicitando...' : 'Uniéndose...')
+                                    : (isPrivate ? 'Solicitar acceso' : 'Unirse')}
+                            </button>
+                        )
                     )}
                     {joined && (
                         <button className="join-button joined" disabled>

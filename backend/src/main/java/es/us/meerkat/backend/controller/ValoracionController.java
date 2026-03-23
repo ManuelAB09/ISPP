@@ -25,6 +25,13 @@ public class ValoracionController {
         }
     }
 
+    @GetMapping("/check")
+    public ResponseEntity<Map<String, Boolean>> checkAlreadyRated(
+            @RequestParam Long alumnoId, @RequestParam Long eventoId) {
+        boolean rated = valoracionService.isAlreadyRated(alumnoId, eventoId);
+        return ResponseEntity.ok(Map.of("rated", rated));
+    }
+
     @GetMapping("/profesor/{profesorId}")
     public ResponseEntity<Map<String, Object>> obtenerEstadisticas(@PathVariable Long profesorId) {
         Double media = valoracionService.obtenerMediaPorProfesor(profesorId);

@@ -197,8 +197,9 @@ describe('CrearComunidad', () => {
   });
 
   test('muestra estado de carga mientras se crea', async () => {
+    let resolveCreate;
     communitiesApi.create.mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve({ id: 1 }), 100))
+      () => new Promise((resolve) => { resolveCreate = resolve; })
     );
     renderComponent();
 
@@ -209,6 +210,8 @@ describe('CrearComunidad', () => {
     userEvent.click(createButton);
 
     await screen.findByRole('button', { name: /Creando/i });
+
+    resolveCreate({ id: 1 });
   });
 
   test('muestra error cuando falla la creación', async () => {
@@ -252,5 +255,10 @@ describe('CrearComunidad', () => {
     await waitFor(() => {
       expect(slider).toHaveAttribute('max', '250');
     });
+  });
+
+  test('muestra acceso al flujo de planes institucionales', () => {
+    renderComponent();
+    expect(screen.getByRole('button', { name: /Ir a planes institucionales/i })).toBeInTheDocument();
   });
 });

@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import GoogleAuthButton from '../../components/GoogleAuthButton';
 import './Register.css';
 import studyShareLogo from '../../static/images/MeerKatters_logo.png';
 
 const Register = () => {
   const navigate = useNavigate();
-  const { register, processDirectLogin, resendVerification, error: authError, clearError, isAuthenticated, loading } = useAuth();
+  const { register, resendVerification, error: authError, clearError, isAuthenticated, loading } = useAuth();
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -141,19 +140,6 @@ const Register = () => {
     setIsLoading(false);
   };
 
-  const handleGoogleSuccess = async (payload) => {
-    setIsLoading(true);
-    setError('');
-    
-    const result = processDirectLogin(payload);
-
-    if (result.success) {
-      navigate('/');
-    } else {
-      setError(result.error || 'Error al registrarse con Google');
-    }
-    setIsLoading(false);
-  };
 
   const handleResendVerification = async () => {
     setResendLoading(true);
@@ -417,25 +403,6 @@ const Register = () => {
             </button>
           </form>
 
-          {/* Importar GoogleLogin dentro del componente */}
-          <div className="google-auth-container" style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
-            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', margin: '15px 0', width: '100%' }}>
-                <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                <span style={{ padding: '0 10px', color: '#94a3b8', fontSize: '0.9rem' }}>o registrarse con</span>
-                <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-              </div>
-              
-              <GoogleAuthButton
-                onSuccess={handleGoogleSuccess}
-                onError={(err) => {
-                  setError(err || 'Fallo en el registro con Google');
-                }}
-                text="Registrarse con Google"
-                flowType="login"
-              />
-            </div>
-          </div>
 
           <div className="login-link" style={{ marginTop: '15px' }}>
             <p>

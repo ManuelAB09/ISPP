@@ -10,6 +10,7 @@ import Settings from "../myProfile/Settings";
 import HireDirectModal from "./HireDirectModal";
 import TutorSolicitudes from "./TutorSolicitudes";
 import TutorConversaciones from "./TutorConversaciones";
+import GestionDisponibilidad from "./GestionDisponibilidad";
 import AlumnoSolicitudes from "./AlumnoSolicitudes";
 import PrivateChat from "../chat/PrivateChat";
 import { getApiBaseUrl } from "../../api/baseUrl";
@@ -58,6 +59,7 @@ const TeacherProfile = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showVerificacion, setShowVerificacion] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showDisponibilidad, setShowDisponibilidad] = useState(false);
   const [showHireModal, setShowHireModal] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [stripeLoading, setStripeLoading] = useState(false);
@@ -228,6 +230,12 @@ const TeacherProfile = () => {
       {showSettings && (
         <Settings onClose={() => setShowSettings(false)} />
       )}
+      {showDisponibilidad && tutor && (
+        <GestionDisponibilidad
+          tutorId={tutor.id}
+          onClose={() => setShowDisponibilidad(false)}
+        />
+      )}
       <div className="tp-page">
 
         {/* ═══════════════ BANNER MORADO + CABECERA ═══════════════ */}
@@ -295,6 +303,12 @@ const TeacherProfile = () => {
                   {tutor.verificado ? "🏅 Verificado" : "Promocionarse"}
                 </button>
                 <button
+                  className="tp-btn tp-btn--edit"
+                  onClick={() => setShowDisponibilidad(true)}
+                >
+                  📅 Mi disponibilidad
+                </button>
+                <button
                   className={`tp-btn ${tutor.stripeConfigured ? 'tp-btn--edit' : 'tp-btn--hire'}`}
                   disabled={stripeLoading}
                   onClick={async () => {
@@ -319,7 +333,19 @@ const TeacherProfile = () => {
               <div className="tp-header__actions">
                 <button
                   className="tp-btn tp-btn--contact"
-                  onClick={() => setShowChat((prev) => !prev)}
+                  onClick={() => {
+                    const targetUserId = tutor.userId ?? tutor.usuario?.id;
+                    const nombre = tutor.usuario?.nombre || 'Profesor';
+                    if (!targetUserId) return;
+                    const params = new URLSearchParams({
+                      userId: String(targetUserId),
+                      userName: nombre,
+                    });
+                    if (tutor.usuario?.foto) {
+                      params.set('userPhoto', toAbsoluteImageUrl(tutor.usuario.foto));
+                    }
+                    navigate(`/chats?${params.toString()}`);
+                  }}
                 >
                   {showChat ? '✕ Cerrar chat' : '💬 Contactar'}
                 </button>

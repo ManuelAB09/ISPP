@@ -128,7 +128,6 @@ class MensajeComunidadServiceTest {
     @Test
     void obtenerArchivoShouldThrowWhenMessageNotInCommunity() {
         Usuario usuario = buildUsuario(1L, "Test");
-        Comunidad comunidad = buildComunidad(10L);
 
         MensajeComunidad mensaje =
                 MensajeComunidad.builder()
