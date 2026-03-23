@@ -1096,11 +1096,10 @@ export default function CommunityDetail() {
       setMembershipError(null);
       await communitiesApi.leave(communityId);
       // Si el admin era el único miembro, el backend elimina la comunidad
-      // En ese caso redirigimos a la lista
-      if (isAdmin) {
-        navigate('/comunidades');
-        return;
-      }
+      // Cualquier persona que abandone la comunidad será redirigida a la lista de comunidades
+      
+      navigate('/comunidades');
+      
       setIsMember(false);
       await fetchCommunity(); // Refresh member count
       await fetchEvents(); // Refresh events to hide private events

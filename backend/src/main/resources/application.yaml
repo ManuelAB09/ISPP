@@ -18,6 +18,7 @@ spring:
     show-sql: true
 
 # ── CONFIGURACIÓN EMAIL ──
+
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}
