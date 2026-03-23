@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Header from '../../components/Header/Header';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSocketContext } from '../../contexts/SocketContext';
-import Header from '../../components/Header/Header';
 import {
-  getAlertas,
-  getAlertasCount,
-  getMisEventos,
-  getMisEventosHistorial,
-  marcarAlertaLeida,
-  marcarTodasLeidas,
+    getAlertas,
+    getAlertasCount,
+    getMisEventos,
+    getMisEventosHistorial,
+    marcarAlertaLeida,
+    marcarTodasLeidas,
 } from '../../utils/myEventsUtils';
 import './MisEventos.css';
 
@@ -211,13 +211,16 @@ export default function MisEventos() {
   }, []);
 
   useEffect(() => {
+    if (!socket) {
+      return;
+    }
     fetchAlertasCount();
     const handler = (count) => {
       setAlertasCount(typeof count === 'number' ? count : 0);
     };
     socket.on('alerts_count', handler);
     return () => socket.off('alerts_count', handler);
-  }, [fetchAlertasCount]);
+  }, [fetchAlertasCount, socket]);
 
   useEffect(() => {
     if (vistaHistorial) fetchHistorial();

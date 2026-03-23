@@ -24,7 +24,7 @@ export default function PlanesSuccess() {
         subscriptionsApi.verifySession(sessionId)
             .then(() => setEstado("ok"))
             .catch(() => setEstado("error"));
-    }, []);
+    }, [searchParams]);
 
     return (
         <>

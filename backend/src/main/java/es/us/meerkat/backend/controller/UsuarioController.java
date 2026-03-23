@@ -1,7 +1,9 @@
 package es.us.meerkat.backend.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -16,13 +18,21 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import es.us.meerkat.backend.dto.AttendanceResponse;
 import es.us.meerkat.backend.dto.ChangePasswordRequest;
+import es.us.meerkat.backend.dto.FeedbackResponse;
 import es.us.meerkat.backend.dto.MessageResponse;
 import es.us.meerkat.backend.dto.UpdateUserRequest;
+import es.us.meerkat.backend.dto.UserActivityResponse;
 import es.us.meerkat.backend.dto.UserDetailResponse;
 import es.us.meerkat.backend.dto.UserPublicResponse;
 import es.us.meerkat.backend.dto.VisibilityRequest;
+import es.us.meerkat.backend.entity.AsistenciaEvento;
+import es.us.meerkat.backend.entity.CuestionarioIntento;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
+import es.us.meerkat.backend.repository.CuestionarioIntentoRepository;
+import es.us.meerkat.backend.repository.FeedbackRepository;
 import es.us.meerkat.backend.service.UsuarioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +51,10 @@ public final class UsuarioController {
 
     /** Servicio para operaciones de usuario. */
     private final UsuarioService usuarioService;
+
+    private final CuestionarioIntentoRepository intentoRepository;
+    private final AsistenciaEventoRepository asistenciaEventoRepository;
+    private final FeedbackRepository feedbackRepository;
 
     /**
      * Devuelve el perfil completo del usuario autenticado.
@@ -162,6 +176,63 @@ public final class UsuarioController {
     @GetMapping("/{userId}")
     public ResponseEntity<UserPublicResponse> getUserById(@PathVariable final Long userId) {
         return ResponseEntity.ok(usuarioService.obtenerPerfilPublico(userId));
+    }
+
+    /**
+     * Devuelve la actividad del usuario autenticado: cuestionarios completados y asistencias. GET
+     * /api/v1/users/me/activity
+     */
+    @GetMapping("/me/activity")
+    public ResponseEntity<UserActivityResponse> getMyActivity(
+            @AuthenticationPrincipal final Usuario usuario) {
+        if (usuario == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        UserActivityResponse.UserActivityResponseBuilder builder = UserActivityResponse.builder();
+
+        // Cuestionarios completados — si existen intentos, los devolvemos.
+        List<CuestionarioIntento> intentos =
+                intentoRepository.findWithCuestionarioByUsuarioId(usuario.getId());
+        List<UserActivityResponse.QuizResult> quizResults = new ArrayList<>();
+        for (CuestionarioIntento ci : intentos) {
+            UserActivityResponse.QuizResult qr =
+                    UserActivityResponse.QuizResult.builder()
+                            .intentoId(ci.getId())
+                            .cuestionarioId(
+                                    ci.getCuestionario() != null
+                                            ? ci.getCuestionario().getId()
+                                            : null)
+                            .titulo(
+                                    ci.getCuestionario() != null
+                                            ? ci.getCuestionario().getTitulo()
+                                            : null)
+                            .puntuacion(ci.getPuntuacion())
+                            .fecha(ci.getCreatedAt())
+                            .build();
+            quizResults.add(qr);
+        }
+        builder.cuestionarios(quizResults);
+
+        // Asistencias: si existe repositorio y datos, incluirlos.
+        List<AttendanceResponse> attendanceDtos = new ArrayList<>();
+        List<AsistenciaEvento> asistencias =
+                asistenciaEventoRepository.findConfirmadasByUsuarioId(usuario.getId());
+        if (asistencias != null && !asistencias.isEmpty()) {
+            for (AsistenciaEvento a : asistencias) {
+                attendanceDtos.add(a.toDTO());
+            }
+        }
+        builder.asistencias(attendanceDtos);
+
+        // Feedbacks recibidos (últimos 20)
+        List<FeedbackResponse> feedbackDtos = new ArrayList<>();
+        var feedbacksPage =
+                feedbackRepository.findByAlumnoId(usuario.getId(), PageRequest.of(0, 20));
+        feedbacksPage.forEach(f -> feedbackDtos.add(FeedbackResponse.fromEntity(f)));
+        builder.feedbacks(feedbackDtos);
+
+        return ResponseEntity.ok(builder.build());
     }
 
     /**

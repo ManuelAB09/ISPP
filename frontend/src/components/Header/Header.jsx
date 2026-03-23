@@ -105,7 +105,13 @@ export default function Header({ user, page }) {
                         {panelUnreadCount > 0 && <span className="header-notification-badge">{panelUnreadCount}</span>}
                     </Link>
                     {isAuthenticated && (
-                        <Link to="/mis-reservas" className={page === 'mis-reservas' ? 'active' : ''}>Mis reservas</Link>
+                        <>
+                            <Link to="/mis-reservas" className={page === 'mis-reservas' ? 'active' : ''}>Mis reservas</Link>
+                            <Link to="/cuestionarios/crear" className={page === 'cuestionarios' ? 'active' : ''}>Crear cuestionario</Link>
+                            {storedUser?.esTutor && (
+                                <Link to="/ganancias" className={page === 'ganancias' ? 'active' : ''}>Mis ganancias</Link>
+                            )}
+                        </>
                     )}
                     <Link to="/chats" className={page === 'chats' ? 'active' : ''}>
                                 Chats
@@ -158,19 +164,24 @@ export default function Header({ user, page }) {
                         {panelUnreadCount > 0 && <span className="header-notification-badge">{panelUnreadCount}</span>}
                     </Link>
                     {isAuthenticated && (
-                        <Link to="/mis-reservas" className={page === 'mis-reservas' ? 'active' : ''} onClick={closeMenu}>Mis reservas</Link>
+                        <>
+                            <Link to="/mis-reservas" className={page === 'mis-reservas' ? 'active' : ''} onClick={closeMenu}>Mis reservas</Link>
+                            <Link to="/cuestionarios/crear" className={page === 'cuestionarios' ? 'active' : ''} onClick={closeMenu}>Crear cuestionario</Link>
+                            {storedUser?.esTutor && (
+                                <Link to="/ganancias" className={page === 'ganancias' ? 'active' : ''} onClick={closeMenu}>Mis ganancias</Link>
+                            )}
+                        </>
                     )}
                     <Link to="/chats" className={page === 'chats' ? 'active' : ''} onClick={closeMenu}>Chats</Link>
                     <Link to="/planes" className={page === 'planes' ? 'active' : ''} onClick={closeMenu}>Planes</Link>
                     <Link to="/pagos" className={page === 'pagos' ? 'active' : ''} onClick={closeMenu}>Mis pagos</Link>
-                    {isAuthenticated && storedUser?.esTutor && (
-                        <Link to="/ganancias" className={page === 'ganancias' ? 'active' : ''} onClick={closeMenu}>Mis ganancias</Link>
-                    )}
- (
+                    {!isAuthenticated && (
                         <Link to="/login" onClick={closeMenu}>Iniciar sesión</Link>
-                    )
+                    )}
                 </div>
-            </div >
+            </div>
         </>
     );
 }
+
+

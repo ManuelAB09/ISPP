@@ -1,11 +1,11 @@
-import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useNotifications } from '../hooks/useNotifications';
-import { obtenerConversaciones, obtenerHistorialComunidad } from '../api/mensajeService';
-import { getAllEventAlerts, getAllUserNotifications } from '../api/notificationService';
-import { communitiesApi } from '../api/communities.api';
 import { authApi } from '../api/auth.api';
 import { getApiBaseUrl } from '../api/baseUrl';
+import { communitiesApi } from '../api/communities.api';
+import { obtenerConversaciones, obtenerHistorialComunidad } from '../api/mensajeService';
+import { getAllEventAlerts, getAllUserNotifications } from '../api/notificationService';
+import { useNotifications } from '../hooks/useNotifications';
 import { resolveCommunityImage } from '../screens/chat/Chats';
 import { useAuth } from './AuthContext';
 import { useSocketContext } from './SocketContext';
@@ -708,9 +708,5 @@ export const NotificationProvider = ({ children }) => {
  * Hook para acceder al contexto de notificaciones.
  */
 export const useNotificationContext = () => {
-    const context = useContext(NotificationContext);
-    if (!context) {
-        throw new Error('useNotificationContext debe usarse dentro de <NotificationProvider>');
-    }
-    return context;
+    return useContext(NotificationContext);
 };
