@@ -1,18 +1,17 @@
-import React from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import DetalleEvento from './DetalleEvento';
-import {
-  getEventById,
-  cancelEvent,
-  attendEvent,
-  cancelAttendance,
-  getConfirmedAttendees,
-  getMyAttendance,
-} from '../../api/eventEndpoints';
-import { communitiesApi } from '../../api/communities.api';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import axiosInstance from '../../api/axiosConfig';
+import { communitiesApi } from '../../api/communities.api';
+import {
+    attendEvent,
+    cancelAttendance,
+    cancelEvent,
+    getConfirmedAttendees,
+    getEventById,
+    getMyAttendance,
+} from '../../api/eventEndpoints';
 import { checkAlreadyRated } from '../../api/valoraciones.api';
+import DetalleEvento from './DetalleEvento';
 
 // Mocks
 jest.mock('../../api/eventEndpoints');
