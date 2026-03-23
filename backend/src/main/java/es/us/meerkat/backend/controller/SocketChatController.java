@@ -186,6 +186,38 @@ public class SocketChatController {
     }
 
     /**
+     * Edita un mensaje privado (solo el emisor puede hacerlo).
+     *
+     * @param payload map con messageId y nuevoContenido.
+     * @param principal usuario autenticado.
+     */
+    @MessageMapping("/dm.edit")
+    public void editDm(@Payload final Map<String, Object> payload, final Principal principal) {
+        try {
+            final Usuario usuario = getAuthenticatedUser(principal);
+            final Long messageId = Long.parseLong(payload.get("messageId").toString());
+            final String nuevoContenido = payload.get("nuevoContenido").toString();
+
+            final MensajeResponse response =
+                    mensajeService.editarMensaje(usuario.getId(), messageId, nuevoContenido);
+
+            final Mensaje mensaje =
+                    mensajeRepository
+                            .findById(messageId)
+                            .orElseThrow(() -> new RuntimeException("Mensaje no encontrado"));
+            final Usuario receptor = mensaje.getReceptor();
+
+            // Notificar a ambos usuarios de la edición
+            broker.convertAndSendToUser(
+                    getUserDestinationKey(usuario), "/queue/dm_update_success", response);
+            broker.convertAndSendToUser(
+                    getUserDestinationKey(receptor), "/queue/dm_update_success", response);
+        } catch (final Exception e) {
+            sendError(principal, "edit_dm_failed", e.getMessage());
+        }
+    }
+
+    /**
      * Envía un mensaje en el chat de una comunidad.
      *
      * @param request datos del mensaje (comunidadId, contenido).

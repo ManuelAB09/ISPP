@@ -61,9 +61,6 @@ public class UserDetailResponse {
     /** Indica si el usuario tiene activada la autenticación de dos factores. */
     private Boolean autenticacionDosFactores;
 
-    /** Indica si el usuario recibe notificaciones por email. */
-    private Boolean notificacionesEmail;
-
     /** Indica si el usuario recibe notificaciones push. */
     private Boolean notificacionesPush;
 

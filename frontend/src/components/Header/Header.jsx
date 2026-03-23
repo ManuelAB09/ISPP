@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getApiBaseUrl } from '../../api/baseUrl';
 import GoogleClassroomButton from '../GoogleClassroomButton/GoogleClassroomButton.jsx';
 import PlanExpiryBanner from '../PlanExpiryBanner/PlanExpiryBanner';
 import { useSubscriptionExpiry } from '../../hooks/useSubscriptionExpiry';
+import { useNotificationContext } from '../../contexts/NotificationContext';
 import './Header.css';
 
 const DEFAULT_PROFILE_AVATAR =
@@ -25,6 +26,16 @@ const toAbsoluteImageUrl = (imageUrl, fallback = DEFAULT_PROFILE_AVATAR) => {
 export default function Header({ user, page }) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { showBanner, planName, fechaFin, dismiss } = useSubscriptionExpiry();
+    const { panelUnreadCount, communityUnreadById } = useNotificationContext();
+    // Calcular total de no leídos de chats privados y comunidades
+    const [privateUnread, setPrivateUnread] = useState(0);
+    useEffect(() => {
+        // Obtener de localStorage o API si es necesario, aquí solo ejemplo simple
+        const conversaciones = JSON.parse(localStorage.getItem('conversacionesNoLeidas') || '[]');
+        setPrivateUnread(conversaciones.reduce((acc, c) => acc + (c.noLeidos || 0), 0));
+    }, []);
+    const communityUnread = Object.values(communityUnreadById || {}).reduce((acc, n) => acc + (n || 0), 0);
+    const totalChatsUnread = privateUnread + communityUnread;
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
@@ -89,6 +100,10 @@ export default function Header({ user, page }) {
                     <Link to="/eventos-mapa" className={page === 'eventos-mapa' ? 'active' : ''}>Mapa de eventos</Link>
                     <Link to="/mis-eventos" className={page === 'mis-eventos' ? 'active' : ''}>Mis eventos</Link>
                     <Link to="/profesores" className={page === 'profesores' ? 'active' : ''}>Profesores</Link>
+                    <Link to="/notificaciones" className={`header-link-with-badge ${page === 'notificaciones' ? 'active' : ''}`}>
+                        Notificaciones
+                        {panelUnreadCount > 0 && <span className="header-notification-badge">{panelUnreadCount}</span>}
+                    </Link>
                     {isAuthenticated && (
                         <>
                             <Link to="/mis-reservas" className={page === 'mis-reservas' ? 'active' : ''}>Mis reservas</Link>
@@ -98,7 +113,12 @@ export default function Header({ user, page }) {
                             )}
                         </>
                     )}
-                    <Link to="/chats" className={page === 'chats' ? 'active' : ''}>Chats</Link>
+                    <Link to="/chats" className={page === 'chats' ? 'active' : ''}>
+                                Chats
+                                {totalChatsUnread > 0 && (
+                                    <span className="header-notification-badge">{totalChatsUnread}</span>
+                                )}
+                            </Link>
                     <Link to="/planes" className={page === 'planes' ? 'active' : ''}>Planes</Link>
                     <Link to="/pagos" className={page === 'pagos' ? 'active' : ''}>Mis pagos</Link>
                     {isAuthenticated && storedUser?.esTutor && (
@@ -139,6 +159,10 @@ export default function Header({ user, page }) {
                     <Link to="/eventos-mapa" className={page === 'eventos-mapa' ? 'active' : ''} onClick={closeMenu}>Mapa de eventos</Link>
                     <Link to="/mis-eventos" className={page === 'mis-eventos' ? 'active' : ''} onClick={closeMenu}>Mis eventos</Link>
                     <Link to="/profesores" className={page === 'profesores' ? 'active' : ''} onClick={closeMenu}>Profesores</Link>
+                    <Link to="/notificaciones" className={`header-link-with-badge ${page === 'notificaciones' ? 'active' : ''}`} onClick={closeMenu}>
+                        Notificaciones
+                        {panelUnreadCount > 0 && <span className="header-notification-badge">{panelUnreadCount}</span>}
+                    </Link>
                     {isAuthenticated && (
                         <>
                             <Link to="/mis-reservas" className={page === 'mis-reservas' ? 'active' : ''} onClick={closeMenu}>Mis reservas</Link>

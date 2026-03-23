@@ -23,6 +23,17 @@ public class UpdatePreferenciasRequest {
     /** Activar/desactivar recordatorio 30min antes. */
     private Boolean recordatorio30min;
 
-    /** Canal por defecto para las alarmas personalizadas. PLATAFORMA, EMAIL o AMBOS. */
     private TipoCanal canalAlarmasPorDefecto;
+
+    private Boolean notificarMensajeComunidad;
+
+    private Boolean notificarMenciones;
+
+    private Boolean notificarInvitaciones;
+
+    private Boolean notificarAnuncios;
+
+    private Boolean notificarSolicitudAcceso;
+
+    private Boolean notificarCambiosDeEventos;
 }

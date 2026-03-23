@@ -350,6 +350,9 @@ public class MisEventosService {
                     String.format("⏰ El evento \"%s\" comienza en 15 minutos.", evento.getTitulo());
             case PROXIMA_24H ->
                     String.format("📅 El evento \"%s\" comienza mañana.", evento.getTitulo());
+            default ->
+                    String.format(
+                            "🔔 Tienes una alerta para el evento \"%s\".", evento.getTitulo());
         };
     }
 

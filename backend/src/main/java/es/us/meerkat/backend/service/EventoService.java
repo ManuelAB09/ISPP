@@ -2,6 +2,7 @@ package es.us.meerkat.backend.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -9,7 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.entity.AsistenciaEvento;
 import es.us.meerkat.backend.entity.Comunidad;
+import es.us.meerkat.backend.entity.EstadoAsistencia;
 import es.us.meerkat.backend.entity.Evento;
+import es.us.meerkat.backend.entity.Notificacion;
+import es.us.meerkat.backend.entity.PreferenciasNotificacion;
 import es.us.meerkat.backend.entity.Ubicacion;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
@@ -19,6 +23,7 @@ import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.UbicacionRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Servicio para gestionar la lógica de negocio relacionada con los eventos.
@@ -27,6 +32,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EventoService {
 
     /** Repositorio para acceder a la información de eventos. */
@@ -41,6 +47,8 @@ public class EventoService {
     /** Repositorio para acceder a la información de comunidades. */
     private final ComunidadRepository comunidadRepository;
 
+    private final NotificacionService notificacionService;
+
     /** Repositorio para acceder a la información de miembros de comunidad. */
     private final MiembroComunidadRepository miembroComunidadRepository;
 
@@ -51,6 +59,8 @@ public class EventoService {
     private final AuthorizationService authorizationService;
 
     private final GoogleCalendarService googleCalendarService;
+    private final EmailService emailService;
+    private final PreferenciasNotificacionService preferenciasNotificacionService;
 
     // ===============================
     // CREAR EVENTO
@@ -141,7 +151,32 @@ public class EventoService {
                             .orElseThrow(() -> new RuntimeException("Ubicación no encontrada"));
             evento.setUbicacion(ubicacion);
         }
+        // Guardar el evento primero para obtener su ID
         final Evento savedEvento = eventoRepository.save(evento);
+
+        // Notificar a todos los miembros de la comunidad (excepto el creador)
+        List<Long> miembrosIds =
+                miembroComunidadRepository.findUsuarioIdsByComunidadId(comunidadId);
+        for (Long usuarioId : miembrosIds) {
+            if (!usuarioId.equals(creadorId)) {
+                Usuario usuario = usuarioRepository.findById(usuarioId).orElse(null);
+                if (usuario != null) {
+                    Notificacion notificacion =
+                            Notificacion.builder()
+                                    .usuario(usuario)
+                                    .titulo("Nuevo evento en la comunidad " + comunidad.getNombre())
+                                    .mensaje("Se ha creado el evento '" + tituloParam + "'.")
+                                    .tipo("EVENTO")
+                                    .leida(false)
+                                    .comunidadId(comunidad.getId())
+                                    .comunidadNombre(comunidad.getNombre())
+                                    .comunidadImagenUrl(comunidad.getImagenUrl())
+                                    .eventoId(savedEvento.getId())
+                                    .build();
+                    notificacionService.crearYNotificar(notificacion);
+                }
+            }
+        }
 
         // Auto-unir al creador como asistente confirmado
         final AsistenciaEvento asistencia = new AsistenciaEvento();
@@ -208,6 +243,18 @@ public class EventoService {
                         .findById(eventoIdParam)
                         .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
 
+        final String tituloAnterior = evento.getTitulo();
+        final String descripcionAnterior = evento.getDescripcion();
+        final LocalDateTime fechaHoraAnterior = evento.getFechaHora();
+        final LocalDateTime fechaFinAnterior = evento.getFechaFin();
+        final Integer aforoAnterior = evento.getAforo();
+        final String queLlevarAnterior = evento.getQueLlevar();
+        final Boolean esVirtualAnterior = evento.getEsVirtual();
+        final Boolean privadoAnterior = evento.getPrivado();
+        final Long ubicacionIdAnterior =
+                evento.getUbicacion() != null ? evento.getUbicacion().getId() : null;
+        final Boolean visibleMapaAnterior = evento.getVisibleMapa();
+
         validarEventoNoIniciado(evento);
 
         evento.editar(
@@ -241,7 +288,187 @@ public class EventoService {
             evento.setVisibleMapa(visibleMapaParam);
         }
 
-        return eventoRepository.save(evento);
+        final Evento eventoActualizado = eventoRepository.save(evento);
+
+        final Long ubicacionIdActual =
+                eventoActualizado.getUbicacion() != null
+                        ? eventoActualizado.getUbicacion().getId()
+                        : null;
+        final boolean huboCambios =
+                !Objects.equals(tituloAnterior, eventoActualizado.getTitulo())
+                        || !Objects.equals(descripcionAnterior, eventoActualizado.getDescripcion())
+                        || !Objects.equals(fechaHoraAnterior, eventoActualizado.getFechaHora())
+                        || !Objects.equals(fechaFinAnterior, eventoActualizado.getFechaFin())
+                        || !Objects.equals(aforoAnterior, eventoActualizado.getAforo())
+                        || !Objects.equals(queLlevarAnterior, eventoActualizado.getQueLlevar())
+                        || !Objects.equals(esVirtualAnterior, eventoActualizado.getEsVirtual())
+                        || !Objects.equals(privadoAnterior, eventoActualizado.getPrivado())
+                        || !Objects.equals(ubicacionIdAnterior, ubicacionIdActual)
+                        || !Objects.equals(visibleMapaAnterior, eventoActualizado.getVisibleMapa());
+
+        if (huboCambios) {
+            // Construir resumen de cambios
+            StringBuilder cambios = new StringBuilder();
+            if (!Objects.equals(tituloAnterior, eventoActualizado.getTitulo())) {
+                cambios.append(
+                        "Título: '"
+                                + tituloAnterior
+                                + "' → '"
+                                + eventoActualizado.getTitulo()
+                                + "'\n");
+            }
+            if (!Objects.equals(descripcionAnterior, eventoActualizado.getDescripcion())) {
+                cambios.append("Descripción modificada\n");
+            }
+            if (!Objects.equals(fechaHoraAnterior, eventoActualizado.getFechaHora())) {
+                cambios.append(
+                        "Fecha de inicio: '"
+                                + fechaHoraAnterior
+                                + "' → '"
+                                + eventoActualizado.getFechaHora()
+                                + "'\n");
+            }
+            if (!Objects.equals(fechaFinAnterior, eventoActualizado.getFechaFin())) {
+                cambios.append(
+                        "Fecha de fin: '"
+                                + fechaFinAnterior
+                                + "' → '"
+                                + eventoActualizado.getFechaFin()
+                                + "'\n");
+            }
+            if (!Objects.equals(aforoAnterior, eventoActualizado.getAforo())) {
+                cambios.append(
+                        "Aforo: '"
+                                + aforoAnterior
+                                + "' → '"
+                                + eventoActualizado.getAforo()
+                                + "'\n");
+            }
+            if (!Objects.equals(queLlevarAnterior, eventoActualizado.getQueLlevar())) {
+                String antes =
+                        (queLlevarAnterior == null || queLlevarAnterior.trim().isEmpty())
+                                ? "vacío"
+                                : queLlevarAnterior;
+                String despues =
+                        (eventoActualizado.getQueLlevar() == null
+                                        || eventoActualizado.getQueLlevar().trim().isEmpty())
+                                ? "vacío"
+                                : eventoActualizado.getQueLlevar();
+                cambios.append("Qué llevar: '" + antes + "' → '" + despues + "'\n");
+            }
+            if (!Objects.equals(esVirtualAnterior, eventoActualizado.getEsVirtual())) {
+                cambios.append(
+                        "Tipo: "
+                                + (eventoActualizado.getEsVirtual() ? "Virtual" : "Presencial")
+                                + "\n");
+            }
+            if (!Objects.equals(privadoAnterior, eventoActualizado.getPrivado())) {
+                cambios.append(
+                        "Privacidad: "
+                                + (eventoActualizado.getPrivado() ? "Privado" : "Público")
+                                + "\n");
+            }
+            if (!Objects.equals(ubicacionIdAnterior, ubicacionIdActual)) {
+                cambios.append("Ubicación modificada\n");
+            }
+            if (!Objects.equals(visibleMapaAnterior, eventoActualizado.getVisibleMapa())) {
+                cambios.append(
+                        "Visibilidad en mapa: "
+                                + (eventoActualizado.getVisibleMapa() ? "Sí" : "No")
+                                + "\n");
+            }
+            String resumenCambios =
+                    cambios.length() > 0 ? cambios.toString() : "Detalles no disponibles.";
+
+            // Notificar a todos los miembros de la comunidad (excepto el creador)
+            Comunidad comunidad = eventoActualizado.getComunidad();
+            List<Long> miembrosIds =
+                    miembroComunidadRepository.findUsuarioIdsByComunidadId(comunidad.getId());
+            for (Long usuarioId : miembrosIds) {
+                if (!usuarioId.equals(eventoActualizado.getCreador().getId())) {
+                    Usuario usuario = usuarioRepository.findById(usuarioId).orElse(null);
+                    if (usuario != null) {
+                        Notificacion notificacion =
+                                Notificacion.builder()
+                                        .usuario(usuario)
+                                        .titulo(
+                                                "Evento actualizado en la comunidad "
+                                                        + comunidad.getNombre())
+                                        .mensaje(
+                                                "El evento '"
+                                                        + eventoActualizado.getTitulo()
+                                                        + "' ha sido actualizado.\n\nCambios:\n"
+                                                        + resumenCambios)
+                                        .tipo("EVENTO")
+                                        .leida(false)
+                                        .comunidadId(comunidad.getId())
+                                        .comunidadNombre(comunidad.getNombre())
+                                        .comunidadImagenUrl(comunidad.getImagenUrl())
+                                        .eventoId(eventoActualizado.getId())
+                                        .build();
+                        notificacionService.crearYNotificar(notificacion);
+                    }
+                }
+            }
+            notificarCambioEvento(eventoActualizado);
+        }
+
+        return eventoActualizado;
+    }
+
+    private void notificarCambioEvento(final Evento evento) {
+        final List<AsistenciaEvento> asistencias =
+                asistenciaEventoRepository.findByEventoIdAndEstado(
+                        evento.getId(), EstadoAsistencia.CONFIRMADA);
+
+        if (asistencias == null || asistencias.isEmpty()) {
+            log.info(
+                    "Evento {} actualizado sin asistentes confirmados para notificar",
+                    evento.getId());
+            return;
+        }
+
+        int notificados = 0;
+
+        for (final AsistenciaEvento asistencia : asistencias) {
+            final Usuario asistente = asistencia.getUsuario();
+            if (asistente == null || asistente.getId() == null || asistente.getEmail() == null) {
+                continue;
+            }
+
+            if (evento.getCreador() != null
+                    && evento.getCreador().getId() != null
+                    && evento.getCreador().getId().equals(asistente.getId())) {
+                continue;
+            }
+
+            try {
+                final PreferenciasNotificacion preferencias =
+                        preferenciasNotificacionService.getOrCreate(asistente.getId());
+                final boolean puedeRecibir =
+                        Boolean.TRUE.equals(preferencias.getEmailsActivados())
+                                && Boolean.TRUE.equals(preferencias.getNotificarCambiosDeEventos());
+
+                if (!puedeRecibir) {
+                    continue;
+                }
+
+                emailService.sendEventUpdatedEmail(asistente, evento);
+                notificados++;
+            } catch (Exception e) {
+                log.warn(
+                        "No se pudo notificar cambio de evento {} al usuario {}: {}",
+                        evento.getId(),
+                        asistente.getId(),
+                        e.getMessage());
+            }
+        }
+
+        log.info(
+                "Evento {} actualizado: {} asistentes confirmados, {} correos enviados",
+                evento.getId(),
+                asistencias.size(),
+                notificados);
     }
 
     // ===============================

@@ -34,6 +34,7 @@ import VerifiedTeachers from './screens/verifiedTeachers/VerifiedTeachers';
 import CalendarCallback from './screens/myProfile/CalendarCallback';
 import CuestionarioEditor from './screens/cuestionarios/CuestionarioEditor';
 import Chats from './screens/chat/Chats';
+import NotificationTab from './screens/notificaciones/NotificationTab';
 
 function AppRoutes() {
   const { isAuthenticated, loading } = useAuth();
@@ -77,6 +78,7 @@ function AppRoutes() {
         <Route path="/planes/success" element={<PlanesSuccess />} />
         <Route path="/settings/calendar" element={<CalendarCallback />} />
         <Route path="/mis-reservas" element={<MisReservas />} />
+        <Route path="/notificaciones" element={<NotificationTab />} />
       </>
     )
   }

@@ -56,8 +56,9 @@ jobs:
           # Determinar rango de commits a validar
           BEFORE="${{ github.event.before }}"
           if [[ "$BEFORE" == "0000000000000000000000000000000000000000" ]]; then
-            # Rama nueva: comparar con trunk (o main si trunk no existe)
-            BASE=$(git merge-base origin/trunk HEAD 2>/dev/null \
+            # Rama nueva: comparar con develop (rama de integración principal)
+            BASE=$(git merge-base origin/develop HEAD 2>/dev/null \
+                || git merge-base origin/trunk HEAD 2>/dev/null \
                 || git merge-base origin/main HEAD 2>/dev/null \
                 || echo "")
             if [[ -n "$BASE" ]]; then

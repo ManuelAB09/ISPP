@@ -34,6 +34,7 @@ import lombok.ToString;
 @ToString(exclude = {"intereses", "tutor", "institution"})
 @NoArgsConstructor
 @AllArgsConstructor
+@lombok.Builder
 public class Usuario {
 
     /** Identificador único del usuario. */
