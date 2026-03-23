@@ -49,6 +49,9 @@ public class SubscriptionResponse {
     /** Nombre de la institución del usuario (si tiene). */
     private String institutionNombre;
 
+    /** Identificador de la institución del usuario (si tiene). */
+    private Long institutionId;
+
     /** Plan corporativo de la institución (si tiene). */
     private String planCorporativo;
 

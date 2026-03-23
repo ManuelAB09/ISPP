@@ -1,7 +1,7 @@
 package es.us.meerkat.backend.controller;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.time.LocalDate;
@@ -76,9 +76,10 @@ class SuscripcionControllerTest {
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(2, response.getBody().length);
+                assertEquals(3, response.getBody().length);
         assertEquals(TipoPlan.FREE, response.getBody()[0]);
         assertEquals(TipoPlan.PREMIUM, response.getBody()[1]);
+                assertEquals(TipoPlan.PRO, response.getBody()[2]);
         verify(suscripcionService).obtenerPlanesDisponibles();
     }
 

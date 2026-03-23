@@ -10,10 +10,46 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import es.us.meerkat.backend.dto.*;
+import es.us.meerkat.backend.dto.AccessRequestBody;
+import es.us.meerkat.backend.dto.CategoryListResponse;
+import es.us.meerkat.backend.dto.CategoryResponse;
+import es.us.meerkat.backend.dto.ClassroomInfoResponse;
+import es.us.meerkat.backend.dto.CommunityDetailResponse;
+import es.us.meerkat.backend.dto.CommunityListResponse;
+import es.us.meerkat.backend.dto.CommunityRankingEntryResponse;
+import es.us.meerkat.backend.dto.CreateCategoryRequest;
+import es.us.meerkat.backend.dto.CreateCommunityRequest;
+import es.us.meerkat.backend.dto.CreateEventRequest;
+import es.us.meerkat.backend.dto.EventDetailResponse;
+import es.us.meerkat.backend.dto.EventSummaryResponse;
+import es.us.meerkat.backend.dto.HireTutorRequest;
+import es.us.meerkat.backend.dto.JoinCommunityRequest;
+import es.us.meerkat.backend.dto.LinkClassroomRequest;
+import es.us.meerkat.backend.dto.MemberListResponse;
+import es.us.meerkat.backend.dto.MemberResponse;
+import es.us.meerkat.backend.dto.MessageResponse;
+import es.us.meerkat.backend.dto.PaymentUrlResponse;
+import es.us.meerkat.backend.dto.PrivacyRequest;
+import es.us.meerkat.backend.dto.ReorderCategoriesRequest;
+import es.us.meerkat.backend.dto.RequestListResponse;
+import es.us.meerkat.backend.dto.RequestResponse;
+import es.us.meerkat.backend.dto.RespondRequestBody;
+import es.us.meerkat.backend.dto.TransferAdminRequest;
+import es.us.meerkat.backend.dto.UpdateCategoryRequest;
+import es.us.meerkat.backend.dto.UpdateCommunityRequest;
+import es.us.meerkat.backend.dto.UpgradeCommunityRequest;
+import es.us.meerkat.backend.dto.UserSimpleResponse;
 import es.us.meerkat.backend.entity.Categoria;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.ComunidadClassroom;
@@ -158,7 +194,8 @@ public class CommunityController {
                                             request.tipoGrupo())
                                     : es.us.meerkat.backend.entity.TipoGrupo.COMUNIDAD_PUBLICA,
                             request.imagenUrl(),
-                            null,
+                        request.institutionId(),
+                        request.maxMiembros(),
                             rolInicial);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(entityToDetailResponse(comunidad, usuario.getId()));
@@ -580,6 +617,39 @@ public class CommunityController {
                     memberService.transferAdmin(
                             usuario.getId(), communityId, request.nuevoAdminId(), rol);
             return ResponseEntity.ok(entityToMemberResponse(newAdmin));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
+    /** Promueve a ADMIN a un miembro de la comunidad. POST /api/v1/communities/{communityId}/admin/{userId} */
+    @PostMapping("/{communityId}/admin/{userId}")
+    @Operation(
+            summary = "Promover miembro a admin",
+            description = "Asciende a ADMIN a un miembro existente (solo admin actual)",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Miembro promovido a admin"),
+        @ApiResponse(responseCode = "403", description = "No tienes permisos"),
+        @ApiResponse(responseCode = "404", description = "Usuario target no encontrado")
+    })
+    public ResponseEntity<MemberResponse> promoteMemberToAdmin(
+            @PathVariable Long communityId,
+            @PathVariable Long userId,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        try {
+            MiembroComunidad promotedMember =
+                    memberService.promoteToAdmin(usuario.getId(), communityId, userId);
+            return ResponseEntity.ok(entityToMemberResponse(promotedMember));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }

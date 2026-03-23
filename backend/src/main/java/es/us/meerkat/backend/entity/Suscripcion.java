@@ -39,7 +39,7 @@ public class Suscripcion {
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 
-    /** Tipo de plan contratado (FREE o PREMIUM). */
+    /** Tipo de plan contratado (FREE, PREMIUM o PRO). */
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -67,17 +67,23 @@ public class Suscripcion {
     @Column(length = 10)
     private String periodo;
 
-    /** Suscribe al usuario al plan. */
-    public static Suscripcion suscribir(String periodo) {
+    /** Suscribe al usuario al plan indicado. */
+    public static Suscripcion suscribir(String periodo, TipoPlan plan) {
         int meses = "anual".equalsIgnoreCase(periodo) ? 12 : 1;
+        TipoPlan planSolicitado = plan != null && plan != TipoPlan.FREE ? plan : TipoPlan.PREMIUM;
         return Suscripcion.builder()
                 .activa(true)
                 .autoRenovar(true)
-                .plan(TipoPlan.PREMIUM)
+                .plan(planSolicitado)
                 .periodo(periodo != null ? periodo.toUpperCase() : "MENSUAL")
                 .fechaInicio(LocalDate.now())
                 .fechaFin(LocalDate.now().plusMonths(meses))
                 .build();
+    }
+
+    /** Suscribe al usuario al plan premium (compatibilidad). */
+    public static Suscripcion suscribir(String periodo) {
+        return suscribir(periodo, TipoPlan.PREMIUM);
     }
 
     /** Suscribe al usuario al plan (periodo mensual por defecto). */
@@ -95,10 +101,10 @@ public class Suscripcion {
         this.fechaFin = LocalDate.now();
     }
 
-    /** Renueva la suscripción extendiendo las fechas de vigencia. */
-    /** Renueva la suscripción extendiendo las fechas de vigencia. */
-    public void renovar() {
-        this.plan = TipoPlan.PREMIUM;
+    /** Renueva la suscripción extendiendo las fechas de vigencia para un plan dado. */
+    public void renovar(TipoPlan plan) {
+        TipoPlan planSolicitado = plan != null && plan != TipoPlan.FREE ? plan : TipoPlan.PREMIUM;
+        this.plan = planSolicitado;
         this.activa = true;
         this.autoRenovar = true;
 
@@ -111,6 +117,11 @@ public class Suscripcion {
             this.fechaInicio = LocalDate.now();
             this.fechaFin = LocalDate.now().plusMonths(meses);
         }
+    }
+
+    /** Renueva manteniendo el plan actual (o PREMIUM por defecto). */
+    public void renovar() {
+        renovar(this.plan != null && this.plan != TipoPlan.FREE ? this.plan : TipoPlan.PREMIUM);
     }
 
     /**
