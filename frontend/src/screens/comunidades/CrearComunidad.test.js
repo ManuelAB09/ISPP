@@ -3,11 +3,24 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { communitiesApi } from '../../api/communities.api';
 import { subscriptionsApi } from '../../api/subscriptions.api';
+import { getMyTutorProfiles } from '../../api/tutorEndpoints';
 import CrearComunidad from './CrearComunidad';
 
 // Mocks
 jest.mock('../../api/communities.api');
 jest.mock('../../api/subscriptions.api');
+jest.mock('../../api/tutorEndpoints', () => ({
+  getMyTutorProfiles: jest.fn(),
+}));
+jest.mock('../../contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: {
+      id: 1,
+      esTutor: true,
+      esProfesor: true,
+    },
+  }),
+}));
 jest.mock('../../components/Header/Header', () => {
   return function MockHeader() {
     return <div data-testid="mock-header">Header</div>;
@@ -26,6 +39,11 @@ describe('CrearComunidad', () => {
     communitiesApi.create.mockResolvedValue({ id: 123 });
     communitiesApi.listMine.mockResolvedValue({ content: [], page: { totalElements: 0 } });
     subscriptionsApi.getMySubscription.mockResolvedValue({ plan: 'FREE', activa: true });
+    getMyTutorProfiles.mockResolvedValue({
+      especialidades: ['Matematicas'],
+      tarifaPorHora: 15,
+      biografia: 'Tutor de prueba',
+    });
   });
 
   const renderComponent = () => {
@@ -180,6 +198,7 @@ describe('CrearComunidad', () => {
         tipoGrupo: 'COMUNIDAD_PUBLICA',
         imagenUrl: 'empty',
         maxMiembros: 30,
+        rolInicial: 'PROFESOR',
       });
     });
   });

@@ -11,9 +11,22 @@ import {
   getMyAttendance,
 } from '../../api/eventEndpoints';
 import { communitiesApi } from '../../api/communities.api';
+import axiosInstance from '../../api/axiosConfig';
+import { checkAlreadyRated } from '../../api/valoraciones.api';
 
 // Mocks
 jest.mock('../../api/eventEndpoints');
+jest.mock('../../api/axiosConfig', () => ({
+  __esModule: true,
+  default: {
+    get: jest.fn(),
+    post: jest.fn(),
+    delete: jest.fn(),
+  },
+}));
+jest.mock('../../api/valoraciones.api', () => ({
+  checkAlreadyRated: jest.fn(),
+}));
 jest.mock('../../api/communities.api', () => ({
   communitiesApi: {
     getMyMembership: jest.fn(),
@@ -49,6 +62,10 @@ describe('DetalleEvento', () => {
     });
 
     communitiesApi.getMyMembership.mockResolvedValue({});
+    axiosInstance.get.mockResolvedValue({ data: [] });
+    axiosInstance.post.mockResolvedValue({ data: {} });
+    axiosInstance.delete.mockResolvedValue({});
+    checkAlreadyRated.mockResolvedValue({ rated: false });
     getConfirmedAttendees.mockResolvedValue([
       { id: 201, usuario: { id: 20, nombre: 'Ana' } },
       { id: 202, usuario: { id: 21, nombre: 'Luis' } },
