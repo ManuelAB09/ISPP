@@ -263,8 +263,8 @@ public class InstitutionController {
 
         try {
             Institution institution =
-                institutionService.preconfigurarPlanCorporativo(
-                    institutionId, usuario.getId(), request);
+                    institutionService.preconfigurarPlanCorporativo(
+                            institutionId, usuario.getId(), request);
 
             TipoPlanCorporativo tipoPlan = institution.getPlanCorporativo();
             String periodo = request.getPeriodo();
@@ -320,12 +320,12 @@ public class InstitutionController {
 
             Long institucionId = Long.parseLong(institucionIdStr);
             Integer duracionMeses = duracionStr != null ? Integer.parseInt(duracionStr) : 12;
-                TipoPlanCorporativo tipoPlanCorporativo =
+            TipoPlanCorporativo tipoPlanCorporativo =
                     tipoPlanCorporativoStr != null
-                        ? TipoPlanCorporativo.valueOf(tipoPlanCorporativoStr)
-                        : null;
+                            ? TipoPlanCorporativo.valueOf(tipoPlanCorporativoStr)
+                            : null;
 
-                institutionService.activarPlanCorporativo(
+            institutionService.activarPlanCorporativo(
                     institucionId, duracionMeses, emailContacto, tipoPlanCorporativo);
             log.info(
                     "Plan corporativo activado para institución {} vía Stripe Elements",
@@ -381,12 +381,12 @@ public class InstitutionController {
 
             Long institucionId = Long.parseLong(institucionIdStr);
             Integer duracionMeses = duracionStr != null ? Integer.parseInt(duracionStr) : 12;
-                TipoPlanCorporativo tipoPlanCorporativo =
+            TipoPlanCorporativo tipoPlanCorporativo =
                     tipoPlanCorporativoStr != null
-                        ? TipoPlanCorporativo.valueOf(tipoPlanCorporativoStr)
-                        : null;
+                            ? TipoPlanCorporativo.valueOf(tipoPlanCorporativoStr)
+                            : null;
 
-                institutionService.activarPlanCorporativo(
+            institutionService.activarPlanCorporativo(
                     institucionId, duracionMeses, emailContacto, tipoPlanCorporativo);
             log.info("Plan corporativo activado para institución {}", institucionId);
 

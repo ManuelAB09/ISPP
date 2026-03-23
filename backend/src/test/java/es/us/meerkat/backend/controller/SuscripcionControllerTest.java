@@ -76,10 +76,10 @@ class SuscripcionControllerTest {
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-                assertEquals(3, response.getBody().length);
+        assertEquals(3, response.getBody().length);
         assertEquals(TipoPlan.FREE, response.getBody()[0]);
         assertEquals(TipoPlan.PREMIUM, response.getBody()[1]);
-                assertEquals(TipoPlan.PRO, response.getBody()[2]);
+        assertEquals(TipoPlan.PRO, response.getBody()[2]);
         verify(suscripcionService).obtenerPlanesDisponibles();
     }
 

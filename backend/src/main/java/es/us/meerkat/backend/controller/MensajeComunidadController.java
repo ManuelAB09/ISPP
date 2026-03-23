@@ -274,7 +274,7 @@ public class MensajeComunidadController {
                 continue;
             }
             messagingTemplate.convertAndSendToUser(
-                    miembro.getEmail(), "/queue/community_message", response);
+                    miembro.getId().toString(), "/queue/community_message", response);
         }
     }
 }

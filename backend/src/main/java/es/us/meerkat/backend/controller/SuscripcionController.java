@@ -92,13 +92,13 @@ public class SuscripcionController {
         }
 
         try {
-                        TipoPlan planSolicitado = resolvePlan(request.getPlanId());
+            TipoPlan planSolicitado = resolvePlan(request.getPlanId());
             PaymentUrlResponse paymentUrl =
                     paymentService.generarPagoSuscripcion(
                             usuario, planSolicitado, request.getPeriodo());
             return ResponseEntity.status(HttpStatus.CREATED).body(paymentUrl);
-                } catch (IllegalArgumentException e) {
-                        return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (StripeException e) {
 
             return ResponseEntity.internalServerError()
@@ -201,7 +201,8 @@ public class SuscripcionController {
                             : BigDecimal.valueOf(2.99);
 
             TipoPlan planSolicitado =
-                    resolvePlan(session.getMetadata().getOrDefault("plan", TipoPlan.PREMIUM.name()));
+                    resolvePlan(
+                            session.getMetadata().getOrDefault("plan", TipoPlan.PREMIUM.name()));
             String periodo = session.getMetadata().getOrDefault("periodo", "mensual");
 
             log.info("Llamando activarSuscripcionTrasStripe con monto: {}", monto);
@@ -294,29 +295,30 @@ public class SuscripcionController {
         }
 
         try {
-                        TipoPlan planSolicitado = resolvePlan(request.getPlanId());
+            TipoPlan planSolicitado = resolvePlan(request.getPlanId());
             Map<String, String> result =
-                                        paymentService.crearPaymentIntentSuscripcion(
-                                                        usuario, planSolicitado, request.getPeriodo());
+                    paymentService.crearPaymentIntentSuscripcion(
+                            usuario, planSolicitado, request.getPeriodo());
             return ResponseEntity.ok(result);
-                } catch (IllegalArgumentException e) {
-                        return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (StripeException e) {
             return ResponseEntity.internalServerError()
                     .body(Map.of("error", "Error al crear el intent de pago: " + e.getMessage()));
         }
     }
 
-        private TipoPlan resolvePlan(String planId) {
-                String normalized = (planId == null || planId.isBlank()) ? "PREMIUM" : planId.trim().toUpperCase();
-                try {
-                        TipoPlan plan = TipoPlan.valueOf(normalized);
-                        if (plan == TipoPlan.FREE) {
-                                throw new IllegalArgumentException("El plan FREE no es contratable");
-                        }
-                        return plan;
-                } catch (IllegalArgumentException e) {
-                        throw new IllegalArgumentException("Plan no válido: " + planId + ". Usa PREMIUM o PRO");
-                }
+    private TipoPlan resolvePlan(String planId) {
+        String normalized =
+                (planId == null || planId.isBlank()) ? "PREMIUM" : planId.trim().toUpperCase();
+        try {
+            TipoPlan plan = TipoPlan.valueOf(normalized);
+            if (plan == TipoPlan.FREE) {
+                throw new IllegalArgumentException("El plan FREE no es contratable");
+            }
+            return plan;
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Plan no válido: " + planId + ". Usa PREMIUM o PRO");
         }
+    }
 }

@@ -294,10 +294,7 @@ public class PaymentController {
                                                 tipoPlanCorporativoStr)
                                         : null;
                         institutionService.activarPlanCorporativo(
-                                institucionId,
-                                duracionMeses,
-                                emailContacto,
-                                tipoPlanCorporativo);
+                                institucionId, duracionMeses, emailContacto, tipoPlanCorporativo);
                     }
                     // Registrar transacción
                     paymentService.procesarPagoExitoso(
@@ -348,7 +345,8 @@ public class PaymentController {
                     BigDecimal.valueOf(invoice.getAmountPaid())
                             .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
 
-            String planMeta = invoice.getMetadata() != null ? invoice.getMetadata().get("plan") : null;
+            String planMeta =
+                    invoice.getMetadata() != null ? invoice.getMetadata().get("plan") : null;
             es.us.meerkat.backend.entity.TipoPlan plan =
                     "PRO".equalsIgnoreCase(planMeta)
                             ? es.us.meerkat.backend.entity.TipoPlan.PRO

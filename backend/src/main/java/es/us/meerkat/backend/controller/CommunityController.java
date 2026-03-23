@@ -194,8 +194,8 @@ public class CommunityController {
                                             request.tipoGrupo())
                                     : es.us.meerkat.backend.entity.TipoGrupo.COMUNIDAD_PUBLICA,
                             request.imagenUrl(),
-                        request.institutionId(),
-                        request.maxMiembros(),
+                            request.institutionId(),
+                            request.maxMiembros(),
                             rolInicial);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(entityToDetailResponse(comunidad, usuario.getId()));
@@ -622,7 +622,10 @@ public class CommunityController {
         }
     }
 
-    /** Promueve a ADMIN a un miembro de la comunidad. POST /api/v1/communities/{communityId}/admin/{userId} */
+    /**
+     * Promueve a ADMIN a un miembro de la comunidad. POST
+     * /api/v1/communities/{communityId}/admin/{userId}
+     */
     @PostMapping("/{communityId}/admin/{userId}")
     @Operation(
             summary = "Promover miembro a admin",

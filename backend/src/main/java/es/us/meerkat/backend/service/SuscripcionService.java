@@ -25,7 +25,7 @@ public class SuscripcionService {
 
     private final SuscripcionRepository suscripcionRepository;
     private final UsuarioRepository usuarioRepository;
-        private final InstitutionRepository institutionRepository;
+    private final InstitutionRepository institutionRepository;
     private final PaymentService paymentService;
 
     /**
@@ -102,8 +102,8 @@ public class SuscripcionService {
      * @return true si tiene plan institucional activo
      */
     public boolean tienePlanInstitucionalActivo(Usuario usuario) {
-                Institution institution = resolveInstitutionForUser(usuario);
-                if (institution == null) {
+        Institution institution = resolveInstitutionForUser(usuario);
+        if (institution == null) {
             return false;
         }
         return institution.getPlanActivo()
@@ -111,41 +111,41 @@ public class SuscripcionService {
                         || institution.getFechaFinPlan().isAfter(LocalDateTime.now()));
     }
 
-        private Institution resolveInstitutionForUser(Usuario usuario) {
-                if (usuario == null) {
-                        return null;
-                }
-
-                // 1) Priorizar institución activa administrada por el usuario
-                Optional<Institution> adminActiveInstitution =
-                                institutionRepository
-                                                .findFirstByUsuarioAdminIdAndPlanActivoTrueOrderByFechaFinPlanDesc(
-                                                                usuario.getId());
-                if (adminActiveInstitution.isPresent()) {
-                        return adminActiveInstitution.get();
-                }
-
-                // 2) Si el usuario está vinculado directamente, usar esa relación
-                if (usuario.getInstitution() != null) {
-                        return usuario.getInstitution();
-                }
-
-                // 3) Fallback: institución activa donde el email del usuario es el contacto
-                if (usuario.getEmail() != null && !usuario.getEmail().isBlank()) {
-                        Optional<Institution> byContactEmail =
-                                institutionRepository
-                                        .findFirstByEmailContactoIgnoreCaseAndPlanActivoTrueOrderByFechaFinPlanDesc(
-                                                usuario.getEmail());
-                        if (byContactEmail.isPresent()) {
-                                return byContactEmail.get();
-                        }
-                }
-
-                // 4) Último fallback: última institución administrada
-                return institutionRepository
-                                .findFirstByUsuarioAdminIdOrderByCreatedAtDesc(usuario.getId())
-                                .orElse(null);
+    private Institution resolveInstitutionForUser(Usuario usuario) {
+        if (usuario == null) {
+            return null;
         }
+
+        // 1) Priorizar institución activa administrada por el usuario
+        Optional<Institution> adminActiveInstitution =
+                institutionRepository
+                        .findFirstByUsuarioAdminIdAndPlanActivoTrueOrderByFechaFinPlanDesc(
+                                usuario.getId());
+        if (adminActiveInstitution.isPresent()) {
+            return adminActiveInstitution.get();
+        }
+
+        // 2) Si el usuario está vinculado directamente, usar esa relación
+        if (usuario.getInstitution() != null) {
+            return usuario.getInstitution();
+        }
+
+        // 3) Fallback: institución activa donde el email del usuario es el contacto
+        if (usuario.getEmail() != null && !usuario.getEmail().isBlank()) {
+            Optional<Institution> byContactEmail =
+                    institutionRepository
+                            .findFirstByEmailContactoIgnoreCaseAndPlanActivoTrueOrderByFechaFinPlanDesc(
+                                    usuario.getEmail());
+            if (byContactEmail.isPresent()) {
+                return byContactEmail.get();
+            }
+        }
+
+        // 4) Último fallback: última institución administrada
+        return institutionRepository
+                .findFirstByUsuarioAdminIdOrderByCreatedAtDesc(usuario.getId())
+                .orElse(null);
+    }
 
     /**
      * Suscribe un usuario a un plan Premium.
@@ -225,9 +225,9 @@ public class SuscripcionService {
         return renovada;
     }
 
-        /**
-         * Activa la suscripción individual tras confirmación de pago por Stripe. Crea o reactiva la
-         * Suscripcion, registra la TransaccionPago y actualiza el plan del Usuario.
+    /**
+     * Activa la suscripción individual tras confirmación de pago por Stripe. Crea o reactiva la
+     * Suscripcion, registra la TransaccionPago y actualiza el plan del Usuario.
      *
      * @param usuarioId ID del usuario extraído de los metadata de Stripe
      * @param monto monto cobrado (ya convertido de centavos a euros)
@@ -251,8 +251,7 @@ public class SuscripcionService {
                     "No se puede activar suscripción individual con plan institucional activo");
         }
 
-        TipoPlan planSolicitado =
-                (plan == null || plan == TipoPlan.FREE) ? TipoPlan.PREMIUM : plan;
+        TipoPlan planSolicitado = (plan == null || plan == TipoPlan.FREE) ? TipoPlan.PREMIUM : plan;
 
         // 1. Crear o reutilizar suscripción
         Optional<Suscripcion> existente = suscripcionRepository.findByUsuarioId(usuarioId);
@@ -262,11 +261,11 @@ public class SuscripcionService {
             // Ya tenía una suscripción anterior (cancelada o expirada): reactivar
             suscripcion = existente.get();
             suscripcion.setPeriodo(periodo != null ? periodo.toUpperCase() : "MENSUAL");
-                        suscripcion.renovar(planSolicitado);
+            suscripcion.renovar(planSolicitado);
 
         } else {
             // Primera vez
-                        suscripcion = Suscripcion.suscribir(periodo, planSolicitado);
+            suscripcion = Suscripcion.suscribir(periodo, planSolicitado);
             suscripcion.setUsuario(usuario);
         }
         suscripcionRepository.save(suscripcion);
@@ -276,24 +275,24 @@ public class SuscripcionService {
                 usuarioId,
                 TipoTransaccion.SUSCRIPCION,
                 monto,
-                                "Suscripción " + planSolicitado.name() + " activada vía Stripe",
+                "Suscripción " + planSolicitado.name() + " activada vía Stripe",
                 null);
 
         // 3. Actualizar plan del usuario
-                usuario.setPlan(planSolicitado);
+        usuario.setPlan(planSolicitado);
         usuarioRepository.save(usuario);
     }
 
-        /** Compatibilidad: activa suscripción asumiendo plan PREMIUM. */
-        @Transactional
-        public void activarSuscripcionTrasStripe(Long usuarioId, BigDecimal monto, String periodo) {
-                activarSuscripcionTrasStripe(usuarioId, monto, periodo, TipoPlan.PREMIUM);
-        }
+    /** Compatibilidad: activa suscripción asumiendo plan PREMIUM. */
+    @Transactional
+    public void activarSuscripcionTrasStripe(Long usuarioId, BigDecimal monto, String periodo) {
+        activarSuscripcionTrasStripe(usuarioId, monto, periodo, TipoPlan.PREMIUM);
+    }
 
     /** Sobrecarga sin periodo para compatibilidad con webhooks que no pasan periodo. */
     @Transactional
     public void activarSuscripcionTrasStripe(Long usuarioId, BigDecimal monto) {
-                activarSuscripcionTrasStripe(usuarioId, monto, "MENSUAL", TipoPlan.PREMIUM);
+        activarSuscripcionTrasStripe(usuarioId, monto, "MENSUAL", TipoPlan.PREMIUM);
     }
 
     /**
@@ -305,17 +304,16 @@ public class SuscripcionService {
      */
     @Transactional
     public void renovarSuscripcionTrasStripe(Long usuarioId, BigDecimal monto) {
-                renovarSuscripcionTrasStripe(usuarioId, monto, TipoPlan.PREMIUM);
-        }
+        renovarSuscripcionTrasStripe(usuarioId, monto, TipoPlan.PREMIUM);
+    }
 
-        /**
-         * Renueva la suscripción individual tras cobro recurrente exitoso de Stripe para el plan
-         * indicado.
-         */
-        @Transactional
-        public void renovarSuscripcionTrasStripe(Long usuarioId, BigDecimal monto, TipoPlan plan) {
-                TipoPlan planSolicitado =
-                                (plan == null || plan == TipoPlan.FREE) ? TipoPlan.PREMIUM : plan;
+    /**
+     * Renueva la suscripción individual tras cobro recurrente exitoso de Stripe para el plan
+     * indicado.
+     */
+    @Transactional
+    public void renovarSuscripcionTrasStripe(Long usuarioId, BigDecimal monto, TipoPlan plan) {
+        TipoPlan planSolicitado = (plan == null || plan == TipoPlan.FREE) ? TipoPlan.PREMIUM : plan;
 
         // 1. Renovar suscripción
         Suscripcion suscripcion =
