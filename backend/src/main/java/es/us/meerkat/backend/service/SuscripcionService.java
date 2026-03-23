@@ -133,9 +133,9 @@ public class SuscripcionService {
                 // 3) Fallback: institución activa donde el email del usuario es el contacto
                 if (usuario.getEmail() != null && !usuario.getEmail().isBlank()) {
                         Optional<Institution> byContactEmail =
-                                        institutionRepository
-                                                        .findFirstByEmailContactoIgnoreCaseAndPlanActivoTrueOrderByFechaFinPlanDesc(
-                                                                        usuario.getEmail());
+                                institutionRepository
+                                        .findFirstByEmailContactoIgnoreCaseAndPlanActivoTrueOrderByFechaFinPlanDesc(
+                                                usuario.getEmail());
                         if (byContactEmail.isPresent()) {
                                 return byContactEmail.get();
                         }
