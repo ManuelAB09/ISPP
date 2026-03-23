@@ -23,7 +23,10 @@ import es.us.meerkat.backend.dto.CreateEventRequest;
 import es.us.meerkat.backend.dto.EventDetailResponse;
 import es.us.meerkat.backend.dto.EventSummaryResponse;
 import es.us.meerkat.backend.entity.Evento;
+import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.MiembroComunidadRepository;
+import es.us.meerkat.backend.service.AuthorizationService;
 import es.us.meerkat.backend.service.EventoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -39,6 +42,10 @@ public class EventoController {
 
     /** Servicio para operaciones de evento. */
     private final EventoService eventoService;
+
+    private final AuthorizationService authorizationService;
+
+    private final MiembroComunidadRepository miembroComunidadRepository;
 
     // ===============================
     // CREAR EVENTO
@@ -63,6 +70,12 @@ public class EventoController {
 
         if (usuario == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado");
+        }
+
+        if (!authorizationService.isAdminOrProfesor(usuario.getId(), comunidadId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "No tienes permisos para crear eventos en esta comunidad");
         }
 
         final Evento evento;
@@ -108,7 +121,27 @@ public class EventoController {
             @PathVariable @Parameter(description = "ID del evento") final Long eventId,
             @AuthenticationPrincipal Usuario usuario) {
         Long usuarioId = usuario != null ? usuario.getId() : null;
-        return ResponseEntity.ok(eventoService.obtenerEvento(eventId, usuarioId).toDTO());
+        Evento evento = eventoService.obtenerEvento(eventId, usuarioId);
+        EventDetailResponse dto = evento.toDTO();
+
+        // Resolver el rol del creador en la comunidad del evento
+        if (evento.getCreador() != null && evento.getComunidad() != null) {
+            miembroComunidadRepository
+                    .findByUsuarioIdAndComunidadId(
+                            evento.getCreador().getId(), evento.getComunidad().getId())
+                    .ifPresent(
+                            m -> {
+                                // Si tiene rolDocente (ADMIN que eligió ser profesor/alumno), usar
+                                // ese
+                                // Si no, usar su rol principal (PROFESOR o ALUMNO de miembro
+                                // normal)
+                                RolComunidad rolEfectivo =
+                                        m.getRolDocente() != null ? m.getRolDocente() : m.getRol();
+                                dto.setCreadorRolComunidad(rolEfectivo.name());
+                            });
+        }
+
+        return ResponseEntity.ok(dto);
     }
 
     /**
@@ -232,7 +265,12 @@ public class EventoController {
         }
 
         final Evento evento = eventoService.obtenerEventoInterno(eventId);
-        if (!evento.getCreador().getId().equals(usuario.getId())) {
+        boolean isCreatorEdit = evento.getCreador().getId().equals(usuario.getId());
+        boolean isComunidadAdminEdit =
+                evento.getComunidad() != null
+                        && authorizationService.isAdminOf(
+                                usuario.getId(), evento.getComunidad().getId());
+        if (!isCreatorEdit && !isComunidadAdminEdit) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN, "Solo el creador del evento puede editarlo");
         }
@@ -287,9 +325,7 @@ public class EventoController {
      * @param motivo Motivo de la cancelación.
      * @return El evento cancelado.
      */
-    @PostMapping(
-            "/{eventId}/cancel") // TODO: Esto debería de ser un PUT o un PATCH pero yo no mando
-    // asiq nos vemo
+    @PostMapping("/{eventId}/cancel")
     @Operation(summary = "Cancelar evento", description = "Cancela un evento y registra el motivo")
     public ResponseEntity<EventDetailResponse> cancelarEvento(
             @PathVariable @Parameter(description = "ID del evento") final Long eventId,
@@ -301,7 +337,12 @@ public class EventoController {
         }
 
         final Evento evento = eventoService.obtenerEventoInterno(eventId);
-        if (!evento.getCreador().getId().equals(usuario.getId())) {
+        boolean isCreatorCancel = evento.getCreador().getId().equals(usuario.getId());
+        boolean isComunidadAdminCancel =
+                evento.getComunidad() != null
+                        && authorizationService.isAdminOf(
+                                usuario.getId(), evento.getComunidad().getId());
+        if (!isCreatorCancel && !isComunidadAdminCancel) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN, "Solo el creador del evento puede cancelarlo");
         }

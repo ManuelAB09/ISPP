@@ -10,5 +10,8 @@ public enum EstadoTransaccion {
     COMPLETADA,
 
     /** La transacción falló o el pago fue rechazado. */
-    FALLIDA;
+    FALLIDA,
+
+    /** La transacción fue reembolsada. */
+    REEMBOLSADA;
 }

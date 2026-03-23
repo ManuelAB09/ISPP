@@ -50,7 +50,7 @@ class MemberServiceTest {
         when(miembroComunidadRepository.save(any(MiembroComunidad.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        MiembroComunidad miembro = memberService.joinPublicCommunity(userId, communityId);
+        MiembroComunidad miembro = memberService.joinPublicCommunity(userId, communityId, null);
 
         verify(miembroComunidadRepository).save(miembro);
         assertThat(miembro.getUsuario()).isEqualTo(usuario);
@@ -66,7 +66,7 @@ class MemberServiceTest {
         when(comunidadRepository.findById(communityId))
                 .thenReturn(Optional.of(buildComunidad(communityId, TipoGrupo.GRUPO_PRIVADO)));
 
-        assertThatThrownBy(() -> memberService.joinPublicCommunity(userId, communityId))
+        assertThatThrownBy(() -> memberService.joinPublicCommunity(userId, communityId, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("comunidad privada");
     }
@@ -82,7 +82,7 @@ class MemberServiceTest {
         when(communityService.countMembers(communityId)).thenReturn(50L);
         when(communityService.getMaxMembers(communityId)).thenReturn(50);
 
-        assertThatThrownBy(() -> memberService.joinPublicCommunity(userId, communityId))
+        assertThatThrownBy(() -> memberService.joinPublicCommunity(userId, communityId, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("La comunidad está llena");
     }
@@ -132,11 +132,49 @@ class MemberServiceTest {
         when(miembroComunidadRepository.save(any(MiembroComunidad.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        MiembroComunidad result = memberService.transferAdmin(adminId, communityId, newAdminId);
+        MiembroComunidad result =
+                memberService.transferAdmin(adminId, communityId, newAdminId, null);
 
         assertThat(actual.getRol()).isEqualTo(RolComunidad.ALUMNO);
         assertThat(nuevo.getRol()).isEqualTo(RolComunidad.ADMIN);
         assertThat(result.getRol()).isEqualTo(RolComunidad.ADMIN);
+    }
+
+    @Test
+    void addAdminShouldFailWhenCommunityIsNotCorporate() {
+        Long adminId = 1L;
+        Long targetUserId = 2L;
+        Long communityId = 10L;
+
+        when(authorizationService.isAdminOf(adminId, communityId)).thenReturn(true);
+        when(communityService.isCommunityCorporate(communityId)).thenReturn(false);
+
+        assertThatThrownBy(() -> memberService.addAdmin(adminId, communityId, targetUserId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("comunidades corporativas");
+
+        verify(miembroComunidadRepository, never()).save(any(MiembroComunidad.class));
+    }
+
+    @Test
+    void addAdminShouldPromoteMemberWhenCommunityIsCorporate() {
+        Long adminId = 1L;
+        Long targetUserId = 2L;
+        Long communityId = 10L;
+
+        MiembroComunidad targetMember = MiembroComunidad.builder().rol(RolComunidad.ALUMNO).build();
+
+        when(authorizationService.isAdminOf(adminId, communityId)).thenReturn(true);
+        when(communityService.isCommunityCorporate(communityId)).thenReturn(true);
+        when(miembroComunidadRepository.findByUsuarioIdAndComunidadId(targetUserId, communityId))
+                .thenReturn(Optional.of(targetMember));
+        when(miembroComunidadRepository.save(any(MiembroComunidad.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        MiembroComunidad result = memberService.addAdmin(adminId, communityId, targetUserId);
+
+        assertThat(result.getRol()).isEqualTo(RolComunidad.ADMIN);
+        verify(miembroComunidadRepository).save(targetMember);
     }
 
     private Usuario buildUsuario(final Long id) {

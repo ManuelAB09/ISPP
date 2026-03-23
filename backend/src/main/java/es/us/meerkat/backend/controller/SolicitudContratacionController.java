@@ -10,10 +10,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import es.us.meerkat.backend.dto.DisponibilidadTutorResponse;
+import es.us.meerkat.backend.dto.HorarioOcupadoResponse;
 import es.us.meerkat.backend.dto.SolicitudContratacionRequest;
 import es.us.meerkat.backend.dto.SolicitudContratacionResponse;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.service.DisponibilidadService;
 import es.us.meerkat.backend.service.EmailService;
 import es.us.meerkat.backend.service.PaymentService;
 import es.us.meerkat.backend.service.SolicitudContratacionService;
@@ -31,6 +34,7 @@ public class SolicitudContratacionController {
     private final PaymentService paymentService;
     private final TutorService tutorService;
     private final EmailService emailService;
+    private final DisponibilidadService disponibilidadService;
 
     /** Crear una solicitud de contratación directa a un tutor. */
     @PostMapping("/tutor/{tutorId}")
@@ -112,7 +116,7 @@ public class SolicitudContratacionController {
         }
         try {
             SolicitudContratacionResponse response =
-                    solicitudService.marcarComoPagada(solicitudId, usuario.getId());
+                    solicitudService.marcarComoPagada(solicitudId, usuario.getId(), null);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -311,7 +315,8 @@ public class SolicitudContratacionController {
 
             // Mark solicitud as paid (validates state + ownership)
             SolicitudContratacionResponse response =
-                    solicitudService.marcarComoPagada(solicitudId, usuario.getId());
+                    solicitudService.marcarComoPagada(
+                            solicitudId, usuario.getId(), paymentIntentId);
 
             // Record transaction with actual tutor reference
             java.math.BigDecimal monto =
@@ -362,6 +367,127 @@ public class SolicitudContratacionController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /** Cancelar una solicitud como alumno (regla 24h si pagada). */
+    @PostMapping("/{solicitudId}/cancelar-alumno")
+    public ResponseEntity<?> cancelarPorAlumno(
+            @AuthenticationPrincipal Usuario usuario,
+            @PathVariable Long solicitudId,
+            @RequestBody(required = false) Map<String, String> body) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado");
+        }
+        try {
+            String motivo = body != null ? body.get("motivo") : null;
+            SolicitudContratacionResponse response =
+                    solicitudService.cancelarPorAlumno(solicitudId, usuario.getId(), motivo);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /** Calificar una clase completada (solo alumno, 1-5 + comentario). */
+    @PostMapping("/{solicitudId}/calificar")
+    public ResponseEntity<?> calificarSolicitud(
+            @AuthenticationPrincipal Usuario usuario,
+            @PathVariable Long solicitudId,
+            @RequestBody Map<String, Object> body) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado");
+        }
+        try {
+            Integer calificacion =
+                    body.get("calificacion") != null
+                            ? Integer.valueOf(body.get("calificacion").toString())
+                            : null;
+            String comentario =
+                    body.get("comentario") != null ? body.get("comentario").toString() : null;
+            SolicitudContratacionResponse response =
+                    solicitudService.calificarSolicitud(
+                            solicitudId, usuario.getId(), calificacion, comentario);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /** Alumno aprueba la reprogramación propuesta por el tutor. */
+    @PostMapping("/{solicitudId}/aprobar-reprogramacion")
+    public ResponseEntity<?> aprobarReprogramacion(
+            @AuthenticationPrincipal Usuario usuario, @PathVariable Long solicitudId) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado");
+        }
+        try {
+            SolicitudContratacionResponse response =
+                    solicitudService.aprobarReprogramacion(solicitudId, usuario.getId());
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /** Alumno rechaza la reprogramación propuesta por el tutor. */
+    @PostMapping("/{solicitudId}/rechazar-reprogramacion")
+    public ResponseEntity<?> rechazarReprogramacion(
+            @AuthenticationPrincipal Usuario usuario, @PathVariable Long solicitudId) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado");
+        }
+        try {
+            SolicitudContratacionResponse response =
+                    solicitudService.rechazarReprogramacion(solicitudId, usuario.getId());
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /** Obtener horarios ocupados de un tutor en una fecha (contrataciones activas). */
+    @GetMapping("/tutor/{tutorId}/horarios-ocupados")
+    public ResponseEntity<?> getHorariosOcupados(
+            @PathVariable Long tutorId, @RequestParam String fecha) {
+        try {
+            LocalDate fechaParsed = LocalDate.parse(fecha);
+            List<HorarioOcupadoResponse> horarios =
+                    solicitudService.getHorariosOcupados(tutorId, fechaParsed);
+            return ResponseEntity.ok(horarios);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /** Obtener disponibilidad del tutor para una fecha (desde DisponibilidadService). */
+    @GetMapping("/tutor/{tutorId}/disponibilidad")
+    public ResponseEntity<?> getDisponibilidadPorFecha(
+            @PathVariable Long tutorId, @RequestParam String fecha) {
+        try {
+            LocalDate fechaParsed = LocalDate.parse(fecha);
+            List<DisponibilidadTutorResponse> disponibilidades =
+                    disponibilidadService.getDisponibilidadesPorFecha(tutorId, fechaParsed);
+            return ResponseEntity.ok(disponibilidades);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /** Crear reunión Zoom para una clase online pagada (tutor). */
+    @PostMapping("/{solicitudId}/crear-zoom")
+    public ResponseEntity<?> crearZoom(
+            @AuthenticationPrincipal Usuario usuario, @PathVariable Long solicitudId) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "No autenticado"));
+        }
+        try {
+            SolicitudContratacionResponse response =
+                    solicitudService.crearZoomParaClase(solicitudId, usuario.getId());
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 }

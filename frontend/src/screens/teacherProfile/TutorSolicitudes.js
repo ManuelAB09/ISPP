@@ -6,8 +6,8 @@ import {
   rechazarSolicitud,
   cancelarSolicitud,
   reprogramarSolicitud,
+  crearZoomSolicitud,
 } from "../../api/solicitudContratacion";
-import { cancelarReserva, confirmarReserva, getMisReservasTutor } from "../../api/reservas.api";
 import "./TutorSolicitudes.css";
 
 const MODALIDAD_LABEL = {
@@ -21,38 +21,11 @@ const ESTADO_LABEL = {
   ACEPTADA: "✅ Aceptada",
   RECHAZADA: "❌ Rechazada",
   PAGADA: "💰 Pagada",
-  CANCELADA: "🚫 Cancelada",
-};
-
-const RESERVA_ESTADO_LABEL = {
-  PENDIENTE: "⏳ Pendiente",
-  CONFIRMADA: "✅ Confirmada",
-  COMPLETADA: "🏁 Completada",
   CANCELADA_ALUMNO: "🚫 Cancelada (alumno)",
   CANCELADA_TUTOR: "🚫 Cancelada (tutor)",
+  COMPLETADA: "🏁 Completada",
   NO_ASISTIDA: "❌ No asistida",
-};
-
-const RESERVA_ESTADO_COLOR = {
-  PENDIENTE: "ts-card--pendiente",
-  CONFIRMADA: "ts-card--aceptada",
-  COMPLETADA: "ts-card--pagada",
-  CANCELADA_ALUMNO: "ts-card--cancelada",
-  CANCELADA_TUTOR: "ts-card--cancelada",
-  NO_ASISTIDA: "ts-card--rechazada",
-};
-
-const formatFecha = (fechaHora) => {
-  if (!fechaHora) return "—";
-  const d = new Date(fechaHora);
-  return d.toLocaleString("es-ES", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  REPROGRAMACION_PENDIENTE: "🔄 Reprogramación pendiente",
 };
 
 /**
@@ -76,18 +49,6 @@ const TutorSolicitudes = () => {
   const [nuevaHoraFin, setNuevaHoraFin] = useState("");
   const [tab, setTab] = useState("PENDIENTE");
 
-  // ── Reservas de clase directa ─────────────────────────────
-  const [reservas, setReservas] = useState([]);
-  const [reservasLoading, setReservasLoading] = useState(true);
-  const [reservaActionLoading, setReservaActionLoading] = useState(null);
-  const [reservaCancelTarget, setReservaCancelTarget] = useState(null);
-  const [reservaCancelMotivo, setReservaCancelMotivo] = useState("");
-  const [reservasError, setReservasError] = useState("");
-  const [reservasTab, setReservasTab] = useState("PENDIENTE");
-
-  // ── Sección activa ────────────────────────────────────────
-  const [seccion, setSeccion] = useState("contrataciones");
-
   // ── Carga solicitudes ─────────────────────────────────────
   const cargarSolicitudes = useCallback(async () => {
     try {
@@ -102,20 +63,6 @@ const TutorSolicitudes = () => {
   }, []);
 
   useEffect(() => { cargarSolicitudes(); }, [cargarSolicitudes]);
-
-  // ── Carga reservas directas ───────────────────────────────
-  const cargarReservas = useCallback(() => {
-    setReservasLoading(true);
-    getMisReservasTutor({ size: 100 })
-      .then((data) => {
-        const lista = Array.isArray(data) ? data : data?.content ?? [];
-        setReservas(lista);
-      })
-      .catch(() => setReservas([]))
-      .finally(() => setReservasLoading(false));
-  }, []);
-
-  useEffect(() => { cargarReservas(); }, [cargarReservas]);
 
   // ── WebSocket ─────────────────────────────────────────────
   useEffect(() => {
@@ -208,32 +155,15 @@ const TutorSolicitudes = () => {
     }
   };
 
-  // ── Acciones reservas directas ────────────────────────────
-  const handleConfirmarReserva = async (reservaId) => {
-    setReservaActionLoading(reservaId + "_confirm");
-    setReservasError("");
+  const handleCrearZoom = async (solicitudId) => {
+    setProcesandoId(solicitudId);
     try {
-      await confirmarReserva(reservaId);
-      cargarReservas();
+      const { data } = await crearZoomSolicitud(solicitudId);
+      setSolicitudes((prev) => prev.map((s) => (s.id === solicitudId ? { ...s, ...data } : s)));
     } catch (err) {
-      setReservasError(err?.message || "Error al confirmar.");
+      alert(err?.response?.data?.error || "Error al crear reunión Zoom");
     } finally {
-      setReservaActionLoading(null);
-    }
-  };
-
-  const handleCancelarReserva = async () => {
-    setReservaActionLoading(reservaCancelTarget + "_cancel");
-    setReservasError("");
-    try {
-      await cancelarReserva(reservaCancelTarget, reservaCancelMotivo);
-      setReservaCancelTarget(null);
-      setReservaCancelMotivo("");
-      cargarReservas();
-    } catch (err) {
-      setReservasError(err?.message || "Error al cancelar.");
-    } finally {
-      setReservaActionLoading(null);
+      setProcesandoId(null);
     }
   };
 
@@ -243,54 +173,25 @@ const TutorSolicitudes = () => {
   const minDate = tomorrow.toISOString().split("T")[0];
 
   const pendientes = solicitudes.filter((s) => s.estado === "PENDIENTE");
-  const activas = solicitudes.filter((s) => s.estado === "ACEPTADA" || s.estado === "PAGADA");
-  const historialSol = solicitudes.filter((s) => s.estado === "RECHAZADA" || s.estado === "CANCELADA");
+  const activas = solicitudes.filter((s) => ["ACEPTADA", "PAGADA", "REPROGRAMACION_PENDIENTE"].includes(s.estado));
+  const historialSol = solicitudes.filter((s) => ["RECHAZADA", "CANCELADA_ALUMNO", "CANCELADA_TUTOR", "COMPLETADA", "NO_ASISTIDA"].includes(s.estado));
   const currentList = tab === "PENDIENTE" ? pendientes : tab === "ACTIVAS" ? activas : historialSol;
-
-  const reservasPendientes = reservas.filter((r) => r.estado === "PENDIENTE");
-  const reservasConfirmadas = reservas.filter((r) => r.estado === "CONFIRMADA");
-  const reservasHistorial = reservas.filter((r) =>
-    ["COMPLETADA", "CANCELADA_ALUMNO", "CANCELADA_TUTOR", "NO_ASISTIDA"].includes(r.estado)
-  );
-  const reservasGrupos = { PENDIENTE: reservasPendientes, CONFIRMADA: reservasConfirmadas, HISTORIAL: reservasHistorial };
-  const currentReservas = reservasGrupos[reservasTab] || [];
 
   return (
     <section className="ts-panel">
       <h2 className="ts-panel__title">📋 Gestión de reservas</h2>
 
-      {/* Selector de sección */}
-      <div className="ts-seccion-tabs">
-        <button
-          className={`ts-seccion-tab ${seccion === "contrataciones" ? "ts-seccion-tab--active" : ""}`}
-          onClick={() => setSeccion("contrataciones")}
-        >
-          Solicitudes de contratación
-          {pendientes.length > 0 && <span className="ts-seccion-tab__badge">{pendientes.length}</span>}
+      <div className="ts-tabs">
+        <button className={`ts-tab ${tab === "PENDIENTE" ? "ts-tab--active" : ""}`} onClick={() => setTab("PENDIENTE")}>
+          Pendientes {pendientes.length > 0 && `(${pendientes.length})`}
         </button>
-        <button
-          className={`ts-seccion-tab ${seccion === "clases" ? "ts-seccion-tab--active" : ""}`}
-          onClick={() => setSeccion("clases")}
-        >
-          Reservas de clase directa
-          {reservasPendientes.length > 0 && <span className="ts-seccion-tab__badge">{reservasPendientes.length}</span>}
+        <button className={`ts-tab ${tab === "ACTIVAS" ? "ts-tab--active" : ""}`} onClick={() => setTab("ACTIVAS")}>
+          Confirmadas {activas.length > 0 && `(${activas.length})`}
+        </button>
+        <button className={`ts-tab ${tab === "HISTORIAL" ? "ts-tab--active" : ""}`} onClick={() => setTab("HISTORIAL")}>
+          Historial
         </button>
       </div>
-
-      {/* ── Sección: Solicitudes de contratación ── */}
-      {seccion === "contrataciones" && (
-        <>
-          <div className="ts-tabs">
-            <button className={`ts-tab ${tab === "PENDIENTE" ? "ts-tab--active" : ""}`} onClick={() => setTab("PENDIENTE")}>
-              Pendientes {pendientes.length > 0 && `(${pendientes.length})`}
-            </button>
-            <button className={`ts-tab ${tab === "ACTIVAS" ? "ts-tab--active" : ""}`} onClick={() => setTab("ACTIVAS")}>
-              Confirmadas {activas.length > 0 && `(${activas.length})`}
-            </button>
-            <button className={`ts-tab ${tab === "HISTORIAL" ? "ts-tab--active" : ""}`} onClick={() => setTab("HISTORIAL")}>
-              Historial
-            </button>
-          </div>
 
           {loading ? (
             <p className="ts-loading">Cargando reservas…</p>
@@ -369,6 +270,22 @@ const TutorSolicitudes = () => {
                     </div>
                   )}
 
+                  {/* Zoom para clases ONLINE pagadas */}
+                  {s.estado === "PAGADA" && s.modalidad === "ONLINE" && !s.zoomStartUrl && (
+                    <div className="ts-card__actions">
+                      <button className="ts-btn ts-btn--accept" onClick={() => handleCrearZoom(s.id)} disabled={procesandoId === s.id}>
+                        {procesandoId === s.id ? "Creando…" : "📹 Crear reunión Zoom"}
+                      </button>
+                    </div>
+                  )}
+                  {s.zoomStartUrl && (
+                    <div className="ts-card__actions">
+                      <a href={s.zoomStartUrl} target="_blank" rel="noopener noreferrer" className="ts-btn ts-btn--accept" style={{ textDecoration: "none", textAlign: "center" }}>
+                        📹 Iniciar reunión Zoom
+                      </a>
+                    </div>
+                  )}
+
                   {cancelandoId === s.id && (
                     <div className="ts-card__rechazo">
                       <input type="text" className="ts-card__rechazo-input" placeholder="Motivo de la cancelación (opcional)" value={motivoCancelacion} onChange={(e) => setMotivoCancelacion(e.target.value)} />
@@ -385,10 +302,10 @@ const TutorSolicitudes = () => {
                     <div className="ts-card__reschedule">
                       <p className="ts-card__reschedule-title">Nueva fecha y horario:</p>
                       <p className="ts-card__reschedule-hint">
-                        Solo puedes mover la clase hasta 2 días después de la fecha original ({s.diaOriginal || s.dia}).
+                        {s.estado === "PAGADA" ? "La clase está pagada. El alumno deberá aprobar el cambio." : "Selecciona la nueva fecha y horario."}
                       </p>
                       <div className="ts-card__reschedule-fields">
-                        <input type="date" className="ts-card__reschedule-input" min={minDate} max={(() => { const d = new Date((s.diaOriginal || s.dia) + "T00:00:00"); d.setDate(d.getDate() + 2); return d.toISOString().split("T")[0]; })()} value={nuevoDia} onChange={(e) => setNuevoDia(e.target.value)} />
+                        <input type="date" className="ts-card__reschedule-input" min={minDate} value={nuevoDia} onChange={(e) => setNuevoDia(e.target.value)} />
                         <input type="time" className="ts-card__reschedule-input" value={nuevaHoraInicio} onChange={(e) => setNuevaHoraInicio(e.target.value)} />
                         <span>–</span>
                         <input type="time" className="ts-card__reschedule-input" value={nuevaHoraFin} onChange={(e) => setNuevaHoraFin(e.target.value)} />
@@ -405,87 +322,6 @@ const TutorSolicitudes = () => {
               ))}
             </div>
           )}
-        </>
-      )}
-
-      {/* ── Sección: Reservas de clase directa ── */}
-      {seccion === "clases" && (
-        <>
-          <div className="ts-tabs">
-            {[["PENDIENTE", "Pendientes", reservasPendientes], ["CONFIRMADA", "Confirmadas", reservasConfirmadas], ["HISTORIAL", "Historial", reservasHistorial]].map(([key, label, grupo]) => (
-              <button key={key} className={`ts-tab ${reservasTab === key ? "ts-tab--active" : ""}`} onClick={() => setReservasTab(key)}>
-                {label} {grupo.length > 0 && `(${grupo.length})`}
-              </button>
-            ))}
-          </div>
-
-          {reservasError && <p className="ts-error">⚠️ {reservasError}</p>}
-
-          {reservasLoading ? (
-            <p className="ts-loading">Cargando reservas…</p>
-          ) : currentReservas.length === 0 ? (
-            <p className="ts-empty">No hay reservas en esta sección.</p>
-          ) : (
-            <div className="ts-list">
-              {currentReservas.map((r) => (
-                <div key={r.id} className={`ts-card ${RESERVA_ESTADO_COLOR[r.estado] || ""}`}>
-                  <div className="ts-card__header">
-                    <strong>{r.alumnoNombre || `Alumno #${r.alumnoId}`}</strong>
-                    <span className="ts-card__badge">{RESERVA_ESTADO_LABEL[r.estado] || r.estado}</span>
-                  </div>
-                  <div className="ts-card__details">
-                    <div className="ts-card__row">
-                      <span className="ts-card__label">📅 Fecha:</span>
-                      <span>{formatFecha(r.fechaHora)}</span>
-                    </div>
-                    <div className="ts-card__row">
-                      <span className="ts-card__label">📖 Tema:</span>
-                      <span>{r.tema}</span>
-                    </div>
-                    <div className="ts-card__row">
-                      <span className="ts-card__label">📍 Modalidad:</span>
-                      <span>{r.modalidad} · {r.duracionMinutos} min{r.tarifa != null ? ` · ${r.tarifa}€` : ""}</span>
-                    </div>
-                    {r.descripcion && (
-                      <div className="ts-card__row">
-                        <span className="ts-card__label">💬 Descripción:</span>
-                        <span>{r.descripcion}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {r.estado === "PENDIENTE" && reservaCancelTarget !== r.id && (
-                    <div className="ts-card__actions">
-                      <button className="ts-btn ts-btn--reject" onClick={() => setReservaCancelTarget(r.id)} disabled={!!reservaActionLoading}>Rechazar</button>
-                      <button className="ts-btn ts-btn--accept" onClick={() => handleConfirmarReserva(r.id)} disabled={!!reservaActionLoading}>
-                        {reservaActionLoading === r.id + "_confirm" ? "Confirmando…" : "✓ Confirmar"}
-                      </button>
-                    </div>
-                  )}
-
-                  {r.estado === "CONFIRMADA" && reservaCancelTarget !== r.id && (
-                    <div className="ts-card__actions">
-                      <button className="ts-btn ts-btn--cancel" onClick={() => setReservaCancelTarget(r.id)} disabled={!!reservaActionLoading}>🚫 Cancelar</button>
-                    </div>
-                  )}
-
-                  {reservaCancelTarget === r.id && (
-                    <div className="ts-card__rechazo">
-                      <input type="text" className="ts-card__rechazo-input" placeholder="Motivo de cancelación (opcional)" value={reservaCancelMotivo} onChange={(e) => setReservaCancelMotivo(e.target.value)} />
-                      <div className="ts-card__actions">
-                        <button className="ts-btn ts-btn--cancel" onClick={() => { setReservaCancelTarget(null); setReservaCancelMotivo(""); }} disabled={!!reservaActionLoading}>Volver</button>
-                        <button className="ts-btn ts-btn--reject" onClick={handleCancelarReserva} disabled={!!reservaActionLoading}>
-                          {reservaActionLoading === reservaCancelTarget + "_cancel" ? "Cancelando…" : "Confirmar cancelación"}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
     </section>
   );
 };

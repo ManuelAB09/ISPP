@@ -97,7 +97,8 @@ const CommunityChat = ({
         const cargarHistorial = async () => {
             try {
                 setCargandoHistorial(true);
-                const { data } = await obtenerHistorialComunidad(comunidadId);
+                const response = await obtenerHistorialComunidad(comunidadId);
+                const data = Array.isArray(response?.data) ? response.data : [];
                 setMensajes(data);
             } catch (err) {
                 setError('Error al cargar el historial de mensajes');

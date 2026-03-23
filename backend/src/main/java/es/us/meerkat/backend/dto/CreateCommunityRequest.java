@@ -10,4 +10,5 @@ public record CreateCommunityRequest(
         @Size(max = 1000, message = "La descripción no puede exceder 1000 caracteres")
                 String descripcion,
         @NotBlank(message = "El tipo de grupo es requerido") String tipoGrupo,
-        String imagenUrl) {}
+        String imagenUrl,
+        String rolInicial) {}

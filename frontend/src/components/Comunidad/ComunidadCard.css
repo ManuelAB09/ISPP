@@ -139,6 +139,26 @@
     cursor: default;
 }
 
+.comunidad-card .join-role-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+.comunidad-card .join-role-picker__title {
+    margin: 0;
+    font-size: 12px;
+    color: var(--spaceIndigo);
+    font-family: 'inter', sans-serif;
+    font-weight: 600;
+}
+
+.comunidad-card .join-role-picker__actions {
+    display: flex;
+    gap: 8px;
+}
+
 .comunidad-card .comunidad-private-badge {
     display: inline-block;
     background-color: var(--whiteSmoke);
@@ -215,6 +235,15 @@
         width: 100%;
         text-align: center;
         padding: 12px 24px;
+    }
+
+    .comunidad-card .join-role-picker {
+        width: 100%;
+        align-items: stretch;
+    }
+
+    .comunidad-card .join-role-picker__actions {
+        flex-direction: column;
     }
 
     .comunidad-card .members-info {

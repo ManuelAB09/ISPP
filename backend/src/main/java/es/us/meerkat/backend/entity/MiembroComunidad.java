@@ -38,5 +38,12 @@ public class MiembroComunidad {
     @Builder.Default
     private RolComunidad rol = RolComunidad.ALUMNO;
 
+    /**
+     * Rol docente secundario: solo relevante cuando rol=ADMIN. Indica si el creador actúa como
+     * PROFESOR (eventos valorables) o ALUMNO.
+     */
+    @Enumerated(EnumType.STRING)
+    private RolComunidad rolDocente;
+
     @Builder.Default private LocalDateTime fechaIngreso = LocalDateTime.now();
 }

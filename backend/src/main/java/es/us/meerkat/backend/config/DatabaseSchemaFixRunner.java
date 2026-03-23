@@ -57,10 +57,31 @@ public class DatabaseSchemaFixRunner implements ApplicationRunner {
                 END
                 $$;
                 """);
+        jdbcTemplate.execute(
+                """
+                DO $$
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1
+                        FROM information_schema.tables
+                        WHERE table_schema = 'public'
+                          AND table_name = 'transaccion_pago'
+                    ) THEN
+                        ALTER TABLE transaccion_pago
+                        DROP CONSTRAINT IF EXISTS transaccion_pago_estado_check;
+
+                        ALTER TABLE transaccion_pago
+                        ADD CONSTRAINT transaccion_pago_estado_check
+                        CHECK (estado IN ('PENDIENTE', 'COMPLETADA', 'FALLIDA', 'REEMBOLSADA'));
+                    END IF;
+                END
+                $$;
+                """);
         log.info("Schema check applied: columna email_verificado verificada en tabla usuario");
         log.info(
                 "Schema check applied: constraint de rol de miembros normalizado a"
                         + " ADMIN/PROFESOR/ALUMNO");
+        log.info("Schema check applied: constraint de estado de transaccion_pago actualizado");
     }
 
     private boolean isPostgres() {

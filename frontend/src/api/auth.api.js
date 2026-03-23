@@ -42,6 +42,16 @@ export const authApi = {
   },
 
   /**
+   * GET /api/v1/users/{userId}
+   * Obtener perfil público de un usuario
+   * @param {number|string} userId
+   * @returns {Promise<Object>} - UserPublicResponse
+   */
+  getUserById(userId) {
+    return apiClient.get(`/api/v1/users/${userId}`);
+  },
+
+  /**
    * PUT /api/v1/users/me
    * Actualizar perfil del usuario autenticado
     * @param {Object} data - { nombre, foto, bio, universidad, grado, nivelEstudios, baseFormativa, ubicacion, intereses }

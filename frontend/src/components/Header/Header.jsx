@@ -101,6 +101,9 @@ export default function Header({ user, page }) {
                     <Link to="/chats" className={page === 'chats' ? 'active' : ''}>Chats</Link>
                     <Link to="/planes" className={page === 'planes' ? 'active' : ''}>Planes</Link>
                     <Link to="/pagos" className={page === 'pagos' ? 'active' : ''}>Mis pagos</Link>
+                    {isAuthenticated && storedUser?.esTutor && (
+                        <Link to="/ganancias" className={page === 'ganancias' ? 'active' : ''}>Mis ganancias</Link>
+                    )}
                     {!isAuthenticated && (
                         <Link to="/login">Iniciar sesión</Link>
                     )}
@@ -152,7 +155,7 @@ export default function Header({ user, page }) {
                         <Link to="/login" onClick={closeMenu}>Iniciar sesión</Link>
                     )}
                 </div>
-            </div >
+            </div>
         </>
     );
 }

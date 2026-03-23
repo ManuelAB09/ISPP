@@ -35,6 +35,16 @@ public class SolicitudContratacionResponse {
     private String estado;
     private String motivoRechazo;
     private Boolean tutorStripeConfigured;
+    private Integer calificacion;
+    private String comentarioAlumno;
+    private Boolean puedeSerCanceladaPorAlumno;
+    private String reprogramacionDia;
+    private String reprogramacionHoraInicio;
+    private String reprogramacionHoraFin;
+    private String estadoAnterior;
+    private String ubicacionClase;
+    private String zoomJoinUrl;
+    private String zoomStartUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

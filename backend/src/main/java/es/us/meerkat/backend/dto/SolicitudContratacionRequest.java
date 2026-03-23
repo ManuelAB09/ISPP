@@ -33,4 +33,7 @@ public class SolicitudContratacionRequest {
 
     @Size(max = 500, message = "El mensaje no puede superar los 500 caracteres")
     private String mensaje;
+
+    @Size(max = 500, message = "La ubicación no puede superar los 500 caracteres")
+    private String ubicacionClase;
 }

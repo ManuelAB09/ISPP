@@ -7,11 +7,10 @@ import EditProfileModal from "./EditProfileModal";
 import CreateProfileModal from "./CreateProfileModal";
 import VerificacionModal from "./VerificacionModal";
 import Settings from "../myProfile/Settings";
-import HireTutorModal from "./HireTutorModal";
-import BookClassModal from "./BookClassModal";
 import HireDirectModal from "./HireDirectModal";
 import TutorSolicitudes from "./TutorSolicitudes";
 import TutorConversaciones from "./TutorConversaciones";
+import GestionDisponibilidad from "./GestionDisponibilidad";
 import AlumnoSolicitudes from "./AlumnoSolicitudes";
 import PrivateChat from "../chat/PrivateChat";
 import { getApiBaseUrl } from "../../api/baseUrl";
@@ -60,8 +59,8 @@ const TeacherProfile = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showVerificacion, setShowVerificacion] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showDisponibilidad, setShowDisponibilidad] = useState(false);
   const [showHireModal, setShowHireModal] = useState(false);
-  const [showBookModal, setShowBookModal] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [stripeLoading, setStripeLoading] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
@@ -231,6 +230,12 @@ const TeacherProfile = () => {
       {showSettings && (
         <Settings onClose={() => setShowSettings(false)} />
       )}
+      {showDisponibilidad && tutor && (
+        <GestionDisponibilidad
+          tutorId={tutor.id}
+          onClose={() => setShowDisponibilidad(false)}
+        />
+      )}
       <div className="tp-page">
 
         {/* ═══════════════ BANNER MORADO + CABECERA ═══════════════ */}
@@ -298,6 +303,12 @@ const TeacherProfile = () => {
                   {tutor.verificado ? "🏅 Verificado" : "Promocionarse"}
                 </button>
                 <button
+                  className="tp-btn tp-btn--edit"
+                  onClick={() => setShowDisponibilidad(true)}
+                >
+                  📅 Mi disponibilidad
+                </button>
+                <button
                   className={`tp-btn ${tutor.stripeConfigured ? 'tp-btn--edit' : 'tp-btn--hire'}`}
                   disabled={stripeLoading}
                   onClick={async () => {
@@ -337,9 +348,6 @@ const TeacherProfile = () => {
                   }}
                 >
                   {showChat ? '✕ Cerrar chat' : '💬 Contactar'}
-                </button>
-                <button className="tp-btn tp-btn--book" onClick={() => setShowBookModal(true)}>
-                  📅 Reservar clase
                 </button>
                 <button className="tp-btn tp-btn--hire" onClick={() => setShowHireModal(true)}>
                   🎓 Contratar
@@ -571,9 +579,6 @@ const TeacherProfile = () => {
 
       {showHireModal && (
         <HireDirectModal tutor={tutor} onClose={() => setShowHireModal(false)} />
-      )}
-      {showBookModal && (
-        <BookClassModal tutor={tutor} onClose={() => setShowBookModal(false)} />
       )}
     </>
   );

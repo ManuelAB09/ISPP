@@ -20,6 +20,7 @@ import es.us.meerkat.backend.entity.ComunidadClassroom;
 import es.us.meerkat.backend.entity.EstadoSolicitud;
 import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.MiembroComunidad;
+import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.SolicitudComunidad;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.AuthorizationService;
@@ -138,6 +139,14 @@ public class CommunityController {
         }
 
         try {
+            RolComunidad rolInicial = null;
+            if (request.rolInicial() != null && !request.rolInicial().isBlank()) {
+                try {
+                    rolInicial = RolComunidad.valueOf(request.rolInicial().toUpperCase());
+                } catch (IllegalArgumentException ignored) {
+                    rolInicial = null;
+                }
+            }
             Comunidad comunidad =
                     communityService.createCommunity(
                             usuario.getId(),
@@ -147,7 +156,9 @@ public class CommunityController {
                                     ? es.us.meerkat.backend.entity.TipoGrupo.valueOf(
                                             request.tipoGrupo())
                                     : es.us.meerkat.backend.entity.TipoGrupo.COMUNIDAD_PUBLICA,
-                            request.imagenUrl());
+                            request.imagenUrl(),
+                            null,
+                            rolInicial);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(entityToDetailResponse(comunidad, usuario.getId()));
         } catch (IllegalArgumentException e) {
@@ -403,15 +414,27 @@ public class CommunityController {
         @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
     })
     public ResponseEntity<?> joinPublicCommunity(
-            @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
+            @PathVariable Long communityId,
+            @Valid @RequestBody JoinCommunityRequest request,
+            @AuthenticationPrincipal Usuario usuario) {
 
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         try {
+            RolComunidad desiredRol = null;
+            if (request != null && request.rol() != null) {
+                try {
+                    desiredRol = RolComunidad.valueOf(request.rol().toUpperCase());
+                } catch (IllegalArgumentException ex) {
+                    return ResponseEntity.badRequest()
+                            .body(MessageResponse.builder().message("Rol inválido").build());
+                }
+            }
+
             MiembroComunidad miembro =
-                    memberService.joinPublicCommunity(usuario.getId(), communityId);
+                    memberService.joinPublicCommunity(usuario.getId(), communityId, desiredRol);
             return ResponseEntity.status(HttpStatus.CREATED).body(entityToMemberResponse(miembro));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
@@ -543,9 +566,18 @@ public class CommunityController {
         }
 
         try {
+            RolComunidad rol = null;
+            if (request.nuevoRolOrigen() != null) {
+                try {
+                    rol = RolComunidad.valueOf(request.nuevoRolOrigen().toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    return ResponseEntity.badRequest().build();
+                }
+            }
+
             MiembroComunidad newAdmin =
                     memberService.transferAdmin(
-                            usuario.getId(), communityId, request.nuevoAdminId());
+                            usuario.getId(), communityId, request.nuevoAdminId(), rol);
             return ResponseEntity.ok(entityToMemberResponse(newAdmin));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -576,6 +608,46 @@ public class CommunityController {
 
         return ResponseEntity.ok(
                 communityService.getCommunityRanking(communityId, usuario.getId()));
+    }
+
+    /**
+     * Añade un nuevo administrador a la comunidad (solo comunidades corporativas). POST
+     * /api/v1/communities/{communityId}/admins
+     */
+    @PostMapping("/{communityId}/admins/{nuevoAdminId}")
+    @Operation(
+            summary = "Añadir administrador (corporativo)",
+            description = "Añade un administrador adicional a una comunidad corporativa",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Administrador añadido"),
+        @ApiResponse(
+                responseCode = "400",
+                description = "Datos inválidos o condiciones no cumplidas"),
+        @ApiResponse(responseCode = "403", description = "No tienes permisos"),
+        @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
+    })
+    public ResponseEntity<?> addAdminToCommunity(
+            @PathVariable Long communityId,
+            @PathVariable Long nuevoAdminId,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        try {
+            MiembroComunidad miembro =
+                    memberService.addAdmin(usuario.getId(), communityId, nuevoAdminId);
+            return ResponseEntity.ok(entityToMemberResponse(miembro));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(MessageResponse.builder().message(e.getMessage()).build());
+        }
     }
 
     // =====================================================
@@ -645,8 +717,17 @@ public class CommunityController {
         }
 
         try {
+            RolComunidad rolDeseado = RolComunidad.ALUMNO;
+            if (request.rolDeseado() != null && !request.rolDeseado().isBlank()) {
+                try {
+                    rolDeseado = RolComunidad.valueOf(request.rolDeseado());
+                } catch (IllegalArgumentException ignored) {
+                    // Si el valor no es válido, mantener ALUMNO
+                }
+            }
             SolicitudComunidad solicitud =
-                    requestService.requestAccess(usuario.getId(), communityId, request.mensaje());
+                    requestService.requestAccess(
+                            usuario.getId(), communityId, request.mensaje(), rolDeseado);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(entityToRequestResponse(solicitud));
         } catch (IllegalArgumentException e) {
@@ -1134,6 +1215,7 @@ public class CommunityController {
                 convertUserToSimple(solicitud.getSolicitante()),
                 solicitud.getEstado().name(),
                 solicitud.getMensaje(),
+                solicitud.getRolDeseado() != null ? solicitud.getRolDeseado().name() : "ALUMNO",
                 solicitud.getFechaSolicitud(),
                 solicitud.getRespondidaPor() != null
                         ? convertUserToSimple(solicitud.getRespondidaPor())

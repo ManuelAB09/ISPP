@@ -17,10 +17,12 @@ import com.stripe.exception.StripeException;
 import com.stripe.model.Account;
 import com.stripe.model.AccountLink;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.Refund;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.AccountCreateParams;
 import com.stripe.param.AccountLinkCreateParams;
 import com.stripe.param.PaymentIntentCreateParams;
+import com.stripe.param.RefundCreateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 
 import es.us.meerkat.backend.dto.PaymentUrlResponse;
@@ -54,10 +56,6 @@ public class PaymentService {
     // -------------------------------------------------------------------------
     // Generación de sesiones de pago
     // -------------------------------------------------------------------------
-
-    /** Verificación de tutor → TipoTransaccion.PAGO_VERIFICACION */
-    /** ID del precio de verificación de tutor en Stripe (pago único) */
-    private static final String PRICE_VERIFICACION_TUTOR = "price_1TBeu1KD9Z3Ygfm3nNkMLAmn";
 
     /** Verificación de tutor → TipoTransaccion.PAGO_VERIFICACION */
     @Transactional
@@ -638,5 +636,47 @@ public class PaymentService {
     public java.util.List<TransaccionPago> obtenerTodasGananciasTutor(Long tutorId) {
         return transaccionRepository.findByTutorIdAndTipoAndEstadoOrderByCompletadoAtDesc(
                 tutorId, TipoTransaccion.PAGO_TUTOR, EstadoTransaccion.COMPLETADA);
+    }
+
+    /**
+     * Realiza un reembolso completo del PaymentIntent indicado y registra la transacción.
+     *
+     * @param paymentIntentId ID del PaymentIntent de Stripe a reembolsar
+     * @param usuario usuario que recibe el reembolso
+     * @param tutor tutor relacionado (puede ser null)
+     * @param monto importe a registrar
+     * @throws StripeException si Stripe rechaza el reembolso
+     */
+    @Transactional
+    public void reembolsarPago(
+            String paymentIntentId, Usuario usuario, Tutor tutor, BigDecimal monto)
+            throws StripeException {
+        if (paymentIntentId == null || paymentIntentId.isBlank()) {
+            log.warn("No se puede reembolsar: paymentIntentId vacío");
+            return;
+        }
+        RefundCreateParams params =
+                RefundCreateParams.builder()
+                        .setPaymentIntent(paymentIntentId)
+                        .setReverseTransfer(true)
+                        .build();
+        Refund refund = Refund.create(params);
+        log.info("Reembolso creado: {} para PaymentIntent {}", refund.getId(), paymentIntentId);
+
+        // Marcar la transacción original como REEMBOLSADA
+        if (usuario != null && tutor != null) {
+            transaccionRepository
+                    .findTopByUsuarioIdAndTutorIdAndTipoAndEstadoOrderByCompletadoAtDesc(
+                            usuario.getId(),
+                            tutor.getId(),
+                            TipoTransaccion.PAGO_TUTOR,
+                            EstadoTransaccion.COMPLETADA)
+                    .ifPresent(
+                            tx -> {
+                                tx.setEstado(EstadoTransaccion.REEMBOLSADA);
+                                transaccionRepository.save(tx);
+                                log.info("Transacción {} marcada como REEMBOLSADA", tx.getId());
+                            });
+        }
     }
 }

@@ -148,7 +148,8 @@ describe('DetalleEvento', () => {
     });
   });
 
-  test('si es organizador, muestra acciones de editar/cancelar evento', async () => {
+  test('si es profesor de la comunidad, muestra acciones de editar/cancelar evento aunque no sea el creador', async () => {
+    communitiesApi.getMyMembership.mockResolvedValueOnce({ rol: 'PROFESOR' });
     getEventById.mockResolvedValueOnce({
       id: 77,
       titulo: 'Evento React',
@@ -158,7 +159,7 @@ describe('DetalleEvento', () => {
       asistentesConfirmados: 10,
       cancelado: false,
       comunidadId: 10,
-      creador: { id: 1, nombre: 'Yo' }, // organizador = currentUserId
+      creador: { id: 2, nombre: 'Organizador' },
     });
 
     renderComponent();
@@ -167,7 +168,29 @@ describe('DetalleEvento', () => {
     expect(screen.getByRole('button', { name: /Cancelar evento/i })).toBeInTheDocument();
   });
 
+  test('si es alumno aunque sea creador, no muestra editar en evento comunitario', async () => {
+    communitiesApi.getMyMembership.mockResolvedValueOnce({ rol: 'ALUMNO' });
+    getEventById.mockResolvedValueOnce({
+      id: 77,
+      titulo: 'Evento React',
+      fechaHora: '2026-08-10T18:00:00',
+      esVirtual: true,
+      aforo: 50,
+      asistentesConfirmados: 10,
+      cancelado: false,
+      comunidadId: 10,
+      creador: { id: 1, nombre: 'Yo' },
+    });
+
+    renderComponent();
+
+    expect(await screen.findByText('Evento React')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Editar evento/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Cancelar evento/i })).not.toBeInTheDocument();
+  });
+
   test('abre modal y cancela evento', async () => {
+    communitiesApi.getMyMembership.mockResolvedValueOnce({ rol: 'PROFESOR' });
     getEventById.mockResolvedValueOnce({
       id: 77,
       titulo: 'Evento React',
