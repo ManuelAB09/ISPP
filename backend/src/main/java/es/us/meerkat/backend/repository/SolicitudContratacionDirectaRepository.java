@@ -73,7 +73,8 @@ public interface SolicitudContratacionDirectaRepository
     @Query(
             "SELECT s FROM SolicitudContratacionDirecta s WHERE s.tutor.id = :tutorId AND s.dia ="
                     + " :dia AND s.estado NOT IN"
-                    + " (es.us.meerkat.backend.entity.EstadoSolicitudContratacion.CANCELADA,"
+                    + " (es.us.meerkat.backend.entity.EstadoSolicitudContratacion.CANCELADA_ALUMNO,"
+                    + " es.us.meerkat.backend.entity.EstadoSolicitudContratacion.CANCELADA_TUTOR,"
                     + " es.us.meerkat.backend.entity.EstadoSolicitudContratacion.RECHAZADA) AND"
                     + " s.horaInicio < :horaFin AND s.horaFin > :horaInicio")
     List<SolicitudContratacionDirecta> findConflictingBookingsAnyState(
