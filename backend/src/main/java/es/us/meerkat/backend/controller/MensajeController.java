@@ -33,8 +33,8 @@ import lombok.RequiredArgsConstructor;
 public class MensajeController {
 
     @PostMapping("/marcar-leida/{otherUserId}")
-    public ResponseEntity<?> marcarConversacionComoLeida(@AuthenticationPrincipal Usuario usuario,
-            @PathVariable Long otherUserId) {
+    public ResponseEntity<?> marcarConversacionComoLeida(
+            @AuthenticationPrincipal Usuario usuario, @PathVariable Long otherUserId) {
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado");
         }
@@ -79,7 +79,8 @@ public class MensajeController {
         }
 
         try {
-            List<MensajeResponse> conversacion = mensajeService.obtenerConversacion(usuario.getId(), tutorId);
+            List<MensajeResponse> conversacion =
+                    mensajeService.obtenerConversacion(usuario.getId(), tutorId);
             return ResponseEntity.ok(conversacion);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -97,7 +98,8 @@ public class MensajeController {
         }
 
         try {
-            List<MensajeResponse> conversacion = mensajeService.obtenerConversacionConUsuario(usuario.getId(), userId);
+            List<MensajeResponse> conversacion =
+                    mensajeService.obtenerConversacionConUsuario(usuario.getId(), userId);
             return ResponseEntity.ok(conversacion);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -131,19 +133,21 @@ public class MensajeController {
 
         try {
             MensajeResponse deleted = mensajeService.obtenerMensaje(mensajeId);
-            Long otherUserId = deleted.getEmisorId().equals(usuario.getId())
-                    ? deleted.getReceptorId()
-                    : deleted.getEmisorId();
+            Long otherUserId =
+                    deleted.getEmisorId().equals(usuario.getId())
+                            ? deleted.getReceptorId()
+                            : deleted.getEmisorId();
             mensajeService.eliminarMensaje(usuario.getId(), mensajeId);
             // Notify both parties
             broker.convertAndSendToUser(usuario.getEmail(), "/queue/dm_delete_success", mensajeId);
             usuarioRepository
                     .findById(otherUserId)
                     .ifPresent(
-                            other -> broker.convertAndSendToUser(
-                                    other.getEmail(),
-                                    "/queue/dm_delete_success",
-                                    mensajeId));
+                            other ->
+                                    broker.convertAndSendToUser(
+                                            other.getEmail(),
+                                            "/queue/dm_delete_success",
+                                            mensajeId));
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -163,8 +167,9 @@ public class MensajeController {
         }
 
         try {
-            MensajeResponse response = mensajeService.editarMensaje(
-                    usuario.getId(), mensajeId, request.getContenido());
+            MensajeResponse response =
+                    mensajeService.editarMensaje(
+                            usuario.getId(), mensajeId, request.getContenido());
             broadcastDmUpdate(usuario, response);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
@@ -187,17 +192,19 @@ public class MensajeController {
         }
 
         try {
-            ChatFileStorageService.ValidatedChatFile validatedFile = chatFileStorageService.validateAndExtract(file);
+            ChatFileStorageService.ValidatedChatFile validatedFile =
+                    chatFileStorageService.validateAndExtract(file);
 
-            MensajeResponse response = mensajeService.enviarArchivo(
-                    usuario.getId(),
-                    userId,
-                    tutorId,
-                    contenido,
-                    validatedFile.originalName(),
-                    validatedFile.mimeType(),
-                    validatedFile.sizeBytes(),
-                    validatedFile.content());
+            MensajeResponse response =
+                    mensajeService.enviarArchivo(
+                            usuario.getId(),
+                            userId,
+                            tutorId,
+                            contenido,
+                            validatedFile.originalName(),
+                            validatedFile.mimeType(),
+                            validatedFile.sizeBytes(),
+                            validatedFile.content());
 
             broadcastDm(usuario, response);
             return ResponseEntity.ok(response);
@@ -217,14 +224,17 @@ public class MensajeController {
         }
 
         try {
-            MensajeService.MensajeArchivo archivo = mensajeService.obtenerArchivo(usuario.getId(), mensajeId);
+            MensajeService.MensajeArchivo archivo =
+                    mensajeService.obtenerArchivo(usuario.getId(), mensajeId);
 
-            String mimeType = archivo.mimeType() == null || archivo.mimeType().isBlank()
-                    ? MediaType.APPLICATION_OCTET_STREAM_VALUE
-                    : archivo.mimeType();
-            String nombre = archivo.nombre() == null || archivo.nombre().isBlank()
-                    ? "adjunto"
-                    : archivo.nombre();
+            String mimeType =
+                    archivo.mimeType() == null || archivo.mimeType().isBlank()
+                            ? MediaType.APPLICATION_OCTET_STREAM_VALUE
+                            : archivo.mimeType();
+            String nombre =
+                    archivo.nombre() == null || archivo.nombre().isBlank()
+                            ? "adjunto"
+                            : archivo.nombre();
 
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(mimeType))
@@ -246,25 +256,28 @@ public class MensajeController {
             usuarioRepository
                     .findById(receiverId)
                     .ifPresent(
-                            receiver -> broker.convertAndSendToUser(
-                                    receiver.getEmail(), "/queue/dm", response));
+                            receiver ->
+                                    broker.convertAndSendToUser(
+                                            receiver.getEmail(), "/queue/dm", response));
         }
     }
 
     /** Broadcasts a message update to both parties via WebSocket. */
     private void broadcastDmUpdate(Usuario sender, MensajeResponse response) {
         broker.convertAndSendToUser(sender.getEmail(), "/queue/dm_update_success", response);
-        Long otherUserId = response.getEmisorId().equals(sender.getId())
-                ? response.getReceptorId()
-                : response.getEmisorId();
+        Long otherUserId =
+                response.getEmisorId().equals(sender.getId())
+                        ? response.getReceptorId()
+                        : response.getEmisorId();
         if (otherUserId != null) {
             usuarioRepository
                     .findById(otherUserId)
                     .ifPresent(
-                            other -> broker.convertAndSendToUser(
-                                    other.getEmail(),
-                                    "/queue/dm_update_success",
-                                    response));
+                            other ->
+                                    broker.convertAndSendToUser(
+                                            other.getEmail(),
+                                            "/queue/dm_update_success",
+                                            response));
         }
     }
 }

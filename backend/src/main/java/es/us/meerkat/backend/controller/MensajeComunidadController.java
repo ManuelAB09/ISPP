@@ -34,13 +34,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MensajeComunidadController {
 
-    /**
-     * Marca todos los mensajes de una comunidad como leídos para el usuario
-     * autenticado.
-     */
+    /** Marca todos los mensajes de una comunidad como leídos para el usuario autenticado. */
     @PostMapping("/{comunidadId}/marcar-leida")
-    public ResponseEntity<?> marcarComunidadComoLeida(@PathVariable Long comunidadId,
-            @AuthenticationPrincipal Usuario usuario) {
+    public ResponseEntity<?> marcarComunidadComoLeida(
+            @PathVariable Long comunidadId, @AuthenticationPrincipal Usuario usuario) {
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado");
         }
@@ -53,10 +50,7 @@ public class MensajeComunidadController {
         }
     }
 
-    /**
-     * Devuelve el número de mensajes no leídos por comunidad para el usuario
-     * autenticado.
-     */
+    /** Devuelve el número de mensajes no leídos por comunidad para el usuario autenticado. */
     @GetMapping("/no-leidos")
     public ResponseEntity<?> obtenerNoLeidosPorComunidad(@AuthenticationPrincipal Usuario usuario) {
         if (usuario == null) {
@@ -81,8 +75,8 @@ public class MensajeComunidadController {
      * Envía un mensaje en el chat de una comunidad.
      *
      * @param comunidadId ID de la comunidad.
-     * @param usuario     usuario autenticado.
-     * @param request     datos del mensaje.
+     * @param usuario usuario autenticado.
+     * @param request datos del mensaje.
      * @return respuesta con el mensaje guardado.
      */
     @PostMapping("/{comunidadId}/mensajes")
@@ -92,7 +86,8 @@ public class MensajeComunidadController {
             @RequestBody final EnviarMensajeComunidadRequest request) {
         try {
             request.setComunidadId(comunidadId);
-            final MensajeComunidadResponse response = mensajeComunidadService.enviarMensaje(usuario.getId(), request);
+            final MensajeComunidadResponse response =
+                    mensajeComunidadService.enviarMensaje(usuario.getId(), request);
             messagingTemplate.convertAndSend("/topic/community." + comunidadId, response);
             notifyCommunityMembers(comunidadId, response, usuario.getId());
             return ResponseEntity.ok(response);
@@ -111,7 +106,8 @@ public class MensajeComunidadController {
     @GetMapping("/{comunidadId}/mensajes")
     public ResponseEntity<?> obtenerHistorial(@PathVariable final Long comunidadId) {
         try {
-            final List<MensajeComunidadResponse> mensajes = mensajeComunidadService.obtenerHistorial(comunidadId);
+            final List<MensajeComunidadResponse> mensajes =
+                    mensajeComunidadService.obtenerHistorial(comunidadId);
             return ResponseEntity.ok(mensajes);
         } catch (final Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -123,9 +119,9 @@ public class MensajeComunidadController {
      * Edita un mensaje de comunidad.
      *
      * @param comunidadId ID de la comunidad.
-     * @param mensajeId   ID del mensaje a editar.
-     * @param usuario     usuario autenticado.
-     * @param request     con el nuevo contenido.
+     * @param mensajeId ID del mensaje a editar.
+     * @param usuario usuario autenticado.
+     * @param request con el nuevo contenido.
      * @return respuesta con el mensaje actualizado.
      */
     @PutMapping("/{comunidadId}/mensajes/{mensajeId}")
@@ -135,8 +131,9 @@ public class MensajeComunidadController {
             @AuthenticationPrincipal final Usuario usuario,
             @RequestBody final EnviarMensajeComunidadRequest request) {
         try {
-            final MensajeComunidadResponse response = mensajeComunidadService.editarMensaje(
-                    usuario.getId(), mensajeId, request.getContenido());
+            final MensajeComunidadResponse response =
+                    mensajeComunidadService.editarMensaje(
+                            usuario.getId(), mensajeId, request.getContenido());
             return ResponseEntity.ok(response);
         } catch (final Exception e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -148,8 +145,8 @@ public class MensajeComunidadController {
      * Elimina un mensaje de comunidad.
      *
      * @param comunidadId ID de la comunidad.
-     * @param mensajeId   ID del mensaje a eliminar.
-     * @param usuario     usuario autenticado.
+     * @param mensajeId ID del mensaje a eliminar.
+     * @param usuario usuario autenticado.
      * @return respuesta de éxito o error.
      */
     @DeleteMapping("/{comunidadId}/mensajes/{mensajeId}")
@@ -166,7 +163,9 @@ public class MensajeComunidadController {
         }
     }
 
-    @PostMapping(value = "/{comunidadId}/mensajes/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(
+            value = "/{comunidadId}/mensajes/upload",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> enviarArchivo(
             @PathVariable final Long comunidadId,
             @AuthenticationPrincipal final Usuario usuario,
@@ -177,16 +176,18 @@ public class MensajeComunidadController {
         }
 
         try {
-            ChatFileStorageService.ValidatedChatFile validatedFile = chatFileStorageService.validateAndExtract(file);
+            ChatFileStorageService.ValidatedChatFile validatedFile =
+                    chatFileStorageService.validateAndExtract(file);
 
-            MensajeComunidadResponse response = mensajeComunidadService.enviarArchivo(
-                    usuario.getId(),
-                    comunidadId,
-                    contenido,
-                    validatedFile.originalName(),
-                    validatedFile.mimeType(),
-                    validatedFile.sizeBytes(),
-                    validatedFile.content());
+            MensajeComunidadResponse response =
+                    mensajeComunidadService.enviarArchivo(
+                            usuario.getId(),
+                            comunidadId,
+                            contenido,
+                            validatedFile.originalName(),
+                            validatedFile.mimeType(),
+                            validatedFile.sizeBytes(),
+                            validatedFile.content());
 
             messagingTemplate.convertAndSend("/topic/community." + comunidadId, response);
             notifyCommunityMembers(comunidadId, response, usuario.getId());
@@ -209,15 +210,17 @@ public class MensajeComunidadController {
         }
 
         try {
-            MensajeComunidadService.MensajeComunidadArchivo archivo = mensajeComunidadService
-                    .obtenerArchivo(usuario.getId(), comunidadId, mensajeId);
+            MensajeComunidadService.MensajeComunidadArchivo archivo =
+                    mensajeComunidadService.obtenerArchivo(usuario.getId(), comunidadId, mensajeId);
 
-            String mimeType = archivo.mimeType() == null || archivo.mimeType().isBlank()
-                    ? MediaType.APPLICATION_OCTET_STREAM_VALUE
-                    : archivo.mimeType();
-            String nombre = archivo.nombre() == null || archivo.nombre().isBlank()
-                    ? "adjunto"
-                    : archivo.nombre();
+            String mimeType =
+                    archivo.mimeType() == null || archivo.mimeType().isBlank()
+                            ? MediaType.APPLICATION_OCTET_STREAM_VALUE
+                            : archivo.mimeType();
+            String nombre =
+                    archivo.nombre() == null || archivo.nombre().isBlank()
+                            ? "adjunto"
+                            : archivo.nombre();
 
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(mimeType))
@@ -233,7 +236,8 @@ public class MensajeComunidadController {
 
     private void notifyCommunityMembers(
             final Long comunidadId, final MensajeComunidadResponse response, final Long senderId) {
-        List<Long> miembrosIds = miembroComunidadRepository.findUsuarioIdsByComunidadId(comunidadId);
+        List<Long> miembrosIds =
+                miembroComunidadRepository.findUsuarioIdsByComunidadId(comunidadId);
         for (Long miembroId : miembrosIds) {
             if (miembroId.equals(senderId)) {
                 continue;
@@ -241,10 +245,11 @@ public class MensajeComunidadController {
             usuarioRepository
                     .findById(miembroId)
                     .ifPresent(
-                            miembro -> messagingTemplate.convertAndSendToUser(
-                                    miembro.getEmail(),
-                                    "/queue/community_message",
-                                    response));
+                            miembro ->
+                                    messagingTemplate.convertAndSendToUser(
+                                            miembro.getEmail(),
+                                            "/queue/community_message",
+                                            response));
         }
     }
 }

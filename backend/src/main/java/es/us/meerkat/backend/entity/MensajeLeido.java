@@ -8,9 +8,9 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "mensajes_leidos", uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "mensaje_id", "usuario_id" })
-})
+@Table(
+        name = "mensajes_leidos",
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"mensaje_id", "usuario_id"})})
 public class MensajeLeido {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
