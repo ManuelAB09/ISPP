@@ -130,6 +130,10 @@ public class CommunityService {
                     maxMiembrosSolicitado != null
                             ? maxMiembrosSolicitado
                             : institutionPlanLimits.maxMembers();
+            maxMiembros =
+                    maxMiembrosSolicitado != null
+                            ? maxMiembrosSolicitado
+                            : institutionPlanLimits.maxMembers();
         } else {
             Optional<Suscripcion> suscripcionOpt = suscripcionService.obtenerMiSuscripcion(userId);
             TipoPlan userPlan = suscripcionOpt.map(Suscripcion::getPlan).orElse(TipoPlan.FREE);
@@ -165,6 +169,10 @@ public class CommunityService {
             maxMiembros = maxMiembrosSolicitado != null ? maxMiembrosSolicitado : maxAllowedMembers;
             tipoPlan =
                     userPlan == TipoPlan.FREE ? TipoPlanComunidad.FREE : TipoPlanComunidad.PREMIUM;
+        }
+
+        if (imagenUrl == null || imagenUrl.isBlank()) {
+            imagenUrl = "https://i.postimg.cc/Bb8f1dDC/community-default.png";
         }
 
         // Crear comunidad
