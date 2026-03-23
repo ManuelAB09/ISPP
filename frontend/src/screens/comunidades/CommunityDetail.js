@@ -202,11 +202,12 @@ export default function CommunityDetail() {
   const isPrivate = community?.tipoGrupo === 'GRUPO_PRIVADO';
   const isCorporateCommunity = String(community?.tipoPlan || '').toUpperCase() === 'UNLIMITED';
   const normalizedRole = normalizeCommunityRole(community?.miRol);
+  const normalizedRolDocente = community?.miRolDocente || null;
   const isAdmin = isAdminRole(normalizedRole);
-  const isTeacher = isTeacherRole(normalizedRole);
-  const canCreateEvent = canCreateCommunityEvent(normalizedRole);
-  const roleLabel = getCommunityRoleLabel(normalizedRole);
-  const roleCapabilities = getCommunityRoleCapabilities(normalizedRole);
+  const isTeacher = isTeacherRole(normalizedRole, normalizedRolDocente);
+  const canCreateEvent = canCreateCommunityEvent(normalizedRole, normalizedRolDocente);
+  const roleLabel = getCommunityRoleLabel(normalizedRole, normalizedRolDocente);
+  const roleCapabilities = getCommunityRoleCapabilities(normalizedRole, normalizedRolDocente);
   const currentUserId = localStorage.getItem('userId');
   const hasTeacherProfile = Boolean(user?.esTutor || user?.esProfesor);
   const currentUser = {
@@ -223,7 +224,10 @@ export default function CommunityDetail() {
     return acc;
   }, {});
   const adminMembers = groupedMembers.ADMIN || [];
-  const teacherMembers = groupedMembers.PROFESOR || [];
+  const adminProfesores = adminMembers.filter(
+    (m) => normalizeCommunityRole(m?.rolDocente) === 'PROFESOR'
+  );
+  const teacherMembers = [...(groupedMembers.PROFESOR || []), ...adminProfesores];
   const studentMembers = [...(groupedMembers.ALUMNO || []), ...(groupedMembers.MIEMBRO || [])];
 
   const formatPlanLabel = (plan) => {
@@ -333,7 +337,7 @@ export default function CommunityDetail() {
               </span>
               <span className="cd-member-info">
                 <span className="cd-member-name">{getMemberName(member)}</span>
-                <span className="cd-member-role">{getCommunityRoleLabel(member?.rol)}</span>
+                <span className="cd-member-role">{getCommunityRoleLabel(member?.rol, member?.rolDocente)}</span>
               </span>
             </button>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -723,7 +727,12 @@ export default function CommunityDetail() {
 
   const getMemberRoleLabel = (member) => {
     const rawRole = String(member?.rol || member?.role || '').toUpperCase();
-    if (rawRole === 'ADMIN') return 'Administrador';
+    const rawRolDocente = member?.rolDocente ? String(member.rolDocente).toUpperCase() : null;
+    if (rawRole === 'ADMIN') {
+      if (rawRolDocente === 'PROFESOR') return 'Administrador · Profesor';
+      if (rawRolDocente === 'ALUMNO') return 'Administrador · Alumno';
+      return 'Administrador';
+    }
     if (rawRole === 'MODERADOR' || rawRole === 'MODERATOR') return 'Moderador';
     if (rawRole === 'MIEMBRO' || rawRole === 'MEMBER') return 'Miembro';
     if (rawRole === 'ALUMNO' || rawRole === 'STUDENT') return 'Alumno';
