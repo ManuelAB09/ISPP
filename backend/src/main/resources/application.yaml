@@ -105,29 +105,4 @@ spring:
     console:
       enabled: true
 
-server:
-  port: 8080
-
-logging:
-  level:
-    org.springframework.security: DEBUG
-    org.springframework.mail: DEBUG
-
-# ── PROPIEDADES PERSONALIZADAS ──
-mail:
-  from: ${MAIL_FROM:${MAIL_USERNAME:${EMAIL}}}
-
-app:
-  name: Meerkat
-
-springdoc:
-  swagger-ui:
-    urls:
-      - name: Dynamic
-        url: /v3/api-docs
-      - name: Static
-        url: /spec/openapi.yaml
-    oauth:
-      enabled: false
-  api-docs:
-    enabled: true
+  # ...existing code...

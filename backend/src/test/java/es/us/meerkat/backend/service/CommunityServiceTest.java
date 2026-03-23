@@ -37,8 +37,8 @@ class CommunityServiceTest {
 
     @Mock private ComunidadRepository comunidadRepository;
     @Mock private MiembroComunidadRepository miembroComunidadRepository;
-        @Mock private UsuarioRepository usuarioRepository;
-        @Mock private TutorRepository tutorRepository;
+    @Mock private UsuarioRepository usuarioRepository;
+    @Mock private TutorRepository tutorRepository;
     @Mock private AuthorizationService authorizationService;
     @Mock private SuscripcionService suscripcionService;
 
