@@ -171,9 +171,9 @@ describe('CommunityDetail', () => {
 
     await screen.findByRole('heading', { name: /Comunidad de Matemáticas/i });
     const openMembersButton = screen.queryByRole('button', { name: /listado de miembros/i });
+    expect(openMembersButton ?? screen.getByText(/25 miembros/i)).toBeTruthy();
 
     if (!openMembersButton) {
-      expect(screen.getByText(/25 miembros/i)).toBeInTheDocument();
       return;
     }
 
