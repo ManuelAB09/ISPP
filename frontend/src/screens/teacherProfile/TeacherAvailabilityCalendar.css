@@ -1,0 +1,236 @@
+.tp-calendar {
+  margin: 1rem 0 2rem;
+  padding: 1.25rem;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid var(--tp-border);
+}
+
+.tp-calendar__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.tp-calendar__month-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tp-calendar__nav-btn {
+  border: 1px solid var(--tp-border);
+  background: var(--whiteSmoke);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.tp-calendar__month-label {
+  text-transform: capitalize;
+  font-weight: 700;
+  min-width: 180px;
+  text-align: center;
+}
+
+.tp-calendar__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.9rem;
+}
+
+.tp-calendar__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.82rem;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  border: 1px solid transparent;
+}
+
+.tp-calendar__legend-item--booked {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fecaca;
+}
+
+.tp-calendar__legend-item--free {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
+.tp-calendar__legend-help {
+  font-size: 0.8rem;
+  color: var(--tp-text-muted);
+}
+
+.tp-calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.tp-calendar__weekday {
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--tp-text-muted);
+}
+
+.tp-calendar__cell {
+  min-height: 90px;
+  border: 1px solid var(--tp-border);
+  border-radius: 10px;
+  padding: 0.4rem;
+  background: var(--whiteSmoke);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tp-calendar__cell--empty {
+  background: transparent;
+  border: 1px dashed #e8e8ef;
+  cursor: default;
+}
+
+.tp-calendar__cell--selected {
+  border-color: var(--tp-primary);
+  box-shadow: 0 0 0 2px rgba(64, 70, 130, 0.14);
+}
+
+.tp-calendar__day-number {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--tp-text);
+}
+
+.tp-calendar__markers {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 0.2rem;
+}
+
+.tp-calendar__chip {
+  border-radius: 7px;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tp-calendar__chip--booked {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.tp-calendar__chip--free {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.tp-calendar__more {
+  color: var(--tp-text-muted);
+  font-size: 0.7rem;
+}
+
+.tp-calendar__details {
+  margin-top: 1rem;
+  border-top: 1px solid var(--tp-border);
+  padding-top: 1rem;
+}
+
+.tp-calendar__details-title {
+  font-size: 1rem;
+  margin: 0 0 0.75rem;
+}
+
+.tp-calendar__detail-group {
+  margin-bottom: 0.75rem;
+}
+
+.tp-calendar__detail-group h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.88rem;
+}
+
+.tp-calendar__slot-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tp-calendar__slot {
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.82rem;
+}
+
+.tp-calendar__slot--booked {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fecaca;
+}
+
+.tp-calendar__slot--free {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
+.tp-calendar__slot--clickable {
+  cursor: pointer;
+}
+
+.tp-calendar__slot--clickable:hover {
+  filter: brightness(0.98);
+}
+
+.tp-calendar__loading,
+.tp-calendar__empty {
+  color: var(--tp-text-muted);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 760px) {
+  .tp-calendar {
+    padding: 0.9rem;
+  }
+
+  .tp-calendar__head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tp-calendar__month-label {
+    min-width: 150px;
+  }
+
+  .tp-calendar__grid {
+    gap: 0.35rem;
+  }
+
+  .tp-calendar__cell {
+    min-height: 78px;
+    padding: 0.3rem;
+  }
+
+  .tp-calendar__chip {
+    font-size: 0.62rem;
+  }
+}

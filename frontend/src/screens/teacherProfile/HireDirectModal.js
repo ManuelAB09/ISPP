@@ -31,7 +31,7 @@ const normMod = (m) => (m === "VIRTUAL" || m === "HIBRIDA" || m === "HIBRIDO" ? 
  * Modal para contratar directamente a un tutor.
  * El alumno elige día (se muestran franjas disponibles), rango horario y envía la solicitud.
  */
-const HireDirectModal = ({ tutor, onClose }) => {
+const HireDirectModal = ({ tutor, onClose, initialSelection }) => {
   const [paso, setPaso] = useState(1);
   const [dia, setDia] = useState("");
   const [horaInicio, setHoraInicio] = useState("");
@@ -95,6 +95,13 @@ const HireDirectModal = ({ tutor, onClose }) => {
     fetchDisponibilidad();
     return () => { cancelled = true; };
   }, [dia, tutor?.id]);
+
+  useEffect(() => {
+    if (!initialSelection) return;
+    if (initialSelection.dia) setDia(initialSelection.dia);
+    if (initialSelection.horaInicio) setHoraInicio(initialSelection.horaInicio);
+    if (initialSelection.horaFin) setHoraFin(initialSelection.horaFin);
+  }, [initialSelection]);
 
   const calcularHoras = () => {
     if (!horaInicio || !horaFin) return 0;
