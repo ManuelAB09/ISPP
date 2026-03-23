@@ -3,18 +3,21 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import axiosInstance from '../../api/axiosConfig';
 import { communitiesApi } from '../../api/communities.api';
 import {
-    attendEvent,
-    cancelAttendance,
-    cancelEvent,
-    getConfirmedAttendees,
-    getEventById,
-    getMyAttendance,
+  attendEvent,
+  cancelAttendance,
+  cancelEvent,
+  getConfirmedAttendees,
+  getEventById,
+  getMyAttendance,
 } from '../../api/eventEndpoints';
 import { checkAlreadyRated } from '../../api/valoraciones.api';
 import DetalleEvento from './DetalleEvento';
 
 // Mocks
 jest.mock('../../api/eventEndpoints');
+jest.mock('../../api/valoraciones.api', () => ({
+  checkAlreadyRated: jest.fn(),
+}));
 jest.mock('../../api/axiosConfig', () => ({
   __esModule: true,
   default: {
