@@ -28,12 +28,12 @@ class MemberServiceTest {
 
     @Mock private MiembroComunidadRepository miembroComunidadRepository;
     @Mock private ComunidadRepository comunidadRepository;
-        @Mock private ComunidadClassroomRepository comunidadClassroomRepository;
+    @Mock private ComunidadClassroomRepository comunidadClassroomRepository;
     @Mock private UsuarioRepository usuarioRepository;
-        @Mock private AsistenciaEventoRepository asistenciaEventoRepository;
+    @Mock private AsistenciaEventoRepository asistenciaEventoRepository;
     @Mock private AuthorizationService authorizationService;
     @Mock private CommunityService communityService;
-        @Mock private GoogleClassroomService googleClassroomService;
+    @Mock private GoogleClassroomService googleClassroomService;
 
     @InjectMocks private MemberService memberService;
 
@@ -217,6 +217,7 @@ class MemberServiceTest {
         assertThat(result.getRol()).isEqualTo(RolComunidad.ADMIN);
         verify(miembroComunidadRepository).save(targetMember);
     }
+
     private Usuario buildUsuario(final Long id) {
         Usuario usuario = new Usuario();
         usuario.setId(id);

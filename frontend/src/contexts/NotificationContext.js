@@ -176,8 +176,9 @@ export const NotificationProvider = ({ children }) => {
                 const notifUnread = (Array.isArray(userNotifications) ? userNotifications : []).filter((n) => !n?.leida).length;
                 setPanelUnreadCount(eventUnread + notifUnread);
             })
-            .catch(() => {
+            .catch((error) => {
                 // Keep last known count if refresh fails
+                console.error('Error al refrescar el contador de notificaciones:', error);
             });
     }, [isAuthenticated]);
 
@@ -260,7 +261,7 @@ export const NotificationProvider = ({ children }) => {
                         foto: conv.usuarioFoto,
                     });
                 });
-            } catch { /* silent */ }
+            } catch (error) { console.error('Error al obtener conversaciones:', error); }
 
             try {
                 const { content: communities } = await communitiesApi.listMine({ page: 0, size: 100 });
@@ -274,9 +275,9 @@ export const NotificationProvider = ({ children }) => {
                                 lastMessage.contenido || ''
                             );
                         }
-                    } catch { /* silent */ }
+                    } catch (error) { console.error('Error al obtener historial de comunidad:', error); }
                 }
-            } catch { /* silent */ }
+            } catch (error) { console.error('Error al obtener comunidades:', error); }
         };
 
         seedKnown();
@@ -630,7 +631,7 @@ export const NotificationProvider = ({ children }) => {
                         });
                     });
                 })
-                .catch(() => {});
+                .catch((error) => { console.error('Error al obtener conversaciones (ruta chats/comunidades):', error); });
         }
     }, [isInChatRoute, location.pathname, isAuthenticated]);
 
