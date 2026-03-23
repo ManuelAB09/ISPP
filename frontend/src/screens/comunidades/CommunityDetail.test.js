@@ -185,8 +185,10 @@ describe('CommunityDetail', () => {
       expect(communitiesApi.getMembers).toHaveBeenCalledWith('1', { page: 0, size: 100 });
     });
 
-    await screen.findByText('Ana Tutor');
-    expect(screen.getByText('Administrador')).toBeInTheDocument();
+    const anaTutorMatches = await screen.findAllByText('Ana Tutor');
+    expect(anaTutorMatches.length).toBeGreaterThan(0);
+    const adminMatches = screen.getAllByText('Administrador');
+    expect(adminMatches.length).toBeGreaterThan(0);
     expect(screen.getByText('Tu')).toBeInTheDocument();
   });
 

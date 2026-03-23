@@ -621,6 +621,39 @@ public class CommunityController {
         }
     }
 
+    /** Promueve a ADMIN a un miembro de la comunidad. POST /api/v1/communities/{communityId}/admin/{userId} */
+    @PostMapping("/{communityId}/admin/{userId}")
+    @Operation(
+            summary = "Promover miembro a admin",
+            description = "Asciende a ADMIN a un miembro existente (solo admin actual)",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Miembro promovido a admin"),
+        @ApiResponse(responseCode = "403", description = "No tienes permisos"),
+        @ApiResponse(responseCode = "404", description = "Usuario target no encontrado")
+    })
+    public ResponseEntity<MemberResponse> promoteMemberToAdmin(
+            @PathVariable Long communityId,
+            @PathVariable Long userId,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        try {
+            MiembroComunidad promotedMember =
+                    memberService.promoteToAdmin(usuario.getId(), communityId, userId);
+            return ResponseEntity.ok(entityToMemberResponse(promotedMember));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
     /** Ranking de miembros por actividad. GET /api/v1/communities/{communityId}/ranking */
     @GetMapping("/{communityId}/ranking")
     @Operation(

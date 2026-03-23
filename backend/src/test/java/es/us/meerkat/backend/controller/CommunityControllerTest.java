@@ -228,6 +228,40 @@ class CommunityControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
+        @Test
+        void promoteMemberToAdminShouldReturnForbiddenWhenUserIsNotAdmin() {
+                Usuario usuario = buildUsuario(1L);
+                when(authorizationService.isAdminOf(usuario.getId(), 100L)).thenReturn(false);
+
+                ResponseEntity<MemberResponse> response =
+                                communityController.promoteMemberToAdmin(100L, 2L, usuario);
+
+                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        void promoteMemberToAdminShouldReturnOkWhenServiceSucceeds() {
+                Usuario usuario = buildUsuario(1L);
+                Usuario targetUser = buildUsuario(2L);
+                MiembroComunidad promoted =
+                                MiembroComunidad.builder()
+                                                .id(90L)
+                                                .usuario(targetUser)
+                                                .rol(RolComunidad.ADMIN)
+                                                .build();
+
+                when(authorizationService.isAdminOf(usuario.getId(), 100L)).thenReturn(true);
+                when(memberService.promoteToAdmin(usuario.getId(), 100L, 2L)).thenReturn(promoted);
+
+                ResponseEntity<MemberResponse> response =
+                                communityController.promoteMemberToAdmin(100L, 2L, usuario);
+
+                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+                assertThat(response.getBody()).isNotNull();
+                assertThat(response.getBody().id()).isEqualTo(90L);
+                assertThat(response.getBody().rol()).isEqualTo("ADMIN");
+        }
+
     private Usuario buildUsuario(final Long id) {
         Usuario usuario = new Usuario();
         usuario.setId(id);
