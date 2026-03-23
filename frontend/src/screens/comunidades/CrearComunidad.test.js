@@ -198,7 +198,7 @@ describe('CrearComunidad', () => {
         tipoGrupo: 'COMUNIDAD_PUBLICA',
         imagenUrl: 'empty',
         maxMiembros: 30,
-        rolInicial: 'PROFESOR',
+        rolInicial: 'ALUMNO',
       });
     });
   });
