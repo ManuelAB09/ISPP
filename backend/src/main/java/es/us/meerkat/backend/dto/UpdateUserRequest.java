@@ -56,9 +56,6 @@ public class UpdateUserRequest {
     /** Visibilidad del perfil en listados públicos. */
     private Boolean visibleEnListados;
 
-    /** Preferencia de notificaciones por email. */
-    private Boolean notificacionesEmail;
-
     /** Preferencia de notificaciones push. */
     private Boolean notificacionesPush;
 

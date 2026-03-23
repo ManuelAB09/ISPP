@@ -18,8 +18,11 @@ import {
 } from '../../api/eventEndpoints';
 import { communitiesApi } from '../../api/communities.api';
 import { ZoomApi } from '../../api/zoom.api';
+import { checkAlreadyRated } from '../../api/valoraciones.api';
 import { getApiBaseUrl } from '../../api/baseUrl';
+import { normalizeCommunityRole } from '../../utils/communityRoles';
 import { useSocketContext } from '../../contexts/SocketContext';
+import RatingForm from '../../components/RatingForm';
 
 const OPCIONES_ANTELACION = [
   { label: '2 días antes', value: 2880 },
@@ -73,8 +76,31 @@ const eventIconRed = L.icon({
   shadowSize: [41, 41],
 });
 
+// Valoración de profesor (sin validación de permisos)
+// Mover fuera de la función para evitar acceder a 'event' antes de su inicialización
 const DetalleEvento = () => {
   const { eventId } = useParams();
+  // Persist valorado per user+event in localStorage
+  const [valorado, setValorado] = useState(() => {
+    try {
+      const userId = localStorage.getItem('userId');
+      const ratedEvents = JSON.parse(localStorage.getItem('ratedEvents') || '{}');
+      return !!ratedEvents[`${userId}_${eventId}`];
+    } catch {
+      return false;
+    }
+  });
+  // When valorado changes to true, persist in localStorage
+  useEffect(() => {
+    if (valorado) {
+      try {
+        const userId = localStorage.getItem('userId');
+        const ratedEvents = JSON.parse(localStorage.getItem('ratedEvents') || '{}');
+        ratedEvents[`${userId}_${eventId}`] = true;
+        localStorage.setItem('ratedEvents', JSON.stringify(ratedEvents));
+      } catch {}
+    }
+  }, [valorado, eventId]);
   const navigate = useNavigate();
   const { socket } = useSocketContext();
 
@@ -88,6 +114,7 @@ const DetalleEvento = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelLoading, setCancelLoading] = useState(false);
   const [isMember, setIsMember] = useState(false);
+  const [communityRole, setCommunityRole] = useState(null);
 
   // Alarmas
   const [alarms, setAlarms] = useState([]);
@@ -135,10 +162,12 @@ const DetalleEvento = () => {
       // Verificar si soy miembro de la comunidad del evento
       if (currentUserId && eventData.comunidadId) {
         try {
-          await communitiesApi.getMyMembership(eventData.comunidadId);
+          const membership = await communitiesApi.getMyMembership(eventData.comunidadId);
           setIsMember(true);
+          setCommunityRole(normalizeCommunityRole(membership?.rol));
         } catch {
           setIsMember(false);
+          setCommunityRole(null);
         }
       }
 
@@ -158,6 +187,16 @@ const DetalleEvento = () => {
         } catch {
           setAlarms([]);
         }
+
+        // Verificar si ya valoré este evento en el backend
+        try {
+          const checkResp = await checkAlreadyRated(currentUserId, eventId);
+          if (checkResp?.rated || checkResp?.data?.rated) {
+            setValorado(true);
+          }
+        } catch {
+          // Si falla, respetar el estado de localStorage
+        }
       }
     } catch (err) {
       console.error('Error al cargar el evento:', err);
@@ -172,10 +211,19 @@ const DetalleEvento = () => {
   }, [fetchEventData]);
 
   const isOrganizer = event?.creador?.id?.toString() === currentUserId;
+  // For community events: only ADMIN/PROFESOR can edit. For non-community: organizer can edit.
+  const canEditEvent = communityRole
+    ? (communityRole === 'ADMIN' || communityRole === 'PROFESOR')
+    : isOrganizer;
   const isConfirmed = myAttendance?.estado === 'CONFIRMADA';
   const isFull = event && event.aforo && (event.asistentesConfirmados || 0) >= event.aforo;
   const isCancelled = event?.cancelado;
   const isStarted = event?.fechaHora ? new Date(event.fechaHora).getTime() <= Date.now() : false;
+  const isEnded = event?.fechaFin
+    ? new Date(event.fechaFin).getTime() <= Date.now()
+    : isStarted && event?.fechaHora
+      ? Date.now() - new Date(event.fechaHora).getTime() > 2 * 60 * 60 * 1000
+      : false;
 
   // Abre el modal de confirmación de asistencia
   const handleAttend = () => {
@@ -493,6 +541,47 @@ const DetalleEvento = () => {
     });
   };
 
+  // Estado y efecto para obtener el id real de tutor para la valoración
+  const [realTutorId, setRealTutorId] = React.useState(null);
+  const [buscandoTutor, setBuscandoTutor] = useState(false);
+  const [, setTutorError] = useState(null);
+
+  // Determinar si el creador es profesor en la comunidad del evento
+  const creadorEsProfesorEnComunidad = event?.creadorRolComunidad === 'PROFESOR';
+
+  React.useEffect(() => {
+    let cancelled = false;
+    async function fetchTutorId() {
+      setBuscandoTutor(false);
+      setTutorError(null);
+      if (event && creadorEsProfesorEnComunidad && event.creador?.tutorId) {
+        setRealTutorId(event.creador.tutorId);
+      } else if (event && creadorEsProfesorEnComunidad && event.creador?.id) {
+        setBuscandoTutor(true);
+        try {
+          const resp = await axiosInstance.get(`/api/v1/tutors/user/${event.creador.id}`);
+          if (!cancelled && resp.data && resp.data.id) {
+            setRealTutorId(resp.data.id);
+          } else if (!cancelled) {
+            setRealTutorId(null);
+            setTutorError('No se encontró tutor para el organizador.');
+          }
+        } catch (e) {
+          if (!cancelled) {
+            setRealTutorId(null);
+            setTutorError('No se encontró tutor para el organizador.');
+          }
+        } finally {
+          if (!cancelled) setBuscandoTutor(false);
+        }
+      } else {
+        setRealTutorId(null);
+      }
+    }
+    fetchTutorId();
+    return () => { cancelled = true; };
+  }, [event, creadorEsProfesorEnComunidad]);
+
   if (loading) {
     return (
       <div className="ed-page">
@@ -543,7 +632,7 @@ const DetalleEvento = () => {
               {isCancelled && (
                 <span className="ed-badge ed-badge-cancelled">❌ Cancelado</span>
               )}
-              {event.visibleMapa && !isCancelled && (
+              {event.visibleMapa && !isCancelled && !event.esVirtual && (
                 <span className="ed-badge ed-badge-map"><LuMap /> Visible en mapa</span>
               )}
               {isStarted && !isCancelled && (
@@ -571,7 +660,7 @@ const DetalleEvento = () => {
           </div>
 
           {/* Acciones del organizador */}
-          {isOrganizer && !isCancelled && !isStarted && (
+          {canEditEvent && !isCancelled && !isStarted && (
             <div className="ed-organizer-actions">
               <button
                 className="ed-btn ed-btn-edit"
@@ -901,7 +990,7 @@ const DetalleEvento = () => {
                         <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Tarea vinculada a este evento</span>
                       </div>
                     </div>
-                    {isOrganizer && !isCancelled && !isStarted && (
+                    {canEditEvent && !isCancelled && !isStarted && (
                       <button
                         onClick={handleUnlinkTask}
                         disabled={taskLinking}
@@ -973,13 +1062,13 @@ const DetalleEvento = () => {
                   </span>
                 </div>
 
-                {isFull && !isConfirmed && (
+                {isFull && !isConfirmed && !isStarted && (
                   <div className="ed-full-message">
                     <LuUsers /> Aforo completo
                   </div>
                 )}
 
-                {!isMember && currentUserId && !isConfirmed && (
+                {!isMember && currentUserId && !isConfirmed && !isStarted && (
                   <div className="ed-full-message">
                     Debes ser miembro de la comunidad para apuntarte
                   </div>
@@ -992,7 +1081,7 @@ const DetalleEvento = () => {
                     </div>
                     {isOrganizer ? (
                       <span style={{ fontSize: '0.85rem', color: '#888' }}>Eres el organizador de este evento</span>
-                    ) : (
+                    ) : !isEnded ? (
                       <button
                         className="ed-btn ed-btn-cancel-attendance"
                         onClick={handleCancelAttendance}
@@ -1000,9 +1089,9 @@ const DetalleEvento = () => {
                       >
                         {attendanceLoading ? 'Cancelando...' : 'Cancelar asistencia'}
                       </button>
-                    )}
+                    ) : null}
                   </div>
-                ) : (
+                ) : !isStarted ? (
                   <button
                     className="ed-btn ed-btn-attend"
                     onClick={handleAttend}
@@ -1011,7 +1100,7 @@ const DetalleEvento = () => {
                   >
                     {attendanceLoading ? 'Confirmando...' : 'Confirmar asistencia'}
                   </button>
-                )}
+                ) : null}
 
                 {/* Alarmas rápidas (solo si confirmado) */}
                 {isConfirmed && currentUserId && (
@@ -1109,6 +1198,29 @@ const DetalleEvento = () => {
                 <p className="ed-no-participants">Aún no hay participantes confirmados.</p>
               )}
             </div>
+
+            {/* Formulario de valoración tras evento finalizado (solo si el creador es PROFESOR en la comunidad y soy asistente confirmado) */}
+            {!isOrganizer && isConfirmed && creadorEsProfesorEnComunidad && isStarted && !isCancelled && (
+              valorado ? (
+                <div className="ed-rating-success">¡Gracias por valorar al profesor!</div>
+              ) : buscandoTutor ? (
+                <div className="ed-rating-card">
+                  <h3 className="ed-card-title">Buscando tutor...</h3>
+                  <div className="ed-rating-error">Buscando el tutor asociado al organizador del evento...</div>
+                </div>
+              ) : realTutorId ? (
+                <div className="ed-rating-card">
+                  <h3 className="ed-card-title">Valora al profesor</h3>
+                  <RatingForm
+                    profesorId={realTutorId}
+                    alumnoId={currentUserId}
+                    eventoId={eventId}
+                    onValorado={() => setValorado(true)}
+                    alreadyRated={valorado}
+                  />
+                </div>
+              ) : null
+            )}
           </div>
         </div>
       </div>

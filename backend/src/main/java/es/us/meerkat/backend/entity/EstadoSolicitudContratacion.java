@@ -6,5 +6,9 @@ public enum EstadoSolicitudContratacion {
     ACEPTADA,
     RECHAZADA,
     PAGADA,
-    CANCELADA
+    CANCELADA_ALUMNO,
+    CANCELADA_TUTOR,
+    COMPLETADA,
+    NO_ASISTIDA,
+    REPROGRAMACION_PENDIENTE
 }

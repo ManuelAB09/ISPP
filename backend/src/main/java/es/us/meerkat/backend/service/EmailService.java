@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
 
 import es.us.meerkat.backend.entity.AsistenciaEvento;
+import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.EstadoAsistencia;
 import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.TipoEvento;
@@ -44,8 +45,10 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final AsistenciaEventoRepository asistenciaEventoRepository;
 
+    @SuppressWarnings("deprecation")
     private static final DateTimeFormatter DATE_FORMATTER =
             DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM 'de' yyyy", new Locale("es", "ES"));
+
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
     // ===============================
@@ -728,6 +731,100 @@ public class EmailService {
         sendHtmlEmailSafe(alumnoEmail, subject, body);
     }
 
+    /** Email al alumno confirmando que ÉL ha cancelado la clase. */
+    public void sendAlumnoCancelledConfirmationEmail(
+            String alumnoEmail,
+            String alumnoNombre,
+            String tutorNombre,
+            LocalDate dia,
+            LocalTime horaInicio,
+            LocalTime horaFin,
+            String motivo) {
+
+        String fecha = dia.format(DATE_FMT);
+        String horario = horaInicio.format(TIME_FMT) + " \u2013 " + horaFin.format(TIME_FMT);
+        String motivoHtml =
+                motivo != null && !motivo.isBlank()
+                        ? "<p><strong>Motivo:</strong> " + motivo + "</p>"
+                        : "";
+
+        String subject = appName + " - Has cancelado tu clase";
+        String body =
+                "<html><body style='font-family:Arial,sans-serif;color:#333'><div"
+                    + " style='max-width:600px;margin:0 auto;padding:20px'><div"
+                    + " style='background:#c0392b;color:white;padding:20px;text-align:center;border-radius:5px"
+                    + " 5px 0 0'><h1>Clase cancelada</h1></div><div"
+                    + " style='background:#f9f9f9;padding:20px;border:1px solid #ddd'><p>Hola"
+                    + " <strong>"
+                        + alumnoNombre
+                        + "</strong>,</p>"
+                        + "<p>Has cancelado tu clase con <strong>"
+                        + tutorNombre
+                        + "</strong> prevista para:</p><div"
+                        + " style='background:#fdecea;padding:15px;border-left:4px solid"
+                        + " #c0392b;margin:20px 0'>\uD83D\uDCC5 "
+                        + fecha
+                        + "<br>"
+                        + "\uD83D\uDD50 "
+                        + horario
+                        + "</div>"
+                        + motivoHtml
+                        + "<p>Puedes reservar una nueva clase cuando quieras.</p></div><div"
+                        + " style='background:#f0f0f0;padding:15px;text-align:center;font-size:12px;border-radius:0"
+                        + " 0 5px 5px'><p>&copy; "
+                        + appName
+                        + "</p></div></div></body></html>";
+
+        sendHtmlEmailSafe(alumnoEmail, subject, body);
+    }
+
+    /** Email al tutor notificando que su alumno ha cancelado la clase. */
+    public void sendTutorNotificationAlumnoCancelledEmail(
+            String tutorEmail,
+            String tutorNombre,
+            String alumnoNombre,
+            LocalDate dia,
+            LocalTime horaInicio,
+            LocalTime horaFin,
+            String motivo) {
+
+        String fecha = dia.format(DATE_FMT);
+        String horario = horaInicio.format(TIME_FMT) + " \u2013 " + horaFin.format(TIME_FMT);
+        String motivoHtml =
+                motivo != null && !motivo.isBlank()
+                        ? "<p><strong>Motivo:</strong> " + motivo + "</p>"
+                        : "";
+
+        String subject = appName + " - Tu alumno ha cancelado la clase";
+        String body =
+                "<html><body style='font-family:Arial,sans-serif;color:#333'><div"
+                    + " style='max-width:600px;margin:0 auto;padding:20px'><div"
+                    + " style='background:#c0392b;color:white;padding:20px;text-align:center;border-radius:5px"
+                    + " 5px 0 0'><h1>Clase cancelada por el alumno</h1></div><div"
+                    + " style='background:#f9f9f9;padding:20px;border:1px solid #ddd'><p>Hola"
+                    + " <strong>"
+                        + tutorNombre
+                        + "</strong>,</p>"
+                        + "<p>Tu alumno <strong>"
+                        + alumnoNombre
+                        + "</strong> ha cancelado la clase prevista para:</p><div"
+                        + " style='background:#fdecea;padding:15px;border-left:4px solid"
+                        + " #c0392b;margin:20px 0'>\uD83D\uDCC5 "
+                        + fecha
+                        + "<br>"
+                        + "\uD83D\uDD50 "
+                        + horario
+                        + "</div>"
+                        + motivoHtml
+                        + "</div><div"
+                        + " style='background:#f0f0f0;padding:15px;text-align:center;font-size:12px;border-radius:0"
+                        + " 0 5px 5px'><p>&copy; "
+                        + appName
+                        + "</p></div></div></body></html>";
+
+        sendHtmlEmailSafe(tutorEmail, subject, body);
+    }
+
     /** Email de reprogramación de reserva (al alumno). */
     public void sendBookingRescheduledEmail(
             String alumnoEmail,
@@ -861,6 +958,320 @@ public class EmailService {
                         + "</p></div></div></body></html>";
 
         sendHtmlEmailSafe(email, subject, body);
+    }
+
+    /**
+     * Email cuando un evento al que el usuario está apuntado ha sido modificado.
+     *
+     * @param usuario destinatario con asistencia confirmada.
+     * @param evento evento actualizado.
+     */
+    public void sendEventUpdatedEmail(final Usuario usuario, final Evento evento) {
+        if (usuario == null || usuario.getEmail() == null || evento == null) {
+            return;
+        }
+
+        final String nombreUsuario = usuario.getNombre() != null ? usuario.getNombre() : "";
+        final String fecha =
+                evento.getFechaHora() != null ? evento.getFechaHora().format(DATE_FORMATTER) : "";
+        final String horaInicio =
+                evento.getFechaHora() != null
+                        ? evento.getFechaHora().format(TIME_FORMATTER)
+                        : "--:--";
+        final String horaFin =
+                evento.getFechaFin() != null
+                        ? evento.getFechaFin().format(TIME_FORMATTER)
+                        : "--:--";
+        final String comunidad =
+                evento.getComunidad() != null && evento.getComunidad().getNombre() != null
+                        ? evento.getComunidad().getNombre()
+                        : "Comunidad";
+        final String modalidad =
+                Boolean.TRUE.equals(evento.getEsVirtual()) ? "Online" : "Presencial";
+        final String ubicacion =
+                !Boolean.TRUE.equals(evento.getEsVirtual()) && evento.getUbicacion() != null
+                        ? evento.getUbicacion().getNombre()
+                        : "";
+
+        final String subject = "🔄 Evento actualizado: " + escapeHtml(evento.getTitulo());
+        final String body =
+                "<html><body style='font-family:Arial,sans-serif;color:#333'><div"
+                    + " style='max-width:600px;margin:0 auto;padding:20px'><div"
+                    + " style='background:#2D3250;color:white;padding:20px;text-align:center;border-radius:5px"
+                    + " 5px 0 0'><h1>Evento actualizado</h1></div><div"
+                    + " style='background:#f9f9f9;padding:20px;border:1px solid #ddd'><p>Hola"
+                    + " <strong>"
+                        + escapeHtml(nombreUsuario)
+                        + "</strong>,</p><p>Se han aplicado cambios en un evento al que estás"
+                        + " apuntado:</p><div"
+                        + " style='background:#e8f4f8;padding:15px;border-left:4px solid"
+                        + " #2D3250;margin:20px 0'><strong>"
+                        + escapeHtml(evento.getTitulo())
+                        + "</strong><br>"
+                        + "🏠 Comunidad: "
+                        + escapeHtml(comunidad)
+                        + "<br>"
+                        + "📅 Fecha: "
+                        + fecha
+                        + "<br>"
+                        + "🕐 Hora: "
+                        + horaInicio
+                        + " – "
+                        + horaFin
+                        + "<br>"
+                        + "💻 Modalidad: "
+                        + modalidad
+                        + (ubicacion != null && !ubicacion.isBlank()
+                                ? "<br>📍 Ubicación: " + escapeHtml(ubicacion)
+                                : "")
+                        + "</a></p></div><div"
+                        + " style='background:#f0f0f0;padding:15px;text-align:center;font-size:12px;border-radius:0"
+                        + " 0 5px 5px'><p>&copy; "
+                        + appName
+                        + "</p></div></div></body></html>";
+
+        sendHtmlEmailSafe(usuario.getEmail(), subject, body);
+    }
+
+    /**
+     * Email al dueño de una comunidad cuando un usuario solicita acceso a una comunidad privada.
+     *
+     * @param dueno destinatario (creador de la comunidad).
+     * @param comunidad comunidad privada donde se solicita acceso.
+     * @param solicitante usuario que solicita acceso.
+     * @param mensaje mensaje opcional adjunto a la solicitud.
+     */
+    public void sendCommunityAccessRequestEmail(
+            final Usuario dueno,
+            final Comunidad comunidad,
+            final Usuario solicitante,
+            final String mensaje) {
+        if (dueno == null || dueno.getEmail() == null || comunidad == null || solicitante == null) {
+            return;
+        }
+
+        final String nombreDueno = dueno.getNombre() != null ? dueno.getNombre() : "";
+        final String nombreSolicitante =
+                solicitante.getNombre() != null ? solicitante.getNombre() : "Usuario";
+        final String nombreComunidad =
+                comunidad.getNombre() != null ? comunidad.getNombre() : "tu comunidad";
+
+        final String mensajeHtml =
+                mensaje != null && !mensaje.isBlank()
+                        ? "<p style='margin-top:12px'><strong>Mensaje:</strong><br>"
+                                + escapeHtml(mensaje)
+                                + "</p>"
+                        : "";
+
+        final String subject = "📩 Nueva solicitud de acceso: " + nombreComunidad;
+        final String body =
+                "<html><body style='font-family:Arial,sans-serif;color:#333'><div"
+                    + " style='max-width:600px;margin:0 auto;padding:20px'><div"
+                    + " style='background:#2D3250;color:white;padding:20px;text-align:center;border-radius:5px"
+                    + " 5px 0 0'><h1>Nueva solicitud de acceso</h1></div><div"
+                    + " style='background:#f9f9f9;padding:20px;border:1px solid #ddd'><p>Hola"
+                    + " <strong>"
+                        + escapeHtml(nombreDueno)
+                        + "</strong>,</p><p>"
+                        + escapeHtml(nombreSolicitante)
+                        + " ha solicitado unirse a la comunidad <strong>"
+                        + escapeHtml(nombreComunidad)
+                        + "</strong>.</p>"
+                        + mensajeHtml
+                        + "<p style='margin-top:16px'>Puedes revisar y responder la solicitud desde"
+                        + " la pantalla de la comunidad.</p></div><div"
+                        + " style='background:#f0f0f0;padding:15px;text-align:center;font-size:12px;border-radius:0"
+                        + " 0 5px 5px'><p>&copy; "
+                        + appName
+                        + "</p></div></div></body></html>";
+
+        sendHtmlEmailSafe(dueno.getEmail(), subject, body);
+    }
+
+    /**
+     * Email a un miembro de comunidad cuando se publica un nuevo mensaje en el chat.
+     *
+     * @param destinatario usuario miembro que recibe el aviso.
+     * @param comunidad comunidad donde se ha publicado el mensaje.
+     * @param remitente usuario que publicó el mensaje.
+     * @param contenido contenido del mensaje.
+     */
+    public void sendCommunityMessageEmail(
+            final Usuario destinatario,
+            final Comunidad comunidad,
+            final Usuario remitente,
+            final String contenido) {
+        if (destinatario == null
+                || destinatario.getEmail() == null
+                || destinatario.getEmail().isBlank()
+                || comunidad == null
+                || remitente == null) {
+            return;
+        }
+
+        final String nombreDestinatario =
+                destinatario.getNombre() != null ? destinatario.getNombre() : "";
+        final String nombreComunidad =
+                comunidad.getNombre() != null ? comunidad.getNombre() : "tu comunidad";
+        final String nombreRemitente =
+                remitente.getNombre() != null ? remitente.getNombre() : "Un miembro";
+        final String vistaPrevia =
+                contenido != null && !contenido.isBlank()
+                        ? (contenido.length() > 220
+                                ? contenido.substring(0, 220) + "..."
+                                : contenido)
+                        : "Se ha publicado un nuevo mensaje en la comunidad.";
+
+        final String subject = "💬 Nuevo mensaje en comunidad: " + nombreComunidad;
+        final String body =
+                "<html><body style='font-family:Arial,sans-serif;color:#333'><div"
+                    + " style='max-width:600px;margin:0 auto;padding:20px'><div"
+                    + " style='background:#2D3250;color:white;padding:20px;text-align:center;border-radius:5px"
+                    + " 5px 0 0'><h1>Nuevo mensaje en tu comunidad</h1></div><div"
+                    + " style='background:#f9f9f9;padding:20px;border:1px solid #ddd'><p>Hola"
+                    + " <strong>"
+                        + escapeHtml(nombreDestinatario)
+                        + "</strong>,</p><p><strong>"
+                        + escapeHtml(nombreRemitente)
+                        + "</strong> ha enviado un mensaje en <strong>"
+                        + escapeHtml(nombreComunidad)
+                        + "</strong>.</p><div"
+                        + " style='background:#eef2ff;padding:14px;border-left:4px solid"
+                        + " #2D3250;margin:18px 0;white-space:pre-wrap'>"
+                        + escapeHtml(vistaPrevia)
+                        + "</div><p>Entra en la comunidad para leer y responder en el"
+                        + " chat.</p></div><div"
+                        + " style='background:#f0f0f0;padding:15px;text-align:center;font-size:12px;border-radius:0"
+                        + " 0 5px 5px'><p>&copy; "
+                        + appName
+                        + "</p></div></div></body></html>";
+
+        sendHtmlEmailSafe(destinatario.getEmail(), subject, body);
+    }
+
+    /**
+     * Email a un miembro de comunidad cuando se le menciona explícitamente en el chat.
+     *
+     * @param destinatario usuario miembro que recibe el aviso.
+     * @param comunidad comunidad donde ocurrió la mención.
+     * @param remitente usuario que escribió la mención.
+     * @param contenido contenido del mensaje.
+     */
+    public void sendCommunityMentionEmail(
+            final Usuario destinatario,
+            final Comunidad comunidad,
+            final Usuario remitente,
+            final String contenido) {
+        if (destinatario == null
+                || destinatario.getEmail() == null
+                || destinatario.getEmail().isBlank()
+                || comunidad == null
+                || remitente == null) {
+            return;
+        }
+
+        final String nombreDestinatario =
+                destinatario.getNombre() != null ? destinatario.getNombre() : "";
+        final String nombreComunidad =
+                comunidad.getNombre() != null ? comunidad.getNombre() : "tu comunidad";
+        final String nombreRemitente =
+                remitente.getNombre() != null ? remitente.getNombre() : "Un miembro";
+        final String vistaPrevia =
+                contenido != null && !contenido.isBlank()
+                        ? (contenido.length() > 220
+                                ? contenido.substring(0, 220) + "..."
+                                : contenido)
+                        : "Te han mencionado en un mensaje de comunidad.";
+
+        final String subject = "🔔 Te han mencionado en: " + nombreComunidad;
+        final String body =
+                "<html><body style='font-family:Arial,sans-serif;color:#333'><div"
+                    + " style='max-width:600px;margin:0 auto;padding:20px'><div"
+                    + " style='background:#2D3250;color:white;padding:20px;text-align:center;border-radius:5px"
+                    + " 5px 0 0'><h1>Te han mencionado en tu comunidad</h1></div><div"
+                    + " style='background:#f9f9f9;padding:20px;border:1px solid #ddd'><p>Hola"
+                    + " <strong>"
+                        + escapeHtml(nombreDestinatario)
+                        + "</strong>,</p><p><strong>"
+                        + escapeHtml(nombreRemitente)
+                        + "</strong> te ha mencionado en <strong>"
+                        + escapeHtml(nombreComunidad)
+                        + "</strong>.</p><div"
+                        + " style='background:#eef2ff;padding:14px;border-left:4px solid"
+                        + " #2D3250;margin:18px 0;white-space:pre-wrap'>"
+                        + escapeHtml(vistaPrevia)
+                        + "</div><p>Entra en la comunidad para responder en el chat.</p></div><div"
+                        + " style='background:#f0f0f0;padding:15px;text-align:center;font-size:12px;border-radius:0"
+                        + " 0 5px 5px'><p>&copy; "
+                        + appName
+                        + "</p></div></div></body></html>";
+
+        sendHtmlEmailSafe(destinatario.getEmail(), subject, body);
+    }
+
+    /**
+     * Email a un miembro de comunidad cuando se publica un nuevo anuncio.
+     *
+     * @param destinatario usuario miembro que recibe el aviso.
+     * @param comunidad comunidad donde se publica el anuncio.
+     * @param autor usuario que publica el anuncio.
+     * @param anuncio anuncio publicado.
+     */
+    public void sendCommunityAnnouncementEmail(
+            final Usuario destinatario,
+            final Comunidad comunidad,
+            final Usuario autor,
+            final es.us.meerkat.backend.entity.Anuncio anuncio) {
+        if (destinatario == null
+                || destinatario.getEmail() == null
+                || destinatario.getEmail().isBlank()
+                || comunidad == null
+                || anuncio == null) {
+            return;
+        }
+
+        final String nombreDestinatario =
+                destinatario.getNombre() != null ? destinatario.getNombre() : "";
+        final String nombreComunidad =
+                comunidad.getNombre() != null ? comunidad.getNombre() : "tu comunidad";
+        final String nombreAutor =
+                autor != null && autor.getNombre() != null ? autor.getNombre() : "Un administrador";
+        final String titulo = anuncio.getTitulo() != null ? anuncio.getTitulo() : "Nuevo anuncio";
+        final String contenido =
+                anuncio.getContenido() != null && !anuncio.getContenido().isBlank()
+                        ? anuncio.getContenido()
+                        : "Hay un nuevo anuncio disponible en la comunidad.";
+
+        final String vistaPrevia =
+                contenido.length() > 220 ? contenido.substring(0, 220) + "..." : contenido;
+
+        final String subject = "📢 Nuevo anuncio en comunidad: " + nombreComunidad;
+        final String body =
+                "<html><body style='font-family:Arial,sans-serif;color:#333'><div"
+                    + " style='max-width:600px;margin:0 auto;padding:20px'><div"
+                    + " style='background:#2D3250;color:white;padding:20px;text-align:center;border-radius:5px"
+                    + " 5px 0 0'><h1>Nuevo anuncio en tu comunidad</h1></div><div"
+                    + " style='background:#f9f9f9;padding:20px;border:1px solid #ddd'><p>Hola"
+                    + " <strong>"
+                        + escapeHtml(nombreDestinatario)
+                        + "</strong>,</p><p><strong>"
+                        + escapeHtml(nombreAutor)
+                        + "</strong> ha publicado un anuncio en <strong>"
+                        + escapeHtml(nombreComunidad)
+                        + "</strong>.</p><div"
+                        + " style='background:#fff7ed;padding:14px;border-left:4px solid"
+                        + " #c2410c;margin:18px 0'><strong>"
+                        + escapeHtml(titulo)
+                        + "</strong><p style='margin-top:10px;white-space:pre-wrap'>"
+                        + escapeHtml(vistaPrevia)
+                        + "</p></div><p>Entra en la comunidad para ver el anuncio"
+                        + " completo.</p></div><div"
+                        + " style='background:#f0f0f0;padding:15px;text-align:center;font-size:12px;border-radius:0"
+                        + " 0 5px 5px'><p>&copy; "
+                        + appName
+                        + "</p></div></div></body></html>";
+
+        sendHtmlEmailSafe(destinatario.getEmail(), subject, body);
     }
 
     private void sendHtmlEmailSafe(String to, String subject, String htmlBody) {

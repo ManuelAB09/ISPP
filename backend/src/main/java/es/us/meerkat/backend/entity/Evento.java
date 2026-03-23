@@ -326,6 +326,10 @@ public class Evento {
                             .bio(this.creador.getBio())
                             .intereses(this.creador.getIntereses())
                             .esTutor(this.creador.getEsTutor())
+                            .tutorId(
+                                    this.creador.getTutor() != null
+                                            ? this.creador.getTutor().getId()
+                                            : null)
                             .build());
         }
 

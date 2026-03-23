@@ -17,14 +17,22 @@ import com.stripe.exception.StripeException;
 import com.stripe.model.Account;
 import com.stripe.model.AccountLink;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.Refund;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.AccountCreateParams;
 import com.stripe.param.AccountLinkCreateParams;
 import com.stripe.param.PaymentIntentCreateParams;
+import com.stripe.param.RefundCreateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 
 import es.us.meerkat.backend.dto.PaymentUrlResponse;
-import es.us.meerkat.backend.entity.*;
+import es.us.meerkat.backend.entity.EstadoTransaccion;
+import es.us.meerkat.backend.entity.TipoPlan;
+import es.us.meerkat.backend.entity.TipoPlanCorporativo;
+import es.us.meerkat.backend.entity.TipoTransaccion;
+import es.us.meerkat.backend.entity.TransaccionPago;
+import es.us.meerkat.backend.entity.Tutor;
+import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.TransaccionPagoRepository;
 import es.us.meerkat.backend.repository.TutorRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
@@ -46,18 +54,11 @@ public class PaymentService {
     @Value("${stripe.cancel.url}")
     private String cancelUrl;
 
-    @Value("${stripe.price.premium}")
-    private String pricePremium;
-
     private static final BigDecimal COMISION_PORCENTAJE = new BigDecimal("10");
 
     // -------------------------------------------------------------------------
     // Generación de sesiones de pago
     // -------------------------------------------------------------------------
-
-    /** Verificación de tutor → TipoTransaccion.PAGO_VERIFICACION */
-    /** ID del precio de verificación de tutor en Stripe (pago único) */
-    private static final String PRICE_VERIFICACION_TUTOR = "price_1TBeu1KD9Z3Ygfm3nNkMLAmn";
 
     /** Verificación de tutor → TipoTransaccion.PAGO_VERIFICACION */
     @Transactional
@@ -133,30 +134,55 @@ public class PaymentService {
     /** ID del precio Premium anual en Stripe */
     private static final String PRICE_PREMIUM_ANUAL = "price_1T8hTmIti4eEH8Y01iZAD8gY";
 
+    /** ID del precio Pro mensual en Stripe (si no existe, usar flujo embebido). */
+    private static final String PRICE_PRO_MENSUAL = "price_pro_monthly_placeholder";
+
+    /** ID del precio Pro anual en Stripe (si no existe, usar flujo embebido). */
+    private static final String PRICE_PRO_ANUAL = "price_pro_yearly_placeholder";
+
     public PaymentUrlResponse generarPagoSuscripcion(Usuario usuario, TipoPlan plan, String periodo)
             throws StripeException {
+        TipoPlan planSolicitado =
+                (plan == null || plan == TipoPlan.FREE) ? TipoPlan.PREMIUM : plan;
+        boolean esAnual = "anual".equalsIgnoreCase(periodo);
 
-        String priceId =
-                periodo.equalsIgnoreCase("anual") ? PRICE_PREMIUM_ANUAL : PRICE_PREMIUM_MENSUAL;
+        // PREMIUM usa sesión de suscripción (recurring) con Price IDs existentes
+        if (planSolicitado == TipoPlan.PREMIUM) {
+            String priceId = esAnual ? PRICE_PREMIUM_ANUAL : PRICE_PREMIUM_MENSUAL;
 
-        SessionCreateParams params =
-                SessionCreateParams.builder()
-                        .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
-                        .setSuccessUrl(
-                                successUrl + "?session_id={CHECKOUT_SESSION_ID}&tipo=suscripcion")
-                        .setCancelUrl(cancelUrl)
-                        .setCustomerEmail(usuario.getEmail())
-                        .addLineItem(
-                                SessionCreateParams.LineItem.builder()
-                                        .setPrice(priceId)
-                                        .setQuantity(1L)
-                                        .build())
-                        .putMetadata("usuarioId", usuario.getId().toString())
-                        .putMetadata("plan", plan.name())
-                        .putMetadata("periodo", periodo)
-                        .build();
+            SessionCreateParams params =
+                    SessionCreateParams.builder()
+                            .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
+                            .setSuccessUrl(
+                                    successUrl
+                                            + "?session_id={CHECKOUT_SESSION_ID}&tipo=suscripcion&plan="
+                                            + planSolicitado.name())
+                            .setCancelUrl(cancelUrl)
+                            .setCustomerEmail(usuario.getEmail())
+                            .addLineItem(
+                                    SessionCreateParams.LineItem.builder()
+                                            .setPrice(priceId)
+                                            .setQuantity(1L)
+                                            .build())
+                            .putMetadata("tipo", TipoTransaccion.SUSCRIPCION.name())
+                            .putMetadata("usuarioId", usuario.getId().toString())
+                            .putMetadata("plan", planSolicitado.name())
+                            .putMetadata("periodo", esAnual ? "anual" : "mensual")
+                            .build();
 
-        Session session = Session.create(params);
+            Session session = Session.create(params);
+            return new PaymentUrlResponse(session.getUrl(), session.getId());
+        }
+
+        // PRO se procesa como pago único y se activa en la verificación posterior
+        BigDecimal monto = esAnual ? new BigDecimal("200.00") : new BigDecimal("19.99");
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("tipo", TipoTransaccion.SUSCRIPCION.name());
+        metadata.put("usuarioId", usuario.getId().toString());
+        metadata.put("plan", planSolicitado.name());
+        metadata.put("periodo", esAnual ? "anual" : "mensual");
+
+        Session session = crearSesionPagoUnico("Suscripcion " + planSolicitado.name(), monto, metadata);
         return new PaymentUrlResponse(session.getUrl(), session.getId());
     }
 
@@ -371,16 +397,22 @@ public class PaymentService {
      */
     public Map<String, String> crearPaymentIntentSuscripcion(
             Usuario usuario, TipoPlan plan, String periodo) throws StripeException {
+                TipoPlan planSolicitado =
+                                (plan == null || plan == TipoPlan.FREE) ? TipoPlan.PREMIUM : plan;
+                boolean esAnual = "anual".equalsIgnoreCase(periodo);
 
-        long amount;
-        String description;
-        if ("anual".equalsIgnoreCase(periodo)) {
-            amount = 3145L; // 25.99 + 21% IVA = 31.45 EUR en centimos
-            description = "Suscripcion Premium Anual (IVA incluido) - MeerKatters";
-        } else {
-            amount = 362L; // 2.99 + 21% IVA = 3.62 EUR en centimos
-            description = "Suscripcion Premium Mensual (IVA incluido) - MeerKatters";
-        }
+                long amount;
+                if (planSolicitado == TipoPlan.PRO) {
+                        amount = esAnual ? 20000L : 1999L;
+                } else {
+                        amount = esAnual ? 5000L : 499L;
+                }
+                String description =
+                                "Suscripcion "
+                                                + planSolicitado.name()
+                                                + " "
+                                                + (esAnual ? "Anual" : "Mensual")
+                                                + " - MeerKatters";
 
         PaymentIntentCreateParams params =
                 PaymentIntentCreateParams.builder()
@@ -389,8 +421,8 @@ public class PaymentService {
                         .setDescription(description)
                         .setReceiptEmail(usuario.getEmail())
                         .putMetadata("usuarioId", usuario.getId().toString())
-                        .putMetadata("plan", plan.name())
-                        .putMetadata("periodo", periodo)
+                                                .putMetadata("plan", planSolicitado.name())
+                                                .putMetadata("periodo", esAnual ? "anual" : "mensual")
                         .putMetadata("tipo", TipoTransaccion.SUSCRIPCION.name())
                         .addPaymentMethodType("card")
                         .build();
@@ -638,5 +670,47 @@ public class PaymentService {
     public java.util.List<TransaccionPago> obtenerTodasGananciasTutor(Long tutorId) {
         return transaccionRepository.findByTutorIdAndTipoAndEstadoOrderByCompletadoAtDesc(
                 tutorId, TipoTransaccion.PAGO_TUTOR, EstadoTransaccion.COMPLETADA);
+    }
+
+    /**
+     * Realiza un reembolso completo del PaymentIntent indicado y registra la transacción.
+     *
+     * @param paymentIntentId ID del PaymentIntent de Stripe a reembolsar
+     * @param usuario usuario que recibe el reembolso
+     * @param tutor tutor relacionado (puede ser null)
+     * @param monto importe a registrar
+     * @throws StripeException si Stripe rechaza el reembolso
+     */
+    @Transactional
+    public void reembolsarPago(
+            String paymentIntentId, Usuario usuario, Tutor tutor, BigDecimal monto)
+            throws StripeException {
+        if (paymentIntentId == null || paymentIntentId.isBlank()) {
+            log.warn("No se puede reembolsar: paymentIntentId vacío");
+            return;
+        }
+        RefundCreateParams params =
+                RefundCreateParams.builder()
+                        .setPaymentIntent(paymentIntentId)
+                        .setReverseTransfer(true)
+                        .build();
+        Refund refund = Refund.create(params);
+        log.info("Reembolso creado: {} para PaymentIntent {}", refund.getId(), paymentIntentId);
+
+        // Marcar la transacción original como REEMBOLSADA
+        if (usuario != null && tutor != null) {
+            transaccionRepository
+                    .findTopByUsuarioIdAndTutorIdAndTipoAndEstadoOrderByCompletadoAtDesc(
+                            usuario.getId(),
+                            tutor.getId(),
+                            TipoTransaccion.PAGO_TUTOR,
+                            EstadoTransaccion.COMPLETADA)
+                    .ifPresent(
+                            tx -> {
+                                tx.setEstado(EstadoTransaccion.REEMBOLSADA);
+                                transaccionRepository.save(tx);
+                                log.info("Transacción {} marcada como REEMBOLSADA", tx.getId());
+                            });
+        }
     }
 }

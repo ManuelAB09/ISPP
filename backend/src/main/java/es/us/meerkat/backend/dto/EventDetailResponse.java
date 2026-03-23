@@ -90,6 +90,9 @@ public class EventDetailResponse {
     /** Identificador del creador del evento. */
     private Long creadorId;
 
+    /** Rol del creador en la comunidad del evento (ADMIN, PROFESOR, ALUMNO). */
+    private String creadorRolComunidad;
+
     /** Estado de asistencia del usuario autenticado (null si no está registrado). */
     private EstadoAsistencia miAsistencia;
 

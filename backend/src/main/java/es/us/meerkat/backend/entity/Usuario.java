@@ -34,6 +34,7 @@ import lombok.ToString;
 @ToString(exclude = {"intereses", "tutor", "institution"})
 @NoArgsConstructor
 @AllArgsConstructor
+@lombok.Builder
 public class Usuario {
 
     /** Identificador único del usuario. */
@@ -125,7 +126,7 @@ public class Usuario {
     private Boolean notificacionesEmail = true;
 
     /** Indica si el usuario quiere recibir notificaciones push. */
-    @Column(nullable = false)
+    @Column(nullable = true)
     private Boolean notificacionesPush = false;
 
     // AÑADIR tipo plan cuando se cree la clase

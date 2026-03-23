@@ -69,8 +69,12 @@ public class MisEventosService {
 
         final LocalDateTime ahora = LocalDateTime.now();
         final List<Evento> eventos =
-                eventoRepository.findProximosEventosByUsuarioId(usuarioId, ahora);
-
+                eventoRepository.findProximosEventosByUsuarioId(
+                        usuarioId,
+                        ahora,
+                        ahora.minusHours(
+                                2)); // Incluir eventos que comenzaron hace hasta 2 horas para
+        // mostrar recientes
         return eventos.stream()
                 .map(e -> mapToMisEventosItem(e, usuarioId, ahora))
                 .collect(Collectors.toList());
@@ -346,6 +350,9 @@ public class MisEventosService {
                     String.format("⏰ El evento \"%s\" comienza en 15 minutos.", evento.getTitulo());
             case PROXIMA_24H ->
                     String.format("📅 El evento \"%s\" comienza mañana.", evento.getTitulo());
+            default ->
+                    String.format(
+                            "🔔 Tienes una alerta para el evento \"%s\".", evento.getTitulo());
         };
     }
 

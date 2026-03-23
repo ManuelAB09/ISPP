@@ -5,7 +5,22 @@ import { apiClient } from "../../api/client"
 import { authApi } from "../../api/auth.api"
 import { useAuth } from "../../contexts/AuthContext"
 import { QRCodeCanvas } from "qrcode.react"
+import { useNotificationContext } from "../../contexts/NotificationContext"
 import "./Settings.css"
+
+const DEFAULT_NOTIFICATION_PREFERENCES = {
+    emailsActivados: true,
+    recordatorio24h: true,
+    recordatorio1h: true,
+    recordatorio30min: false,
+    canalAlarmasPorDefecto: 'AMBOS',
+    notificarMensajeComunidad: false,
+    notificarMenciones: false,
+    //notificarInvitaciones: false,
+    notificarAnuncios: false,
+    notificarSolicitudAcceso: false,
+    notificarCambiosDeEventos: false,
+}
 
 const EVENT_TYPES = [
     { value: 'REUNION', label: 'Reuniones' },
@@ -19,11 +34,30 @@ const EVENT_TYPES = [
 const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNotificationRead }) => {
     const navigate = useNavigate()
     const { logout, user, updateProfile } = useAuth()
+    
+    // Intentar usar el contexto de notificaciones, pero fallback si no está disponible
+    let notificationsEnabled = false
+    let toggleNotifications = () => {}
+    let requestPermission = () => Promise.resolve('denied')
+    let permission = 'denied'
+    let isSupported = false
+    
+    try {
+        const notifContext = useNotificationContext()
+        if (notifContext) {
+            notificationsEnabled = notifContext.notificationsEnabled
+            toggleNotifications = notifContext.toggleNotifications
+            requestPermission = notifContext.requestPermission
+            permission = notifContext.permission
+            isSupported = notifContext.isSupported
+        }
+    } catch (e) {
+        console.warn('NotificationContext no disponible:', e.message)
+    }
 
     // Estados para los toggles y configuraciones
     const [profileVisibility, setProfileVisibility] = useState(true)
-    const [emailNotifications, setEmailNotifications] = useState(true)
-    const [pushNotifications, setPushNotifications] = useState(false)
+    const [localNotificationsEnabled, setLocalNotificationsEnabled] = useState(false)
     const [twoFactorAuth, setTwoFactorAuth] = useState(false)
     const [isSavingPreferences, setIsSavingPreferences] = useState(false)
     const [preferencesError, setPreferencesError] = useState("")
@@ -38,13 +72,7 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
     const [showBackupCodesModal, setShowBackupCodesModal] = useState(false)
 
     // Recordatorios por email + canal alarmas por defecto
-    const [emailRecordatorios, setEmailRecordatorios] = useState({
-        emailsActivados: true,
-        recordatorio24h: true,
-        recordatorio1h: true,
-        recordatorio30min: false,
-        canalAlarmasPorDefecto: 'AMBOS',
-    })
+    const [emailRecordatorios, setEmailRecordatorios] = useState(DEFAULT_NOTIFICATION_PREFERENCES)
     const [isSavingRecordatorios, setIsSavingRecordatorios] = useState(false)
     const [recordatoriosError, setRecordatoriosError] = useState("")
 
@@ -84,17 +112,27 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
         }
 
         setProfileVisibility(user.visibleEnListados ?? true)
-        setEmailNotifications(user.notificacionesEmail ?? true)
-        setPushNotifications(user.notificacionesPush ?? false)
         setTwoFactorAuth(user.autenticacionDosFactores ?? false)
         setIsGoogleLinked(user.googleLinked ?? false)
     }, [user])
 
     useEffect(() => {
         axiosInstance.get('/api/v1/notifications/preferences')
-            .then(res => setEmailRecordatorios(res.data))
+            .then(res => setEmailRecordatorios({ ...DEFAULT_NOTIFICATION_PREFERENCES, ...res.data }))
             .catch(() => { /* usa valores por defecto */ })
     }, [])
+
+    // Sincronizar estado local de notificaciones con el contexto y con el usuario
+    useEffect(() => {
+        if (!user) return
+        setLocalNotificationsEnabled(user.notificacionesPush ?? false)
+        // También sincronizar con contexto si está disponible
+        if (notificationsEnabled !== user.notificacionesPush) {
+            if (user.notificacionesPush) {
+                toggleNotifications()
+            }
+        }
+    }, [user, notificationsEnabled, toggleNotifications])
 
     useEffect(() => {
         setIsLoadingCalendar(true)
@@ -304,31 +342,40 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
         }
     }
 
-    const handleToggleEmailNotifications = async () => {
-        if (isSavingPreferences) {
-            return
-        }
-
-        const newValue = !emailNotifications
-        setEmailNotifications(newValue)
-
-        const ok = await savePreferences({ notificacionesEmail: newValue })
-        if (!ok) {
-            setEmailNotifications(!newValue)
-        }
-    }
-
     const handleTogglePushNotifications = async () => {
         if (isSavingPreferences) {
             return
         }
 
-        const newValue = !pushNotifications
-        setPushNotifications(newValue)
+        // Si va a activar notificaciones pero aún no tiene permisos, pedir primero
+        if (!localNotificationsEnabled && !isSupported) {
+            setPreferencesError("Tu navegador no soporta notificaciones push")
+            return
+        }
+
+        if (!localNotificationsEnabled && permission !== 'granted') {
+            const result = await requestPermission()
+            if (result !== 'granted') {
+                setPreferencesError("Necesitas permitir notificaciones en tu navegador para activarlas")
+                return
+            }
+        }
+
+        const newValue = !localNotificationsEnabled
+        setLocalNotificationsEnabled(newValue)
+        
+        // Sincronizar con contexto si está disponible
+        if (toggleNotifications) {
+            toggleNotifications()
+        }
 
         const ok = await savePreferences({ notificacionesPush: newValue })
         if (!ok) {
-            setPushNotifications(!newValue)
+            setLocalNotificationsEnabled(!newValue)
+            // Revertir contexto si está disponible
+            if (toggleNotifications) {
+                toggleNotifications()
+            }
         }
     }
 
@@ -574,22 +621,10 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
                         <h3 className="settings-subsection__title">Notificaciones</h3>
                         <div className="settings-toggle-row">
                             <span className="settings-toggle-label">
-                                Notificaciones por email
-                            </span>
-                            <button
-                                className={`settings-toggle ${emailNotifications ? 'settings-toggle--active' : ''}`}
-                                onClick={handleToggleEmailNotifications}
-                                disabled={isSavingPreferences}
-                            >
-                                <span className="settings-toggle__slider"></span>
-                            </button>
-                        </div>
-                        <div className="settings-toggle-row">
-                            <span className="settings-toggle-label">
                                 Notificaciones push
                             </span>
                             <button
-                                className={`settings-toggle ${pushNotifications ? 'settings-toggle--active' : ''}`}
+                                className={`settings-toggle ${localNotificationsEnabled ? 'settings-toggle--active' : ''}`}
                                 onClick={handleTogglePushNotifications}
                                 disabled={isSavingPreferences}
                             >
@@ -692,6 +727,91 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
                         </div>
                     </div>
 
+                    {/* Notificaciones de actividad en comunidades */}
+                    <div className="settings-subsection">
+                        <h3 className="settings-subsection__title">🗨️ Notificaciones de actividad</h3>
+                        <p className="settings-subsection__text" style={{ marginBottom: '12px' }}>
+                            Elige qué tipos de actividad de comunidades te notificamos.
+                        </p>
+                        {recordatoriosError && (
+                            <p className="settings-password-error" style={{ marginBottom: '8px' }}>{recordatoriosError}</p>
+                        )}
+                        <div className="settings-recordatorios-sub">
+                            <div className="settings-toggle-row">
+                                <span className="settings-toggle-label">
+                                    Mensajes de comunidad
+                                </span>
+                                <button
+                                    className={`settings-toggle ${emailRecordatorios.notificarMensajeComunidad ? 'settings-toggle--active' : ''}`}
+                                    onClick={() => handleToggleRecordatorio('notificarMensajeComunidad')}
+                                    disabled={isSavingRecordatorios}
+                                >
+                                    <span className="settings-toggle__slider"></span>
+                                </button>
+                            </div>
+                            <div className="settings-toggle-row">
+                                <span className="settings-toggle-label">
+                                    Menciones en chat de comunidad
+                                </span>
+                                <button
+                                    className={`settings-toggle ${emailRecordatorios.notificarMenciones ? 'settings-toggle--active' : ''}`}
+                                    onClick={() => handleToggleRecordatorio('notificarMenciones')}
+                                    disabled={isSavingRecordatorios}
+                                >
+                                    <span className="settings-toggle__slider"></span>
+                                </button>
+                            </div>
+                           {/* <div className="settings-toggle-row">
+                                <span className="settings-toggle-label">
+                                    Invitaciones
+                                </span>
+                                <button
+                                    className={`settings-toggle ${emailRecordatorios.notificarInvitaciones ? 'settings-toggle--active' : ''}`}
+                                    onClick={() => handleToggleRecordatorio('notificarInvitaciones')}
+                                    disabled={isSavingRecordatorios}
+                                >
+                                    <span className="settings-toggle__slider"></span>
+                                </button>
+                            </div> */}
+                            <div className="settings-toggle-row">
+                                <span className="settings-toggle-label">
+                                    Anuncios de comunidad
+                                </span>
+                                <button
+                                    className={`settings-toggle ${emailRecordatorios.notificarAnuncios ? 'settings-toggle--active' : ''}`}
+                                    onClick={() => handleToggleRecordatorio('notificarAnuncios')}
+                                    disabled={isSavingRecordatorios}
+                                >
+                                    <span className="settings-toggle__slider"></span>
+                                </button>
+                            </div>
+                            <div className="settings-toggle-row">
+                                <span className="settings-toggle-label">
+                                    Solicitudes de acceso a comunidades privadas
+                                </span>
+                                <button
+                                    className={`settings-toggle ${emailRecordatorios.notificarSolicitudAcceso ? 'settings-toggle--active' : ''}`}
+                                    onClick={() => handleToggleRecordatorio('notificarSolicitudAcceso')}
+                                    disabled={isSavingRecordatorios}
+                                >
+                                    <span className="settings-toggle__slider"></span>
+                                </button>
+                            </div>
+                            <div className="settings-toggle-row">
+                                <span className="settings-toggle-label">
+                                    Cambios en eventos
+                                </span>
+                                <button
+                                    className={`settings-toggle ${emailRecordatorios.notificarCambiosDeEventos ? 'settings-toggle--active' : ''}`}
+                                    onClick={() => handleToggleRecordatorio('notificarCambiosDeEventos')}
+                                    disabled={isSavingRecordatorios}
+                                >
+                                    <span className="settings-toggle__slider"></span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Privacidad */}
                     <div className="settings-subsection">
                         <h3 className="settings-subsection__title">Privacidad</h3>
@@ -725,7 +845,7 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
                                 type="password" 
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
-                                placeholder="Introduce la nueva contraseña"
+                                placeholder="Introduce la nueva contraseña (min 8 caracteres)"
                                 required
                             />
                         </div>

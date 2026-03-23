@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react"
-import { Link, useLocation, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom"
+import { authApi } from "../../api/auth.api"
 import { getApiBaseUrl } from "../../api/baseUrl"
 import { communitiesApi } from "../../api/communities.api"
-import { getMyTutorProfiles } from "../../api/tutorEndpoints"
+import { getMyTutorProfiles, getVerifiedTutors } from "../../api/tutorEndpoints"
 import Header from "../../components/Header/Header"
 import { useAuth } from "../../contexts/AuthContext"
 
@@ -37,6 +38,7 @@ const toAbsoluteImageUrl = (imageUrl, fallback = DEFAULT_PROFILE_AVATAR) => {
 
 const MyProfile = () => {
     const { isAuthenticated, loading, user, updateProfile } = useAuth()
+    const { userId } = useParams()
     const navigate = useNavigate()
     const location = useLocation()
     const [showSettings, setShowSettings] = useState(false)
@@ -56,13 +58,63 @@ const MyProfile = () => {
         valoracionMedia: 0,
         descargas: 0
     })
-    const isOwner = true // Siempre es el propietario en esta pantalla
+    const [publicProfile, setPublicProfile] = useState(null)
+    const [publicTutorProfile, setPublicTutorProfile] = useState(null)
+    const [loadingPublicProfile, setLoadingPublicProfile] = useState(false)
+    const [publicProfileError, setPublicProfileError] = useState('')
+    const currentUserId = String(user?.id || localStorage.getItem('userId') || '')
+    const isOwner = !userId || currentUserId === String(userId)
     const [unauthorizedMessage, setUnauthorizedMessage] = useState("")
     const [calendarNotification, setCalendarNotification] = useState(null)
     const { logout } = useAuth()
 
+    useEffect(() => {
+        if (isOwner || !userId || !isAuthenticated) {
+            setPublicProfile(null)
+            setPublicTutorProfile(null)
+            setPublicProfileError('')
+            setLoadingPublicProfile(false)
+            return
+        }
+
+        setLoadingPublicProfile(true)
+        setPublicProfileError('')
+
+        authApi.getUserById(userId)
+            .then((profile) => {
+                setPublicProfile(profile)
+                if (!profile?.esTutor) {
+                    setPublicTutorProfile(null)
+                    return null
+                }
+
+                return getVerifiedTutors({ page: 0, size: 200 })
+                    .then((resp) => {
+                        const tutors = resp?.content ?? (Array.isArray(resp) ? resp : [])
+                        const matchingTutor = tutors.find((tutor) => String(tutor?.userId) === String(profile.id)) || null
+                        setPublicTutorProfile(matchingTutor)
+                    })
+                    .catch(() => {
+                        setPublicTutorProfile(null)
+                    })
+            })
+            .catch((err) => {
+                console.error('Error al cargar perfil público:', err)
+                setPublicProfile(null)
+                setPublicTutorProfile(null)
+                setPublicProfileError('No se pudo cargar este perfil.')
+            })
+            .finally(() => setLoadingPublicProfile(false))
+    }, [isAuthenticated, isOwner, userId])
+
     // Cargar perfil de tutor cuando el usuario es tutor
     useEffect(() => {
+        if (!isOwner) {
+            setMiPerfilTutor(null);
+            setLoadingTutorProfile(false);
+            return;
+        }
+
         if (!isAuthenticated || loading || !user?.esTutor) {
             setMiPerfilTutor(null);
             return;
@@ -78,7 +130,7 @@ const MyProfile = () => {
                 setMiPerfilTutor(null);
             })
             .finally(() => setLoadingTutorProfile(false));
-    }, [isAuthenticated, loading, user]);
+    }, [isAuthenticated, isOwner, loading, user]);
 
     // Abrir modal de edición/configuración cuando se navega con estado desde otras pantallas.
     useEffect(() => {
@@ -119,6 +171,13 @@ const MyProfile = () => {
 
     // Cargar comunidades del usuario
     useEffect(() => {
+        if (!isOwner) {
+            setLoadingCommunities(false);
+            setMisComunidades([]);
+            setComunidadesCreadas([]);
+            return;
+        }
+
         if (!isAuthenticated || loading) {
             setLoadingCommunities(false);
             return;
@@ -158,7 +217,7 @@ const MyProfile = () => {
         };
 
         fetchCommunities();
-    }, [isAuthenticated, loading, user]);
+    }, [isAuthenticated, isOwner, loading, user]);
 
     if (loading) {
         return (
@@ -193,23 +252,54 @@ const MyProfile = () => {
         )
     }
 
+    if (!isOwner && loadingPublicProfile) {
+        return (
+            <>
+                <Header page={'inicio'} />
+                <main className="my-profile">
+                    <div className="profile-loading">Cargando perfil...</div>
+                </main>
+            </>
+        )
+    }
+
+    if (!isOwner && publicProfileError) {
+        return (
+            <>
+                <Header page={'inicio'} />
+                <main className="my-profile">
+                    <div className="profile-not-logged">
+                        <div className="profile-not-logged__icon">👤</div>
+                        <h1 className="profile-not-logged__title">Perfil no disponible</h1>
+                        <p className="profile-not-logged__text">{publicProfileError}</p>
+                        <div className="profile-not-logged__buttons">
+                            <button className="btn-login" onClick={() => navigate(-1)}>Volver</button>
+                        </div>
+                    </div>
+                </main>
+            </>
+        )
+    }
+
+    const profileSource = isOwner ? user : publicProfile
+
     // Datos del usuario desde el contexto
     const userData = {
-        nombre: user?.nombre || "Sin nombre",
-        descripcion: user?.bio || "",
-        rol: user?.esTutor ? 'Estudiante y Profesor' : 'Estudiante',
-        email: user?.email || "Sin email",
-        universidad: user?.universidad || "",
-        grado: user?.grado || "",
+        nombre: profileSource?.nombre || "Sin nombre",
+        descripcion: profileSource?.bio || "",
+        rol: profileSource?.esTutor ? 'Estudiante y Profesor' : 'Estudiante',
+        email: isOwner ? (profileSource?.email || "Sin email") : "",
+        universidad: profileSource?.universidad || "",
+        grado: profileSource?.grado || "",
         ubicacion:
-            typeof user?.ubicacion === 'string'
-                ? user.ubicacion
-                : user?.ubicacion?.nombre || '',
-        nivelEstudios: user?.nivelEstudios || "",
-        baseFormativa: user?.baseFormativa || "",
-        foto: user?.foto || null,
-        fotoBackgroundColor: user?.fotoBackgroundColor || '#ffffff',
-        intereses: user?.intereses || []
+            typeof profileSource?.ubicacion === 'string'
+                ? profileSource.ubicacion
+                : profileSource?.ubicacion?.nombre || '',
+        nivelEstudios: isOwner ? (profileSource?.nivelEstudios || "") : "",
+        baseFormativa: isOwner ? (profileSource?.baseFormativa || "") : "",
+        foto: profileSource?.foto || null,
+        fotoBackgroundColor: profileSource?.fotoBackgroundColor || '#ffffff',
+        intereses: profileSource?.intereses || []
     }
 
     // Función para mostrar valor o texto de "sin información"
@@ -280,9 +370,41 @@ const MyProfile = () => {
                             />
                         </div>
                         <div className="profile-info">
-                            <h1 className="profile-info__name">{userData.nombre}</h1>
+                            <div className="profile-info__headline">
+                                <h1 className="profile-info__name">{userData.nombre}</h1>
+                                {!isOwner && publicTutorProfile?.verificado && (
+                                    <span className="profile-verified-badge" title="Tutor verificado">
+                                        ✓ Tutor verificado
+                                    </span>
+                                )}
+                            </div>
                             <p className="profile-info__description">{userData.descripcion}</p>
                             <span className="profile-info__role">{userData.rol}</span>
+                            {!isOwner && publicTutorProfile && (
+                                <div className="profile-public-tutor-card">
+                                    <div>
+                                        <p className="profile-public-tutor-card__title">Perfil docente disponible</p>
+                                        <p className="profile-public-tutor-card__text">
+                                            {publicTutorProfile.verificado
+                                                ? 'Tutor verificado en la plataforma.'
+                                                : 'Tiene perfil de tutor activo.'}
+                                        </p>
+                                        {publicTutorProfile.especialidades?.length > 0 && (
+                                            <div className="profile-public-tutor-card__tags">
+                                                {publicTutorProfile.especialidades.slice(0, 3).map((speciality) => (
+                                                    <span key={speciality} className="profile-interest-tag">{speciality}</span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <button
+                                        className="btn-edit-profile profile-public-tutor-card__button"
+                                        onClick={() => navigate(`/profesores/${publicTutorProfile.id}`)}
+                                    >
+                                        Ver perfil de profesor
+                                    </button>
+                                </div>
+                            )}
                             {userData.intereses && userData.intereses.length > 0 && (
                                 <div className="profile-info__interests">
                                     {userData.intereses.map((interes, index) => (
@@ -324,10 +446,12 @@ const MyProfile = () => {
                                 <span className="data-field__label">NOMBRE COMPLETO</span>
                                 <span className="data-field__value">{displayValue(userData.nombre)}</span>
                             </div>
-                            <div className="data-field">
-                                <span className="data-field__label">EMAIL</span>
-                                <span className="data-field__value">{displayValue(userData.email)}</span>
-                            </div>
+                            {isOwner && (
+                                <div className="data-field">
+                                    <span className="data-field__label">EMAIL</span>
+                                    <span className="data-field__value">{displayValue(userData.email)}</span>
+                                </div>
+                            )}
                             <div className="data-field">
                                 <span className="data-field__label">UNIVERSIDAD</span>
                                 <span className="data-field__value">{displayValue(userData.universidad)}</span>
@@ -336,14 +460,18 @@ const MyProfile = () => {
                                 <span className="data-field__label">GRADO</span>
                                 <span className="data-field__value">{displayValue(userData.grado)}</span>
                             </div>
-                            <div className="data-field">
-                                <span className="data-field__label">NIVEL DE ESTUDIOS</span>
-                                <span className="data-field__value">{displayValue(userData.nivelEstudios)}</span>
-                            </div>
-                            <div className="data-field">
-                                <span className="data-field__label">BASE FORMATIVA</span>
-                                <span className="data-field__value">{displayValue(userData.baseFormativa)}</span>
-                            </div>
+                            {isOwner && (
+                                <div className="data-field">
+                                    <span className="data-field__label">NIVEL DE ESTUDIOS</span>
+                                    <span className="data-field__value">{displayValue(userData.nivelEstudios)}</span>
+                                </div>
+                            )}
+                            {isOwner && (
+                                <div className="data-field">
+                                    <span className="data-field__label">BASE FORMATIVA</span>
+                                    <span className="data-field__value">{displayValue(userData.baseFormativa)}</span>
+                                </div>
+                            )}
                             <div className="data-field">
                                 <span className="data-field__label">UBICACIÓN</span>
                                 <span className="data-field__value">{displayValue(userData.ubicacion)}</span>
@@ -351,7 +479,7 @@ const MyProfile = () => {
                         </div>
                     </div>
 
-                    <div className="activity-card">
+                    {isOwner && <div className="activity-card">
                         <h3 className="activity-card__title">Tu Actividad</h3>
                         <div className="activity-card__grid">
                             <div className="activity-stat">
@@ -371,11 +499,11 @@ const MyProfile = () => {
                                 <span className="activity-stat__label">DESCARGAS</span>
                             </div>
                         </div>
-                    </div>
+                    </div>}
                 </section >
 
                 {/* Sección Mis comunidades */}
-                < section className="my-communities-section" >
+                {isOwner && < section className="my-communities-section" >
                     <h2 className="section-title">Mis comunidades</h2>
                     {
                         loadingCommunities ? (
@@ -421,10 +549,10 @@ const MyProfile = () => {
                             </div>
                         )
                     }
-                </section >
+                </section >}
 
                 {/* Sección Perfil de Profesor / Convertirse en tutor */}
-                {
+                {isOwner &&
                     !user?.esTutor && (
                         <section className="tutor-profile-section">
                             <div className="created-header">
@@ -447,7 +575,7 @@ const MyProfile = () => {
                         </section>
                     )
                 }
-                {
+                {isOwner &&
                     user?.esTutor && (
                         <section className="tutor-profile-section">
                             <div className="created-header">
@@ -507,7 +635,7 @@ const MyProfile = () => {
                 }
 
                 {/* Sección Comunidades creadas */}
-                <section className="created-communities-section">
+                {isOwner && <section className="created-communities-section">
                     <div className="created-header">
                         <div>
                             <h2 className="section-title">Comunidades creadas</h2>
@@ -558,11 +686,11 @@ const MyProfile = () => {
                             <button className="btn-create-first" onClick={() => navigate('/crear-comunidad')}>Crear mi primera comunidad</button>
                         </div>
                     )}
-                </section>
+                </section>}
             </main >
 
             {/* Modal de crear perfil de profesor */}
-            {
+            {isOwner &&
                 showCreateTutorModal && (
                     <CreateProfileModal
                         onClose={() => setShowCreateTutorModal(false)}
@@ -576,7 +704,7 @@ const MyProfile = () => {
             }
 
             {/* Modal de configuración */}
-            {
+            {isOwner &&
                 showSettings && (
                     <Settings
                         onClose={() => setShowSettings(false)}
@@ -588,7 +716,7 @@ const MyProfile = () => {
             }
 
             {/* Modal de editar perfil */}
-            {showEditProfile && (
+            {isOwner && showEditProfile && (
                 <EditProfile 
                     onClose={() => setShowEditProfile(false)} 
                     ubicacionPreseleccionada={ubicacionPreseleccionada}

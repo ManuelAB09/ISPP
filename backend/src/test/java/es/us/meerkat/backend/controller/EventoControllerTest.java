@@ -16,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
 
+import es.us.meerkat.backend.dto.CreateEventRequest;
+import es.us.meerkat.backend.dto.EventDetailResponse;
 import es.us.meerkat.backend.dto.EventSummaryResponse;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.Evento;
@@ -27,6 +29,7 @@ import es.us.meerkat.backend.service.EventoService;
 class EventoControllerTest {
 
     @Mock private EventoService eventoService;
+    @Mock private es.us.meerkat.backend.service.AuthorizationService authorizationService;
 
     @InjectMocks private EventoController eventoController;
 
@@ -184,5 +187,63 @@ class EventoControllerTest {
         evento.setCreador(creador);
         evento.setUbicacion(ubicacion);
         return evento;
+    }
+
+    @Test
+    void crearEventoShouldAllowWhenAdminOrProfesor() {
+        Usuario usuario = new Usuario();
+        usuario.setId(2L);
+
+        CreateEventRequest req = new CreateEventRequest();
+        req.setTitulo("Clase");
+        req.setDescripcion("Desc");
+        req.setFechaHora(LocalDateTime.now().plusDays(1));
+        req.setFechaFin(LocalDateTime.now().plusDays(1).plusHours(1));
+        req.setAforo(30);
+        req.setVisibleEnMapa(true);
+
+        when(authorizationService.isAdminOrProfesor(usuario.getId(), 3L)).thenReturn(true);
+
+        Evento created = buildEvento(55L, true);
+        when(eventoService.crearEvento(
+                        usuario.getId(),
+                        3L,
+                        req.getTitulo(),
+                        req.getDescripcion(),
+                        req.getFechaHora(),
+                        req.getFechaFin(),
+                        req.getAforo(),
+                        req.getQueLlevar(),
+                        req.getEsVirtual(),
+                        req.getPrivado(),
+                        req.getEnlaceVirtual(),
+                        req.getVisibleEnMapa(),
+                        (Long) null))
+                .thenReturn(created);
+
+        ResponseEntity<?> resp = eventoController.crearEvento(3L, req, usuario);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        EventDetailResponse body = (EventDetailResponse) resp.getBody();
+        assertThat(body.getId()).isEqualTo(55L);
+    }
+
+    @Test
+    void crearEventoShouldThrow403WhenNotAuthorized() {
+        Usuario usuario = new Usuario();
+        usuario.setId(7L);
+
+        CreateEventRequest req = new CreateEventRequest();
+        req.setTitulo("Clase");
+        req.setDescripcion("Desc");
+        req.setFechaHora(LocalDateTime.now().plusDays(1));
+        req.setFechaFin(LocalDateTime.now().plusDays(1).plusHours(1));
+        req.setAforo(30);
+
+        when(authorizationService.isAdminOrProfesor(usuario.getId(), 3L)).thenReturn(false);
+
+        assertThatThrownBy(() -> eventoController.crearEvento(3L, req, usuario))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
+                .hasMessageContaining("403 FORBIDDEN");
     }
 }

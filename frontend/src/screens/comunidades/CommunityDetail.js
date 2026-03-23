@@ -1,21 +1,66 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { LuPlus, LuArrowLeft, LuCalendar, LuUsers, LuLogIn, LuLogOut, LuVideo, LuPlay, LuPencil, LuTrash2, LuCheck, LuX, LuUserPlus } from 'react-icons/lu';
-import Header from '../../components/Header/Header';
-import TarjetaEvento from '../../components/Evento/TarjetaEvento';
-import CommunityChat from '../chat/CommunityChat';
-import GoogleClassroomButton from '../../components/GoogleClassroomButton/GoogleClassroomButton';
-import EditCommunityModal from '../../components/Comunidad/EditCommunityModal';
-import TransferAdminModal from '../../components/Comunidad/TransferAdminModal';
-import { communitiesApi } from '../../api/communities.api';
-import { ZoomApi } from '../../api/zoom.api';
-import { listCommunityEvents, attendEvent, cancelAttendance, getMyAttendance } from '../../api/eventEndpoints';
-import { useAuth } from '../../contexts/AuthContext';
-import { useSocketContext } from '../../contexts/SocketContext';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  LuArrowLeft,
+  LuCalendar,
+  LuCheck,
+  LuChevronDown,
+  LuChevronUp,
+  LuLogIn,
+  LuLogOut,
+  LuPencil,
+  LuPlay,
+  LuPlus,
+  LuTrash2,
+  LuUserPlus,
+  LuUsers,
+  LuVideo,
+  LuX,
+} from 'react-icons/lu';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import axiosInstance from '../../api/axiosConfig';
 import { getApiBaseUrl } from '../../api/baseUrl';
+import { communitiesApi } from '../../api/communities.api';
+import { attendEvent, cancelAttendance, getMyAttendance, listCommunityEvents } from '../../api/eventEndpoints';
+import { ZoomApi } from '../../api/zoom.api';
+import EditCommunityModal from '../../components/Comunidad/EditCommunityModal';
+import TransferAdminModal from '../../components/Comunidad/TransferAdminModal';
+import TarjetaEvento from '../../components/Evento/TarjetaEvento';
+import GoogleClassroomButton from '../../components/GoogleClassroomButton/GoogleClassroomButton';
+import Header from '../../components/Header/Header';
+import { useAuth } from '../../contexts/AuthContext';
+import { useSocketContext } from '../../contexts/SocketContext';
+import {
+  canCreateCommunityEvent,
+  getCommunityRoleCapabilities,
+  getCommunityRoleLabel,
+  isAdminRole,
+  isTeacherRole,
+  normalizeCommunityRole,
+} from '../../utils/communityRoles';
+import CommunityChat from '../chat/CommunityChat';
+import CommunityAnnouncementsTab from './CommunityAnnouncementsTab';
 import './CommunityDetail.css';
 
+const DEFAULT_MEMBER_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%23E6EAF3'/%3E%3Ccircle cx='40' cy='30' r='14' fill='%2395A1BB'/%3E%3Cpath d='M14 68c5-13 15-21 26-21s21 8 26 21' fill='%2395A1BB'/%3E%3C/svg%3E";
+
+const toAbsoluteImageUrl = (imageUrl, fallback = DEFAULT_MEMBER_AVATAR) => {
+  if (!imageUrl || !String(imageUrl).trim()) {
+    return fallback;
+  }
+
+  const value = String(imageUrl).trim();
+  if (/^https?:\/\//i.test(value) || value.startsWith('data:') || value.startsWith('blob:')) {
+    return value;
+  }
+
+  const base = getApiBaseUrl();
+
+  if (value.startsWith('/')) {
+    return `${base}${value}`;
+  }
+
+  return `${base}/${value}`;
+};
 
 const OPCIONES_ANTELACION = [
   { label: '2 días antes', value: 2880 },
@@ -71,9 +116,12 @@ const formatFileSize = (bytes) => {
 };
 
 export default function CommunityDetail() {
+  // Estado para alternar entre pestaña de eventos y anuncios
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab');
+  const [showAnnouncementsTab, setShowAnnouncementsTab] = useState(initialTab === 'anuncios');
   const { communityId } = useParams();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { socket } = useSocketContext();
   const openChatOnLoad = searchParams.get('chat') === 'open';
@@ -88,6 +136,12 @@ export default function CommunityDetail() {
   const [isMember, setIsMember] = useState(false);
   const [joinLoading, setJoinLoading] = useState(false);
   const [membershipError, setMembershipError] = useState(null);
+  const [membersOpen, setMembersOpen] = useState(false);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [membersError, setMembersError] = useState(null);
+  const [members, setMembers] = useState([]);
+  const [promotingMemberId, setPromotingMemberId] = useState(null);
+  const [membersActionError, setMembersActionError] = useState(null);
   const [activeMeeting, setActiveMeeting] = useState(null);
   const [meetingLoading, setMeetingLoading] = useState(false);
   const [meetingError, setMeetingError] = useState(null);
@@ -118,6 +172,9 @@ export default function CommunityDetail() {
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [respondingId, setRespondingId] = useState(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
+  const [expellingMemberId, setExpellingMemberId] = useState(null);
+  const [memberToast, setMemberToast] = useState(null);
+  const [showJoinRoleChooser, setShowJoinRoleChooser] = useState(false);
   const [chatOpen, setChatOpen] = useState(openChatOnLoad);
   const [ranking, setRanking] = useState([]);
   const [rankingLoading, setRankingLoading] = useState(false);
@@ -139,14 +196,168 @@ export default function CommunityDetail() {
   }, []);
 
   const isPrivate = community?.tipoGrupo === 'GRUPO_PRIVADO';
-  const isAdmin = community?.miRol === 'ADMIN';
-
+  const isCorporateCommunity = String(community?.tipoPlan || '').toUpperCase() === 'UNLIMITED';
+  const normalizedRole = normalizeCommunityRole(community?.miRol);
+  const isAdmin = isAdminRole(normalizedRole);
+  const isTeacher = isTeacherRole(normalizedRole);
+  const canCreateEvent = canCreateCommunityEvent(normalizedRole);
+  const roleLabel = getCommunityRoleLabel(normalizedRole);
+  const roleCapabilities = getCommunityRoleCapabilities(normalizedRole);
   const currentUserId = localStorage.getItem('userId');
+  const hasTeacherProfile = Boolean(user?.esTutor || user?.esProfesor);
   const currentUser = {
     id: Number(currentUserId),
     nombre: user?.nombre || 'Usuario',
     foto: user?.foto || null,
     fotoBackgroundColor: user?.fotoBackgroundColor || '#ffffff',
+  };
+  const groupedMembers = members.reduce((acc, member) => {
+    const role = normalizeCommunityRole(member?.rol);
+    const key = role || 'OTROS';
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(member);
+    return acc;
+  }, {});
+  const adminMembers = groupedMembers.ADMIN || [];
+  const teacherMembers = groupedMembers.PROFESOR || [];
+  const studentMembers = [...(groupedMembers.ALUMNO || []), ...(groupedMembers.MIEMBRO || [])];
+
+  const formatPlanLabel = (plan) => {
+    switch (String(plan || '').toUpperCase()) {
+      case 'CORPORATIVO':
+      case 'INSTITUTIONAL':
+      case 'EMPRESARIAL':
+        return 'Plan corporativo';
+      case 'PREMIUM':
+        return 'Plan premium';
+      case 'FREE':
+      case 'GRATUITO':
+        return 'Plan gratuito';
+      default:
+        return plan ? `Plan ${String(plan).toLowerCase()}` : null;
+    }
+  };
+
+  const getMemberName = (member) => member?.usuario?.nombre || member?.nombre || 'Usuario';
+  const getMemberId = (member) => member?.usuario?.id || member?.id || getMemberName(member);
+  const getMemberPhoto = (member) => {
+    const userData = member?.usuario || member;
+
+    if (!userData || typeof userData !== 'object') {
+      return null;
+    }
+
+    return (
+      userData.foto
+      || userData.avatarUrl
+      || userData.fotoUrl
+      || userData.fotoPerfil
+      || userData.avatar
+      || userData.imagen
+      || userData.image
+      || userData.usuarioFoto
+      || null
+    );
+  };
+  const getMemberInitial = (member) => getMemberName(member).trim().charAt(0).toUpperCase() || 'U';
+  const canExpelMember = (member) => isAdmin && String(getMemberId(member)) !== String(currentUserId);
+  const handleOpenMemberProfile = (member) => {
+    const memberId = getMemberId(member);
+    if (!memberId) return;
+    navigate(`/perfil/${memberId}`);
+  };
+
+  useEffect(() => {
+    if (!memberToast) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setMemberToast(null);
+    }, 3200);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [memberToast]);
+
+  const handleMakeAdmin = async (member) => {
+    const memberId = getMemberId(member);
+    const memberName = getMemberName(member);
+    if (!memberId) return;
+    if (!isCorporateCommunity) {
+      setMemberToast({
+        type: 'error',
+        message: 'Solo se pueden añadir administradores en comunidades corporativas.',
+      });
+      return;
+    }
+    if (!window.confirm(`¿Seguro que quieres hacer a ${memberName} administrador?`)) {
+      return;
+    }
+    try {
+      setMembersLoading(true);
+      await communitiesApi.addAdmin(communityId, memberId);
+      setMemberToast({ type: 'success', message: `${memberName} es ahora administrador.` });
+      await fetchMembers();
+    } catch (err) {
+      console.error('Error al hacer administrador:', err);
+      setMemberToast({ type: 'error', message: err?.message || 'No se pudo hacer administrador al miembro.' });
+    } finally {
+      setMembersLoading(false);
+    }
+  };
+
+  const renderMemberPills = (list, emptyMessage) => {
+    if (!list.length) {
+      return <p className="cd-role-empty">{emptyMessage}</p>;
+    }
+
+    return (
+      <div className="cd-member-pills">
+        {list.map((member) => (
+          <div key={getMemberId(member)} className="cd-member-pill">
+            <button
+              type="button"
+              className="cd-member-link"
+              onClick={() => handleOpenMemberProfile(member)}
+            >
+              <span className="cd-member-avatar">
+                {getMemberPhoto(member) ? (
+                  <img src={toAbsoluteImageUrl(getMemberPhoto(member))} alt={getMemberName(member)} />
+                ) : (
+                  <span className="cd-member-avatar-fallback">{getMemberInitial(member)}</span>
+                )}
+              </span>
+              <span className="cd-member-info">
+                <span className="cd-member-name">{getMemberName(member)}</span>
+                <span className="cd-member-role">{getCommunityRoleLabel(member?.rol)}</span>
+              </span>
+            </button>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              {isAdmin && isCorporateCommunity && normalizeCommunityRole(member?.rol) !== 'ADMIN' && (
+                <button
+                  type="button"
+                  className="cd-member-remove"
+                  style={{ backgroundColor: '#eef2ff', color: '#4f46e5', borderColor: '#eef2ff' }}
+                  onClick={() => handleMakeAdmin(member)}
+                >
+                  Hacer administrador
+                </button>
+              )}
+              {canExpelMember(member) && (
+                <button
+                  type="button"
+                  className="cd-member-remove"
+                  onClick={() => handleExpelMember(member)}
+                  disabled={expellingMemberId === getMemberId(member)}
+                >
+                  {expellingMemberId === getMemberId(member) ? 'Expulsando...' : 'Expulsar'}
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   };
   const communityImage = (() => {
     const raw = community?.imagen || community?.imagenUrl || community?.foto;
@@ -164,20 +375,28 @@ export default function CommunityDetail() {
   const fetchCommunity = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await communitiesApi.getById(communityId);
-      setCommunity(data);
+      let data = await communitiesApi.getById(communityId);
       // Use esMiembro from backend response if available
       if (data.esMiembro !== undefined) {
         setIsMember(data.esMiembro);
       } else if (currentUserId) {
         // Fallback: check membership via API
         try {
-          await communitiesApi.getMyMembership(communityId);
+          const membership = await communitiesApi.getMyMembership(communityId);
+          if (membership) {
+            data = {
+              ...data,
+              esMiembro: true,
+              miRol: data.miRol || membership.rol,
+            };
+          }
           setIsMember(true);
         } catch {
           setIsMember(false);
         }
       }
+
+      setCommunity(data);
 
       // Si es comunidad privada y el usuario no es miembro, comprobar solicitud pendiente
       if (data.tipoGrupo === 'GRUPO_PRIVADO' && !data.esMiembro && currentUserId) {
@@ -185,10 +404,17 @@ export default function CommunityDetail() {
           const status = await communitiesApi.getMyRequestStatus(communityId);
           if (status && status.pending) {
             setRequestSent(true);
+          } else if (status && !status.pending) {
+            setRequestSent(false);
           }
-        } catch {
-          // Ignorar error, el usuario simplemente puede solicitar
+          // Si status es undefined o null, no cambiar estado local (mantener lo que había)
+        } catch (err) {
+          // Error al verificar: mantener estado local en lugar de asumir false
+          console.warn('Aviso: No se pudo verificar solicitud pendiente', err);
         }
+      } else if (!data.esMiembro) {
+        // No es privada pero tampoco es miembro: seguro no hay solicitud
+        setRequestSent(false);
       }
     } catch (err) {
       console.error('Error al cargar la comunidad:', err);
@@ -197,6 +423,20 @@ export default function CommunityDetail() {
       setLoading(false);
     }
   }, [communityId, currentUserId]);
+
+  const fetchMembers = useCallback(async () => {
+    try {
+      setMembersLoading(true);
+      const data = await communitiesApi.getMembers(communityId, { page: 0, size: 100 });
+      const list = data?.content || data?.miembros || data || [];
+      setMembers(Array.isArray(list) ? list : []);
+    } catch (err) {
+      console.error('Error al cargar miembros:', err);
+      setMembers([]);
+    } finally {
+      setMembersLoading(false);
+    }
+  }, [communityId]);
 
   const fetchEvents = useCallback(async () => {
     try {
@@ -244,10 +484,51 @@ export default function CommunityDetail() {
   }, [communityId]);
 
   useEffect(() => {
-    fetchCommunity();
-    fetchEvents();
-  }, [fetchCommunity, fetchEvents]);
+      if (!communityId) return;
+    
+      const load = async () => {
+        try {
+          setLoading(true);
+          const data = await communitiesApi.getById(communityId);
+          setCommunity(data);
+        
+          if (data.esMiembro !== undefined) {
+            setIsMember(data.esMiembro);
+          } else if (currentUserId) {
+            try {
+              await communitiesApi.getMyMembership(communityId);
+              setIsMember(true);
+            } catch {
+              setIsMember(false);
+            }
+          }
 
+          // Si es comunidad privada y el usuario no es miembro, comprobar solicitud pendiente
+          if (data.tipoGrupo === 'GRUPO_PRIVADO' && !data.esMiembro && currentUserId) {
+            try {
+              const status = await communitiesApi.getMyRequestStatus(communityId);
+              setRequestSent(status && status.pending);
+            } catch (err) {
+              console.warn('No se pudo verificar solicitud pendiente', err);
+            }
+          } else if (!data.esMiembro) {
+            setRequestSent(false);
+          }
+        } catch (err) {
+          console.error('Error al cargar la comunidad:', err);
+          setError('No se pudo cargar la comunidad.');
+        } finally {
+          setLoading(false);
+        }
+      };
+    
+      load();
+    fetchEvents();
+    }, [communityId, currentUserId]);
+
+  useEffect(() => {
+    fetchMembers();
+  }, [fetchMembers]);
 
   const fetchRanking = useCallback(async () => {
     if (!isMember) {
@@ -408,6 +689,65 @@ export default function CommunityDetail() {
       || participant?.name
       || participant?.email
       || `Participante ${index + 1}`;
+  };
+
+  const getMemberRoleLabel = (member) => {
+    const rawRole = String(member?.rol || member?.role || '').toUpperCase();
+    if (rawRole === 'ADMIN') return 'Administrador';
+    if (rawRole === 'MODERADOR' || rawRole === 'MODERATOR') return 'Moderador';
+    if (rawRole === 'MIEMBRO' || rawRole === 'MEMBER') return 'Miembro';
+    if (rawRole === 'ALUMNO' || rawRole === 'STUDENT') return 'Alumno';
+    if (rawRole === 'PROFESOR' || rawRole === 'TEACHER') return 'Profesor';
+    return rawRole || 'Miembro';
+  };
+
+  const getMemberUserId = (member) => {
+    return member?.usuario?.id || member?.user?.id || member?.usuarioId || member?.userId;
+  };
+
+  const isMemberAdmin = (member) => {
+    const rawRole = String(member?.rol || member?.role || '').toUpperCase();
+    return rawRole === 'ADMIN';
+  };
+
+  const handleToggleMembers = async () => {
+    if (membersOpen) {
+      setMembersOpen(false);
+      return;
+    }
+
+    setMembersOpen(true);
+    setMembersActionError(null);
+    if (!members.length && !membersLoading) {
+      await fetchMembers();
+    }
+  };
+
+  const handlePromoteMember = async (member) => {
+    const memberUserId = getMemberUserId(member);
+    if (!memberUserId) {
+      setMembersActionError('No se pudo identificar al miembro seleccionado.');
+      return;
+    }
+
+    try {
+      setPromotingMemberId(memberUserId);
+      setMembersActionError(null);
+      await communitiesApi.promoteMemberToAdmin(communityId, memberUserId);
+      setMembers((prev) =>
+        prev.map((item) =>
+          String(getMemberUserId(item)) === String(memberUserId)
+            ? { ...item, rol: 'ADMIN' }
+            : item
+        )
+      );
+      await fetchCommunity();
+    } catch (err) {
+      console.error('Error al promover miembro a admin:', err);
+      setMembersActionError(err?.message || 'No se pudo promover al miembro a admin.');
+    } finally {
+      setPromotingMemberId(null);
+    }
   };
 
   const handleJoinMeeting = async () => {
@@ -673,6 +1013,9 @@ export default function CommunityDetail() {
     setRecordingsError(null);
     setRecordings([]);
     setSelectedRecordingMeetingId(null);
+    setMembersOpen(false);
+    setMembersError(null);
+    setMembers([]);
   }, [communityId]);
 
   const handleOpenEditModal = () => {
@@ -769,15 +1112,35 @@ export default function CommunityDetail() {
       navigate('/login');
       return;
     }
+
+    if (hasTeacherProfile) {
+      setShowJoinRoleChooser(true);
+      setMembershipError(null);
+      return;
+    }
+
+    await handleJoinWithRole('ALUMNO');
+  };
+
+  const handleJoinWithRole = async (role) => {
+    if (!currentUserId) {
+      navigate('/login');
+      return;
+    }
+
     try {
       setJoinLoading(true);
       setMembershipError(null);
       if (isPrivate) {
-        await communitiesApi.requestAccess(communityId);
-        setRequestSent(true);
+        await communitiesApi.requestAccess(communityId, '', role || 'ALUMNO');
+        // Refrescar estado desde servidor para asegurar sincronización
+        const status = await communitiesApi.getMyRequestStatus(communityId);
+        setRequestSent(status && status.pending);
+        setShowJoinRoleChooser(false);
       } else {
-        await communitiesApi.join(communityId);
+        await communitiesApi.join(communityId, role || 'ALUMNO');
         setIsMember(true);
+        setShowJoinRoleChooser(false);
         await fetchCommunity();
         await fetchEvents();
       }
@@ -787,9 +1150,17 @@ export default function CommunityDetail() {
         navigate('/login');
       } else if (err.status === 409 || err.message?.includes('409')) {
         setIsMember(true);
+        setShowJoinRoleChooser(false);
       } else if (err.status === 400) {
         if (isPrivate) {
-          setRequestSent(true);
+          // Aún así, verificar si existe solicitud pendiente en BD
+          try {
+            const status = await communitiesApi.getMyRequestStatus(communityId);
+            setRequestSent(status && status.pending);
+          } catch {
+            // Si falla, asumir que sí hay solicitud
+            setRequestSent(true);
+          }
         } else {
           setMembershipError(err.message || 'Error al unirse a la comunidad');
         }
@@ -807,11 +1178,10 @@ export default function CommunityDetail() {
       setMembershipError(null);
       await communitiesApi.leave(communityId);
       // Si el admin era el único miembro, el backend elimina la comunidad
-      // En ese caso redirigimos a la lista
-      if (isAdmin) {
-        navigate('/comunidades');
-        return;
-      }
+      // Cualquier persona que abandone la comunidad será redirigida a la lista de comunidades
+      
+      navigate('/comunidades');
+      
       setIsMember(false);
       await fetchCommunity(); // Refresh member count
       await fetchEvents(); // Refresh events to hide private events
@@ -862,6 +1232,40 @@ export default function CommunityDetail() {
     }
   };
 
+  const handleExpelMember = async (member) => {
+    const memberId = getMemberId(member);
+    const memberName = getMemberName(member);
+
+    if (!memberId) {
+      return;
+    }
+
+    if (!window.confirm(`¿Seguro que quieres expulsar a ${memberName} de esta comunidad?`)) {
+      return;
+    }
+
+    try {
+      setExpellingMemberId(memberId);
+      setMemberToast(null);
+      await communitiesApi.expelMember(communityId, memberId);
+      setMembers((prev) => prev.filter((currentMember) => String(getMemberId(currentMember)) !== String(memberId)));
+      setMemberToast({ type: 'success', message: `${memberName} ha sido expulsado de la comunidad.` });
+      await fetchCommunity();
+    } catch (err) {
+      console.error('Error al expulsar miembro:', err);
+      const status = err?.status || err?.response?.status;
+      if (status === 403) {
+        setMemberToast({ type: 'error', message: 'Solo los administradores pueden expulsar miembros.' });
+      } else if (status === 404) {
+        setMemberToast({ type: 'error', message: 'No se pudo expulsar al miembro seleccionado.' });
+      } else {
+        setMemberToast({ type: 'error', message: err?.message || 'No se pudo expulsar al miembro.' });
+      }
+    } finally {
+      setExpellingMemberId(null);
+    }
+  };
+
   if (loading) {
     return (
       <>
@@ -891,6 +1295,15 @@ export default function CommunityDetail() {
     <>
       <Header page={'comunidades'} user={user} />
       <div className="cd-container">
+        {memberToast && (
+          <div
+            className={`cd-toast cd-toast--${memberToast.type}`}
+            role="status"
+            aria-live="polite"
+          >
+            {memberToast.message}
+          </div>
+        )}
         <button className="cd-back-btn" onClick={() => navigate('/comunidades')}>
           <LuArrowLeft /> Volver a comunidades
         </button>
@@ -925,6 +1338,81 @@ export default function CommunityDetail() {
                 <span className="cd-members">
                   <LuUsers /> {community.miembrosActuales || 0} miembros
                 </span>
+                {community?.miRol && (
+                  <span className="cd-role-chip cd-role-chip--role">
+                    Tu rol: {roleLabel}
+                  </span>
+                )}
+                {formatPlanLabel(community?.tipoPlan) && (
+                  <span className="cd-role-chip cd-role-chip--plan">
+                    {formatPlanLabel(community?.tipoPlan)}
+                  </span>
+                )}
+                <span className="cd-role-chip cd-role-chip--capacity">
+                  Aforo {community?.maxMiembros ? `hasta ${community.maxMiembros}` : 'sin límite'}
+                </span>
+              </div>
+              <div className="cd-members-dropdown">
+                <button
+                  type="button"
+                  className="cd-members-toggle"
+                  onClick={handleToggleMembers}
+                  aria-expanded={membersOpen}
+                  aria-controls="cd-members-list-panel"
+                >
+                  <span className="cd-members-toggle-left">
+                    <LuUsers />
+                    {membersOpen ? 'Ocultar listado de miembros' : 'Ver listado de miembros'}
+                  </span>
+                  <span className="cd-members-toggle-right">
+                    {membersOpen ? <LuChevronUp /> : <LuChevronDown />}
+                  </span>
+                </button>
+
+                {membersOpen && (
+                  <div id="cd-members-list-panel" className="cd-members-panel">
+                    {membersActionError ? (
+                      <p className="cd-members-panel-state cd-members-panel-error">{membersActionError}</p>
+                    ) : null}
+                    {membersLoading ? (
+                      <p className="cd-members-panel-state">Cargando miembros...</p>
+                    ) : membersError ? (
+                      <p className="cd-members-panel-state cd-members-panel-error">{membersError}</p>
+                    ) : members.length > 0 ? (
+                      <ul className="cd-members-list">
+                        {members.map((member, index) => {
+                          const memberUserId = getMemberUserId(member);
+                          const isCurrentMember = currentUserId && memberUserId && String(memberUserId) === String(currentUserId);
+                          const canPromote = isAdmin && !isCurrentMember && !isMemberAdmin(member);
+
+                          return (
+                            <li key={member?.id || memberUserId || member?.usuario?.email || member?.email || index} className="cd-members-list-item">
+                              <span className="cd-members-list-name">
+                                {getMemberName(member, index)}
+                                {isCurrentMember ? <strong className="cd-members-you-badge">Tu</strong> : null}
+                              </span>
+                              <div className="cd-members-list-actions">
+                                <span className="cd-members-list-role">{getMemberRoleLabel(member)}</span>
+                                {canPromote ? (
+                                  <button
+                                    type="button"
+                                    className="cd-members-promote-btn"
+                                    onClick={() => handlePromoteMember(member)}
+                                    disabled={promotingMemberId === memberUserId}
+                                  >
+                                    {promotingMemberId === memberUserId ? 'Promoviendo...' : 'Hacer admin'}
+                                  </button>
+                                ) : null}
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : (
+                      <p className="cd-members-panel-state">Aún no hay miembros registrados.</p>
+                    )}
+                  </div>
+                )}
               </div>
               {/* Join / Leave / Request access */}
               <div className="cd-membership-actions">
@@ -969,6 +1457,39 @@ export default function CommunityDetail() {
                     <button className="cd-btn cd-btn-pending" disabled>
                       Solicitud de acceso enviada
                     </button>
+                  ) : showJoinRoleChooser && hasTeacherProfile ? (
+                    <div className="cd-join-role-picker">
+                      <p className="cd-join-role-title">
+                        {isPrivate ? 'Elige cómo quieres solicitar acceso:' : 'Elige cómo quieres unirte:'}
+                      </p>
+                      <div className="cd-join-role-actions">
+                        <button
+                          className="cd-btn cd-btn-join"
+                          onClick={() => handleJoinWithRole('PROFESOR')}
+                          disabled={joinLoading}
+                        >
+                          <LuLogIn /> {joinLoading
+                            ? (isPrivate ? 'Solicitando...' : 'Uniendose...')
+                            : (isPrivate ? 'Solicitar como profesor' : 'Unirme como profesor')}
+                        </button>
+                        <button
+                          className="cd-btn cd-btn-join"
+                          onClick={() => handleJoinWithRole('ALUMNO')}
+                          disabled={joinLoading}
+                        >
+                          <LuLogIn /> {joinLoading
+                            ? (isPrivate ? 'Solicitando...' : 'Uniendose...')
+                            : (isPrivate ? 'Solicitar como alumno' : 'Unirme como alumno')}
+                        </button>
+                        <button
+                          className="cd-btn cd-btn-leave"
+                          onClick={() => setShowJoinRoleChooser(false)}
+                          disabled={joinLoading}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
                   ) : (
                     <button
                       className="cd-btn cd-btn-join"
@@ -990,6 +1511,61 @@ export default function CommunityDetail() {
                 )}
               </div>
 
+            </div>
+          </div>
+        )}
+
+        {community && (
+          <div className="cd-roles-section">
+            <div className="cd-role-card">
+              <h2 className="cd-role-card-title">Sistema de roles</h2>
+              <p className="cd-role-card-subtitle">
+                La comunidad distingue entre administración, profesorado y alumnado.
+              </p>
+              <div className="cd-role-summary-head">
+                <span className="cd-role-chip cd-role-chip--role">{roleLabel}</span>
+                {isAdmin && <span className="cd-role-summary-note">Acceso completo a gestión</span>}
+                {isTeacher && <span className="cd-role-summary-note">Puede crear eventos y coordinar actividades</span>}
+              </div>
+              <ul className="cd-role-capabilities">
+                {roleCapabilities.map((capability) => (
+                  <li key={capability}>{capability}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="cd-role-card">
+              <h2 className="cd-role-card-title">Equipo de la comunidad</h2>
+              <p className="cd-role-card-subtitle">
+                Listado visible de responsables y miembros por rol. Pulsa sobre cualquier persona para ver su perfil.
+              </p>
+              {membersLoading ? (
+                <p className="cd-loading">Cargando miembros...</p>
+              ) : (
+                <div className="cd-role-groups">
+                  <div className="cd-role-group">
+                    <div className="cd-role-group-head">
+                      <span>Administradores</span>
+                      <strong>{adminMembers.length}</strong>
+                    </div>
+                    {renderMemberPills(adminMembers, 'Todavía no hay administradores visibles.')}
+                  </div>
+                  <div className="cd-role-group">
+                    <div className="cd-role-group-head">
+                      <span>Profesores</span>
+                      <strong>{teacherMembers.length}</strong>
+                    </div>
+                    {renderMemberPills(teacherMembers, 'No hay profesores asignados en este momento.')}
+                  </div>
+                  <div className="cd-role-group">
+                    <div className="cd-role-group-head">
+                      <span>Alumnos</span>
+                      <strong>{studentMembers.length}</strong>
+                    </div>
+                    {renderMemberPills(studentMembers, 'No hay alumnos visibles en este momento.')}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1059,68 +1635,109 @@ export default function CommunityDetail() {
           />
         )}
 
-        {/* Sección de eventos */}
-        <div className="cd-events-section">
-          <div className="cd-events-header">
-            <h2 className="cd-events-title">
-              <LuCalendar /> Eventos
-            </h2>
-            <div className="cd-events-actions">
-              <label className="cd-filter-label">
-                <input
-                  type="checkbox"
-                  checked={filterCancelled}
-                  onChange={(e) => setFilterCancelled(e.target.checked)}
-                />
-                Mostrar cancelados
-              </label>
-              {isMember ? (
-                <button
-                  className="cd-btn cd-btn-create"
-                  onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
-                >
-                  <LuPlus /> Crear evento
-                </button>
-              ) : (
-                <span className="cd-member-hint">Únete a la comunidad para crear eventos</span>
-              )}
-            </div>
-          </div>
 
-          {eventsLoading ? (
-            <p className="cd-loading">Cargando eventos...</p>
-          ) : events.length > 0 ? (
-            <div className="cd-events-list">
-              {events.map(event => (
-                <TarjetaEvento
-                  key={event.id}
-                  event={event}
-                  onAttend={currentUserId && isMember ? handleAttend : null}
-                  onCancelAttendance={currentUserId ? handleCancelAttendance : null}
-                  attendanceLoading={attendanceLoading}
-                  currentUserId={currentUserId}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="cd-empty-events">
-              <LuCalendar className="cd-empty-icon" />
-              <h3>No hay eventos</h3>
-              {isMember ? (
-                <>
-                  <p>Sé el primero en crear un evento para esta comunidad.</p>
-                  <button
-                    className="cd-btn cd-btn-create"
-                    onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
-                  >
-                    <LuPlus /> Crear evento
-                  </button>
-                </>
-              ) : (
-                <p>Únete a la comunidad para poder crear eventos.</p>
-              )}
-            </div>
-          )}
+        {/* Tabs de eventos y anuncios */}
+        <div className="cd-tabs-section">
+          <div className="cd-tabs-header">
+            <button
+              className={`cd-tab-btn${!showAnnouncementsTab ? ' cd-tab-btn-active' : ''}`}
+              onClick={() => {
+                setShowAnnouncementsTab(false);
+                const params = new URLSearchParams(searchParams);
+                params.set('tab', 'eventos');
+                navigate({ search: params.toString() }, { replace: true });
+              }}
+              type="button"
+            >
+              <LuCalendar /> Eventos
+            </button>
+            <button
+              className={`cd-tab-btn${showAnnouncementsTab ? ' cd-tab-btn-active' : ''}`}
+              onClick={() => {
+                setShowAnnouncementsTab(true);
+                const params = new URLSearchParams(searchParams);
+                params.set('tab', 'anuncios');
+                navigate({ search: params.toString() }, { replace: true });
+              }}
+              type="button"
+            >
+              <span role="img" aria-label="Anuncios">📢</span> Anuncios
+            </button>
+          </div>
+          <div className="cd-tabs-content">
+            {!showAnnouncementsTab ? (
+              <div className="cd-events-section">
+                <div className="cd-events-header">
+                  <h2 className="cd-events-title">
+                    <LuCalendar /> Eventos
+                  </h2>
+                  <div className="cd-events-actions">
+                    <label className="cd-filter-label">
+                      <input
+                        type="checkbox"
+                        checked={filterCancelled}
+                        onChange={(e) => setFilterCancelled(e.target.checked)}
+                      />
+                      Mostrar cancelados
+                    </label>
+                    {isMember && canCreateEvent ? (
+                      <button
+                        className="cd-btn cd-btn-create"
+                        onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
+                      >
+                        <LuPlus /> Crear evento
+                      </button>
+                    ) : isMember ? (
+                      <span className="cd-member-hint">Solo administradores y profesores pueden crear eventos</span>
+                    ) : (
+                      <span className="cd-member-hint">Únete a la comunidad para crear eventos</span>
+                    )}
+                  </div>
+                </div>
+
+                {eventsLoading ? (
+                  <p className="cd-loading">Cargando eventos...</p>
+                ) : events.length > 0 ? (
+                  <div className="cd-events-list">
+                    {events.map(event => (
+                      <TarjetaEvento
+                        key={event.id}
+                        event={event}
+                        onAttend={currentUserId && isMember ? handleAttend : null}
+                        onCancelAttendance={currentUserId ? handleCancelAttendance : null}
+                        attendanceLoading={attendanceLoading}
+                        currentUserId={currentUserId}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="cd-empty-events">
+                    <LuCalendar className="cd-empty-icon" />
+                    <h3>No hay eventos</h3>
+                    {isMember && canCreateEvent ?  (
+                      <>
+                        <p>Sé el primero en crear un evento para esta comunidad.</p>
+                        <button
+                          className="cd-btn cd-btn-create"
+                          onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
+                        >
+                          <LuPlus /> Crear evento
+                        </button>
+                      </>
+                    ) : isMember ? (
+                      <p>Solo administradores y profesores pueden crear eventos en esta comunidad.</p>
+                    ) : (
+                      <p>Únete a la comunidad para poder crear eventos.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="cd-announcements-section">
+                <CommunityAnnouncementsTab communityId={communityId} isAdmin={isAdmin} />
+              </div>
+            )}
+          </div>
         </div>
         
         {isMember && (
@@ -1488,6 +2105,7 @@ extraActions={(
           <TransferAdminModal
             communityId={communityId}
             currentUserId={currentUserId}
+            hasTeacherProfile={hasTeacherProfile}
             onClose={() => setShowTransferModal(false)}
             onTransferred={() => {
               setShowTransferModal(false);

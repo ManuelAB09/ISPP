@@ -10,9 +10,12 @@ import es.us.meerkat.backend.dto.CreateAnuncioRequest;
 import es.us.meerkat.backend.dto.UpdateAnuncioRequest;
 import es.us.meerkat.backend.entity.Anuncio;
 import es.us.meerkat.backend.entity.Comunidad;
+import es.us.meerkat.backend.entity.Notificacion;
+import es.us.meerkat.backend.entity.PreferenciasNotificacion;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.AnuncioRepository;
 import es.us.meerkat.backend.repository.ComunidadRepository;
+import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -26,6 +29,10 @@ public class AnuncioService {
     private final ComunidadRepository comunidadRepository;
     private final UsuarioRepository usuarioRepository;
     private final AuthorizationService authorizationService;
+    private final MiembroComunidadRepository miembroComunidadRepository;
+    private final NotificacionService notificacionService;
+    private final PreferenciasNotificacionService preferenciasNotificacionService;
+    private final EmailService emailService;
 
     /**
      * Crea un nuevo anuncio en una comunidad.
@@ -65,7 +72,59 @@ public class AnuncioService {
                                         : true)
                         .build();
 
-        return anuncioRepository.save(anuncio);
+        Anuncio saved = anuncioRepository.save(anuncio);
+
+        // Notificar a todos los miembros de la comunidad excepto el creador
+        java.util.List<Usuario> miembros =
+                miembroComunidadRepository.findMiembrosMasAntiguosEnComunidad(
+                        comunidad.getId(), usuario.getId());
+        for (Usuario miembro : miembros) {
+            // Usar la misma lógica de imagen que en la pestaña de comunidades
+            String imagenUrl = comunidad.getImagenUrl();
+            if (imagenUrl != null && (imagenUrl.equalsIgnoreCase("empty") || imagenUrl.isBlank())) {
+                imagenUrl = null; // O pon aquí una URL por defecto si tienes una
+            }
+            Notificacion notif =
+                    Notificacion.builder()
+                            .usuario(miembro)
+                            .titulo("Nuevo anuncio en tu comunidad")
+                            .mensaje(saved.getTitulo())
+                            .tipo("ANUNCIO")
+                            .anuncioId(saved.getId())
+                            .comunidadId(comunidad.getId())
+                            .comunidadNombre(comunidad.getNombre())
+                            .comunidadImagenUrl(imagenUrl)
+                            .build();
+            notificacionService.crearYNotificar(notif);
+            notificarAnuncioPorEmail(saved, comunidad, usuario, miembro);
+        }
+        return saved;
+    }
+
+    private void notificarAnuncioPorEmail(
+            final Anuncio anuncio,
+            final Comunidad comunidad,
+            final Usuario autor,
+            final Usuario miembro) {
+        if (miembro == null || miembro.getId() == null || miembro.getEmail() == null) {
+            return;
+        }
+
+        try {
+            final PreferenciasNotificacion preferencias =
+                    preferenciasNotificacionService.getOrCreate(miembro.getId());
+            final boolean puedeRecibir =
+                    Boolean.TRUE.equals(preferencias.getEmailsActivados())
+                            && Boolean.TRUE.equals(preferencias.getNotificarAnuncios());
+
+            if (!puedeRecibir) {
+                return;
+            }
+
+            emailService.sendCommunityAnnouncementEmail(miembro, comunidad, autor, anuncio);
+        } catch (Exception ignored) {
+            // No interrumpir la creación del anuncio si falla el envío de email.
+        }
     }
 
     /**

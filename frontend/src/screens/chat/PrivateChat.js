@@ -20,7 +20,7 @@ import './PrivateChat.css';
  * @param {string} props.tutorNombre - Nombre del usuario destino.
  * @param {object} props.usuarioActual - Información del usuario autenticado.
  */
-const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
+const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose, headerActions }) => {
     const { socket, isConnected } = useSocketContext();
     const [mensajes, setMensajes] = useState([]);
     const [contenido, setContenido] = useState('');
@@ -652,6 +652,7 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
                     <div className={`status ${isConnected ? 'conectado' : 'desconectado'}`}>
                         {isConnected ? 'En línea' : 'Fuera de línea'}
                     </div>
+                    {headerActions ? <div className="private-chat-extra-actions">{headerActions}</div> : null}
                     {onClose && (
                         <button type="button" className="private-chat-close" onClick={onClose}>
                             Volver

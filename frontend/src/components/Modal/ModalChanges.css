@@ -1,0 +1,44 @@
+.modal-changes-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #2E3559;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.modal-changes-list {
+  background: #F6F8FB;
+  border-radius: 0.7rem;
+  padding: 1.2rem 1.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.08rem;
+  color: #2E3559;
+  box-shadow: 0 1px 4px rgba(44,44,44,0.06);
+}
+
+.modal-changes-list ul {
+  padding-left: 1.2rem;
+  margin: 0;
+}
+
+.modal-changes-list li {
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+.modal-changes-btn {
+  display: block;
+  margin: 0 auto;
+  background: #6B73A1;
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.7rem 1.7rem;
+  font-size: 1.08rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.modal-changes-btn:hover {
+  background: #4b5070;
+}

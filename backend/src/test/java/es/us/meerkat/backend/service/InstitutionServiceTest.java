@@ -143,8 +143,7 @@ class InstitutionServiceTest {
         when(institutionRepository.save(any(Institution.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Institution updated =
-                institutionService.actualizarInstitucion(institutionId, usuarioId, request);
+        institutionService.actualizarInstitucion(institutionId, usuarioId, request);
 
         ArgumentCaptor<Institution> captor = ArgumentCaptor.forClass(Institution.class);
         verify(institutionRepository).save(captor.capture());

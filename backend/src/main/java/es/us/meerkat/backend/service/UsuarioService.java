@@ -230,9 +230,6 @@ public class UsuarioService {
         if (requestParam.getVisibleEnListados() != null) {
             usuario.setVisibleEnListados(requestParam.getVisibleEnListados());
         }
-        if (requestParam.getNotificacionesEmail() != null) {
-            usuario.setNotificacionesEmail(requestParam.getNotificacionesEmail());
-        }
         if (requestParam.getNotificacionesPush() != null) {
             usuario.setNotificacionesPush(requestParam.getNotificacionesPush());
         }
@@ -494,7 +491,6 @@ public class UsuarioService {
                 .visibleEnListados(usuario.getVisibleEnListados())
                 .esTutor(usuario.getEsTutor())
                 .autenticacionDosFactores(usuario.getAutenticacionDosFactores())
-                .notificacionesEmail(usuario.getNotificacionesEmail())
                 .notificacionesPush(usuario.getNotificacionesPush())
                 .createdAt(usuario.getCreatedAt())
                 .googleLinked(usuario.getGoogleId() != null)
@@ -529,6 +525,7 @@ public class UsuarioService {
                                 : null)
                 .intereses(usuario.getIntereses())
                 .esTutor(usuario.getEsTutor())
+                .tutorId(usuario.getTutor() != null ? usuario.getTutor().getId() : null)
                 .build();
     }
 

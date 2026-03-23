@@ -20,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
+import es.us.meerkat.backend.dto.DisponibilidadTutorResponse;
 import es.us.meerkat.backend.dto.SolicitudContratacionRequest;
 import es.us.meerkat.backend.dto.SolicitudContratacionResponse;
 import es.us.meerkat.backend.entity.EstadoSolicitudContratacion;
@@ -38,6 +39,9 @@ class SolicitudContratacionServiceTest {
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private SimpMessagingTemplate broker;
     @Mock private EmailService emailService;
+    @Mock private GoogleCalendarService googleCalendarService;
+    @Mock private PaymentService paymentService;
+    @Mock private DisponibilidadService disponibilidadService;
 
     @InjectMocks private SolicitudContratacionService service;
 
@@ -67,6 +71,14 @@ class SolicitudContratacionServiceTest {
         return req;
     }
 
+    private DisponibilidadTutorResponse buildDisponibilidad(LocalTime inicio, LocalTime fin) {
+        return DisponibilidadTutorResponse.builder()
+                .horaInicio(inicio)
+                .horaFin(fin)
+                .modalidad("ONLINE")
+                .build();
+    }
+
     @Test
     void crearSolicitudShouldCreateAndNotifyTutor() {
         Usuario alumno = buildUsuario(1L, "alumno@test.es");
@@ -78,6 +90,8 @@ class SolicitudContratacionServiceTest {
         when(tutorRepository.findById(10L)).thenReturn(Optional.of(tutor));
         when(solicitudRepository.findConflictingBookings(eq(10L), any(), any(), any()))
                 .thenReturn(List.of());
+        when(disponibilidadService.getDisponibilidadesPorFecha(eq(10L), any()))
+                .thenReturn(List.of(buildDisponibilidad(LocalTime.of(9, 0), LocalTime.of(12, 0))));
         when(solicitudRepository.save(any(SolicitudContratacionDirecta.class)))
                 .thenAnswer(
                         inv -> {
@@ -268,7 +282,7 @@ class SolicitudContratacionServiceTest {
         when(solicitudRepository.findById(100L)).thenReturn(Optional.of(solicitud));
         when(solicitudRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        SolicitudContratacionResponse result = service.rechazarSolicitud(100L, 2L, "No disponible");
+        service.rechazarSolicitud(100L, 2L, "No disponible");
 
         assertThat(solicitud.getEstado()).isEqualTo(EstadoSolicitudContratacion.RECHAZADA);
         assertThat(solicitud.getMotivoRechazo()).isEqualTo("No disponible");
@@ -296,7 +310,7 @@ class SolicitudContratacionServiceTest {
         when(solicitudRepository.findById(100L)).thenReturn(Optional.of(solicitud));
         when(solicitudRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        service.marcarComoPagada(100L, 1L);
+        service.marcarComoPagada(100L, 1L, null);
 
         assertThat(solicitud.getEstado()).isEqualTo(EstadoSolicitudContratacion.PAGADA);
         verify(broker)
@@ -316,7 +330,7 @@ class SolicitudContratacionServiceTest {
 
         when(solicitudRepository.findById(100L)).thenReturn(Optional.of(solicitud));
 
-        assertThatThrownBy(() -> service.marcarComoPagada(100L, 99L))
+        assertThatThrownBy(() -> service.marcarComoPagada(100L, 99L, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("No tienes permiso");
     }
@@ -333,7 +347,7 @@ class SolicitudContratacionServiceTest {
 
         when(solicitudRepository.findById(100L)).thenReturn(Optional.of(solicitud));
 
-        assertThatThrownBy(() -> service.marcarComoPagada(100L, 1L))
+        assertThatThrownBy(() -> service.marcarComoPagada(100L, 1L, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("aceptada para poder pagarla");
     }
@@ -382,6 +396,8 @@ class SolicitudContratacionServiceTest {
         when(solicitudRepository.findConflictingBookingsExcluding(
                         any(), any(), any(), any(), any()))
                 .thenReturn(List.of());
+        when(disponibilidadService.getDisponibilidadesPorFecha(eq(10L), any()))
+                .thenReturn(List.of(buildDisponibilidad(LocalTime.of(9, 0), LocalTime.of(12, 0))));
         when(solicitudRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         // Reprogramar 2 días después (día 17) con la misma duración
@@ -480,6 +496,8 @@ class SolicitudContratacionServiceTest {
         when(solicitudRepository.findConflictingBookingsExcluding(
                         any(), any(), any(), any(), any()))
                 .thenReturn(List.of());
+        when(disponibilidadService.getDisponibilidadesPorFecha(eq(10L), any()))
+                .thenReturn(List.of(buildDisponibilidad(LocalTime.of(9, 0), LocalTime.of(12, 0))));
         when(solicitudRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         // Primer aplazamiento: +2 días (Día 17)
@@ -523,6 +541,8 @@ class SolicitudContratacionServiceTest {
         when(solicitudRepository.findConflictingBookingsExcluding(
                         any(), any(), any(), any(), any()))
                 .thenReturn(List.of());
+        when(disponibilidadService.getDisponibilidadesPorFecha(eq(10L), any()))
+                .thenReturn(List.of(buildDisponibilidad(LocalTime.of(9, 0), LocalTime.of(12, 0))));
         when(solicitudRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         // Primer aplazamiento: +2 días (Día 17) -> Legal

@@ -8,100 +8,48 @@ import "./InstitutionPlansScreen.css";
 const INSTITUTION_PLANS = [
   {
     id: "BASICO",
-    nombre: "Institucional Básico",
-    descripcion: "Para academias e instituciones pequeñas",
-    precio: "49,99€/mes",
-    precioAnual: "499,99€/año",
-    maxUsuarios: 50,
+    nombre: "Instituciones Academias",
+    descripcion: "Para academias y centros de tamaño medio",
+    precio: "120€/mes",
+    precioAnual: "1200€/año",
+    maxUsuarios: 500,
     features: [
-      "Hasta 50 usuarios activos",
-      "Gestión de grupos de estudio",
-      "Perfil institucional verificado",
-      "Estadísticas básicas de uso",
-      "Soporte por email",
+      "30 comunidades activas",
+      "500 aforo máx",
+      "20 profesores por comunidad",
     ],
     destacado: false,
     requiereEligibilidad: false,
   },
   {
     id: "ESTANDAR",
-    nombre: "Institucional Estándar",
-    descripcion: "Para academias en pleno crecimiento",
-    precio: "99,99€/mes",
-    precioAnual: "999,99€/año",
-    maxUsuarios: 200,
+    nombre: "Instituciones Colegios",
+    descripcion: "Pensado para colegios con alta actividad",
+    precio: "340€/mes",
+    precioAnual: "3400€/año",
+    maxUsuarios: 2000,
     features: [
-      "Hasta 200 usuarios activos",
-      "Múltiples administradores",
-      "Gestión avanzada de grupos",
-      "Estadísticas detalladas de uso",
-      "Eventos y comunidades sin límite",
-      "Soporte prioritario",
+      "100 comunidades activas",
+      "2000 aforo máx",
+      "75 profesores por comunidad",
     ],
     destacado: true,
     requiereEligibilidad: false,
   },
   {
     id: "PREMIUM",
-    nombre: "Institucional Premium",
-    descripcion: "La solución completa para grandes instituciones",
-    precio: "199,99€/mes",
-    precioAnual: "1999,99€/año",
-    maxUsuarios: null,
+    nombre: "Instituciones Universidades",
+    descripcion: "Máxima capacidad para universidades",
+    precio: "950€/mes",
+    precioAnual: "9500€/año",
+    maxUsuarios: 10000,
     features: [
-      "Usuarios ilimitados",
-      "Administradores ilimitados",
-      "Estadísticas avanzadas y exportación",
-      "Personalización de marca",
-      "Gestor de cuenta dedicado",
-      "SLA garantizado 99,9%",
-      "API de integración",
+      "Comunidades ilimitadas",
+      "10000 aforo máx",
+      "300 profesores por comunidad",
     ],
     destacado: false,
     requiereEligibilidad: false,
-  },
-];
-
-const SPECIAL_PLANS = [
-  {
-    id: "REDUCIDO_PUBLICA",
-    nombre: "Educación Pública",
-    descripcion: "Precio especial para centros educativos públicos",
-    precio: "29,99€/mes",
-    precioAnual: "299,99€/año",
-    maxUsuarios: 300,
-    descuento: "50% DESC.",
-    features: [
-      "Hasta 300 usuarios activos",
-      "Múltiples administradores",
-      "Gestión de grupos de estudio",
-      "Estadísticas de uso detalladas",
-      "Soporte prioritario",
-    ],
-    eligibilidadInfo:
-      "Disponible para universidades, institutos y colegios públicos. La validación se realiza a través del dominio de email institucional.",
-    requiereEligibilidad: true,
-    tipoEligibilidad: "publica",
-  },
-  {
-    id: "REDUCIDO_PRIVADA",
-    nombre: "Centro Concertado",
-    descripcion: "Condiciones especiales para centros privados concertados",
-    precio: "69,99€/mes",
-    precioAnual: "699,99€/año",
-    maxUsuarios: 200,
-    descuento: "30% DESC.",
-    features: [
-      "Hasta 200 usuarios activos",
-      "Múltiples administradores",
-      "Gestión avanzada de grupos",
-      "Estadísticas de uso detalladas",
-      "Soporte prioritario",
-    ],
-    eligibilidadInfo:
-      "Disponible para centros privados concertados con financiación pública. Requiere documentación acreditativa.",
-    requiereEligibilidad: true,
-    tipoEligibilidad: "privada",
   },
 ];
 
@@ -128,7 +76,7 @@ export default function InstitutionPlansScreen() {
         <div className="instPlansHeader">
           <PageHeader 
             title="Planes para Instituciones"
-            subtitle="Soluciones adaptadas para academias, universidades y centros educativos con gestión avanzada"
+            subtitle="Escala desde academias hasta universidades con límites de comunidades, aforo y profesorado adaptados"
           />
           <button
             className="instBtnBack"
@@ -144,29 +92,29 @@ export default function InstitutionPlansScreen() {
             <div className="instFeatureItem">
               <div className="instFeatureIcon">👥</div>
               <div>
-                <strong>Múltiples administradores</strong>
-                <p>Delegar la gestión entre varios responsables</p>
+                <strong>Más profesorado</strong>
+                <p>Amplía docentes por comunidad según tu plan</p>
               </div>
             </div>
             <div className="instFeatureItem">
               <div className="instFeatureIcon">📊</div>
               <div>
-                <strong>Estadísticas avanzadas</strong>
-                <p>Seguimiento de actividad de todos los usuarios</p>
+                <strong>Mayor aforo</strong>
+                <p>Desde 500 hasta 10000 plazas según plan</p>
               </div>
             </div>
             <div className="instFeatureItem">
-              <div className="instFeatureIcon">🏫</div>
+              <div className="instFeatureIcon">📚</div>
               <div>
-                <strong>Gestión de grupos</strong>
-                <p>Organiza usuarios en grupos y clases</p>
+                <strong>Comunidades escalables</strong>
+                <p>Desde 30 comunidades hasta ilimitadas</p>
               </div>
             </div>
             <div className="instFeatureItem">
-              <div className="instFeatureIcon">✅</div>
+              <div className="instFeatureIcon">🏢</div>
               <div>
-                <strong>Perfil verificado</strong>
-                <p>Distintivo oficial para tu institución</p>
+                <strong>Plan anual disponible</strong>
+                <p>Ahorra con facturación anual en cada categoría</p>
               </div>
             </div>
           </section>
@@ -176,8 +124,8 @@ export default function InstitutionPlansScreen() {
             <div className="instSectionHead">
               <h2>Planes Institucionales</h2>
               <p>
-                Elige el plan que mejor se adapte al tamaño y necesidades de tu
-                institución.
+                Elige el plan según el tamaño de tu institución y las necesidades
+                de capacidad de tus comunidades.
               </p>
             </div>
 
@@ -187,37 +135,6 @@ export default function InstitutionPlansScreen() {
                   key={plan.id}
                   plan={plan}
                   onSelect={handleSelectPlan}
-                />
-              ))}
-            </div>
-          </section>
-
-          {/* ── Special / reduced plans ───────────────── */}
-          <section className="instPlansSection instSpecialSection">
-            <div className="instSectionHead">
-              <h2>Planes con Condiciones Especiales</h2>
-              <p>
-                Precios reducidos para centros educativos públicos y privados
-                concertados. Sujetos a validación de elegibilidad.
-              </p>
-            </div>
-
-            <div className="instEligibilityNotice">
-              <span className="instEligibilityIcon">ℹ️</span>
-              <span>
-                Estos planes requieren validación previa. Comprobaremos la
-                elegibilidad a través del dominio de email institucional o
-                documentación acreditativa antes de activar el plan.
-              </span>
-            </div>
-
-            <div className="instCardsGrid instCardsGrid--2">
-              {SPECIAL_PLANS.map((plan) => (
-                <PlanCard
-                  key={plan.id}
-                  plan={plan}
-                  onSelect={handleSelectPlan}
-                  special
                 />
               ))}
             </div>
@@ -268,8 +185,8 @@ function PlanCard({ plan, onSelect, special = false }) {
 
       <div className="instPlanCapacity">
         {plan.maxUsuarios
-          ? `Hasta ${plan.maxUsuarios} usuarios`
-          : "Usuarios ilimitados"}
+          ? `Aforo máximo ${plan.maxUsuarios}`
+          : "Aforo ilimitado"}
       </div>
 
       <ul className="instPlanFeatures">

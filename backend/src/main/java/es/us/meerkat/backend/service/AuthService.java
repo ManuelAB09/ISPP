@@ -103,8 +103,6 @@ public class AuthService {
     /** Servicio de correo electrónico */
     private final EmailService emailService;
 
-    private final GoogleClassroomService googleClassroomService;
-
     @Value("${google.classroom.client-id}")
     private String googleClientId;
 
@@ -160,7 +158,6 @@ public class AuthService {
         usuario.setEsTutor(Boolean.TRUE.equals(requestParam.getEsTutor()));
         usuario.setVisibleEnListados(true);
         usuario.setAutenticacionDosFactores(false);
-        usuario.setNotificacionesEmail(true);
         usuario.setNotificacionesPush(true);
         usuario.setIntereses(new ArrayList<>());
         usuario.setEmailVerificado(false);
@@ -515,6 +512,7 @@ public class AuthService {
         return MessageResponse.builder().message("2FA desactivado").build();
     }
 
+    @SuppressWarnings("deprecation")
     private List<String> generateBackupCodes() {
         List<String> backupCodes = new ArrayList<>();
         for (int i = 0; i < BACKUP_CODES_COUNT; i++) {
@@ -776,9 +774,6 @@ public class AuthService {
             JsonNode uiJson = objectMapper.readTree(uiResp.getBody());
             String googleId = uiJson.hasNonNull("sub") ? uiJson.get("sub").asText() : null;
             String email = uiJson.hasNonNull("email") ? uiJson.get("email").asText() : null;
-            String name = uiJson.hasNonNull("name") ? uiJson.get("name").asText() : "";
-            boolean emailVerified =
-                    uiJson.hasNonNull("email_verified") && uiJson.get("email_verified").asBoolean();
 
             if (googleId == null || email == null) {
                 return ResponseEntity.ok()
@@ -808,7 +803,7 @@ public class AuthService {
                 usuarioRepository.save(usuario);
 
                 String html =
-                        "<html><body><script>"
+                        "<html><head><meta charset=\"UTF-8\"></head><body><script>"
                                 + "window.opener.postMessage({ type: 'google-link-success' }, '*');"
                                 + "window.close();</script></body></html>";
                 return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
@@ -845,7 +840,8 @@ public class AuthService {
                     String payloadStr =
                             "{\"isTwoFactor\": true, \"tempToken\": \"" + tempToken + "\"}";
                     String html =
-                            "<html><body><script>window.opener.postMessage({ type:"
+                            "<html><head><meta charset=\"UTF-8\"></head>"
+                                    + "<body><script>window.opener.postMessage({ type:"
                                     + " 'google-auth-success', payload: "
                                     + payloadStr
                                     + " }, '*');"
@@ -858,7 +854,8 @@ public class AuthService {
                 String payloadStr = objectMapper.writeValueAsString(authRes);
 
                 String html =
-                        "<html><body><script>window.opener.postMessage({ type:"
+                        "<html><head><meta charset=\"UTF-8\"></head>"
+                                + "<body><script>window.opener.postMessage({ type:"
                                 + " 'google-auth-success', payload: "
                                 + payloadStr
                                 + " }, '*');"
@@ -880,7 +877,7 @@ public class AuthService {
 
     private String htmlPostMessageError(String err) {
         String safe = err.replace("'", "\\'");
-        return "<html><body><script>"
+        return "<html><head><meta charset=\"UTF-8\"></head><body><script>"
                 + "window.opener.postMessage({ type: 'google-auth-error', error: '"
                 + safe
                 + "' }, '*');"
@@ -1031,6 +1028,7 @@ public class AuthService {
     }
 
     /** Genera una contraseña segura aleatoría. */
+    @SuppressWarnings("deprecation")
     private String generarContrasenaSegura(final int length) {
         return RandomStringUtils.randomAlphanumeric(length).toUpperCase()
                 + RandomStringUtils.randomNumeric(2);
@@ -1166,7 +1164,6 @@ public class AuthService {
                         .visibleEnListados(usuario.getVisibleEnListados())
                         .esTutor(usuario.getEsTutor())
                         .autenticacionDosFactores(usuario.getAutenticacionDosFactores())
-                        .notificacionesEmail(usuario.getNotificacionesEmail())
                         .notificacionesPush(usuario.getNotificacionesPush())
                         .createdAt(usuario.getCreatedAt())
                         .googleLinked(usuario.getGoogleId() != null)
@@ -1211,10 +1208,6 @@ public class AuthService {
         }
         if (usuario.getAutenticacionDosFactores() == null) {
             usuario.setAutenticacionDosFactores(false);
-            changed = true;
-        }
-        if (usuario.getNotificacionesEmail() == null) {
-            usuario.setNotificacionesEmail(true);
             changed = true;
         }
         if (usuario.getNotificacionesPush() == null) {

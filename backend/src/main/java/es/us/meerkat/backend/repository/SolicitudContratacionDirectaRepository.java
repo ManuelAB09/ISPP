@@ -91,4 +91,18 @@ public interface SolicitudContratacionDirectaRepository
                     + " AND s.estado ="
                     + " es.us.meerkat.backend.entity.EstadoSolicitudContratacion.PENDIENTE")
     List<SolicitudContratacionDirecta> findExpiredPendingBookings(@Param("fecha") LocalDate fecha);
+
+    /**
+     * Obtiene contrataciones activas (ACEPTADA, PAGADA, REPROGRAMACION_PENDIENTE) de un tutor en un
+     * día concreto, para mostrar horarios ocupados.
+     */
+    @Query(
+            "SELECT s FROM SolicitudContratacionDirecta s WHERE s.tutor.id = :tutorId AND s.dia ="
+                + " :dia AND s.estado IN"
+                + " (es.us.meerkat.backend.entity.EstadoSolicitudContratacion.ACEPTADA,"
+                + " es.us.meerkat.backend.entity.EstadoSolicitudContratacion.PAGADA,"
+                + " es.us.meerkat.backend.entity.EstadoSolicitudContratacion.REPROGRAMACION_PENDIENTE)"
+                + " ORDER BY s.horaInicio ASC")
+    List<SolicitudContratacionDirecta> findActiveBookingsByTutorAndDate(
+            @Param("tutorId") Long tutorId, @Param("dia") LocalDate dia);
 }
