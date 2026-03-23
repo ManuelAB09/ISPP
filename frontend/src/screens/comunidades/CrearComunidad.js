@@ -12,6 +12,56 @@ const PLAN_LIMITS = {
     PRO: { planLabel: "Pro", maxCommunities: 25, maxMembers: 250 },
 };
 
+const INSTITUTION_PLAN_LIMITS = {
+    BASICO: { planLabel: "Academias", maxCommunities: 30, maxMembers: 500 },
+    REDUCIDO_PUBLICA: { planLabel: "Academias", maxCommunities: 30, maxMembers: 500 },
+    REDUCIDO_PRIVADA: { planLabel: "Academias", maxCommunities: 30, maxMembers: 500 },
+    ESTANDAR: { planLabel: "Colegios", maxCommunities: 100, maxMembers: 2000 },
+    PREMIUM: {
+        planLabel: "Universidades",
+        maxCommunities: Number.MAX_SAFE_INTEGER,
+        maxMembers: 10000,
+    },
+};
+
+const normalizeSubscriptionPayload = (payload) => {
+    if (!payload || typeof payload !== "object") return {};
+    if (payload.subscription && typeof payload.subscription === "object") {
+        return payload.subscription;
+    }
+    if (payload.data && typeof payload.data === "object") {
+        if (payload.data.subscription && typeof payload.data.subscription === "object") {
+            return payload.data.subscription;
+        }
+        return payload.data;
+    }
+    return payload;
+};
+
+const normalizeBoolean = (value) => {
+    if (typeof value === "boolean") return value;
+    if (typeof value === "string") return value.trim().toLowerCase() === "true";
+    if (typeof value === "number") return value === 1;
+    return false;
+};
+
+const resolveInstitutionPlanCode = (rawPlan) => {
+    const normalized = (rawPlan || "").toString().trim().toUpperCase();
+    if (!normalized) return null;
+
+    if (["BASICO", "ACADEMIA", "ACADEMIAS", "REDUCIDO_PUBLICA", "REDUCIDO_PRIVADA"].includes(normalized)) {
+        return "BASICO";
+    }
+    if (["ESTANDAR", "COLEGIO", "COLEGIOS"].includes(normalized)) {
+        return "ESTANDAR";
+    }
+    if (["PREMIUM", "UNIVERSIDAD", "UNIVERSIDADES"].includes(normalized)) {
+        return "PREMIUM";
+    }
+
+    return normalized;
+};
+
 export default function CrearComunidad() {
     const navigate = useNavigate();
     const [nombre, setNombre] = useState("");
@@ -23,15 +73,33 @@ export default function CrearComunidad() {
     const [tipoComunidad, setTipoComunidad] = useState("COMUNIDAD_PUBLICA"); // Debe ser enum del backend
     const [maxMiembros, setMaxMiembros] = useState(30);
     const [planLimits, setPlanLimits] = useState(PLAN_LIMITS.FREE);
+    const [institutionContext, setInstitutionContext] = useState({
+        hasActivePlan: false,
+        institutionId: null,
+        institutionName: null,
+        planCode: null,
+    });
+    const [createAsInstitutional, setCreateAsInstitutional] = useState(false);
     const [myCommunitiesCount, setMyCommunitiesCount] = useState(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
 
-    const maxMembersAllowed = planLimits.maxMembers;
-    const maxCommunitiesAllowed = planLimits.maxCommunities;
+    const institutionalLimits =
+        institutionContext.hasActivePlan && institutionContext.planCode
+            ? INSTITUTION_PLAN_LIMITS[institutionContext.planCode] || null
+            : null;
+    const effectiveLimits =
+        createAsInstitutional && institutionalLimits ? institutionalLimits : planLimits;
+    const maxMembersAllowed = effectiveLimits.maxMembers;
+    const maxCommunitiesAllowed = effectiveLimits.maxCommunities;
     const communitiesRemaining = Math.max(0, maxCommunitiesAllowed - myCommunitiesCount);
     const reachedCommunityLimit = myCommunitiesCount >= maxCommunitiesAllowed;
+    const isUnlimitedCommunities = maxCommunitiesAllowed >= Number.MAX_SAFE_INTEGER;
+    const currentLimitsLabel =
+        createAsInstitutional && institutionalLimits
+            ? `Institucional ${institutionalLimits.planLabel}`
+            : planLimits.planLabel;
 
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
@@ -62,6 +130,7 @@ export default function CrearComunidad() {
             descripcion: descripcion.trim(),
             tipoComunidad,
             maxMiembros,
+            createAsInstitutional,
             categorias,
             imagenPreview // store preview data URL, file cannot be stored
         };
@@ -88,6 +157,9 @@ export default function CrearComunidad() {
                 if (draft.descripcion) setDescripcion(draft.descripcion);
                 if (draft.tipoComunidad) setTipoComunidad(draft.tipoComunidad);
                 if (draft.maxMiembros) setMaxMiembros(draft.maxMiembros);
+                if (typeof draft.createAsInstitutional === 'boolean') {
+                    setCreateAsInstitutional(draft.createAsInstitutional);
+                }
                 if (Array.isArray(draft.categorias)) setCategorias(draft.categorias);
                 if (draft.imagenPreview) setImagenPreview(draft.imagenPreview);
             }
@@ -107,13 +179,37 @@ export default function CrearComunidad() {
 
         const loadLimitsAndCount = async () => {
             try {
-                const [subscription, myCommunities] = await Promise.all([
+                const [subscriptionRaw, myCommunities] = await Promise.all([
                     subscriptionsApi.getMySubscription(),
                     communitiesApi.listMine({ page: 0, size: 1 }),
                 ]);
 
+                const subscription = normalizeSubscriptionPayload(subscriptionRaw);
+
                 const limits = resolveLimits(subscription);
                 setPlanLimits(limits);
+
+                const institutionPlanCode = resolveInstitutionPlanCode(subscription?.planCorporativo);
+                const institutionPlanLimits = INSTITUTION_PLAN_LIMITS[institutionPlanCode] || null;
+                const institutionPlanIsActive = normalizeBoolean(subscription?.planCorporativoActivo);
+                const hasInstitutionSignals = Boolean(
+                    subscription?.institutionId ||
+                    subscription?.institutionNombre ||
+                    subscription?.planCorporativo
+                );
+                const hasActiveInstitutionPlan = Boolean(
+                    (institutionPlanIsActive || hasInstitutionSignals) && institutionPlanLimits
+                );
+
+                setInstitutionContext({
+                    hasActivePlan: hasActiveInstitutionPlan,
+                    institutionId: hasActiveInstitutionPlan ? subscription.institutionId : null,
+                    institutionName: subscription?.institutionNombre || null,
+                    planCode: hasActiveInstitutionPlan ? institutionPlanCode : null,
+                });
+                if (!hasActiveInstitutionPlan) {
+                    setCreateAsInstitutional(false);
+                }
 
                 const total =
                     typeof myCommunities?.page?.totalElements === "number"
@@ -131,6 +227,13 @@ export default function CrearComunidad() {
             } catch (err) {
                 console.error("Error cargando límites de plan/comunidades:", err);
                 setPlanLimits(PLAN_LIMITS.FREE);
+                setInstitutionContext({
+                    hasActivePlan: false,
+                    institutionId: null,
+                    institutionName: null,
+                    planCode: null,
+                });
+                setCreateAsInstitutional(false);
                 setMyCommunitiesCount(0);
                 setMaxMiembros((prev) => {
                     const parsed = Number(prev);
@@ -142,6 +245,14 @@ export default function CrearComunidad() {
 
         loadLimitsAndCount();
     }, []);
+
+    useEffect(() => {
+        setMaxMiembros((prev) => {
+            const parsed = Number(prev);
+            if (!Number.isFinite(parsed) || parsed < 1) return maxMembersAllowed;
+            return Math.min(parsed, maxMembersAllowed);
+        });
+    }, [maxMembersAllowed]);
 
     const handleCrearComunidad = async () => {
         // Validación básica
@@ -161,9 +272,15 @@ export default function CrearComunidad() {
         }
 
         if (reachedCommunityLimit) {
+            const maxCommunitiesText = isUnlimitedCommunities ? "ilimitadas" : maxCommunitiesAllowed;
             setError(
-                `Has alcanzado el límite de ${maxCommunitiesAllowed} comunidades para tu plan ${planLimits.planLabel}.`
+                `Has alcanzado el límite de ${maxCommunitiesText} comunidades para tu plan ${currentLimitsLabel}.`
             );
+            return;
+        }
+
+        if (createAsInstitutional && !institutionContext.institutionId) {
+            setError("No se pudo identificar tu institución activa para crear una comunidad institucional.");
             return;
         }
 
@@ -180,6 +297,9 @@ export default function CrearComunidad() {
                 imagenUrl: 'empty',
                 maxMiembros,
             };
+            if (createAsInstitutional) {
+                data.institutionId = institutionContext.institutionId;
+            }
 
             // Llamar API para crear comunidad
             const response = await communitiesApi.create(data);
@@ -317,9 +437,38 @@ export default function CrearComunidad() {
                             </label>
                         </div>
                         <div className="plan-limit-box">
-                            <p><strong>Plan actual:</strong> {planLimits.planLabel}</p>
-                            <p><strong>Comunidades creadas:</strong> {myCommunitiesCount} / {maxCommunitiesAllowed}</p>
-                            <p><strong>Comunidades restantes:</strong> {communitiesRemaining}</p>
+                            {institutionContext.hasActivePlan && (
+                                <div className="institution-toggle-box">
+                                    <label className="institution-toggle-label" htmlFor="institutional-community-toggle">
+                                        <input
+                                            id="institutional-community-toggle"
+                                            type="checkbox"
+                                            checked={createAsInstitutional}
+                                            onChange={(e) => setCreateAsInstitutional(e.target.checked)}
+                                        />
+                                        <span>Crear como comunidad institucional</span>
+                                    </label>
+                                    <p className="institution-toggle-help">
+                                        {institutionContext.institutionId
+                                            ? (institutionContext.institutionName
+                                                ? `Se asociará a ${institutionContext.institutionName}.`
+                                                : "Se asociará a tu institución activa.")
+                                            : "Tienes plan institucional activo, pero tu cuenta no está vinculada a una institución. Usa el email de contacto institucional o solicita vinculación."}
+                                    </p>
+                                </div>
+                            )}
+
+                            <p><strong>Plan aplicado:</strong> {currentLimitsLabel}</p>
+                            <p>
+                                <strong>Comunidades creadas:</strong>{' '}
+                                {isUnlimitedCommunities
+                                    ? `${myCommunitiesCount} / Ilimitadas`
+                                    : `${myCommunitiesCount} / ${maxCommunitiesAllowed}`}
+                            </p>
+                            <p>
+                                <strong>Comunidades restantes:</strong>{' '}
+                                {isUnlimitedCommunities ? 'Ilimitadas' : communitiesRemaining}
+                            </p>
                         </div>
 
                         <div className="capacity-slider-group">
@@ -339,7 +488,7 @@ export default function CrearComunidad() {
                                 <span>{maxMembersAllowed}</span>
                             </div>
                             <p className="capacity-help-text">
-                                El máximo depende de tu plan y no puede superar {maxMembersAllowed} miembros.
+                                El máximo depende del plan aplicado y no puede superar {maxMembersAllowed} miembros.
                             </p>
                         </div>
                     </div>

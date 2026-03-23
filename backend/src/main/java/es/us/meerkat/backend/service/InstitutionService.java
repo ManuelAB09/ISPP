@@ -214,6 +214,31 @@ public class InstitutionService {
         return paymentUrl;
     }
 
+    /**
+     * Persiste la configuración del plan corporativo para el flujo de PaymentIntent embebido.
+     *
+     * @param institutionId ID de la institución
+     * @param usuarioId ID del usuario administrador
+     * @param request datos del plan
+     * @return institución actualizada
+     */
+    @Transactional
+    public Institution preconfigurarPlanCorporativo(
+            Long institutionId, Long usuarioId, CorporatePlanRequest request) {
+        Institution institution = obtenerInstitucion(institutionId, usuarioId);
+
+        TipoPlanCorporativo tipoPlan = TipoPlanCorporativo.valueOf(request.getTipoPlan());
+
+        if (tipoPlan == TipoPlanCorporativo.REDUCIDO_PUBLICA
+                || tipoPlan == TipoPlanCorporativo.REDUCIDO_PRIVADA) {
+            validarEligibilidadPlanReducido(institution.getDominioEmail());
+        }
+
+        institution.setNumUsuariosPermitidos(request.getNumUsuarios());
+        institution.setPlanCorporativo(tipoPlan);
+        return institutionRepository.save(institution);
+    }
+
     // Helper para calcular monto estimado según plan y periodo
     private BigDecimal calcularMontoEstimado(TipoPlanCorporativo tipoPlan, String periodo) {
         boolean esAnual = "anual".equalsIgnoreCase(periodo);
@@ -267,17 +292,39 @@ public class InstitutionService {
     @Transactional
     public void activarPlanCorporativo(
             Long institutionId, Integer duracionMeses, String emailContacto) {
+        activarPlanCorporativo(institutionId, duracionMeses, emailContacto, null);
+    }
+
+    @Transactional
+    public void activarPlanCorporativo(
+            Long institutionId,
+            Integer duracionMeses,
+            String emailContacto,
+            TipoPlanCorporativo tipoPlanCorporativo) {
         Institution institution =
                 institutionRepository
                         .findById(institutionId)
                         .orElseThrow(
                                 () -> new IllegalArgumentException("Institución no encontrada"));
 
+        if (tipoPlanCorporativo != null) {
+            institution.setPlanCorporativo(tipoPlanCorporativo);
+        }
+
         institution.setPlanActivo(true);
         institution.setFechaInicioPlan(LocalDateTime.now());
         institution.setFechaFinPlan(LocalDateTime.now().plusMonths(duracionMeses));
 
         institutionRepository.save(institution);
+
+        // Garantiza que el admin que contrató también quede vinculado a la institución.
+        Usuario usuarioAdmin = institution.getUsuarioAdmin();
+        if (usuarioAdmin != null
+                && (usuarioAdmin.getInstitution() == null
+                        || !institution.getId().equals(usuarioAdmin.getInstitution().getId()))) {
+            usuarioAdmin.setInstitution(institution);
+            usuarioRepository.save(usuarioAdmin);
+        }
 
         // Gestionar la cuenta del email de contacto
         if (emailContacto != null && !emailContacto.isBlank()) {
@@ -293,7 +340,7 @@ public class InstitutionService {
                         .findById(institutionId)
                         .orElseThrow(
                                 () -> new IllegalArgumentException("Institución no encontrada"));
-        activarPlanCorporativo(institutionId, duracionMeses, institution.getEmailContacto());
+        activarPlanCorporativo(institutionId, duracionMeses, institution.getEmailContacto(), null);
     }
 
     /** Busca o crea un usuario por email y le asigna el plan institucional. */

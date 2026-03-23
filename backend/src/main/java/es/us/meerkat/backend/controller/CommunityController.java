@@ -183,6 +183,7 @@ public class CommunityController {
                                             request.tipoGrupo())
                                     : es.us.meerkat.backend.entity.TipoGrupo.COMUNIDAD_PUBLICA,
                         request.imagenUrl(),
+                        request.institutionId(),
                         request.maxMiembros());
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(entityToDetailResponse(comunidad, usuario.getId()));

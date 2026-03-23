@@ -1,8 +1,7 @@
 package es.us.meerkat.backend.controller;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,7 +55,7 @@ class CommunityControllerTest {
     void createCommunityShouldReturnUnauthorizedWhenUserIsNull() {
         CreateCommunityRequest request =
                 new CreateCommunityRequest(
-                        "Comunidad Java", "Descripción", "COMUNIDAD_PUBLICA", null);
+                        "Comunidad Java", "Descripción", "COMUNIDAD_PUBLICA", null, null, null);
 
         ResponseEntity<CommunityDetailResponse> response =
                 (ResponseEntity<CommunityDetailResponse>)
@@ -70,7 +69,12 @@ class CommunityControllerTest {
         Usuario usuario = buildUsuario(1L);
         CreateCommunityRequest request =
                 new CreateCommunityRequest(
-                        "Comunidad Java", "Descripción", "COMUNIDAD_PUBLICA", "img.png");
+                        "Comunidad Java",
+                        "Descripción",
+                        "COMUNIDAD_PUBLICA",
+                        "img.png",
+                        null,
+                        null);
         Comunidad comunidad =
                 buildComunidad(10L, usuario, TipoGrupo.COMUNIDAD_PUBLICA, TipoPlanComunidad.FREE);
 
@@ -79,7 +83,9 @@ class CommunityControllerTest {
                         request.nombre(),
                         request.descripcion(),
                         TipoGrupo.COMUNIDAD_PUBLICA,
-                        request.imagenUrl()))
+                        request.imagenUrl(),
+                        request.institutionId(),
+                        request.maxMiembros()))
                 .thenReturn(comunidad);
         when(communityService.countMembers(comunidad.getId())).thenReturn(1L);
         when(authorizationService.getUserRoleInCommunityAsString(
@@ -101,14 +107,16 @@ class CommunityControllerTest {
         Usuario usuario = buildUsuario(1L);
         CreateCommunityRequest request =
                 new CreateCommunityRequest(
-                        "Comunidad Java", "Descripción", "COMUNIDAD_PUBLICA", null);
+                        "Comunidad Java", "Descripción", "COMUNIDAD_PUBLICA", null, null, null);
 
         when(communityService.createCommunity(
                         usuario.getId(),
                         request.nombre(),
                         request.descripcion(),
                         TipoGrupo.COMUNIDAD_PUBLICA,
-                        request.imagenUrl()))
+                        request.imagenUrl(),
+                        request.institutionId(),
+                        request.maxMiembros()))
                 .thenThrow(new IllegalArgumentException("límite alcanzado"));
 
         ResponseEntity<?> response = communityController.createCommunity(request, usuario);

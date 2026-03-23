@@ -288,6 +288,38 @@
     font-family: 'inter', sans-serif;
 }
 
+.institution-toggle-box {
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--alabasterGray);
+}
+
+.institution-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    cursor: pointer;
+}
+
+.institution-toggle-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--spaceIndigo);
+}
+
+.institution-toggle-label span {
+    font-family: 'inter', sans-serif;
+    font-weight: 600;
+    color: var(--spaceIndigo);
+}
+
+.institution-toggle-help {
+    margin: 0;
+    color: #5f637a;
+    font-size: 0.82rem;
+}
+
 .capacity-slider-group {
     margin-top: 18px;
 }

@@ -1,10 +1,8 @@
 package es.us.meerkat.backend.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 import java.util.Optional;
 
@@ -49,8 +47,7 @@ class CommunityServiceTest {
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
         when(suscripcionService.obtenerMiSuscripcion(userId))
                 .thenReturn(Optional.of(Suscripcion.builder().plan(TipoPlan.FREE).build()));
-        when(comunidadRepository.countByCreadorIdAndTipoPlan(userId, TipoPlanComunidad.FREE))
-                .thenReturn(0L);
+        when(comunidadRepository.countByCreadorIdAndInstitutionIsNull(userId)).thenReturn(0L);
         when(comunidadRepository.save(any(Comunidad.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -68,7 +65,7 @@ class CommunityServiceTest {
 
         assertThat(saved.getNombre()).isEqualTo("Comunidad de estudio");
         assertThat(saved.getTipoPlan()).isEqualTo(TipoPlanComunidad.FREE);
-        assertThat(saved.getMaxMiembros()).isEqualTo(50);
+        assertThat(saved.getMaxMiembros()).isEqualTo(30);
         assertThat(saved.getCreador()).isEqualTo(usuario);
 
         ArgumentCaptor<MiembroComunidad> memberCaptor =
@@ -86,8 +83,7 @@ class CommunityServiceTest {
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(buildUsuario(userId)));
         when(suscripcionService.obtenerMiSuscripcion(userId))
                 .thenReturn(Optional.of(Suscripcion.builder().plan(TipoPlan.FREE).build()));
-        when(comunidadRepository.countByCreadorIdAndTipoPlan(userId, TipoPlanComunidad.FREE))
-                .thenReturn(3L);
+        when(comunidadRepository.countByCreadorIdAndInstitutionIsNull(userId)).thenReturn(3L);
 
         assertThatThrownBy(
                         () ->
@@ -98,7 +94,7 @@ class CommunityServiceTest {
                                         TipoGrupo.COMUNIDAD_PUBLICA,
                                         null))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("límite de 3 comunidades gratuitas");
+                .hasMessageContaining("límite de 3 comunidades");
     }
 
     @Test
@@ -139,7 +135,7 @@ class CommunityServiceTest {
         Comunidad updated = communityService.upgradeToPremium(1L, 10L);
 
         assertThat(updated.getTipoPlan()).isEqualTo(TipoPlanComunidad.PREMIUM);
-        assertThat(updated.getMaxMiembros()).isEqualTo(200);
+        assertThat(updated.getMaxMiembros()).isEqualTo(75);
         verify(comunidadRepository).save(comunidad);
     }
 

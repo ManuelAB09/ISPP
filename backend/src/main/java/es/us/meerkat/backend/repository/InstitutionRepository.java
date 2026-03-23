@@ -31,6 +31,14 @@ public interface InstitutionRepository extends JpaRepository<Institution, Long> 
      */
     Optional<Institution> findByVerificada(Boolean verificada);
 
+    Optional<Institution> findFirstByUsuarioAdminIdOrderByCreatedAtDesc(Long usuarioAdminId);
+
+        Optional<Institution> findFirstByUsuarioAdminIdAndPlanActivoTrueOrderByFechaFinPlanDesc(
+            Long usuarioAdminId);
+
+        Optional<Institution> findFirstByEmailContactoIgnoreCaseAndPlanActivoTrueOrderByFechaFinPlanDesc(
+            String emailContacto);
+
     /** Elimina instituciones cuyo administrador sea el usuario indicado. */
     void deleteByUsuarioAdminId(Long usuarioId);
 

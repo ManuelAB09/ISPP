@@ -284,10 +284,20 @@ public class PaymentController {
                         Long institucionId = Long.parseLong(institucionIdStr);
                         String duracionStr = session.getMetadata().get("duracionMeses");
                         String emailContacto = session.getMetadata().get("emailContacto");
+                        String tipoPlanCorporativoStr =
+                                session.getMetadata().get("tipoPlanCorporativo");
                         Integer duracionMeses =
                                 duracionStr != null ? Integer.parseInt(duracionStr) : 12;
+                        es.us.meerkat.backend.entity.TipoPlanCorporativo tipoPlanCorporativo =
+                                tipoPlanCorporativoStr != null
+                                        ? es.us.meerkat.backend.entity.TipoPlanCorporativo.valueOf(
+                                                tipoPlanCorporativoStr)
+                                        : null;
                         institutionService.activarPlanCorporativo(
-                                institucionId, duracionMeses, emailContacto);
+                                institucionId,
+                                duracionMeses,
+                                emailContacto,
+                                tipoPlanCorporativo);
                     }
                     // Registrar transacción
                     paymentService.procesarPagoExitoso(

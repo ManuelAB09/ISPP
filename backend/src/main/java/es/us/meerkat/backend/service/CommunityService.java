@@ -1,6 +1,7 @@
 package es.us.meerkat.backend.service;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -21,12 +22,14 @@ import es.us.meerkat.backend.dto.UserSimpleResponse;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.EstadoComunidad;
 import es.us.meerkat.backend.entity.Evento;
+import es.us.meerkat.backend.entity.Institution;
 import es.us.meerkat.backend.entity.MiembroComunidad;
 import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.Suscripcion;
 import es.us.meerkat.backend.entity.TipoGrupo;
 import es.us.meerkat.backend.entity.TipoPlan;
 import es.us.meerkat.backend.entity.TipoPlanComunidad;
+import es.us.meerkat.backend.entity.TipoPlanCorporativo;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.EventoRepository;
@@ -56,6 +59,12 @@ public class CommunityService {
     private static final int FREE_MAX_MEMBERS = 30;
     private static final int PREMIUM_MAX_MEMBERS = 75;
     private static final int PRO_MAX_MEMBERS = 250;
+    private static final int INST_ACADEMY_MAX_COMMUNITIES = 30;
+    private static final int INST_SCHOOL_MAX_COMMUNITIES = 100;
+    private static final int INST_UNIVERSITY_MAX_COMMUNITIES = Integer.MAX_VALUE;
+    private static final int INST_ACADEMY_MAX_MEMBERS = 500;
+    private static final int INST_SCHOOL_MAX_MEMBERS = 2000;
+    private static final int INST_UNIVERSITY_MAX_MEMBERS = 10000;
 
     /** Crea una nueva comunidad verificando límites de plan. */
     public Comunidad createCommunity(
@@ -73,16 +82,49 @@ public class CommunityService {
                         .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
         // Si es una comunidad institucional, no aplicar límites de FREE
-        es.us.meerkat.backend.entity.Institution institution = null;
+        Institution institution = null;
         TipoPlanComunidad tipoPlan = TipoPlanComunidad.FREE;
         Integer maxMiembros;
 
         if (institutionId != null) {
             institution = obtenerInstitucion(institutionId);
+            validarUsuarioPerteneceAInstitucion(usuario, institution);
+            validarPlanInstitucionalActivo(institution);
 
-            // Comunidades institucionales obtienen plan UNLIMITED
+            InstitutionPlanLimits institutionPlanLimits = obtenerLimitesPlanInstitucional(institution);
+            long totalInstitutionalCommunities = comunidadRepository.countByInstitutionId(institutionId);
+
+            if (institutionPlanLimits.maxCommunities() != Integer.MAX_VALUE
+                    && totalInstitutionalCommunities >= institutionPlanLimits.maxCommunities()) {
+                throw new IllegalArgumentException(
+                        "La institución ha alcanzado el límite de "
+                                + institutionPlanLimits.maxCommunities()
+                                + " comunidades para el plan "
+                                + institution.getPlanCorporativo().name()
+                                + ".");
+            }
+
+            if (maxMiembrosSolicitado != null) {
+                if (maxMiembrosSolicitado < 1) {
+                    throw new IllegalArgumentException(
+                            "El máximo de miembros debe ser mayor que 0.");
+                }
+                if (maxMiembrosSolicitado > institutionPlanLimits.maxMembers()) {
+                    throw new IllegalArgumentException(
+                            "El máximo de miembros para el plan institucional "
+                                    + institution.getPlanCorporativo().name()
+                                    + " es "
+                                    + institutionPlanLimits.maxMembers()
+                                    + ".");
+                }
+            }
+
+            // Se usa UNLIMITED para distinguir comunidades institucionales.
             tipoPlan = TipoPlanComunidad.UNLIMITED;
-            maxMiembros = maxMiembrosSolicitado; // Sin límites de suscripción individual
+            maxMiembros =
+                    maxMiembrosSolicitado != null
+                            ? maxMiembrosSolicitado
+                            : institutionPlanLimits.maxMembers();
         } else {
             Optional<Suscripcion> suscripcionOpt = suscripcionService.obtenerMiSuscripcion(userId);
             TipoPlan userPlan = suscripcionOpt.map(Suscripcion::getPlan).orElse(TipoPlan.FREE);
@@ -188,11 +230,59 @@ public class CommunityService {
     }
 
     /** Obtiene la institución del repositorio. */
-    private es.us.meerkat.backend.entity.Institution obtenerInstitucion(Long institutionId) {
+    private Institution obtenerInstitucion(Long institutionId) {
         return institutionRepository
                 .findById(institutionId)
                 .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada"));
     }
+
+    private void validarUsuarioPerteneceAInstitucion(Usuario usuario, Institution institution) {
+        boolean isLinkedMember =
+            usuario.getInstitution() != null
+                && institution.getId().equals(usuario.getInstitution().getId());
+        boolean isInstitutionAdmin =
+            institution.getUsuarioAdmin() != null
+                && institution.getUsuarioAdmin().getId().equals(usuario.getId());
+
+        if (!isLinkedMember && !isInstitutionAdmin) {
+            throw new IllegalArgumentException(
+                "No perteneces ni administras la institución seleccionada para crear esta"
+                    + " comunidad.");
+        }
+    }
+
+    private void validarPlanInstitucionalActivo(Institution institution) {
+        boolean planActivo =
+                Boolean.TRUE.equals(institution.getPlanActivo())
+                        && (institution.getFechaFinPlan() == null
+                                || institution.getFechaFinPlan().isAfter(LocalDateTime.now()));
+        if (!planActivo || institution.getPlanCorporativo() == null) {
+            throw new IllegalArgumentException(
+                    "La institución no tiene un plan corporativo activo para crear comunidades"
+                            + " institucionales.");
+        }
+    }
+
+    private InstitutionPlanLimits obtenerLimitesPlanInstitucional(Institution institution) {
+        TipoPlanCorporativo tipoPlan = institution.getPlanCorporativo();
+        if (tipoPlan == null) {
+            throw new IllegalArgumentException("La institución no tiene plan corporativo asignado.");
+        }
+
+        return switch (tipoPlan) {
+            case BASICO, REDUCIDO_PUBLICA, REDUCIDO_PRIVADA ->
+                    new InstitutionPlanLimits(
+                            INST_ACADEMY_MAX_COMMUNITIES, INST_ACADEMY_MAX_MEMBERS);
+            case ESTANDAR ->
+                    new InstitutionPlanLimits(
+                            INST_SCHOOL_MAX_COMMUNITIES, INST_SCHOOL_MAX_MEMBERS);
+            case PREMIUM ->
+                    new InstitutionPlanLimits(
+                            INST_UNIVERSITY_MAX_COMMUNITIES, INST_UNIVERSITY_MAX_MEMBERS);
+        };
+    }
+
+    private record InstitutionPlanLimits(int maxCommunities, int maxMembers) {}
 
     /** Obtiene una comunidad por ID. Comunidades privadas solo son visibles para miembros. */
     @Transactional(readOnly = true)

@@ -22,6 +22,8 @@ public interface ComunidadRepository extends JpaRepository<Comunidad, Long> {
 
         long countByCreadorIdAndInstitutionIsNull(Long userId);
 
+        long countByInstitutionId(Long institutionId);
+
     List<Comunidad> findByCreadorId(Long userId);
 
     Page<Comunidad> findByTipoGrupoAndNombreContainingIgnoreCaseAndEstado(
