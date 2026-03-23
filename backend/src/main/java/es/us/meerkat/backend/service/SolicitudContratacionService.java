@@ -526,8 +526,8 @@ public class SolicitudContratacionService {
         LocalTime horaInicioAnterior = solicitud.getHoraInicio();
         LocalTime horaFinAnterior = solicitud.getHoraFin();
 
-        // En lugar de sobreescribir la fecha y hora original directamente, guardamos 
-        // la propuesta en los campos de reprogramación y pasamos al estado pendiente para 
+        // En lugar de sobreescribir la fecha y hora original directamente, guardamos
+        // la propuesta en los campos de reprogramación y pasamos al estado pendiente para
         // que el alumno lo acepte explícitamente.
         solicitud.setEstadoAnterior(solicitud.getEstado());
         solicitud.setEstado(EstadoSolicitudContratacion.REPROGRAMACION_PENDIENTE);
