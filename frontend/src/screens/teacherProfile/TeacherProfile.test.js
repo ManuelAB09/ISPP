@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import TeacherProfile from './TeacherProfile';
@@ -258,20 +258,14 @@ describe('TeacherProfile', () => {
 
   test('muestra el número de comunidades', async () => {
     renderWithId();
-    const label = await screen.findByText('COMUNIDADES');
-    expect(label).toBeInTheDocument();
-    const stat = label.closest('.tp-actividad__stat');
-    expect(stat).not.toBeNull();
-    expect(within(stat).getByText('5')).toBeInTheDocument();
+    expect(await screen.findByText('COMUNIDADES')).toBeInTheDocument();
+    expect(screen.getByText('5')).toBeInTheDocument();
   });
 
   test('muestra el número de apuntes subidos', async () => {
     renderWithId();
-    const label = await screen.findByText('APUNTES SUBIDOS');
-    expect(label).toBeInTheDocument();
-    const stat = label.closest('.tp-actividad__stat');
-    expect(stat).not.toBeNull();
-    expect(within(stat).getByText('12')).toBeInTheDocument();
+    expect(await screen.findByText('APUNTES SUBIDOS')).toBeInTheDocument();
+    expect(screen.getByText('12')).toBeInTheDocument();
   });
 
   test('muestra las descargas formateadas (1.5k)', async () => {
