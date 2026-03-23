@@ -325,7 +325,7 @@ export default function CrearComunidad() {
                 nombre: nombre.trim(),
                 descripcion: descripcion.trim(),
                 tipoGrupo: tipoComunidad,
-                imagenUrl: imagenPortada ? undefined : null,
+                imagenUrl: null,
                 maxMiembros,
                 rolInicial,
             };

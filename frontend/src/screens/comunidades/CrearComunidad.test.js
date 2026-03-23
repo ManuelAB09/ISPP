@@ -196,7 +196,7 @@ describe('CrearComunidad', () => {
         nombre: 'Mi Nueva Comunidad',
         descripcion: 'Una descripción de prueba',
         tipoGrupo: 'COMUNIDAD_PUBLICA',
-        imagenUrl: 'empty',
+        imagenUrl: null,
         maxMiembros: 30,
         rolInicial: 'ALUMNO',
       });
