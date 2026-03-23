@@ -14,6 +14,7 @@ public record CommunityDetailResponse(
         String estado,
         Boolean esMiembro,
         String miRol,
+        String miRolDocente,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         String imagenUrl,
