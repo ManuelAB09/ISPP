@@ -85,7 +85,7 @@ export default function CrearComunidad() {
     });
     const [createAsInstitutional, setCreateAsInstitutional] = useState(false);
     const [myCommunitiesCount, setMyCommunitiesCount] = useState(0);
-    const [rolInicial, setRolInicial] = useState("PROFESOR");
+    const [rolInicial, setRolInicial] = useState("ALUMNO");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
@@ -290,9 +290,8 @@ export default function CrearComunidad() {
             return;
         }
 
-        setLoading(true);
         // Si el usuario elige rol PROFESOR, verificar que tenga el perfil de tutor configurado
-        if (hasTeacherProfile && rolInicial === 'PROFESOR') {
+        if (rolInicial === 'PROFESOR') {
             try {
                 const perfilTutor = await getMyTutorProfiles();
                 const perfilCompleto = perfilTutor &&
@@ -328,7 +327,7 @@ export default function CrearComunidad() {
                 tipoGrupo: tipoComunidad,
                 imagenUrl: 'empty',
                 maxMiembros,
-                ...(hasTeacherProfile && { rolInicial })
+                rolInicial,
             };
             if (createAsInstitutional) {
                 data.institutionId = institutionContext.institutionId;
@@ -526,13 +525,17 @@ export default function CrearComunidad() {
                         </div>
                     </div>
                </div>
-               {hasTeacherProfile && (
                <div className="third-section">
                     <h3>Tu rol en la comunidad</h3>
                     <div className="config-group">
                         <p style={{ fontSize: '14px', color: '#444', marginTop: 0, lineHeight: 1.5 }}>
-                            Como creador serás administrador de la comunidad. Al tener perfil de tutor, puedes elegir tu identidad:
+                            Como creador serás administrador de la comunidad. Puedes elegir si tu rol docente será profesor o alumno.
                         </p>
+                        {!hasTeacherProfile && (
+                            <p style={{ fontSize: '13px', color: '#8a6d3b', marginTop: '0px', marginBottom: '10px' }}>
+                                Puedes seleccionar Profesor, pero necesitarás tener tu perfil de tutor configurado para crear la comunidad con ese rol.
+                            </p>
+                        )}
                         <div className="radio-group">
                             <label className="radio-label">
                                 <input
@@ -555,7 +558,6 @@ export default function CrearComunidad() {
                         </div>
                     </div>
                </div>
-               )}
                <div className="third-section">
                     <h3>Comunidades corporativas</h3>
                     <div className="config-group">
