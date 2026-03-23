@@ -18,12 +18,13 @@ spring:
     show-sql: true
 
 # ── CONFIGURACIÓN EMAIL ──
+
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${EMAIL:meerkattersauth@gmail.com}
-    password: ${PASSWORD_EMAIL:changeme}
-    from: meerkattersauth@gmail.com
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:${EMAIL:meerkattersauth@gmail.com}}
+    password: ${MAIL_PASSWORD:${PASSWORD_EMAIL:changeme}}
+    from: ${MAIL_FROM:meerkattersauth@gmail.com}
     properties:
       mail:
         smtp:
