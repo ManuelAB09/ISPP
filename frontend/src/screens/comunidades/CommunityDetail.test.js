@@ -169,7 +169,8 @@ describe('CommunityDetail', () => {
 
     await renderComponent();
 
-    const openMembersButton = await screen.findByRole('button', { name: /Ver listado de miembros/i });
+    await screen.findByRole('heading', { name: /Comunidad de Matemáticas/i });
+    const openMembersButton = await screen.findByRole('button', { name: /listado de miembros/i });
     fireEvent.click(openMembersButton);
 
     await waitFor(() => {
