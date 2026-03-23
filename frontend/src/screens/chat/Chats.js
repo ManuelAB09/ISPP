@@ -88,6 +88,7 @@ export default function Chats() {
     const hasSidebar = sidebarConversations.length > 0;
     const communityIdFromQuery = Number(searchParams.get('communityId'));
     const privateUserIdFromQuery = Number(searchParams.get('userId'));
+    const autoStartQuery = searchParams.get('autoStart') === 'true';
 
     const currentUser = {
         id: Number(localStorage.getItem('userId')),
@@ -131,7 +132,7 @@ export default function Chats() {
 
                 if (privateUserIdFromQuery) {
                     try {
-                        const { data: profile } = await authApi.getUserPublicProfile(privateUserIdFromQuery);
+                        const profile = await authApi.getUserPublicProfile(privateUserIdFromQuery);
                         const targetObj = {
                             id: profile.id,
                             nombre: profile.nombre || `Usuario ${privateUserIdFromQuery}`,
@@ -516,6 +517,7 @@ export default function Chats() {
                                             tutorNombre={privateTarget.nombre}
                                             usuarioActual={currentUser}
                                             onClose={() => setPrivateTarget(null)}
+                                            autoStart={autoStartQuery}
                                         />
                                     ) : (
                                         <div className="chats-main-empty">

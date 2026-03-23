@@ -458,7 +458,7 @@ const VerifiedTeachers = () => {
                         <button
                           className="vt-btn vt-btn--primary"
                           onClick={() => {
-                            navigate(`/chats?userId=${targetUserId}`);
+                            navigate(`/chats?userId=${targetUserId}&autoStart=true`);
                           }}
                         >
                           Contactar

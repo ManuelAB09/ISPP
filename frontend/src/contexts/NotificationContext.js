@@ -111,6 +111,9 @@ export const NotificationProvider = ({ children }) => {
         const handleDM = (msg) => {
             if (isInChatRouteRef.current || !msg) return;
 
+            // Bloquear notificación push para el mensaje automático de inicio de chat
+            if (msg.contenido === "¡Hola! Me gustaría contactar contigo.") return;
+
             const key = `user-${msg.emisorId}`;
             const known = knownConversationsRef.current;
             const prev = known.get(key);

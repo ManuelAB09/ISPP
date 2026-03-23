@@ -526,17 +526,15 @@ public class SolicitudContratacionService {
         LocalTime horaInicioAnterior = solicitud.getHoraInicio();
         LocalTime horaFinAnterior = solicitud.getHoraFin();
 
-        // Recalcular importe
-        long minutos = Duration.between(nuevaHoraInicio, nuevaHoraFin).toMinutes();
-        BigDecimal horas =
-                BigDecimal.valueOf(minutos).divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
-        BigDecimal importeTotal =
-                solicitud.getTarifaHora().multiply(horas).setScale(2, RoundingMode.HALF_UP);
+        // En lugar de sobreescribir la fecha y hora original directamente, guardamos 
+        // la propuesta en los campos de reprogramación y pasamos al estado pendiente para 
+        // que el alumno lo acepte explícitamente.
+        solicitud.setEstadoAnterior(solicitud.getEstado());
+        solicitud.setEstado(EstadoSolicitudContratacion.REPROGRAMACION_PENDIENTE);
+        solicitud.setReprogramacionDia(nuevoDia);
+        solicitud.setReprogramacionHoraInicio(nuevaHoraInicio);
+        solicitud.setReprogramacionHoraFin(nuevaHoraFin);
 
-        solicitud.setDia(nuevoDia);
-        solicitud.setHoraInicio(nuevaHoraInicio);
-        solicitud.setHoraFin(nuevaHoraFin);
-        solicitud.setImporteTotal(importeTotal);
         solicitudRepository.save(solicitud);
 
         SolicitudContratacionResponse response = mapToResponse(solicitud);

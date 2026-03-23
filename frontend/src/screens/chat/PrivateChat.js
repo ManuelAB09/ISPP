@@ -20,11 +20,12 @@ import './PrivateChat.css';
  * @param {string} props.tutorNombre - Nombre del usuario destino.
  * @param {object} props.usuarioActual - Información del usuario autenticado.
  */
-const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
+const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose, autoStart }) => {
     const { socket, isConnected } = useSocketContext();
     const [mensajes, setMensajes] = useState([]);
     const [contenido, setContenido] = useState('');
-    const [cargandoHistorial, setCargandoHistorial] = useState(false);
+    const [cargandoHistorial, setCargandoHistorial] = useState(true);
+    const [historialCargadoPara, setHistorialCargadoPara] = useState(null);
     const [enviando, setEnviando] = useState(false);
     const [procesandoId, setProcesandoId] = useState(null);
     const [error, setError] = useState(null);
@@ -71,6 +72,7 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
                 console.error(err);
             } finally {
                 setCargandoHistorial(false);
+                setHistorialCargadoPara(tutorId);
             }
         };
 
@@ -349,6 +351,36 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose }) => {
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
+
+    /**
+     * Envía mensaje automático si el chat es nuevo y autoStart está activo.
+     */
+    useEffect(() => {
+        if (autoStart && !cargandoHistorial && historialCargadoPara === tutorId && mensajes.length === 0 && tutorId) {
+            // Eliminar autoStart de la URL para evitar reenvíos al refrescar
+            const url = new URL(window.location);
+            if (url.searchParams.has('autoStart')) {
+                url.searchParams.delete('autoStart');
+                window.history.replaceState({}, '', url);
+            }
+
+            enviarMensajePrivado(tutorId, "¡Hola! Me gustaría contactar contigo.")
+                .then(response => {
+                    const data = response.data;
+                    if (data) {
+                        const msg = {
+                            ...data,
+                            emisorId: Number(data.emisorId),
+                            receptorId: Number(data.receptorId),
+                        };
+                        setMensajes([msg]);
+                        scrollToBottom();
+                    }
+                })
+                .catch(err => console.error("Error enviando mensaje autoStart", err));
+        }
+        // eslint-disable-next-line
+    }, [autoStart, cargandoHistorial, historialCargadoPara, mensajes.length, tutorId]);
 
     /**
      * Envía un mensaje privado.

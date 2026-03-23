@@ -340,6 +340,7 @@ const TeacherProfile = () => {
                     const params = new URLSearchParams({
                       userId: String(targetUserId),
                       userName: nombre,
+                      autoStart: 'true'
                     });
                     if (tutor.usuario?.foto) {
                       params.set('userPhoto', toAbsoluteImageUrl(tutor.usuario.foto));
