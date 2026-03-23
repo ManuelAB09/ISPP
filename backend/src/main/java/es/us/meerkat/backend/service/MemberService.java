@@ -266,21 +266,28 @@ public class MemberService {
     /**
      * Añade un administrador adicional a la comunidad (solo si la comunidad es corporativa).
      * Requiere que el solicitante sea ADMIN de la comunidad y que el objetivo sea miembro.
-     *
-     * @param userId ID del usuario que realiza la acción
-     * @param communityId ID de la comunidad
-     * @param targetUserId ID del usuario a promover a ADMIN
-     * @return la entidad MiembroComunidad actualizada
      */
     public MiembroComunidad addAdmin(Long userId, Long communityId, Long targetUserId) {
         if (!authorizationService.isAdminOf(userId, communityId)) {
             throw new IllegalArgumentException("Solo admins pueden agregar nuevos administradores");
         }
 
-        // Solo permitido para comunidades corporativas/institucionales
         if (!communityService.isCommunityCorporate(communityId)) {
             throw new IllegalArgumentException(
                     "Solo se pueden añadir administradores en comunidades corporativas");
+        }
+
+        return promoteToAdmin(userId, communityId, targetUserId);
+    }
+
+    /** Asciende a ADMIN a un miembro existente (solo ADMIN actual). */
+    public MiembroComunidad promoteToAdmin(Long userId, Long communityId, Long targetUserId) {
+        if (!authorizationService.isAdminOf(userId, communityId)) {
+            throw new IllegalArgumentException("Solo admins pueden promover miembros a admin");
+        }
+
+        if (userId.equals(targetUserId)) {
+            throw new IllegalArgumentException("No puedes auto-promocionarte");
         }
 
         MiembroComunidad targetMiembro =
@@ -289,21 +296,19 @@ public class MemberService {
                         .orElseThrow(
                                 () ->
                                         new IllegalArgumentException(
-                                                "El usuario debe ser miembro de la comunidad"));
+                                                "El usuario no es miembro de esta comunidad"));
 
         if (targetMiembro.getRol() == RolComunidad.ADMIN) {
-            throw new IllegalArgumentException("El usuario ya es administrador");
+            throw new IllegalArgumentException("El usuario ya es admin de la comunidad");
         }
 
-        // Preservar rol docente original al promover a ADMIN
         RolComunidad rolPrevio = targetMiembro.getRol();
         targetMiembro.setRol(RolComunidad.ADMIN);
         if (rolPrevio == RolComunidad.PROFESOR && targetMiembro.getRolDocente() == null) {
             targetMiembro.setRolDocente(RolComunidad.PROFESOR);
         }
-        MiembroComunidad saved = miembroComunidadRepository.save(targetMiembro);
 
-        return saved;
+        return miembroComunidadRepository.save(targetMiembro);
     }
 
     /** Cuenta los ADMINs de una comunidad específica. */

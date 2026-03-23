@@ -140,6 +140,10 @@ const DetalleEvento = () => {
   const [participantsOpen, setParticipantsOpen] = useState(false);
   const activeMeetingRequestInFlightRef = useRef(false);
 
+  const [recordingsOpen, setRecordingsOpen] = useState(false);
+  const [recordings, setRecordings] = useState([]);
+  const [recordingsLoading, setRecordingsLoading] = useState(false);
+
   // Classroom Task State
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [classroomTasks, setClassroomTasks] = useState([]);
@@ -451,6 +455,39 @@ const DetalleEvento = () => {
     } catch (err) {
       setZoomParticipants([]);
       setParticipantsOpen(true);
+    }
+  };
+
+  const handleToggleRecordings = async () => {
+    if (recordingsOpen) {
+      setRecordingsOpen(false);
+      return;
+    }
+    setRecordingsOpen(true);
+    setRecordingsLoading(true);
+    try {
+      const data = await ZoomApi.listRecordings(event.comunidadId);
+      let list = Array.isArray(data) ? data : (data?.recordings || data?.content || data?.items || []);
+      setRecordings(list);
+    } catch(err) {
+      setRecordings([]);
+    } finally {
+      setRecordingsLoading(false);
+    }
+  };
+
+  const handleDownloadRecording = async (recId) => {
+    try {
+      const { blob, fileName } = await ZoomApi.downloadRecording(event.comunidadId, recId);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch(err) {
+      alert('Error descargando la grabación');
     }
   };
 
@@ -899,6 +936,51 @@ const DetalleEvento = () => {
                           )}
                         </div>
                       )}
+
+                      {/* === SECCIÓN DE GRABACIONES === */}
+                      <div style={{ marginTop: 16 }}>
+                        <button
+                          onClick={handleToggleRecordings}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            padding: '8px 16px', background: '#9c27b0', color: '#fff',
+                            border: 'none', borderRadius: 6, cursor: 'pointer',
+                            fontWeight: 600, fontSize: '0.9rem', marginBottom: '8px'
+                          }}
+                        >
+                          <LuVideo size={16} /> {recordingsOpen ? 'Ocultar Grabaciones' : 'Ver Grabaciones en la Comunidad'}
+                        </button>
+                        {recordingsOpen && (
+                          <div style={{ padding: '12px', background: '#fafafa', borderRadius: 8, border: '1px solid #e0e0e0', marginTop: '8px' }}>
+                            <p style={{ fontWeight: 600, fontSize: '0.9rem', margin: '0 0 10px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              Grabaciones Disponibles
+                            </p>
+                            {recordingsLoading ? (
+                              <p style={{ fontSize: '0.85rem', color: '#666' }}>Cargando grabaciones...</p>
+                            ) : recordings.length > 0 ? (
+                              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {recordings.map(rec => (
+                                  <li key={rec.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', background: '#fff', border: '1px solid #f0f0f0', borderRadius: '4px' }}>
+                                    <div>
+                                      <strong style={{ fontSize: '0.85rem', display: 'block' }}>{rec.topic}</strong>
+                                      <span style={{ fontSize: '0.8rem', color: '#888' }}>{new Date(rec.startTime).toLocaleString()} • {rec.duration} min</span>
+                                    </div>
+                                    <button 
+                                      onClick={() => handleDownloadRecording(rec.id)} 
+                                      style={{ padding: '4px 12px', fontSize: '0.8rem', cursor: 'pointer', background: '#e6f4ff', color: '#1890ff', border: '1px solid #91caff', borderRadius: '4px' }}
+                                    >
+                                      Descargar
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p style={{ fontSize: '0.85rem', color: '#999', margin: 0 }}>No hay grabaciones disponibles.</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
                     </div>
                   </div>
                 ) : (

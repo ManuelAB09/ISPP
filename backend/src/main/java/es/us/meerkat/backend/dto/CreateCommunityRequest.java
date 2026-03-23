@@ -1,6 +1,7 @@
 package es.us.meerkat.backend.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 public record CreateCommunityRequest(
@@ -11,4 +12,6 @@ public record CreateCommunityRequest(
                 String descripcion,
         @NotBlank(message = "El tipo de grupo es requerido") String tipoGrupo,
         String imagenUrl,
+        @Positive(message = "El máximo de miembros debe ser mayor que 0") Integer maxMiembros,
+        @Positive(message = "La institución debe ser válida") Long institutionId,
         String rolInicial) {}

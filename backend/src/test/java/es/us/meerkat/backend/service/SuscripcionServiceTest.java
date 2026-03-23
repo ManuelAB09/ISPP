@@ -1,12 +1,9 @@
 package es.us.meerkat.backend.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -25,6 +22,7 @@ import es.us.meerkat.backend.entity.Suscripcion;
 import es.us.meerkat.backend.entity.TipoPlan;
 import es.us.meerkat.backend.entity.TipoTransaccion;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.InstitutionRepository;
 import es.us.meerkat.backend.repository.SuscripcionRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 
@@ -40,6 +38,7 @@ class SuscripcionServiceTest {
 
     @Mock private SuscripcionRepository suscripcionRepository;
     @Mock private UsuarioRepository usuarioRepository;
+    @Mock private InstitutionRepository institutionRepository;
     @Mock private PaymentService paymentService;
 
     @InjectMocks private SuscripcionService suscripcionService;
@@ -71,9 +70,10 @@ class SuscripcionServiceTest {
         TipoPlan[] planes = suscripcionService.obtenerPlanesDisponibles();
 
         assertNotNull(planes);
-        assertEquals(2, planes.length);
+        assertEquals(3, planes.length);
         assertTrue(contains(planes, TipoPlan.FREE));
         assertTrue(contains(planes, TipoPlan.PREMIUM));
+        assertTrue(contains(planes, TipoPlan.PRO));
     }
 
     @Test
@@ -432,9 +432,11 @@ class SuscripcionServiceTest {
     @Test
     void renovarSuscripcionTrasStripeShouldRenewSuscripcion() {
         Long usuarioId = 1L;
+        Usuario usuario = buildUsuario(usuarioId);
         Suscripcion suscripcion = buildSuscripcion(1L, usuarioId, true);
         BigDecimal monto = new BigDecimal("9.99");
 
+        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
         when(suscripcionRepository.findByUsuarioId(usuarioId)).thenReturn(Optional.of(suscripcion));
         when(suscripcionRepository.save(any(Suscripcion.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -447,9 +449,11 @@ class SuscripcionServiceTest {
     @Test
     void renovarSuscripcionTrasStripeShouldRecordPaymentTransaction() {
         Long usuarioId = 1L;
+        Usuario usuario = buildUsuario(usuarioId);
         Suscripcion suscripcion = buildSuscripcion(1L, usuarioId, true);
         BigDecimal monto = new BigDecimal("9.99");
 
+        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
         when(suscripcionRepository.findByUsuarioId(usuarioId)).thenReturn(Optional.of(suscripcion));
         when(suscripcionRepository.save(any(Suscripcion.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));

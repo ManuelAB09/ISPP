@@ -1,11 +1,11 @@
 package es.us.meerkat.backend.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -25,9 +25,11 @@ import es.us.meerkat.backend.entity.Suscripcion;
 import es.us.meerkat.backend.entity.TipoGrupo;
 import es.us.meerkat.backend.entity.TipoPlan;
 import es.us.meerkat.backend.entity.TipoPlanComunidad;
+import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.TutorRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,7 +37,8 @@ class CommunityServiceTest {
 
     @Mock private ComunidadRepository comunidadRepository;
     @Mock private MiembroComunidadRepository miembroComunidadRepository;
-    @Mock private UsuarioRepository usuarioRepository;
+        @Mock private UsuarioRepository usuarioRepository;
+        @Mock private TutorRepository tutorRepository;
     @Mock private AuthorizationService authorizationService;
     @Mock private SuscripcionService suscripcionService;
 
@@ -49,8 +52,7 @@ class CommunityServiceTest {
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
         when(suscripcionService.obtenerMiSuscripcion(userId))
                 .thenReturn(Optional.of(Suscripcion.builder().plan(TipoPlan.FREE).build()));
-        when(comunidadRepository.countByCreadorIdAndTipoPlan(userId, TipoPlanComunidad.FREE))
-                .thenReturn(0L);
+        when(comunidadRepository.countByCreadorIdAndInstitutionIsNull(userId)).thenReturn(0L);
         when(comunidadRepository.save(any(Comunidad.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -68,7 +70,7 @@ class CommunityServiceTest {
 
         assertThat(saved.getNombre()).isEqualTo("Comunidad de estudio");
         assertThat(saved.getTipoPlan()).isEqualTo(TipoPlanComunidad.FREE);
-        assertThat(saved.getMaxMiembros()).isEqualTo(50);
+        assertThat(saved.getMaxMiembros()).isEqualTo(30);
         assertThat(saved.getCreador()).isEqualTo(usuario);
 
         ArgumentCaptor<MiembroComunidad> memberCaptor =
@@ -86,8 +88,7 @@ class CommunityServiceTest {
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(buildUsuario(userId)));
         when(suscripcionService.obtenerMiSuscripcion(userId))
                 .thenReturn(Optional.of(Suscripcion.builder().plan(TipoPlan.FREE).build()));
-        when(comunidadRepository.countByCreadorIdAndTipoPlan(userId, TipoPlanComunidad.FREE))
-                .thenReturn(3L);
+        when(comunidadRepository.countByCreadorIdAndInstitutionIsNull(userId)).thenReturn(3L);
 
         assertThatThrownBy(
                         () ->
@@ -98,7 +99,7 @@ class CommunityServiceTest {
                                         TipoGrupo.COMUNIDAD_PUBLICA,
                                         null))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("límite de 3 comunidades gratuitas");
+                .hasMessageContaining("límite de 3 comunidades");
     }
 
     @Test
@@ -139,7 +140,7 @@ class CommunityServiceTest {
         Comunidad updated = communityService.upgradeToPremium(1L, 10L);
 
         assertThat(updated.getTipoPlan()).isEqualTo(TipoPlanComunidad.PREMIUM);
-        assertThat(updated.getMaxMiembros()).isEqualTo(200);
+        assertThat(updated.getMaxMiembros()).isEqualTo(75);
         verify(comunidadRepository).save(comunidad);
     }
 
@@ -154,6 +155,86 @@ class CommunityServiceTest {
         verify(comunidadRepository)
                 .findByNombreContainingIgnoreCaseAndEstado(
                         "java", EstadoComunidad.ACTIVA, PageRequest.of(0, 20));
+    }
+
+    @Test
+    void createCommunityShouldSetRolDocenteWhenRolInicialProfesor() {
+        Long userId = 1L;
+        Usuario usuario = buildUsuario(userId);
+        usuario.setEsTutor(true);
+
+        Tutor tutor = new Tutor();
+        tutor.setUsuario(usuario);
+        tutor.setEspecialidades(List.of("Matematicas"));
+        tutor.setTarifaHora(BigDecimal.valueOf(12));
+        tutor.setBio("Tutor activo");
+
+        MiembroComunidad savedMembership =
+                MiembroComunidad.builder().id(50L).usuario(usuario).rol(RolComunidad.ADMIN).build();
+
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
+        when(tutorRepository.findByUsuario(usuario)).thenReturn(Optional.of(tutor));
+        when(suscripcionService.obtenerMiSuscripcion(userId))
+                .thenReturn(Optional.of(Suscripcion.builder().plan(TipoPlan.FREE).build()));
+        when(comunidadRepository.countByCreadorIdAndInstitutionIsNull(userId)).thenReturn(0L);
+        when(comunidadRepository.save(any(Comunidad.class)))
+                .thenAnswer(
+                        invocation -> {
+                            Comunidad c = invocation.getArgument(0);
+                            c.setId(10L);
+                            return c;
+                        });
+        when(miembroComunidadRepository.findByUsuarioIdAndComunidadId(userId, 10L))
+                .thenReturn(Optional.of(savedMembership));
+        when(miembroComunidadRepository.save(any(MiembroComunidad.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        communityService.createCommunity(
+                userId,
+                "Comunidad tutor",
+                "Desc",
+                TipoGrupo.COMUNIDAD_PUBLICA,
+                "img",
+                (Long) null,
+                (Integer) null,
+                RolComunidad.PROFESOR);
+
+        assertThat(savedMembership.getRol()).isEqualTo(RolComunidad.ADMIN);
+        assertThat(savedMembership.getRolDocente()).isEqualTo(RolComunidad.PROFESOR);
+        verify(miembroComunidadRepository).findByUsuarioIdAndComunidadId(userId, 10L);
+        verify(miembroComunidadRepository, atLeast(2)).save(any(MiembroComunidad.class));
+    }
+
+    @Test
+    void createCommunityShouldFailWhenRolInicialProfesorAndTutorProfileIncomplete() {
+        Long userId = 1L;
+        Usuario usuario = buildUsuario(userId);
+        usuario.setEsTutor(true);
+
+        Tutor tutor = new Tutor();
+        tutor.setUsuario(usuario);
+        tutor.setEspecialidades(List.of());
+        tutor.setTarifaHora(BigDecimal.valueOf(12));
+        tutor.setBio("Bio");
+
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
+        when(tutorRepository.findByUsuario(usuario)).thenReturn(Optional.of(tutor));
+
+        assertThatThrownBy(
+                        () ->
+                                communityService.createCommunity(
+                                        userId,
+                                        "Comunidad tutor",
+                                        "Desc",
+                                        TipoGrupo.COMUNIDAD_PUBLICA,
+                                        "img",
+                                        (Long) null,
+                                        (Integer) null,
+                                        RolComunidad.PROFESOR))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("perfil de tutor");
+
+        verify(comunidadRepository, never()).save(any(Comunidad.class));
     }
 
     private Usuario buildUsuario(final Long id) {
