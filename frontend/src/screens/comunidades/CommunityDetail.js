@@ -1,25 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  LuArrowLeft,
-  LuCalendar,
-  LuCheck,
-  LuChevronDown,
-  LuChevronUp,
-  LuLogIn,
-  LuLogOut,
-  LuPencil,
-  LuPlay,
-  LuPlus,
-  LuTrash2,
-  LuUserPlus,
-  LuUsers,
-  LuVideo,
-  LuX,
+    LuArrowLeft,
+    LuCalendar,
+    LuCheck,
+    LuChevronDown,
+    LuChevronUp,
+    LuLogIn,
+    LuLogOut,
+    LuPencil,
+    LuPlay,
+    LuPlus,
+    LuTrash2,
+    LuUserPlus,
+    LuUsers,
+    LuVideo,
+    LuX,
 } from 'react-icons/lu';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import axiosInstance from '../../api/axiosConfig';
 import { getApiBaseUrl } from '../../api/baseUrl';
 import { communitiesApi } from '../../api/communities.api';
+import { cuestionariosApi } from '../../api/cuestionarios.api';
 import { attendEvent, cancelAttendance, getMyAttendance, listCommunityEvents } from '../../api/eventEndpoints';
 import { ZoomApi } from '../../api/zoom.api';
 import EditCommunityModal from '../../components/Comunidad/EditCommunityModal';
@@ -30,12 +31,12 @@ import Header from '../../components/Header/Header';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSocketContext } from '../../contexts/SocketContext';
 import {
-  canCreateCommunityEvent,
-  getCommunityRoleCapabilities,
-  getCommunityRoleLabel,
-  isAdminRole,
-  isTeacherRole,
-  normalizeCommunityRole,
+    canCreateCommunityEvent,
+    getCommunityRoleCapabilities,
+    getCommunityRoleLabel,
+    isAdminRole,
+    isTeacherRole,
+    normalizeCommunityRole,
 } from '../../utils/communityRoles';
 import CommunityChat from '../chat/CommunityChat';
 import CommunityAnnouncementsTab from './CommunityAnnouncementsTab';
@@ -172,6 +173,9 @@ export default function CommunityDetail() {
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [respondingId, setRespondingId] = useState(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
+  const [communityCuestionarios, setCommunityCuestionarios] = useState([]);
+  const [cuestionariosLoading, setCuestionariosLoading] = useState(false);
+  const [cuestionariosError, setCuestionariosError] = useState(null);
   const [expellingMemberId, setExpellingMemberId] = useState(null);
   const [memberToast, setMemberToast] = useState(null);
   const [showJoinRoleChooser, setShowJoinRoleChooser] = useState(false);
@@ -524,11 +528,37 @@ export default function CommunityDetail() {
     
       load();
     fetchEvents();
-    }, [communityId, currentUserId]);
+    }, [communityId, currentUserId, fetchEvents]);
 
   useEffect(() => {
     fetchMembers();
   }, [fetchMembers]);
+
+  useEffect(() => {
+    if (!currentUserId) {
+      setCommunityCuestionarios([]);
+      setCuestionariosLoading(false);
+      setCuestionariosError(null);
+      return;
+    }
+
+    const fetchCommunityCuestionarios = async () => {
+      setCuestionariosLoading(true);
+      setCuestionariosError(null);
+      try {
+        const data = await cuestionariosApi.listByCommunity(communityId);
+        setCommunityCuestionarios(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Error al cargar cuestionarios de la comunidad:', err);
+        setCommunityCuestionarios([]);
+        setCuestionariosError(err?.response?.data?.message || err?.message || 'No se pudieron cargar los cuestionarios');
+      } finally {
+        setCuestionariosLoading(false);
+      }
+    };
+
+    fetchCommunityCuestionarios();
+  }, [communityId, currentUserId]);
 
   const fetchRanking = useCallback(async () => {
     if (!isMember) {
@@ -1635,7 +1665,6 @@ export default function CommunityDetail() {
           />
         )}
 
-
         {/* Tabs de eventos y anuncios */}
         <div className="cd-tabs-section">
           <div className="cd-tabs-header">
@@ -1666,72 +1695,131 @@ export default function CommunityDetail() {
           </div>
           <div className="cd-tabs-content">
             {!showAnnouncementsTab ? (
-              <div className="cd-events-section">
-                <div className="cd-events-header">
-                  <h2 className="cd-events-title">
-                    <LuCalendar /> Eventos
-                  </h2>
-                  <div className="cd-events-actions">
-                    <label className="cd-filter-label">
-                      <input
-                        type="checkbox"
-                        checked={filterCancelled}
-                        onChange={(e) => setFilterCancelled(e.target.checked)}
-                      />
-                      Mostrar cancelados
-                    </label>
-                    {isMember && canCreateEvent ? (
-                      <button
-                        className="cd-btn cd-btn-create"
-                        onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
-                      >
-                        <LuPlus /> Crear evento
-                      </button>
-                    ) : isMember ? (
-                      <span className="cd-member-hint">Solo administradores y profesores pueden crear eventos</span>
-                    ) : (
-                      <span className="cd-member-hint">Únete a la comunidad para crear eventos</span>
-                    )}
+              <>
+                <div className="cd-questionnaires-section">
+                  <div className="cd-events-header">
+                    <h2 className="cd-events-title">
+                      <LuCalendar /> Cuestionarios de la comunidad
+                    </h2>
                   </div>
+
+                  {!currentUserId ? (
+                    <div className="cd-questionnaires-empty">
+                      <p>Inicia sesión para ver los cuestionarios de esta comunidad.</p>
+                    </div>
+                  ) : cuestionariosLoading ? (
+                    <p className="cd-loading">Cargando cuestionarios...</p>
+                  ) : cuestionariosError ? (
+                    <div className="cd-error">{cuestionariosError}</div>
+                  ) : communityCuestionarios.length > 0 ? (
+                    <div className="cd-questionnaires-grid">
+                      {communityCuestionarios.map((cuestionario) => (
+                        <article key={cuestionario.id} className="cd-questionnaire-card">
+                          <div className="cd-questionnaire-card__header">
+                            <h3>{cuestionario.titulo || 'Cuestionario sin titulo'}</h3>
+                            <span className={`cd-questionnaire-state ${cuestionario.publicado ? 'is-published' : 'is-draft'}`}>
+                              {cuestionario.publicado ? 'Publicado' : 'Borrador'}
+                            </span>
+                          </div>
+                          <p>Materia: {cuestionario.materia || 'Sin materia'}</p>
+                          <p>Preguntas: {cuestionario.numPreguntas || 0}</p>
+                          <p>Creado: {formatDateTime(cuestionario.createdAt)}</p>
+                        </article>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="cd-questionnaires-empty">
+                      <p>Esta comunidad todavía no tiene cuestionarios publicados o asociados.</p>
+                    </div>
+                  )}
                 </div>
 
-                {eventsLoading ? (
-                  <p className="cd-loading">Cargando eventos...</p>
-                ) : events.length > 0 ? (
-                  <div className="cd-events-list">
-                    {events.map(event => (
-                      <TarjetaEvento
-                        key={event.id}
-                        event={event}
-                        onAttend={currentUserId && isMember ? handleAttend : null}
-                        onCancelAttendance={currentUserId ? handleCancelAttendance : null}
-                        attendanceLoading={attendanceLoading}
-                        currentUserId={currentUserId}
-                      />
-                    ))}
+                <div className="cd-events-section">
+                  <div className="cd-events-header">
+                    <h2 className="cd-events-title">
+                      <LuCalendar /> Eventos
+                    </h2>
+                    <div className="cd-events-actions">
+                      <label className="cd-filter-label">
+                        <input
+                          type="checkbox"
+                          checked={filterCancelled}
+                          onChange={(e) => setFilterCancelled(e.target.checked)}
+                        />
+                        Mostrar cancelados
+                      </label>
+                      {isMember ? (
+                        <>
+                          <button
+                            className="cd-btn cd-btn-create"
+                            onClick={() => navigate(`/cuestionarios/crear?communityId=${communityId}`)}
+                          >
+                            <LuPlus /> Crear cuestionario
+                          </button>
+                          {canCreateEvent ? (
+                            <button
+                              className="cd-btn cd-btn-create"
+                              onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
+                            >
+                              <LuPlus /> Crear evento
+                            </button>
+                          ) : (
+                            <span className="cd-member-hint">Solo administradores y profesores pueden crear eventos</span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="cd-member-hint">Únete a la comunidad para crear eventos</span>
+                      )}
+                    </div>
                   </div>
-                ) : (
-                  <div className="cd-empty-events">
-                    <LuCalendar className="cd-empty-icon" />
-                    <h3>No hay eventos</h3>
-                    {isMember && canCreateEvent ?  (
-                      <>
-                        <p>Sé el primero en crear un evento para esta comunidad.</p>
-                        <button
-                          className="cd-btn cd-btn-create"
-                          onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
-                        >
-                          <LuPlus /> Crear evento
-                        </button>
-                      </>
-                    ) : isMember ? (
-                      <p>Solo administradores y profesores pueden crear eventos en esta comunidad.</p>
-                    ) : (
-                      <p>Únete a la comunidad para poder crear eventos.</p>
-                    )}
-                  </div>
-                )}
-              </div>
+
+                  {eventsLoading ? (
+                    <p className="cd-loading">Cargando eventos...</p>
+                  ) : events.length > 0 ? (
+                    <div className="cd-events-list">
+                      {events.map(event => (
+                        <TarjetaEvento
+                          key={event.id}
+                          event={event}
+                          onAttend={currentUserId && isMember ? handleAttend : null}
+                          onCancelAttendance={currentUserId ? handleCancelAttendance : null}
+                          attendanceLoading={attendanceLoading}
+                          currentUserId={currentUserId}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="cd-empty-events">
+                      <LuCalendar className="cd-empty-icon" />
+                      <h3>No hay eventos</h3>
+                      {isMember ? (
+                        <>
+                          <p>Sé el primero en crear un evento para esta comunidad.</p>
+                          <button
+                            className="cd-btn cd-btn-create"
+                            onClick={() => navigate(`/cuestionarios/crear?communityId=${communityId}`)}
+                          >
+                            <LuPlus /> Crear cuestionario
+                          </button>
+                          {canCreateEvent && (
+                            <button
+                              className="cd-btn cd-btn-create"
+                              onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
+                            >
+                              <LuPlus /> Crear evento
+                            </button>
+                          )}
+                          {!canCreateEvent && (
+                            <p>Solo administradores y profesores pueden crear eventos en esta comunidad.</p>
+                          )}
+                        </>
+                      ) : (
+                        <p>Únete a la comunidad para poder crear eventos.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </>
             ) : (
               <div className="cd-announcements-section">
                 <CommunityAnnouncementsTab communityId={communityId} isAdmin={isAdmin} />

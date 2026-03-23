@@ -149,6 +149,100 @@ public class SolicitudContratacionService {
     }
 
     /**
+     * Reserva directa desde el perfil del alumno: crea la solicitud en estado ACEPTADA y bloquea la
+     * franja (sin pasar por PENDIENTE). Sincroniza con Google Calendar si procede.
+     */
+    @Transactional
+    public SolicitudContratacionResponse reservarDirecta(
+            Long alumnoId, Long tutorId, SolicitudContratacionRequest request) {
+
+        Usuario alumno =
+                usuarioRepository
+                        .findById(alumnoId)
+                        .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
+        Tutor tutor =
+                tutorRepository
+                        .findById(tutorId)
+                        .orElseThrow(() -> new IllegalArgumentException("Tutor no encontrado"));
+
+        if (tutor.getUsuario().getId().equals(alumnoId)) {
+            throw new IllegalArgumentException("No puedes contratarte a ti mismo");
+        }
+
+        if (!Boolean.TRUE.equals(tutor.getVerificado())) {
+            throw new IllegalArgumentException(
+                    "El tutor debe estar verificado para ser contratado");
+        }
+
+        if (!request.getHoraFin().isAfter(request.getHoraInicio())) {
+            throw new IllegalArgumentException(
+                    "La hora de fin debe ser posterior a la hora de inicio");
+        }
+
+        // Validar modalidad
+        String modalidad =
+                request.getModalidad() != null ? request.getModalidad().toUpperCase() : "ONLINE";
+        if (!MODALIDADES_VALIDAS.contains(modalidad)) {
+            throw new IllegalArgumentException(
+                    "Modalidad no válida. Valores permitidos: ONLINE, PRESENCIAL, HIBRIDO");
+        }
+
+        // Comprobar conflictos de horario (evitar dobles reservas) — considerar cualquier estado
+        List<SolicitudContratacionDirecta> conflictos =
+                solicitudRepository.findConflictingBookingsAnyState(
+                        tutor.getId(),
+                        request.getDia(),
+                        request.getHoraInicio(),
+                        request.getHoraFin());
+        if (!conflictos.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "El profesor ya tiene una reserva en ese horario. Elige otro momento.");
+        }
+
+        // Calcular importe total
+        long minutos = Duration.between(request.getHoraInicio(), request.getHoraFin()).toMinutes();
+        BigDecimal horas =
+                BigDecimal.valueOf(minutos).divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
+        BigDecimal tarifaHora = tutor.getTarifaHora();
+        BigDecimal importeTotal = tarifaHora.multiply(horas).setScale(2, RoundingMode.HALF_UP);
+
+        SolicitudContratacionDirecta solicitud =
+                SolicitudContratacionDirecta.builder()
+                        .alumno(alumno)
+                        .tutor(tutor)
+                        .dia(request.getDia())
+                        .diaOriginal(request.getDia())
+                        .horaInicio(request.getHoraInicio())
+                        .horaFin(request.getHoraFin())
+                        .tarifaHora(tarifaHora)
+                        .importeTotal(importeTotal)
+                        .modalidad(modalidad)
+                        .mensaje(request.getMensaje())
+                        .estado(EstadoSolicitudContratacion.ACEPTADA)
+                        .createdAt(LocalDateTime.now())
+                        .build();
+
+        solicitudRepository.save(solicitud);
+
+        SolicitudContratacionResponse response = mapToResponse(solicitud);
+
+        // Notificar al tutor por WebSocket
+        broker.convertAndSendToUser(
+                tutor.getUsuario().getEmail(), "/queue/solicitud_contratacion", response);
+
+        // Sincronizar con Google Calendar (si alumno / tutor tienen Calendar conectado y activado)
+        try {
+            googleCalendarService.sincronizarBookingParaUsuario(solicitud, alumno);
+            googleCalendarService.sincronizarBookingParaUsuario(solicitud, tutor.getUsuario());
+        } catch (Exception e) {
+            log.warn("Error al sincronizar Google Calendar (reserva directa): {}", e.getMessage());
+        }
+
+        return response;
+    }
+
+    /**
      * El tutor acepta una solicitud.
      *
      * @param solicitudId ID de la solicitud

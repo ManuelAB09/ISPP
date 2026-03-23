@@ -1,18 +1,39 @@
-import React, { useEffect, useState } from 'react';
-import Modal from '../../components/Modal/Modal';
-import '../../components/Modal/ModalChanges.css';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useNotificationContext } from '../../contexts/NotificationContext';
-import './NotificationTab.css';
 import {
-  getAllEventAlerts,
-  getAllUserNotifications,
-  markEventAlertAsRead,
-  markAllEventAlertsAsRead,
-  markUserNotificationAsRead,
-  markAllUserNotificationsAsRead,
+    getAllEventAlerts,
+    getAllUserNotifications,
+    markAllEventAlertsAsRead,
+    markAllUserNotificationsAsRead,
+    markEventAlertAsRead,
+    markUserNotificationAsRead,
 } from '../../api/notificationService';
 import Header from '../../components/Header/Header';
+import Modal from '../../components/Modal/Modal';
+import '../../components/Modal/ModalChanges.css';
+import { useNotificationContext } from '../../contexts/NotificationContext';
+import './NotificationTab.css';
+
+function getApiBaseUrl() {
+  if (process.env.REACT_APP_API_BASE_URL) return process.env.REACT_APP_API_BASE_URL;
+  if (window && window.location && window.location.origin) return window.location.origin + '/api';
+  return '/api';
+}
+
+function resolveCommunityImage(raw) {
+  if (!raw || !String(raw).trim() || String(raw).trim().toLowerCase() === 'empty') {
+    return 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
+  }
+  const value = String(raw).trim();
+  if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
+    return value;
+  }
+  const base = getApiBaseUrl();
+  if (value.startsWith('/')) {
+    return `${base}${value}`;
+  }
+  return `${base}/${value}`;
+}
 
 export default function NotificationTab() {
   const {
@@ -26,28 +47,6 @@ export default function NotificationTab() {
   const [changesContent, setChangesContent] = useState('');
   const [pendingEventId, setPendingEventId] = useState(null);
   const navigate = useNavigate();
-
-  // Lógica para obtener la URL base de la API 
-  function getApiBaseUrl() {
-    if (process.env.REACT_APP_API_BASE_URL) return process.env.REACT_APP_API_BASE_URL;
-    if (window && window.location && window.location.origin) return window.location.origin + '/api';
-    return '/api';
-  }
-
-  function resolveCommunityImage(raw) {
-    if (!raw || !String(raw).trim() || String(raw).trim().toLowerCase() === 'empty') {
-      return 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
-    }
-    const value = String(raw).trim();
-    if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
-      return value;
-    }
-    const base = getApiBaseUrl();
-    if (value.startsWith('/')) {
-      return `${base}${value}`;
-    }
-    return `${base}/${value}`;
-  }
 
   useEffect(() => {
     Promise.all([
