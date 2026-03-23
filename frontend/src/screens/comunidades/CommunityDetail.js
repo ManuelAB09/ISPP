@@ -1714,7 +1714,19 @@ export default function CommunityDetail() {
                   ) : communityCuestionarios.length > 0 ? (
                     <div className="cd-questionnaires-grid">
                       {communityCuestionarios.map((cuestionario) => (
-                        <article key={cuestionario.id} className="cd-questionnaire-card">
+                        <article
+                          key={cuestionario.id}
+                          className="cd-questionnaire-card"
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => navigate(`/cuestionarios/${cuestionario.id}`)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              navigate(`/cuestionarios/${cuestionario.id}`);
+                            }
+                          }}
+                        >
                           <div className="cd-questionnaire-card__header">
                             <h3>{cuestionario.titulo || 'Cuestionario sin titulo'}</h3>
                             <span className={`cd-questionnaire-state ${cuestionario.publicado ? 'is-published' : 'is-draft'}`}>

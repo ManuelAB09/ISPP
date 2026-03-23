@@ -21,6 +21,14 @@ export const cuestionariosApi = {
     const response = await axiosInstance.get(`/api/v1/cuestionarios/${id}`);
     return response.data;
   },
+  getPreview: async (id) => {
+    const response = await axiosInstance.get(`/api/v1/cuestionarios/${id}/preview`);
+    return response.data;
+  },
+  getResolver: async (id) => {
+    const response = await axiosInstance.get(`/api/v1/cuestionarios/${id}/resolver`);
+    return response.data;
+  },
   publishCuestionario: async (id) => {
     const response = await axiosInstance.put(`/api/v1/cuestionarios/${id}/publish`);
     return response.data;

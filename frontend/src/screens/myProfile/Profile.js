@@ -610,7 +610,19 @@ const MyProfile = () => {
                     ) : misCuestionarios.length > 0 ? (
                         <div className="my-questionnaires-list">
                             {misCuestionarios.map((cuestionario) => (
-                                <article key={cuestionario.id} className="my-questionnaire-card">
+                                <article
+                                    key={cuestionario.id}
+                                    className="my-questionnaire-card"
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={() => navigate(`/cuestionarios/${cuestionario.id}`)}
+                                    onKeyDown={(event) => {
+                                        if (event.key === 'Enter' || event.key === ' ') {
+                                            event.preventDefault()
+                                            navigate(`/cuestionarios/${cuestionario.id}`)
+                                        }
+                                    }}
+                                >
                                     <div className="my-questionnaire-card__header">
                                         <h3>{cuestionario.titulo || 'Cuestionario sin titulo'}</h3>
                                         <span className={`my-questionnaire-status ${cuestionario.publicado ? 'is-published' : 'is-draft'}`}>

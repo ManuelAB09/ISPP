@@ -104,9 +104,7 @@ class SolicitudContratacionServiceTest {
 
         assertThat(result).isNotNull();
         verify(solicitudRepository).save(any(SolicitudContratacionDirecta.class));
-        verify(broker)
-                .convertAndSendToUser(
-                        eq("2"), eq("/queue/solicitud_contratacion"), any());
+        verify(broker).convertAndSendToUser(eq("2"), eq("/queue/solicitud_contratacion"), any());
     }
 
     @Test
@@ -314,8 +312,7 @@ class SolicitudContratacionServiceTest {
 
         assertThat(solicitud.getEstado()).isEqualTo(EstadoSolicitudContratacion.PAGADA);
         verify(broker)
-                .convertAndSendToUser(
-                        eq("2"), eq("/queue/solicitud_contratacion_pagada"), any());
+                .convertAndSendToUser(eq("2"), eq("/queue/solicitud_contratacion_pagada"), any());
     }
 
     @Test

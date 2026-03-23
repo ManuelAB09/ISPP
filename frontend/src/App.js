@@ -33,6 +33,9 @@ import CrearUbicacionScreen from './screens/ubicaciones/CrearUbicacionScreen';
 import VerifiedTeachers from './screens/verifiedTeachers/VerifiedTeachers';
 import CalendarCallback from './screens/myProfile/CalendarCallback';
 import CuestionarioEditor from './screens/cuestionarios/CuestionarioEditor';
+import CuestionarioPreview from './screens/cuestionarios/CuestionarioPreview';
+import CuestionarioResolver from './screens/cuestionarios/CuestionarioResolver';
+import CuestionarioResultado from './screens/cuestionarios/CuestionarioResultado';
 import Chats from './screens/chat/Chats';
 import NotificationTab from './screens/notificaciones/NotificationTab';
 
@@ -75,6 +78,9 @@ function AppRoutes() {
         <Route path="/eventos-mapa" element={<EventosMapaScreen />} />
         <Route path="/mis-eventos" element={<MisEventos />} />
         <Route path="/cuestionarios/crear" element={<CuestionarioEditor />} />
+        <Route path="/cuestionarios/:id" element={<CuestionarioPreview />} />
+        <Route path="/cuestionarios/:id/resolver" element={<CuestionarioResolver />} />
+        <Route path="/cuestionarios/:id/resultado" element={<CuestionarioResultado />} />
         <Route path="/planes/success" element={<PlanesSuccess />} />
         <Route path="/settings/calendar" element={<CalendarCallback />} />
         <Route path="/mis-reservas" element={<MisReservas />} />
