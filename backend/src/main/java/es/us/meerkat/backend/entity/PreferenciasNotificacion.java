@@ -47,6 +47,24 @@ public class PreferenciasNotificacion {
     /** Si desea recibir recordatorio 30 minutos antes del evento. */
     private Boolean recordatorio30min;
 
+    /** Frecuencia de notificaciones. SIEMPRE, RESUMEN_DIARIO, NUNCA */
+    private Boolean notificarMensajeComunidad;
+
+    /** Frecuencia de notificaciones. SIEMPRE, RESUMEN_DIARIO, NUNCA */
+    private Boolean notificarMenciones;
+
+    /** Frecuencia de notificaciones. SIEMPRE, RESUMEN_DIARIO, NUNCA */
+    private Boolean notificarInvitaciones;
+
+    /** Frecuencia de notificaciones. SIEMPRE, RESUMEN_DIARIO, NUNCA */
+    private Boolean notificarAnuncios;
+
+    /** Frecuencia de notificaciones. SIEMPRE, RESUMEN_DIARIO, NUNCA */
+    private Boolean notificarSolicitudAcceso;
+
+    /** Frecuencia de notificaciones. SIEMPRE, RESUMEN_DIARIO, NUNCA */
+    private Boolean notificarCambiosDeEventos;
+
     /**
      * Canal por defecto para las alarmas personalizadas. Se usa cuando el usuario crea una alarma
      * sin especificar canal. Por defecto: AMBOS.
@@ -74,6 +92,24 @@ public class PreferenciasNotificacion {
         }
         if (this.canalAlarmasPorDefecto == null) {
             this.canalAlarmasPorDefecto = TipoCanal.AMBOS;
+        }
+        if (this.notificarMensajeComunidad == null) {
+            this.notificarMensajeComunidad = false;
+        }
+        if (this.notificarMenciones == null) {
+            this.notificarMenciones = false;
+        }
+        if (this.notificarInvitaciones == null) {
+            this.notificarInvitaciones = false;
+        }
+        if (this.notificarAnuncios == null) {
+            this.notificarAnuncios = false;
+        }
+        if (this.notificarSolicitudAcceso == null) {
+            this.notificarSolicitudAcceso = false;
+        }
+        if (this.notificarCambiosDeEventos == null) {
+            this.notificarCambiosDeEventos = false;
         }
     }
 

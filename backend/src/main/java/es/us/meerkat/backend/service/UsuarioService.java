@@ -230,9 +230,6 @@ public class UsuarioService {
         if (requestParam.getVisibleEnListados() != null) {
             usuario.setVisibleEnListados(requestParam.getVisibleEnListados());
         }
-        if (requestParam.getNotificacionesEmail() != null) {
-            usuario.setNotificacionesEmail(requestParam.getNotificacionesEmail());
-        }
         if (requestParam.getNotificacionesPush() != null) {
             usuario.setNotificacionesPush(requestParam.getNotificacionesPush());
         }
@@ -288,6 +285,7 @@ public class UsuarioService {
      * @param usuario Usuario autenticado a eliminar.
      */
     @Transactional
+    @SuppressWarnings("unchecked")
     public void eliminarCuenta(final Usuario usuario) {
         if (usuario == null || usuario.getId() == null) {
             throw new ValidationException("Usuario no autenticado");
@@ -295,7 +293,218 @@ public class UsuarioService {
 
         final Long usuarioId = usuario.getId();
 
-        // PASO 1: Eliminar eventos y asistencias PRIMERO
+        // ═══════════════════════════════════════════════════════
+        // FASE A: Read-receipts (antes de eliminar mensajes)
+        // ═══════════════════════════════════════════════════════
+        entityManager
+                .createQuery(
+                        "DELETE FROM MensajeComunidadLeido ml WHERE ml.usuario.id = :id"
+                                + " OR ml.mensajeComunidad.usuario.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+        entityManager
+                .createQuery(
+                        "DELETE FROM MensajeLeido ml WHERE ml.usuario.id = :id"
+                                + " OR ml.mensaje.emisor.id = :id"
+                                + " OR ml.mensaje.receptor.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+
+        // ═══════════════════════════════════════════════════════
+        // FASE B: Comentarios y anuncios
+        // ═══════════════════════════════════════════════════════
+        entityManager
+                .createQuery("DELETE FROM ComentarioAnuncio c WHERE c.anuncio.usuario.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+        entityManager
+                .createQuery("DELETE FROM ComentarioAnuncio c WHERE c.usuario.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+        entityManager
+                .createQuery("DELETE FROM Anuncio a WHERE a.usuario.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+
+        // ═══════════════════════════════════════════════════════
+        // FASE C: Classroom, entregas, cuestionarios
+        // ═══════════════════════════════════════════════════════
+        entityManager
+                .createQuery("DELETE FROM CalificacionClassroom c WHERE c.alumno.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+        entityManager
+                .createQuery("DELETE FROM EntregaTarea e WHERE e.alumno.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+        entityManager
+                .createQuery("DELETE FROM CuestionarioIntento ci WHERE ci.usuario.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+        entityManager
+                .createNativeQuery("DELETE FROM cuestionario_alumnos WHERE usuario_id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+        entityManager
+                .createQuery(
+                        "UPDATE Cuestionario c SET c.creador = null" + " WHERE c.creador.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+
+        // ═══════════════════════════════════════════════════════
+        // FASE D: Feedback
+        // ═══════════════════════════════════════════════════════
+        entityManager
+                .createQuery("DELETE FROM FeedbackRecomendacion fr WHERE fr.usuario.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+        entityManager
+                .createQuery(
+                        "DELETE FROM Feedback f WHERE f.alumno.id = :id"
+                                + " OR f.profesor.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+
+        // ═══════════════════════════════════════════════════════
+        // FASE E: Notificaciones, alertas, alarmas
+        // ═══════════════════════════════════════════════════════
+        entityManager
+                .createQuery("DELETE FROM Notificacion n WHERE n.usuario.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+        entityManager
+                .createQuery(
+                        "DELETE FROM AlertaEvento a WHERE a.usuario.id = :id"
+                                + " OR a.evento.creador.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+        entityManager
+                .createQuery(
+                        "DELETE FROM AlarmaPersonalizada a WHERE a.usuario.id = :id"
+                                + " OR a.evento.creador.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+
+        // ═══════════════════════════════════════════════════════
+        // FASE F: Actividad, invitaciones, grabaciones
+        // ═══════════════════════════════════════════════════════
+        entityManager
+                .createQuery("DELETE FROM ActividadUsuario a WHERE a.usuario.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+        entityManager
+                .createQuery(
+                        "UPDATE InvitacionMiembro i SET i.usuarioAceptador = null"
+                                + " WHERE i.usuarioAceptador.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+        entityManager
+                .createQuery(
+                        "DELETE FROM InvitacionMiembro i" + " WHERE i.usuarioInvitador.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+        entityManager
+                .createQuery(
+                        "UPDATE GrabacionClase g SET g.subidoPor = null"
+                                + " WHERE g.subidoPor.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+
+        // ═══════════════════════════════════════════════════════
+        // FASE G: Mensajes privados
+        // ═══════════════════════════════════════════════════════
+        entityManager
+                .createQuery(
+                        "DELETE FROM Mensaje m WHERE m.emisor.id = :id" + " OR m.receptor.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+
+        // ═══════════════════════════════════════════════════════
+        // FASE H: Google Calendar
+        // ═══════════════════════════════════════════════════════
+        entityManager
+                .createQuery(
+                        "DELETE FROM GoogleCalendarEvento g WHERE g.usuario.id = :id"
+                                + " OR g.evento.creador.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+        entityManager
+                .createQuery("DELETE FROM GoogleCalendarToken g WHERE g.usuario.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+        entityManager
+                .createQuery("DELETE FROM GoogleCalendarBooking g WHERE g.usuario.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+
+        // ═══════════════════════════════════════════════════════
+        // FASE I: Solicitudes de contratación y valoraciones
+        // ═══════════════════════════════════════════════════════
+        entityManager
+                .createQuery(
+                        "DELETE FROM SolicitudContratacionDirecta s" + " WHERE s.alumno.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+        entityManager
+                .createQuery("DELETE FROM ValoracionTutor v WHERE v.usuario.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+
+        // ═══════════════════════════════════════════════════════
+        // FASE J: Limpieza de Tutor (si el usuario es tutor)
+        // ═══════════════════════════════════════════════════════
+        if (usuario.getTutor() != null) {
+            final Long tutorId = usuario.getTutor().getId();
+            entityManager
+                    .createQuery("DELETE FROM ValoracionTutor v WHERE v.tutor.id = :tid")
+                    .setParameter("tid", tutorId)
+                    .executeUpdate();
+            entityManager
+                    .createQuery("DELETE FROM Valoracion v WHERE v.profesor.id = :tid")
+                    .setParameter("tid", tutorId)
+                    .executeUpdate();
+            entityManager
+                    .createQuery(
+                            "DELETE FROM SolicitudContratacionDirecta s"
+                                    + " WHERE s.tutor.id = :tid")
+                    .setParameter("tid", tutorId)
+                    .executeUpdate();
+            entityManager
+                    .createQuery("DELETE FROM TutorContratacion t WHERE t.tutor.id = :tid")
+                    .setParameter("tid", tutorId)
+                    .executeUpdate();
+            entityManager
+                    .createQuery("DELETE FROM DisponibilidadTutor d WHERE d.tutor.id = :tid")
+                    .setParameter("tid", tutorId)
+                    .executeUpdate();
+            entityManager
+                    .createQuery(
+                            "UPDATE TransaccionPago t SET t.tutor = null"
+                                    + " WHERE t.tutor.id = :tid")
+                    .setParameter("tid", tutorId)
+                    .executeUpdate();
+            entityManager
+                    .createQuery("UPDATE Mensaje m SET m.tutor = null" + " WHERE m.tutor.id = :tid")
+                    .setParameter("tid", tutorId)
+                    .executeUpdate();
+        }
+
+        // Nullify grabaciones referencing user's events before deleting events
+        entityManager
+                .createQuery(
+                        "UPDATE GrabacionClase g SET g.evento = null"
+                                + " WHERE g.evento.creador.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // ═══════════════════════════════════════════════════════
+        // PASOS ORIGINALES
+        // ═══════════════════════════════════════════════════════
+
+        // PASO 1: Eliminar eventos y asistencias
         asistenciaEventoRepository.deleteByUsuarioId(usuarioId);
         asistenciaEventoRepository.deleteByEventoCreadorId(usuarioId);
         eventoRepository.deleteByUsuarioId(usuarioId);
@@ -303,11 +512,10 @@ public class UsuarioService {
         // PASO 1b: Eliminar mensajes de comunidad del usuario
         mensajeComunidadRepository.deleteByUsuarioId(usuarioId);
 
-        // PASO 2: Limpiar la sesión de Hibernate para eliminar cualquier
-        // referencia en memoria a entidades que ya hemos eliminado
+        // PASO 2: Limpiar la sesión de Hibernate
         entityManager.clear();
 
-        // PASO 3: Ahora manipular comunidades sin riesgo de referencias transitorias
+        // PASO 3: Manipular comunidades
         List<Comunidad> comunidadesUsuario = comunidadRepository.findByCreadorId(usuarioId);
         for (Comunidad comunidad : comunidadesUsuario) {
             List<Usuario> miembrosMasAntiguos =
@@ -315,10 +523,8 @@ public class UsuarioService {
                             comunidad.getId(), usuarioId);
 
             if (miembrosMasAntiguos.isEmpty()) {
-                // No hay miembros, eliminar la comunidad
                 comunidadRepository.delete(comunidad);
             } else {
-                // Intentar encontrar un miembro que pueda asumir la propiedad
                 Usuario miembroMasAntiguo =
                         miembrosMasAntiguos.stream()
                                 .filter(
@@ -330,17 +536,15 @@ public class UsuarioService {
                                 .orElse(null);
 
                 if (miembroMasAntiguo != null) {
-                    // Transferir propiedad
                     comunidad.setCreador(miembroMasAntiguo);
                     comunidadRepository.save(comunidad);
                 } else {
-                    // Ningún miembro puede asumir la comunidad, eliminarla
                     comunidadRepository.delete(comunidad);
                 }
             }
         }
 
-        // PASO 4: Eliminar otras relaciones que referencian al usuario
+        // PASO 4: Eliminar otras relaciones
         solicitudComunidadRepository.deleteBySolicitanteId(usuarioId);
         solicitudComunidadRepository.deleteByRespondidaPorId(usuarioId);
         googleClassroomConnectionRepository.deleteByUsuarioId(usuarioId);
@@ -494,7 +698,6 @@ public class UsuarioService {
                 .visibleEnListados(usuario.getVisibleEnListados())
                 .esTutor(usuario.getEsTutor())
                 .autenticacionDosFactores(usuario.getAutenticacionDosFactores())
-                .notificacionesEmail(usuario.getNotificacionesEmail())
                 .notificacionesPush(usuario.getNotificacionesPush())
                 .createdAt(usuario.getCreatedAt())
                 .googleLinked(usuario.getGoogleId() != null)

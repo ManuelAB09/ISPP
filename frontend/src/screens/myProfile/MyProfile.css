@@ -231,6 +231,34 @@
     border-color: #ef4444;
 }
 
+/* Botones de navegación de perfil (Mis pagos, Mis ganancias) */
+.profile-nav-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.profile-nav-btn {
+    font-family: 'inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 20px;
+    background-color: var(--whiteSmoke);
+    color: var(--spaceIndigo);
+    border: 1px solid var(--alabasterGray);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.profile-nav-btn:hover {
+    background-color: var(--spaceIndigo);
+    color: white;
+    border-color: var(--spaceIndigo);
+    transform: translateY(-1px);
+}
+
 /* ═══════════════════════════════════════════════════════════════
    Sección Mis Datos + Tu Actividad
    ═══════════════════════════════════════════════════════════════ */
@@ -365,6 +393,78 @@
     border-radius: 16px;
     padding: 30px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+.my-questionnaires-section {
+    background: #ffffff;
+    border: 1px solid var(--alabasterGray);
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+.my-questionnaires-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+.my-questionnaire-card {
+    border: 1px solid var(--alabasterGray);
+    border-radius: 12px;
+    background: #ffffff;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.my-questionnaire-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--glaucous);
+    box-shadow: 0 10px 18px rgba(45, 50, 80, 0.08);
+}
+
+.my-questionnaire-card__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+.my-questionnaire-card__header h3 {
+    margin: 0;
+    font-family: 'spacegrotesk', sans-serif;
+    font-size: 17px;
+    color: var(--spaceIndigo);
+}
+
+.my-questionnaire-card__meta {
+    margin: 0;
+    font-family: 'inter', sans-serif;
+    font-size: 13px;
+    color: var(--glaucous);
+}
+
+.my-questionnaire-status {
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-family: 'inter', sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.my-questionnaire-status.is-published {
+    background: #e8f7ec;
+    color: #1f7a3d;
+}
+
+.my-questionnaire-status.is-draft {
+    background: #f5f6fa;
+    color: #5f6688;
 }
 
 .communities-list, .created-communities-list {

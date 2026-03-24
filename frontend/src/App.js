@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Link, Navigate, Route, Routes } from 'react-router-dom';
 import './App.css';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { NotificationProvider } from './contexts/NotificationContext';
+import { NotificationProvider, useNotificationContext } from './contexts/NotificationContext';
 import { SocketProvider } from './contexts/SocketContext';
 import Login from './screens/auth/Login';
 import Register from './screens/auth/Register';
@@ -32,9 +32,26 @@ import MisReservas from './screens/reservas/MisReservas';
 import CrearUbicacionScreen from './screens/ubicaciones/CrearUbicacionScreen';
 import VerifiedTeachers from './screens/verifiedTeachers/VerifiedTeachers';
 import CalendarCallback from './screens/myProfile/CalendarCallback';
-
-
+import CuestionarioEditor from './screens/cuestionarios/CuestionarioEditor';
+import CuestionarioPreview from './screens/cuestionarios/CuestionarioPreview';
+import CuestionarioResolver from './screens/cuestionarios/CuestionarioResolver';
+import CuestionarioResultado from './screens/cuestionarios/CuestionarioResultado';
 import Chats from './screens/chat/Chats';
+import NotificationTab from './screens/notificaciones/NotificationTab';
+
+function FloatingNotifButton() {
+  const { panelUnreadCount } = useNotificationContext();
+  const isAuthenticated = Boolean(localStorage.getItem('accessToken'));
+  if (!isAuthenticated) return null;
+  return (
+    <Link to="/notificaciones" className="floating-notif-btn" aria-label="Notificaciones">
+      🔔
+      {panelUnreadCount > 0 && (
+        <span className="floating-notif-badge">{panelUnreadCount}</span>
+      )}
+    </Link>
+  );
+}
 
 function AppRoutes() {
   const { isAuthenticated, loading } = useAuth();
@@ -74,9 +91,14 @@ function AppRoutes() {
         <Route path="/eventos/:eventId" element={<DetalleEvento />} />
         <Route path="/eventos-mapa" element={<EventosMapaScreen />} />
         <Route path="/mis-eventos" element={<MisEventos />} />
+        <Route path="/cuestionarios/crear" element={<CuestionarioEditor />} />
+        <Route path="/cuestionarios/:id" element={<CuestionarioPreview />} />
+        <Route path="/cuestionarios/:id/resolver" element={<CuestionarioResolver />} />
+        <Route path="/cuestionarios/:id/resultado" element={<CuestionarioResultado />} />
         <Route path="/planes/success" element={<PlanesSuccess />} />
         <Route path="/settings/calendar" element={<CalendarCallback />} />
         <Route path="/mis-reservas" element={<MisReservas />} />
+        <Route path="/notificaciones" element={<NotificationTab />} />
       </>
     )
   }
@@ -84,6 +106,7 @@ function AppRoutes() {
   return (
     <SocketProvider token={socketToken}>
       <NotificationProvider>
+      <FloatingNotifButton />
       <Routes>
         {/* Ruta principal - muestra landing page si no está autenticado */}
         <Route path="/" element={
@@ -140,3 +163,4 @@ function App() {
 }
 
 export default App;
+

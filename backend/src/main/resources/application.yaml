@@ -24,14 +24,14 @@ spring:
     port: ${MAIL_PORT:587}
     username: ${MAIL_USERNAME:${EMAIL:meerkattersauth@gmail.com}}
     password: ${MAIL_PASSWORD:${PASSWORD_EMAIL:changeme}}
-    from: ${MAIL_FROM:meerkattersauth@gmail.com}
+    from: ${MAIL_FROM:${MAIL_USERNAME:${EMAIL:meerkattersauth@gmail.com}}}
     properties:
       mail:
         smtp:
-          auth: true
+          auth: ${MAIL_SMTP_AUTH:true}
           starttls:
-            enable: true
-            required: true
+            enable: ${MAIL_SMTP_STARTTLS_ENABLE:true}
+            required: ${MAIL_SMTP_STARTTLS_REQUIRED:true}
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000
@@ -105,29 +105,4 @@ spring:
     console:
       enabled: true
 
-server:
-  port: 8080
-
-logging:
-  level:
-    org.springframework.security: DEBUG
-    org.springframework.mail: DEBUG
-
-# ── PROPIEDADES PERSONALIZADAS ──
-mail:
-  from: ${EMAIL}
-
-app:
-  name: Meerkat
-
-springdoc:
-  swagger-ui:
-    urls:
-      - name: Dynamic
-        url: /v3/api-docs
-      - name: Static
-        url: /spec/openapi.yaml
-    oauth:
-      enabled: false
-  api-docs:
-    enabled: true
+  # ...existing code...

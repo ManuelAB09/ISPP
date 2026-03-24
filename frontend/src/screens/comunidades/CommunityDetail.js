@@ -1,27 +1,45 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { LuPlus, LuArrowLeft, LuCalendar, LuUsers, LuLogIn, LuLogOut, LuVideo, LuPlay, LuPencil, LuTrash2, LuCheck, LuX, LuUserPlus } from 'react-icons/lu';
-import Header from '../../components/Header/Header';
-import TarjetaEvento from '../../components/Evento/TarjetaEvento';
-import CommunityChat from '../chat/CommunityChat';
-import GoogleClassroomButton from '../../components/GoogleClassroomButton/GoogleClassroomButton';
-import EditCommunityModal from '../../components/Comunidad/EditCommunityModal';
-import TransferAdminModal from '../../components/Comunidad/TransferAdminModal';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    LuArrowLeft,
+    LuCalendar,
+    LuCheck,
+    LuChevronDown,
+    LuChevronUp,
+    LuLogIn,
+    LuLogOut,
+    LuPencil,
+    LuPlay,
+    LuPlus,
+    LuTrash2,
+    LuUserPlus,
+    LuUsers,
+    LuVideo,
+    LuX,
+} from 'react-icons/lu';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import axiosInstance from '../../api/axiosConfig';
 import { getApiBaseUrl } from '../../api/baseUrl';
 import { communitiesApi } from '../../api/communities.api';
+import { cuestionariosApi } from '../../api/cuestionarios.api';
+import { attendEvent, cancelAttendance, getMyAttendance, listCommunityEvents } from '../../api/eventEndpoints';
 import { ZoomApi } from '../../api/zoom.api';
-import { listCommunityEvents, attendEvent, cancelAttendance, getMyAttendance } from '../../api/eventEndpoints';
+import EditCommunityModal from '../../components/Comunidad/EditCommunityModal';
+import TransferAdminModal from '../../components/Comunidad/TransferAdminModal';
+import TarjetaEvento from '../../components/Evento/TarjetaEvento';
+import GoogleClassroomButton from '../../components/GoogleClassroomButton/GoogleClassroomButton';
+import Header from '../../components/Header/Header';
 import { useAuth } from '../../contexts/AuthContext';
-import {
-  canCreateCommunityEvent,
-  getCommunityRoleCapabilities,
-  getCommunityRoleLabel,
-  isAdminRole,
-  isTeacherRole,
-  normalizeCommunityRole,
-} from '../../utils/communityRoles';
 import { useSocketContext } from '../../contexts/SocketContext';
-import axiosInstance from '../../api/axiosConfig';
+import {
+    canCreateCommunityEvent,
+    getCommunityRoleCapabilities,
+    getCommunityRoleLabel,
+    isAdminRole,
+    isTeacherRole,
+    normalizeCommunityRole,
+} from '../../utils/communityRoles';
+import CommunityChat from '../chat/CommunityChat';
+import CommunityAnnouncementsTab from './CommunityAnnouncementsTab';
 import './CommunityDetail.css';
 
 const DEFAULT_MEMBER_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%23E6EAF3'/%3E%3Ccircle cx='40' cy='30' r='14' fill='%2395A1BB'/%3E%3Cpath d='M14 68c5-13 15-21 26-21s21 8 26 21' fill='%2395A1BB'/%3E%3C/svg%3E";
@@ -99,9 +117,12 @@ const formatFileSize = (bytes) => {
 };
 
 export default function CommunityDetail() {
+  // Estado para alternar entre pestaña de eventos y anuncios
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab');
+  const [showAnnouncementsTab, setShowAnnouncementsTab] = useState(initialTab === 'anuncios');
   const { communityId } = useParams();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { socket } = useSocketContext();
   const openChatOnLoad = searchParams.get('chat') === 'open';
@@ -116,6 +137,12 @@ export default function CommunityDetail() {
   const [isMember, setIsMember] = useState(false);
   const [joinLoading, setJoinLoading] = useState(false);
   const [membershipError, setMembershipError] = useState(null);
+  const [membersOpen, setMembersOpen] = useState(false);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [membersError, setMembersError] = useState(null);
+  const [members, setMembers] = useState([]);
+  const [promotingMemberId, setPromotingMemberId] = useState(null);
+  const [membersActionError, setMembersActionError] = useState(null);
   const [activeMeeting, setActiveMeeting] = useState(null);
   const [meetingLoading, setMeetingLoading] = useState(false);
   const [meetingError, setMeetingError] = useState(null);
@@ -146,8 +173,9 @@ export default function CommunityDetail() {
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [respondingId, setRespondingId] = useState(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
-  const [members, setMembers] = useState([]);
-  const [membersLoading, setMembersLoading] = useState(false);
+  const [communityCuestionarios, setCommunityCuestionarios] = useState([]);
+  const [cuestionariosLoading, setCuestionariosLoading] = useState(false);
+  const [cuestionariosError, setCuestionariosError] = useState(null);
   const [expellingMemberId, setExpellingMemberId] = useState(null);
   const [memberToast, setMemberToast] = useState(null);
   const [showJoinRoleChooser, setShowJoinRoleChooser] = useState(false);
@@ -174,11 +202,12 @@ export default function CommunityDetail() {
   const isPrivate = community?.tipoGrupo === 'GRUPO_PRIVADO';
   const isCorporateCommunity = String(community?.tipoPlan || '').toUpperCase() === 'UNLIMITED';
   const normalizedRole = normalizeCommunityRole(community?.miRol);
+  const normalizedRolDocente = community?.miRolDocente || null;
   const isAdmin = isAdminRole(normalizedRole);
-  const isTeacher = isTeacherRole(normalizedRole);
-  const canCreateEvent = canCreateCommunityEvent(normalizedRole);
-  const roleLabel = getCommunityRoleLabel(normalizedRole);
-  const roleCapabilities = getCommunityRoleCapabilities(normalizedRole);
+  const isTeacher = isTeacherRole(normalizedRole, normalizedRolDocente);
+  const canCreateEvent = canCreateCommunityEvent(normalizedRole, normalizedRolDocente);
+  const roleLabel = getCommunityRoleLabel(normalizedRole, normalizedRolDocente);
+  const roleCapabilities = getCommunityRoleCapabilities(normalizedRole, normalizedRolDocente);
   const currentUserId = localStorage.getItem('userId');
   const hasTeacherProfile = Boolean(user?.esTutor || user?.esProfesor);
   const currentUser = {
@@ -195,7 +224,10 @@ export default function CommunityDetail() {
     return acc;
   }, {});
   const adminMembers = groupedMembers.ADMIN || [];
-  const teacherMembers = groupedMembers.PROFESOR || [];
+  const adminProfesores = adminMembers.filter(
+    (m) => normalizeCommunityRole(m?.rolDocente) === 'PROFESOR'
+  );
+  const teacherMembers = [...(groupedMembers.PROFESOR || []), ...adminProfesores];
   const studentMembers = [...(groupedMembers.ALUMNO || []), ...(groupedMembers.MIEMBRO || [])];
 
   const formatPlanLabel = (plan) => {
@@ -305,7 +337,7 @@ export default function CommunityDetail() {
               </span>
               <span className="cd-member-info">
                 <span className="cd-member-name">{getMemberName(member)}</span>
-                <span className="cd-member-role">{getCommunityRoleLabel(member?.rol)}</span>
+                <span className="cd-member-role">{getCommunityRoleLabel(member?.rol, member?.rolDocente)}</span>
               </span>
             </button>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -380,10 +412,17 @@ export default function CommunityDetail() {
           const status = await communitiesApi.getMyRequestStatus(communityId);
           if (status && status.pending) {
             setRequestSent(true);
+          } else if (status && !status.pending) {
+            setRequestSent(false);
           }
-        } catch {
-          // Ignorar error, el usuario simplemente puede solicitar
+          // Si status es undefined o null, no cambiar estado local (mantener lo que había)
+        } catch (err) {
+          // Error al verificar: mantener estado local en lugar de asumir false
+          console.warn('Aviso: No se pudo verificar solicitud pendiente', err);
         }
+      } else if (!data.esMiembro) {
+        // No es privada pero tampoco es miembro: seguro no hay solicitud
+        setRequestSent(false);
       }
     } catch (err) {
       console.error('Error al cargar la comunidad:', err);
@@ -396,7 +435,7 @@ export default function CommunityDetail() {
   const fetchMembers = useCallback(async () => {
     try {
       setMembersLoading(true);
-      const data = await communitiesApi.getMembers(communityId, { size: 200 });
+      const data = await communitiesApi.getMembers(communityId, { page: 0, size: 100 });
       const list = data?.content || data?.miembros || data || [];
       setMembers(Array.isArray(list) ? list : []);
     } catch (err) {
@@ -453,13 +492,77 @@ export default function CommunityDetail() {
   }, [communityId]);
 
   useEffect(() => {
-    fetchCommunity();
+      if (!communityId) return;
+    
+      const load = async () => {
+        try {
+          setLoading(true);
+          const data = await communitiesApi.getById(communityId);
+          setCommunity(data);
+        
+          if (data.esMiembro !== undefined) {
+            setIsMember(data.esMiembro);
+          } else if (currentUserId) {
+            try {
+              await communitiesApi.getMyMembership(communityId);
+              setIsMember(true);
+            } catch {
+              setIsMember(false);
+            }
+          }
+
+          // Si es comunidad privada y el usuario no es miembro, comprobar solicitud pendiente
+          if (data.tipoGrupo === 'GRUPO_PRIVADO' && !data.esMiembro && currentUserId) {
+            try {
+              const status = await communitiesApi.getMyRequestStatus(communityId);
+              setRequestSent(status && status.pending);
+            } catch (err) {
+              console.warn('No se pudo verificar solicitud pendiente', err);
+            }
+          } else if (!data.esMiembro) {
+            setRequestSent(false);
+          }
+        } catch (err) {
+          console.error('Error al cargar la comunidad:', err);
+          setError('No se pudo cargar la comunidad.');
+        } finally {
+          setLoading(false);
+        }
+      };
+    
+      load();
     fetchEvents();
-  }, [fetchCommunity, fetchEvents]);
+    }, [communityId, currentUserId, fetchEvents]);
 
   useEffect(() => {
     fetchMembers();
   }, [fetchMembers]);
+
+  useEffect(() => {
+    if (!currentUserId) {
+      setCommunityCuestionarios([]);
+      setCuestionariosLoading(false);
+      setCuestionariosError(null);
+      return;
+    }
+
+    const fetchCommunityCuestionarios = async () => {
+      setCuestionariosLoading(true);
+      setCuestionariosError(null);
+      try {
+        const data = await cuestionariosApi.listByCommunity(communityId);
+        setCommunityCuestionarios(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Error al cargar cuestionarios de la comunidad:', err);
+        setCommunityCuestionarios([]);
+        setCuestionariosError(err?.response?.data?.message || err?.message || 'No se pudieron cargar los cuestionarios');
+      } finally {
+        setCuestionariosLoading(false);
+      }
+    };
+
+    fetchCommunityCuestionarios();
+  }, [communityId, currentUserId]);
 
   const fetchRanking = useCallback(async () => {
     if (!isMember) {
@@ -620,6 +723,70 @@ export default function CommunityDetail() {
       || participant?.name
       || participant?.email
       || `Participante ${index + 1}`;
+  };
+
+  const getMemberRoleLabel = (member) => {
+    const rawRole = String(member?.rol || member?.role || '').toUpperCase();
+    const rawRolDocente = member?.rolDocente ? String(member.rolDocente).toUpperCase() : null;
+    if (rawRole === 'ADMIN') {
+      if (rawRolDocente === 'PROFESOR') return 'Administrador · Profesor';
+      if (rawRolDocente === 'ALUMNO') return 'Administrador · Alumno';
+      return 'Administrador';
+    }
+    if (rawRole === 'MODERADOR' || rawRole === 'MODERATOR') return 'Moderador';
+    if (rawRole === 'MIEMBRO' || rawRole === 'MEMBER') return 'Miembro';
+    if (rawRole === 'ALUMNO' || rawRole === 'STUDENT') return 'Alumno';
+    if (rawRole === 'PROFESOR' || rawRole === 'TEACHER') return 'Profesor';
+    return rawRole || 'Miembro';
+  };
+
+  const getMemberUserId = (member) => {
+    return member?.usuario?.id || member?.user?.id || member?.usuarioId || member?.userId;
+  };
+
+  const isMemberAdmin = (member) => {
+    const rawRole = String(member?.rol || member?.role || '').toUpperCase();
+    return rawRole === 'ADMIN';
+  };
+
+  const handleToggleMembers = async () => {
+    if (membersOpen) {
+      setMembersOpen(false);
+      return;
+    }
+
+    setMembersOpen(true);
+    setMembersActionError(null);
+    if (!members.length && !membersLoading) {
+      await fetchMembers();
+    }
+  };
+
+  const handlePromoteMember = async (member) => {
+    const memberUserId = getMemberUserId(member);
+    if (!memberUserId) {
+      setMembersActionError('No se pudo identificar al miembro seleccionado.');
+      return;
+    }
+
+    try {
+      setPromotingMemberId(memberUserId);
+      setMembersActionError(null);
+      await communitiesApi.promoteMemberToAdmin(communityId, memberUserId);
+      setMembers((prev) =>
+        prev.map((item) =>
+          String(getMemberUserId(item)) === String(memberUserId)
+            ? { ...item, rol: 'ADMIN' }
+            : item
+        )
+      );
+      await fetchCommunity();
+    } catch (err) {
+      console.error('Error al promover miembro a admin:', err);
+      setMembersActionError(err?.message || 'No se pudo promover al miembro a admin.');
+    } finally {
+      setPromotingMemberId(null);
+    }
   };
 
   const handleJoinMeeting = async () => {
@@ -885,6 +1052,9 @@ export default function CommunityDetail() {
     setRecordingsError(null);
     setRecordings([]);
     setSelectedRecordingMeetingId(null);
+    setMembersOpen(false);
+    setMembersError(null);
+    setMembers([]);
   }, [communityId]);
 
   const handleOpenEditModal = () => {
@@ -1002,7 +1172,9 @@ export default function CommunityDetail() {
       setMembershipError(null);
       if (isPrivate) {
         await communitiesApi.requestAccess(communityId, '', role || 'ALUMNO');
-        setRequestSent(true);
+        // Refrescar estado desde servidor para asegurar sincronización
+        const status = await communitiesApi.getMyRequestStatus(communityId);
+        setRequestSent(status && status.pending);
         setShowJoinRoleChooser(false);
       } else {
         await communitiesApi.join(communityId, role || 'ALUMNO');
@@ -1020,7 +1192,14 @@ export default function CommunityDetail() {
         setShowJoinRoleChooser(false);
       } else if (err.status === 400) {
         if (isPrivate) {
-          setRequestSent(true);
+          // Aún así, verificar si existe solicitud pendiente en BD
+          try {
+            const status = await communitiesApi.getMyRequestStatus(communityId);
+            setRequestSent(status && status.pending);
+          } catch {
+            // Si falla, asumir que sí hay solicitud
+            setRequestSent(true);
+          }
         } else {
           setMembershipError(err.message || 'Error al unirse a la comunidad');
         }
@@ -1038,11 +1217,10 @@ export default function CommunityDetail() {
       setMembershipError(null);
       await communitiesApi.leave(communityId);
       // Si el admin era el único miembro, el backend elimina la comunidad
-      // En ese caso redirigimos a la lista
-      if (isAdmin) {
-        navigate('/comunidades');
-        return;
-      }
+      // Cualquier persona que abandone la comunidad será redirigida a la lista de comunidades
+      
+      navigate('/comunidades');
+      
       setIsMember(false);
       await fetchCommunity(); // Refresh member count
       await fetchEvents(); // Refresh events to hide private events
@@ -1213,6 +1391,68 @@ export default function CommunityDetail() {
                   Aforo {community?.maxMiembros ? `hasta ${community.maxMiembros}` : 'sin límite'}
                 </span>
               </div>
+              <div className="cd-members-dropdown">
+                <button
+                  type="button"
+                  className="cd-members-toggle"
+                  onClick={handleToggleMembers}
+                  aria-expanded={membersOpen}
+                  aria-controls="cd-members-list-panel"
+                >
+                  <span className="cd-members-toggle-left">
+                    <LuUsers />
+                    {membersOpen ? 'Ocultar listado de miembros' : 'Ver listado de miembros'}
+                  </span>
+                  <span className="cd-members-toggle-right">
+                    {membersOpen ? <LuChevronUp /> : <LuChevronDown />}
+                  </span>
+                </button>
+
+                {membersOpen && (
+                  <div id="cd-members-list-panel" className="cd-members-panel">
+                    {membersActionError ? (
+                      <p className="cd-members-panel-state cd-members-panel-error">{membersActionError}</p>
+                    ) : null}
+                    {membersLoading ? (
+                      <p className="cd-members-panel-state">Cargando miembros...</p>
+                    ) : membersError ? (
+                      <p className="cd-members-panel-state cd-members-panel-error">{membersError}</p>
+                    ) : members.length > 0 ? (
+                      <ul className="cd-members-list">
+                        {members.map((member, index) => {
+                          const memberUserId = getMemberUserId(member);
+                          const isCurrentMember = currentUserId && memberUserId && String(memberUserId) === String(currentUserId);
+                          const canPromote = isAdmin && !isCurrentMember && !isMemberAdmin(member);
+
+                          return (
+                            <li key={member?.id || memberUserId || member?.usuario?.email || member?.email || index} className="cd-members-list-item">
+                              <span className="cd-members-list-name">
+                                {getMemberName(member, index)}
+                                {isCurrentMember ? <strong className="cd-members-you-badge">Tu</strong> : null}
+                              </span>
+                              <div className="cd-members-list-actions">
+                                <span className="cd-members-list-role">{getMemberRoleLabel(member)}</span>
+                                {canPromote ? (
+                                  <button
+                                    type="button"
+                                    className="cd-members-promote-btn"
+                                    onClick={() => handlePromoteMember(member)}
+                                    disabled={promotingMemberId === memberUserId}
+                                  >
+                                    {promotingMemberId === memberUserId ? 'Promoviendo...' : 'Hacer admin'}
+                                  </button>
+                                ) : null}
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : (
+                      <p className="cd-members-panel-state">Aún no hay miembros registrados.</p>
+                    )}
+                  </div>
+                )}
+              </div>
               {/* Join / Leave / Request access */}
               <div className="cd-membership-actions">
                 {membershipError && (
@@ -1245,6 +1485,7 @@ export default function CommunityDetail() {
                 )}
                 {currentUserId ? (
                   isMember ? (
+                    community?.miembrosActuales > 1 && (
                     <button
                       className="cd-btn cd-btn-leave"
                       onClick={handleLeaveCommunity}
@@ -1252,6 +1493,7 @@ export default function CommunityDetail() {
                     >
                       <LuLogOut /> {joinLoading ? 'Saliendo...' : 'Abandonar comunidad'}
                     </button>
+                    )
                   ) : requestSent ? (
                     <button className="cd-btn cd-btn-pending" disabled>
                       Solicitud de acceso enviada
@@ -1386,7 +1628,8 @@ export default function CommunityDetail() {
                   <div key={req.id} className="cd-request-item">
                     <div className="cd-request-info">
                       <span className="cd-request-name">
-                        {req.solicitante?.nombre || 'Usuario'}
+                        {req.solicitante?.nombre || 'Usuario'} quiere unirse como{' '}
+                        <strong>{getCommunityRoleLabel(req.rolDeseado || 'ALUMNO')}</strong>
                       </span>
                       {req.mensaje && (
                         <span className="cd-request-message">{req.mensaje}</span>
@@ -1434,72 +1677,179 @@ export default function CommunityDetail() {
           />
         )}
 
-        {/* Sección de eventos */}
-        <div className="cd-events-section">
-          <div className="cd-events-header">
-            <h2 className="cd-events-title">
+        {/* Tabs de eventos y anuncios */}
+        <div className="cd-tabs-section">
+          <div className="cd-tabs-header">
+            <button
+              className={`cd-tab-btn${!showAnnouncementsTab ? ' cd-tab-btn-active' : ''}`}
+              onClick={() => {
+                setShowAnnouncementsTab(false);
+                const params = new URLSearchParams(searchParams);
+                params.set('tab', 'eventos');
+                navigate({ search: params.toString() }, { replace: true });
+              }}
+              type="button"
+            >
               <LuCalendar /> Eventos
-            </h2>
-            <div className="cd-events-actions">
-              <label className="cd-filter-label">
-                <input
-                  type="checkbox"
-                  checked={filterCancelled}
-                  onChange={(e) => setFilterCancelled(e.target.checked)}
-                />
-                Mostrar cancelados
-              </label>
-              {isMember && canCreateEvent ? (
-                <button
-                  className="cd-btn cd-btn-create"
-                  onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
-                >
-                  <LuPlus /> Crear evento
-                </button>
-              ) : isMember ? (
-                <span className="cd-member-hint">Solo administradores y profesores pueden crear eventos</span>
-              ) : (
-                <span className="cd-member-hint">Únete a la comunidad para crear eventos</span>
-              )}
-            </div>
+            </button>
+            <button
+              className={`cd-tab-btn${showAnnouncementsTab ? ' cd-tab-btn-active' : ''}`}
+              onClick={() => {
+                setShowAnnouncementsTab(true);
+                const params = new URLSearchParams(searchParams);
+                params.set('tab', 'anuncios');
+                navigate({ search: params.toString() }, { replace: true });
+              }}
+              type="button"
+            >
+              <span role="img" aria-label="Anuncios">📢</span> Anuncios
+            </button>
           </div>
+          <div className="cd-tabs-content">
+            {!showAnnouncementsTab ? (
+              <>
+                <div className="cd-questionnaires-section">
+                  <div className="cd-events-header">
+                    <h2 className="cd-events-title">
+                      <LuCalendar /> Cuestionarios de la comunidad
+                    </h2>
+                  </div>
 
-          {eventsLoading ? (
-            <p className="cd-loading">Cargando eventos...</p>
-          ) : events.length > 0 ? (
-            <div className="cd-events-list">
-              {events.map(event => (
-                <TarjetaEvento
-                  key={event.id}
-                  event={event}
-                  onAttend={currentUserId && isMember ? handleAttend : null}
-                  onCancelAttendance={currentUserId ? handleCancelAttendance : null}
-                  attendanceLoading={attendanceLoading}
-                  currentUserId={currentUserId}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="cd-empty-events">
-              <LuCalendar className="cd-empty-icon" />
-              <h3>No hay eventos</h3>
-              {isMember && canCreateEvent ? (
-                <>
-                  <p>Sé el primero en crear un evento para esta comunidad.</p>
-                  <button
-                    className="cd-btn cd-btn-create"
-                    onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
-                  >
-                    <LuPlus /> Crear evento
-                  </button>
-                </>
-              ) : isMember ? (
-                <p>Solo administradores y profesores pueden crear eventos en esta comunidad.</p>
-              ) : (
-                <p>Únete a la comunidad para poder crear eventos.</p>
-              )}
-            </div>
-          )}
+                  {!currentUserId ? (
+                    <div className="cd-questionnaires-empty">
+                      <p>Inicia sesión para ver los cuestionarios de esta comunidad.</p>
+                    </div>
+                  ) : cuestionariosLoading ? (
+                    <p className="cd-loading">Cargando cuestionarios...</p>
+                  ) : cuestionariosError ? (
+                    <div className="cd-error">{cuestionariosError}</div>
+                  ) : communityCuestionarios.length > 0 ? (
+                    <div className="cd-questionnaires-grid">
+                      {communityCuestionarios.map((cuestionario) => (
+                        <article
+                          key={cuestionario.id}
+                          className="cd-questionnaire-card"
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => navigate(`/cuestionarios/${cuestionario.id}`)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              navigate(`/cuestionarios/${cuestionario.id}`);
+                            }
+                          }}
+                        >
+                          <div className="cd-questionnaire-card__header">
+                            <h3>{cuestionario.titulo || 'Cuestionario sin titulo'}</h3>
+                            <span className={`cd-questionnaire-state ${cuestionario.publicado ? 'is-published' : 'is-draft'}`}>
+                              {cuestionario.publicado ? 'Publicado' : 'Borrador'}
+                            </span>
+                          </div>
+                          <p>Materia: {cuestionario.materia || 'Sin materia'}</p>
+                          <p>Preguntas: {cuestionario.numPreguntas || 0}</p>
+                          <p>Creado: {formatDateTime(cuestionario.createdAt)}</p>
+                        </article>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="cd-questionnaires-empty">
+                      <p>Esta comunidad todavía no tiene cuestionarios publicados o asociados.</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="cd-events-section">
+                  <div className="cd-events-header">
+                    <h2 className="cd-events-title">
+                      <LuCalendar /> Eventos
+                    </h2>
+                    <div className="cd-events-actions">
+                      <label className="cd-filter-label">
+                        <input
+                          type="checkbox"
+                          checked={filterCancelled}
+                          onChange={(e) => setFilterCancelled(e.target.checked)}
+                        />
+                        Mostrar cancelados
+                      </label>
+                      {isMember ? (
+                        <>
+                          <button
+                            className="cd-btn cd-btn-create"
+                            onClick={() => navigate(`/cuestionarios/crear?communityId=${communityId}`)}
+                          >
+                            <LuPlus /> Crear cuestionario
+                          </button>
+                          {canCreateEvent ? (
+                            <button
+                              className="cd-btn cd-btn-create"
+                              onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
+                            >
+                              <LuPlus /> Crear evento
+                            </button>
+                          ) : (
+                            <span className="cd-member-hint">Solo administradores y profesores pueden crear eventos</span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="cd-member-hint">Únete a la comunidad para crear eventos</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {eventsLoading ? (
+                    <p className="cd-loading">Cargando eventos...</p>
+                  ) : events.length > 0 ? (
+                    <div className="cd-events-list">
+                      {events.map(event => (
+                        <TarjetaEvento
+                          key={event.id}
+                          event={event}
+                          onAttend={currentUserId && isMember ? handleAttend : null}
+                          onCancelAttendance={currentUserId ? handleCancelAttendance : null}
+                          attendanceLoading={attendanceLoading}
+                          currentUserId={currentUserId}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="cd-empty-events">
+                      <LuCalendar className="cd-empty-icon" />
+                      <h3>No hay eventos</h3>
+                      {isMember ? (
+                        <>
+                          <p>Sé el primero en crear un evento para esta comunidad.</p>
+                          <button
+                            className="cd-btn cd-btn-create"
+                            onClick={() => navigate(`/cuestionarios/crear?communityId=${communityId}`)}
+                          >
+                            <LuPlus /> Crear cuestionario
+                          </button>
+                          {canCreateEvent && (
+                            <button
+                              className="cd-btn cd-btn-create"
+                              onClick={() => navigate(`/crear-evento/new?communityId=${communityId}`)}
+                            >
+                              <LuPlus /> Crear evento
+                            </button>
+                          )}
+                          {!canCreateEvent && (
+                            <p>Solo administradores y profesores pueden crear eventos en esta comunidad.</p>
+                          )}
+                        </>
+                      ) : (
+                        <p>Únete a la comunidad para poder crear eventos.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="cd-announcements-section">
+                <CommunityAnnouncementsTab communityId={communityId} isAdmin={isAdmin} />
+              </div>
+            )}
+          </div>
         </div>
         
         {isMember && (

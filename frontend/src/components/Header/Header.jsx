@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getApiBaseUrl } from '../../api/baseUrl';
 import GoogleClassroomButton from '../GoogleClassroomButton/GoogleClassroomButton.jsx';
 import PlanExpiryBanner from '../PlanExpiryBanner/PlanExpiryBanner';
 import { useSubscriptionExpiry } from '../../hooks/useSubscriptionExpiry';
+import { useNotificationContext } from '../../contexts/NotificationContext';
 import './Header.css';
 
 const DEFAULT_PROFILE_AVATAR =
@@ -25,6 +26,16 @@ const toAbsoluteImageUrl = (imageUrl, fallback = DEFAULT_PROFILE_AVATAR) => {
 export default function Header({ user, page }) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { showBanner, planName, fechaFin, dismiss } = useSubscriptionExpiry();
+    const { panelUnreadCount, communityUnreadById } = useNotificationContext();
+    // Calcular total de no leídos de chats privados y comunidades
+    const [privateUnread, setPrivateUnread] = useState(0);
+    useEffect(() => {
+        // Obtener de localStorage o API si es necesario, aquí solo ejemplo simple
+        const conversaciones = JSON.parse(localStorage.getItem('conversacionesNoLeidas') || '[]');
+        setPrivateUnread(conversaciones.reduce((acc, c) => acc + (c.noLeidos || 0), 0));
+    }, []);
+    const communityUnread = Object.values(communityUnreadById || {}).reduce((acc, n) => acc + (n || 0), 0);
+    const totalChatsUnread = privateUnread + communityUnread;
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
@@ -86,18 +97,17 @@ export default function Header({ user, page }) {
                 <div className="header-links-desktop">
                     <Link to="/" className={page === 'inicio' ? 'active' : ''}>Inicio</Link>
                     <Link to="/comunidades" className={page === 'comunidades' ? 'active' : ''}>Comunidades</Link>
-                    <Link to="/eventos-mapa" className={page === 'eventos-mapa' ? 'active' : ''}>Mapa de eventos</Link>
-                    <Link to="/mis-eventos" className={page === 'mis-eventos' ? 'active' : ''}>Mis eventos</Link>
                     <Link to="/profesores" className={page === 'profesores' ? 'active' : ''}>Profesores</Link>
                     {isAuthenticated && (
-                        <Link to="/mis-reservas" className={page === 'mis-reservas' ? 'active' : ''}>Mis reservas</Link>
+                        <Link to="/cuestionarios/crear" className={page === 'cuestionarios' ? 'active' : ''}>Cuestionarios</Link>
                     )}
-                    <Link to="/chats" className={page === 'chats' ? 'active' : ''}>Chats</Link>
+                    <Link to="/chats" className={page === 'chats' ? 'active' : ''}>
+                        Chats
+                        {totalChatsUnread > 0 && (
+                            <span className="header-notification-badge">{totalChatsUnread}</span>
+                        )}
+                    </Link>
                     <Link to="/planes" className={page === 'planes' ? 'active' : ''}>Planes</Link>
-                    <Link to="/pagos" className={page === 'pagos' ? 'active' : ''}>Mis pagos</Link>
-                    {isAuthenticated && storedUser?.esTutor && (
-                        <Link to="/ganancias" className={page === 'ganancias' ? 'active' : ''}>Mis ganancias</Link>
-                    )}
                     {!isAuthenticated && (
                         <Link to="/login">Iniciar sesión</Link>
                     )}
@@ -130,23 +140,24 @@ export default function Header({ user, page }) {
                 <div className="header-links-mobile">
                     <Link to="/" className={page === 'inicio' ? 'active' : ''} onClick={closeMenu}>Inicio</Link>
                     <Link to="/comunidades" className={page === 'comunidades' ? 'active' : ''} onClick={closeMenu}>Comunidades</Link>
-                    <Link to="/eventos-mapa" className={page === 'eventos-mapa' ? 'active' : ''} onClick={closeMenu}>Mapa de eventos</Link>
-                    <Link to="/mis-eventos" className={page === 'mis-eventos' ? 'active' : ''} onClick={closeMenu}>Mis eventos</Link>
                     <Link to="/profesores" className={page === 'profesores' ? 'active' : ''} onClick={closeMenu}>Profesores</Link>
                     {isAuthenticated && (
-                        <Link to="/mis-reservas" className={page === 'mis-reservas' ? 'active' : ''} onClick={closeMenu}>Mis reservas</Link>
+                        <Link to="/cuestionarios/crear" className={page === 'cuestionarios' ? 'active' : ''} onClick={closeMenu}>Cuestionarios</Link>
                     )}
-                    <Link to="/chats" className={page === 'chats' ? 'active' : ''} onClick={closeMenu}>Chats</Link>
+                    <Link to="/chats" className={page === 'chats' ? 'active' : ''} onClick={closeMenu}>
+                        Chats
+                        {totalChatsUnread > 0 && (
+                            <span className="header-notification-badge">{totalChatsUnread}</span>
+                        )}
+                    </Link>
                     <Link to="/planes" className={page === 'planes' ? 'active' : ''} onClick={closeMenu}>Planes</Link>
-                    <Link to="/pagos" className={page === 'pagos' ? 'active' : ''} onClick={closeMenu}>Mis pagos</Link>
-                    {isAuthenticated && storedUser?.esTutor && (
-                        <Link to="/ganancias" className={page === 'ganancias' ? 'active' : ''} onClick={closeMenu}>Mis ganancias</Link>
-                    )}
- (
+                    {!isAuthenticated && (
                         <Link to="/login" onClick={closeMenu}>Iniciar sesión</Link>
-                    )
+                    )}
                 </div>
-            </div >
+            </div>
         </>
     );
 }
+
+

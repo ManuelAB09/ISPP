@@ -14,6 +14,10 @@ import es.us.meerkat.backend.entity.NivelDificultad;
 @Repository
 public interface CuestionarioRepository extends JpaRepository<Cuestionario, Long> {
 
+    List<Cuestionario> findByCreadorIdOrderByCreatedAtDesc(Long creadorId);
+
+    List<Cuestionario> findDistinctByComunidadesIdOrderByCreatedAtDesc(Long comunidadId);
+
     /**
      * Busca cuestionarios activos por materia o tags. Usado para generar recomendaciones basadas en
      * temas de interés.

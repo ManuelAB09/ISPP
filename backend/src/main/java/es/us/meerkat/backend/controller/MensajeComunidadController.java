@@ -1,6 +1,9 @@
 package es.us.meerkat.backend.controller;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -22,6 +25,9 @@ import org.springframework.web.multipart.MultipartFile;
 import es.us.meerkat.backend.dto.EnviarMensajeComunidadRequest;
 import es.us.meerkat.backend.dto.MensajeComunidadResponse;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.service.AuthorizationService;
 import es.us.meerkat.backend.service.ChatFileStorageService;
 import es.us.meerkat.backend.service.MensajeComunidadService;
 import lombok.RequiredArgsConstructor;
@@ -32,9 +38,60 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MensajeComunidadController {
 
+    /** Marca todos los mensajes de una comunidad como leídos para el usuario autenticado. */
+    @PostMapping("/{comunidadId}/marcar-leida")
+    public ResponseEntity<?> marcarComunidadComoLeida(
+            @PathVariable Long comunidadId, @AuthenticationPrincipal Usuario usuario) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado");
+        }
+        if (!authorizationService.isMemberOf(usuario.getId(), comunidadId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("No perteneces a esta comunidad");
+        }
+        try {
+            mensajeComunidadService.marcarComunidadComoLeida(usuario.getId(), comunidadId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al marcar como leída: " + e.getMessage());
+        }
+    }
+
+    /** Devuelve el número de mensajes no leídos por comunidad para el usuario autenticado. */
+    @GetMapping("/no-leidos")
+    public ResponseEntity<?> obtenerNoLeidosPorComunidad(@AuthenticationPrincipal Usuario usuario) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado");
+        }
+        try {
+            Map<Long, Integer> map =
+                    mensajeComunidadService.obtenerNoLeidosPorComunidad(usuario.getId());
+            Map<Long, Integer> filtrado =
+                    map.entrySet().stream()
+                            .filter(
+                                    entry ->
+                                            authorizationService.isMemberOf(
+                                                    usuario.getId(), entry.getKey()))
+                            .collect(
+                                    Collectors.toMap(
+                                            Map.Entry::getKey,
+                                            Map.Entry::getValue,
+                                            (a, b) -> a,
+                                            java.util.HashMap::new));
+            return ResponseEntity.ok(filtrado);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al obtener no leídos: " + e.getMessage());
+        }
+    }
+
     private final MensajeComunidadService mensajeComunidadService;
     private final ChatFileStorageService chatFileStorageService;
+    private final AuthorizationService authorizationService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final MiembroComunidadRepository miembroComunidadRepository;
+    private final UsuarioRepository usuarioRepository;
 
     /**
      * Envía un mensaje en el chat de una comunidad.
@@ -54,6 +111,7 @@ public class MensajeComunidadController {
             final MensajeComunidadResponse response =
                     mensajeComunidadService.enviarMensaje(usuario.getId(), request);
             messagingTemplate.convertAndSend("/topic/community." + comunidadId, response);
+            notifyCommunityMembers(comunidadId, response, usuario.getId());
             return ResponseEntity.ok(response);
         } catch (final Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -154,6 +212,7 @@ public class MensajeComunidadController {
                             validatedFile.content());
 
             messagingTemplate.convertAndSend("/topic/community." + comunidadId, response);
+            notifyCommunityMembers(comunidadId, response, usuario.getId());
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -194,6 +253,28 @@ public class MensajeComunidadController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al descargar archivo en comunidad: " + e.getMessage());
+        }
+    }
+
+    private void notifyCommunityMembers(
+            final Long comunidadId, final MensajeComunidadResponse response, final Long senderId) {
+        List<Long> miembrosIds =
+                miembroComunidadRepository.findUsuarioIdsByComunidadId(comunidadId);
+        Map<Long, Usuario> miembrosPorId =
+                usuarioRepository.findAllById(miembrosIds).stream()
+                        .filter(u -> u.getId() != null)
+                        .collect(
+                                Collectors.toMap(Usuario::getId, Function.identity(), (a, b) -> a));
+        for (Long miembroId : miembrosIds) {
+            if (miembroId.equals(senderId)) {
+                continue;
+            }
+            Usuario miembro = miembrosPorId.get(miembroId);
+            if (miembro == null) {
+                continue;
+            }
+            messagingTemplate.convertAndSendToUser(
+                    miembro.getId().toString(), "/queue/community_message", response);
         }
     }
 }

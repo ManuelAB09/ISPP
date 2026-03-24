@@ -6,7 +6,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
@@ -256,14 +263,12 @@ public class InstitutionController {
 
         try {
             Institution institution =
-                    institutionService.obtenerInstitucion(institutionId, usuario.getId());
+                    institutionService.preconfigurarPlanCorporativo(
+                            institutionId, usuario.getId(), request);
 
-            TipoPlanCorporativo tipoPlan = TipoPlanCorporativo.valueOf(request.getTipoPlan());
+            TipoPlanCorporativo tipoPlan = institution.getPlanCorporativo();
             String periodo = request.getPeriodo();
             Integer duracionMeses = request.getDuracionMeses();
-
-            institution.setNumUsuariosPermitidos(request.getNumUsuarios());
-            institution.setPlanCorporativo(tipoPlan);
 
             Map<String, String> result =
                     paymentService.crearPaymentIntentPlanCorporativo(
@@ -306,6 +311,7 @@ public class InstitutionController {
             String institucionIdStr = metadata.get("institucionId");
             String duracionStr = metadata.get("duracionMeses");
             String emailContacto = metadata.get("emailContacto");
+            String tipoPlanCorporativoStr = metadata.get("tipoPlanCorporativo");
 
             if (institucionIdStr == null) {
                 return ResponseEntity.badRequest()
@@ -314,8 +320,13 @@ public class InstitutionController {
 
             Long institucionId = Long.parseLong(institucionIdStr);
             Integer duracionMeses = duracionStr != null ? Integer.parseInt(duracionStr) : 12;
+            TipoPlanCorporativo tipoPlanCorporativo =
+                    tipoPlanCorporativoStr != null
+                            ? TipoPlanCorporativo.valueOf(tipoPlanCorporativoStr)
+                            : null;
 
-            institutionService.activarPlanCorporativo(institucionId, duracionMeses, emailContacto);
+            institutionService.activarPlanCorporativo(
+                    institucionId, duracionMeses, emailContacto, tipoPlanCorporativo);
             log.info(
                     "Plan corporativo activado para institución {} vía Stripe Elements",
                     institucionId);
@@ -361,6 +372,7 @@ public class InstitutionController {
             String institucionIdStr = metadata.get("institucionId");
             String duracionStr = metadata.get("duracionMeses");
             String emailContacto = metadata.get("emailContacto");
+            String tipoPlanCorporativoStr = metadata.get("tipoPlanCorporativo");
 
             if (institucionIdStr == null) {
                 return ResponseEntity.badRequest()
@@ -369,8 +381,13 @@ public class InstitutionController {
 
             Long institucionId = Long.parseLong(institucionIdStr);
             Integer duracionMeses = duracionStr != null ? Integer.parseInt(duracionStr) : 12;
+            TipoPlanCorporativo tipoPlanCorporativo =
+                    tipoPlanCorporativoStr != null
+                            ? TipoPlanCorporativo.valueOf(tipoPlanCorporativoStr)
+                            : null;
 
-            institutionService.activarPlanCorporativo(institucionId, duracionMeses, emailContacto);
+            institutionService.activarPlanCorporativo(
+                    institucionId, duracionMeses, emailContacto, tipoPlanCorporativo);
             log.info("Plan corporativo activado para institución {}", institucionId);
 
             return ResponseEntity.ok(

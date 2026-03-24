@@ -33,6 +33,11 @@
     gap: 0.5rem;
 }
 
+.private-chat .private-chat-extra-actions {
+    display: flex;
+    align-items: center;
+}
+
 .private-chat .private-chat-close {
     border: none;
     border-radius: 999px;

@@ -11,6 +11,10 @@ jest.setTimeout(15000);
 
 // Mocks
 jest.mock('../../api/tutorEndpoints');
+jest.mock('../../api/solicitudContratacion', () => ({
+  getDisponibilidadTutorFecha: jest.fn().mockResolvedValue({ data: [] }),
+  getHorariosOcupadosContratacion: jest.fn().mockResolvedValue({ data: [] }),
+}));
 jest.mock('../../contexts/AuthContext');
 jest.mock('../../components/Header/Header', () => {
   return function MockHeader() {
@@ -76,6 +80,11 @@ jest.mock('./TutorConversaciones', () => {
 jest.mock('./AlumnoSolicitudes', () => {
   return function MockAlumnoSolicitudes() {
     return <div data-testid="alumno-solicitudes" />;
+  };
+});
+jest.mock('./TeacherAvailabilityCalendar', () => {
+  return function MockTeacherAvailabilityCalendar() {
+    return <div data-testid="teacher-availability-calendar" />;
   };
 });
 jest.mock('../chat/PrivateChat', () => {

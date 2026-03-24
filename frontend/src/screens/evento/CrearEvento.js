@@ -67,6 +67,7 @@ const CrearEvento = () => {
     tipoLocalizacion: 'Presencial',
     direccion: '',
     zoomDuration: 60,
+    subirGrabacion: false,
     aforo: '',
     privado: false,
     visibleEnMapa: true,
@@ -83,6 +84,7 @@ const CrearEvento = () => {
   const [validationErrors, setValidationErrors] = useState({});
   const [materialInput, setMaterialInput] = useState('');
   const [selectedCommunityRole, setSelectedCommunityRole] = useState(null);
+  const [communityHasClassroom, setCommunityHasClassroom] = useState(false);
 
   const isEdit = id && id !== 'new';
   const currentUserId = localStorage.getItem('userId');
@@ -237,6 +239,23 @@ const CrearEvento = () => {
     }
   }, [isEdit, selectedCommunityId, currentUserId]);
 
+  useEffect(() => {
+    if (!selectedCommunityId) {
+      setCommunityHasClassroom(false);
+      return;
+    }
+    // Check if the community has Google Classroom linked
+    const found = myCommunities.find(c => String(c.id) === String(selectedCommunityId));
+    if (found) {
+      setCommunityHasClassroom(!!found.classroom);
+      return;
+    }
+    // Fallback for edit mode (myCommunities not loaded): call the API directly
+    communitiesApi.getClassroom(selectedCommunityId)
+      .then(() => setCommunityHasClassroom(true))
+      .catch(() => setCommunityHasClassroom(false));
+  }, [selectedCommunityId, myCommunities]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     let parsedValue = value;
@@ -376,7 +395,8 @@ const CrearEvento = () => {
       queLlevar: formData.materiales.length > 0 ? formData.materiales.join(', ') : undefined,
       esVirtual,
       privado: formData.privado,
-      visibleEnMapa: esVirtual ? false : formData.visibleEnMapa
+      visibleEnMapa: esVirtual ? false : formData.visibleEnMapa,
+      guardarGrabacionClassroom: formData.subirGrabacion
     };
 
     if (formData.diaFin && formData.mesFin && formData.anioFin) {
@@ -723,9 +743,7 @@ const CrearEvento = () => {
                       <LuVideo className="input-icon" />
                     </div>
                     {validationErrors.zoomDuration && <span className="field-error">{validationErrors.zoomDuration}</span>}
-                    <span className="field-hint">Entre 5 y 480 minutos.</span>
-                  </div>
-                </div>
+                    <span className="field-hint">Entre 5 y 480 minutos.</span></div>{communityHasClassroom && <div className="input-group checkbox-group" style={{ marginTop: '1rem', background: '#e6f7ff', padding: '10px', borderRadius: '8px', border: '1px solid #91d5ff' }}><input type="checkbox" id="subirGrabacionCheckbox" name="subirGrabacion" checked={formData.subirGrabacion} onChange={(e) => setFormData({ ...formData, subirGrabacion: e.target.checked })} /><label htmlFor="subirGrabacionCheckbox" style={{ marginLeft: '8px', fontWeight: 'bold', color: '#0050b3' }}>Subir grabación automáticamente a Google Classroom al finalizar</label></div>}</div>
               </div>
             )}
 

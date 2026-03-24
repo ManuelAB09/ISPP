@@ -212,6 +212,16 @@ export const communitiesApi = {
   },
 
   /**
+   * POST /api/v1/communities/{communityId}/admin/{userId}
+   * Promover miembro a admin
+   * @param {number} communityId
+   * @param {number} userId
+   */
+  promoteMemberToAdmin(communityId, userId) {
+    return apiClient.post(`/api/v1/communities/${communityId}/admin/${userId}`, {});
+  },
+
+  /**
    * POST /api/v1/communities/{communityId}/requests
    * Solicitar acceso a una comunidad privada
    * @param {number} communityId

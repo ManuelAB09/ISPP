@@ -32,6 +32,21 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MensajeController {
 
+    @PostMapping("/marcar-leida/{otherUserId}")
+    public ResponseEntity<?> marcarConversacionComoLeida(
+            @AuthenticationPrincipal Usuario usuario, @PathVariable Long otherUserId) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado");
+        }
+        try {
+            mensajeService.marcarConversacionComoLeida(usuario.getId(), otherUserId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al marcar como leída: " + e.getMessage());
+        }
+    }
+
     private final MensajeService mensajeService;
     private final ChatFileStorageService chatFileStorageService;
     private final SimpMessagingTemplate broker;
@@ -124,13 +139,14 @@ public class MensajeController {
                             : deleted.getEmisorId();
             mensajeService.eliminarMensaje(usuario.getId(), mensajeId);
             // Notify both parties
-            broker.convertAndSendToUser(usuario.getEmail(), "/queue/dm_delete_success", mensajeId);
+            broker.convertAndSendToUser(
+                    usuario.getId().toString(), "/queue/dm_delete_success", mensajeId);
             usuarioRepository
                     .findById(otherUserId)
                     .ifPresent(
                             other ->
                                     broker.convertAndSendToUser(
-                                            other.getEmail(),
+                                            other.getId().toString(),
                                             "/queue/dm_delete_success",
                                             mensajeId));
             return ResponseEntity.noContent().build();
@@ -235,7 +251,7 @@ public class MensajeController {
 
     /** Broadcasts a new/file message to both sender and receiver via WebSocket. */
     private void broadcastDm(Usuario sender, MensajeResponse response) {
-        broker.convertAndSendToUser(sender.getEmail(), "/queue/dm", response);
+        broker.convertAndSendToUser(sender.getId().toString(), "/queue/dm", response);
         Long receiverId = response.getReceptorId();
         if (receiverId != null && !receiverId.equals(sender.getId())) {
             usuarioRepository
@@ -243,13 +259,14 @@ public class MensajeController {
                     .ifPresent(
                             receiver ->
                                     broker.convertAndSendToUser(
-                                            receiver.getEmail(), "/queue/dm", response));
+                                            receiver.getId().toString(), "/queue/dm", response));
         }
     }
 
     /** Broadcasts a message update to both parties via WebSocket. */
     private void broadcastDmUpdate(Usuario sender, MensajeResponse response) {
-        broker.convertAndSendToUser(sender.getEmail(), "/queue/dm_update_success", response);
+        broker.convertAndSendToUser(
+                sender.getId().toString(), "/queue/dm_update_success", response);
         Long otherUserId =
                 response.getEmisorId().equals(sender.getId())
                         ? response.getReceptorId()
@@ -260,7 +277,7 @@ public class MensajeController {
                     .ifPresent(
                             other ->
                                     broker.convertAndSendToUser(
-                                            other.getEmail(),
+                                            other.getId().toString(),
                                             "/queue/dm_update_success",
                                             response));
         }
