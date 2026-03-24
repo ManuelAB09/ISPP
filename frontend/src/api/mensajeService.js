@@ -183,3 +183,29 @@ export const editarMensajePrivado = (mensajeId, contenido) => {
 export const obtenerPreviewEnlace = (url) => {
     return api.post('/link-preview', { url });
 };
+
+/**
+ * Marca como leída una conversación privada con otro usuario.
+ * @param {number} otherUserId - ID del otro usuario.
+ * @returns {Promise}
+ */
+export const marcarConversacionComoLeida = (otherUserId) => {
+    return api.post(`/mensajes/marcar-leida/${otherUserId}`);
+};
+
+/**
+ * Obtiene el número de mensajes no leídos por comunidad para el usuario autenticado.
+ * @returns {Promise<Object>} Mapa comunidadId -> count no leídos
+ */
+export const obtenerNoLeidosPorComunidad = () => {
+    return api.get('/comunidades/no-leidos');
+};
+
+/**
+ * Marca todos los mensajes de una comunidad como leídos para el usuario autenticado.
+ * @param {number} comunidadId
+ * @returns {Promise}
+ */
+export const marcarComunidadComoLeida = (comunidadId) => {
+    return api.post(`/comunidades/${comunidadId}/marcar-leida`);
+};

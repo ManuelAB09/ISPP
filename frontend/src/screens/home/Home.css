@@ -132,6 +132,34 @@
     transform: translateY(-1px);
 }
 
+/* Botones de acceso rápido */
+.home-quick-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 24px;
+    padding-left: 20px;
+}
+
+.home-quick-btn {
+    font-family: 'inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 20px;
+    background-color: transparent;
+    color: var(--spaceIndigo);
+    border: 2px solid var(--spaceIndigo);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.home-quick-btn:hover {
+    background-color: var(--spaceIndigo);
+    color: white;
+    transform: translateY(-1px);
+}
+
 /* Lista de comunidades */
 .comunidades-list {
     list-style: none;

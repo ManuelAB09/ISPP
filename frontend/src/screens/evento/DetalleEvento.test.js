@@ -1,23 +1,48 @@
-import React from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import DetalleEvento from './DetalleEvento';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import axiosInstance from '../../api/axiosConfig';
+import { communitiesApi } from '../../api/communities.api';
 import {
-  getEventById,
-  cancelEvent,
   attendEvent,
   cancelAttendance,
+  cancelEvent,
   getConfirmedAttendees,
+  getEventById,
   getMyAttendance,
 } from '../../api/eventEndpoints';
-import { communitiesApi } from '../../api/communities.api';
+import { checkAlreadyRated } from '../../api/valoraciones.api';
+import DetalleEvento from './DetalleEvento';
 
 // Mocks
 jest.mock('../../api/eventEndpoints');
+jest.mock('../../api/valoraciones.api', () => ({
+  checkAlreadyRated: jest.fn(),
+}));
+jest.mock('../../api/axiosConfig', () => ({
+  __esModule: true,
+  default: {
+    get: jest.fn().mockResolvedValue({ data: [] }),
+    post: jest.fn().mockResolvedValue({ data: {} }),
+    delete: jest.fn().mockResolvedValue({ data: {} }),
+    put: jest.fn().mockResolvedValue({ data: {} }),
+  }
+}));
+jest.mock('../../api/zoom.api', () => ({
+  ZoomApi: {
+    getEventRecordings: jest.fn().mockResolvedValue([]),
+    uploadRecordingToClassroom: jest.fn().mockResolvedValue({}),
+  }
+}));
 jest.mock('../../api/communities.api', () => ({
   communitiesApi: {
     getMyMembership: jest.fn(),
   },
+}));
+jest.mock('../../contexts/SocketContext', () => ({
+    useSocketContext: () => ({
+        socket: { on: jest.fn(), off: jest.fn() },
+        isConnected: true,
+    }),
 }));
 jest.mock('../../components/Header/Header', () => {
   return function MockHeader() {
@@ -43,6 +68,10 @@ describe('DetalleEvento', () => {
     });
 
     communitiesApi.getMyMembership.mockResolvedValue({});
+    axiosInstance.get.mockResolvedValue({ data: [] });
+    axiosInstance.post.mockResolvedValue({ data: {} });
+    axiosInstance.delete.mockResolvedValue({});
+    checkAlreadyRated.mockResolvedValue({ rated: false });
     getConfirmedAttendees.mockResolvedValue([
       { id: 201, usuario: { id: 20, nombre: 'Ana' } },
       { id: 202, usuario: { id: 21, nombre: 'Luis' } },
@@ -103,6 +132,10 @@ describe('DetalleEvento', () => {
     const btn = await screen.findByRole('button', { name: /Confirmar asistencia/i });
     fireEvent.click(btn);
 
+    // El botón abre un modal; hay que confirmar en él
+    const modalConfirmBtn = await screen.findAllByRole('button', { name: /Confirmar asistencia/i });
+    fireEvent.click(modalConfirmBtn[modalConfirmBtn.length - 1]);
+
     await waitFor(() => {
       expect(attendEvent).toHaveBeenCalledWith('77');
     });
@@ -123,7 +156,8 @@ describe('DetalleEvento', () => {
     });
   });
 
-  test('si es organizador, muestra acciones de editar/cancelar evento', async () => {
+  test('si es profesor de la comunidad, muestra acciones de editar/cancelar evento aunque no sea el creador', async () => {
+    communitiesApi.getMyMembership.mockResolvedValueOnce({ rol: 'PROFESOR' });
     getEventById.mockResolvedValueOnce({
       id: 77,
       titulo: 'Evento React',
@@ -133,7 +167,7 @@ describe('DetalleEvento', () => {
       asistentesConfirmados: 10,
       cancelado: false,
       comunidadId: 10,
-      creador: { id: 1, nombre: 'Yo' }, // organizador = currentUserId
+      creador: { id: 2, nombre: 'Organizador' },
     });
 
     renderComponent();
@@ -142,7 +176,29 @@ describe('DetalleEvento', () => {
     expect(screen.getByRole('button', { name: /Cancelar evento/i })).toBeInTheDocument();
   });
 
+  test('si es alumno aunque sea creador, no muestra editar en evento comunitario', async () => {
+    communitiesApi.getMyMembership.mockResolvedValueOnce({ rol: 'ALUMNO' });
+    getEventById.mockResolvedValueOnce({
+      id: 77,
+      titulo: 'Evento React',
+      fechaHora: '2026-08-10T18:00:00',
+      esVirtual: true,
+      aforo: 50,
+      asistentesConfirmados: 10,
+      cancelado: false,
+      comunidadId: 10,
+      creador: { id: 1, nombre: 'Yo' },
+    });
+
+    renderComponent();
+
+    expect(await screen.findByText('Evento React')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Editar evento/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Cancelar evento/i })).not.toBeInTheDocument();
+  });
+
   test('abre modal y cancela evento', async () => {
+    communitiesApi.getMyMembership.mockResolvedValueOnce({ rol: 'PROFESOR' });
     getEventById.mockResolvedValueOnce({
       id: 77,
       titulo: 'Evento React',

@@ -7,6 +7,24 @@ import * as tutorEndpoints from '../../api/tutorEndpoints';
 // Mock de la API de tutores
 jest.mock('../../api/tutorEndpoints');
 
+// Mock de Stripe
+jest.mock('@stripe/stripe-js', () => ({
+  loadStripe: jest.fn(() => Promise.resolve({})),
+}));
+
+const mockConfirmPayment = jest.fn();
+const mockSubmit = jest.fn();
+jest.mock('@stripe/react-stripe-js', () => ({
+  Elements: ({ children }) => <div data-testid="stripe-elements">{children}</div>,
+  PaymentElement: () => <div data-testid="stripe-payment-element">Stripe Payment Element</div>,
+  useStripe: () => ({
+    confirmPayment: mockConfirmPayment,
+  }),
+  useElements: () => ({
+    submit: mockSubmit,
+  }),
+}));
+
 describe('VerificacionModal', () => {
   const mockOnClose = jest.fn();
   const mockOnVerificado = jest.fn();
@@ -14,8 +32,17 @@ describe('VerificacionModal', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
-    // Mock verificarTutor para que resuelva inmediatamente
-    tutorEndpoints.verificarTutor.mockResolvedValue({});
+    // Mock createVerificationPaymentIntent para que devuelva un clientSecret
+    tutorEndpoints.createVerificationPaymentIntent.mockResolvedValue({
+      data: { clientSecret: 'pi_test_secret_123', paymentIntentId: 'pi_test_123' },
+    });
+    // Mock confirmVerificationPayment
+    tutorEndpoints.confirmVerificationPayment.mockResolvedValue({});
+    // Mock submit y confirmPayment de Stripe
+    mockSubmit.mockResolvedValue({ error: null });
+    mockConfirmPayment.mockResolvedValue({
+      paymentIntent: { id: 'pi_test_123', status: 'succeeded' },
+    });
   });
 
   afterEach(() => {
@@ -98,52 +125,29 @@ describe('VerificacionModal', () => {
   // TESTS DEL FLUJO DE PAGO
   // ==============================
 
-  test('muestra el formulario de pago al iniciar solicitud', async () => {
+  test('muestra Stripe Elements al iniciar pago', async () => {
     jest.useRealTimers();
     renderModal({ verificado: false });
     
     const iniciarBtn = screen.getByRole('button', { name: /Iniciar pago y solicitud/i });
     await userEvent.click(iniciarBtn);
 
+    await waitFor(() => {
+      expect(screen.getByTestId('stripe-payment-element')).toBeInTheDocument();
+    });
     expect(screen.getByText(/Pago de verificación/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/Nombre completo/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/1234 5678 9012 3456/i)).toBeInTheDocument();
   });
 
-  test('muestra campos de caducidad y CVC en el formulario de pago', async () => {
+  test('muestra botón para cancelar pago cuando se muestra Stripe Elements', async () => {
     jest.useRealTimers();
     renderModal({ verificado: false });
     
     const iniciarBtn = screen.getByRole('button', { name: /Iniciar pago y solicitud/i });
     await userEvent.click(iniciarBtn);
 
-    expect(screen.getByPlaceholderText(/MM\/AA/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('123')).toBeInTheDocument();
-  });
-
-  test('permite ingresar datos de tarjeta', async () => {
-    jest.useRealTimers();
-    renderModal({ verificado: false });
-    
-    const iniciarBtn = screen.getByRole('button', { name: /Iniciar pago y solicitud/i });
-    await userEvent.click(iniciarBtn);
-
-    const nombreInput = screen.getByPlaceholderText(/Nombre completo/i);
-    await userEvent.type(nombreInput, 'Juan Pérez');
-    expect(nombreInput).toHaveValue('Juan Pérez');
-
-    const numeroInput = screen.getByPlaceholderText(/1234 5678 9012 3456/i);
-    await userEvent.type(numeroInput, '4111111111111111');
-    expect(numeroInput).toHaveValue('4111111111111111');
-  });
-
-  test('muestra botón para cancelar pago', async () => {
-    jest.useRealTimers();
-    renderModal({ verificado: false });
-    
-    const iniciarBtn = screen.getByRole('button', { name: /Iniciar pago y solicitud/i });
-    await userEvent.click(iniciarBtn);
-
+    await waitFor(() => {
+      expect(screen.getByTestId('stripe-payment-element')).toBeInTheDocument();
+    });
     expect(screen.getByRole('button', { name: /Cancelar/i })).toBeInTheDocument();
   });
 
@@ -154,13 +158,17 @@ describe('VerificacionModal', () => {
     const iniciarBtn = screen.getByRole('button', { name: /Iniciar pago y solicitud/i });
     await userEvent.click(iniciarBtn);
 
+    await waitFor(() => {
+      expect(screen.getByTestId('stripe-payment-element')).toBeInTheDocument();
+    });
+
     const cancelarBtn = screen.getByRole('button', { name: /Cancelar/i });
     await userEvent.click(cancelarBtn);
 
     expect(screen.getByText(/Destaca tu perfil como Verificado/i)).toBeInTheDocument();
   });
 
-  test('procesa el pago y muestra mensaje de éxito', async () => {
+  test('procesa el pago con Stripe y muestra verificación exitosa', async () => {
     jest.useRealTimers();
     renderModal({ verificado: false });
     
@@ -168,38 +176,29 @@ describe('VerificacionModal', () => {
     const iniciarBtn = screen.getByRole('button', { name: /Iniciar pago y solicitud/i });
     await userEvent.click(iniciarBtn);
 
-    // Realizar pago (el mock acepta cualquier dato)
+    await waitFor(() => {
+      expect(screen.getByTestId('stripe-payment-element')).toBeInTheDocument();
+    });
+
+    // Pagar
     const pagarBtn = screen.getByRole('button', { name: /Pagar y solicitar verificación/i });
     await userEvent.click(pagarBtn);
 
-    // Verificar que se muestra el mensaje de pago realizado
     await waitFor(() => {
-      expect(screen.getByText(/Pago realizado/i)).toBeInTheDocument();
+      expect(screen.getByText(/Perfil verificado/i)).toBeInTheDocument();
     });
   });
 
-  test('muestra estado pendiente tras el pago exitoso', async () => {
+  test('llama a onVerificado tras el pago exitoso con Stripe', async () => {
     jest.useRealTimers();
     renderModal({ verificado: false });
     
     const iniciarBtn = screen.getByRole('button', { name: /Iniciar pago y solicitud/i });
     await userEvent.click(iniciarBtn);
 
-    const pagarBtn = screen.getByRole('button', { name: /Pagar y solicitar verificación/i });
-    await userEvent.click(pagarBtn);
-
-    // Después del pago, se muestra primero "Pago realizado"
     await waitFor(() => {
-      expect(screen.getByText(/Pago realizado/i)).toBeInTheDocument();
-    }, { timeout: 5000 });
-  }, 15000);
-
-  test('llama a onVerificado tras el pago exitoso', async () => {
-    jest.useRealTimers();
-    renderModal({ verificado: false });
-    
-    const iniciarBtn = screen.getByRole('button', { name: /Iniciar pago y solicitud/i });
-    await userEvent.click(iniciarBtn);
+      expect(screen.getByTestId('stripe-payment-element')).toBeInTheDocument();
+    });
 
     const pagarBtn = screen.getByRole('button', { name: /Pagar y solicitar verificación/i });
     await userEvent.click(pagarBtn);

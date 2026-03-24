@@ -11,7 +11,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
@@ -26,6 +33,7 @@ import es.us.meerkat.backend.dto.TransactionResponse;
 import es.us.meerkat.backend.entity.TipoTransaccion;
 import es.us.meerkat.backend.entity.TransaccionPago;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.service.InstitutionService;
 import es.us.meerkat.backend.service.PaymentService;
 import es.us.meerkat.backend.service.SuscripcionService;
 import es.us.meerkat.backend.service.TutorService;
@@ -43,7 +51,8 @@ import lombok.extern.slf4j.Slf4j;
 public class PaymentController {
 
     private final PaymentService paymentService;
-    private final SuscripcionService suscripcionService; // ← añadido para el webhook
+    private final SuscripcionService suscripcionService;
+    private final InstitutionService institutionService;
     private final TutorService tutorService;
 
     @Value("${stripe.webhook.secret}")
@@ -237,7 +246,14 @@ public class PaymentController {
             switch (tipo) {
                 case SUSCRIPCION -> {
                     // Activa suscripción + crea transacción + actualiza plan usuario
-                    suscripcionService.activarSuscripcionTrasStripe(usuarioId, monto);
+                    String periodo = session.getMetadata().get("periodo");
+                    String planMeta = session.getMetadata().get("plan");
+                    es.us.meerkat.backend.entity.TipoPlan plan =
+                            "PRO".equalsIgnoreCase(planMeta)
+                                    ? es.us.meerkat.backend.entity.TipoPlan.PRO
+                                    : es.us.meerkat.backend.entity.TipoPlan.PREMIUM;
+                    suscripcionService.activarSuscripcionTrasStripe(
+                            usuarioId, monto, periodo, plan);
                 }
 
                 case PAGO_VERIFICACION -> {
@@ -262,7 +278,25 @@ public class PaymentController {
                 }
 
                 case PAGO_TUTOR, COMISION -> {
-                    // Pago único genérico
+                    // Si es un plan corporativo institucional, activarlo
+                    String institucionIdStr = session.getMetadata().get("institucionId");
+                    if (tipo == TipoTransaccion.COMISION && institucionIdStr != null) {
+                        Long institucionId = Long.parseLong(institucionIdStr);
+                        String duracionStr = session.getMetadata().get("duracionMeses");
+                        String emailContacto = session.getMetadata().get("emailContacto");
+                        String tipoPlanCorporativoStr =
+                                session.getMetadata().get("tipoPlanCorporativo");
+                        Integer duracionMeses =
+                                duracionStr != null ? Integer.parseInt(duracionStr) : 12;
+                        es.us.meerkat.backend.entity.TipoPlanCorporativo tipoPlanCorporativo =
+                                tipoPlanCorporativoStr != null
+                                        ? es.us.meerkat.backend.entity.TipoPlanCorporativo.valueOf(
+                                                tipoPlanCorporativoStr)
+                                        : null;
+                        institutionService.activarPlanCorporativo(
+                                institucionId, duracionMeses, emailContacto, tipoPlanCorporativo);
+                    }
+                    // Registrar transacción
                     paymentService.procesarPagoExitoso(
                             usuarioId, tipo, monto, "Pago completado vía Stripe", null);
                 }
@@ -311,7 +345,14 @@ public class PaymentController {
                     BigDecimal.valueOf(invoice.getAmountPaid())
                             .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
 
-            suscripcionService.renovarSuscripcionTrasStripe(usuarioId, monto);
+            String planMeta =
+                    invoice.getMetadata() != null ? invoice.getMetadata().get("plan") : null;
+            es.us.meerkat.backend.entity.TipoPlan plan =
+                    "PRO".equalsIgnoreCase(planMeta)
+                            ? es.us.meerkat.backend.entity.TipoPlan.PRO
+                            : es.us.meerkat.backend.entity.TipoPlan.PREMIUM;
+
+            suscripcionService.renovarSuscripcionTrasStripe(usuarioId, monto, plan);
 
             log.info("Renovación PREMIUM procesada. Usuario: {}, Monto: {}€", usuarioId, monto);
 

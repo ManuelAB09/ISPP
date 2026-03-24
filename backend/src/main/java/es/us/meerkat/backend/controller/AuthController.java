@@ -2,9 +2,11 @@ package es.us.meerkat.backend.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import es.us.meerkat.backend.dto.AuthResponse;
@@ -12,7 +14,12 @@ import es.us.meerkat.backend.dto.ForgotPasswordRequest;
 import es.us.meerkat.backend.dto.LoginRequest;
 import es.us.meerkat.backend.dto.MessageResponse;
 import es.us.meerkat.backend.dto.RegisterRequest;
+import es.us.meerkat.backend.dto.ResendVerificationRequest;
+import es.us.meerkat.backend.dto.TotpEnableResponse;
+import es.us.meerkat.backend.dto.TotpSetupResponse;
+import es.us.meerkat.backend.dto.TotpVerifyRequest;
 import es.us.meerkat.backend.service.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -32,15 +39,46 @@ public final class AuthController {
     /**
      * Registra un nuevo usuario con email y contraseña.
      *
-     * <p>POST /api/v1/auth/register Devuelve 201 con token JWT si el registro es exitoso. Devuelve
-     * 409 si el email ya está registrado.
+     * <p>POST /api/v1/auth/register Devuelve 201 con mensaje de confirmación si el registro es
+     * exitoso. Se envía un email de verificación al usuario. Devuelve 409 si el email ya está
+     * registrado.
      *
      * @param request Datos del nuevo usuario.
-     * @return AuthResponse con token JWT y datos del usuario.
+     * @return MessageResponse con instrucciones para verificar el email.
      */
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@RequestBody final RegisterRequest request) {
+    public ResponseEntity<MessageResponse> register(
+            @Valid @RequestBody final RegisterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.registrar(request));
+    }
+
+    /**
+     * Verifica el email de un usuario usando el token enviado por email.
+     *
+     * <p>GET /api/v1/auth/verify?token=xxx Devuelve 200 con token JWT si la verificación es
+     * exitosa. Devuelve 400 si el token es inválido o ha expirado.
+     *
+     * @param token Token de verificación.
+     * @return AuthResponse con token JWT y datos del usuario.
+     */
+    @GetMapping("/verify")
+    public ResponseEntity<AuthResponse> verifyEmail(@RequestParam final String token) {
+        return ResponseEntity.ok(authService.verificarEmail(token));
+    }
+
+    /**
+     * Reenvía el email de verificación a un usuario.
+     *
+     * <p>POST /api/v1/auth/resend-verification Devuelve 200 con mensaje de confirmación. Devuelve
+     * 400 si el email no existe o ya está verificado.
+     *
+     * @param request DTO con el email del usuario.
+     * @return MessageResponse con confirmación.
+     */
+    @PostMapping("/resend-verification")
+    public ResponseEntity<MessageResponse> resendVerification(
+            @RequestBody final ResendVerificationRequest request) {
+        return ResponseEntity.ok(authService.reenviarVerificacion(request.getEmail()));
     }
 
     /**
@@ -53,8 +91,74 @@ public final class AuthController {
      * @return AuthResponse con token JWT y datos del usuario.
      */
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody final LoginRequest request) {
+    public ResponseEntity<?> login(@RequestBody final LoginRequest request) {
         return ResponseEntity.ok(authService.iniciarSesion(request));
+    }
+
+    /** Completa el login cuando el usuario estaba en desafío 2FA. POST /api/v1/auth/2fa/login */
+    @PostMapping("/2fa/login")
+    public ResponseEntity<AuthResponse> login2fa(
+            @RequestBody final java.util.Map<String, String> body) {
+        String tempToken = body.get("tempToken");
+        String code = body.get("code");
+        return ResponseEntity.ok(authService.completeLoginWith2fa(tempToken, code));
+    }
+
+    /**
+     * Genera una clave TOTP temporal y otpauth URL para el usuario autenticado. POST
+     * /api/v1/auth/2fa/setup
+     */
+    @PostMapping("/2fa/setup")
+    public ResponseEntity<TotpSetupResponse> setup2fa() {
+        return ResponseEntity.ok(authService.generateTotpSetupForCurrentUser());
+    }
+
+    /** Verifica el código TOTP y activa 2FA para el usuario. POST /api/v1/auth/2fa/enable */
+    @PostMapping("/2fa/enable")
+    public ResponseEntity<TotpEnableResponse> enable2fa(
+            @RequestBody final TotpVerifyRequest request) {
+        return ResponseEntity.ok(authService.enableTotpForCurrentUser(request.getCode()));
+    }
+
+    /** Desactiva 2FA tras verificar el código actual. POST /api/v1/auth/2fa/disable */
+    @PostMapping("/2fa/disable")
+    public ResponseEntity<MessageResponse> disable2fa(
+            @RequestBody final TotpVerifyRequest request) {
+        return ResponseEntity.ok(authService.disableTotpForCurrentUser(request.getCode()));
+    }
+
+    /**
+     * Inicia el flujo de autenticación con Google (Redirige a Google). GET
+     * /api/v1/auth/google/authorize
+     */
+    @GetMapping("/google/authorize")
+    public ResponseEntity<java.util.Map<String, String>> authorizeGoogleLogin() {
+        return ResponseEntity.ok(
+                java.util.Map.of("url", authService.getGoogleAuthorizeUrl("login")));
+    }
+
+    /**
+     * Callback de Google OAuth2 para inicio de sesión o registro. GET /api/v1/auth/google/callback
+     */
+    @GetMapping("/google/callback")
+    public ResponseEntity<String> googleLoginCallback(
+            @RequestParam(name = "code", required = false) String code,
+            @RequestParam(name = "error", required = false) String error,
+            @RequestParam(name = "state", required = false) String state) {
+        return authService.processGoogleCallback(code, error, state);
+    }
+
+    /** Vincula la cuenta Google al usuario autenticado. GET /api/v1/auth/google/link/authorize */
+    @GetMapping("/google/link/authorize")
+    public ResponseEntity<java.util.Map<String, String>> authorizeGoogleLink() {
+        return ResponseEntity.ok(
+                java.util.Map.of("url", authService.getGoogleAuthorizeUrl("link")));
+    }
+
+    /** Desvincula la cuenta Google del usuario autenticado. POST /api/v1/auth/google/unlink */
+    @PostMapping("/google/unlink")
+    public ResponseEntity<MessageResponse> unlinkGoogle() {
+        return ResponseEntity.ok(authService.unlinkGoogleFromCurrentUser());
     }
 
     /**

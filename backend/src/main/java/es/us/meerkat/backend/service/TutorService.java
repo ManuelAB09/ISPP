@@ -197,6 +197,8 @@ public class TutorService {
                 .bio(tutor.getBio())
                 .verificado(tutor.getVerificado())
                 .classroomConectado(tutor.getClassroomConectado())
+                .stripeConfigured(
+                        tutor.getStripeAccountId() != null && !tutor.getStripeAccountId().isBlank())
                 .ubicacion(
                         tutor.getUsuario().getUbicacion() != null
                                 ? UbicacionResponse.builder()
@@ -214,14 +216,15 @@ public class TutorService {
     }
 
     /**
-     * Obtiene todos los tutores verificados aplicando filtros opcionales y paginación.
+     * Obtiene todos los tutores aplicando filtros opcionales y paginacion. Los tutores verificados
+     * aparecen primero en el listado.
      *
      * @param especialidad Filtro por especialidad (opcional)
-     * @param tarifaMin Tarifa mínima por hora (opcional, default 0)
-     * @param tarifaMax Tarifa máxima por hora (opcional, default Double.MAX_VALUE)
-     * @param page Número de página (0-indexed)
-     * @param size Tamaño de página
-     * @return Página de tutores filtrados
+     * @param tarifaMin Tarifa minima por hora (opcional)
+     * @param tarifaMax Tarifa maxima por hora (opcional)
+     * @param page Numero de pagina (0-indexed)
+     * @param size Tamano de pagina
+     * @return Pagina de tutores filtrados, verificados primero
      */
     public Page<TutorProfileResponse> obtenerTutoresVerificados(
             String especialidad, BigDecimal tarifaMin, BigDecimal tarifaMax, int page, int size) {
@@ -229,8 +232,7 @@ public class TutorService {
         PageRequest pageable = PageRequest.of(page, size);
 
         Page<Tutor> pageResult =
-                tutorRepository.findVerificadosFiltrados(
-                        especialidad, tarifaMin, tarifaMax, pageable);
+                tutorRepository.findAllFiltrados(especialidad, tarifaMin, tarifaMax, pageable);
 
         return pageResult.map(this::mapToResponse);
     }

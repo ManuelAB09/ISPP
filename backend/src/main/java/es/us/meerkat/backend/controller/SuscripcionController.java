@@ -1,14 +1,17 @@
 package es.us.meerkat.backend.controller;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.Map;
-import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
@@ -61,24 +64,9 @@ public class SuscripcionController {
     @Operation(summary = "Obtener mi suscripción", description = "Devuelve la suscripción actual")
     public ResponseEntity<SubscriptionResponse> obtenerMiSuscripcion(
             @AuthenticationPrincipal final Usuario usuario) {
-        Optional<Suscripcion> suscripcion =
-                suscripcionService.obtenerMiSuscripcion(usuario.getId());
-
-        if (suscripcion.isPresent()) {
-            return ResponseEntity.ok(suscripcion.get().toDTO());
-        } else {
-            SubscriptionResponse freePlan =
-                    SubscriptionResponse.builder()
-                            .id(null)
-                            .plan(TipoPlan.FREE)
-                            .fechaInicio(LocalDate.now())
-                            .fechaFin(LocalDate.now())
-                            .activa(true)
-                            .autoRenovar(false)
-                            .enPeriodoGracia(false)
-                            .build();
-            return ResponseEntity.ok(freePlan);
-        }
+        SubscriptionResponse response =
+                suscripcionService.obtenerMiSuscripcionCompleta(usuario.getId());
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -93,11 +81,24 @@ public class SuscripcionController {
             @AuthenticationPrincipal final Usuario usuario,
             @Valid @RequestBody SubscribeRequest request) {
 
+        // Verificar si tiene plan institucional activo
+        if (suscripcionService.tienePlanInstitucionalActivo(usuario)) {
+            return ResponseEntity.badRequest()
+                    .body(
+                            Map.of(
+                                    "error",
+                                    "No puedes suscribirte a un plan individual mientras tengas un"
+                                            + " plan institucional activo"));
+        }
+
         try {
+            TipoPlan planSolicitado = resolvePlan(request.getPlanId());
             PaymentUrlResponse paymentUrl =
                     paymentService.generarPagoSuscripcion(
-                            usuario, TipoPlan.PREMIUM, request.getPeriodo());
+                            usuario, planSolicitado, request.getPeriodo());
             return ResponseEntity.status(HttpStatus.CREATED).body(paymentUrl);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (StripeException e) {
 
             return ResponseEntity.internalServerError()
@@ -181,7 +182,7 @@ public class SuscripcionController {
                         .body(
                                 Map.of(
                                         "error",
-                                        "El pago no está completado: " + session.getStatus()));
+                                        "El pago no esta completado: " + session.getStatus()));
             }
 
             String usuarioIdEnSession = session.getMetadata().get("usuarioId");
@@ -190,7 +191,7 @@ public class SuscripcionController {
 
             if (!usuario.getId().toString().equals(usuarioIdEnSession)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("error", "Sesión no válida para este usuario"));
+                        .body(Map.of("error", "Sesion no valida para este usuario"));
             }
 
             BigDecimal monto =
@@ -199,11 +200,17 @@ public class SuscripcionController {
                                     .divide(BigDecimal.valueOf(100))
                             : BigDecimal.valueOf(2.99);
 
-            log.info("Llamando activarSuscripcionTrasStripe con monto: {}", monto);
-            suscripcionService.activarSuscripcionTrasStripe(usuario.getId(), monto);
-            log.info("=== SUSCRIPCIÓN ACTIVADA CORRECTAMENTE ===");
+            TipoPlan planSolicitado =
+                    resolvePlan(
+                            session.getMetadata().getOrDefault("plan", TipoPlan.PREMIUM.name()));
+            String periodo = session.getMetadata().getOrDefault("periodo", "mensual");
 
-            return ResponseEntity.ok(Map.of("mensaje", "Suscripción activada correctamente"));
+            log.info("Llamando activarSuscripcionTrasStripe con monto: {}", monto);
+            suscripcionService.activarSuscripcionTrasStripe(
+                    usuario.getId(), monto, periodo, planSolicitado);
+            log.info("=== SUSCRIPCION ACTIVADA CORRECTAMENTE ===");
+
+            return ResponseEntity.ok(Map.of("mensaje", "Suscripcion activada correctamente"));
 
         } catch (StripeException e) {
             log.error("StripeException: code={}, message={}", e.getCode(), e.getMessage(), e);
@@ -218,6 +225,100 @@ public class SuscripcionController {
                     e);
             return ResponseEntity.internalServerError()
                     .body(Map.of("error", e.getClass().getSimpleName() + ": " + e.getMessage()));
+        }
+    }
+
+    /** Confirma la suscripcion tras pago exitoso con Stripe Elements (PaymentIntent). */
+    @PostMapping("/me/confirm-embedded-payment")
+    @Operation(
+            summary = "Confirmar pago embebido con Stripe Elements",
+            description = "Verifica el PaymentIntent y activa la suscripcion Premium")
+    public ResponseEntity<?> confirmarPagoEmbebido(
+            @AuthenticationPrincipal final Usuario usuario, @RequestBody Map<String, String> body) {
+
+        String paymentIntentId = body.get("paymentIntentId");
+        if (paymentIntentId == null || paymentIntentId.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "paymentIntentId requerido"));
+        }
+
+        try {
+            com.stripe.model.PaymentIntent intent =
+                    com.stripe.model.PaymentIntent.retrieve(paymentIntentId);
+
+            if (!"succeeded".equals(intent.getStatus())) {
+                return ResponseEntity.badRequest()
+                        .body(
+                                Map.of(
+                                        "error",
+                                        "El pago no se ha completado: " + intent.getStatus()));
+            }
+
+            String usuarioIdMeta = intent.getMetadata().get("usuarioId");
+            if (!usuario.getId().toString().equals(usuarioIdMeta)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "PaymentIntent no valido para este usuario"));
+            }
+
+            BigDecimal monto =
+                    BigDecimal.valueOf(intent.getAmount()).divide(BigDecimal.valueOf(100));
+            String periodo = intent.getMetadata().get("periodo");
+            TipoPlan planSolicitado = resolvePlan(intent.getMetadata().get("plan"));
+            suscripcionService.activarSuscripcionTrasStripe(
+                    usuario.getId(), monto, periodo, planSolicitado);
+
+            return ResponseEntity.ok(Map.of("mensaje", "Suscripcion activada correctamente"));
+
+        } catch (StripeException e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Error Stripe: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/me/create-payment-intent")
+    @Operation(
+            summary = "Crear PaymentIntent para suscripcion",
+            description = "Devuelve el clientSecret para usar con Stripe Elements")
+    public ResponseEntity<?> crearPaymentIntent(
+            @AuthenticationPrincipal final Usuario usuario,
+            @Valid @RequestBody SubscribeRequest request) {
+
+        // Verificar si tiene plan institucional activo
+        if (suscripcionService.tienePlanInstitucionalActivo(usuario)) {
+            return ResponseEntity.badRequest()
+                    .body(
+                            Map.of(
+                                    "error",
+                                    "No puedes suscribirte a un plan individual mientras tengas un"
+                                            + " plan institucional activo"));
+        }
+
+        try {
+            TipoPlan planSolicitado = resolvePlan(request.getPlanId());
+            Map<String, String> result =
+                    paymentService.crearPaymentIntentSuscripcion(
+                            usuario, planSolicitado, request.getPeriodo());
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (StripeException e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Error al crear el intent de pago: " + e.getMessage()));
+        }
+    }
+
+    private TipoPlan resolvePlan(String planId) {
+        String normalized =
+                (planId == null || planId.isBlank()) ? "PREMIUM" : planId.trim().toUpperCase();
+        try {
+            TipoPlan plan = TipoPlan.valueOf(normalized);
+            if (plan == TipoPlan.FREE) {
+                throw new IllegalArgumentException("El plan FREE no es contratable");
+            }
+            return plan;
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Plan no válido: " + planId + ". Usa PREMIUM o PRO");
         }
     }
 }

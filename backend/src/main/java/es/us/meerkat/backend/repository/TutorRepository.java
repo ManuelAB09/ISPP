@@ -88,17 +88,58 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
     @EntityGraph(attributePaths = {"usuario"})
     @Query(
             """
-    SELECT DISTINCT t
+        SELECT t
     FROM Tutor t
-    LEFT JOIN t.especialidades e
-    WHERE t.verificado = true
-    AND (:especialidad IS NULL OR LOWER(e) LIKE LOWER(CONCAT('%', CAST(:especialidad AS string), '%')))
+        WHERE (
+                :especialidad IS NULL
+                OR EXISTS (
+                        SELECT 1
+                        FROM Tutor t2 JOIN t2.especialidades e
+                        WHERE t2.id = t.id
+                        AND LOWER(e) LIKE LOWER(CONCAT('%', CAST(:especialidad AS string), '%'))
+                )
+        )
     AND (:tarifaMin IS NULL OR t.tarifaHora >= :tarifaMin)
     AND (:tarifaMax IS NULL OR t.tarifaHora <= :tarifaMax)
+        ORDER BY t.verificado DESC, t.createdAt DESC
 """)
     Page<Tutor> findVerificadosFiltrados(
             @Param("especialidad") String especialidad,
             @Param("tarifaMin") BigDecimal tarifaMin,
             @Param("tarifaMax") BigDecimal tarifaMax,
             Pageable pageable);
+
+    /**
+     * Lista todos los tutores (verificados y no verificados) con filtros opcionales. Ordenados por
+     * verificado DESC (verificados primero).
+     */
+    @EntityGraph(attributePaths = {"usuario"})
+    @Query(
+            value =
+                    """
+    SELECT DISTINCT t
+    FROM Tutor t
+    LEFT JOIN t.especialidades e
+    WHERE (:especialidad IS NULL OR LOWER(e) LIKE LOWER(CONCAT('%', CAST(:especialidad AS string), '%')))
+    AND (:tarifaMin IS NULL OR t.tarifaHora >= :tarifaMin)
+    AND (:tarifaMax IS NULL OR t.tarifaHora <= :tarifaMax)
+    ORDER BY t.verificado DESC, t.createdAt DESC
+""",
+            countQuery =
+                    """
+    SELECT COUNT(DISTINCT t)
+    FROM Tutor t
+    LEFT JOIN t.especialidades e
+    WHERE (:especialidad IS NULL OR LOWER(e) LIKE LOWER(CONCAT('%', CAST(:especialidad AS string), '%')))
+    AND (:tarifaMin IS NULL OR t.tarifaHora >= :tarifaMin)
+    AND (:tarifaMax IS NULL OR t.tarifaHora <= :tarifaMax)
+""")
+    Page<Tutor> findAllFiltrados(
+            @Param("especialidad") String especialidad,
+            @Param("tarifaMin") BigDecimal tarifaMin,
+            @Param("tarifaMax") BigDecimal tarifaMax,
+            Pageable pageable);
+
+    /** Busca un tutor por el ID del usuario asociado. */
+    Optional<Tutor> findByUsuarioId(Long usuarioId);
 }

@@ -28,20 +28,19 @@ class AuthControllerTest {
     @InjectMocks private AuthController authController;
 
     @Test
-    void registerShouldReturnCreatedWithAuthResponse() {
+    void registerShouldReturnCreatedWithMessageResponse() {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("new.user@meerkat.es");
         request.setPassword("password123");
         request.setNombre("Nuevo Usuario");
 
-        AuthResponse serviceResponse =
-                AuthResponse.builder()
-                        .accessToken("jwt-token")
-                        .user(UserDetailResponse.builder().id(1L).email(request.getEmail()).build())
+        MessageResponse serviceResponse =
+                MessageResponse.builder()
+                        .message("Se ha enviado un email de verificación a new.user@meerkat.es")
                         .build();
         when(authService.registrar(request)).thenReturn(serviceResponse);
 
-        ResponseEntity<AuthResponse> response = authController.register(request);
+        ResponseEntity<MessageResponse> response = authController.register(request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isEqualTo(serviceResponse);
@@ -61,7 +60,7 @@ class AuthControllerTest {
                         .build();
         when(authService.iniciarSesion(request)).thenReturn(serviceResponse);
 
-        ResponseEntity<AuthResponse> response = authController.login(request);
+        ResponseEntity<?> response = authController.login(request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(serviceResponse);

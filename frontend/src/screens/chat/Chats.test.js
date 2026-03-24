@@ -20,6 +20,21 @@ jest.mock('../../contexts/AuthContext', () => ({
     }),
 }));
 
+jest.mock('../../contexts/NotificationContext', () => ({
+    useNotificationContext: () => ({
+        isChatMuted: jest.fn(() => false),
+        toggleChatMuted: jest.fn(),
+        communityUnreadById: {},
+        clearCommunityUnread: jest.fn(),
+    }),
+}));
+
+jest.mock('../../api/auth.api', () => ({
+    authApi: {
+        getUserPublicProfile: jest.fn().mockResolvedValue({ data: { id: 1, nombre: 'Test', foto: null } }),
+    },
+}));
+
 jest.mock('../../api/communities.api', () => ({
     communitiesApi: {
         getMyMemberships: jest.fn().mockResolvedValue([]),

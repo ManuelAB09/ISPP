@@ -22,6 +22,29 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class MensajeService {
+    @Transactional
+    public void marcarConversacionComoLeida(Long usuarioId, Long otherUserId) {
+        // Buscar todos los mensajes recibidos por el usuario autenticado de la otra
+        // persona
+        List<Mensaje> mensajes =
+                mensajeRepository.findConversationBetweenUsers(usuarioId, otherUserId);
+        for (Mensaje m : mensajes) {
+            if (m.getReceptor().getId().equals(usuarioId)) {
+                if (!mensajeLeidoRepository
+                        .findByMensajeAndUsuario(m, m.getReceptor())
+                        .isPresent()) {
+                    es.us.meerkat.backend.entity.MensajeLeido ml =
+                            es.us.meerkat.backend.entity.MensajeLeido.builder()
+                                    .mensaje(m)
+                                    .usuario(m.getReceptor())
+                                    .leidoAt(java.time.LocalDateTime.now())
+                                    .build();
+                    mensajeLeidoRepository.save(ml);
+                }
+            }
+        }
+    }
+
     /** Repositorio para acceder a la información de tutores. */
     private final TutorRepository tutorRepository;
 
@@ -30,6 +53,8 @@ public class MensajeService {
 
     private final MensajeRepository mensajeRepository;
     private final JdbcTemplate jdbcTemplate;
+
+    private final es.us.meerkat.backend.repository.MensajeLeidoRepository mensajeLeidoRepository;
 
     @PostConstruct
     void ensureTutorColumnNullable() {
@@ -215,9 +240,7 @@ public class MensajeService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         List<Mensaje> mensajes =
-                mensajeRepository
-                        .findByEmisorIdAndReceptorIdOrEmisorIdAndReceptorIdOrderByCreatedAtAsc(
-                                usuarioId, otherUserId, otherUserId, usuarioId);
+                mensajeRepository.findConversationBetweenUsers(usuarioId, otherUserId);
 
         return mensajes.stream().map(this::mapToResponse).toList();
     }
@@ -236,35 +259,60 @@ public class MensajeService {
         java.util.Map<Long, java.util.Map<String, Object>> conversationMap =
                 new java.util.LinkedHashMap<>();
 
+        // Agrupar mensajes por otro usuario
+        java.util.Map<Long, java.util.List<Mensaje>> mensajesPorOtroUsuario =
+                new java.util.HashMap<>();
         for (Mensaje msg : messages) {
-            try {
-                // Validar que emisor y receptor no sean nulos
-                if (msg.getEmisor() == null || msg.getReceptor() == null) {
-                    log.warn("Mensaje {} tiene emisor o receptor nulo, omitiendo", msg.getId());
-                    continue;
-                }
-
-                Long otherId =
-                        msg.getEmisor().getId().equals(usuarioId)
-                                ? msg.getReceptor().getId()
-                                : msg.getEmisor().getId();
-                Usuario otherUser =
-                        msg.getEmisor().getId().equals(usuarioId)
-                                ? msg.getReceptor()
-                                : msg.getEmisor();
-
-                if (!conversationMap.containsKey(otherId)) {
-                    java.util.Map<String, Object> convData = new java.util.HashMap<>();
-                    convData.put("usuarioId", otherId);
-                    convData.put("usuarioNombre", otherUser.getNombre());
-                    convData.put("usuarioFoto", otherUser.getFoto());
-                    convData.put("ultimoMensaje", msg.getContenido());
-                    convData.put("ultimaFecha", msg.getCreatedAt());
-                    conversationMap.put(otherId, convData);
-                }
-            } catch (Exception e) {
-                log.error("Error procesando mensaje {}: {}", msg.getId(), e.getMessage(), e);
+            if (msg.getEmisor() == null || msg.getReceptor() == null) {
+                continue;
             }
+            Long otherId =
+                    msg.getEmisor().getId().equals(usuarioId)
+                            ? msg.getReceptor().getId()
+                            : msg.getEmisor().getId();
+            mensajesPorOtroUsuario
+                    .computeIfAbsent(otherId, k -> new java.util.ArrayList<>())
+                    .add(msg);
+        }
+
+        for (var entry : mensajesPorOtroUsuario.entrySet()) {
+            Long otherId = entry.getKey();
+            java.util.List<Mensaje> convMsgs = entry.getValue();
+            if (convMsgs.isEmpty()) {
+                continue;
+            }
+            Mensaje ultimo = convMsgs.get(0);
+            for (Mensaje m : convMsgs) {
+                if (m.getCreatedAt().isAfter(ultimo.getCreatedAt())) {
+                    ultimo = m;
+                }
+            }
+            Usuario otherUser =
+                    ultimo.getEmisor().getId().equals(usuarioId)
+                            ? ultimo.getReceptor()
+                            : ultimo.getEmisor();
+
+            // Mensajes recibidos no leídos
+            java.util.List<Long> idsRecibidos =
+                    convMsgs.stream()
+                            .filter(m -> m.getReceptor().getId().equals(usuarioId))
+                            .map(Mensaje::getId)
+                            .toList();
+            java.util.List<Long> idsLeidos =
+                    idsRecibidos.isEmpty()
+                            ? java.util.List.of()
+                            : mensajeLeidoRepository.findMensajeIdsLeidosByUsuario(
+                                    usuarioId, idsRecibidos);
+            int noLeidos = idsRecibidos.size() - idsLeidos.size();
+
+            java.util.Map<String, Object> convData = new java.util.HashMap<>();
+            convData.put("usuarioId", otherId);
+            convData.put("usuarioNombre", otherUser.getNombre());
+            convData.put("usuarioFoto", otherUser.getFoto());
+            convData.put("ultimoMensaje", ultimo.getContenido());
+            convData.put("ultimaFecha", ultimo.getCreatedAt());
+            convData.put("noLeidos", noLeidos);
+            conversationMap.put(otherId, convData);
         }
 
         log.info("Total de conversaciones únicas: {}", conversationMap.size());
@@ -320,6 +368,16 @@ public class MensajeService {
                 .archivoMimeType(mensaje.getArchivoMimeType())
                 .archivoTamano(mensaje.getArchivoTamano())
                 .build();
+    }
+
+    /** Obtiene un mensaje por su ID y lo devuelve como DTO. */
+    @Transactional(readOnly = true)
+    public MensajeResponse obtenerMensaje(Long mensajeId) {
+        Mensaje mensaje =
+                mensajeRepository
+                        .findById(mensajeId)
+                        .orElseThrow(() -> new IllegalArgumentException("Mensaje no encontrado"));
+        return mapToResponse(mensaje);
     }
 
     public record MensajeArchivo(byte[] data, String nombre, String mimeType) {}

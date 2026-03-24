@@ -203,6 +203,13 @@ textarea.input-box {
   color: #5B6392;
 }
 
+.toggle-btn--disabled,
+.toggle-btn--disabled:hover {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .toggle-icon {
   margin-right: 0.4rem;
   font-size: 1rem;
@@ -220,6 +227,60 @@ textarea.input-box {
   color: #848BA8;
   font-size: 0.75rem;
   margin-top: 0.35rem;
+}
+
+.materials-input-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.btn-material-add {
+  border: none;
+  background-color: #6B73A1;
+  color: #fff;
+  border-radius: 0.75rem;
+  padding: 0.85rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-material-add:hover {
+  background-color: #525983;
+}
+
+.materials-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.material-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background-color: #eef2ff;
+  color: #2E3559;
+  border: 1px solid #c7d2fe;
+  border-radius: 999px;
+  padding: 0.35rem 0.55rem 0.35rem 0.7rem;
+  font-size: 0.8rem;
+}
+
+.material-chip-remove {
+  border: none;
+  background: transparent;
+  color: #2E3559;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.material-chip-remove:hover {
+  color: #d64545;
 }
 
 .input-error {
@@ -355,5 +416,10 @@ textarea.input-box {
 
   .input-row {
     justify-content: space-between;
+  }
+
+  .materials-input-row {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

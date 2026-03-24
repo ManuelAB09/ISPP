@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import GoogleAuthButton from '../../components/GoogleAuthButton';
 import './Login.css';
 import studyShareLogo from '../../static/images/MeerKatters_logo.png';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, error: authError, clearError, isAuthenticated, loading } = useAuth();
+  const { login, processDirectLogin, login2fa, resendVerification, error: authError, clearError, isAuthenticated, loading } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -15,6 +16,14 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [emailNotVerified, setEmailNotVerified] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
+
+  // 2FA state
+  const [show2FA, setShow2FA] = useState(false);
+  const [totpCode, setTotpCode] = useState('');
+  const [tempToken, setTempToken] = useState('');
 
   // Si ya está autenticado, mostrar mensaje
   if (!loading && isAuthenticated) {
@@ -43,6 +52,8 @@ const Login = () => {
     }));
     // Limpiar errores al escribir
     if (error) setError('');
+    if (emailNotVerified) setEmailNotVerified(false);
+    if (resendMessage) setResendMessage('');
     if (authError) clearError();
   };
 
@@ -51,16 +62,96 @@ const Login = () => {
 
     setIsLoading(true);
     setError('');
+    setEmailNotVerified(false);
+    setResendMessage('');
+
+    // Validaciones frontend
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim()) {
+      setError('El correo electrónico no puede estar vacío');
+      setIsLoading(false);
+      return;
+    }
+    if (!emailRegex.test(formData.email)) {
+      setError('Introduce un correo electrónico válido (ej: usuario@dominio.com)');
+      setIsLoading(false);
+      return;
+    }
+    if (!formData.password) {
+      setError('La contraseña no puede estar vacía');
+      setIsLoading(false);
+      return;
+    }
 
     const result = await login(formData.email, formData.password);
 
     if (result.success) {
-      navigate('/');
+      if (result.twoFactorRequired) {
+        setTempToken(result.tempToken);
+        setShow2FA(true);
+      } else {
+        navigate('/');
+      }
     } else {
-      setError(result.error || 'Error al iniciar sesión');
+      const errorMsg = result.error || 'Error al iniciar sesión';
+      // Detectar si el error es por email no verificado
+      if (errorMsg.toLowerCase().includes('verificar') || errorMsg.toLowerCase().includes('verificado')) {
+        setEmailNotVerified(true);
+      }
+      setError(errorMsg);
     }
 
     setIsLoading(false);
+  };
+
+  const handle2FASubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
+    const result = await login2fa(tempToken, totpCode);
+    if (result.success) {
+      navigate('/');
+    } else {
+      setError(result.error || 'Código 2FA incorrecto');
+    }
+    setIsLoading(false);
+  };
+
+  const handleGoogleSuccess = async (payload) => {
+    setIsLoading(true);
+    setError('');
+    
+    // AuthResponse format or 2FA challenge from the backend popup
+    const result = processDirectLogin(payload);
+    
+    if (result.success) {
+      if (result.twoFactorRequired) {
+        setTempToken(result.tempToken);
+        setShow2FA(true);
+      } else {
+        navigate('/');
+      }
+    } else {
+      setError(result.error || 'Error al procesar la respuesta de Google');
+    }
+    
+    setIsLoading(false);
+  };
+
+  const handleResendVerification = async () => {
+    setResendLoading(true);
+    setResendMessage('');
+    
+    const result = await resendVerification(formData.email);
+    
+    if (result.success) {
+      setResendMessage('Email de verificación reenviado correctamente. Revisa tu bandeja de entrada.');
+    } else {
+      setResendMessage(result.error || 'Error al reenviar el email');
+    }
+    
+    setResendLoading(false);
   };
 
   return (
@@ -95,19 +186,52 @@ const Login = () => {
       {/* Right Panel - Form */}
       <div className="login-right-panel">
         <div className="login-form-container">
-          <div className="login-header">
-            <h2>Bienvenido</h2>
-            <p>Por favor, inserte sus datos para iniciar sesión</p>
-          </div>
+          
+          {show2FA ? (
+            <div className="login-2fa-container">
+              <div className="login-header">
+                <h2>Verificación en dos pasos</h2>
+                <p>Introduce el código de tu app de autenticación o un código de respaldo</p>
+              </div>
 
-          <form onSubmit={handleSubmit} className="login-form">
+              <form onSubmit={handle2FASubmit} className="login-form">
+                <div className="form-group">
+                  <label htmlFor="totpCode">Código 2FA o de respaldo</label>
+                  <input
+                    type="text"
+                    id="totpCode"
+                    value={totpCode}
+                    onChange={(e) => setTotpCode(e.target.value.toUpperCase())}
+                    placeholder="000111 o ABCD-EFGH"
+                    maxLength="24"
+                    required
+                    style={{ letterSpacing: '1px', textAlign: 'center', fontSize: '1.2rem' }}
+                  />
+                </div>
+                {error && <div className="login-error-message">{error}</div>}
+                <button type="submit" className="login-button" disabled={isLoading}>
+                  {isLoading ? 'Verificando...' : 'Verificar código'}
+                </button>
+                <button type="button" className="login-button secondary" onClick={() => setShow2FA(false)} style={{ marginTop: '10px', background: 'transparent', border: '1px solid #ccc', color: '#333' }}>
+                  Atrás
+                </button>
+              </form>
+            </div>
+          ) : (
+            <>
+              <div className="login-header">
+                <h2>Bienvenido</h2>
+                <p>Por favor, inserte sus datos para iniciar sesión</p>
+              </div>
+
+              <form onSubmit={handleSubmit} className="login-form">
             <div className="form-group">
               <label htmlFor="email">Correo electrónico</label>
               <input
                 type="email"
                 id="email"
                 name="email"
-                placeholder="nombre@universidadDeSevilla.mola"
+                placeholder="tu@correo.com"
                 value={formData.email}
                 onChange={handleInputChange}
                 required
@@ -167,6 +291,39 @@ const Login = () => {
             {error && (
               <div className="login-error-message">
                 {error}
+                {emailNotVerified && (
+                  <div style={{ marginTop: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={handleResendVerification}
+                      disabled={resendLoading || !formData.email}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#3b82f6',
+                        textDecoration: 'underline',
+                        cursor: resendLoading ? 'not-allowed' : 'pointer',
+                        padding: 0,
+                        fontSize: '14px'
+                      }}
+                    >
+                      {resendLoading ? 'Enviando...' : 'Reenviar email de verificación'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {resendMessage && (
+              <div style={{
+                padding: '10px',
+                borderRadius: '8px',
+                marginBottom: '15px',
+                backgroundColor: resendMessage.includes('Error') ? '#fee2e2' : '#d1fae5',
+                color: resendMessage.includes('Error') ? '#991b1b' : '#065f46',
+                fontSize: '14px'
+              }}>
+                {resendMessage}
               </div>
             )}
 
@@ -175,11 +332,34 @@ const Login = () => {
             </button>
           </form>
 
-          <div className="register-link">
+          {/* Import GoogleLogin inside the component */}
+          <div className="google-auth-container" style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
+            {/* Usamos require en lugar de import estático para evitar problemas si falla la inicialización */}
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', margin: '15px 0', width: '100%' }}>
+                <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                <span style={{ padding: '0 10px', color: '#94a3b8', fontSize: '0.9rem' }}>o continuar con</span>
+                <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+              </div>
+              
+              <GoogleAuthButton
+                onSuccess={handleGoogleSuccess}
+                onError={(err) => {
+                  setError(err || 'Fallo en el inicio de sesión de Google');
+                }}
+                text="Continuar con Google"
+                flowType="login"
+              />
+            </div>
+          </div>
+
+          <div className="register-link" style={{ marginTop: '15px' }}>
             <p>
               No tienes cuenta todavía? <Link to="/register">Crear cuenta</Link>
             </p>
           </div>
+        </>
+        )}
         </div>
       </div>
     </div>

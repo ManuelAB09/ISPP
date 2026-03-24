@@ -28,7 +28,7 @@ export const useSocket = (token) => {
         }
 
         const SOCKET_SERVER = getApiBaseUrl();
-        const WS_URL = `${SOCKET_SERVER}/ws`;
+        const WS_URL = `${SOCKET_SERVER}/ws?token=${encodeURIComponent(token)}`;
         const subscriptions = subscriptionsRef.current;
         const localListeners = localListenersRef.current;
 
@@ -92,7 +92,6 @@ export const useSocket = (token) => {
                 return;
             }
             isIdleDisconnectedRef.current = true;
-            console.log('🛑 Socket desconectado por inactividad');
             deactivateSocket();
         };
 
@@ -104,7 +103,6 @@ export const useSocket = (token) => {
         const handleUserActivity = () => {
             if (isIdleDisconnectedRef.current) {
                 isIdleDisconnectedRef.current = false;
-                console.log('🔄 Actividad detectada: reconectando socket...');
                 activateSocket();
             }
             resetInactivityTimer();
@@ -146,9 +144,16 @@ export const useSocket = (token) => {
             const subscribeMap = {
                 dm_message: '/user/queue/dm',
                 dm_delete_success: '/user/queue/dm_delete_success',
+                dm_update_success: '/user/queue/dm_update_success',
                 dm_history: '/user/queue/dm_history',
                 conversations: '/user/queue/conversations',
                 community_history: '/user/queue/community_history',
+                community_message: '/user/queue/community_message',
+                notificaciones: '/user/queue/notificaciones',
+                solicitud_contratacion: '/user/queue/solicitud_contratacion',
+                solicitud_contratacion_respuesta: '/user/queue/solicitud_contratacion_respuesta',
+                solicitud_contratacion_pagada: '/user/queue/solicitud_contratacion_pagada',
+                alerts_count: '/user/queue/alerts_count',
                 error: '/user/queue/error',
             };
             return subscribeMap[event] || event;
@@ -157,6 +162,7 @@ export const useSocket = (token) => {
         const socketAdapter = {
             on: (event, callback) => {
                 if (!stompClientRef.current || !stompClientRef.current.connected) {
+
                     const listeners = localListeners.get(event) || new Set();
                     listeners.add(callback);
                     localListeners.set(event, listeners);
@@ -181,7 +187,10 @@ export const useSocket = (token) => {
                 for (const [key, item] of subscriptions.entries()) {
                     if (item.event === event && (!callback || item.callback === callback)) {
                         if (item.subscription) {
-                            item.subscription.unsubscribe();
+                            // Only send UNSUBSCRIBE frame if the connection is alive
+                            if (stompClientRef.current?.connected) {
+                                item.subscription.unsubscribe();
+                            }
                             item.subscription = null;
                         }
                         subscriptions.delete(key);
@@ -225,26 +234,46 @@ export const useSocket = (token) => {
             reconnectDelay: 3000,
             heartbeatIncoming: 10000,
             heartbeatOutgoing: 10000,
+
             onConnect: () => {
+                // Bug A fix: reset stale subscription refs from previous connection
+                // so subscribeRecord() creates fresh STOMP subscriptions
+                for (const [, record] of subscriptions.entries()) {
+                    record.subscription = null;
+                }
+
                 setIsConnected(true);
                 subscribeAll();
+
+                // Bug B fix: promote localListeners registered before connection
+                // to real STOMP subscriptions
+                for (const [event, listeners] of localListeners.entries()) {
+                    if (event === 'connect' || event === 'disconnect' || event === 'connect_error') {
+                        continue;
+                    }
+                    for (const cb of listeners) {
+                        const destination = eventToSubscription(event);
+                        const key = `${event}:${subscriptionCounterRef.current++}`;
+                        const record = { event, callback: cb, destination, subscription: null };
+                        subscriptions.set(key, record);
+                        subscribeRecord(record);
+                    }
+                    listeners.clear();
+                }
+
                 emitLocal('connect', {});
-                console.log('✓ Conectado al servidor WebSocket (STOMP)');
             },
             onStompError: (frame) => {
                 setIsConnected(false);
                 emitLocal('error', { message: frame?.headers?.message || 'STOMP error' });
-                console.error('✗ STOMP error:', frame?.body);
             },
             onWebSocketError: (error) => {
                 setIsConnected(false);
                 emitLocal('connect_error', error);
-                console.error('✗ Error de conexión WebSocket:', error);
             },
             onWebSocketClose: () => {
                 setIsConnected(false);
                 emitLocal('disconnect', {});
-                console.log('✗ Desconectado del servidor WebSocket');
             },
         });
 

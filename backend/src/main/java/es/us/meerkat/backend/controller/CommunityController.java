@@ -10,24 +10,63 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import es.us.meerkat.backend.dto.*;
+import es.us.meerkat.backend.dto.AccessRequestBody;
+import es.us.meerkat.backend.dto.CategoryListResponse;
+import es.us.meerkat.backend.dto.CategoryResponse;
+import es.us.meerkat.backend.dto.ClassroomInfoResponse;
+import es.us.meerkat.backend.dto.CommunityDetailResponse;
+import es.us.meerkat.backend.dto.CommunityListResponse;
+import es.us.meerkat.backend.dto.CommunityRankingEntryResponse;
+import es.us.meerkat.backend.dto.CreateCategoryRequest;
+import es.us.meerkat.backend.dto.CreateCommunityRequest;
+import es.us.meerkat.backend.dto.CreateEventRequest;
+import es.us.meerkat.backend.dto.EventDetailResponse;
+import es.us.meerkat.backend.dto.EventSummaryResponse;
+import es.us.meerkat.backend.dto.HireTutorRequest;
+import es.us.meerkat.backend.dto.JoinCommunityRequest;
+import es.us.meerkat.backend.dto.LinkClassroomRequest;
+import es.us.meerkat.backend.dto.MemberListResponse;
+import es.us.meerkat.backend.dto.MemberResponse;
+import es.us.meerkat.backend.dto.MessageResponse;
+import es.us.meerkat.backend.dto.PaymentUrlResponse;
+import es.us.meerkat.backend.dto.PrivacyRequest;
+import es.us.meerkat.backend.dto.ReorderCategoriesRequest;
+import es.us.meerkat.backend.dto.RequestListResponse;
+import es.us.meerkat.backend.dto.RequestResponse;
+import es.us.meerkat.backend.dto.RespondRequestBody;
+import es.us.meerkat.backend.dto.TransferAdminRequest;
+import es.us.meerkat.backend.dto.UpdateCategoryRequest;
+import es.us.meerkat.backend.dto.UpdateCommunityRequest;
+import es.us.meerkat.backend.dto.UpgradeCommunityRequest;
+import es.us.meerkat.backend.dto.UserSimpleResponse;
 import es.us.meerkat.backend.entity.Categoria;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.ComunidadClassroom;
 import es.us.meerkat.backend.entity.EstadoSolicitud;
 import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.MiembroComunidad;
+import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.SolicitudComunidad;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.exception.ValidationException;
 import es.us.meerkat.backend.service.AuthorizationService;
 import es.us.meerkat.backend.service.CategoryService;
 import es.us.meerkat.backend.service.CommunityService;
 import es.us.meerkat.backend.service.EventoService;
 import es.us.meerkat.backend.service.GoogleClassroomService;
 import es.us.meerkat.backend.service.MemberService;
+import es.us.meerkat.backend.service.PaymentService;
 import es.us.meerkat.backend.service.RequestService;
 import es.us.meerkat.backend.service.TutorContratacionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -55,6 +94,7 @@ public class CommunityController {
     private final CategoryService categoryService;
     private final AuthorizationService authorizationService;
     private final TutorContratacionService tutorContratacionService;
+    private final PaymentService paymentService;
     private final EventoService eventoService;
     private final GoogleClassroomService googleClassroomService;
 
@@ -76,7 +116,7 @@ public class CommunityController {
 
         Long userId = usuario != null ? usuario.getId() : null;
         Pageable pageable = PageRequest.of(page, size);
-        Page<Comunidad> comunidades = communityService.listPublicCommunities(search, pageable);
+        Page<Comunidad> comunidades = communityService.listActiveCommunities(search, pageable);
         Page<CommunityDetailResponse> response =
                 comunidades.map(c -> entityToDetailResponse(c, userId));
         return ResponseEntity.ok(new CommunityListResponse(response));
@@ -136,6 +176,14 @@ public class CommunityController {
         }
 
         try {
+            RolComunidad rolInicial = null;
+            if (request.rolInicial() != null && !request.rolInicial().isBlank()) {
+                try {
+                    rolInicial = RolComunidad.valueOf(request.rolInicial().toUpperCase());
+                } catch (IllegalArgumentException ignored) {
+                    rolInicial = null;
+                }
+            }
             Comunidad comunidad =
                     communityService.createCommunity(
                             usuario.getId(),
@@ -145,7 +193,10 @@ public class CommunityController {
                                     ? es.us.meerkat.backend.entity.TipoGrupo.valueOf(
                                             request.tipoGrupo())
                                     : es.us.meerkat.backend.entity.TipoGrupo.COMUNIDAD_PUBLICA,
-                            request.imagenUrl());
+                            request.imagenUrl(),
+                            request.institutionId(),
+                            request.maxMiembros(),
+                            rolInicial);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(entityToDetailResponse(comunidad, usuario.getId()));
         } catch (IllegalArgumentException e) {
@@ -400,19 +451,32 @@ public class CommunityController {
                 description = "No puedes unirte (privada, llena, ya eres miembro)"),
         @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
     })
-    public ResponseEntity<MemberResponse> joinPublicCommunity(
-            @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
+    public ResponseEntity<?> joinPublicCommunity(
+            @PathVariable Long communityId,
+            @Valid @RequestBody JoinCommunityRequest request,
+            @AuthenticationPrincipal Usuario usuario) {
 
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         try {
+            RolComunidad desiredRol = null;
+            if (request != null && request.rol() != null) {
+                try {
+                    desiredRol = RolComunidad.valueOf(request.rol().toUpperCase());
+                } catch (IllegalArgumentException ex) {
+                    return ResponseEntity.badRequest()
+                            .body(MessageResponse.builder().message("Rol inválido").build());
+                }
+            }
+
             MiembroComunidad miembro =
-                    memberService.joinPublicCommunity(usuario.getId(), communityId);
+                    memberService.joinPublicCommunity(usuario.getId(), communityId, desiredRol);
             return ResponseEntity.status(HttpStatus.CREATED).body(entityToMemberResponse(miembro));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest()
+                    .body(MessageResponse.builder().message(e.getMessage()).build());
         }
     }
 
@@ -468,6 +532,10 @@ public class CommunityController {
         try {
             memberService.leaveCommunity(usuario.getId(), communityId);
             return ResponseEntity.noContent().build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .header("Content-Type", "text/plain")
+                    .build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
@@ -536,12 +604,123 @@ public class CommunityController {
         }
 
         try {
+            RolComunidad rol = null;
+            if (request.nuevoRolOrigen() != null) {
+                try {
+                    rol = RolComunidad.valueOf(request.nuevoRolOrigen().toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    return ResponseEntity.badRequest().build();
+                }
+            }
+
             MiembroComunidad newAdmin =
                     memberService.transferAdmin(
-                            usuario.getId(), communityId, request.nuevoAdminId());
+                            usuario.getId(), communityId, request.nuevoAdminId(), rol);
             return ResponseEntity.ok(entityToMemberResponse(newAdmin));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
+    /**
+     * Promueve a ADMIN a un miembro de la comunidad. POST
+     * /api/v1/communities/{communityId}/admin/{userId}
+     */
+    @PostMapping("/{communityId}/admin/{userId}")
+    @Operation(
+            summary = "Promover miembro a admin",
+            description = "Asciende a ADMIN a un miembro existente (solo admin actual)",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Miembro promovido a admin"),
+        @ApiResponse(responseCode = "403", description = "No tienes permisos"),
+        @ApiResponse(responseCode = "404", description = "Usuario target no encontrado")
+    })
+    public ResponseEntity<MemberResponse> promoteMemberToAdmin(
+            @PathVariable Long communityId,
+            @PathVariable Long userId,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        try {
+            MiembroComunidad promotedMember =
+                    memberService.promoteToAdmin(usuario.getId(), communityId, userId);
+            return ResponseEntity.ok(entityToMemberResponse(promotedMember));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
+    /** Ranking de miembros por actividad. GET /api/v1/communities/{communityId}/ranking */
+    @GetMapping("/{communityId}/ranking")
+    @Operation(
+            summary = "Ranking de miembros",
+            description = "Devuelve el ranking de actividad de los miembros de la comunidad",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Ranking obtenido"),
+        @ApiResponse(responseCode = "401", description = "Usuario no autenticado"),
+        @ApiResponse(responseCode = "403", description = "No eres miembro de la comunidad")
+    })
+    public ResponseEntity<List<CommunityRankingEntryResponse>> getCommunityRanking(
+            @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        if (!authorizationService.isMemberOf(usuario.getId(), communityId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        return ResponseEntity.ok(
+                communityService.getCommunityRanking(communityId, usuario.getId()));
+    }
+
+    /**
+     * Añade un nuevo administrador a la comunidad (solo comunidades corporativas). POST
+     * /api/v1/communities/{communityId}/admins
+     */
+    @PostMapping("/{communityId}/admins/{nuevoAdminId}")
+    @Operation(
+            summary = "Añadir administrador (corporativo)",
+            description = "Añade un administrador adicional a una comunidad corporativa",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Administrador añadido"),
+        @ApiResponse(
+                responseCode = "400",
+                description = "Datos inválidos o condiciones no cumplidas"),
+        @ApiResponse(responseCode = "403", description = "No tienes permisos"),
+        @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
+    })
+    public ResponseEntity<?> addAdminToCommunity(
+            @PathVariable Long communityId,
+            @PathVariable Long nuevoAdminId,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        if (!authorizationService.isAdminOf(usuario.getId(), communityId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        try {
+            MiembroComunidad miembro =
+                    memberService.addAdmin(usuario.getId(), communityId, nuevoAdminId);
+            return ResponseEntity.ok(entityToMemberResponse(miembro));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(MessageResponse.builder().message(e.getMessage()).build());
         }
     }
 
@@ -612,13 +791,48 @@ public class CommunityController {
         }
 
         try {
+            RolComunidad rolDeseado = RolComunidad.ALUMNO;
+            if (request.rolDeseado() != null && !request.rolDeseado().isBlank()) {
+                try {
+                    rolDeseado = RolComunidad.valueOf(request.rolDeseado());
+                } catch (IllegalArgumentException ignored) {
+                    // Si el valor no es válido, mantener ALUMNO
+                }
+            }
             SolicitudComunidad solicitud =
-                    requestService.requestAccess(usuario.getId(), communityId, request.mensaje());
+                    requestService.requestAccess(
+                            usuario.getId(), communityId, request.mensaje(), rolDeseado);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(entityToRequestResponse(solicitud));
-        } catch (IllegalArgumentException e) {
+        } catch (ValidationException e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    /**
+     * Comprueba si el usuario tiene solicitud pendiente. GET
+     * /api/v1/communities/{communityId}/requests/me
+     */
+    @GetMapping("/{communityId}/requests/me")
+    @Operation(
+            summary = "Comprobar mi solicitud pendiente",
+            description =
+                    "Devuelve si el usuario autenticado tiene una solicitud pendiente en esta"
+                            + " comunidad",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Estado de solicitud obtenido"),
+        @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
+    })
+    public ResponseEntity<java.util.Map<String, Boolean>> getMyRequestStatus(
+            @PathVariable Long communityId, @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        boolean pending = requestService.hasPendingRequest(usuario.getId(), communityId);
+        return ResponseEntity.ok(java.util.Map.of("pending", pending));
     }
 
     /**
@@ -841,8 +1055,8 @@ public class CommunityController {
         }
 
         try {
-            communityService.getCommunityById(communityId, null);
-        } catch (Exception e) {
+            communityService.getCommunityById(communityId, usuario.getId());
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
@@ -864,6 +1078,8 @@ public class CommunityController {
                             request.getUbicacionId());
 
             return ResponseEntity.status(HttpStatus.CREATED).body(evento.toDTO());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         } catch (RuntimeException e) {
             if (e.getMessage() != null && e.getMessage().contains("no perteneces")) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
@@ -886,13 +1102,14 @@ public class CommunityController {
             @RequestParam(name = "cancelados", defaultValue = "false") boolean cancelados,
             @AuthenticationPrincipal Usuario usuario) {
 
+        Long usuarioId = usuario != null ? usuario.getId() : null;
+
         try {
-            communityService.getCommunityById(communityId, null);
-        } catch (Exception e) {
+            communityService.getCommunityById(communityId, usuarioId);
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
-        Long usuarioId = usuario != null ? usuario.getId() : null;
         List<Evento> eventos =
                 eventoService.obtenerEventosPorComunidad(communityId, cancelados, usuarioId);
         List<EventSummaryResponse> response =
@@ -1020,11 +1237,20 @@ public class CommunityController {
     private CommunityDetailResponse entityToDetailResponse(Comunidad comunidad, Long userId) {
         Long miembrosActuales = communityService.countMembers(comunidad.getId());
         String miRol = null;
+        String miRolDocente = null;
         Boolean esMiembro = false;
 
         if (userId != null) {
-            miRol = authorizationService.getUserRoleInCommunityAsString(userId, comunidad.getId());
-            esMiembro = miRol != null;
+            es.us.meerkat.backend.entity.MiembroComunidad membership =
+                    authorizationService.getMembership(userId, comunidad.getId());
+            if (membership != null) {
+                miRol = membership.getRol().name();
+                miRolDocente =
+                        membership.getRolDocente() != null
+                                ? membership.getRolDocente().name()
+                                : null;
+                esMiembro = true;
+            }
         }
 
         // Obtener info de Google Classroom vinculado (si existe)
@@ -1052,6 +1278,7 @@ public class CommunityController {
                 comunidad.getEstado().name(),
                 esMiembro,
                 miRol,
+                miRolDocente,
                 comunidad.getCreatedAt(),
                 comunidad.getUpdatedAt(),
                 comunidad.getImagenUrl(),
@@ -1063,6 +1290,7 @@ public class CommunityController {
                 miembro.getId(),
                 convertUserToSimple(miembro.getUsuario()),
                 miembro.getRol().name(),
+                miembro.getRolDocente() != null ? miembro.getRolDocente().name() : null,
                 miembro.getFechaIngreso());
     }
 
@@ -1072,6 +1300,7 @@ public class CommunityController {
                 convertUserToSimple(solicitud.getSolicitante()),
                 solicitud.getEstado().name(),
                 solicitud.getMensaje(),
+                solicitud.getRolDeseado() != null ? solicitud.getRolDeseado().name() : "ALUMNO",
                 solicitud.getFechaSolicitud(),
                 solicitud.getRespondidaPor() != null
                         ? convertUserToSimple(solicitud.getRespondidaPor())
@@ -1135,6 +1364,103 @@ public class CommunityController {
             return ResponseEntity.ok(paymentUrl);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/{communityId}/tutor/{tutorId}/create-payment-intent")
+    @Operation(
+            summary = "Crear PaymentIntent para contratación de tutor",
+            description = "Devuelve clientSecret para usar con Stripe Elements embebido",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> crearHiringPaymentIntent(
+            @PathVariable Long communityId,
+            @PathVariable Long tutorId,
+            @Valid @RequestBody HireTutorRequest request,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            java.util.Map<String, String> result =
+                    paymentService.crearPaymentIntentContratacionTutor(
+                            tutorId,
+                            communityId,
+                            request.getTarifaAcordada(),
+                            usuario.getId(),
+                            usuario.getEmail());
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(
+                            java.util.Map.of(
+                                    "error",
+                                    "Error al crear el intent de pago: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/confirm-tutor-payment")
+    @Operation(
+            summary = "Confirmar pago de contratación de tutor",
+            description = "Verifica el PaymentIntent y activa la contratación",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> confirmarPagoContratacion(
+            @RequestBody java.util.Map<String, String> body,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String paymentIntentId = body.get("paymentIntentId");
+        if (paymentIntentId == null || paymentIntentId.isBlank()) {
+            return ResponseEntity.badRequest()
+                    .body(java.util.Map.of("error", "paymentIntentId requerido"));
+        }
+
+        try {
+            com.stripe.model.PaymentIntent intent =
+                    com.stripe.model.PaymentIntent.retrieve(paymentIntentId);
+
+            if (!"succeeded".equals(intent.getStatus())) {
+                return ResponseEntity.badRequest()
+                        .body(
+                                java.util.Map.of(
+                                        "error",
+                                        "El pago no se ha completado: " + intent.getStatus()));
+            }
+
+            String usuarioIdMeta = intent.getMetadata().get("usuarioId");
+            if (!usuario.getId().toString().equals(usuarioIdMeta)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(
+                                java.util.Map.of(
+                                        "error", "PaymentIntent no válido para este usuario"));
+            }
+
+            java.math.BigDecimal monto =
+                    java.math.BigDecimal.valueOf(intent.getAmount())
+                            .divide(java.math.BigDecimal.valueOf(100));
+
+            paymentService.procesarPagoExitoso(
+                    usuario.getId(),
+                    es.us.meerkat.backend.entity.TipoTransaccion.PAGO_TUTOR,
+                    monto,
+                    "Contratación de tutor completada vía Stripe Elements",
+                    null);
+
+            return ResponseEntity.ok(
+                    java.util.Map.of("mensaje", "Pago de contratación confirmado correctamente"));
+
+        } catch (com.stripe.exception.StripeException e) {
+            return ResponseEntity.internalServerError()
+                    .body(java.util.Map.of("error", "Error Stripe: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(java.util.Map.of("error", e.getMessage()));
         }
     }
 

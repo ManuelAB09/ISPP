@@ -1,0 +1,204 @@
+package es.us.meerkat.backend.service;
+
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import es.us.meerkat.backend.dto.CreateDisponibilidadRequest;
+import es.us.meerkat.backend.dto.DisponibilidadTutorResponse;
+import es.us.meerkat.backend.entity.DisponibilidadTutor;
+import es.us.meerkat.backend.entity.Tutor;
+import es.us.meerkat.backend.repository.DisponibilidadTutorRepository;
+import es.us.meerkat.backend.repository.TutorRepository;
+
+/**
+ * Servicio para gestionar disponibilidades horarias de tutores.
+ *
+ * <p>Permite a los tutores definir sus horarios disponibles para reservas de clases.
+ */
+@Service
+public class DisponibilidadService {
+
+    @Autowired private DisponibilidadTutorRepository disponibilidadRepository;
+
+    @Autowired private TutorRepository tutorRepository;
+
+    /** Crea una nueva disponibilidad horaria para un tutor. */
+    @Transactional
+    public DisponibilidadTutorResponse crearDisponibilidad(
+            Long tutorId, CreateDisponibilidadRequest request, Long usuarioId) {
+
+        Tutor tutor =
+                tutorRepository
+                        .findById(tutorId)
+                        .orElseThrow(() -> new IllegalArgumentException("Tutor no encontrado"));
+
+        // Verificar que el usuario sea el dueño del perfil de tutor
+        if (!tutor.getUsuario().getId().equals(usuarioId)) {
+            throw new IllegalArgumentException(
+                    "No tienes permisos para modificar disponibilidades de otro tutor");
+        }
+
+        // Validaciones
+        if (request.getEsRecurrente()) {
+            if (request.getDiaSemana() == null) {
+                throw new IllegalArgumentException(
+                        "Día de semana requerido para disponibilidad recurrente");
+            }
+        } else {
+            if (request.getFechaPuntual() == null) {
+                throw new IllegalArgumentException(
+                        "Fecha específica requerida para disponibilidad puntual");
+            }
+        }
+
+        if (request.getHoraInicio().isAfter(request.getHoraFin())) {
+            throw new IllegalArgumentException("La hora de inicio debe ser anterior a la de fin");
+        }
+
+        // Buscar solapamientos con otras disponibilidades
+        if (request.getEsRecurrente()) {
+            List<DisponibilidadTutor> existentes =
+                    disponibilidadRepository.findByTutorIdAndActivaTrueAndEsRecurrenteTrue(tutorId);
+            for (DisponibilidadTutor existente : existentes) {
+                if (existente.getDiaSemana().equals(request.getDiaSemana())) {
+                    // Verificar solapamiento temporal
+                    if (request.getHoraInicio().isBefore(existente.getHoraFin())
+                            && request.getHoraFin().isAfter(existente.getHoraInicio())) {
+                        throw new IllegalArgumentException(
+                                "Esta disponibilidad se solapa con otra existente en el mismo día");
+                    }
+                }
+            }
+        }
+
+        DisponibilidadTutor disponibilidad =
+                DisponibilidadTutor.builder()
+                        .tutor(tutor)
+                        .esRecurrente(request.getEsRecurrente())
+                        .diaSemana(request.getDiaSemana())
+                        .fechaPuntual(request.getFechaPuntual())
+                        .horaInicio(request.getHoraInicio())
+                        .horaFin(request.getHoraFin())
+                        .modalidad(request.getModalidad())
+                        .ubicacionPresencial(request.getUbicacionPresencial())
+                        .activa(true)
+                        .build();
+
+        disponibilidad = disponibilidadRepository.save(disponibilidad);
+        return mapToResponse(disponibilidad);
+    }
+
+    /** Obtiene todas las disponibilidades activas de un tutor. */
+    @Transactional(readOnly = true)
+    public List<DisponibilidadTutorResponse> getDisponibilidades(Long tutorId) {
+        List<DisponibilidadTutor> disponibilidades =
+                disponibilidadRepository.findByTutorIdAndActivaTrue(tutorId);
+        return disponibilidades.stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
+
+    /** Obtiene disponibilidades para una fecha específica. */
+    @Transactional(readOnly = true)
+    public List<DisponibilidadTutorResponse> getDisponibilidadesPorFecha(
+            Long tutorId, LocalDate fecha) {
+        DayOfWeek dayOfWeek = fecha.getDayOfWeek();
+        List<DisponibilidadTutor> disponibilidades =
+                disponibilidadRepository.findDisponibilidadesPara(tutorId, dayOfWeek, fecha);
+        return disponibilidades.stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
+
+    /** Desactiva una disponibilidad. */
+    @Transactional
+    public void desactivarDisponibilidad(Long disponibilidadId, Long usuarioId) {
+        DisponibilidadTutor disponibilidad =
+                disponibilidadRepository
+                        .findById(disponibilidadId)
+                        .orElseThrow(
+                                () -> new IllegalArgumentException("Disponibilidad no encontrada"));
+
+        if (!disponibilidad.getTutor().getUsuario().getId().equals(usuarioId)) {
+            throw new IllegalArgumentException(
+                    "No tienes permisos para modificar esta disponibilidad");
+        }
+
+        disponibilidad.setActiva(false);
+        disponibilidadRepository.save(disponibilidad);
+    }
+
+    /** Actualiza una disponibilidad existente. */
+    @Transactional
+    public DisponibilidadTutorResponse actualizarDisponibilidad(
+            Long disponibilidadId, CreateDisponibilidadRequest request, Long usuarioId) {
+
+        DisponibilidadTutor disponibilidad =
+                disponibilidadRepository
+                        .findById(disponibilidadId)
+                        .orElseThrow(
+                                () -> new IllegalArgumentException("Disponibilidad no encontrada"));
+
+        if (!disponibilidad.getTutor().getUsuario().getId().equals(usuarioId)) {
+            throw new IllegalArgumentException(
+                    "No tienes permisos para modificar esta disponibilidad");
+        }
+
+        // Validaciones (igual que en crear)
+        if (request.getHoraInicio().isAfter(request.getHoraFin())) {
+            throw new IllegalArgumentException("La hora de inicio debe ser anterior a la de fin");
+        }
+
+        // Verificar solapamiento con otras franjas del mismo día (excluyendo la propia)
+        if (Boolean.TRUE.equals(disponibilidad.getEsRecurrente())) {
+            List<DisponibilidadTutor> existentes =
+                    disponibilidadRepository.findByTutorIdAndActivaTrueAndEsRecurrenteTrue(
+                            disponibilidad.getTutor().getId());
+            for (DisponibilidadTutor existente : existentes) {
+                if (existente.getId().equals(disponibilidadId)) {
+                    continue;
+                }
+                if (existente.getDiaSemana().equals(disponibilidad.getDiaSemana())) {
+                    if (request.getHoraInicio().isBefore(existente.getHoraFin())
+                            && request.getHoraFin().isAfter(existente.getHoraInicio())) {
+                        throw new IllegalArgumentException(
+                                "Esta disponibilidad se solapa con otra existente en el mismo día");
+                    }
+                }
+            }
+        }
+
+        disponibilidad.setHoraInicio(request.getHoraInicio());
+        disponibilidad.setHoraFin(request.getHoraFin());
+        disponibilidad.setModalidad(request.getModalidad());
+        disponibilidad.setUbicacionPresencial(request.getUbicacionPresencial());
+
+        disponibilidad = disponibilidadRepository.save(disponibilidad);
+        return mapToResponse(disponibilidad);
+    }
+
+    /** Elimina todas las disponibilidades de un tutor (al desactivar el perfil, por ej). */
+    @Transactional
+    public void eliminarTodasDisponibilidades(Long tutorId) {
+        disponibilidadRepository.deleteAllByTutorId(tutorId);
+    }
+
+    // ==================== Métodos Privados ====================
+
+    private DisponibilidadTutorResponse mapToResponse(DisponibilidadTutor disponibilidad) {
+        return DisponibilidadTutorResponse.builder()
+                .id(disponibilidad.getId())
+                .esRecurrente(disponibilidad.getEsRecurrente())
+                .diaSemana(disponibilidad.getDiaSemana())
+                .fechaPuntual(disponibilidad.getFechaPuntual())
+                .horaInicio(disponibilidad.getHoraInicio())
+                .horaFin(disponibilidad.getHoraFin())
+                .modalidad(disponibilidad.getModalidad())
+                .ubicacionPresencial(disponibilidad.getUbicacionPresencial())
+                .activa(disponibilidad.getActiva())
+                .createdAt(disponibilidad.getCreatedAt())
+                .build();
+    }
+}

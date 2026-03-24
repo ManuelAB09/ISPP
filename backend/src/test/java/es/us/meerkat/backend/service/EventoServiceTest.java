@@ -22,6 +22,7 @@ import es.us.meerkat.backend.entity.MiembroComunidad;
 import es.us.meerkat.backend.entity.TipoGrupo;
 import es.us.meerkat.backend.entity.Ubicacion;
 import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.EventoRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
@@ -32,11 +33,13 @@ import es.us.meerkat.backend.repository.UsuarioRepository;
 class EventoServiceTest {
 
     @Mock private EventoRepository eventoRepository;
+    @Mock private AsistenciaEventoRepository asistenciaEventoRepository;
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private ComunidadRepository comunidadRepository;
     @Mock private MiembroComunidadRepository miembroComunidadRepository;
     @Mock private UbicacionRepository ubicacionRepository;
     @Mock private AuthorizationService authorizationService;
+    @Mock private GoogleCalendarService googleCalendarService;
 
     @InjectMocks private EventoService eventoService;
 
@@ -118,17 +121,48 @@ class EventoServiceTest {
     }
 
     @Test
+    void crearEventoShouldFailWhenStartDateTimeIsInThePast() {
+        Long creadorId = 1L;
+        Long comunidadId = 2L;
+
+        assertThatThrownBy(
+                        () ->
+                                eventoService.crearEvento(
+                                        creadorId,
+                                        comunidadId,
+                                        "Meet",
+                                        "Desc",
+                                        LocalDateTime.now().minusMinutes(5),
+                                        LocalDateTime.now().plusHours(1),
+                                        20,
+                                        "Nada",
+                                        false,
+                                        false,
+                                        null,
+                                        true,
+                                        null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("fecha y hora actual");
+    }
+
+    @Test
     void editarEventoShouldUpdateLocationAndClearItForVirtualEvents() {
         Long eventId = 10L;
         Long ubicacionId = 5L;
+        Long comunidadId = 2L;
+        Long creadorId = 1L;
 
         Evento evento = new Evento();
         evento.setId(eventId);
         evento.setUbicacion(buildUbicacion(9L));
+        evento.setComunidad(buildComunidad(comunidadId));
+        evento.setCreador(buildUsuario(creadorId));
 
         when(eventoRepository.findById(eventId)).thenReturn(Optional.of(evento));
         when(ubicacionRepository.findById(ubicacionId))
                 .thenReturn(Optional.of(buildUbicacion(ubicacionId)));
+        when(miembroComunidadRepository.findUsuarioIdsByComunidadId(comunidadId))
+                .thenReturn(List.of());
         when(eventoRepository.save(any(Evento.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -143,7 +177,8 @@ class EventoServiceTest {
                         "Cuaderno",
                         false,
                         false,
-                        ubicacionId);
+                        ubicacionId,
+                        true);
 
         assertThat(presencial.getUbicacion()).isNotNull();
 
@@ -158,9 +193,74 @@ class EventoServiceTest {
                         "Cuaderno",
                         true,
                         false,
-                        null);
+                        null,
+                        false);
 
         assertThat(virtual.getUbicacion()).isNull();
+        assertThat(virtual.getVisibleMapa()).isFalse();
+    }
+
+    @Test
+    void editarEventoShouldFailWhenEventAlreadyStarted() {
+        Long eventId = 12L;
+        Evento evento = new Evento();
+        evento.setId(eventId);
+        evento.setFechaHora(LocalDateTime.now().minusHours(1));
+
+        when(eventoRepository.findById(eventId)).thenReturn(Optional.of(evento));
+
+        assertThatThrownBy(
+                        () ->
+                                eventoService.editarEvento(
+                                        eventId,
+                                        "Nuevo título",
+                                        "Nueva desc",
+                                        LocalDateTime.now().plusDays(1),
+                                        LocalDateTime.now().plusDays(1).plusHours(1),
+                                        25,
+                                        "Cuaderno",
+                                        false,
+                                        false,
+                                        null,
+                                        true))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("ya ha comenzado");
+    }
+
+    @Test
+    void editarEventoShouldFailWhenNewStartDateTimeIsInThePast() {
+        Long eventId = 99L;
+
+        assertThatThrownBy(
+                        () ->
+                                eventoService.editarEvento(
+                                        eventId,
+                                        "Nuevo título",
+                                        "Nueva desc",
+                                        LocalDateTime.now().minusMinutes(1),
+                                        LocalDateTime.now().plusHours(2),
+                                        25,
+                                        "Cuaderno",
+                                        false,
+                                        false,
+                                        null,
+                                        true))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("fecha y hora actual");
+    }
+
+    @Test
+    void cancelarEventoShouldFailWhenEventAlreadyStarted() {
+        Long eventId = 13L;
+        Evento evento = new Evento();
+        evento.setId(eventId);
+        evento.setFechaHora(LocalDateTime.now().minusMinutes(10));
+
+        when(eventoRepository.findById(eventId)).thenReturn(Optional.of(evento));
+
+        assertThatThrownBy(() -> eventoService.cancelarEvento(eventId, "motivo"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("ya ha comenzado");
     }
 
     @Test
@@ -170,17 +270,18 @@ class EventoServiceTest {
         Evento e2 = new Evento();
         e2.setId(2L);
 
-        when(eventoRepository.findVisibleOnMap()).thenReturn(List.of(e1, e2));
+        when(eventoRepository.findVisibleOnMap(any(LocalDateTime.class)))
+                .thenReturn(List.of(e1, e2));
 
-        List<Evento> visibles = eventoService.obtenerEventosEnMapa();
+        List<Evento> visibles = eventoService.obtenerEventosEnMapa(null, null, null);
 
         assertThat(visibles).hasSize(2);
-        verify(eventoRepository).findVisibleOnMap();
+        verify(eventoRepository).findVisibleOnMap(any(LocalDateTime.class));
     }
 
     @Test
-    void obtenerUbicacionesRecomendadasShouldReturnPlaceholderListUntilImplemented() {
-        List<String> result = eventoService.obtenerUbicacionesRecomendadas();
+    void obtenerUbicacionesRecomendadasShouldReturnEmptyWhenNoParams() {
+        List<String> result = eventoService.obtenerUbicacionesRecomendadas(null, null, null);
 
         assertThat(result).isEmpty();
     }

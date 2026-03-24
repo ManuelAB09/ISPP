@@ -25,6 +25,7 @@ import es.us.meerkat.backend.dto.MessageResponse;
 import es.us.meerkat.backend.dto.RegisterRequest;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.exception.ConflictException;
+import es.us.meerkat.backend.exception.EmailNotVerifiedException;
 import es.us.meerkat.backend.exception.ValidationException;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import es.us.meerkat.backend.security.JwtService;
@@ -43,17 +44,16 @@ class AuthServiceTest {
     @InjectMocks private AuthService authService;
 
     @Test
-    void registrarShouldCreateUserAndReturnAuthResponse() {
+    void registrarShouldCreateUserAndReturnMessageResponse() {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("new.user@meerkat.es");
-        request.setPassword("password123");
+        request.setPassword("Password123");
         request.setNombre("Nuevo Usuario");
 
         when(usuarioRepository.existsByEmail(request.getEmail())).thenReturn(false);
         when(passwordEncoder.encode(request.getPassword())).thenReturn("encoded-password");
-        when(jwtService.generateToken(request.getEmail())).thenReturn("jwt-token");
 
-        AuthResponse response = authService.registrar(request);
+        MessageResponse response = authService.registrar(request);
 
         ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
         verify(usuarioRepository).save(captor.capture());
@@ -64,17 +64,18 @@ class AuthServiceTest {
         assertThat(savedUser.getVisibleEnListados()).isTrue();
         assertThat(savedUser.getEsTutor()).isFalse();
         assertThat(savedUser.getIntereses()).isInstanceOf(ArrayList.class);
+        assertThat(savedUser.getEmailVerificado()).isFalse();
+        assertThat(savedUser.getVerificationToken()).isNotNull();
 
-        assertThat(response.getAccessToken()).isEqualTo("jwt-token");
-        assertThat(response.getUser()).isNotNull();
-        assertThat(response.getUser().getEmail()).isEqualTo(request.getEmail());
+        assertThat(response.getMessage()).contains("verificar");
     }
 
     @Test
     void registrarShouldThrowConflictWhenEmailAlreadyExists() {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("used@meerkat.es");
-        request.setPassword("password123");
+        request.setPassword("Password123");
+        request.setNombre("Usuario Test");
 
         when(usuarioRepository.existsByEmail(request.getEmail())).thenReturn(true);
 
@@ -101,6 +102,7 @@ class AuthServiceTest {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("user@meerkat.es");
         request.setPassword("short");
+        request.setNombre("Usuario Test");
 
         assertThatThrownBy(() -> authService.registrar(request))
                 .isInstanceOf(ValidationException.class)
@@ -119,13 +121,14 @@ class AuthServiceTest {
         usuario.setPassword("encoded-password");
         usuario.setVisibleEnListados(true);
         usuario.setEsTutor(false);
+        usuario.setEmailVerificado(true);
 
         when(usuarioRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches(request.getPassword(), usuario.getPassword()))
                 .thenReturn(true);
         when(jwtService.generateToken(request.getEmail())).thenReturn("jwt-token");
 
-        AuthResponse response = authService.iniciarSesion(request);
+        AuthResponse response = (AuthResponse) authService.iniciarSesion(request);
 
         assertThat(response.getAccessToken()).isEqualTo("jwt-token");
         assertThat(response.getUser()).isNotNull();
@@ -163,6 +166,27 @@ class AuthServiceTest {
         assertThatThrownBy(() -> authService.iniciarSesion(request))
                 .isInstanceOf(ValidationException.class)
                 .hasMessage("Credenciales incorrectas");
+    }
+
+    @Test
+    void iniciarSesionShouldThrowEmailNotVerifiedWhenEmailNotVerified() {
+        LoginRequest request = new LoginRequest();
+        request.setEmail("user@meerkat.es");
+        request.setPassword("password123");
+
+        Usuario usuario = new Usuario();
+        usuario.setId(20L);
+        usuario.setEmail(request.getEmail());
+        usuario.setPassword("encoded-password");
+        usuario.setEmailVerificado(false);
+
+        when(usuarioRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches(request.getPassword(), usuario.getPassword()))
+                .thenReturn(true);
+
+        assertThatThrownBy(() -> authService.iniciarSesion(request))
+                .isInstanceOf(EmailNotVerifiedException.class)
+                .hasMessageContaining("verificar tu email");
     }
 
     @Test

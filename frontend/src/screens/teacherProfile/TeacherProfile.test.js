@@ -11,6 +11,10 @@ jest.setTimeout(15000);
 
 // Mocks
 jest.mock('../../api/tutorEndpoints');
+jest.mock('../../api/solicitudContratacion', () => ({
+  getDisponibilidadTutorFecha: jest.fn().mockResolvedValue({ data: [] }),
+  getHorariosOcupadosContratacion: jest.fn().mockResolvedValue({ data: [] }),
+}));
 jest.mock('../../contexts/AuthContext');
 jest.mock('../../components/Header/Header', () => {
   return function MockHeader() {
@@ -56,6 +60,36 @@ jest.mock('./VerificacionModal', () => {
         <button onClick={onClose}>Mock Cerrar</button>
       </div>
     );
+  };
+});
+jest.mock('./HireDirectModal', () => {
+  return function MockHireDirectModal({ onClose }) {
+    return <div data-testid="hire-modal"><button onClick={onClose}>Mock Cerrar</button></div>;
+  };
+});
+jest.mock('./TutorSolicitudes', () => {
+  return function MockTutorSolicitudes() {
+    return <div data-testid="tutor-solicitudes" />;
+  };
+});
+jest.mock('./TutorConversaciones', () => {
+  return function MockTutorConversaciones() {
+    return <div data-testid="tutor-conversaciones" />;
+  };
+});
+jest.mock('./AlumnoSolicitudes', () => {
+  return function MockAlumnoSolicitudes() {
+    return <div data-testid="alumno-solicitudes" />;
+  };
+});
+jest.mock('./TeacherAvailabilityCalendar', () => {
+  return function MockTeacherAvailabilityCalendar() {
+    return <div data-testid="teacher-availability-calendar" />;
+  };
+});
+jest.mock('../chat/PrivateChat', () => {
+  return function MockPrivateChat() {
+    return <div data-testid="private-chat" />;
   };
 });
 

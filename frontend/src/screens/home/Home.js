@@ -66,6 +66,19 @@ const Home = () => {
             <h1 className="title">MeerKatters</h1>
             <h2>Bienvenido a la mayor comunidad de estudio donde estudiantes y universitarios comparten sus estudios</h2>
           </div>
+          {isAuthenticated && (
+            <div className="home-quick-actions">
+              <button onClick={() => navigate('/eventos-mapa')} className="home-quick-btn">
+                🗺️ Mapa de eventos
+              </button>
+              <button onClick={() => navigate('/mis-eventos')} className="home-quick-btn">
+                📅 Mis eventos
+              </button>
+              <button onClick={() => navigate('/mis-reservas')} className="home-quick-btn">
+                📋 Mis reservas
+              </button>
+            </div>
+          )}
         </div>
         
         <div className="body">

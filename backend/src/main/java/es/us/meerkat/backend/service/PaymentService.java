@@ -14,12 +14,27 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.stripe.exception.StripeException;
+import com.stripe.model.Account;
+import com.stripe.model.AccountLink;
+import com.stripe.model.PaymentIntent;
+import com.stripe.model.Refund;
 import com.stripe.model.checkout.Session;
+import com.stripe.param.AccountCreateParams;
+import com.stripe.param.AccountLinkCreateParams;
+import com.stripe.param.PaymentIntentCreateParams;
+import com.stripe.param.RefundCreateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 
 import es.us.meerkat.backend.dto.PaymentUrlResponse;
-import es.us.meerkat.backend.entity.*;
+import es.us.meerkat.backend.entity.EstadoTransaccion;
+import es.us.meerkat.backend.entity.TipoPlan;
+import es.us.meerkat.backend.entity.TipoPlanCorporativo;
+import es.us.meerkat.backend.entity.TipoTransaccion;
+import es.us.meerkat.backend.entity.TransaccionPago;
+import es.us.meerkat.backend.entity.Tutor;
+import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.TransaccionPagoRepository;
+import es.us.meerkat.backend.repository.TutorRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +46,7 @@ public class PaymentService {
 
     private final TransaccionPagoRepository transaccionRepository;
     private final UsuarioRepository usuarioRepository;
+    private final TutorRepository tutorRepository;
 
     @Value("${stripe.success.url}")
     private String successUrl;
@@ -38,18 +54,11 @@ public class PaymentService {
     @Value("${stripe.cancel.url}")
     private String cancelUrl;
 
-    @Value("${stripe.price.premium}")
-    private String pricePremium;
-
     private static final BigDecimal COMISION_PORCENTAJE = new BigDecimal("10");
 
     // -------------------------------------------------------------------------
     // Generación de sesiones de pago
     // -------------------------------------------------------------------------
-
-    /** Verificación de tutor → TipoTransaccion.PAGO_VERIFICACION */
-    /** ID del precio de verificación de tutor en Stripe (pago único) */
-    private static final String PRICE_VERIFICACION_TUTOR = "price_1T8no6Iti4eEH8Y0mb6IAwMc";
 
     /** Verificación de tutor → TipoTransaccion.PAGO_VERIFICACION */
     @Transactional
@@ -125,30 +134,55 @@ public class PaymentService {
     /** ID del precio Premium anual en Stripe */
     private static final String PRICE_PREMIUM_ANUAL = "price_1T8hTmIti4eEH8Y01iZAD8gY";
 
+    /** ID del precio Pro mensual en Stripe (si no existe, usar flujo embebido). */
+    private static final String PRICE_PRO_MENSUAL = "price_pro_monthly_placeholder";
+
+    /** ID del precio Pro anual en Stripe (si no existe, usar flujo embebido). */
+    private static final String PRICE_PRO_ANUAL = "price_pro_yearly_placeholder";
+
     public PaymentUrlResponse generarPagoSuscripcion(Usuario usuario, TipoPlan plan, String periodo)
             throws StripeException {
+        TipoPlan planSolicitado = (plan == null || plan == TipoPlan.FREE) ? TipoPlan.PREMIUM : plan;
+        boolean esAnual = "anual".equalsIgnoreCase(periodo);
 
-        String priceId =
-                periodo.equalsIgnoreCase("anual") ? PRICE_PREMIUM_ANUAL : PRICE_PREMIUM_MENSUAL;
+        // PREMIUM usa sesión de suscripción (recurring) con Price IDs existentes
+        if (planSolicitado == TipoPlan.PREMIUM) {
+            String priceId = esAnual ? PRICE_PREMIUM_ANUAL : PRICE_PREMIUM_MENSUAL;
 
-        SessionCreateParams params =
-                SessionCreateParams.builder()
-                        .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
-                        .setSuccessUrl(
-                                "http://localhost:3000/planes/success?session_id={CHECKOUT_SESSION_ID}")
-                        .setCancelUrl("http://localhost:3000/planes")
-                        .setCustomerEmail(usuario.getEmail())
-                        .addLineItem(
-                                SessionCreateParams.LineItem.builder()
-                                        .setPrice(priceId)
-                                        .setQuantity(1L)
-                                        .build())
-                        .putMetadata("usuarioId", usuario.getId().toString())
-                        .putMetadata("plan", plan.name())
-                        .putMetadata("periodo", periodo)
-                        .build();
+            SessionCreateParams params =
+                    SessionCreateParams.builder()
+                            .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
+                            .setSuccessUrl(
+                                    successUrl
+                                            + "?session_id={CHECKOUT_SESSION_ID}&tipo=suscripcion&plan="
+                                            + planSolicitado.name())
+                            .setCancelUrl(cancelUrl)
+                            .setCustomerEmail(usuario.getEmail())
+                            .addLineItem(
+                                    SessionCreateParams.LineItem.builder()
+                                            .setPrice(priceId)
+                                            .setQuantity(1L)
+                                            .build())
+                            .putMetadata("tipo", TipoTransaccion.SUSCRIPCION.name())
+                            .putMetadata("usuarioId", usuario.getId().toString())
+                            .putMetadata("plan", planSolicitado.name())
+                            .putMetadata("periodo", esAnual ? "anual" : "mensual")
+                            .build();
 
-        Session session = Session.create(params);
+            Session session = Session.create(params);
+            return new PaymentUrlResponse(session.getUrl(), session.getId());
+        }
+
+        // PRO se procesa como pago único y se activa en la verificación posterior
+        BigDecimal monto = esAnual ? new BigDecimal("200.00") : new BigDecimal("19.99");
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("tipo", TipoTransaccion.SUSCRIPCION.name());
+        metadata.put("usuarioId", usuario.getId().toString());
+        metadata.put("plan", planSolicitado.name());
+        metadata.put("periodo", esAnual ? "anual" : "mensual");
+
+        Session session =
+                crearSesionPagoUnico("Suscripcion " + planSolicitado.name(), monto, metadata);
         return new PaymentUrlResponse(session.getUrl(), session.getId());
     }
 
@@ -351,5 +385,331 @@ public class PaymentService {
                         .build();
 
         return Session.create(params);
+    }
+
+    // -------------------------------------------------------------------------
+    // PaymentIntent para Stripe Elements (pago embebido en la app)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Crea un PaymentIntent para suscripcion Premium usando Stripe Elements. Devuelve clientSecret
+     * para inicializar el formulario de pago embebido.
+     */
+    public Map<String, String> crearPaymentIntentSuscripcion(
+            Usuario usuario, TipoPlan plan, String periodo) throws StripeException {
+        TipoPlan planSolicitado = (plan == null || plan == TipoPlan.FREE) ? TipoPlan.PREMIUM : plan;
+        boolean esAnual = "anual".equalsIgnoreCase(periodo);
+
+        long amount;
+        if (planSolicitado == TipoPlan.PRO) {
+            amount = esAnual ? 20000L : 1999L;
+        } else {
+            amount = esAnual ? 5000L : 499L;
+        }
+        String description =
+                "Suscripcion "
+                        + planSolicitado.name()
+                        + " "
+                        + (esAnual ? "Anual" : "Mensual")
+                        + " - MeerKatters";
+
+        PaymentIntentCreateParams params =
+                PaymentIntentCreateParams.builder()
+                        .setAmount(amount)
+                        .setCurrency("eur")
+                        .setDescription(description)
+                        .setReceiptEmail(usuario.getEmail())
+                        .putMetadata("usuarioId", usuario.getId().toString())
+                        .putMetadata("plan", planSolicitado.name())
+                        .putMetadata("periodo", esAnual ? "anual" : "mensual")
+                        .putMetadata("tipo", TipoTransaccion.SUSCRIPCION.name())
+                        .addPaymentMethodType("card")
+                        .build();
+
+        PaymentIntent intent = PaymentIntent.create(params);
+        log.info("PaymentIntent creado para usuario {}: {}", usuario.getId(), intent.getId());
+
+        Map<String, String> result = new HashMap<>();
+        result.put("clientSecret", intent.getClientSecret());
+        result.put("paymentIntentId", intent.getId());
+        return result;
+    }
+
+    /**
+     * Crea un PaymentIntent para verificación de tutor (pago único embebido). Devuelve clientSecret
+     * para inicializar Stripe Elements en el frontend.
+     */
+    public Map<String, String> crearPaymentIntentVerificacion(
+            Long tutorId, Long usuarioId, String email) throws StripeException {
+
+        PaymentIntentCreateParams params =
+                PaymentIntentCreateParams.builder()
+                        .setAmount(1999L) // 19.99 EUR en céntimos
+                        .setCurrency("eur")
+                        .setDescription("Verificación de tutor - MeerKatters")
+                        .setReceiptEmail(email)
+                        .putMetadata("usuarioId", usuarioId.toString())
+                        .putMetadata("tutorId", tutorId.toString())
+                        .putMetadata("tipo", TipoTransaccion.PAGO_VERIFICACION.name())
+                        .addPaymentMethodType("card")
+                        .build();
+
+        PaymentIntent intent = PaymentIntent.create(params);
+        log.info("PaymentIntent verificación creado para tutor {}: {}", tutorId, intent.getId());
+
+        Map<String, String> result = new HashMap<>();
+        result.put("clientSecret", intent.getClientSecret());
+        result.put("paymentIntentId", intent.getId());
+        return result;
+    }
+
+    /**
+     * Crea un PaymentIntent para plan corporativo institucional (pago embebido). Devuelve
+     * clientSecret para inicializar Stripe Elements en el frontend.
+     */
+    public Map<String, String> crearPaymentIntentPlanCorporativo(
+            Long institucionId,
+            TipoPlanCorporativo tipoPlan,
+            String periodo,
+            String emailContacto,
+            Integer duracionMeses)
+            throws StripeException {
+
+        boolean esAnual =
+                periodo != null && periodo.equalsIgnoreCase("anual")
+                        || (duracionMeses != null && duracionMeses >= 12);
+
+        long amount = calcularMontoCentimos(tipoPlan, esAnual);
+
+        String description =
+                "Plan Institucional "
+                        + tipoPlan.name()
+                        + " ("
+                        + (esAnual ? "anual" : "mensual")
+                        + ") - MeerKatters";
+
+        PaymentIntentCreateParams.Builder builder =
+                PaymentIntentCreateParams.builder()
+                        .setAmount(amount)
+                        .setCurrency("eur")
+                        .setDescription(description)
+                        .putMetadata("institucionId", institucionId.toString())
+                        .putMetadata("tipoPlanCorporativo", tipoPlan.name())
+                        .putMetadata("periodo", esAnual ? "anual" : "mensual")
+                        .putMetadata(
+                                "duracionMeses",
+                                String.valueOf(
+                                        duracionMeses != null ? duracionMeses : (esAnual ? 12 : 1)))
+                        .putMetadata("tipo", TipoTransaccion.COMISION.name())
+                        .addPaymentMethodType("card");
+
+        if (emailContacto != null && !emailContacto.isBlank()) {
+            builder.setReceiptEmail(emailContacto);
+            builder.putMetadata("emailContacto", emailContacto);
+        }
+
+        PaymentIntent intent = PaymentIntent.create(builder.build());
+        log.info(
+                "PaymentIntent plan corporativo {} creado para institución {}: {}",
+                tipoPlan,
+                institucionId,
+                intent.getId());
+
+        Map<String, String> result = new HashMap<>();
+        result.put("clientSecret", intent.getClientSecret());
+        result.put("paymentIntentId", intent.getId());
+        return result;
+    }
+
+    /** Calcula el monto en céntimos para planes corporativos. */
+    private long calcularMontoCentimos(TipoPlanCorporativo tipoPlan, boolean esAnual) {
+        return switch (tipoPlan) {
+            case BASICO -> esAnual ? 49999L : 4999L;
+            case ESTANDAR -> esAnual ? 99999L : 9999L;
+            case PREMIUM -> esAnual ? 199999L : 19999L;
+            case REDUCIDO_PUBLICA, REDUCIDO_PRIVADA -> esAnual ? 49999L : 4999L;
+        };
+    }
+
+    /**
+     * Crea un PaymentIntent para contratación de tutor (pago embebido). Devuelve clientSecret para
+     * inicializar Stripe Elements en el frontend.
+     */
+    public Map<String, String> crearPaymentIntentContratacionTutor(
+            Long tutorId,
+            Long comunidadId,
+            java.math.BigDecimal monto,
+            Long usuarioId,
+            String email)
+            throws StripeException {
+
+        long montoEnCentavos =
+                monto.multiply(new java.math.BigDecimal("100"))
+                        .setScale(0, java.math.RoundingMode.HALF_UP)
+                        .longValue();
+
+        PaymentIntentCreateParams.Builder builder =
+                PaymentIntentCreateParams.builder()
+                        .setAmount(montoEnCentavos)
+                        .setCurrency("eur")
+                        .setDescription("Contratación de tutor - MeerKatters")
+                        .putMetadata("usuarioId", usuarioId.toString())
+                        .putMetadata("tutorId", tutorId.toString())
+                        .putMetadata("tipo", TipoTransaccion.PAGO_TUTOR.name())
+                        .addPaymentMethodType("card");
+
+        if (comunidadId != null) {
+            builder.putMetadata("comunidadId", comunidadId.toString());
+        }
+        if (email != null && !email.isBlank()) {
+            builder.setReceiptEmail(email);
+        }
+
+        // If tutor has a connected Stripe account, route the payment to them
+        Tutor tutor = tutorRepository.findById(tutorId).orElse(null);
+        if (tutor != null
+                && tutor.getStripeAccountId() != null
+                && !tutor.getStripeAccountId().isBlank()) {
+            long comisionCentavos =
+                    calcularComision(monto)
+                            .multiply(new java.math.BigDecimal("100"))
+                            .setScale(0, java.math.RoundingMode.HALF_UP)
+                            .longValue();
+            builder.setApplicationFeeAmount(comisionCentavos);
+            builder.setTransferData(
+                    PaymentIntentCreateParams.TransferData.builder()
+                            .setDestination(tutor.getStripeAccountId())
+                            .build());
+        }
+
+        PaymentIntent intent = PaymentIntent.create(builder.build());
+        log.info(
+                "PaymentIntent contratación tutor creado para tutor {}: {}",
+                tutorId,
+                intent.getId());
+
+        Map<String, String> result = new HashMap<>();
+        result.put("clientSecret", intent.getClientSecret());
+        result.put("paymentIntentId", intent.getId());
+        return result;
+    }
+
+    // -------------------------------------------------------------------------
+    // Stripe Connect (cuentas conectadas de tutores)
+    // -------------------------------------------------------------------------
+
+    /** Crea una cuenta Express de Stripe Connect para el tutor. */
+    @Transactional
+    public String crearCuentaConectadaTutor(Tutor tutor) throws StripeException {
+        if (tutor.getStripeAccountId() != null && !tutor.getStripeAccountId().isBlank()) {
+            return tutor.getStripeAccountId();
+        }
+
+        AccountCreateParams params =
+                AccountCreateParams.builder()
+                        .setType(AccountCreateParams.Type.EXPRESS)
+                        .setEmail(tutor.getUsuario().getEmail())
+                        .setCountry("ES")
+                        .setBusinessType(AccountCreateParams.BusinessType.INDIVIDUAL)
+                        .setCapabilities(
+                                AccountCreateParams.Capabilities.builder()
+                                        .setCardPayments(
+                                                AccountCreateParams.Capabilities.CardPayments
+                                                        .builder()
+                                                        .setRequested(true)
+                                                        .build())
+                                        .setTransfers(
+                                                AccountCreateParams.Capabilities.Transfers.builder()
+                                                        .setRequested(true)
+                                                        .build())
+                                        .build())
+                        .build();
+
+        Account account = Account.create(params);
+        tutor.setStripeAccountId(account.getId());
+        tutorRepository.save(tutor);
+
+        log.info("Cuenta Stripe Connect creada para tutor {}: {}", tutor.getId(), account.getId());
+        return account.getId();
+    }
+
+    /** Genera un link de onboarding de Stripe Connect para un tutor. */
+    public String generarOnboardingLink(String stripeAccountId, String returnUrl)
+            throws StripeException {
+        AccountLinkCreateParams params =
+                AccountLinkCreateParams.builder()
+                        .setAccount(stripeAccountId)
+                        .setRefreshUrl(returnUrl)
+                        .setReturnUrl(returnUrl)
+                        .setType(AccountLinkCreateParams.Type.ACCOUNT_ONBOARDING)
+                        .build();
+
+        AccountLink link = AccountLink.create(params);
+        return link.getUrl();
+    }
+
+    /** Comprueba si la cuenta conectada de Stripe está operativa. */
+    public boolean cuentaConectadaActiva(String stripeAccountId) throws StripeException {
+        Account account = Account.retrieve(stripeAccountId);
+        return Boolean.TRUE.equals(account.getChargesEnabled())
+                && Boolean.TRUE.equals(account.getPayoutsEnabled());
+    }
+
+    // -------------------------------------------------------------------------
+    // Ganancias del tutor
+    // -------------------------------------------------------------------------
+
+    /** Obtiene las transacciones de pago completadas para un tutor (paginado). */
+    public Page<TransaccionPago> obtenerGananciasTutor(Long tutorId, Pageable pageable) {
+        return transaccionRepository.findByTutorIdAndTipoAndEstadoOrderByCompletadoAtDesc(
+                tutorId, TipoTransaccion.PAGO_TUTOR, EstadoTransaccion.COMPLETADA, pageable);
+    }
+
+    /** Obtiene todas las transacciones completadas de un tutor (para calcular total). */
+    public java.util.List<TransaccionPago> obtenerTodasGananciasTutor(Long tutorId) {
+        return transaccionRepository.findByTutorIdAndTipoAndEstadoOrderByCompletadoAtDesc(
+                tutorId, TipoTransaccion.PAGO_TUTOR, EstadoTransaccion.COMPLETADA);
+    }
+
+    /**
+     * Realiza un reembolso completo del PaymentIntent indicado y registra la transacción.
+     *
+     * @param paymentIntentId ID del PaymentIntent de Stripe a reembolsar
+     * @param usuario usuario que recibe el reembolso
+     * @param tutor tutor relacionado (puede ser null)
+     * @param monto importe a registrar
+     * @throws StripeException si Stripe rechaza el reembolso
+     */
+    @Transactional
+    public void reembolsarPago(
+            String paymentIntentId, Usuario usuario, Tutor tutor, BigDecimal monto)
+            throws StripeException {
+        if (paymentIntentId == null || paymentIntentId.isBlank()) {
+            log.warn("No se puede reembolsar: paymentIntentId vacío");
+            return;
+        }
+        RefundCreateParams params =
+                RefundCreateParams.builder()
+                        .setPaymentIntent(paymentIntentId)
+                        .setReverseTransfer(true)
+                        .build();
+        Refund refund = Refund.create(params);
+        log.info("Reembolso creado: {} para PaymentIntent {}", refund.getId(), paymentIntentId);
+
+        // Marcar la transacción original como REEMBOLSADA
+        if (usuario != null && tutor != null) {
+            transaccionRepository
+                    .findTopByUsuarioIdAndTutorIdAndTipoAndEstadoOrderByCompletadoAtDesc(
+                            usuario.getId(),
+                            tutor.getId(),
+                            TipoTransaccion.PAGO_TUTOR,
+                            EstadoTransaccion.COMPLETADA)
+                    .ifPresent(
+                            tx -> {
+                                tx.setEstado(EstadoTransaccion.REEMBOLSADA);
+                                transaccionRepository.save(tx);
+                                log.info("Transacción {} marcada como REEMBOLSADA", tx.getId());
+                            });
+        }
     }
 }

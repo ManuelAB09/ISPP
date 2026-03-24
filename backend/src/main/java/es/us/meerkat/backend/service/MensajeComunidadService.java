@@ -1,6 +1,10 @@
 package es.us.meerkat.backend.service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -9,20 +13,75 @@ import es.us.meerkat.backend.dto.EnviarMensajeComunidadRequest;
 import es.us.meerkat.backend.dto.MensajeComunidadResponse;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.MensajeComunidad;
+import es.us.meerkat.backend.entity.MensajeComunidadLeido;
+import es.us.meerkat.backend.entity.PreferenciasNotificacion;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.MensajeComunidadRepository;
+import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /** Servicio para la gestión de mensajes en chats de comunidades. */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MensajeComunidadService {
+
+    /** Marca todos los mensajes de una comunidad como leídos para el usuario. */
+    @Transactional
+    public void marcarComunidadComoLeida(Long usuarioId, Long comunidadId) {
+        if (!miembroComunidadRepository
+                .findByUsuarioIdAndComunidadId(usuarioId, comunidadId)
+                .isPresent()) {
+            throw new IllegalArgumentException("No perteneces a esta comunidad");
+        }
+        java.util.List<MensajeComunidad> mensajes =
+                mensajeComunidadRepository.findByComunidadIdOrderByCreatedAtAsc(comunidadId);
+        for (MensajeComunidad m : mensajes) {
+            if (!mensajeComunidadLeidoRepository
+                    .findByMensajeComunidadAndUsuario(m, Usuario.builder().id(usuarioId).build())
+                    .isPresent()) {
+                MensajeComunidadLeido ml =
+                        MensajeComunidadLeido.builder()
+                                .mensajeComunidad(m)
+                                .usuario(Usuario.builder().id(usuarioId).build())
+                                .leidoAt(java.time.LocalDateTime.now())
+                                .build();
+                mensajeComunidadLeidoRepository.save(ml);
+            }
+        }
+    }
+
+    private final es.us.meerkat.backend.repository.MensajeComunidadLeidoRepository
+            mensajeComunidadLeidoRepository;
+
+    /**
+     * Devuelve el número de mensajes no leídos por comunidad para el usuario.
+     *
+     * @param usuarioId ID del usuario autenticado
+     * @return Map comunidadId -> count no leídos
+     */
+    @Transactional(readOnly = true)
+    public java.util.Map<Long, Integer> obtenerNoLeidosPorComunidad(Long usuarioId) {
+        java.util.Map<Long, Integer> resultado = new java.util.HashMap<>();
+        java.util.List<Object[]> conteos =
+                mensajeComunidadRepository.countNoLeidosByComunidadParaUsuario(usuarioId);
+        for (Object[] fila : conteos) {
+            Long comunidadId = (Long) fila[0];
+            Long noLeidos = (Long) fila[1];
+            resultado.put(comunidadId, noLeidos.intValue());
+        }
+        return resultado;
+    }
 
     private final MensajeComunidadRepository mensajeComunidadRepository;
     private final UsuarioRepository usuarioRepository;
     private final ComunidadRepository comunidadRepository;
+    private final MiembroComunidadRepository miembroComunidadRepository;
+    private final PreferenciasNotificacionService preferenciasNotificacionService;
+    private final EmailService emailService;
 
     /**
      * Envía un mensaje en el chat de una comunidad.
@@ -55,6 +114,7 @@ public class MensajeComunidadService {
                         .build();
 
         final MensajeComunidad saved = mensajeComunidadRepository.save(mensaje);
+        notificarMensajeComunidadPorEmail(saved);
         return mapToResponse(saved);
     }
 
@@ -112,6 +172,7 @@ public class MensajeComunidadService {
                         .build();
 
         final MensajeComunidad saved = mensajeComunidadRepository.save(mensaje);
+        notificarMensajeComunidadPorEmail(saved);
         saved.setArchivoUrl(
                 "/api/v1/comunidades/" + comunidadId + "/mensajes/" + saved.getId() + "/archivo");
         mensajeComunidadRepository.save(saved);
@@ -224,11 +285,115 @@ public class MensajeComunidadService {
                 .usuarioNombre(mensaje.getUsuario().getNombre())
                 .usuarioFoto(mensaje.getUsuario().getFoto())
                 .comunidadId(mensaje.getComunidad().getId())
+                .comunidadNombre(mensaje.getComunidad().getNombre())
+                .comunidadImagenUrl(mensaje.getComunidad().getImagenUrl())
                 .archivoUrl(mensaje.getArchivoUrl())
                 .archivoNombre(mensaje.getArchivoNombre())
                 .archivoMimeType(mensaje.getArchivoMimeType())
                 .archivoTamano(mensaje.getArchivoTamano())
                 .build();
+    }
+
+    private void notificarMensajeComunidadPorEmail(final MensajeComunidad mensaje) {
+        if (mensaje == null
+                || mensaje.getUsuario() == null
+                || mensaje.getUsuario().getId() == null
+                || mensaje.getComunidad() == null
+                || mensaje.getComunidad().getId() == null) {
+            return;
+        }
+
+        final Long remitenteId = mensaje.getUsuario().getId();
+        final Long comunidadId = mensaje.getComunidad().getId();
+
+        final List<Long> miembrosIds =
+                miembroComunidadRepository.findUsuarioIdsByComunidadId(comunidadId);
+
+        if (miembrosIds == null || miembrosIds.isEmpty()) {
+            return;
+        }
+
+        final Map<Long, Usuario> miembrosPorId =
+                usuarioRepository.findAllById(miembrosIds).stream()
+                        .filter(u -> u.getId() != null)
+                        .collect(
+                                Collectors.toMap(Usuario::getId, Function.identity(), (a, b) -> a));
+
+        for (final Long miembroId : miembrosIds) {
+            if (miembroId == null || miembroId.equals(remitenteId)) {
+                continue;
+            }
+
+            final Usuario miembro = miembrosPorId.get(miembroId);
+            if (miembro == null) {
+                continue;
+            }
+            notificarMiembroPorEmail(mensaje, comunidadId, miembroId, miembro);
+        }
+    }
+
+    private void notificarMiembroPorEmail(
+            final MensajeComunidad mensaje,
+            final Long comunidadId,
+            final Long miembroId,
+            final Usuario miembro) {
+        if (miembro == null || miembro.getEmail() == null || miembro.getEmail().isBlank()) {
+            return;
+        }
+        try {
+            final PreferenciasNotificacion preferencias =
+                    preferenciasNotificacionService.getOrCreate(miembro.getId());
+            if (!Boolean.TRUE.equals(preferencias.getEmailsActivados())) {
+                return;
+            }
+
+            final boolean estaMencionado = estaUsuarioMencionado(miembro, mensaje.getContenido());
+            final boolean puedeRecibir =
+                    estaMencionado
+                            ? Boolean.TRUE.equals(preferencias.getNotificarMenciones())
+                            : Boolean.TRUE.equals(preferencias.getNotificarMensajeComunidad());
+
+            if (!puedeRecibir) {
+                return;
+            }
+
+            if (estaMencionado) {
+                emailService.sendCommunityMentionEmail(
+                        miembro,
+                        mensaje.getComunidad(),
+                        mensaje.getUsuario(),
+                        mensaje.getContenido());
+            } else {
+                emailService.sendCommunityMessageEmail(
+                        miembro,
+                        mensaje.getComunidad(),
+                        mensaje.getUsuario(),
+                        mensaje.getContenido());
+            }
+        } catch (Exception e) {
+            log.warn(
+                    "No se pudo enviar notificacion email de mensaje comunidad {} al usuario {}:"
+                            + " {}",
+                    comunidadId,
+                    miembroId,
+                    e.getMessage());
+        }
+    }
+
+    private boolean estaUsuarioMencionado(final Usuario usuario, final String contenido) {
+        if (usuario == null || usuario.getNombre() == null || contenido == null) {
+            return false;
+        }
+
+        final String nombre = usuario.getNombre().trim();
+        if (nombre.isBlank()) {
+            return false;
+        }
+
+        final Pattern mentionPattern =
+                Pattern.compile(
+                        "@" + Pattern.quote(nombre) + "(?![\\w-])", Pattern.CASE_INSENSITIVE);
+        return mentionPattern.matcher(contenido).find();
     }
 
     public record MensajeComunidadArchivo(byte[] data, String nombre, String mimeType) {}

@@ -12,7 +12,6 @@ export const useNotifications = () => {
     useEffect(() => {
         // Verificar si el navegador soporta notificaciones
         if (!('Notification' in window)) {
-            console.warn('Este navegador no soporta notificaciones de escritorio');
             setIsSupported(false);
             return;
         }
@@ -52,7 +51,6 @@ export const useNotifications = () => {
     const showNotification = useCallback(
         (title, options = {}, onClick = null) => {
             if (!isSupported || Notification.permission !== 'granted') {
-                console.warn('Notificaciones no disponibles o no autorizadas');
                 return null;
             }
 
@@ -66,7 +64,6 @@ export const useNotifications = () => {
             };
 
             try {
-                console.log('🔔 Mostrando notificación:', title, defaultOptions.body);
                 const notification = new Notification(title, defaultOptions);
 
                 if (onClick) {
@@ -85,9 +82,7 @@ export const useNotifications = () => {
                     };
                 }
 
-                notification.onerror = (error) => {
-                    console.error('❌ Error en notificación:', error);
-                };
+                notification.onerror = () => {};
 
                 // Auto-cerrar después de 8 segundos
                 setTimeout(() => {
@@ -95,8 +90,7 @@ export const useNotifications = () => {
                 }, 8000);
 
                 return notification;
-            } catch (error) {
-                console.error('Error al mostrar la notificación:', error);
+            } catch {
                 return null;
             }
         },

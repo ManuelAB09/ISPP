@@ -1,8 +1,7 @@
 package es.us.meerkat.backend.controller;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import es.us.meerkat.backend.dto.AccessRequestBody;
 import es.us.meerkat.backend.dto.CommunityDetailResponse;
 import es.us.meerkat.backend.dto.CreateCommunityRequest;
+import es.us.meerkat.backend.dto.JoinCommunityRequest;
 import es.us.meerkat.backend.dto.MemberResponse;
 import es.us.meerkat.backend.dto.PrivacyRequest;
 import es.us.meerkat.backend.dto.RequestResponse;
@@ -52,11 +52,18 @@ class CommunityControllerTest {
 
     @InjectMocks private CommunityController communityController;
 
+    @SuppressWarnings("unchecked")
     @Test
     void createCommunityShouldReturnUnauthorizedWhenUserIsNull() {
         CreateCommunityRequest request =
                 new CreateCommunityRequest(
-                        "Comunidad Java", "Descripción", "COMUNIDAD_PUBLICA", null);
+                        "Comunidad Java",
+                        "Descripción",
+                        "COMUNIDAD_PUBLICA",
+                        null,
+                        null,
+                        null,
+                        null);
 
         ResponseEntity<CommunityDetailResponse> response =
                 (ResponseEntity<CommunityDetailResponse>)
@@ -65,12 +72,19 @@ class CommunityControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void createCommunityShouldReturnCreatedWhenServiceSucceeds() {
         Usuario usuario = buildUsuario(1L);
         CreateCommunityRequest request =
                 new CreateCommunityRequest(
-                        "Comunidad Java", "Descripción", "COMUNIDAD_PUBLICA", "img.png");
+                        "Comunidad Java",
+                        "Descripción",
+                        "COMUNIDAD_PUBLICA",
+                        "img.png",
+                        null,
+                        null,
+                        null);
         Comunidad comunidad =
                 buildComunidad(10L, usuario, TipoGrupo.COMUNIDAD_PUBLICA, TipoPlanComunidad.FREE);
 
@@ -79,12 +93,15 @@ class CommunityControllerTest {
                         request.nombre(),
                         request.descripcion(),
                         TipoGrupo.COMUNIDAD_PUBLICA,
-                        request.imagenUrl()))
+                        request.imagenUrl(),
+                        request.institutionId(),
+                        request.maxMiembros(),
+                        null))
                 .thenReturn(comunidad);
         when(communityService.countMembers(comunidad.getId())).thenReturn(1L);
-        when(authorizationService.getUserRoleInCommunityAsString(
-                        usuario.getId(), comunidad.getId()))
-                .thenReturn("ADMIN");
+        MiembroComunidad membership = MiembroComunidad.builder().rol(RolComunidad.ADMIN).build();
+        when(authorizationService.getMembership(usuario.getId(), comunidad.getId()))
+                .thenReturn(membership);
 
         ResponseEntity<CommunityDetailResponse> response =
                 (ResponseEntity<CommunityDetailResponse>)
@@ -101,14 +118,23 @@ class CommunityControllerTest {
         Usuario usuario = buildUsuario(1L);
         CreateCommunityRequest request =
                 new CreateCommunityRequest(
-                        "Comunidad Java", "Descripción", "COMUNIDAD_PUBLICA", null);
+                        "Comunidad Java",
+                        "Descripción",
+                        "COMUNIDAD_PUBLICA",
+                        null,
+                        null,
+                        null,
+                        null);
 
         when(communityService.createCommunity(
                         usuario.getId(),
                         request.nombre(),
                         request.descripcion(),
                         TipoGrupo.COMUNIDAD_PUBLICA,
-                        request.imagenUrl()))
+                        request.imagenUrl(),
+                        request.institutionId(),
+                        request.maxMiembros(),
+                        null))
                 .thenThrow(new IllegalArgumentException("límite alcanzado"));
 
         ResponseEntity<?> response = communityController.createCommunity(request, usuario);
@@ -138,15 +164,18 @@ class CommunityControllerTest {
                         .rol(RolComunidad.ALUMNO)
                         .build();
 
-        when(memberService.joinPublicCommunity(usuario.getId(), 100L)).thenReturn(miembro);
+        when(memberService.joinPublicCommunity(usuario.getId(), 100L, null)).thenReturn(miembro);
 
+        @SuppressWarnings("unchecked")
         ResponseEntity<MemberResponse> response =
-                communityController.joinPublicCommunity(100L, usuario);
+                (ResponseEntity<MemberResponse>)
+                        communityController.joinPublicCommunity(
+                                100L, new JoinCommunityRequest(null), usuario);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().id()).isEqualTo(50L);
-        verify(memberService).joinPublicCommunity(usuario.getId(), 100L);
+        verify(memberService).joinPublicCommunity(usuario.getId(), 100L, null);
     }
 
     @Test
@@ -160,12 +189,13 @@ class CommunityControllerTest {
                         .mensaje("Quiero entrar")
                         .build();
 
-        when(requestService.requestAccess(usuario.getId(), 100L, "Quiero entrar"))
+        when(requestService.requestAccess(
+                        usuario.getId(), 100L, "Quiero entrar", RolComunidad.ALUMNO))
                 .thenReturn(solicitud);
 
         ResponseEntity<RequestResponse> response =
                 communityController.requestAccess(
-                        100L, new AccessRequestBody("Quiero entrar"), usuario);
+                        100L, new AccessRequestBody("Quiero entrar", null), usuario);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isNotNull();
@@ -196,6 +226,40 @@ class CommunityControllerTest {
                         100L, new UpgradeCommunityRequest("premium"), usuario);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void promoteMemberToAdminShouldReturnForbiddenWhenUserIsNotAdmin() {
+        Usuario usuario = buildUsuario(1L);
+        when(authorizationService.isAdminOf(usuario.getId(), 100L)).thenReturn(false);
+
+        ResponseEntity<MemberResponse> response =
+                communityController.promoteMemberToAdmin(100L, 2L, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    void promoteMemberToAdminShouldReturnOkWhenServiceSucceeds() {
+        Usuario usuario = buildUsuario(1L);
+        Usuario targetUser = buildUsuario(2L);
+        MiembroComunidad promoted =
+                MiembroComunidad.builder()
+                        .id(90L)
+                        .usuario(targetUser)
+                        .rol(RolComunidad.ADMIN)
+                        .build();
+
+        when(authorizationService.isAdminOf(usuario.getId(), 100L)).thenReturn(true);
+        when(memberService.promoteToAdmin(usuario.getId(), 100L, 2L)).thenReturn(promoted);
+
+        ResponseEntity<MemberResponse> response =
+                communityController.promoteMemberToAdmin(100L, 2L, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().id()).isEqualTo(90L);
+        assertThat(response.getBody().rol()).isEqualTo("ADMIN");
     }
 
     private Usuario buildUsuario(final Long id) {

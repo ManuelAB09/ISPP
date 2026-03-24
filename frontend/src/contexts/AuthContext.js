@@ -38,9 +38,9 @@ export const AuthProvider = ({ children }) => {
       esTutor: userData.esTutor,
       autenticacionDosFactores:
         extraData.autenticacionDosFactores ?? userData.autenticacionDosFactores ?? false,
-      notificacionesEmail: extraData.notificacionesEmail ?? userData.notificacionesEmail ?? true,
       notificacionesPush: extraData.notificacionesPush ?? userData.notificacionesPush ?? true,
       createdAt: userData.createdAt,
+      googleLinked: userData.googleLinked ?? false,
       // Campos que la API acepta en PUT pero no devuelve en GET
       universidad: extraData.universidad ?? userData.universidad ?? '',
       grado: extraData.grado ?? userData.grado ?? '',
@@ -90,10 +90,8 @@ export const AuthProvider = ({ children }) => {
             fotoBackgroundColor: storedData?.fotoBackgroundColor ?? userData?.fotoBackgroundColor ?? '#ffffff',
             autenticacionDosFactores:
               storedData?.autenticacionDosFactores ?? userData?.autenticacionDosFactores ?? false,
-            notificacionesEmail:
-              storedData?.notificacionesEmail ?? userData?.notificacionesEmail ?? true,
             notificacionesPush:
-              storedData?.notificacionesPush ?? userData?.notificacionesPush ?? false,
+              storedData?.notificacionesPush ?? userData?.notificacionesPush ?? true,
           };
           setUser(combinedUser);
           saveUserToStorage(userData, {
@@ -123,6 +121,12 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       const response = await authApi.login({ email, password });
+      
+      // Si la respuesta indica que es un desafío 2FA
+      if (response.twoFactorRequired) {
+        return { success: true, twoFactorRequired: true, tempToken: response.tempToken };
+      }
+
       const { accessToken, user: userData } = response;
 
       localStorage.setItem('accessToken', accessToken);
@@ -142,6 +146,20 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       const response = await authApi.register({ email, password, nombre, esTutor });
+      // Ahora el registro devuelve un mensaje, no token/user
+      // El usuario debe verificar su email antes de poder iniciar sesión
+      return { success: true, requiresVerification: true, message: response.message };
+    } catch (err) {
+      const message = err.message || 'Error al registrarse';
+      setError(message);
+      return { success: false, error: message };
+    }
+  }, []);
+
+  const verifyEmail = useCallback(async (token) => {
+    setError(null);
+    try {
+      const response = await authApi.verifyEmail(token);
       const { accessToken, user: userData } = response;
 
       localStorage.setItem('accessToken', accessToken);
@@ -151,7 +169,87 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true };
     } catch (err) {
-      const message = err.message || 'Error al registrarse';
+      const message = err.message || 'Error al verificar el email';
+      setError(message);
+      return { success: false, error: message };
+    }
+  }, []);
+
+  const resendVerification = useCallback(async (email) => {
+    setError(null);
+    try {
+      const response = await authApi.resendVerification(email);
+      return { success: true, message: response.message };
+    } catch (err) {
+      const message = err.message || 'Error al reenviar el email de verificación';
+      setError(message);
+      return { success: false, error: message };
+    }
+  }, []);
+
+  const loginWithGoogle = useCallback(async (idToken, requestClassroomAccess = false) => {
+    setError(null);
+    try {
+      const response = await authApi.loginWithGoogle({ idToken, requestClassroomAccess });
+
+      const authResp = response.authResponse;
+      
+      if (authResp?.twoFactorRequired) {
+        return { success: true, twoFactorRequired: true, tempToken: authResp.tempToken };
+      }
+
+      const { accessToken, user: userData } = authResp;
+      localStorage.setItem('accessToken', accessToken);
+      const savedUser = saveUserToStorage(userData);
+      apiClient.setToken(accessToken);
+      setUser(savedUser);
+
+      return { success: true, requestClassroomAccess: response.requestClassroomAccess };
+    } catch (err) {
+      const message = err.message || 'Error al autenticar con Google';
+      setError(message);
+      return { success: false, error: message };
+    }
+  }, []);
+
+  const processDirectLogin = useCallback((payload) => {
+    setError(null);
+    try {
+      if (payload.twoFactorRequired || payload.isTwoFactor) {
+        return { success: true, twoFactorRequired: true, tempToken: payload.tempToken };
+      }
+
+      const { token, accessToken, user: userData } = payload;
+      // Backend returned 'token' instead of 'accessToken' in AuthResponse
+      const finalToken = token || accessToken; 
+      localStorage.setItem('accessToken', finalToken);
+      const savedUser = saveUserToStorage(userData);
+      apiClient.setToken(finalToken);
+      setUser(savedUser);
+
+      return { success: true };
+    } catch (err) {
+      const message = err.message || 'Error al procesar login con Google';
+      setError(message);
+      return { success: false, error: message };
+    }
+  }, []);
+
+  const login2fa = useCallback(async (tempToken, code) => {
+    setError(null);
+    try {
+      const response = await authApi.login2fa({ tempToken, code });
+      
+      const { accessToken, user: userData } = response;
+
+      localStorage.setItem('accessToken', accessToken);
+      const savedUser = saveUserToStorage(userData);
+      apiClient.setToken(accessToken);
+      setUser(savedUser);
+
+      return { success: true };
+    } catch (err) {
+      const message = err.message || 'Error al verificar el código 2FA';
       setError(message);
       return { success: false, error: message };
     }
@@ -198,11 +296,6 @@ export const AuthProvider = ({ children }) => {
           ?? updatedUser.autenticacionDosFactores
           ?? user?.autenticacionDosFactores
           ?? false,
-        notificacionesEmail:
-          profileData.notificacionesEmail
-          ?? updatedUser.notificacionesEmail
-          ?? user?.notificacionesEmail
-          ?? true,
         notificacionesPush:
           profileData.notificacionesPush
           ?? updatedUser.notificacionesPush
@@ -240,10 +333,8 @@ export const AuthProvider = ({ children }) => {
         fotoBackgroundColor: storedData?.fotoBackgroundColor ?? userData?.fotoBackgroundColor ?? '#ffffff',
         autenticacionDosFactores:
           storedData?.autenticacionDosFactores ?? userData?.autenticacionDosFactores ?? false,
-        notificacionesEmail:
-          storedData?.notificacionesEmail ?? userData?.notificacionesEmail ?? true,
         notificacionesPush:
-          storedData?.notificacionesPush ?? userData?.notificacionesPush ?? false,
+          storedData?.notificacionesPush ?? userData?.notificacionesPush ?? true,
       };
       setUser(combinedUser);
       saveUserToStorage(userData, {
@@ -266,9 +357,14 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!user,
     login,
     register,
+    verifyEmail,
+    resendVerification,
     logout,
     updateProfile,
     refreshUser,
+    loginWithGoogle,
+    processDirectLogin,
+    login2fa,
     clearError: () => setError(null),
   };
 

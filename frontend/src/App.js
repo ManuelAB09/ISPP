@@ -1,22 +1,26 @@
 import { useEffect } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Link, Navigate, Route, Routes } from 'react-router-dom';
 import './App.css';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { NotificationProvider } from './contexts/NotificationContext';
+import { NotificationProvider, useNotificationContext } from './contexts/NotificationContext';
 import { SocketProvider } from './contexts/SocketContext';
 import Login from './screens/auth/Login';
 import Register from './screens/auth/Register';
+import VerifyEmail from './screens/auth/VerifyEmail';
 import Terms from './screens/legal/Terms';
 import Privacy from './screens/legal/Privacy';
+import LandingPage from './screens/landing/LandingPage';
 import CommunityDetail from './screens/comunidades/CommunityDetail';
 import Comunidades from './screens/comunidades/Comunidades';
 import CrearComunidad from './screens/comunidades/CrearComunidad';
 import CrearEvento from './screens/evento/CrearEvento';
 import DetalleEvento from './screens/evento/DetalleEvento';
 import EventosMapaScreen from './screens/evento/EventosMapaScreen';
+import MisEventos from './screens/evento/MisEventos';
 import Home from './screens/home/Home';
 import Profile from './screens/myProfile/Profile';
 import MisPagos from './screens/pagos/MisPagos';
+import MisGanancias from './screens/ganancias/MisGanancias';
 import PagoExitoso from './screens/pagos/PagoExitoso';
 import InstitutionPlansScreen from './screens/planes/InstitutionPlansScreen';
 import PasarelaPago from './screens/planes/PasarelaPago';
@@ -24,11 +28,30 @@ import PlansScreen from './screens/planes/PlansScreen';
 import PlanesSuccess from './screens/planes/PlanesSuccess';
 import PasarelaPagoTutor from './screens/teacherProfile/PasarelaPagoTutor';
 import TeacherProfile from './screens/teacherProfile/TeacherProfile';
+import MisReservas from './screens/reservas/MisReservas';
 import CrearUbicacionScreen from './screens/ubicaciones/CrearUbicacionScreen';
 import VerifiedTeachers from './screens/verifiedTeachers/VerifiedTeachers';
-
-
+import CalendarCallback from './screens/myProfile/CalendarCallback';
+import CuestionarioEditor from './screens/cuestionarios/CuestionarioEditor';
+import CuestionarioPreview from './screens/cuestionarios/CuestionarioPreview';
+import CuestionarioResolver from './screens/cuestionarios/CuestionarioResolver';
+import CuestionarioResultado from './screens/cuestionarios/CuestionarioResultado';
 import Chats from './screens/chat/Chats';
+import NotificationTab from './screens/notificaciones/NotificationTab';
+
+function FloatingNotifButton() {
+  const { panelUnreadCount } = useNotificationContext();
+  const isAuthenticated = Boolean(localStorage.getItem('accessToken'));
+  if (!isAuthenticated) return null;
+  return (
+    <Link to="/notificaciones" className="floating-notif-btn" aria-label="Notificaciones">
+      🔔
+      {panelUnreadCount > 0 && (
+        <span className="floating-notif-badge">{panelUnreadCount}</span>
+      )}
+    </Link>
+  );
+}
 
 function AppRoutes() {
   const { isAuthenticated, loading } = useAuth();
@@ -64,17 +87,28 @@ function AppRoutes() {
         <Route path="/planes/pasarela" element={<PasarelaPago />} />
         <Route path="/planes/instituciones" element={<InstitutionPlansScreen />} />
         <Route path="/pagos" element={<MisPagos />} />
+        <Route path="/ganancias" element={<MisGanancias />} />
         <Route path="/eventos/:eventId" element={<DetalleEvento />} />
         <Route path="/eventos-mapa" element={<EventosMapaScreen />} />
+        <Route path="/mis-eventos" element={<MisEventos />} />
+        <Route path="/cuestionarios/crear" element={<CuestionarioEditor />} />
+        <Route path="/cuestionarios/:id" element={<CuestionarioPreview />} />
+        <Route path="/cuestionarios/:id/resolver" element={<CuestionarioResolver />} />
+        <Route path="/cuestionarios/:id/resultado" element={<CuestionarioResultado />} />
         <Route path="/planes/success" element={<PlanesSuccess />} />
+        <Route path="/settings/calendar" element={<CalendarCallback />} />
+        <Route path="/mis-reservas" element={<MisReservas />} />
+        <Route path="/notificaciones" element={<NotificationTab />} />
       </>
     )
   }
 
   return (
     <SocketProvider token={socketToken}>
+      <NotificationProvider>
+      <FloatingNotifButton />
       <Routes>
-        {/* Ruta principal - redirige a login si no está autenticado */}
+        {/* Ruta principal - muestra landing page si no está autenticado */}
         <Route path="/" element={
           loading ? (
             <div style={{
@@ -91,21 +125,31 @@ function AppRoutes() {
           ) : isAuthenticated ? (
             <Home />
           ) : (
-            <Navigate to="/login" replace />
+            <LandingPage />
           )
         } />
+
+        {/* Landing page - siempre accesible */}
+        <Route path="/landing" element={<LandingPage />} />
 
         {/* Rutas públicas */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/comunidades" element={<Comunidades />} />
         <Route path="/comunidades/:communityId" element={<CommunityDetail />} />
+        <Route path="/comunidades/:communityId/apuntes" element={<CommunityDetail />} />
+        <Route path="/comunidades/:communityId/editar" element={<CommunityDetail />} />
 
         {/* Rutas protegidas - solo disponibles si está autenticado */}
         {ownerRoutes}
+
+        {/* Catch-all: redirige rutas no encontradas a inicio */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </NotificationProvider>
     </SocketProvider>
   );
 }
@@ -113,11 +157,10 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <NotificationProvider>
-        <AppRoutes />
-      </NotificationProvider>
+      <AppRoutes />
     </AuthProvider>
   );
 }
 
 export default App;
+

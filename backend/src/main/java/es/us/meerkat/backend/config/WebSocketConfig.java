@@ -9,6 +9,7 @@ import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
 
+import es.us.meerkat.backend.security.JwtHandshakeHandler;
 import es.us.meerkat.backend.security.WebSocketAuthChannelInterceptor;
 import lombok.RequiredArgsConstructor;
 
@@ -23,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final WebSocketAuthChannelInterceptor authChannelInterceptor;
+    private final JwtHandshakeHandler jwtHandshakeHandler;
 
     /**
      * Registra los endpoints HTTP para el handshake WebSocket.
@@ -36,6 +38,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(final StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
+                .setHandshakeHandler(jwtHandshakeHandler)
                 .setAllowedOrigins(allowedOrigins)
                 .withSockJS()
                 .setInterceptors();

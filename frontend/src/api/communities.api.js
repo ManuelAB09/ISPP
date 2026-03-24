@@ -53,9 +53,10 @@ export const communitiesApi = {
    * POST /api/v1/communities/{id}/members
    * Unirse a comunidad pública
    * @param {number} communityId
+   * @param {'ALUMNO'|'PROFESOR'} rol
    */
-  join(communityId) {
-    return apiClient.post(`/api/v1/communities/${communityId}/members`, {});
+  join(communityId, rol = 'ALUMNO') {
+    return apiClient.post(`/api/v1/communities/${communityId}/members`, { rol });
   },
 
   /**
@@ -91,6 +92,22 @@ export const communitiesApi = {
    */
   hireTutor(communityId, tutorId, data) {
     return apiClient.post(`/api/v1/communities/${communityId}/tutor/${tutorId}`, data);
+  },
+
+  /**
+   * POST /api/v1/communities/{communityId}/tutor/{tutorId}/create-payment-intent
+   * Crea un PaymentIntent para contratación de tutor (Stripe Elements embebido)
+   */
+  createHiringPaymentIntent(communityId, tutorId, data) {
+    return apiClient.post(`/api/v1/communities/${communityId}/tutor/${tutorId}/create-payment-intent`, data);
+  },
+
+  /**
+   * POST /api/v1/communities/confirm-tutor-payment
+   * Confirma el pago de contratación de tutor tras Stripe Elements
+   */
+  confirmTutorPayment(paymentIntentId) {
+    return apiClient.post('/api/v1/communities/confirm-tutor-payment', { paymentIntentId });
   },
 
   /**
@@ -136,7 +153,137 @@ export const communitiesApi = {
    */
   leave(communityId) {
     return apiClient.delete(`/api/v1/communities/${communityId}/members/me`);
+  },
 
+  /**
+   * DELETE /api/v1/communities/{communityId}/members/{userId}
+   * Expulsar a un miembro de la comunidad (solo admin)
+   * @param {number} communityId
+   * @param {number} userId
+   */
+  expelMember(communityId, userId) {
+    return apiClient.delete(`/api/v1/communities/${communityId}/members/${userId}`);
+  },
+
+  /**
+   * POST /api/v1/communities/{id}/admin/transfer
+   * Transferir rol de admin a otro miembro
+   * @param {number} communityId
+   * @param {number} nuevoAdminId
+   */
+  transferAdmin(communityId, nuevoAdminId, nuevoRolOrigen) {
+    return apiClient.post(`/api/v1/communities/${communityId}/admin/transfer`, { nuevoAdminId, nuevoRolOrigen });
+  },
+
+  /**
+   * POST /api/v1/communities/{communityId}/admins/{nuevoAdminId}
+   * Añadir un nuevo administrador a la comunidad
+   * @param {number} communityId
+   * @param {number} nuevoAdminId
+   */
+  addAdmin(communityId, nuevoAdminId) {
+    return apiClient.post(`/api/v1/communities/${communityId}/admins/${nuevoAdminId}`, {});
+  },
+
+  /**
+   * Activar rol PROFESOR para el usuario autenticado dentro de una comunidad.
+   * Nota: se prueban varias rutas por compatibilidad hasta fijar el contrato backend.
+   * @param {number} communityId
+   */
+  async activateTeacherRole(communityId) {
+    try {
+      return await apiClient.put(`/api/v1/communities/${communityId}/members/me/role`, { rol: 'PROFESOR' });
+    } catch (err) {
+      const status = err?.status || err?.response?.status;
+      if (status !== 404 && status !== 405) {
+        throw err;
+      }
+
+      try {
+        return await apiClient.post(`/api/v1/communities/${communityId}/members/me/teacher`, {});
+      } catch (err2) {
+        const status2 = err2?.status || err2?.response?.status;
+        if (status2 !== 404 && status2 !== 405) {
+          throw err2;
+        }
+        return apiClient.post(`/api/v1/communities/${communityId}/members/me/teacher/activate`, {});
+      }
+    }
+  },
+
+  /**
+   * POST /api/v1/communities/{communityId}/admin/{userId}
+   * Promover miembro a admin
+   * @param {number} communityId
+   * @param {number} userId
+   */
+  promoteMemberToAdmin(communityId, userId) {
+    return apiClient.post(`/api/v1/communities/${communityId}/admin/${userId}`, {});
+  },
+
+  /**
+   * POST /api/v1/communities/{communityId}/requests
+   * Solicitar acceso a una comunidad privada
+   * @param {number} communityId
+   * @param {string} mensaje
+   */
+  requestAccess(communityId, mensaje = '', rolDeseado = 'ALUMNO') {
+    return apiClient.post(`/api/v1/communities/${communityId}/requests`, { mensaje, rolDeseado });
+  },
+
+  /**
+   * GET /api/v1/communities/{communityId}/requests/me
+   * Comprobar si tengo solicitud pendiente en una comunidad
+   * @param {number} communityId
+   * @returns {Promise<{pending: boolean}>}
+   */
+  getMyRequestStatus(communityId) {
+    return apiClient.get(`/api/v1/communities/${communityId}/requests/me`);
+  },
+
+  /**
+   * GET /api/v1/communities/{communityId}/requests
+   * Listar solicitudes de acceso (solo admin)
+   * @param {number} communityId
+   * @param {Object} params - { estado?, page?, size? }
+   */
+  listRequests(communityId, params = {}) {
+    const query = new URLSearchParams();
+    if (params.estado) query.set('estado', params.estado);
+    if (params.page !== undefined) query.set('page', String(params.page));
+    if (params.size !== undefined) query.set('size', String(params.size));
+    const queryString = query.toString();
+    return apiClient.get(`/api/v1/communities/${communityId}/requests${queryString ? '?' + queryString : ''}`);
+  },
+
+  /**
+   * PUT /api/v1/communities/{communityId}/requests/{requestId}
+   * Aceptar o rechazar solicitud de acceso (solo admin)
+   * @param {number} communityId
+   * @param {number} requestId
+   * @param {boolean} aceptado
+   */
+  respondToRequest(communityId, requestId, aceptado) {
+    return apiClient.put(`/api/v1/communities/${communityId}/requests/${requestId}`, { aceptado });
+  },
+
+  /**
+   * DELETE /api/v1/communities/{communityId}
+   * Eliminar comunidad (solo admin)
+   * @param {number} communityId
+   */
+  deleteCommunity(communityId) {
+    return apiClient.delete(`/api/v1/communities/${communityId}`);
+  },
+
+  /**
+   * PUT /api/v1/communities/{communityId}
+   * Actualizar datos de comunidad (solo admin)
+   * @param {number} communityId
+   * @param {Object} data - { nombre, descripcion, imagenUrl }
+   */
+  update(communityId, data) {
+    return apiClient.put(`/api/v1/communities/${communityId}`, data);
   },
 
   // ─── Google Classroom ───
@@ -177,5 +324,14 @@ export const communitiesApi = {
    */
   uploadPhoto(communityId, formData) {
     return apiClient.post(`/api/v1/communities/${communityId}/photo`, formData);
+  },
+
+  /**
+   * GET /api/v1/communities/{communityId}/ranking
+   * Obtener ranking de miembros de comunidad
+   * @param {number} communityId
+   */
+  getRanking(communityId) {
+    return apiClient.get(`/api/v1/communities/${communityId}/ranking`);
   },
 };

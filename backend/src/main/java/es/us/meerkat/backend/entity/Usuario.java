@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -31,9 +33,10 @@ import lombok.ToString;
  */
 @Entity
 @Data
-@ToString(exclude = {"intereses", "tutor"})
+@ToString(exclude = {"intereses", "tutor", "institution"})
 @NoArgsConstructor
 @AllArgsConstructor
+@lombok.Builder
 public class Usuario {
 
     /** Identificador único del usuario. */
@@ -104,30 +107,63 @@ public class Usuario {
     @Column(nullable = false)
     private Boolean autenticacionDosFactores = false;
 
+    /** Se almacena la clave TOTP activa (Base32) cuando 2FA está habilitado. */
+    @Column(length = 128)
+    private String totpSecret;
+
+    /** Clave TOTP temporal en el proceso de activación (no habilitada hasta verificar). */
+    @Column(length = 128)
+    private String totpTempSecret;
+
+    /**
+     * Códigos de respaldo (hasheados) para recuperar acceso cuando el usuario no puede usar su app.
+     */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "usuario_backup_codes", joinColumns = @JoinColumn(name = "usuario_id"))
+    @Column(name = "codigo_hash", length = 80)
+    private List<String> backupCodeHashes = new ArrayList<>();
+
     /** Indica si el usuario quiere recibir notificaciones por email. */
     @Column(nullable = false)
     private Boolean notificacionesEmail = true;
 
     /** Indica si el usuario quiere recibir notificaciones push. */
-    @Column(nullable = false)
-    private Boolean notificacionesPush = false;
+    @Column(nullable = true)
+    private Boolean notificacionesPush = true;
 
     // AÑADIR tipo plan cuando se cree la clase
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TipoPlan plan = TipoPlan.FREE;
 
+    /** Indica si el email del usuario ha sido verificado. */
+    @Column(nullable = false)
+    private Boolean emailVerificado = false;
+
+    /** Token de verificación de email (UUID). */
+    @Column(length = 36)
+    private String verificationToken;
+
+    /** Fecha de expiración del token de verificación. */
+    private LocalDateTime tokenExpiration;
+
     /** Fecha y hora de creación de la cuenta. */
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     /** Perfil de tutor del usuario (null si no es tutor). */
+    @JsonIgnore
     @OneToOne(
             mappedBy = "usuario",
             cascade = CascadeType.ALL,
             orphanRemoval = true,
             fetch = FetchType.LAZY)
     private Tutor tutor;
+
+    /** Institución a la que pertenece el usuario (puede ser null). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "institution_id", nullable = true)
+    private Institution institution;
 
     /** Inicializa campos antes de persistir la entidad. */
     @PrePersist
@@ -142,11 +178,17 @@ public class Usuario {
         if (this.autenticacionDosFactores == null) {
             this.autenticacionDosFactores = false;
         }
+        if (this.backupCodeHashes == null) {
+            this.backupCodeHashes = new ArrayList<>();
+        }
         if (this.notificacionesEmail == null) {
             this.notificacionesEmail = true;
         }
         if (this.notificacionesPush == null) {
             this.notificacionesPush = true;
+        }
+        if (this.emailVerificado == null) {
+            this.emailVerificado = false;
         }
     }
 }

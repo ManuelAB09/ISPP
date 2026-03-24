@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import es.us.meerkat.backend.entity.Usuario;
 
@@ -38,4 +40,31 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
      * @return Lista de usuarios con visibleEnListados a true.
      */
     List<Usuario> findByVisibleEnListadosTrue();
+
+    @Query("SELECT mc.usuario FROM MiembroComunidad mc WHERE mc.comunidad.id = :comunidadId")
+    List<Usuario> findMiembrosByComunidadId(@Param("comunidadId") Long comunidadId);
+
+    @Query(
+            "SELECT mc.usuario FROM MiembroComunidad mc "
+                    + "JOIN GoogleCalendarToken gct ON gct.usuario.id = mc.usuario.id "
+                    + "WHERE mc.comunidad.id = :comunidadId "
+                    + "AND gct.sincronizacionActiva = true")
+    List<Usuario> findMiembrosConCalendarActivoByComunidadId(
+            @Param("comunidadId") Long comunidadId);
+
+    /**
+     * Busca un usuario por su token de verificación de email.
+     *
+     * @param verificationToken Token de verificación.
+     * @return Optional con el usuario si existe.
+     */
+    Optional<Usuario> findByVerificationToken(String verificationToken);
+
+    /**
+     * Busca un usuario por su identificador de Google (sub del ID token).
+     *
+     * @param googleId Identificador de Google del usuario.
+     * @return Optional con el usuario si existe.
+     */
+    Optional<Usuario> findByGoogleId(String googleId);
 }

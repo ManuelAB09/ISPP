@@ -1,0 +1,241 @@
+.catab-list {
+  margin: 2rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.catab-item {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(107,115,161,0.07);
+  padding: 1.7rem 2.1rem 1.2rem 2.1rem;
+  border-left: 6px solid #6B73A1;
+  border: 1px solid #EAEBF0;
+  transition: box-shadow 0.2s, border 0.2s;
+  position: relative;
+}
+.catab-item:hover {
+  box-shadow: 0 8px 32px #6B73A133;
+}
+.catab-item.catab-item-highlighted {
+  border: 2px solid #6B73A1;
+  background: #EEF2FF;
+}
+.catab-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #2E3559;
+  margin-bottom: 0.2rem;
+  letter-spacing: -0.5px;
+}
+.catab-meta {
+  font-size: 1rem;
+  color: #848BA8;
+  margin-bottom: 0.8rem;
+  display: flex;
+  gap: 1.2rem;
+  align-items: center;
+}
+.catab-editado {
+  color: #f59e42;
+  font-style: italic;
+  font-size: 0.97em;
+}
+.catab-content {
+  font-size: 1.08rem;
+  color: #334155;
+  white-space: pre-line;
+  margin-bottom: 1.2rem;
+}
+.catab-comments-section {
+  margin-top: 1.2rem;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px #6B73A122;
+  padding: 1.2rem 1.5rem 1rem 1.5rem;
+  border: 1px solid #EAEBF0;
+}
+.catab-comments-title {
+  font-size: 1.08rem;
+  font-weight: 600;
+  color: #6B73A1;
+  margin-bottom: 0.7rem;
+}
+.catab-comment-list {
+  margin-bottom: 0.7rem;
+}
+.catab-comment-item {
+  padding: 0.6rem 0.2rem;
+  border-bottom: 1px solid #EAEBF0;
+  font-size: 1.01rem;
+  color: #334155;
+  background: #EEF2FF;
+  border-radius: 8px;
+  margin-bottom: 6px;
+}
+.catab-comment-item:last-child {
+  border-bottom: none;
+}
+.catab-comment-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  margin-left: 8px;
+  margin-right: 8px;
+  object-fit: cover;
+  vertical-align: middle;
+  background: #eee;
+  box-shadow: 0 1px 4px #6B73A122;
+}
+.catab-comment-form {
+  display: flex;
+  gap: 0.7rem;
+  margin-top: 0.5rem;
+}
+.catab-comment-input {
+  flex: 1;
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: 1px solid #EAEBF0;
+  font-size: 1rem;
+  background: #EEF2FF;
+  transition: border 0.2s;
+}
+.catab-comment-input:focus {
+  border: 1.5px solid #6B73A1;
+  outline: none;
+}
+.catab-comment-btn {
+  background: #6B73A1;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 20px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.catab-comment-btn:disabled {
+  background: #A5B4FC;
+  cursor: not-allowed;
+}
+
+.catab-btn-create {
+  background: #6B73A1;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 26px;
+  font-size: 1.08rem;
+  font-weight: 600;
+  margin-bottom: 1.2rem;
+  box-shadow: 0 2px 8px #6B73A122;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+.catab-btn-create:hover {
+  background: #525983;
+}
+
+.catab-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(30,41,59,0.18);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.catab-modal {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px #6B73A133;
+  padding: 2.2rem 2.5rem 1.7rem 2.5rem;
+  min-width: 340px;
+  max-width: 440px;
+  width: 100%;
+  position: relative;
+}
+.catab-modal h2 {
+  margin-top: 0;
+  margin-bottom: 18px;
+  font-weight: 800;
+  font-size: 1.45rem;
+  color: #2E3559;
+  letter-spacing: -0.5px;
+}
+.catab-input, .catab-textarea {
+  width: 100%;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1.5px solid #EAEBF0;
+  font-size: 1.08rem;
+  background: #EEF2FF;
+  transition: border 0.2s;
+}
+.catab-input:focus, .catab-textarea:focus {
+  border: 1.5px solid #6B73A1;
+  outline: none;
+}
+.catab-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 10px;
+}
+.catab-btn-cancel {
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: none;
+  background: #EAEBF0;
+  color: #334155;
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.catab-btn-cancel:hover {
+  background: #EEF2FF;
+}
+.catab-btn-submit {
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: none;
+  background: #6B73A1;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.catab-btn-submit:disabled {
+  background: #A5B4FC;
+  cursor: not-allowed;
+}
+.catab-form-error {
+  color: #c00;
+}
+.catab-loading, .catab-error, .catab-empty {
+  color: #64748b;
+  margin: 2rem 0;
+  text-align: center;
+  font-size: 1.08rem;
+}
+
+.catab-label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: #2E3559;
+  font-size: 1.05rem;
+}
+.catab-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 1rem;
+}

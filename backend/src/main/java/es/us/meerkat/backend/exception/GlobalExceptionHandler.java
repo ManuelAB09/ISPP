@@ -72,6 +72,22 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Maneja excepciones de argumento inválido (400 Bad Request).
+     *
+     * @param ex Excepción de argumento inválido.
+     * @param request Solicitud HTTP que causó el error.
+     * @return ResponseEntity con estado 400 y detalles del error.
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
+            final IllegalArgumentException ex, final HttpServletRequest request) {
+        final ErrorResponse errorResponse =
+                new ErrorResponse(
+                        HttpStatus.BAD_REQUEST.value(), ex.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    /**
      * Maneja excepciones de conflicto (409 Conflict).
      *
      * @param ex Excepción de conflicto.
@@ -85,6 +101,22 @@ public class GlobalExceptionHandler {
                 new ErrorResponse(
                         HttpStatus.CONFLICT.value(), ex.getMessage(), request.getRequestURI());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    /**
+     * Maneja excepciones de email no verificado (403 Forbidden).
+     *
+     * @param ex Excepción de email no verificado.
+     * @param request Solicitud HTTP que causó el error.
+     * @return ResponseEntity con estado 403 y detalles del error.
+     */
+    @ExceptionHandler(EmailNotVerifiedException.class)
+    public ResponseEntity<ErrorResponse> handleEmailNotVerifiedException(
+            final EmailNotVerifiedException ex, final HttpServletRequest request) {
+        final ErrorResponse errorResponse =
+                new ErrorResponse(
+                        HttpStatus.FORBIDDEN.value(), ex.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 
     /**
@@ -106,11 +138,5 @@ public class GlobalExceptionHandler {
                         "Error interno del servidor",
                         request.getRequestURI());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-    }
-
-    private ResponseEntity<ErrorResponse> buildErrorResponse(
-            final HttpStatus status, final String message, final String path) {
-        final ErrorResponse errorResponse = new ErrorResponse(status.value(), message, path);
-        return ResponseEntity.status(status).body(errorResponse);
     }
 }

@@ -10,6 +10,8 @@ jest.mock('../../api/eventEndpoints');
 jest.mock('../../api/communities.api', () => ({
   communitiesApi: {
     getMyMembership: jest.fn(),
+    listMine: jest.fn(),
+    getClassroom: jest.fn(),
   },
 }));
 jest.mock('../../components/Header/Header', () => {
@@ -35,7 +37,9 @@ describe('CrearEvento', () => {
     Storage.prototype.getItem = jest.fn((key) => (key === 'userId' ? '1' : null));
     Storage.prototype.setItem = jest.fn();
 
-    communitiesApi.getMyMembership.mockResolvedValue({});
+    communitiesApi.getMyMembership.mockResolvedValue({ rol: 'ADMIN' });
+    communitiesApi.listMine.mockResolvedValue([]);
+    communitiesApi.getClassroom.mockResolvedValue({});
     createEvent.mockResolvedValue({});
     updateEvent.mockResolvedValue({});
     getEventById.mockResolvedValue({});
@@ -84,6 +88,51 @@ describe('CrearEvento', () => {
     expect(screen.getByText(/Debes seleccionar una ubicación para el evento presencial/i)).toBeInTheDocument();
   });
 
+  test('aforo solo acepta numeros y maximo 3 cifras', () => {
+    renderCreate();
+
+    const aforoInput = screen.getByPlaceholderText(/Ej\. 30/i);
+
+    fireEvent.change(aforoInput, {
+      target: { name: 'aforo', value: '12abc3456' },
+    });
+
+    expect(aforoInput).toHaveValue('123');
+  });
+
+  test('no permite fecha y hora de inicio en el pasado', async () => {
+    renderCreate();
+
+    fireEvent.change(screen.getByPlaceholderText(/Ej\. Clase de NodeJS \+ Sequelize/i), {
+      target: { name: 'nombre', value: 'Evento pasado' },
+    });
+
+    const ddInputs = screen.getAllByPlaceholderText('DD');
+    const mmDateInputs = screen.getAllByPlaceholderText('MM');
+    const yyyyInputs = screen.getAllByPlaceholderText('YYYY');
+    const hhInputs = screen.getAllByPlaceholderText('HH');
+    const mmTimeInputs = screen.getAllByPlaceholderText('mm');
+
+    fireEvent.change(ddInputs[0], { target: { name: 'dia', value: '01' } });
+    fireEvent.change(mmDateInputs[0], { target: { name: 'mes', value: '01' } });
+    fireEvent.change(yyyyInputs[0], { target: { name: 'anio', value: '2020' } });
+    fireEvent.change(hhInputs[0], { target: { name: 'hora', value: '10' } });
+    fireEvent.change(mmTimeInputs[0], { target: { name: 'minuto', value: '00' } });
+
+    fireEvent.change(screen.getByPlaceholderText(/Ej\. 30/i), {
+      target: { name: 'aforo', value: '30' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Online/i }));
+
+    fireEvent.click(screen.getByRole('button', { name: /Crear Evento/i }));
+
+    expect(
+      await screen.findByText(/La fecha y hora de inicio no puede ser anterior al momento actual/i)
+    ).toBeInTheDocument();
+    expect(createEvent).not.toHaveBeenCalled();
+  });
+
   test('crea evento correctamente en modo creación', async () => {
   renderCreate();
 
@@ -113,12 +162,8 @@ describe('CrearEvento', () => {
 
   // Online para evitar requerir ubicacionId
   fireEvent.click(screen.getByRole('button', { name: /Online/i }));
-  fireEvent.change(
-    screen.getByPlaceholderText(/https:\/\/meet\.google\.com\/abc-defg-hij/i),
-    {
-      target: { name: 'direccion', value: 'https://meet.google.com/abc-defg-hij' },
-    }
-  );
+
+  await screen.findByText(/Rol detectado en esta comunidad:\s*Administrador/i);
 
   fireEvent.click(screen.getByRole('button', { name: /Crear Evento/i }));
 
@@ -128,7 +173,6 @@ describe('CrearEvento', () => {
       expect.objectContaining({
         titulo: 'Evento de prueba',
         esVirtual: true,
-        enlaceVirtual: 'https://meet.google.com/abc-defg-hij',
         aforo: 30,
       })
     );
@@ -189,5 +233,83 @@ describe('CrearEvento', () => {
     expect(
       await screen.findByText(/No puedes crear eventos en una comunidad a la que no perteneces/i)
     ).toBeInTheDocument();
+  });
+
+  test('bloquea la creación de eventos si el rol es alumno', async () => {
+    communitiesApi.getMyMembership.mockResolvedValueOnce({ rol: 'ALUMNO' });
+
+    renderCreate();
+
+    expect(
+      await screen.findByText(/Solo administradores y profesores pueden hacerlo/i)
+    ).toBeInTheDocument();
+  });
+
+  test('permite editar un evento si el usuario es admin de la comunidad aunque no sea el creador', async () => {
+    communitiesApi.getMyMembership.mockResolvedValueOnce({ rol: 'ADMIN' });
+    getEventById.mockResolvedValueOnce({
+      id: 55,
+      titulo: 'Evento de admin',
+      descripcion: 'Descripción',
+      fechaHora: '2026-07-01T17:00:00',
+      esVirtual: true,
+      enlaceVirtual: 'https://meet.google.com/xxx-yyyy-zzz',
+      aforo: 50,
+      privado: false,
+      visibleMapa: true,
+      creador: { id: 99 },
+      comunidad: { id: 10 },
+    });
+
+    renderEdit();
+
+    expect(await screen.findByDisplayValue('Evento de admin')).toBeInTheDocument();
+    expect(screen.queryByText(/No tienes permiso para editar este evento/i)).not.toBeInTheDocument();
+  });
+
+  test('bloquea la edición de un evento comunitario al creador si su rol es alumno', async () => {
+    communitiesApi.getMyMembership.mockResolvedValueOnce({ rol: 'ALUMNO' });
+    getEventById.mockResolvedValueOnce({
+      id: 55,
+      titulo: 'Evento de alumno',
+      descripcion: 'Descripción',
+      fechaHora: '2026-07-01T17:00:00',
+      esVirtual: true,
+      enlaceVirtual: 'https://meet.google.com/xxx-yyyy-zzz',
+      aforo: 50,
+      privado: false,
+      visibleMapa: true,
+      creador: { id: 1 },
+      comunidad: { id: 10 },
+    });
+
+    renderEdit();
+
+    expect(
+      await screen.findByText(/Solo un administrador o un profesor de la comunidad pueden hacerlo/i)
+    ).toBeInTheDocument();
+    expect(screen.queryByDisplayValue('Evento de alumno')).not.toBeInTheDocument();
+  });
+
+  test('permite editar un evento comunitario si el usuario es profesor', async () => {
+    communitiesApi.getMyMembership.mockResolvedValueOnce({ rol: 'PROFESOR' });
+    getEventById.mockResolvedValueOnce({
+      id: 55,
+      titulo: 'Evento de profesor',
+      descripcion: 'Descripción',
+      fechaHora: '2026-07-01T17:00:00',
+      esVirtual: true,
+      enlaceVirtual: 'https://meet.google.com/xxx-yyyy-zzz',
+      aforo: 50,
+      privado: false,
+      visibleMapa: true,
+      creador: { id: 99 },
+      comunidad: { id: 10 },
+    });
+
+    renderEdit();
+
+    expect(await screen.findByDisplayValue('Evento de profesor')).toBeInTheDocument();
+    expect(screen.queryByText(/No tienes permiso para editar este evento/i)).not.toBeInTheDocument();
   });
 });

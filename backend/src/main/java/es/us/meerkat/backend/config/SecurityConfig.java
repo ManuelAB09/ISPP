@@ -3,14 +3,13 @@ package es.us.meerkat.backend.config;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import es.us.meerkat.backend.security.JwtAuthenticationFilter;
 
@@ -50,8 +49,11 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers("/oauth2/authorize/google-classroom-url")
                                         .authenticated()
+                                        .requestMatchers("/api/v1/google-calendar/oauth/callback")
+                                        .permitAll()
                                         .requestMatchers(
                                                 "/api/v1/auth/**",
+                                                "/api/v1/zoom/webhook",
                                                 "/api/ubicaciones",
                                                 "/api/ubicaciones/**",
                                                 "/api/nominatim/**",
@@ -121,7 +123,7 @@ public class SecurityConfig {
      */
     @Bean
     public FilterRegistrationBean<JwtAuthenticationFilter> jwtFilterRegistration(
-            final JwtAuthenticationFilter filter) {
+            @Lazy final JwtAuthenticationFilter filter) {
         final FilterRegistrationBean<JwtAuthenticationFilter> registration =
                 new FilterRegistrationBean<>(filter);
         registration.setEnabled(false);
@@ -136,15 +138,5 @@ public class SecurityConfig {
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    /**
-     * Bean para mapear JSON a objetos Java y viceversa.
-     *
-     * @return Instancia de {@link ObjectMapper}.
-     */
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
     }
 }

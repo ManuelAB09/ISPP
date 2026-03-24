@@ -61,12 +61,12 @@ public class UserDetailResponse {
     /** Indica si el usuario tiene activada la autenticación de dos factores. */
     private Boolean autenticacionDosFactores;
 
-    /** Indica si el usuario recibe notificaciones por email. */
-    private Boolean notificacionesEmail;
-
     /** Indica si el usuario recibe notificaciones push. */
     private Boolean notificacionesPush;
 
     /** Fecha de creación de la cuenta. */
     private LocalDateTime createdAt;
+
+    /** Indica si el usuario tiene una cuenta de Google vinculada. */
+    private Boolean googleLinked;
 }

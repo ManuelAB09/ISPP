@@ -1,8 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import Header from "../../components/Header/Header";
+import { communitiesApi } from "../../api/communities.api";
 import { getApiBaseUrl } from "../../api/baseUrl";
 import "./PasarelaPagoTutor.css";
+
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLIC_KEY);
 
 const toAbsoluteImageUrl = (imageUrl, fallback = '/MeerKatters_logo.png') => {
   const raw = String(imageUrl || '').trim();
@@ -28,27 +33,135 @@ const toAbsoluteImageUrl = (imageUrl, fallback = '/MeerKatters_logo.png') => {
  * Esta NO es una acción inmediata. El flujo completo es:
  * Usuario solicita → Profesor acepta → Usuario paga → Contratación activa
  */
+
+function CheckoutForm({ totalPagar, comunidad, tutor, navigate }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+
+    setProcessing(true);
+    setError(null);
+
+    try {
+      const { error: submitError } = await elements.submit();
+      if (submitError) {
+        setError(submitError.message);
+        setProcessing(false);
+        return;
+      }
+
+      const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: window.location.origin + "/profesores?pago=ok",
+        },
+        redirect: "if_required",
+      });
+
+      if (confirmError) {
+        setError(confirmError.message);
+        setProcessing(false);
+        return;
+      }
+
+      if (paymentIntent && paymentIntent.status === "succeeded") {
+        await communitiesApi.confirmTutorPayment(paymentIntent.id);
+        if (comunidad) {
+          navigate(`/comunidades/${comunidad.id}?pago=ok`);
+        } else {
+          navigate("/profesores?pago=ok");
+        }
+      }
+    } catch (err) {
+      setError(
+        err?.response?.data?.error ||
+          err?.data?.error ||
+          "Error al procesar el pago. Intenta de nuevo."
+      );
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="ppt-form">
+      <PaymentElement />
+
+      {error && (
+        <div
+          className="ppt-error"
+          style={{ padding: "12px", background: "#fef2f2", borderRadius: 8, marginTop: 16 }}
+        >
+          ⚠️ {error}
+        </div>
+      )}
+
+      <div className="ppt-security-info">
+        <span className="ppt-security-icon">🔒</span>
+        <p>
+          Tu información está protegida con encriptación SSL de 256 bits.
+          El pago se procesa de forma segura a través de Stripe.
+        </p>
+      </div>
+
+      <div className="ppt-terms">
+        <p>
+          Al confirmar el pago, aceptas los{" "}
+          <a href="/planes" target="_blank" rel="noreferrer">
+            términos y condiciones
+          </a>{" "}
+          de contratación de tutores en MeerKatters.
+        </p>
+      </div>
+
+      <div className="ppt-actions">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="ppt-btn ppt-btn--secondary"
+          disabled={processing}
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          className="ppt-btn ppt-btn--primary"
+          disabled={processing || !stripe}
+        >
+          {processing ? (
+            <>
+              <span className="ppt-spinner"></span>
+              Procesando...
+            </>
+          ) : (
+            `Pagar ${totalPagar.toFixed(2)}€`
+          )}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 export default function PasarelaPagoTutor() {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Datos pasados desde el modal de contratación
   const {
     tutor,
-    comunidad, // puede ser null si es contratación personal
+    comunidad,
     modalidad,
     duracion,
     tarifa,
   } = location.state || {};
 
-  const [formData, setFormData] = useState({
-    cardNumber: "",
-    cardName: "",
-    expiryDate: "",
-    cvv: "",
-  });
-  const [processing, setProcessing] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [clientSecret, setClientSecret] = useState(null);
+  const [loadingIntent, setLoadingIntent] = useState(false);
+  const [intentError, setIntentError] = useState(null);
 
   // Si no hay datos, redirigir
   if (!tutor || !tarifa || !modalidad || !duracion) {
@@ -63,121 +176,43 @@ export default function PasarelaPagoTutor() {
   const iva = parseFloat(tarifa) * 0.21;
   const totalPagar = parseFloat(tarifa) * 1.21;
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    let formattedValue = value;
-
-    // Formatear número de tarjeta (espacios cada 4 dígitos)
-    if (name === "cardNumber") {
-      formattedValue = value
-        .replace(/\s/g, "")
-        .replace(/(\d{4})/g, "$1 ")
-        .trim();
-      formattedValue = formattedValue.substring(0, 19);
-    }
-
-    // Formatear fecha de expiración (MM/YY)
-    if (name === "expiryDate") {
-      formattedValue = value
-        .replace(/\D/g, "")
-        .replace(/(\d{2})(\d)/, "$1/$2")
-        .substring(0, 5);
-    }
-
-    // Limitar CVV a 3 dígitos
-    if (name === "cvv") {
-      formattedValue = value.replace(/\D/g, "").substring(0, 3);
-    }
-
-    setFormData((prev) => ({ ...prev, [name]: formattedValue }));
-
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    const cardNumberClean = formData.cardNumber.replace(/\s/g, "");
-    if (!cardNumberClean) {
-      newErrors.cardNumber = "El número de tarjeta es requerido";
-    } else if (cardNumberClean.length !== 16) {
-      newErrors.cardNumber = "El número de tarjeta debe tener 16 dígitos";
-    }
-
-    if (!formData.cardName.trim()) {
-      newErrors.cardName = "El nombre del titular es requerido";
-    }
-
-    if (!formData.expiryDate) {
-      newErrors.expiryDate = "La fecha de expiración es requerida";
-    } else if (formData.expiryDate.length !== 5) {
-      newErrors.expiryDate = "Formato inválido (MM/YY)";
-    } else {
-      const [month, year] = formData.expiryDate.split("/");
-      const currentYear = new Date().getFullYear() % 100;
-      const currentMonth = new Date().getMonth() + 1;
-
-      if (parseInt(month) < 1 || parseInt(month) > 12) {
-        newErrors.expiryDate = "Mes inválido";
-      } else if (
-        parseInt(year) < currentYear ||
-        (parseInt(year) === currentYear && parseInt(month) < currentMonth)
-      ) {
-        newErrors.expiryDate = "Tarjeta expirada";
+  // Create PaymentIntent on mount
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    let cancelled = false;
+    const fetchIntent = async () => {
+      setLoadingIntent(true);
+      setIntentError(null);
+      try {
+        const communityId = comunidad?.id;
+        if (!communityId) {
+          setIntentError("Se requiere una comunidad para la contratación.");
+          return;
+        }
+        const res = await communitiesApi.createHiringPaymentIntent(communityId, tutor.id, {
+          modalidad,
+          duracion,
+          tarifaAcordada: parseFloat(tarifa),
+          aceptarTerminos: true,
+        });
+        const data = res.data || res;
+        if (!cancelled) setClientSecret(data.clientSecret);
+      } catch (err) {
+        if (!cancelled)
+          setIntentError(
+            err?.response?.data?.error || "Error al iniciar el pago. Intenta de nuevo."
+          );
+      } finally {
+        if (!cancelled) setLoadingIntent(false);
       }
-    }
+    };
+    fetchIntent();
+    return () => { cancelled = true; };
+  }, [tutor.id, comunidad, modalidad, duracion, tarifa]);
 
-    if (!formData.cvv) {
-      newErrors.cvv = "El CVV es requerido";
-    } else if (formData.cvv.length !== 3) {
-      newErrors.cvv = "El CVV debe tener 3 dígitos";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
-    setProcessing(true);
-
-    try {
-      if (esContratacionComunidad) {
-        // TODO: Implementar llamada al endpoint del backend para contratar tutor en comunidad
-        // const response = await communitiesApi.hireTutor(comunidad.id, tutor.id, {
-        //   modalidad,
-        //   duracion,
-        //   tarifaAcordada: parseFloat(tarifa),
-        //   aceptarTerminos: true,
-        // });
-        // Este endpoint debería devolver una PaymentUrlResponse con la URL de Stripe
-        
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        alert(`¡Pago procesado! Has contratado a ${nombreTutor} para ${comunidad.nombre}`);
-        navigate(`/comunidades/${comunidad.id}`);
-      } else {
-        // TODO: Implementar llamada al endpoint del backend para contratación personal
-        // Actualmente no existe este endpoint en el backend
-        // Se necesitaría crear un endpoint similar pero sin comunidad
-        
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        alert(`¡Pago procesado! Has contratado a ${nombreTutor} para uso personal`);
-        navigate("/profesores");
-      }
-    } catch (error) {
-      console.error("Error al procesar el pago:", error);
-      alert("Error al procesar el pago. Por favor, intente nuevamente.");
-    } finally {
-      setProcessing(false);
-    }
-  };
+  const elementsOptions = clientSecret
+    ? { clientSecret, appearance: { theme: "stripe" } }
+    : undefined;
 
   return (
     <>
@@ -285,149 +320,41 @@ export default function PasarelaPagoTutor() {
             </div>
           </div>
 
-          {/* Columna derecha - Formulario de pago */}
+          {/* Columna derecha - Formulario de pago con Stripe Elements */}
           <div className="ppt-form-section">
             <div className="ppt-header">
               <h1 className="ppt-title">Información de pago</h1>
               <p className="ppt-subtitle">
-                Completa los datos de tu tarjeta para confirmar la contratación
+                Completa el pago para confirmar la contratación
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="ppt-form">
-              {/* Número de tarjeta */}
-              <div className="ppt-form-group">
-                <label htmlFor="cardNumber" className="ppt-label">
-                  Número de tarjeta
-                </label>
-                <div className="ppt-input-wrapper">
-                  <span className="ppt-card-icon">💳</span>
-                  <input
-                    type="text"
-                    id="cardNumber"
-                    name="cardNumber"
-                    value={formData.cardNumber}
-                    onChange={handleInputChange}
-                    placeholder="1234 5678 9012 3456"
-                    className={`ppt-input ${
-                      errors.cardNumber ? "ppt-input--error" : ""
-                    }`}
-                  />
-                </div>
-                {errors.cardNumber && (
-                  <span className="ppt-error">{errors.cardNumber}</span>
-                )}
+            {loadingIntent && (
+              <div style={{ padding: 40, textAlign: "center" }}>
+                <span className="ppt-spinner" style={{ display: "inline-block", marginBottom: 12 }}></span>
+                <p>Preparando el formulario de pago...</p>
               </div>
+            )}
 
-              {/* Nombre del titular */}
-              <div className="ppt-form-group">
-                <label htmlFor="cardName" className="ppt-label">
-                  Nombre del titular
-                </label>
-                <input
-                  type="text"
-                  id="cardName"
-                  name="cardName"
-                  value={formData.cardName}
-                  onChange={handleInputChange}
-                  placeholder="NOMBRE APELLIDO"
-                  className={`ppt-input ${
-                    errors.cardName ? "ppt-input--error" : ""
-                  }`}
-                  style={{ textTransform: "uppercase" }}
+            {intentError && (
+              <div
+                className="ppt-error"
+                style={{ padding: 16, background: "#fef2f2", borderRadius: 8, marginBottom: 16 }}
+              >
+                ⚠️ {intentError}
+              </div>
+            )}
+
+            {clientSecret && elementsOptions && (
+              <Elements stripe={stripePromise} options={elementsOptions}>
+                <CheckoutForm
+                  totalPagar={totalPagar}
+                  comunidad={comunidad}
+                  tutor={tutor}
+                  navigate={navigate}
                 />
-                {errors.cardName && (
-                  <span className="ppt-error">{errors.cardName}</span>
-                )}
-              </div>
-
-              {/* Fecha de expiración y CVV */}
-              <div className="ppt-form-row">
-                <div className="ppt-form-group">
-                  <label htmlFor="expiryDate" className="ppt-label">
-                    Fecha de expiración
-                  </label>
-                  <input
-                    type="text"
-                    id="expiryDate"
-                    name="expiryDate"
-                    value={formData.expiryDate}
-                    onChange={handleInputChange}
-                    placeholder="MM/YY"
-                    className={`ppt-input ${
-                      errors.expiryDate ? "ppt-input--error" : ""
-                    }`}
-                  />
-                  {errors.expiryDate && (
-                    <span className="ppt-error">{errors.expiryDate}</span>
-                  )}
-                </div>
-
-                <div className="ppt-form-group">
-                  <label htmlFor="cvv" className="ppt-label">
-                    CVV
-                  </label>
-                  <input
-                    type="text"
-                    id="cvv"
-                    name="cvv"
-                    value={formData.cvv}
-                    onChange={handleInputChange}
-                    placeholder="123"
-                    className={`ppt-input ${
-                      errors.cvv ? "ppt-input--error" : ""
-                    }`}
-                  />
-                  {errors.cvv && <span className="ppt-error">{errors.cvv}</span>}
-                </div>
-              </div>
-
-              {/* Información de seguridad */}
-              <div className="ppt-security-info">
-                <span className="ppt-security-icon">🔒</span>
-                <p>
-                  Tu información está protegida con encriptación SSL de 256 bits.
-                  No almacenamos datos de tarjetas de crédito.
-                </p>
-              </div>
-
-              {/* Términos y condiciones */}
-              <div className="ppt-terms">
-                <p>
-                  Al confirmar el pago, aceptas los{" "}
-                  <a href="/planes" target="_blank" rel="noreferrer">
-                    términos y condiciones
-                  </a>{" "}
-                  de contratación de tutores en MeerKatters.
-                </p>
-              </div>
-
-              {/* Botones de acción */}
-              <div className="ppt-actions">
-                <button
-                  type="button"
-                  onClick={() => navigate(-1)}
-                  className="ppt-btn ppt-btn--secondary"
-                  disabled={processing}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="ppt-btn ppt-btn--primary"
-                  disabled={processing}
-                >
-                  {processing ? (
-                    <>
-                      <span className="ppt-spinner"></span>
-                      Procesando...
-                    </>
-                  ) : (
-                    `Pagar ${totalPagar.toFixed(2)}€`
-                  )}
-                </button>
-              </div>
-            </form>
+              </Elements>
+            )}
           </div>
         </div>
       </div>

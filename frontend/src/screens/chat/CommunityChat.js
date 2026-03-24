@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useSocketContext } from '../../contexts/SocketContext';
 import {
     enviarMensajeComunidad,
@@ -15,6 +15,7 @@ import { extractFirstUrl } from '../../utils/linkPreview';
 import LinkPreviewCard from './LinkPreviewCard';
 import { LuExpand, LuMessageCircle, LuX } from 'react-icons/lu';
 import './CommunityChat.css';
+import { communitiesApi } from '../../api/communities.api';
 
 const DEFAULT_PROFILE_AVATAR =
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='60' fill='%23E6EAF3'/%3E%3Ccircle cx='60' cy='46' r='22' fill='%2395A1BB'/%3E%3Cpath d='M20 106c6-20 22-32 40-32s34 12 40 32' fill='%2395A1BB'/%3E%3C/svg%3E";
@@ -44,18 +45,25 @@ const CommunityChat = ({
     comunidadNombre,
     comunidadImagen,
     initiallyOpen = false,
+    isOpen,
     mode = 'floating',
     onOpenPrivateChat,
+    onOpenChange,
+    extraActions,
+    headerActions,
 }) => {
     const isEmbedded = mode === 'embedded';
     const navigate = useNavigate();
+    const location = useLocation();
     const { socket, isConnected } = useSocketContext();
     const [mensajes, setMensajes] = useState([]);
     const [contenido, setContenido] = useState('');
     const [cargandoHistorial, setCargandoHistorial] = useState(false);
     const [enviando, setEnviando] = useState(false);
     const [error, setError] = useState(null);
-    const [chatAbierto, setChatAbierto] = useState(isEmbedded ? true : initiallyOpen);
+    const [chatAbierto, setChatAbierto] = useState(
+        isEmbedded ? true : (typeof isOpen === 'boolean' ? isOpen : initiallyOpen)
+    );
     const [editandoId, setEditandoId] = useState(null);
     const [contenidoEditado, setContenidoEditado] = useState('');
     const [procesandoId, setProcesandoId] = useState(null);
@@ -92,7 +100,8 @@ const CommunityChat = ({
         const cargarHistorial = async () => {
             try {
                 setCargandoHistorial(true);
-                const { data } = await obtenerHistorialComunidad(comunidadId);
+                const response = await obtenerHistorialComunidad(comunidadId);
+                const data = Array.isArray(response?.data) ? response.data : [];
                 setMensajes(data);
             } catch (err) {
                 setError('Error al cargar el historial de mensajes');
@@ -146,7 +155,7 @@ const CommunityChat = ({
             socket.off(`/topic/community.${comunidadId}`, handleNewMessage);
             socket.off('error', handleSocketError);
         };
-    }, [socket, isConnected, comunidadId]);
+    }, [socket, isConnected, comunidadId, comunidadNombre, navigate, location.pathname]);
 
     useEffect(() => {
         if (chatAbierto) {
@@ -159,8 +168,22 @@ const CommunityChat = ({
             setChatAbierto(true);
             return;
         }
+        if (typeof isOpen === 'boolean') {
+            setChatAbierto(isOpen);
+            return;
+        }
         setChatAbierto(initiallyOpen);
-    }, [initiallyOpen, isEmbedded]);
+    }, [initiallyOpen, isEmbedded, isOpen]);
+
+    const updateOpenState = (nextOpen) => {
+        if (isEmbedded) {
+            return;
+        }
+        setChatAbierto(nextOpen);
+        if (onOpenChange) {
+            onOpenChange(nextOpen);
+        }
+    };
 
     useEffect(() => {
         previewsByMessageIdRef.current = previewsByMessageId;
@@ -668,33 +691,92 @@ const CommunityChat = ({
             return;
         }
 
-        const params = new URLSearchParams({
-            communityId: String(comunidadId),
-            userId: String(targetId),
-            userName: payload.userName,
+        navigate(`/chats?communityId=${comunidadId}&userId=${targetId}`);
+    };
+
+    const [miembros, setMiembros] = useState([]);
+    const [showMentionMenu, setShowMentionMenu] = useState(false);
+    const [mentionQuery, setMentionQuery] = useState('');
+    const [mentionSelectedIdx, setMentionSelectedIdx] = useState(0);
+
+    useEffect(() => {
+        communitiesApi.getMembers(comunidadId).then(res => {
+            setMiembros(Array.isArray(res?.content) ? res.content : []);
+        }).catch((err) => {
+            setMiembros([]);
         });
-        if (payload.userPhoto) {
-            params.set('userPhoto', payload.userPhoto);
+    }, [comunidadId]);
+
+    const filteredMiembros = miembros.filter(m =>
+        m.usuario && m.usuario.nombre && m.usuario.nombre.toLowerCase().includes(mentionQuery.toLowerCase())
+    );
+
+    const handleMentionSelect = (nombre) => {
+        if (!nombre) return;
+        const input = document.getElementById('community-chat-input');
+        const cursor = input ? input.selectionStart : contenido.length;
+        const before = contenido.slice(0, cursor);
+        const after = contenido.slice(cursor);
+        const newBefore = before.replace(/@([\w]*)$/, `@${nombre} `);
+        setContenido(newBefore + after);
+        setShowMentionMenu(false);
+        setMentionQuery('');
+        setMentionSelectedIdx(0);
+        setTimeout(() => input && input.focus(), 0);
+    };
+
+    const handleMentionKeyDown = (e) => {
+        if (!showMentionMenu) return;
+        if (e.key === 'ArrowDown') {
+            setMentionSelectedIdx(idx => Math.min(idx + 1, filteredMiembros.length - 1));
+            e.preventDefault();
+        } else if (e.key === 'ArrowUp') {
+            setMentionSelectedIdx(idx => Math.max(idx - 1, 0));
+            e.preventDefault();
+        } else if (e.key === 'Enter') {
+            if (filteredMiembros[mentionSelectedIdx]) {
+                handleMentionSelect(filteredMiembros[mentionSelectedIdx].nombre);
+                e.preventDefault();
+            }
+        } else if (e.key === 'Escape') {
+            setShowMentionMenu(false);
         }
-        if (payload.userPhotoBg) {
-            params.set('userPhotoBg', payload.userPhotoBg);
+    };
+
+    const handleInputChange = (e) => {
+        const value = e.target.value;
+        setContenido(value);
+
+        const cursorPosition = e.target.selectionStart;
+        const textBeforeCursor = value.slice(0, cursorPosition);
+        const mentionMatch = textBeforeCursor.match(/@([\w]*)$/); 
+
+        if (mentionMatch) {
+            setShowMentionMenu(true);
+            setMentionQuery(mentionMatch[1]); 
+            setMentionSelectedIdx(0);
+        } else {
+            setShowMentionMenu(false);
+            setMentionQuery('');
         }
-        navigate(`/chats?${params.toString()}`);
     };
 
     return (
         <div className={isEmbedded ? 'community-chat-embedded' : 'community-chat-floating'}>
             {!isEmbedded && (
-                <button
-                    type="button"
-                    className="chat-toggle-button"
-                    onClick={() => setChatAbierto((prev) => !prev)}
-                    aria-expanded={chatAbierto}
-                    aria-label="Abrir chat de comunidad"
-                >
-                    <LuMessageCircle size={20} />
-                    <span>Chat</span>
-                </button>
+                <div className="chat-floating-actions-row">
+                    {extraActions ? <div className="chat-floating-extra-actions">{extraActions}</div> : null}
+                    <button
+                        type="button"
+                        className="chat-toggle-button"
+                        onClick={() => updateOpenState(!chatAbierto)}
+                        aria-expanded={chatAbierto}
+                        aria-label="Abrir chat de comunidad"
+                    >
+                        <LuMessageCircle size={20} />
+                        <span>Chat</span>
+                    </button>
+                </div>
             )}
 
             {!chatAbierto && !isEmbedded ? null : (
@@ -715,6 +797,7 @@ const CommunityChat = ({
                             <div className={`status ${isConnected ? 'conectado' : 'desconectado'}`}>
                                 {isConnected ? 'En línea' : 'Fuera de línea'}
                             </div>
+                            {headerActions ? <div className="chat-header-extra-actions">{headerActions}</div> : null}
                             {!isEmbedded && (
                                 <button
                                     type="button"
@@ -730,7 +813,7 @@ const CommunityChat = ({
                                 <button
                                     type="button"
                                     className="chat-close-button"
-                                    onClick={() => setChatAbierto(false)}
+                                    onClick={() => updateOpenState(false)}
                                     aria-label="Cerrar chat"
                                 >
                                     <LuX size={18} />
@@ -860,16 +943,37 @@ const CommunityChat = ({
                         <label htmlFor={`community-chat-file-${comunidadId}`} className="chat-file-label">
                             {archivoSeleccionado ? 'Archivo listo' : 'Adjuntar'}
                         </label>
-                        <input
-                            type="text"
-                            placeholder="Escribe un mensaje..."
-                            value={contenido}
-                            onChange={(e) => setContenido(e.target.value)}
-                            disabled={enviando}
-                            maxLength={1000}
-                        />
+                        <div style={{ position: 'relative', width: '100%' }}>
+                            <input
+                                id="community-chat-input"
+                                type="text"
+                                placeholder="Escribe un mensaje..."
+                                value={contenido}
+                                onChange={handleInputChange}
+                                onKeyDown={handleMentionKeyDown}
+                                disabled={enviando}
+                                maxLength={1000}
+                                autoComplete="off"
+                                style={{ zIndex: 11 }}
+                            />
+                            {showMentionMenu && filteredMiembros.length > 0 && (
+                                <div style={{ position: 'absolute', left: 0, bottom: 40, zIndex: 100, width: '100%' }}>
+                                    <ul className="mention-menu" style={{ background: '#fff', border: '1px solid #ccc', width: '100%', maxHeight: 200, overflowY: 'auto', margin: 0, padding: 0 }}>
+                                        {filteredMiembros.map((m, idx) => (
+                                            <li
+                                                key={m.id}
+                                                style={{ padding: '8px', cursor: 'pointer', background: idx === mentionSelectedIdx ? '#eee' : '#fff', zIndex: 101 }}
+                                                onMouseDown={() => handleMentionSelect(m.usuario.nombre)}
+                                            >
+                                                @{m.usuario.nombre}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
                         <button type="submit" disabled={enviando || (!contenido.trim() && !archivoSeleccionado)}>
-                            {enviando ? 'Enviando...' : 'Enviar'}
+                            {enviando ? '...' : '→'}
                         </button>
                     </form>
                 </aside>

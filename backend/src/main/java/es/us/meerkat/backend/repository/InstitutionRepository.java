@@ -1,5 +1,7 @@
 package es.us.meerkat.backend.repository;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -29,6 +31,15 @@ public interface InstitutionRepository extends JpaRepository<Institution, Long> 
      */
     Optional<Institution> findByVerificada(Boolean verificada);
 
+    Optional<Institution> findFirstByUsuarioAdminIdOrderByCreatedAtDesc(Long usuarioAdminId);
+
+    Optional<Institution> findFirstByUsuarioAdminIdAndPlanActivoTrueOrderByFechaFinPlanDesc(
+            Long usuarioAdminId);
+
+    Optional<Institution>
+            findFirstByEmailContactoIgnoreCaseAndPlanActivoTrueOrderByFechaFinPlanDesc(
+                    String emailContacto);
+
     /** Elimina instituciones cuyo administrador sea el usuario indicado. */
     void deleteByUsuarioAdminId(Long usuarioId);
 
@@ -39,4 +50,12 @@ public interface InstitutionRepository extends JpaRepository<Institution, Long> 
     // Usuarios cuyo email pertenece al dominio de la institución
     @Query("SELECT COUNT(u) FROM Usuario u WHERE u.email LIKE CONCAT('%@', :dominioEmail)")
     long countUsuariosByDominioEmail(@Param("dominioEmail") String dominioEmail);
+
+    /**
+     * Busca instituciones con plan activo cuya fecha de fin ya pasó (expiradas).
+     *
+     * @param fecha Fecha límite (normalmente LocalDateTime.now())
+     * @return Lista de instituciones con planes expirados
+     */
+    List<Institution> findByPlanActivoTrueAndFechaFinPlanBefore(LocalDateTime fecha);
 }

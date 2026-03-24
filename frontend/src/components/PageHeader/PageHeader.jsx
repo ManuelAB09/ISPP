@@ -10,9 +10,9 @@ import './PageHeader.css';
  */
 const PageHeader = ({ title, subtitle, className = '' }) => {
   return (
-    <div className={`page-header-title ${className}`}>
+    <div className={`page-header-title ${className}`} data-testid="page-header">
       <p>{subtitle}</p>
-      <span className="page-header-line"></span>
+      <span className="page-header-line" data-testid="page-header-line"></span>
       <h1>{title}</h1>
     </div>
   );

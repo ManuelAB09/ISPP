@@ -30,12 +30,18 @@ const CreateProfileModal = ({ onClose, onCreado }) => {
     setCreando(true);
     setError(null);
 
+    if (!form.bio.trim()) {
+      setError("La biografia es obligatoria. Por favor, escribe una breve descripcion profesional.");
+      setCreando(false);
+      return;
+    }
+
     const payload = {
       especialidades: form.especialidades
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean),
-      tarifaPorHora: parseFloat(form.tarifaHora) || 0,
+      tarifaPorHora: parseInt(form.tarifaHora, 10) || 0,
       disponibilidad: form.disponibilidad.trim(),
       biografia: form.bio.trim(),
     };
@@ -46,7 +52,15 @@ const CreateProfileModal = ({ onClose, onCreado }) => {
       onClose();
     } catch (err) {
       console.error("Error al crear perfil de tutor:", err);
-      setError("No se pudo crear el perfil. Inténtalo de nuevo.");
+      const backendMsg = err?.response?.data?.message
+        || err?.response?.data?.error
+        || err?.data?.message
+        || err?.data?.error;
+      if (backendMsg) {
+        setError(backendMsg);
+      } else {
+        setError("No se pudo crear el perfil. Intentalo de nuevo.");
+      }
     } finally {
       setCreando(false);
     }
@@ -88,8 +102,8 @@ const CreateProfileModal = ({ onClose, onCreado }) => {
               id="tarifaHora"
               name="tarifaHora"
               type="number"
-              min="0"
-              step="0.5"
+              min="1"
+              step="1"
               className="tm-field__input tm-field__input--sm"
               value={form.tarifaHora}
               onChange={handleChange}

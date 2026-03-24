@@ -77,7 +77,6 @@ public class DataSeeder {
             u1.setVisibleEnListados(true);
             u1.setEsTutor(false);
             u1.setAutenticacionDosFactores(false);
-            u1.setNotificacionesEmail(true);
             u1.setNotificacionesPush(false);
             u1.setPlan(TipoPlan.FREE);
 
@@ -91,7 +90,6 @@ public class DataSeeder {
             u2.setVisibleEnListados(true);
             u2.setEsTutor(false);
             u2.setAutenticacionDosFactores(false);
-            u2.setNotificacionesEmail(true);
             u2.setNotificacionesPush(false);
             u2.setPlan(TipoPlan.FREE);
 
@@ -105,7 +103,6 @@ public class DataSeeder {
             u3.setVisibleEnListados(true);
             u3.setEsTutor(true);
             u3.setAutenticacionDosFactores(false);
-            u3.setNotificacionesEmail(true);
             u3.setNotificacionesPush(false);
             u3.setPlan(TipoPlan.FREE);
 
@@ -119,7 +116,6 @@ public class DataSeeder {
             u4.setVisibleEnListados(true);
             u4.setEsTutor(true);
             u4.setAutenticacionDosFactores(false);
-            u4.setNotificacionesEmail(true);
             u4.setNotificacionesPush(false);
             u4.setPlan(TipoPlan.FREE);
 
@@ -133,7 +129,6 @@ public class DataSeeder {
             u5.setVisibleEnListados(true);
             u5.setEsTutor(true);
             u5.setAutenticacionDosFactores(false);
-            u5.setNotificacionesEmail(true);
             u5.setNotificacionesPush(false);
             u5.setPlan(TipoPlan.FREE);
 
@@ -147,7 +142,6 @@ public class DataSeeder {
             u6.setVisibleEnListados(true);
             u6.setEsTutor(true);
             u6.setAutenticacionDosFactores(false);
-            u6.setNotificacionesEmail(true);
             u6.setNotificacionesPush(false);
             u6.setPlan(TipoPlan.FREE);
 
@@ -161,7 +155,6 @@ public class DataSeeder {
             u7.setVisibleEnListados(true);
             u7.setEsTutor(false);
             u7.setAutenticacionDosFactores(false);
-            u7.setNotificacionesEmail(true);
             u7.setNotificacionesPush(false);
             u7.setPlan(TipoPlan.FREE);
 
@@ -175,7 +168,6 @@ public class DataSeeder {
             u8.setVisibleEnListados(false);
             u8.setEsTutor(false);
             u8.setAutenticacionDosFactores(false);
-            u8.setNotificacionesEmail(true);
             u8.setNotificacionesPush(false);
             u8.setPlan(TipoPlan.FREE);
 

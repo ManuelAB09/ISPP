@@ -2,7 +2,6 @@ package es.us.meerkat.backend.entity;
 
 import java.time.LocalDate;
 
-import es.us.meerkat.backend.ConstantUtils;
 import es.us.meerkat.backend.dto.SubscriptionResponse;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -40,7 +39,7 @@ public class Suscripcion {
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 
-    /** Tipo de plan contratado (FREE o PREMIUM). */
+    /** Tipo de plan contratado (FREE, PREMIUM o PRO). */
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -64,15 +63,32 @@ public class Suscripcion {
     @Column(nullable = false)
     private Boolean autoRenovar = true;
 
-    /** Suscribe al usuario al plan. */
-    public static Suscripcion suscribir() {
+    /** Periodo de la suscripción (MENSUAL o ANUAL). */
+    @Column(length = 10)
+    private String periodo;
+
+    /** Suscribe al usuario al plan indicado. */
+    public static Suscripcion suscribir(String periodo, TipoPlan plan) {
+        int meses = "anual".equalsIgnoreCase(periodo) ? 12 : 1;
+        TipoPlan planSolicitado = plan != null && plan != TipoPlan.FREE ? plan : TipoPlan.PREMIUM;
         return Suscripcion.builder()
                 .activa(true)
                 .autoRenovar(true)
-                .plan(TipoPlan.PREMIUM)
+                .plan(planSolicitado)
+                .periodo(periodo != null ? periodo.toUpperCase() : "MENSUAL")
                 .fechaInicio(LocalDate.now())
-                .fechaFin(LocalDate.now().plusMonths(ConstantUtils.MESES_SUSCRIPCION))
+                .fechaFin(LocalDate.now().plusMonths(meses))
                 .build();
+    }
+
+    /** Suscribe al usuario al plan premium (compatibilidad). */
+    public static Suscripcion suscribir(String periodo) {
+        return suscribir(periodo, TipoPlan.PREMIUM);
+    }
+
+    /** Suscribe al usuario al plan (periodo mensual por defecto). */
+    public static Suscripcion suscribir() {
+        return suscribir("MENSUAL");
     }
 
     /** Cancela la suscripción del usuario. */
@@ -85,20 +101,27 @@ public class Suscripcion {
         this.fechaFin = LocalDate.now();
     }
 
-    /** Renueva la suscripción extendiendo las fechas de vigencia. */
-    /** Renueva la suscripción extendiendo las fechas de vigencia. */
-    public void renovar() {
-        this.plan = TipoPlan.PREMIUM; // ← añadir esto
+    /** Renueva la suscripción extendiendo las fechas de vigencia para un plan dado. */
+    public void renovar(TipoPlan plan) {
+        TipoPlan planSolicitado = plan != null && plan != TipoPlan.FREE ? plan : TipoPlan.PREMIUM;
+        this.plan = planSolicitado;
         this.activa = true;
         this.autoRenovar = true;
 
+        int meses = "ANUAL".equalsIgnoreCase(this.periodo) ? 12 : 1;
+
         if (this.estaActiva()) {
             this.fechaInicio = this.fechaFin;
-            this.fechaFin = this.fechaFin.plusMonths(ConstantUtils.MESES_SUSCRIPCION);
+            this.fechaFin = this.fechaFin.plusMonths(meses);
         } else {
             this.fechaInicio = LocalDate.now();
-            this.fechaFin = LocalDate.now().plusMonths(ConstantUtils.MESES_SUSCRIPCION);
+            this.fechaFin = LocalDate.now().plusMonths(meses);
         }
+    }
+
+    /** Renueva manteniendo el plan actual (o PREMIUM por defecto). */
+    public void renovar() {
+        renovar(this.plan != null && this.plan != TipoPlan.FREE ? this.plan : TipoPlan.PREMIUM);
     }
 
     /**
@@ -120,6 +143,7 @@ public class Suscripcion {
         return SubscriptionResponse.builder()
                 .id(this.id)
                 .plan(this.plan)
+                .periodo(this.periodo)
                 .fechaInicio(this.fechaInicio)
                 .fechaFin(this.fechaFin)
                 .activa(this.activa)

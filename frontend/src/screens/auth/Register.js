@@ -1,4 +1,3 @@
-// filepath: c:\Users\juana\OneDrive\Escritorio\Juan Antonio\Universidad\cuarto año\ISPP\ISPP\frontend\src\screens\auth\Register.js
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -7,7 +6,7 @@ import studyShareLogo from '../../static/images/MeerKatters_logo.png';
 
 const Register = () => {
   const navigate = useNavigate();
-  const { register, error: authError, clearError, isAuthenticated, loading } = useAuth();
+  const { register, resendVerification, error: authError, clearError, isAuthenticated, loading } = useAuth();
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -21,6 +20,10 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
 
   // Si ya está autenticado, mostrar mensaje
   if (!loading && isAuthenticated) {
@@ -52,19 +55,41 @@ const Register = () => {
     if (authError) clearError();
   };
 
+  // Constantes de validación
+  const MIN_PASSWORD_LENGTH = 8;
+  const MAX_PASSWORD_LENGTH = 128;
+
+  // Función para validar requisitos de contraseña
+  const getPasswordRequirements = (password) => {
+    return {
+      minLength: password.length >= MIN_PASSWORD_LENGTH,
+      maxLength: password.length <= MAX_PASSWORD_LENGTH,
+      hasUppercase: /[A-Z]/.test(password),
+      hasLowercase: /[a-z]/.test(password),
+      hasNumber: /[0-9]/.test(password),
+    };
+  };
+
+  const passwordRequirements = getPasswordRequirements(formData.password);
+  const isPasswordValid = passwordRequirements.minLength &&
+                          passwordRequirements.maxLength &&
+                          passwordRequirements.hasUppercase &&
+                          passwordRequirements.hasLowercase &&
+                          passwordRequirements.hasNumber;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validación de términos y condiciones
     if (!formData.acceptTerms) {
       setError('Debes aceptar los términos y condiciones para continuar');
       return;
     }
 
-    // Validación de formato de correo (solo letras minúsculas antes y después de @)
-    const emailRegex = /^[a-z]+@[a-z]+\.[a-z.]+$/;
+    // Validación de formato de correo más estricta
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!formData.email.match(emailRegex)) {
-      setError('El correo debe tener el formato usuario@dominio.ext y usar sólo letras minúsculas');
+      setError('Introduce un correo electrónico válido (ej: usuario@dominio.com)');
       return;
     }
 
@@ -74,9 +99,27 @@ const Register = () => {
       return;
     }
 
+    // Validación de nombre
+    if (!formData.fullName.trim()) {
+      setError('El nombre no puede estar vacío');
+      return;
+    }
+    if (formData.fullName.trim().length < 2) {
+      setError('El nombre debe tener al menos 2 caracteres');
+      return;
+    }
+
     // Validación de contraseña
-    if (formData.password.length < 8) {
+    if (formData.password.length < MIN_PASSWORD_LENGTH) {
       setError('La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
+    if (formData.password.length > MAX_PASSWORD_LENGTH) {
+      setError('La contraseña no puede tener más de 128 caracteres');
+      return;
+    }
+    if (!isPasswordValid) {
+      setError('La contraseña debe contener mayúsculas, minúsculas y números');
       return;
     }
 
@@ -85,7 +128,10 @@ const Register = () => {
 
     const result = await register(formData.email, formData.password, formData.fullName, formData.esTutor);
     
-    if (result.success) {
+    if (result.success && result.requiresVerification) {
+      setRegistrationSuccess(true);
+      setRegisteredEmail(formData.email);
+    } else if (result.success) {
       navigate('/');
     } else {
       setError(result.error || 'Error al registrarse');
@@ -94,15 +140,61 @@ const Register = () => {
     setIsLoading(false);
   };
 
-  const handleGoogleRegister = () => {
-    // TODO: Implement Google OAuth
-    console.log('Google register clicked');
+
+  const handleResendVerification = async () => {
+    setResendLoading(true);
+    setResendMessage('');
+    
+    const result = await resendVerification(registeredEmail);
+    
+    if (result.success) {
+      setResendMessage('Email de verificación reenviado correctamente');
+    } else {
+      setResendMessage(result.error || 'Error al reenviar el email');
+    }
+    
+    setResendLoading(false);
   };
 
-  const handleLinkedInRegister = () => {
-    // TODO: Implement LinkedIn OAuth
-    console.log('LinkedIn register clicked');
-  };
+  // Si el registro fue exitoso, mostrar mensaje de verificación
+  if (registrationSuccess) {
+    return (
+      <div className="register-container">
+        <div className="register-already-logged">
+          <div className="register-already-logged__icon" style={{ fontSize: '48px' }}>📧</div>
+          <h1 className="register-already-logged__title">¡Revisa tu correo!</h1>
+          <p className="register-already-logged__text">
+            Hemos enviado un email de verificación a <strong>{registeredEmail}</strong>. 
+            Por favor, haz clic en el enlace del email para activar tu cuenta.
+          </p>
+          <p className="register-already-logged__text" style={{ fontSize: '14px', color: '#666', marginTop: '10px' }}>
+            El enlace expira en 24 horas. Si no recibes el email, revisa tu carpeta de spam.
+          </p>
+          {resendMessage && (
+            <p style={{ 
+              marginTop: '15px', 
+              padding: '10px', 
+              borderRadius: '8px',
+              backgroundColor: resendMessage.includes('Error') ? '#fee2e2' : '#d1fae5',
+              color: resendMessage.includes('Error') ? '#991b1b' : '#065f46'
+            }}>
+              {resendMessage}
+            </p>
+          )}
+          <div className="register-already-logged__buttons" style={{ marginTop: '20px' }}>
+            <button 
+              onClick={handleResendVerification} 
+              className="btn-profile"
+              disabled={resendLoading}
+            >
+              {resendLoading ? 'Enviando...' : 'Reenviar email'}
+            </button>
+            <Link to="/login" className="btn-home">Ir a iniciar sesión</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="register-container">
@@ -133,7 +225,7 @@ const Register = () => {
         </div>
 
         <div className="register-footer">
-          <p>© 2024 StudYshare. All rights reserved.</p>
+          <p>© 2026 Meerkatters. All rights reserved.</p>
         </div>
       </div>
 
@@ -165,7 +257,7 @@ const Register = () => {
                 type="email"
                 id="email"
                 name="email"
-                placeholder="correo@org.es"
+                placeholder="tu@correo.com"
                 value={formData.email}
                 onChange={handleInputChange}
                 required
@@ -179,9 +271,10 @@ const Register = () => {
                   type={showPassword ? 'text' : 'password'}
                   id="password"
                   name="password"
-                  placeholder="(Al menos 8 caracteres)"
+                  placeholder="Introduce tu contraseña"
                   value={formData.password}
                   onChange={handleInputChange}
+                  maxLength={MAX_PASSWORD_LENGTH}
                   required
                 />
                 <button
@@ -203,6 +296,28 @@ const Register = () => {
                   )}
                 </button>
               </div>
+              {formData.password && (
+                <div className="password-requirements">
+                  <p className="password-requirements-title">La contraseña debe contener:</p>
+                  <ul className="password-requirements-list">
+                    <li className={passwordRequirements.minLength ? 'requirement-met' : 'requirement-unmet'}>
+                      {passwordRequirements.minLength ? '✓' : '✗'} Mínimo 8 caracteres
+                    </li>
+                    <li className={passwordRequirements.maxLength ? 'requirement-met' : 'requirement-unmet'}>
+                      {passwordRequirements.maxLength ? '✓' : '✗'} Máximo 128 caracteres
+                    </li>
+                    <li className={passwordRequirements.hasUppercase ? 'requirement-met' : 'requirement-unmet'}>
+                      {passwordRequirements.hasUppercase ? '✓' : '✗'} Al menos una mayúscula
+                    </li>
+                    <li className={passwordRequirements.hasLowercase ? 'requirement-met' : 'requirement-unmet'}>
+                      {passwordRequirements.hasLowercase ? '✓' : '✗'} Al menos una minúscula
+                    </li>
+                    <li className={passwordRequirements.hasNumber ? 'requirement-met' : 'requirement-unmet'}>
+                      {passwordRequirements.hasNumber ? '✓' : '✗'} Al menos un número
+                    </li>
+                  </ul>
+                </div>
+              )}
             </div>
 
             <div className="form-group">
@@ -212,9 +327,10 @@ const Register = () => {
                   type={showConfirmPassword ? 'text' : 'password'}
                   id="confirmPassword"
                   name="confirmPassword"
-                  placeholder="(Al menos 8 caracteres)"
+                  placeholder="Repite tu contraseña"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
+                  maxLength={MAX_PASSWORD_LENGTH}
                   required
                 />
                 <button
@@ -238,7 +354,7 @@ const Register = () => {
               </div>
             </div>
 
-            <div className="form-group checkbox-group">
+            <div className={`form-group checkbox-group${error && error.includes('términos') ? ' terms-warning' : ''}`}>
               <label className="checkbox-label">
                 <input
                   type="checkbox"
@@ -252,6 +368,9 @@ const Register = () => {
                   <Link to="/privacy">Política de privacidad</Link>.
                 </span>
               </label>
+              {error && error.includes('términos') && (
+                <p className="terms-error-hint">Debes marcar esta casilla para continuar</p>
+              )}
             </div>
 
             <div className="form-group tutor-toggle-group">
@@ -284,40 +403,11 @@ const Register = () => {
             </button>
           </form>
 
-          <div className="login-link">
+
+          <div className="login-link" style={{ marginTop: '15px' }}>
             <p>
               Ya tienes una cuenta? <Link to="/login">Iniciar sesión</Link>
             </p>
-          </div>
-
-          <div className="social-divider">
-            <span>O REGÍSTRATE CON</span>
-          </div>
-
-          <div className="social-buttons">
-            <button
-              type="button"
-              className="social-button google"
-              onClick={handleGoogleRegister}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-              </svg>
-              Google
-            </button>
-            <button
-              type="button"
-              className="social-button linkedin"
-              onClick={handleLinkedInRegister}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#0A66C2">
-                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-              </svg>
-              LinkedIn
-            </button>
           </div>
         </div>
       </div>

@@ -1,7 +1,8 @@
 .plansPage{
-  background:#f5f6fa;
-  min-height:100vh;
-  color:#111827;
+  background: var(--whiteSmoke);
+  min-height: 100vh;
+  color: var(--graphite);
+  font-family: 'inter', sans-serif;
 }
 
 .header {
@@ -10,410 +11,404 @@
   justify-content: space-between;
   gap: 10px;
   align-items: center;
-  padding: 20px;
+  padding: 40px 60px 20px;
   width: 100%;
-  padding-inline: 40px;
-  max-width: 2000px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .plansContent{
   max-width: 1050px;
   margin: 0 auto;
-  padding: 60px 40px 60px;
+  padding: 40px 60px 60px;
   width: 100%;
 }
 
 .plansError{
-  background:#fff;
-  border:1px solid #fee2e2;
-  color:#b91c1c;
-  padding: 12px 14px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #dc2626;
+  padding: 16px 20px;
   border-radius: 12px;
-  margin: 12px 0 18px;
+  margin: 16px 0 24px;
+  font-size: 15px;
 }
 
 .plansSuccess{
-  background:#f0fdf4;
-  border:1px solid #dcfce7;
-  color:#15803d;
-  padding: 12px 14px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+  padding: 16px 20px;
   border-radius: 12px;
-  margin: 12px 0 18px;
+  margin: 16px 0 24px;
   font-weight: 600;
+  font-size: 15px;
 }
 
 .plansSection{
-  margin-top: 22px;
+  margin-top: 24px;
   background: transparent;
 }
 
 .sectionHead{
-  margin: 10px 0 14px;
+  margin: 10px 0 32px;
+  text-align: center;
 }
 
 .sectionHead h2{
-  margin: 0 0 6px;
-  font-size: 20px;
+  margin: 0 0 12px;
+  font-size: 32px;
+  font-family: 'spacegrotesk', sans-serif;
   font-weight: 800;
-  color:#1f2a4a;
+  color: var(--spaceIndigo);
 }
 
 .sectionHead p{
-  margin: 0;
-  font-size: 12px;
-  color:#6b7280;
+  margin: 0 auto;
+  font-size: 16px;
+  color: var(--glaucous);
   max-width: 720px;
 }
 
 .cardsGrid{
-  display:grid;
+  display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px;
-  align-items: center;
+  gap: 30px;
+  align-items: stretch;
+  margin-bottom: 40px;
 }
 
 @media (max-width: 860px){
-  .plansTitle{ font-size: 36px; }
   .cardsGrid{ grid-template-columns: 1fr; }
 }
 
 .planCard{
   position: relative;
-  background:#fff;
+  background: #ffffff;
   border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 10px 20px rgba(17,24,39,0.06);
-  border: 1px solid #eef2f7;
+  padding: 32px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  border: 1px solid var(--alabasterGray);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
 }
 
 .planCard:hover{
   transform: translateY(-4px);
-  box-shadow: 0 14px 28px rgba(17,24,39,0.12);
+  box-shadow: 0 12px 24px rgba(45, 50, 80, 0.08);
+  border-color: var(--glaucous);
 }
-
 
 .planCard--premium{
-  border: 2px solid #F2C18E;
-  box-shadow: 0 14px 28px rgba(242, 193, 142, 0.12);
+  border: 2px solid var(--peachGlow);
+  box-shadow: 0 8px 24px rgba(242, 193, 142, 0.15);
 }
 
-.planCard--freeProfesor{
-  box-shadow: 0 14px 28px rgba(59, 130, 246, 0.12);
-
-}
-
-.planCard--highlight{
-  border: 2px solid #F2C18E;
+.planCard--premium:hover {
+  border-color: var(--peachGlow);
+  box-shadow: 0 16px 32px rgba(242, 193, 142, 0.25);
 }
 
 .badgeRecommended {
   position: absolute;
-  top: -12px;              /* lo sube por encima de la card */
-  left: 50%;               /* lo centra horizontalmente */
+  top: -14px;
+  left: 50%;
   transform: translateX(-50%);
-  background: #F2C18E;
-  color: #fff;
-  font-size: 10px;
+  background: var(--peachGlow);
+  color: var(--spaceIndigo);
+  font-size: 12px;
   font-weight: 800;
-  padding: 6px 14px;
-  border-radius: 999px;
-  letter-spacing: .04em;
+  padding: 6px 16px;
+  border-radius: 20px;
+  letter-spacing: 0.05em;
+  box-shadow: 0 4px 12px rgba(242, 193, 142, 0.3);
 }
 
 .planCardTop{
-  display:flex;
-  justify-content:space-between;
-  gap: 12px;
-  align-items:flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--whiteSmoke);
 }
 
 .planName{
+  font-family: 'spacegrotesk', sans-serif;
   font-weight: 800;
-  color:#111827;
-  font-size: 14px;
+  color: var(--spaceIndigo);
+  font-size: 24px;
 }
 
 .planSub{
-  font-size: 11px;
-  color:#6b7280;
-  margin-top: 2px;
+  font-size: 14px;
+  color: var(--glaucous);
+  margin-top: 4px;
 }
 
 .planPrice{
-  font-weight: 900;
-  color:#111827;
-  font-size: 12px;
-  white-space: nowrap;
+  font-family: 'spacegrotesk', sans-serif;
+  font-weight: 800;
+  color: var(--spaceIndigo);
+  font-size: 32px;
 }
 
 .planPricePremium{
-  font-weight: 900;
-  color:#F2C18E;
-  font-size: 18px;
-  white-space: normal;
-}
-
-.planPricePremium span{
-  font-size: 17px;
-  font-weight: 700;
-  color:#F2C18E;
-  margin-left: 2px;
+  font-family: 'spacegrotesk', sans-serif;
+  font-weight: 800;
+  color: var(--peachGlow);
+  font-size: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .planPriceStack{
-  display:flex;
+  display: flex;
   flex-direction: column;
-  align-items:flex-end;
-  line-height: 1.15;
+  align-items: center;
+  line-height: 1.4;
 }
 
 .planPriceMain{
-  font-size: 18px;
-  font-weight: 900;
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 4px;
 }
 
 .planPriceSub{
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 700;
+  color: var(--glaucous);
 }
 
 .planFeatures{
-  margin: 12px 0 14px;
+  margin: 0 0 32px;
   padding: 0;
   list-style: none;
-  color:#374151;
-  font-size: 12px;
+  color: var(--graphite);
+  font-size: 15px;
+  flex: 1;
 }
 
 .planFeatures li{
-  margin: 8px 0;
-  display:flex;
-  gap: 8px;
-  align-items:flex-start;
+  margin: 12px 0;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
 }
 
 .planFeatures--checks li::before{
-  content:"✓";
+  content: "✓";
   font-weight: 900;
-  color:#10b981;
+  color: #10b981;
+  font-size: 16px;
 }
 
 .mutedChecks li::before{
-  color:#9ca3af;
+  content: "✓";
+  font-weight: 900;
+  color: var(--silver);
+  font-size: 16px;
 }
 
 .btn{
   width: 100%;
-  border-radius: 10px;
-  padding: 10px 12px;
+  border-radius: 12px;
+  padding: 14px 20px;
   border: 0;
-  font-weight: 800;
-  cursor:pointer;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .btn--primary{
-  background:#F2C18E;
-  color:white;
+  background: var(--peachGlow);
+  color: var(--spaceIndigo);
+  box-shadow: 0 4px 12px rgba(242, 193, 142, 0.3);
+}
+
+.btn--primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(242, 193, 142, 0.4);
 }
 
 .btn--primary:disabled{
-  background:#f3d19b;
-  cursor:not-allowed;
+  background: rgba(242, 193, 142, 0.5);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .btn--muted{
-  background:#eef2f7;
-  color:#6b7280;
-  cursor:not-allowed;
+  background: var(--whiteSmoke);
+  color: var(--glaucous);
+  cursor: not-allowed;
+  border: 1px solid var(--alabasterGray);
 }
 
 .btn--secondary{
-  background:#676F9D;
-  color:#fff;
+  background: var(--spaceIndigo);
+  color: #fff;
   width: auto;
-  padding: 8px 16px;
+  padding: 10px 24px;
   display: inline-block;
-  margin: 6px auto 0;
+  margin: 12px auto 0;
+  box-shadow: 0 4px 12px rgba(45, 50, 80, 0.2);
 }
 
-.planMiniInfo{
-  background:#fff7ed;
-  border: 1px solid #fed7aa;
-  border-radius: 12px;
-  padding: 10px 10px;
-  margin: 12px 0;
-}
-
-.miniLine{
-  display:flex;
-  align-items:center;
-  gap: 8px;
-  font-size: 11px;
-  font-weight: 800;
-  color:#9a5b00;
-}
-
-.miniDot{
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background:#F2C18E;
-  display:inline-block;
-}
-
-.miniText{
-  margin-top: 6px;
-  font-size: 11px;
-  color:#6b7280;
-}
-
-.capacityBox{
-  margin: 12px 0;
-  padding: 10px;
-  border-radius: 12px;
-  border: 1px solid #eef2f7;
-}
-
-.capacityLabels{
-  display:flex;
-  justify-content:space-between;
-  font-size: 10px;
-  color:#9ca3af;
-  margin-bottom: 8px;
-}
-
-.capacityRange{
-  width: 100%;
-}
-
-.capacitySelected{
-  margin-top: 8px;
-  font-size: 12px;
-  color:#374151;
-}
-
-.planCardCenterIcon{
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  background:#f3f4f6;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  margin: 6px auto 10px;
-}
-
-.centered{
-  text-align:center;
+.btn--secondary:hover:not(:disabled) {
+  background: #1e2240;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(45, 50, 80, 0.25);
 }
 
 .plansStatus{
-  margin-top: 18px;
+  margin-top: 40px;
+}
+
+.plansStatus__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
 }
 
 .plansStatus h3{
-  margin: 0 0 10px;
-  font-size: 16px;
-  font-weight: 800;
-  color:#1f2a4a;
+  margin: 0;
+  font-family: 'spacegrotesk', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--spaceIndigo);
+}
+
+.plansStatus__pagos-btn {
+  font-family: 'inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 18px;
+  background-color: transparent;
+  color: var(--spaceIndigo);
+  border: 1.5px solid var(--spaceIndigo);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.plansStatus__pagos-btn:hover {
+  background-color: var(--spaceIndigo);
+  color: white;
 }
 
 .statusBox{
-  background:#fff;
-  border:1px solid #eef2f7;
-  border-radius: 14px;
-  padding: 14px;
-  box-shadow: 0 10px 20px rgba(17,24,39,0.05);
+  background: #ffffff;
+  border: 1px solid var(--alabasterGray);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 15px;
+  color: var(--graphite);
 }
 
-.statusBox:hover{
-  transform: translateY(-4px);
-  box-shadow: 0 14px 28px rgba(17,24,39,0.12);
+.statusBox b {
+  color: var(--spaceIndigo);
 }
 
 /* ── Institutional plans banner ─────────────────── */
 .instBannerSection {
-  margin: 32px 0 0;
+  margin: 40px 0;
 }
 
 .instBannerContent {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
-  background: linear-gradient(135deg, #2d3250 0%, #424769 100%);
-  border-radius: 18px;
-  padding: 24px 28px;
+  gap: 30px;
+  background: linear-gradient(135deg, var(--spaceIndigo) 0%, #1e2240 100%);
+  border-radius: 20px;
+  padding: 32px 40px;
   color: #fff;
+  box-shadow: 0 8px 30px rgba(45, 50, 80, 0.15);
 }
 
 .instBannerLeft {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
+  gap: 24px;
   flex: 1;
 }
 
 .instBannerIcon {
-  font-size: 36px;
+  font-size: 48px;
   flex-shrink: 0;
   line-height: 1;
 }
 
 .instBannerTitle {
-  margin: 0 0 6px;
-  font-size: 17px;
-  font-weight: 800;
+  margin: 0 0 12px;
+  font-family: 'spacegrotesk', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
   color: #fff;
 }
 
 .instBannerDesc {
-  margin: 0 0 12px;
-  font-size: 12px;
-  color: rgba(255,255,255,0.78);
-  max-width: 560px;
+  margin: 0 0 16px;
+  font-size: 15px;
+  color: rgba(255,255,255,0.85);
+  max-width: 600px;
   line-height: 1.6;
 }
 
 .instBannerFeatures {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px;
 }
 
 .instBannerFeatures span {
-  background: rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.1);
   border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 999px;
-  padding: 4px 12px;
-  font-size: 11px;
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 13px;
   font-weight: 600;
-  color: rgba(255,255,255,0.9);
+  color: #fff;
   white-space: nowrap;
 }
 
 .instBannerBtn {
-  background: #F2C18E;
-  color: #fff;
+  background: var(--peachGlow);
+  color: var(--spaceIndigo);
   border: none;
   border-radius: 12px;
-  padding: 12px 22px;
-  font-size: 13px;
-  font-weight: 800;
+  padding: 14px 28px;
+  font-size: 15px;
+  font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
-  transition: opacity 0.15s;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(242, 193, 142, 0.3);
 }
 
 .instBannerBtn:hover {
-  opacity: 0.88;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(242, 193, 142, 0.4);
 }
 
-@media (max-width: 680px) {
+@media (max-width: 860px) {
   .instBannerContent {
     flex-direction: column;
     align-items: flex-start;
+    padding: 24px;
   }
   .instBannerBtn {
     width: 100%;

@@ -8,6 +8,8 @@ import es.us.meerkat.backend.dto.EventSummaryResponse;
 import es.us.meerkat.backend.dto.UbicacionResponse;
 import es.us.meerkat.backend.dto.UserPublicResponse;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -71,18 +73,34 @@ public class Evento {
     /** Indica si el evento tiene modalidad virtual. */
     private Boolean esVirtual;
 
-    /** Indica si se debe enviar notificación en caso de cancelación. */
+    /** Motivo de cancelación del evento (si aplica). */
     private String motivoCancelacion;
 
     /** Indica si el evento es privado. */
     private Boolean privado;
+
+    /** ID de la tarea de Google Classroom vinculada (si aplica). */
+    private String classroomTaskId;
+
+    /** Título de la tarea de Google Classroom vinculada (si aplica). */
+    private String classroomTaskTitle;
+
+    /** URL de la tarea de Google Classroom vinculada (si aplica). */
+    private String classroomTaskUrl;
+
+    /**
+     * Tipo de evento: REUNION, EXAMEN, CUESTIONARIO, TUTORIA, CLASE u OTRO. Determina el icono y la
+     * categoría visual en el panel "Mis Eventos".
+     */
+    @Enumerated(EnumType.STRING)
+    private TipoEvento tipoEvento;
 
     /** Creador del evento. */
     @ManyToOne
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario creador;
 
-    /** Ubicación del evento.(opcional) */
+    /** Ubicación del evento (opcional). */
     @ManyToOne
     @JoinColumn(name = "ubicacion_id", nullable = true)
     private Ubicacion ubicacion;
@@ -105,6 +123,9 @@ public class Evento {
         if (this.asistentesConfirmados == null) {
             this.asistentesConfirmados = 0;
         }
+        if (this.tipoEvento == null) {
+            this.tipoEvento = TipoEvento.OTRO;
+        }
     }
 
     // ========================
@@ -116,12 +137,13 @@ public class Evento {
      *
      * @param tituloParam Título del evento.
      * @param descripcionParam Descripción del evento.
-     * @param fechaInicioParam Fecha y hora de inicio.
+     * @param fechaHoraParam Fecha y hora de inicio.
      * @param fechaFinParam Fecha y hora de fin.
      * @param aforoParam Aforo máximo.
      * @param queLlevarParam Qué llevar al evento.
      * @param esVirtualParam Si es evento virtual.
      * @param privadoParam Si es un evento privado.
+     * @param tipoEventoParam Tipo de evento (REUNION, EXAMEN, etc.).
      */
     public void crear(
             final String tituloParam,
@@ -131,7 +153,8 @@ public class Evento {
             final Integer aforoParam,
             final String queLlevarParam,
             final Boolean esVirtualParam,
-            final Boolean privadoParam) {
+            final Boolean privadoParam,
+            final TipoEvento tipoEventoParam) {
         this.titulo = tituloParam;
         this.descripcion = descripcionParam;
         this.fechaHora = fechaHoraParam;
@@ -142,6 +165,32 @@ public class Evento {
         this.privado = privadoParam;
         this.cancelado = false;
         this.asistentesConfirmados = 0;
+        this.tipoEvento = tipoEventoParam != null ? tipoEventoParam : TipoEvento.OTRO;
+    }
+
+    /**
+     * Sobrecarga de crear() para compatibilidad con código existente que no pasa tipoEvento. Asigna
+     * TipoEvento.OTRO por defecto.
+     */
+    public void crear(
+            final String tituloParam,
+            final String descripcionParam,
+            final LocalDateTime fechaHoraParam,
+            final LocalDateTime fechaFinParam,
+            final Integer aforoParam,
+            final String queLlevarParam,
+            final Boolean esVirtualParam,
+            final Boolean privadoParam) {
+        crear(
+                tituloParam,
+                descripcionParam,
+                fechaHoraParam,
+                fechaFinParam,
+                aforoParam,
+                queLlevarParam,
+                esVirtualParam,
+                privadoParam,
+                TipoEvento.OTRO);
     }
 
     /**
@@ -149,7 +198,7 @@ public class Evento {
      *
      * @param tituloParam Título del evento.
      * @param descripcionParam Descripción del evento.
-     * @param fechaInicioParam Fecha y hora de inicio.
+     * @param fechaHoraParam Fecha y hora de inicio.
      * @param fechaFinParam Fecha y hora de fin.
      * @param aforoParam Aforo máximo.
      * @param queLlevarParam Qué llevar al evento.
@@ -230,7 +279,18 @@ public class Evento {
         return this.enlaceVirtual;
     }
 
+    // ========================
+    // CONVERSIÓN A DTOs
+    // ========================
+
+    /**
+     * Convierte la entidad al DTO de detalle completo.
+     *
+     * @return EventDetailResponse con toda la información del evento.
+     */
     public EventDetailResponse toDTO() {
+        final TipoEvento tipo = this.tipoEvento != null ? this.tipoEvento : TipoEvento.OTRO;
+
         EventDetailResponse.EventDetailResponseBuilder builder =
                 EventDetailResponse.builder()
                         .id(this.id)
@@ -247,10 +307,15 @@ public class Evento {
                         .cancelado(this.cancelado)
                         .motivoCancelacion(this.motivoCancelacion)
                         .privado(this.privado)
+                        .classroomTaskId(this.classroomTaskId)
+                        .classroomTaskTitle(this.classroomTaskTitle)
+                        .classroomTaskUrl(this.classroomTaskUrl)
+                        .tipoEvento(tipo)
+                        .iconoEvento(tipo.getIcono())
                         .createdAt(this.createdAt)
                         .comunidadId(this.comunidad != null ? this.comunidad.getId() : null)
-                        .comunidadNombre(
-                                this.comunidad != null ? this.comunidad.getNombre() : null);
+                        .comunidadNombre(this.comunidad != null ? this.comunidad.getNombre() : null)
+                        .creadorId(this.creador != null ? this.creador.getId() : null);
 
         if (this.creador != null) {
             builder.creador(
@@ -261,6 +326,10 @@ public class Evento {
                             .bio(this.creador.getBio())
                             .intereses(this.creador.getIntereses())
                             .esTutor(this.creador.getEsTutor())
+                            .tutorId(
+                                    this.creador.getTutor() != null
+                                            ? this.creador.getTutor().getId()
+                                            : null)
                             .build());
         }
 
@@ -283,6 +352,8 @@ public class Evento {
      * @return EventSummaryResponse con la información básica del evento.
      */
     public EventSummaryResponse toSummaryDTO() {
+        final TipoEvento tipo = this.tipoEvento != null ? this.tipoEvento : TipoEvento.OTRO;
+
         EventSummaryResponse.EventSummaryResponseBuilder builder =
                 EventSummaryResponse.builder()
                         .id(this.id)
@@ -293,9 +364,14 @@ public class Evento {
                         .asistentesConfirmados(this.asistentesConfirmados)
                         .esVirtual(this.esVirtual)
                         .cancelado(this.cancelado)
+                        .classroomTaskId(this.classroomTaskId)
+                        .classroomTaskTitle(this.classroomTaskTitle)
+                        .classroomTaskUrl(this.classroomTaskUrl)
+                        .tipoEvento(tipo)
+                        .iconoEvento(tipo.getIcono())
                         .comunidadId(this.comunidad != null ? this.comunidad.getId() : null)
-                        .comunidadNombre(
-                                this.comunidad != null ? this.comunidad.getNombre() : null);
+                        .comunidadNombre(this.comunidad != null ? this.comunidad.getNombre() : null)
+                        .creadorId(this.creador != null ? this.creador.getId() : null);
 
         if (this.ubicacion != null) {
             builder.ubicacion(

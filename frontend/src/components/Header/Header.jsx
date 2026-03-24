@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getApiBaseUrl } from '../../api/baseUrl';
 import GoogleClassroomButton from '../GoogleClassroomButton/GoogleClassroomButton.jsx';
+import PlanExpiryBanner from '../PlanExpiryBanner/PlanExpiryBanner';
+import { useSubscriptionExpiry } from '../../hooks/useSubscriptionExpiry';
+import { useNotificationContext } from '../../contexts/NotificationContext';
 import './Header.css';
 
 const DEFAULT_PROFILE_AVATAR =
@@ -22,6 +25,17 @@ const toAbsoluteImageUrl = (imageUrl, fallback = DEFAULT_PROFILE_AVATAR) => {
 
 export default function Header({ user, page }) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const { showBanner, planName, fechaFin, dismiss } = useSubscriptionExpiry();
+    const { panelUnreadCount, communityUnreadById } = useNotificationContext();
+    // Calcular total de no leídos de chats privados y comunidades
+    const [privateUnread, setPrivateUnread] = useState(0);
+    useEffect(() => {
+        // Obtener de localStorage o API si es necesario, aquí solo ejemplo simple
+        const conversaciones = JSON.parse(localStorage.getItem('conversacionesNoLeidas') || '[]');
+        setPrivateUnread(conversaciones.reduce((acc, c) => acc + (c.noLeidos || 0), 0));
+    }, []);
+    const communityUnread = Object.values(communityUnreadById || {}).reduce((acc, n) => acc + (n || 0), 0);
+    const totalChatsUnread = privateUnread + communityUnread;
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
@@ -37,6 +51,8 @@ export default function Header({ user, page }) {
             return null;
         }
     })();
+
+    const isAuthenticated = Boolean(localStorage.getItem('accessToken'));
 
     let profileImage =
         user?.avatar ||
@@ -54,15 +70,25 @@ export default function Header({ user, page }) {
     return (
         <>
             <div className="header-container">
-                <Link to="/perfil" className="header-profile-link">
-                    <img
-                        className="header-profile-image"
-                        src={profileImage || DEFAULT_PROFILE_AVATAR}
-                        alt="Perfil"
-                        style={{ backgroundColor: profileBackgroundColor }}
-                        onError={e => { e.target.onerror = null; e.target.src = DEFAULT_PROFILE_AVATAR; }}
-                    />
-                </Link>
+                {isAuthenticated ? (
+                    <Link to="/perfil" className="header-profile-link">
+                        <img
+                            className="header-profile-image"
+                            src={profileImage || DEFAULT_PROFILE_AVATAR}
+                            alt="Perfil"
+                            style={{ backgroundColor: profileBackgroundColor }}
+                            onError={e => { e.target.onerror = null; e.target.src = DEFAULT_PROFILE_AVATAR; }}
+                        />
+                    </Link>
+                ) : (
+                    <Link to="/login" className="header-profile-link">
+                        <img
+                            className="header-profile-image"
+                            src={DEFAULT_PROFILE_AVATAR}
+                            alt="Iniciar sesión"
+                        />
+                    </Link>
+                )}
 
                 <div className="header-actions-desktop">
                     <GoogleClassroomButton />
@@ -71,14 +97,23 @@ export default function Header({ user, page }) {
                 <div className="header-links-desktop">
                     <Link to="/" className={page === 'inicio' ? 'active' : ''}>Inicio</Link>
                     <Link to="/comunidades" className={page === 'comunidades' ? 'active' : ''}>Comunidades</Link>
-                    <Link to="/eventos-mapa" className={page === 'eventos-mapa' ? 'active' : ''}>Mapa de eventos</Link>
                     <Link to="/profesores" className={page === 'profesores' ? 'active' : ''}>Profesores</Link>
-                    <Link to="/chats" className={page === 'chats' ? 'active' : ''}>Chats</Link>
+                    {isAuthenticated && (
+                        <Link to="/cuestionarios/crear" className={page === 'cuestionarios' ? 'active' : ''}>Cuestionarios</Link>
+                    )}
+                    <Link to="/chats" className={page === 'chats' ? 'active' : ''}>
+                        Chats
+                        {totalChatsUnread > 0 && (
+                            <span className="header-notification-badge">{totalChatsUnread}</span>
+                        )}
+                    </Link>
                     <Link to="/planes" className={page === 'planes' ? 'active' : ''}>Planes</Link>
-                    <Link to="/pagos" className={page === 'pagos' ? 'active' : ''}>Mis pagos</Link>
+                    {!isAuthenticated && (
+                        <Link to="/login">Iniciar sesión</Link>
+                    )}
                 </div>
 
-                <button 
+                <button
                     className={`header-hamburger ${isMenuOpen ? 'open' : ''}`}
                     onClick={toggleMenu}
                     aria-label="Menú"
@@ -88,6 +123,10 @@ export default function Header({ user, page }) {
                     <span></span>
                 </button>
             </div>
+
+            {showBanner && (
+                <PlanExpiryBanner planName={planName} fechaFin={fechaFin} onDismiss={dismiss} />
+            )}
 
             {/* Modal móvil */}
             <div className={`header-menu-overlay ${isMenuOpen ? 'open' : ''}`} onClick={closeMenu}></div>
@@ -101,13 +140,24 @@ export default function Header({ user, page }) {
                 <div className="header-links-mobile">
                     <Link to="/" className={page === 'inicio' ? 'active' : ''} onClick={closeMenu}>Inicio</Link>
                     <Link to="/comunidades" className={page === 'comunidades' ? 'active' : ''} onClick={closeMenu}>Comunidades</Link>
-                    <Link to="/eventos-mapa" className={page === 'eventos-mapa' ? 'active' : ''} onClick={closeMenu}>Mapa de eventos</Link>
                     <Link to="/profesores" className={page === 'profesores' ? 'active' : ''} onClick={closeMenu}>Profesores</Link>
-                    <Link to="/chats" className={page === 'chats' ? 'active' : ''} onClick={closeMenu}>Chats</Link>
+                    {isAuthenticated && (
+                        <Link to="/cuestionarios/crear" className={page === 'cuestionarios' ? 'active' : ''} onClick={closeMenu}>Cuestionarios</Link>
+                    )}
+                    <Link to="/chats" className={page === 'chats' ? 'active' : ''} onClick={closeMenu}>
+                        Chats
+                        {totalChatsUnread > 0 && (
+                            <span className="header-notification-badge">{totalChatsUnread}</span>
+                        )}
+                    </Link>
                     <Link to="/planes" className={page === 'planes' ? 'active' : ''} onClick={closeMenu}>Planes</Link>
-                    <Link to="/pagos" className={page === 'pagos' ? 'active' : ''} onClick={closeMenu}>Mis pagos</Link>
+                    {!isAuthenticated && (
+                        <Link to="/login" onClick={closeMenu}>Iniciar sesión</Link>
+                    )}
                 </div>
             </div>
         </>
     );
 }
+
+

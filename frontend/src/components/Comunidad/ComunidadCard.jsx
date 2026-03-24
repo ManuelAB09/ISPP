@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PersonIcon from '../icons/Person';
 import { communitiesApi } from '../../api/communities.api';
@@ -9,8 +9,20 @@ export default function ComunidadCard({ comunidad, onJoined }) {
     const navigate = useNavigate();
     const [joining, setJoining] = useState(false);
     const [joined, setJoined] = useState(comunidad.esMiembro || false);
+    const [requestSent, setRequestSent] = useState(Boolean(comunidad.solicitudPendiente));
+    const [showRolePicker, setShowRolePicker] = useState(false);
     const [error, setError] = useState(null);
     const currentUserId = localStorage.getItem('userId');
+    const isPrivate = comunidad.tipoGrupo === 'GRUPO_PRIVADO';
+    const userProfileRaw = localStorage.getItem('userProfile');
+    let userProfile = null;
+    try {
+        userProfile = userProfileRaw ? JSON.parse(userProfileRaw) : null;
+    } catch {
+        userProfile = null;
+    }
+    const hasTeacherProfile = Boolean(userProfile?.esTutor || userProfile?.esProfesor);
+    const isMember = comunidad.esMiembro || false;
     const communityImageRaw = comunidad.imagen || comunidad.imagenUrl || comunidad.foto;
     const communityImage = (() => {
         if (!communityImageRaw || !String(communityImageRaw).trim() || String(communityImageRaw).trim().toLowerCase() === 'empty') {
@@ -30,6 +42,67 @@ export default function ComunidadCard({ comunidad, onJoined }) {
         return `${base}/${value}`;
     })();
 
+    useEffect(() => {
+        let cancelled = false;
+
+        const loadPendingStatus = async () => {
+            if (!currentUserId || joined || !isPrivate) {
+                if (!cancelled) {
+                    setRequestSent(false);
+                }
+                return;
+            }
+
+            try {
+                const status = await communitiesApi.getMyRequestStatus(comunidad.id);
+                if (!cancelled) {
+                    setRequestSent(Boolean(status?.pending));
+                }
+            } catch {
+                if (!cancelled) {
+                    setRequestSent(false);
+                }
+            }
+        };
+
+        loadPendingStatus();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [comunidad.id, currentUserId, isPrivate, joined]);
+
+    const performJoin = async (role) => {
+        setJoining(true);
+        setError(null);
+        try {
+            if (isPrivate) {
+                await communitiesApi.requestAccess(comunidad.id, '', role);
+                setRequestSent(true);
+                setShowRolePicker(false);
+            } else {
+                await communitiesApi.join(comunidad.id, role);
+                setJoined(true);
+                setShowRolePicker(false);
+                if (onJoined) onJoined(comunidad.id);
+            }
+        } catch (err) {
+            if (err.message?.includes('401') || err.status === 401) {
+                navigate('/login');
+            } else if (err.message?.includes('409') || err.status === 409) {
+                if (isPrivate) setRequestSent(true); else setJoined(true);
+                setShowRolePicker(false);
+            } else if (err.status === 400) {
+                if (isPrivate) setRequestSent(true);
+                else setError(err?.message || 'Error al unirse');
+            } else {
+                setError(isPrivate ? 'Error al solicitar acceso' : 'Error al unirse');
+            }
+        } finally {
+            setJoining(false);
+        }
+    };
+
     const handleJoin = async (e) => {
         e.stopPropagation();
         const token = localStorage.getItem('accessToken');
@@ -37,37 +110,36 @@ export default function ComunidadCard({ comunidad, onJoined }) {
             navigate('/login');
             return;
         }
-        setJoining(true);
-        setError(null);
-        try {
-            await communitiesApi.join(comunidad.id);
-            setJoined(true);
-            if (onJoined) onJoined(comunidad.id);
-        } catch (err) {
-            if (err.message?.includes('401') || err.status === 401) {
-                navigate('/login');
-            } else if (err.message?.includes('409') || err.status === 409) {
-                // Already a member
-                setJoined(true);
-            } else {
-                setError('Error al unirse');
-            }
-        } finally {
-            setJoining(false);
+
+        if (hasTeacherProfile) {
+            setShowRolePicker(true);
+            return;
         }
+
+        // Sin perfil de tutor: siempre ALUMNO
+        await performJoin('ALUMNO');
     };
 
     return (
         <div
             key={comunidad.id}
             className="comunidad-card"
-            onClick={() => navigate(`/comunidades/${comunidad.id}`)}
+            onClick={() => {
+                if (isPrivate && !isMember) {
+                    setError('No puedes ver una comunidad privada a la que no estás unido.');
+                    return;
+                }
+                navigate(`/comunidades/${comunidad.id}`);
+            }}
             style={{ cursor: 'pointer' }}
         >
             <img src={communityImage} alt={comunidad.nombre} className="comunidad-image" />
             <div className="comunidad-info">
                 <div className='top-info'>
-                    <h2>{comunidad.nombre}</h2>
+                    <h2>
+                        {comunidad.nombre}
+                        {isPrivate && <span className="comunidad-private-badge">Privada</span>}
+                    </h2>
                     {comunidad?.categoria?.map(cat => (
                         <span key={cat} className="comunidad-tag">{cat}</span>
                     ))}
@@ -79,18 +151,59 @@ export default function ComunidadCard({ comunidad, onJoined }) {
                         <p>{comunidad.miembrosActuales || 0}/ <span>{comunidad.maxMiembros || 0}</span></p>
                     </div>
                     {error && <span style={{ color: 'red', fontSize: '0.8rem' }}>{error}</span>}
-                    {currentUserId && !joined && (
-                        <button
-                            className="join-button"
-                            onClick={handleJoin}
-                            disabled={joining}
-                        >
-                            {joining ? 'Uniéndose...' : 'Unirse'}
-                        </button>
+                    {currentUserId && !joined && !requestSent && (
+                        showRolePicker ? (
+                            <div className="join-role-picker" onClick={(e) => e.stopPropagation()}>
+                                <p className="join-role-picker__title">
+                                    {isPrivate ? 'Elige cómo quieres solicitar acceso' : 'Elige cómo quieres unirte'}
+                                </p>
+                                <div className="join-role-picker__actions">
+                                    <button
+                                        className="join-button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            performJoin('PROFESOR');
+                                        }}
+                                        disabled={joining}
+                                    >
+                                        {joining
+                                            ? (isPrivate ? 'Solicitando...' : 'Uniéndose...')
+                                            : (isPrivate ? 'Solicitar como profesor' : 'Unirme como profesor')}
+                                    </button>
+                                    <button
+                                        className="join-button join-button--request"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            performJoin('ALUMNO');
+                                        }}
+                                        disabled={joining}
+                                    >
+                                        {joining
+                                            ? (isPrivate ? 'Solicitando...' : 'Uniéndose...')
+                                            : (isPrivate ? 'Solicitar como alumno' : 'Unirme como alumno')}
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <button
+                                className={`join-button${isPrivate ? ' join-button--request' : ''}`}
+                                onClick={handleJoin}
+                                disabled={joining}
+                            >
+                                {joining
+                                    ? (isPrivate ? 'Solicitando...' : 'Uniéndose...')
+                                    : (isPrivate ? 'Solicitar acceso' : 'Unirse')}
+                            </button>
+                        )
                     )}
                     {joined && (
                         <button className="join-button joined" disabled>
-                            ✓ Unido
+                            Unido
+                        </button>
+                    )}
+                    {requestSent && !joined && (
+                        <button className="join-button join-button--pending" disabled>
+                            Solicitud enviada
                         </button>
                     )}
                     {!currentUserId && (
@@ -98,7 +211,7 @@ export default function ComunidadCard({ comunidad, onJoined }) {
                             className="join-button"
                             onClick={(e) => { e.stopPropagation(); navigate('/login'); }}
                         >
-                            Unirse
+                            {isPrivate ? 'Solicitar acceso' : 'Unirse'}
                         </button>
                     )}
                 </div>

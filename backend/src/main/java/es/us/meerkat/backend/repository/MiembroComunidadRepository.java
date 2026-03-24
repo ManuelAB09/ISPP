@@ -43,6 +43,9 @@ public interface MiembroComunidadRepository extends JpaRepository<MiembroComunid
     List<Usuario> findMiembrosMasAntiguosEnComunidad(
             @Param("comunidadId") Long comunidadId, @Param("creadorId") Long creadorId);
 
+    @Query("SELECT m.usuario.id FROM MiembroComunidad m WHERE m.comunidad.id = :comunidadId")
+    List<Long> findUsuarioIdsByComunidadId(@Param("comunidadId") Long comunidadId);
+
     /**
      * Verifica si un usuario es miembro de una comunidad.
      *

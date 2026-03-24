@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { getValoracionesStats } from "../../api/valoraciones.api";
 import { Link, useNavigate } from "react-router-dom";
 import { getVerifiedTutors } from "../../api/tutorEndpoints";
 import { getApiBaseUrl } from "../../api/baseUrl";
@@ -68,6 +69,9 @@ const VerifiedTeachers = () => {
         });
         // La respuesta es Page<TutorProfileResponse>: { content, totalElements, number, ... }
         let contenido = resp?.content ?? (Array.isArray(resp) ? resp : []);
+        contenido = [...contenido].sort(
+          (a, b) => Number(Boolean(b?.verificado)) - Number(Boolean(a?.verificado))
+        );
         const totalElem = resp?.totalElements ?? contenido.length;
         const userHasCoords = hasValidCoords(user?.ubicacion);
         
@@ -211,6 +215,57 @@ const VerifiedTeachers = () => {
   const AVATAR_COLORS = ["#676F9D", "#F2C18E", "#2D3250", "#9CA3AF", "#22c55e"];
   const userHasCoords = hasValidCoords(user?.ubicacion);
 
+  // Estado para stats de valoraciones por tutorId
+  const [valoracionesStats, setValoracionesStats] = useState({});
+
+  // Cargar stats de valoraciones para los profesores listados, con cache en estado
+  useEffect(() => {
+    const fetchStats = async () => {
+      // Obtener los IDs de los profesores actualmente visibles
+      const idsVisibles = profesores
+        .map((tutor) => tutor.id ?? tutor.userId ?? tutor.usuario?.id)
+        .filter((id) => !!id);
+      // Filtrar solo los IDs que aún no tienen stats en cache
+      const idsFaltantes = idsVisibles.filter(
+        (id) => valoracionesStats[id] === undefined
+      );
+      if (idsFaltantes.length === 0) {
+        return;
+      }
+      const nuevosStats = {};
+      await Promise.all(
+        idsFaltantes.map(async (id) => {
+          try {
+            const res = await getValoracionesStats(id);
+            // Espera que la respuesta tenga { media, total }
+            nuevosStats[id] = res;
+          } catch (e) {
+            // Si falla, ignora
+          }
+        })
+      );
+      if (Object.keys(nuevosStats).length > 0) {
+        setValoracionesStats((prev) => ({
+          ...prev,
+          ...nuevosStats,
+        }));
+      }
+    };
+    if (profesores.length > 0) {
+      fetchStats();
+    }
+  }, [profesores, valoracionesStats]);
+
+  
+  // Función para determinar el nivel
+  // Badge compacto: solo letra y color igual que badge de distancia
+  const getNivelBadge = (media, total) => {
+    if (total < 10 || media < 3) return { label: "P", full: "Principiante", color: "#676F9D" };
+    if (total >= 10 && total <= 50 && media >= 3) return { label: "A", full: "Avanzado", color: "#52c41a" };
+    if (total > 50 && media >= 4.5) return { label: "E", full: "Experto", color: "#1890ff" };
+    return null;
+  };
+
   return (
     <div className="vt-page">
       <Header page={'profesores'} />
@@ -219,9 +274,9 @@ const VerifiedTeachers = () => {
         <div className="vt-header__inner">
 
           <div className="headerTitle">
-            <p>Profesionales con identidad confirmada, calidad contrastada y acceso directo al contacto</p>
+            <p>Profesionales con identidad confirmada</p>
             <span className="line"></span>
-            <h1>Profesores Verificados</h1>
+            <h1>Profesores</h1>
           </div>
 
         </div>
@@ -245,7 +300,7 @@ const VerifiedTeachers = () => {
               type="number"
               min="0"
               step="1"
-              placeholder="€ mín"
+              placeholder="€ min"
               value={filtros.tarifaMin}
               onChange={handleFiltroChange}
             />
@@ -256,7 +311,7 @@ const VerifiedTeachers = () => {
               type="number"
               min="0"
               step="1"
-              placeholder="€ máx"
+              placeholder="€ max"
               value={filtros.tarifaMax}
               onChange={handleFiltroChange}
             />
@@ -278,7 +333,7 @@ const VerifiedTeachers = () => {
         </form>
         {!cargando && !error && (
           <span className="vt-total">
-            {total} profesor{total !== 1 ? "es" : ""} verificado{total !== 1 ? "s" : ""}
+            {total} profesor{total !== 1 ? "es" : ""}
             {busquedaCercaniaActiva && (
               <span style={{ marginLeft: 8, color: '#676F9D' }}>
                 • A menos de {radioKm} km de ti
@@ -315,10 +370,23 @@ const VerifiedTeachers = () => {
               const especialidades = tutor.especialidades ?? [];
               const tarifa = tutor.tarifaHora;
 
+              // Badge de nivel
+              const id = tutor.id ?? tutor.userId ?? tutor.usuario?.id;
+              const stats = valoracionesStats[id] || {};
+              const nivel = getNivelBadge(stats.media, stats.total);
               return (
                 <div key={tutor.id ?? i} className="vt-card">
-                  {/* Insignia verificado */}
-                  <span className="vt-card__badge">Verificado</span>
+                  {/* Contenedor de badges en esquina superior derecha */}
+                  <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, zIndex: 2 }}>
+                    {tutor.verificado && (
+                      <span className="vt-card__badge">Verificado</span>
+                    )}
+                    {nivel && (
+                      <span className="vt-card__badge vt-card__badge-nivel" style={{ background: nivel.color, color: '#fff', fontWeight: 700, fontSize: '1em', borderRadius: '50%', width: 22, height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginLeft: 0 }} title={nivel.full}>
+                        {nivel.label}
+                      </span>
+                    )}
+                  </div>
 
                   {/* Etiqueta de distancia */}
                   {userHasCoords && (
@@ -381,6 +449,7 @@ const VerifiedTeachers = () => {
                     >
                       Ver perfil
                     </Link>
+
                     {/* Contactar: solo si no es el propio usuario */}
                     {(() => {
                       const targetUserId = tutor.userId ?? tutor.usuario?.id;
@@ -389,13 +458,9 @@ const VerifiedTeachers = () => {
                         <button
                           className="vt-btn vt-btn--primary"
                           onClick={() => {
-                            const params = new URLSearchParams({
-                              userId: String(targetUserId),
-                              userName: nombre,
-                            });
-                            if (tutor.usuario?.foto) {
-                              params.set('userPhoto', toAbsoluteImageUrl(tutor.usuario.foto));
-                            }
+                            const nombre = getNombre(tutor);
+                            const params = new URLSearchParams({ userId: String(targetUserId), userName: nombre });
+                            if (tutor.usuario?.foto) params.set('userPhoto', tutor.usuario.foto);
                             navigate(`/chats?${params.toString()}`);
                           }}
                         >

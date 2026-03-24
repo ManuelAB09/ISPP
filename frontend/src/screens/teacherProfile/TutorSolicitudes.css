@@ -1,0 +1,284 @@
+/* Panel de solicitudes de contratación del tutor */
+
+.ts-panel {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.ts-panel__title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 16px;
+}
+
+.ts-empty {
+  color: #6b7280;
+  font-size: 14px;
+  text-align: center;
+  padding: 12px 0;
+}
+
+.ts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ts-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px;
+  transition: box-shadow 0.2s;
+}
+
+.ts-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.ts-card__header {
+  font-size: 15px;
+  color: #374151;
+  margin-bottom: 12px;
+}
+
+.ts-card__details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.ts-card__row {
+  display: flex;
+  gap: 8px;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.ts-card__label {
+  flex-shrink: 0;
+  min-width: 90px;
+}
+
+.ts-card__actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.ts-card__rechazo {
+  margin-top: 8px;
+}
+
+.ts-card__rechazo-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.ts-btn {
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.ts-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ts-btn--accept {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.ts-btn--accept:hover:not(:disabled) {
+  background: #059669;
+}
+
+.ts-btn--reject {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.ts-btn--reject:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.ts-btn--cancel {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.ts-btn--cancel:hover:not(:disabled) {
+  background: #d1d5db;
+}
+
+.ts-loading {
+  text-align: center;
+  color: #6b7280;
+  padding: 20px;
+}
+
+/* ─── Selector de sección ─── */
+.ts-seccion-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.ts-seccion-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  background: #f3f4f6;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.15s;
+}
+
+.ts-seccion-tab:hover { background: #e5e7eb; color: #374151; }
+
+.ts-seccion-tab--active {
+  background: #ede9fe;
+  border-color: #6366f1;
+  color: #6366f1;
+}
+
+.ts-seccion-tab__badge {
+  background: #6366f1;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  min-width: 18px;
+  text-align: center;
+}
+
+.ts-error {
+  color: #ef4444;
+  font-size: 0.85rem;
+  margin: 8px 0;
+}
+
+/* ─── Tabs ─── */
+.ts-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 0;
+}
+
+.ts-tab {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.ts-tab:hover {
+  color: #374151;
+}
+
+.ts-tab--active {
+  color: #6366f1;
+  border-bottom-color: #6366f1;
+}
+
+/* ─── Card states ─── */
+.ts-card--aceptada {
+  border-left: 3px solid #10b981;
+}
+.ts-card--pagada {
+  border-left: 3px solid #6366f1;
+}
+.ts-card--cancelada {
+  border-left: 3px solid #ef4444;
+  opacity: 0.75;
+}
+.ts-card--rechazada {
+  border-left: 3px solid #9ca3af;
+  opacity: 0.75;
+}
+
+/* ─── Badge ─── */
+.ts-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ts-card__badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 12px;
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+/* ─── Reschedule form ─── */
+.ts-card__reschedule {
+  margin-top: 10px;
+  padding: 12px;
+  background: #f0fdf4;
+  border-radius: 8px;
+  border: 1px solid #bbf7d0;
+}
+
+.ts-card__reschedule-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 8px;
+}
+
+.ts-card__reschedule-fields {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.ts-card__reschedule-input {
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.ts-btn--reschedule {
+  background: #6366f1;
+  color: #ffffff;
+}
+
+.ts-btn--reschedule:hover:not(:disabled) {
+  background: #4f46e5;
+}

@@ -3,6 +3,7 @@ package es.us.meerkat.backend.dto;
 import java.time.LocalDateTime;
 
 import es.us.meerkat.backend.entity.EstadoAsistencia;
+import es.us.meerkat.backend.entity.TipoEvento;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,6 +20,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EventDetailResponse {
+    /** Tipo de evento (REUNION, EXAMEN, CUESTIONARIO, TUTORIA, CLASE, OTRO). */
+    private TipoEvento tipoEvento;
+
+    //
+    // /** Icono emoji del tipo de evento (ej: "📝", "👥"). */
+    private String iconoEvento;
 
     /** Identificador del evento. */
     private Long id;
@@ -62,6 +69,15 @@ public class EventDetailResponse {
     /** Si el evento es privado. */
     private Boolean privado;
 
+    /** ID de la tarea de Google Classroom vinculada. */
+    private String classroomTaskId;
+
+    /** Título de la tarea de Google Classroom vinculada. */
+    private String classroomTaskTitle;
+
+    /** URL de la tarea de Google Classroom vinculada. */
+    private String classroomTaskUrl;
+
     /** ID de la comunidad a la que pertenece el evento. */
     private Long comunidadId;
 
@@ -70,6 +86,12 @@ public class EventDetailResponse {
 
     /** Usuario creador del evento. */
     private UserPublicResponse creador;
+
+    /** Identificador del creador del evento. */
+    private Long creadorId;
+
+    /** Rol del creador en la comunidad del evento (ADMIN, PROFESOR, ALUMNO). */
+    private String creadorRolComunidad;
 
     /** Estado de asistencia del usuario autenticado (null si no está registrado). */
     private EstadoAsistencia miAsistencia;
