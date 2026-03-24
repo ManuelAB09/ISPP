@@ -1,24 +1,28 @@
 package es.us.meerkat.backend.service;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
-import org.springframework.web.client.RestTemplate;
+
+import com.sendgrid.Method;
+import com.sendgrid.Request;
+import com.sendgrid.Response;
+import com.sendgrid.SendGrid;
+import com.sendgrid.helpers.mail.Mail;
+import com.sendgrid.helpers.mail.objects.Content;
+import com.sendgrid.helpers.mail.objects.Email;
 
 import es.us.meerkat.backend.entity.AsistenciaEvento;
 import es.us.meerkat.backend.entity.Comunidad;
@@ -95,49 +99,30 @@ public class EmailService {
         }
     }
 
-    private static final int SENDGRID_MAX_RETRIES = 3;
-    private static final long SENDGRID_RETRY_DELAY_MS = 2000;
-
     private void sendViaSendGridApi(String to, String subject, String content, boolean isHtml) {
-        RestTemplate restTemplate = new RestTemplate();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(sendgridApiKey);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
+        Email fromEmail = new Email(from, appName);
+        Email toEmail = new Email(to);
         String contentType = isHtml ? "text/html" : "text/plain";
+        Content mailContent = new Content(contentType, content);
+        Mail mail = new Mail(fromEmail, subject, toEmail, mailContent);
 
-        Map<String, Object> body = Map.of(
-                "personalizations", List.of(Map.of("to", List.of(Map.of("email", to)))),
-                "from", Map.of("email", from, "name", appName),
-                "subject", subject,
-                "content", List.of(Map.of("type", contentType, "value", content)));
-
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
-
-        for (int attempt = 1; attempt <= SENDGRID_MAX_RETRIES; attempt++) {
-            try {
-                var response = restTemplate.postForEntity(
-                        "https://api.sendgrid.net/v3/mail/send", entity, String.class);
-                log.info("SendGrid API respondió {} para email a {}", response.getStatusCode(), to);
-                return;
-            } catch (Exception e) {
-                log.warn("SendGrid API intento {}/{} falló para {}: [{}] {}",
-                        attempt, SENDGRID_MAX_RETRIES, to,
-                        e.getClass().getSimpleName(), e.getMessage());
-                if (attempt == SENDGRID_MAX_RETRIES) {
-                    throw new RuntimeException(
-                            "No se pudo enviar email vía SendGrid API tras "
-                                    + SENDGRID_MAX_RETRIES + " intentos",
-                            e);
-                }
-                try {
-                    Thread.sleep(SENDGRID_RETRY_DELAY_MS);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException("Interrumpido durante retry de SendGrid", ie);
-                }
+        SendGrid sg = new SendGrid(sendgridApiKey);
+        Request request = new Request();
+        try {
+            request.setMethod(Method.POST);
+            request.setEndpoint("mail/send");
+            request.setBody(mail.build());
+            Response response = sg.api(request);
+            log.info("SendGrid API respondió {} para email a {}", response.getStatusCode(), to);
+            if (response.getStatusCode() >= 400) {
+                log.error("SendGrid API error body: {}", response.getBody());
+                throw new RuntimeException(
+                        "SendGrid API respondió " + response.getStatusCode());
             }
+        } catch (IOException e) {
+            log.error("SendGrid API I/O error para {}: [{}] {}",
+                    to, e.getClass().getSimpleName(), e.getMessage());
+            throw new RuntimeException("No se pudo enviar email vía SendGrid API", e);
         }
     }
 

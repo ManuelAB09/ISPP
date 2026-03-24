@@ -1,5 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { within } from '@testing-library/dom';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import axiosInstance from '../../api/axiosConfig';
 import { communitiesApi } from '../../api/communities.api';
@@ -147,8 +146,7 @@ describe('DetalleEvento', () => {
 
     // El botón abre un modal; hay que confirmar en él
     await screen.findByText(/¿Quieres recibir alarmas para recordarte este evento\?/i);
-    const modal = document.querySelector('.ed-modal');
-    const modalConfirmBtn = within(modal).getByRole('button', { name: /Confirmar asistencia/i });
+    const modalConfirmBtn = screen.getByRole('button', { name: /Confirmar asistencia/i });
     fireEvent.click(modalConfirmBtn);
 
     await waitFor(() => {
