@@ -1,5 +1,6 @@
 package es.us.meerkat.backend.service;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -14,6 +15,14 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
+
+import com.sendgrid.Method;
+import com.sendgrid.Request;
+import com.sendgrid.Response;
+import com.sendgrid.SendGrid;
+import com.sendgrid.helpers.mail.Mail;
+import com.sendgrid.helpers.mail.objects.Content;
+import com.sendgrid.helpers.mail.objects.Email;
 
 import es.us.meerkat.backend.entity.AsistenciaEvento;
 import es.us.meerkat.backend.entity.Comunidad;
@@ -42,6 +51,9 @@ public class EmailService {
     @Value("${app.url:http://localhost:3000}")
     private String appUrl;
 
+    @Value("${sendgrid.api-key:}")
+    private String sendgridApiKey;
+
     private final JavaMailSender mailSender;
     private final AsistenciaEventoRepository asistenciaEventoRepository;
 
@@ -52,25 +64,82 @@ public class EmailService {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
     // ===============================
-    // CÓDIGO EXISTENTE — SIN CAMBIOS
+    // ENVÍO CENTRALIZADO (SMTP o SendGrid HTTP API)
+    // ===============================
+
+    private boolean useSendGridApi() {
+        return sendgridApiKey != null && !sendgridApiKey.isBlank();
+    }
+
+    private void doSendHtml(String to, String subject, String htmlContent)
+            throws MessagingException {
+        if (useSendGridApi()) {
+            sendViaSendGridApi(to, subject, htmlContent, true);
+        } else {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(from);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+        }
+    }
+
+    private void doSendPlain(String to, String subject, String text) {
+        if (useSendGridApi()) {
+            sendViaSendGridApi(to, subject, text, false);
+        } else {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(from);
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(text);
+            mailSender.send(message);
+        }
+    }
+
+    private void sendViaSendGridApi(String to, String subject, String content, boolean isHtml) {
+        Email fromEmail = new Email(from, appName);
+        Email toEmail = new Email(to);
+        String contentType = isHtml ? "text/html" : "text/plain";
+        Content mailContent = new Content(contentType, content);
+        Mail mail = new Mail(fromEmail, subject, toEmail, mailContent);
+
+        SendGrid sg = new SendGrid(sendgridApiKey);
+        Request request = new Request();
+        try {
+            request.setMethod(Method.POST);
+            request.setEndpoint("mail/send");
+            request.setBody(mail.build());
+            Response response = sg.api(request);
+            log.info("SendGrid API respondió {} para email a {}", response.getStatusCode(), to);
+            if (response.getStatusCode() >= 400) {
+                log.error("SendGrid API error body: {}", response.getBody());
+                throw new RuntimeException("SendGrid API respondió " + response.getStatusCode());
+            }
+        } catch (IOException e) {
+            log.error(
+                    "SendGrid API I/O error para {}: [{}] {}",
+                    to,
+                    e.getClass().getSimpleName(),
+                    e.getMessage());
+            throw new RuntimeException("No se pudo enviar email vía SendGrid API", e);
+        }
+    }
+
+    // ===============================
+    // CÓDIGO EXISTENTE
     // ===============================
 
     public void sendPasswordResetEmail(
             final String to, final String userName, final String temporaryPassword)
             throws MessagingException {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
         String subject = appName + " - Recuperación de contraseña";
         String htmlContent = buildPasswordResetHtmlEmail(userName, temporaryPassword);
 
-        helper.setFrom(from);
-        helper.setTo(to);
-        helper.setSubject(subject);
-        helper.setText(htmlContent, true);
-
         try {
-            mailSender.send(message);
+            doSendHtml(to, subject, htmlContent);
             log.info("Email de recuperación de contraseña enviado a: {}", to);
         } catch (final Exception e) {
             log.error("Error al enviar email de recuperación a {}: {}", to, e.getMessage());
@@ -135,14 +204,8 @@ public class EmailService {
     }
 
     public void sendSimpleEmail(final String to, final String subject, final String text) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(from);
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(text);
-
         try {
-            mailSender.send(message);
+            doSendPlain(to, subject, text);
             log.info("Email enviado a: {}", to);
         } catch (final Exception e) {
             log.error("Error al enviar email a {}: {}", to, e.getMessage());
@@ -361,14 +424,7 @@ public class EmailService {
 
     private void enviarMime(final String to, final String asunto, final String html)
             throws Exception {
-        final MimeMessage message = mailSender.createMimeMessage();
-        final MimeMessageHelper helper =
-                new MimeMessageHelper(message, true, StandardCharsets.UTF_8.name());
-        helper.setFrom(from, appName);
-        helper.setTo(to);
-        helper.setSubject(asunto);
-        helper.setText(html, true);
-        mailSender.send(message);
+        doSendHtml(to, asunto, html);
     }
 
     private String removeBlock(final String html, final String open, final String close) {
@@ -406,20 +462,12 @@ public class EmailService {
             final String verificationToken,
             final String verificationUrl)
             throws MessagingException {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
         String subject = appName + " - Verifica tu cuenta";
         String htmlContent =
                 buildVerificationHtmlEmail(userName, verificationToken, verificationUrl);
 
-        helper.setFrom(from);
-        helper.setTo(to);
-        helper.setSubject(subject);
-        helper.setText(htmlContent, true);
-
         try {
-            mailSender.send(message);
+            doSendHtml(to, subject, htmlContent);
             log.info("Email de verificación enviado a: {}", to);
         } catch (final Exception e) {
             log.error("Error al enviar email de verificación a {}: {}", to, e.getMessage());
@@ -493,21 +541,13 @@ public class EmailService {
             final String verificationToken,
             final String frontendUrl)
             throws MessagingException {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
         String subject = appName + " - Plan institucional asignado";
         String htmlContent =
                 buildInstitutionInviteHtmlEmail(
                         institutionName, planName, isNewAccount, verificationToken, frontendUrl);
 
-        helper.setFrom(from);
-        helper.setTo(to);
-        helper.setSubject(subject);
-        helper.setText(htmlContent, true);
-
         try {
-            mailSender.send(message);
+            doSendHtml(to, subject, htmlContent);
             log.info("Email de invitación institucional enviado a: {}", to);
         } catch (final Exception e) {
             log.error(
@@ -1276,13 +1316,7 @@ public class EmailService {
 
     private void sendHtmlEmailSafe(String to, String subject, String htmlBody) {
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom(from);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(htmlBody, true);
-            mailSender.send(message);
+            doSendHtml(to, subject, htmlBody);
             log.info("Email '{}' enviado a: {}", subject, to);
         } catch (Exception e) {
             log.error("Error al enviar email '{}' a {}: {}", subject, to, e.getMessage());

@@ -167,12 +167,16 @@ const DetalleEvento = () => {
       if (currentUserId && eventData.comunidadId) {
         try {
           const membership = await communitiesApi.getMyMembership(eventData.comunidadId);
-          setIsMember(true);
-          setCommunityRole(normalizeCommunityRole(membership?.rol));
+          const isCurrentMember = Boolean(membership);
+          setIsMember(isCurrentMember);
+          setCommunityRole(isCurrentMember ? normalizeCommunityRole(membership?.rol) : null);
         } catch {
           setIsMember(false);
           setCommunityRole(null);
         }
+      } else {
+        setIsMember(false);
+        setCommunityRole(null);
       }
 
       // Verificar mi asistencia
@@ -230,7 +234,28 @@ const DetalleEvento = () => {
       : false;
 
   // Abre el modal de confirmación de asistencia
-  const handleAttend = () => {
+  const handleAttend = async () => {
+    if (!currentUserId) {
+      navigate('/login');
+      return;
+    }
+
+    if (event?.comunidadId) {
+      try {
+        const membership = await communitiesApi.getMyMembership(event.comunidadId);
+        if (!membership) {
+          setIsMember(false);
+          setError('Debes ser miembro de la comunidad para confirmar asistencia.');
+          return;
+        }
+        setIsMember(true);
+      } catch {
+        setIsMember(false);
+        setError('No se pudo verificar tu membresía en la comunidad.');
+        return;
+      }
+    }
+
     setSelectedMinutos([]);
     setSelectedCanal('AMBOS');
     setShowAttendModal(true);
@@ -238,6 +263,23 @@ const DetalleEvento = () => {
 
   // Confirma asistencia y crea alarmas si se eligieron
   const handleConfirmAttend = async () => {
+    if (event?.comunidadId) {
+      try {
+        const membership = await communitiesApi.getMyMembership(event.comunidadId);
+        if (!membership) {
+          setIsMember(false);
+          setShowAttendModal(false);
+          setError('Debes ser miembro de la comunidad para confirmar asistencia.');
+          return;
+        }
+      } catch {
+        setIsMember(false);
+        setShowAttendModal(false);
+        setError('No se pudo verificar tu membresía en la comunidad.');
+        return;
+      }
+    }
+
     try {
       setAttendanceLoading(true);
       await attendEvent(eventId);

@@ -202,11 +202,12 @@ export default function CommunityDetail() {
   const isPrivate = community?.tipoGrupo === 'GRUPO_PRIVADO';
   const isCorporateCommunity = String(community?.tipoPlan || '').toUpperCase() === 'UNLIMITED';
   const normalizedRole = normalizeCommunityRole(community?.miRol);
+  const normalizedRolDocente = community?.miRolDocente || null;
   const isAdmin = isAdminRole(normalizedRole);
-  const isTeacher = isTeacherRole(normalizedRole);
-  const canCreateEvent = canCreateCommunityEvent(normalizedRole);
-  const roleLabel = getCommunityRoleLabel(normalizedRole);
-  const roleCapabilities = getCommunityRoleCapabilities(normalizedRole);
+  const isTeacher = isTeacherRole(normalizedRole, normalizedRolDocente);
+  const canCreateEvent = canCreateCommunityEvent(normalizedRole, normalizedRolDocente);
+  const roleLabel = getCommunityRoleLabel(normalizedRole, normalizedRolDocente);
+  const roleCapabilities = getCommunityRoleCapabilities(normalizedRole, normalizedRolDocente);
   const currentUserId = localStorage.getItem('userId');
   const hasTeacherProfile = Boolean(user?.esTutor || user?.esProfesor);
   const currentUser = {
@@ -223,7 +224,10 @@ export default function CommunityDetail() {
     return acc;
   }, {});
   const adminMembers = groupedMembers.ADMIN || [];
-  const teacherMembers = groupedMembers.PROFESOR || [];
+  const adminProfesores = adminMembers.filter(
+    (m) => normalizeCommunityRole(m?.rolDocente) === 'PROFESOR'
+  );
+  const teacherMembers = [...(groupedMembers.PROFESOR || []), ...adminProfesores];
   const studentMembers = [...(groupedMembers.ALUMNO || []), ...(groupedMembers.MIEMBRO || [])];
 
   const formatPlanLabel = (plan) => {
@@ -254,6 +258,25 @@ export default function CommunityDetail() {
     return (
       userData.foto
       || userData.avatarUrl
+      || userData.fotoUrl
+      || userData.fotoPerfil
+      || userData.avatar
+      || userData.imagen
+      || userData.image
+      || userData.usuarioFoto
+      || null
+    );
+  };
+  const getRankingUserPhoto = (rankingItem) => {
+    const userData = rankingItem?.usuario || rankingItem;
+
+    if (!userData || typeof userData !== 'object') {
+      return null;
+    }
+
+    return (
+      userData.avatarUrl
+      || userData.foto
       || userData.fotoUrl
       || userData.fotoPerfil
       || userData.avatar
@@ -333,7 +356,7 @@ export default function CommunityDetail() {
               </span>
               <span className="cd-member-info">
                 <span className="cd-member-name">{getMemberName(member)}</span>
-                <span className="cd-member-role">{getCommunityRoleLabel(member?.rol)}</span>
+                <span className="cd-member-role">{getCommunityRoleLabel(member?.rol, member?.rolDocente)}</span>
               </span>
             </button>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -723,7 +746,12 @@ export default function CommunityDetail() {
 
   const getMemberRoleLabel = (member) => {
     const rawRole = String(member?.rol || member?.role || '').toUpperCase();
-    if (rawRole === 'ADMIN') return 'Administrador';
+    const rawRolDocente = member?.rolDocente ? String(member.rolDocente).toUpperCase() : null;
+    if (rawRole === 'ADMIN') {
+      if (rawRolDocente === 'PROFESOR') return 'Administrador · Profesor';
+      if (rawRolDocente === 'ALUMNO') return 'Administrador · Alumno';
+      return 'Administrador';
+    }
     if (rawRole === 'MODERADOR' || rawRole === 'MODERATOR') return 'Moderador';
     if (rawRole === 'MIEMBRO' || rawRole === 'MEMBER') return 'Miembro';
     if (rawRole === 'ALUMNO' || rawRole === 'STUDENT') return 'Alumno';
@@ -1476,6 +1504,7 @@ export default function CommunityDetail() {
                 )}
                 {currentUserId ? (
                   isMember ? (
+                    community?.miembrosActuales > 1 && (
                     <button
                       className="cd-btn cd-btn-leave"
                       onClick={handleLeaveCommunity}
@@ -1483,6 +1512,7 @@ export default function CommunityDetail() {
                     >
                       <LuLogOut /> {joinLoading ? 'Saliendo...' : 'Abandonar comunidad'}
                     </button>
+                    )
                   ) : requestSent ? (
                     <button className="cd-btn cd-btn-pending" disabled>
                       Solicitud de acceso enviada
@@ -1617,7 +1647,8 @@ export default function CommunityDetail() {
                   <div key={req.id} className="cd-request-item">
                     <div className="cd-request-info">
                       <span className="cd-request-name">
-                        {req.solicitante?.nombre || 'Usuario'}
+                        {req.solicitante?.nombre || 'Usuario'} quiere unirse como{' '}
+                        <strong>{getCommunityRoleLabel(req.rolDeseado || 'ALUMNO')}</strong>
                       </span>
                       {req.mensaje && (
                         <span className="cd-request-message">{req.mensaje}</span>
@@ -1714,7 +1745,19 @@ export default function CommunityDetail() {
                   ) : communityCuestionarios.length > 0 ? (
                     <div className="cd-questionnaires-grid">
                       {communityCuestionarios.map((cuestionario) => (
-                        <article key={cuestionario.id} className="cd-questionnaire-card">
+                        <article
+                          key={cuestionario.id}
+                          className="cd-questionnaire-card"
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => navigate(`/cuestionarios/${cuestionario.id}`)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              navigate(`/cuestionarios/${cuestionario.id}`);
+                            }
+                          }}
+                        >
                           <div className="cd-questionnaire-card__header">
                             <h3>{cuestionario.titulo || 'Cuestionario sin titulo'}</h3>
                             <span className={`cd-questionnaire-state ${cuestionario.publicado ? 'is-published' : 'is-draft'}`}>
@@ -1855,6 +1898,7 @@ export default function CommunityDetail() {
                   <tbody>
                     {ranking.map((item, index) => {
                       const isMe = item.usuario?.id === Number(currentUserId);
+                      const rankingUserPhoto = getRankingUserPhoto(item);
 
                       return (
                         <tr
@@ -1873,9 +1917,9 @@ export default function CommunityDetail() {
 
                           {/* Columna de Usuario */}
                           <td className="cd-ranking-user-cell">
-                            {item.usuario?.avatarUrl ? (
+                            {rankingUserPhoto ? (
                               <img
-                                src={item.usuario.avatarUrl}
+                                src={toAbsoluteImageUrl(rankingUserPhoto)}
                                 alt={item.usuario?.nombre || 'Usuario'}
                                 className="cd-ranking-avatar"
                               />

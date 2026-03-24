@@ -130,6 +130,10 @@ public class CommunityService {
                     maxMiembrosSolicitado != null
                             ? maxMiembrosSolicitado
                             : institutionPlanLimits.maxMembers();
+            maxMiembros =
+                    maxMiembrosSolicitado != null
+                            ? maxMiembrosSolicitado
+                            : institutionPlanLimits.maxMembers();
         } else {
             Optional<Suscripcion> suscripcionOpt = suscripcionService.obtenerMiSuscripcion(userId);
             TipoPlan userPlan = suscripcionOpt.map(Suscripcion::getPlan).orElse(TipoPlan.FREE);

@@ -25,6 +25,12 @@ const toAbsoluteImageUrl = (imageUrl, fallback = DEFAULT_PROFILE_AVATAR) => {
     if (!raw) {
         return fallback;
     }
+
+    const normalizedValue = raw.toLowerCase();
+    if (normalizedValue === 'empty' || normalizedValue === 'null' || normalizedValue === 'undefined') {
+        return fallback;
+    }
+
     if (/^https?:\/\//i.test(raw) || raw.startsWith('data:') || raw.startsWith('blob:')) {
         return raw;
     }
@@ -80,6 +86,16 @@ const CommunityChat = ({
     const previewsByMessageIdRef = useRef({});
     const attachmentObjectUrlsRef = useRef(new Map());
     const pendingAttachmentPreviewRef = useRef(new Set());
+
+    const handleCommunityAvatarError = (e) => {
+        e.currentTarget.onerror = null;
+        e.currentTarget.src = '/MeerKatters_logo.png';
+    };
+
+    const handleProfileAvatarError = (e) => {
+        e.currentTarget.onerror = null;
+        e.currentTarget.src = DEFAULT_PROFILE_AVATAR;
+    };
 
     const isOwnMessage = (msg) => Number(msg?.usuarioId) === Number(usuarioActual?.id);
 
@@ -787,6 +803,7 @@ const CommunityChat = ({
                                 className="chat-header-avatar"
                                 src={toAbsoluteImageUrl(comunidadImagen, '/MeerKatters_logo.png')}
                                 alt={comunidadNombre || `Comunidad ${comunidadId}`}
+                                onError={handleCommunityAvatarError}
                             />
                             <div>
                                 <h2>Chat de comunidad</h2>
@@ -847,6 +864,7 @@ const CommunityChat = ({
                                                 className="usuario-foto"
                                                 src={toAbsoluteImageUrl(msg.usuarioFoto, DEFAULT_PROFILE_AVATAR)}
                                                 alt={msg.usuarioNombre || 'Usuario'}
+                                                onError={handleProfileAvatarError}
                                                 style={{ backgroundColor: resolveAvatarBackgroundColor(msg) }}
                                             />
                                             <span className="usuario-nombre">{msg.usuarioNombre}</span>

@@ -37,9 +37,14 @@ public class NotificacionService {
     @Transactional
     public Notificacion crearYNotificar(Notificacion notificacion) {
         Notificacion guardada = notificacionRepository.save(notificacion);
-        // Enviar por WebSocket al usuario
-        messagingTemplate.convertAndSendToUser(
-                notificacion.getUsuario().getId().toString(), "/queue/notificaciones", guardada);
+        // Enviar por WebSocket solo si el usuario tiene las notificaciones push activadas
+        Boolean pushEnabled = notificacion.getUsuario().getNotificacionesPush();
+        if (pushEnabled == null || pushEnabled) {
+            messagingTemplate.convertAndSendToUser(
+                    notificacion.getUsuario().getId().toString(),
+                    "/queue/notificaciones",
+                    guardada);
+        }
         return guardada;
     }
 }

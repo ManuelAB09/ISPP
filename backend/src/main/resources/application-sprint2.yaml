@@ -15,8 +15,8 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 5
-      minimum-idle: 2
+      maximum-pool-size: 3
+      minimum-idle: 1
       connection-timeout: 20000
 
   jpa:
@@ -30,12 +30,29 @@ spring:
         validator:
           apply_to_ddl: false
 
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
 server:
   port: ${PORT:8080}
+  tomcat:
+    threads:
+      max: 10
+      min-spare: 2
+    max-connections: 30
+    accept-count: 5
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
 
 logging:
   level:
-    root: INFO
+    root: WARN
     es.us.meerkat: INFO
 
 # ── CORS: orígenes permitidos para este entorno ──

@@ -143,7 +143,7 @@ public class SolicitudContratacionService {
 
         // Notificar al tutor por WebSocket
         broker.convertAndSendToUser(
-                tutor.getUsuario().getEmail(), "/queue/solicitud_contratacion", response);
+                tutor.getUsuario().getId().toString(), "/queue/solicitud_contratacion", response);
 
         return response;
     }
@@ -229,7 +229,7 @@ public class SolicitudContratacionService {
 
         // Notificar al tutor por WebSocket
         broker.convertAndSendToUser(
-                tutor.getUsuario().getEmail(), "/queue/solicitud_contratacion", response);
+                tutor.getUsuario().getId().toString(), "/queue/solicitud_contratacion", response);
 
         // Sincronizar con Google Calendar (si alumno / tutor tienen Calendar conectado y activado)
         try {
@@ -288,7 +288,7 @@ public class SolicitudContratacionService {
 
         // Notificar al alumno por WebSocket
         broker.convertAndSendToUser(
-                solicitud.getAlumno().getEmail(),
+                solicitud.getAlumno().getId().toString(),
                 "/queue/solicitud_contratacion_respuesta",
                 response);
 
@@ -328,7 +328,7 @@ public class SolicitudContratacionService {
 
         // Notificar al alumno por WebSocket
         broker.convertAndSendToUser(
-                solicitud.getAlumno().getEmail(),
+                solicitud.getAlumno().getId().toString(),
                 "/queue/solicitud_contratacion_respuesta",
                 response);
 
@@ -383,7 +383,7 @@ public class SolicitudContratacionService {
 
         // Notificar al tutor que el pago se completó
         broker.convertAndSendToUser(
-                solicitud.getTutor().getUsuario().getEmail(),
+                solicitud.getTutor().getUsuario().getId().toString(),
                 "/queue/solicitud_contratacion_pagada",
                 response);
 
@@ -517,7 +517,7 @@ public class SolicitudContratacionService {
 
         // Notificar al alumno por WebSocket
         broker.convertAndSendToUser(
-                solicitud.getAlumno().getEmail(),
+                solicitud.getAlumno().getId().toString(),
                 "/queue/solicitud_contratacion_respuesta",
                 response);
 
@@ -620,24 +620,22 @@ public class SolicitudContratacionService {
         LocalTime horaInicioAnterior = solicitud.getHoraInicio();
         LocalTime horaFinAnterior = solicitud.getHoraFin();
 
-        // Recalcular importe
-        long minutos = Duration.between(nuevaHoraInicio, nuevaHoraFin).toMinutes();
-        BigDecimal horas =
-                BigDecimal.valueOf(minutos).divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
-        BigDecimal importeTotal =
-                solicitud.getTarifaHora().multiply(horas).setScale(2, RoundingMode.HALF_UP);
+        // En lugar de sobreescribir la fecha y hora original directamente, guardamos
+        // la propuesta en los campos de reprogramación y pasamos al estado pendiente para
+        // que el alumno lo acepte explícitamente.
+        solicitud.setEstadoAnterior(solicitud.getEstado());
+        solicitud.setEstado(EstadoSolicitudContratacion.REPROGRAMACION_PENDIENTE);
+        solicitud.setReprogramacionDia(nuevoDia);
+        solicitud.setReprogramacionHoraInicio(nuevaHoraInicio);
+        solicitud.setReprogramacionHoraFin(nuevaHoraFin);
 
-        solicitud.setDia(nuevoDia);
-        solicitud.setHoraInicio(nuevaHoraInicio);
-        solicitud.setHoraFin(nuevaHoraFin);
-        solicitud.setImporteTotal(importeTotal);
         solicitudRepository.save(solicitud);
 
         SolicitudContratacionResponse response = mapToResponse(solicitud);
 
         // Notificar al alumno por WebSocket
         broker.convertAndSendToUser(
-                solicitud.getAlumno().getEmail(),
+                solicitud.getAlumno().getId().toString(),
                 "/queue/solicitud_contratacion_respuesta",
                 response);
 
@@ -709,7 +707,7 @@ public class SolicitudContratacionService {
 
         // Notificar al tutor
         broker.convertAndSendToUser(
-                solicitud.getTutor().getUsuario().getEmail(),
+                solicitud.getTutor().getUsuario().getId().toString(),
                 "/queue/solicitud_contratacion_respuesta",
                 response);
 
@@ -764,7 +762,7 @@ public class SolicitudContratacionService {
 
         // Notificar al tutor
         broker.convertAndSendToUser(
-                solicitud.getTutor().getUsuario().getEmail(),
+                solicitud.getTutor().getUsuario().getId().toString(),
                 "/queue/solicitud_contratacion_respuesta",
                 response);
 
@@ -831,7 +829,7 @@ public class SolicitudContratacionService {
 
         // Notificar al tutor
         broker.convertAndSendToUser(
-                solicitud.getTutor().getUsuario().getEmail(),
+                solicitud.getTutor().getUsuario().getId().toString(),
                 "/queue/solicitud_contratacion_respuesta",
                 response);
 
@@ -989,7 +987,7 @@ public class SolicitudContratacionService {
 
         // Notificar al alumno que el enlace Zoom está disponible
         broker.convertAndSendToUser(
-                solicitud.getAlumno().getEmail(),
+                solicitud.getAlumno().getId().toString(),
                 "/queue/solicitud_contratacion_respuesta",
                 response);
 

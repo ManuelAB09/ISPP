@@ -1,5 +1,12 @@
 package es.us.meerkat.backend.service;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,7 +66,7 @@ public class CuestionarioService {
         cuestionario.setDescripcion(dto.getDescripcion());
         cuestionario.setImagenUrl(dto.getImagenUrl());
         cuestionario.setMateria(dto.getMateria());
-        cuestionario.setTags(dto.getTags());
+        cuestionario.setTags(dto.getTags() != null ? dto.getTags() : new java.util.ArrayList<>());
         cuestionario.setDificultad(dto.getDificultad());
         cuestionario.setNivelEducativo(dto.getNivelEducativo());
         cuestionario.setNumPreguntas(dto.getNumPreguntas() != null ? dto.getNumPreguntas() : 0);
@@ -67,6 +74,11 @@ public class CuestionarioService {
         cuestionario.setActivo(dto.getActivo() != null ? dto.getActivo() : true);
         cuestionario.setPublicado(dto.getPublicado() != null ? dto.getPublicado() : false);
         cuestionario.setCreador(creador);
+        cuestionario.setCreatedAt(java.time.LocalDateTime.now());
+        cuestionario.setIntentos(0L);
+        cuestionario.setPreguntas(new java.util.ArrayList<>());
+        cuestionario.setComunidades(new java.util.HashSet<>());
+        cuestionario.setAlumnos(new java.util.HashSet<>());
 
         // preguntas
         if (dto.getPreguntas() != null) {
@@ -74,6 +86,7 @@ public class CuestionarioService {
                 Pregunta p = new Pregunta();
                 p.setEnunciado(pr.getEnunciado());
                 p.setTipo(pr.getTipo());
+                p.setOpciones(new java.util.ArrayList<>());
                 p.setRespuestasAceptables(
                         pr.getRespuestasAceptables() != null
                                 ? pr.getRespuestasAceptables()
@@ -120,9 +133,15 @@ public class CuestionarioService {
         return cuestionarioRepository.findDistinctByComunidadesIdOrderByCreatedAtDesc(comunidadId);
     }
 
-    /** Registra un intento enviado por un alumno y calcula la puntuación. */
+    public List<CuestionarioIntento> findAttemptsByUsuarioAndCuestionario(
+            Long usuarioId, Long cuestionarioId) {
+        return intentoRepository.findByUsuarioIdAndCuestionarioIdOrderByCreatedAtDesc(
+                usuarioId, cuestionarioId);
+    }
+
+    /** Registra un intento enviado por un alumno y devuelve resultado detallado. */
     @Transactional
-    public CuestionarioIntento submitAttempt(
+    public AttemptSubmissionResult submitAttempt(
             Long cuestionarioId, SubmitAttemptRequest request, Usuario usuario) {
 
         Cuestionario c =
@@ -132,7 +151,7 @@ public class CuestionarioService {
                                 () -> new IllegalArgumentException("Cuestionario no encontrado"));
 
         // Map preguntaId -> answer for quick lookup
-        java.util.Map<Long, SubmitAttemptRequest.Answer> answersMap = new java.util.HashMap<>();
+        Map<Long, SubmitAttemptRequest.Answer> answersMap = new HashMap<>();
         if (request.getAnswers() != null) {
             for (SubmitAttemptRequest.Answer a : request.getAnswers()) {
                 answersMap.put(a.getPreguntaId(), a);
@@ -141,25 +160,48 @@ public class CuestionarioService {
 
         int total = c.getPreguntas() != null ? c.getPreguntas().size() : 0;
         int correct = 0;
+        List<QuestionEvaluation> questionsEvaluation = new ArrayList<>();
 
         for (Pregunta p : c.getPreguntas()) {
             SubmitAttemptRequest.Answer a = answersMap.get(p.getId());
             boolean acertada = false;
+            List<String> respuestaUsuario = new ArrayList<>();
+            List<String> respuestaCorrecta = new ArrayList<>();
+
             if (p.getTipo() == TipoPregunta.TEST || p.getTipo() == TipoPregunta.VERDADERO_FALSO) {
                 if (a != null && a.getOpcionIds() != null && !a.getOpcionIds().isEmpty()) {
-                    java.util.Set<Long> selected = new java.util.HashSet<>(a.getOpcionIds());
-                    java.util.Set<Long> correctIds = new java.util.HashSet<>();
+                    Set<Long> selected = new HashSet<>(a.getOpcionIds());
+                    Set<Long> correctIds = new HashSet<>();
                     for (Opcion o : p.getOpciones()) {
                         if (Boolean.TRUE.equals(o.getCorrecta())) {
                             correctIds.add(o.getId());
+                            respuestaCorrecta.add(o.getTexto());
+                        }
+                        if (selected.contains(o.getId())) {
+                            respuestaUsuario.add(o.getTexto());
                         }
                     }
                     // consider correct if sets equal
                     acertada = selected.equals(correctIds);
+                } else {
+                    for (Opcion o : p.getOpciones()) {
+                        if (Boolean.TRUE.equals(o.getCorrecta())) {
+                            respuestaCorrecta.add(o.getTexto());
+                        }
+                    }
                 }
             } else if (p.getTipo() == TipoPregunta.RESPUESTA_CORTA) {
+                for (String ok : p.getRespuestasAceptables()) {
+                    if (ok != null && !ok.isBlank()) {
+                        respuestaCorrecta.add(ok.trim());
+                    }
+                }
+
                 if (a != null && a.getRespuestaTexto() != null) {
                     String submitted = a.getRespuestaTexto().trim().toLowerCase();
+                    if (!submitted.isBlank()) {
+                        respuestaUsuario.add(a.getRespuestaTexto().trim());
+                    }
                     for (String ok : p.getRespuestasAceptables()) {
                         if (ok != null && submitted.equals(ok.trim().toLowerCase())) {
                             acertada = true;
@@ -172,6 +214,15 @@ public class CuestionarioService {
             if (acertada) {
                 correct++;
             }
+
+            questionsEvaluation.add(
+                    new QuestionEvaluation(
+                            p.getId(),
+                            p.getEnunciado(),
+                            p.getTipo(),
+                            acertada,
+                            respuestaUsuario,
+                            respuestaCorrecta));
         }
 
         double score = 0d;
@@ -191,7 +242,7 @@ public class CuestionarioService {
         // incrementar contador de intentos en cuestionario
         cuestionarioRepository.incrementarIntentos(c.getId());
 
-        return saved;
+        return new AttemptSubmissionResult(saved, total, correct, questionsEvaluation);
     }
 
     public java.util.Optional<Cuestionario> findById(Long id) {
@@ -213,4 +264,18 @@ public class CuestionarioService {
         c.setPublicado(publicado);
         return cuestionarioRepository.save(c);
     }
+
+    public record QuestionEvaluation(
+            Long preguntaId,
+            String enunciado,
+            TipoPregunta tipo,
+            boolean acertada,
+            List<String> respuestaUsuario,
+            List<String> respuestaCorrecta) {}
+
+    public record AttemptSubmissionResult(
+            CuestionarioIntento intento,
+            int totalPreguntas,
+            int preguntasCorrectas,
+            List<QuestionEvaluation> preguntas) {}
 }

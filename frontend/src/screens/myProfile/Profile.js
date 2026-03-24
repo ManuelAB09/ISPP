@@ -19,6 +19,9 @@ import Settings from "./Settings"
 const DEFAULT_PROFILE_AVATAR =
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='60' fill='%23E6EAF3'/%3E%3Ccircle cx='60' cy='46' r='22' fill='%2395A1BB'/%3E%3Cpath d='M20 106c6-20 22-32 40-32s34 12 40 32' fill='%2395A1BB'/%3E%3C/svg%3E";
 
+const DEFAULT_COMMUNITY_IMAGE =
+    'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
+
 const toAbsoluteImageUrl = (imageUrl, fallback = DEFAULT_PROFILE_AVATAR) => {
     if (!imageUrl || !String(imageUrl).trim()) {
         return fallback;
@@ -142,21 +145,30 @@ const MyProfile = () => {
             return
         }
 
-        const fetchMisCuestionarios = async () => {
+        const fetchCuestionarios = async () => {
             setLoadingMisCuestionarios(true)
             try {
-                const data = await cuestionariosApi.listMine()
-                setMisCuestionarios(Array.isArray(data) ? data : [])
+                if (isOwner) {
+                    const data = await cuestionariosApi.listMine()
+                    setMisCuestionarios(Array.isArray(data) ? data : [])
+                } else if (publicProfile?.id) {
+                    const data = await cuestionariosApi.listPublicByUserId(publicProfile.id)
+                    setMisCuestionarios(Array.isArray(data) ? data : [])
+                } else {
+                    setMisCuestionarios([])
+                }
             } catch (err) {
-                console.error('Error al cargar mis cuestionarios:', err)
+                console.error('Error al cargar cuestionarios:', err)
                 setMisCuestionarios([])
             } finally {
                 setLoadingMisCuestionarios(false)
             }
         }
 
-        fetchMisCuestionarios()
-    }, [isAuthenticated, loading])
+        if (isOwner || publicProfile) {
+            fetchCuestionarios()
+        }
+    }, [isAuthenticated, loading, isOwner, publicProfile])
 
     // Abrir modal de edición/configuración cuando se navega con estado desde otras pantallas.
     useEffect(() => {
@@ -341,10 +353,15 @@ const MyProfile = () => {
         const communityImageRaw = comunidad.imagen || comunidad.imagenUrl || comunidad.foto;
 
         if (!communityImageRaw || !String(communityImageRaw).trim()) {
-            return 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
+            return DEFAULT_COMMUNITY_IMAGE;
         }
 
         const value = String(communityImageRaw).trim();
+        const normalizedValue = value.toLowerCase();
+        if (normalizedValue === 'empty' || normalizedValue === 'null' || normalizedValue === 'undefined') {
+            return DEFAULT_COMMUNITY_IMAGE;
+        }
+
         if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
             return value;
         }
@@ -522,6 +539,17 @@ const MyProfile = () => {
                         </div>
                     </div>
 
+                    {isOwner && (
+                        <div className="profile-nav-actions">
+                            <button className="profile-nav-btn" onClick={() => navigate('/pagos')}>
+                                💳 Mis pagos
+                            </button>
+                            <button className="profile-nav-btn" onClick={() => navigate('/ganancias')}>
+                                💰 Mis ganancias
+                            </button>
+                        </div>
+                    )}
+
                     {isOwner && <div className="activity-card">
                         <h3 className="activity-card__title">Tu Actividad</h3>
                         <div className="activity-card__grid">
@@ -559,6 +587,10 @@ const MyProfile = () => {
                                             src={getCommunityImageUrl(comunidad)}
                                             alt={comunidad.nombre}
                                             className="community-card__image"
+                                            onError={(e) => {
+                                                e.currentTarget.onerror = null;
+                                                e.currentTarget.src = DEFAULT_COMMUNITY_IMAGE;
+                                            }}
                                         />
                                         <div className="community-card__info">
                                             <div className="community-card__top">
@@ -595,13 +627,25 @@ const MyProfile = () => {
                 </section >}
 
                 <section className="my-questionnaires-section">
-                    <h2 className="section-title">Mis cuestionarios</h2>
+                    <h2 className="section-title">{isOwner ? 'Mis cuestionarios' : 'Cuestionarios públicos'}</h2>
                     {loadingMisCuestionarios ? (
                         <div className="loading-communities">Cargando cuestionarios...</div>
                     ) : misCuestionarios.length > 0 ? (
                         <div className="my-questionnaires-list">
                             {misCuestionarios.map((cuestionario) => (
-                                <article key={cuestionario.id} className="my-questionnaire-card">
+                                <article
+                                    key={cuestionario.id}
+                                    className="my-questionnaire-card"
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={() => navigate(`/cuestionarios/${cuestionario.id}`)}
+                                    onKeyDown={(event) => {
+                                        if (event.key === 'Enter' || event.key === ' ') {
+                                            event.preventDefault()
+                                            navigate(`/cuestionarios/${cuestionario.id}`)
+                                        }
+                                    }}
+                                >
                                     <div className="my-questionnaire-card__header">
                                         <h3>{cuestionario.titulo || 'Cuestionario sin titulo'}</h3>
                                         <span className={`my-questionnaire-status ${cuestionario.publicado ? 'is-published' : 'is-draft'}`}>
@@ -622,10 +666,12 @@ const MyProfile = () => {
                         </div>
                     ) : (
                         <div className="no-communities-created">
-                            <p>Todavía no has creado cuestionarios.</p>
-                            <button className="btn-create-first" onClick={() => navigate('/cuestionarios/crear')}>
-                                Crear mi primer cuestionario
-                            </button>
+                            <p>{isOwner ? 'Todavía no has creado cuestionarios.' : 'Aún no hay cuestionarios públicos.'}</p>
+                            {isOwner && (
+                                <button className="btn-create-first" onClick={() => navigate('/cuestionarios/crear')}>
+                                    Crear mi primer cuestionario
+                                </button>
+                            )}
                         </div>
                     )}
                 </section>
@@ -732,6 +778,10 @@ const MyProfile = () => {
                                         src={getCommunityImageUrl(comunidad)}
                                         alt={comunidad.nombre}
                                         className="created-community-card__image"
+                                        onError={(e) => {
+                                            e.currentTarget.onerror = null;
+                                            e.currentTarget.src = DEFAULT_COMMUNITY_IMAGE;
+                                        }}
                                     />
                                     <div className="created-community-card__info">
                                         <div className="created-community-card__top">

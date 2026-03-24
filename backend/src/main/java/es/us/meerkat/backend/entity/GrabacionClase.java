@@ -64,6 +64,7 @@ public class GrabacionClase {
 
     /** Estado de la grabación (DISPONIBLE, PROCESANDO, ERROR). */
     @Column(nullable = false)
+    @lombok.Builder.Default
     private String estado = "DISPONIBLE";
 
     /** Miembro que subió la grabación. */

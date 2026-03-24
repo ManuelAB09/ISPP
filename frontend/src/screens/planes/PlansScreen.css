@@ -271,12 +271,37 @@
   margin-top: 40px;
 }
 
+.plansStatus__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
 .plansStatus h3{
-  margin: 0 0 16px;
+  margin: 0;
   font-family: 'spacegrotesk', sans-serif;
   font-size: 22px;
   font-weight: 700;
   color: var(--spaceIndigo);
+}
+
+.plansStatus__pagos-btn {
+  font-family: 'inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 18px;
+  background-color: transparent;
+  color: var(--spaceIndigo);
+  border: 1.5px solid var(--spaceIndigo);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.plansStatus__pagos-btn:hover {
+  background-color: var(--spaceIndigo);
+  color: white;
 }
 
 .statusBox{

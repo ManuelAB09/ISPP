@@ -11,22 +11,32 @@ export const normalizeCommunityRole = (role) => {
 
 export const isAdminRole = (role) => normalizeCommunityRole(role) === 'ADMIN';
 
-export const isTeacherRole = (role) => normalizeCommunityRole(role) === 'PROFESOR';
+export const isTeacherRole = (role, rolDocente) => {
+  if (normalizeCommunityRole(role) === 'PROFESOR') return true;
+  if (normalizeCommunityRole(role) === 'ADMIN' && normalizeCommunityRole(rolDocente) === 'PROFESOR') return true;
+  return false;
+};
 
-export const canCreateCommunityEvent = (role) => {
+export const canCreateCommunityEvent = (role, rolDocente) => {
   // Only admins and professors can create events
   const normalizedRole = normalizeCommunityRole(role);
   return normalizedRole === 'ADMIN' || normalizedRole === 'PROFESOR';
 };
 
-export const canManageCommunityEvents = (role) => {
+export const canManageCommunityEvents = (role, rolDocente) => {
   // Only admins/professors can edit or cancel other people's events
   const normalizedRole = normalizeCommunityRole(role);
   return normalizedRole === 'ADMIN' || normalizedRole === 'PROFESOR';
 };
 
-export const getCommunityRoleLabel = (role) => {
-  switch (normalizeCommunityRole(role)) {
+export const getCommunityRoleLabel = (role, rolDocente) => {
+  const primary = normalizeCommunityRole(role);
+  if (primary === 'ADMIN' && rolDocente) {
+    const secondary = normalizeCommunityRole(rolDocente);
+    if (secondary === 'PROFESOR') return 'Administrador · Profesor';
+    if (secondary === 'ALUMNO') return 'Administrador · Alumno';
+  }
+  switch (primary) {
     case 'ADMIN':
       return 'Administrador';
     case 'PROFESOR':
@@ -40,8 +50,19 @@ export const getCommunityRoleLabel = (role) => {
   }
 };
 
-export const getCommunityRoleCapabilities = (role) => {
-  switch (normalizeCommunityRole(role)) {
+export const getCommunityRoleCapabilities = (role, rolDocente) => {
+  const primary = normalizeCommunityRole(role);
+  const secondary = rolDocente ? normalizeCommunityRole(rolDocente) : null;
+
+  if (primary === 'ADMIN' && secondary === 'PROFESOR') {
+    return [
+      'Gestionar configuración y miembros de la comunidad',
+      'Aprobar solicitudes y moderar contenido',
+      'Crear, editar y cancelar eventos (rol docente)',
+      'Transferir la administración y eliminar la comunidad',
+    ];
+  }
+  switch (primary) {
     case 'ADMIN':
       return [
         'Gestionar configuración y miembros de la comunidad',

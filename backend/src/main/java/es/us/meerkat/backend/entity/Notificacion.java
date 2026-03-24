@@ -33,6 +33,7 @@ public class Notificacion {
     private String tipo; // Ej: ANUNCIO, EVENTO, MENSAJE, etc.
 
     @Column(nullable = false)
+    @lombok.Builder.Default
     private Boolean leida = false;
 
     @Column(nullable = false)
