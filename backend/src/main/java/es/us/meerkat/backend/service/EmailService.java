@@ -95,6 +95,9 @@ public class EmailService {
         }
     }
 
+    private static final int SENDGRID_MAX_RETRIES = 3;
+    private static final long SENDGRID_RETRY_DELAY_MS = 2000;
+
     private void sendViaSendGridApi(String to, String subject, String content, boolean isHtml) {
         RestTemplate restTemplate = new RestTemplate();
 
@@ -112,8 +115,30 @@ public class EmailService {
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
 
-        restTemplate.postForEntity(
-                "https://api.sendgrid.net/v3/mail/send", entity, String.class);
+        for (int attempt = 1; attempt <= SENDGRID_MAX_RETRIES; attempt++) {
+            try {
+                var response = restTemplate.postForEntity(
+                        "https://api.sendgrid.net/v3/mail/send", entity, String.class);
+                log.info("SendGrid API respondió {} para email a {}", response.getStatusCode(), to);
+                return;
+            } catch (Exception e) {
+                log.warn("SendGrid API intento {}/{} falló para {}: [{}] {}",
+                        attempt, SENDGRID_MAX_RETRIES, to,
+                        e.getClass().getSimpleName(), e.getMessage());
+                if (attempt == SENDGRID_MAX_RETRIES) {
+                    throw new RuntimeException(
+                            "No se pudo enviar email vía SendGrid API tras "
+                                    + SENDGRID_MAX_RETRIES + " intentos",
+                            e);
+                }
+                try {
+                    Thread.sleep(SENDGRID_RETRY_DELAY_MS);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Interrumpido durante retry de SendGrid", ie);
+                }
+            }
+        }
     }
 
     // ===============================
