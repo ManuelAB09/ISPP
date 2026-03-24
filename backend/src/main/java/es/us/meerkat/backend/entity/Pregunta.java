@@ -8,7 +8,10 @@ import lombok.*;
 
 /** Pregunta dentro de un `Cuestionario`. */
 @Entity
-@Data
+@Getter
+@Setter
+@ToString(of = "id")
+@EqualsAndHashCode(of = "id")
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

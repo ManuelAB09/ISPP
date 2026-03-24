@@ -105,7 +105,7 @@ const GestionDisponibilidad = ({ tutorId, onClose }) => {
         esRecurrente: form.esRecurrente,
         diaSemana: form.esRecurrente ? form.diaSemana : null,
         fechaPuntual: !form.esRecurrente
-          ? form.fechaPuntual + ":00"
+          ? form.fechaPuntual + "T" + form.horaInicio + ":00"
           : null,
         horaInicio: form.horaInicio + ":00",
         horaFin: form.horaFin + ":00",
@@ -314,16 +314,16 @@ const GestionDisponibilidad = ({ tutorId, onClose }) => {
             ) : (
               <div className="tm-field">
                 <label className="tm-field__label" htmlFor="fechaPuntual">
-                  Fecha y hora de inicio del evento
+                  Fecha de inicio del evento
                 </label>
                 <input
                   id="fechaPuntual"
                   name="fechaPuntual"
-                  type="datetime-local"
+                  type="date"
                   className="tm-field__input"
                   value={form.fechaPuntual}
                   onChange={handleChange}
-                  min={new Date().toISOString().slice(0, 16)}
+                  min={new Date().toISOString().slice(0, 10)}
                 />
               </div>
             )}

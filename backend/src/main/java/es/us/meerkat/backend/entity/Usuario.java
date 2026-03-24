@@ -22,7 +22,9 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
@@ -32,8 +34,10 @@ import lombok.ToString;
  * <p>Contiene información de login, rol de tutor y relación con tutores.
  */
 @Entity
-@Data
-@ToString(exclude = {"intereses", "tutor", "institution"})
+@Getter
+@Setter
+@EqualsAndHashCode(of = "id")
+@ToString(of = "id")
 @NoArgsConstructor
 @AllArgsConstructor
 @lombok.Builder
@@ -61,6 +65,7 @@ public class Usuario {
 
     /** Color de fondo para la foto de perfil (ej: #ffffff). Por defecto blanco. */
     @Column(length = 7)
+    @lombok.Builder.Default
     private String fotoBackgroundColor = "#ffffff";
 
     /** Universidad del usuario. */
@@ -87,6 +92,7 @@ public class Usuario {
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "usuario_intereses", joinColumns = @JoinColumn(name = "usuario_id"))
     @Column(name = "interes")
+    @lombok.Builder.Default
     private List<String> intereses = new ArrayList<>();
 
     /** Identificador de Google para autenticación OAuth2. */
@@ -97,14 +103,17 @@ public class Usuario {
      * defecto es visible.
      */
     @Column(nullable = false)
+    @lombok.Builder.Default
     private Boolean visibleEnListados = true;
 
     /** Indica si el usuario tiene rol de tutor. */
     @Column(nullable = false)
+    @lombok.Builder.Default
     private Boolean esTutor = false;
 
     /** Indica si la autenticación de dos factores está habilitada para el usuario. */
     @Column(nullable = false)
+    @lombok.Builder.Default
     private Boolean autenticacionDosFactores = false;
 
     /** Se almacena la clave TOTP activa (Base32) cuando 2FA está habilitado. */
@@ -121,23 +130,28 @@ public class Usuario {
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "usuario_backup_codes", joinColumns = @JoinColumn(name = "usuario_id"))
     @Column(name = "codigo_hash", length = 80)
+    @lombok.Builder.Default
     private List<String> backupCodeHashes = new ArrayList<>();
 
     /** Indica si el usuario quiere recibir notificaciones por email. */
     @Column(nullable = false)
+    @lombok.Builder.Default
     private Boolean notificacionesEmail = true;
 
     /** Indica si el usuario quiere recibir notificaciones push. */
     @Column(nullable = true)
+    @lombok.Builder.Default
     private Boolean notificacionesPush = true;
 
     // AÑADIR tipo plan cuando se cree la clase
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @lombok.Builder.Default
     private TipoPlan plan = TipoPlan.FREE;
 
     /** Indica si el email del usuario ha sido verificado. */
     @Column(nullable = false)
+    @lombok.Builder.Default
     private Boolean emailVerificado = false;
 
     /** Token de verificación de email (UUID). */

@@ -14,7 +14,10 @@ import lombok.*;
  * dificultad definido.
  */
 @Entity
-@Data
+@Getter
+@Setter
+@ToString(of = "id")
+@EqualsAndHashCode(of = "id")
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

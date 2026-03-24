@@ -2,6 +2,7 @@ import { QRCodeCanvas } from "qrcode.react"
 import { useCallback, useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { authApi } from "../../api/auth.api"
+import { getApiBaseUrl } from "../../api/baseUrl"
 import axiosInstance from "../../api/axiosConfig"
 import { apiClient } from "../../api/client"
 import { useAuth } from "../../contexts/AuthContext"
@@ -374,7 +375,7 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
     const handleLinkGoogle = () => {
         setIsLinkingGoogle(true)
         setGoogleLinkMsg(null)
-        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080'
+        const API_URL = getApiBaseUrl()
         fetch(`${API_URL}/api/v1/auth/google/link/authorize`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
         })

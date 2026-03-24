@@ -30,5 +30,6 @@ public class CuestionarioIntento {
 
     /** Fecha y hora del intento/completado */
     @Column(nullable = false)
+    @lombok.Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 }

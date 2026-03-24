@@ -45,7 +45,7 @@ public class TareaClassroom {
     private LocalDateTime fechaVencimiento;
 
     /** Puntuación máxima posible. */
-    private Integer puntosMaximos = 100;
+    @lombok.Builder.Default private Integer puntosMaximos = 100;
 
     /** ¿Está publicada en Classroom? */
     @Builder.Default
@@ -67,6 +67,7 @@ public class TareaClassroom {
 
     /** Estado (ABIERTA, CERRADA, CANCELADA). */
     @Column(nullable = false)
+    @lombok.Builder.Default
     private String estado = "ABIERTA";
 
     /** Fecha de creación. */

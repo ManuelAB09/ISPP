@@ -41,6 +41,7 @@ public class EntregaTarea {
 
     /** Estado (ABIERTA, ENTREGADA, TARDÍA, CALIFICADA). */
     @Column(nullable = false)
+    @lombok.Builder.Default
     private String estado = "ABIERTA";
 
     /** Calificación dada por el profesor. */
