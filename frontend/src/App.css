@@ -21,6 +21,51 @@ a {
     text-decoration: none;
     color: white;
 }
+
+/* Botón flotante de notificaciones */
+.floating-notif-btn {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 1000;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: var(--spaceIndigo);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 4px 16px rgba(45, 50, 80, 0.35);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    text-decoration: none;
+}
+
+.floating-notif-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(45, 50, 80, 0.45);
+    color: white;
+}
+
+.floating-notif-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background-color: #e53935;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'inter', sans-serif;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    line-height: 1;
+}
 li {
     list-style: none;
 }

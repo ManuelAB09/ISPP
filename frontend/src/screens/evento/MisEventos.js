@@ -2,14 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header/Header';
 import { useAuth } from '../../contexts/AuthContext';
-import { useSocketContext } from '../../contexts/SocketContext';
 import {
-    getAlertas,
-    getAlertasCount,
-    getMisEventos,
-    getMisEventosHistorial,
-    marcarAlertaLeida,
-    marcarTodasLeidas,
+  getMisEventos,
+  getMisEventosHistorial,
 } from '../../utils/myEventsUtils';
 import './MisEventos.css';
 
@@ -43,17 +38,6 @@ const formatHora = (fechaStr) => {
   if (!fechaStr) return '';
   const d = new Date(fechaStr);
   return d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-};
-
-const formatAlertaFecha = (fechaStr) => {
-  if (!fechaStr) return '';
-  const d = new Date(fechaStr);
-  return d.toLocaleString('es-ES', {
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
 };
 
 function EventoCard({ evento, onVerDetalle }) {
@@ -123,44 +107,17 @@ function EventoCard({ evento, onVerDetalle }) {
   );
 }
 
-function AlertaItem({ alerta, onMarcarLeida }) {
-  const icono = TIPO_ICONO[alerta.tipoEvento] || TIPO_ICONO.OTRO;
-  return (
-    <div className={`alerta-item ${alerta.leida ? 'alerta-item--leida' : ''}`}>
-      <div className="alerta-item__icono">{icono}</div>
-      <div className="alerta-item__body">
-        <p className="alerta-item__mensaje">{alerta.mensaje}</p>
-        <span className="alerta-item__fecha">{formatAlertaFecha(alerta.createdAt)}</span>
-      </div>
-      {!alerta.leida && (
-        <button
-          className="alerta-item__btn-leer"
-          onClick={() => onMarcarLeida(alerta.id)}
-          title="Marcar como leída"
-        >
-          ✓
-        </button>
-      )}
-    </div>
-  );
-}
-
 export default function MisEventos() {
   const { user } = useAuth();
-  const { socket } = useSocketContext();
   const navigate = useNavigate();
 
   const [eventos, setEventos] = useState([]);
   const [historial, setHistorial] = useState([]);
-  const [alertas, setAlertas] = useState([]);
-  const [alertasCount, setAlertasCount] = useState(0);
 
   const [vistaHistorial, setVistaHistorial] = useState(false);
-  const [panelAlertasAbierto, setPanelAlertasAbierto] = useState(false);
   const [filtroTipo, setFiltroTipo] = useState('Todos');
 
   const [loadingEventos, setLoadingEventos] = useState(true);
-  const [loadingAlertas, setLoadingAlertas] = useState(false);
   const [error, setError] = useState(null);
 
   const fetchEventos = useCallback(async () => {
@@ -189,62 +146,10 @@ export default function MisEventos() {
     }
   }, []);
 
-  const fetchAlertasCount = useCallback(async () => {
-    try {
-      const count = await getAlertasCount();
-      setAlertasCount(typeof count === 'number' ? count : count?.count ?? 0);
-    } catch (_) {
-      // silencioso
-    }
-  }, []);
-
-  const fetchAlertas = useCallback(async () => {
-    setLoadingAlertas(true);
-    try {
-      const data = await getAlertas();
-      setAlertas(data);
-    } catch (_) {
-      // silencioso
-    } finally {
-      setLoadingAlertas(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!socket) {
-      return;
-    }
-    fetchAlertasCount();
-    const handler = (count) => {
-      setAlertasCount(typeof count === 'number' ? count : 0);
-    };
-    socket.on('alerts_count', handler);
-    return () => socket.off('alerts_count', handler);
-  }, [fetchAlertasCount, socket]);
-
   useEffect(() => {
     if (vistaHistorial) fetchHistorial();
     else fetchEventos();
   }, [vistaHistorial, fetchEventos, fetchHistorial]);
-
-  const abrirPanelAlertas = async () => {
-    setPanelAlertasAbierto(true);
-    await fetchAlertas();
-  };
-
-  const cerrarPanelAlertas = () => setPanelAlertasAbierto(false);
-
-  const handleMarcarLeida = async (id) => {
-    await marcarAlertaLeida(id);
-    setAlertas((prev) => prev.map((a) => (a.id === id ? { ...a, leida: true } : a)));
-    setAlertasCount((c) => Math.max(0, c - 1));
-  };
-
-  const handleMarcarTodasLeidas = async () => {
-    await marcarTodasLeidas();
-    setAlertas((prev) => prev.map((a) => ({ ...a, leida: true })));
-    setAlertasCount(0);
-  };
 
   const listaActual = vistaHistorial ? historial : eventos;
   const eventosFiltrados =
@@ -265,16 +170,6 @@ export default function MisEventos() {
             <h1 className="mis-eventos-titulo">Mis Eventos</h1>
             <p className="mis-eventos-subtitulo">Todos tus próximos eventos en un solo lugar</p>
           </div>
-          <button
-            className={`btn-alertas ${alertasCount > 0 ? 'btn-alertas--activo' : ''}`}
-            onClick={abrirPanelAlertas}
-            title="Ver notificaciones"
-          >
-            🔔
-            {alertasCount > 0 && (
-              <span className="badge-alertas-count">{alertasCount > 99 ? '99+' : alertasCount}</span>
-            )}
-          </button>
         </div>
 
         {/* Banner global eventos inminentes */}
@@ -341,44 +236,6 @@ export default function MisEventos() {
           </div>
         )}
       </div>
-
-      {/* Panel lateral de alertas */}
-      {panelAlertasAbierto && (
-        <>
-          <div className="panel-alertas-overlay" onClick={cerrarPanelAlertas} />
-          <div className="panel-alertas">
-            <div className="panel-alertas__header">
-              <h2>Notificaciones</h2>
-              <div className="panel-alertas__acciones">
-                {alertasCount > 0 && (
-                  <button className="btn-link" onClick={handleMarcarTodasLeidas}>
-                    Marcar todas como leídas
-                  </button>
-                )}
-                <button className="panel-alertas__cerrar" onClick={cerrarPanelAlertas}>
-                  ✕
-                </button>
-              </div>
-            </div>
-
-            <div className="panel-alertas__body">
-              {loadingAlertas ? (
-                <p className="panel-alertas__cargando">Cargando...</p>
-              ) : alertas.length === 0 ? (
-                <p className="panel-alertas__vacio">No tienes notificaciones.</p>
-              ) : (
-                alertas.map((alerta) => (
-                  <AlertaItem
-                    key={alerta.id}
-                    alerta={alerta}
-                    onMarcarLeida={handleMarcarLeida}
-                  />
-                ))
-              )}
-            </div>
-          </div>
-        </>
-      )}
     </div>
   );
 }
