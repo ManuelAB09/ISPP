@@ -5,10 +5,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
-import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -53,15 +52,7 @@ public class GoogleClassroomService {
 
     public static record OAuthCtx(Long userId, Long communityId, Long requestId) {}
 
-    private static final int MAX_OAUTH_STATES = 100;
-
-    public final Map<String, OAuthCtx> oauthStateStore = Collections.synchronizedMap(
-            new LinkedHashMap<>(MAX_OAUTH_STATES, 0.75f, false) {
-                @Override
-                protected boolean removeEldestEntry(final Map.Entry<String, OAuthCtx> eldest) {
-                    return size() > MAX_OAUTH_STATES;
-                }
-            });
+    public final Map<String, OAuthCtx> oauthStateStore = new ConcurrentHashMap<>();
     private final SecureRandom secureRandom = new SecureRandom();
 
     public String generateState() {
