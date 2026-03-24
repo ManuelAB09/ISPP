@@ -22,7 +22,9 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
@@ -32,8 +34,10 @@ import lombok.ToString;
  * <p>Contiene información de login, rol de tutor y relación con tutores.
  */
 @Entity
-@Data
-@ToString(exclude = {"intereses", "tutor", "institution"})
+@Getter
+@Setter
+@EqualsAndHashCode(of = "id")
+@ToString(of = "id")
 @NoArgsConstructor
 @AllArgsConstructor
 @lombok.Builder
