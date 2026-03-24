@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import {
   getDisponibilidades,
   crearDisponibilidad,
-  actualizarDisponibilidad,
   eliminarDisponibilidad,
 } from "../../api/disponibilidad";
 
@@ -45,7 +44,6 @@ const GestionDisponibilidad = ({ tutorId, onClose }) => {
   const [franjas, setFranjas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(EMPTY_FORM);
-  const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -77,32 +75,12 @@ const GestionDisponibilidad = ({ tutorId, onClose }) => {
 
   const abrirNuevo = () => {
     setForm(EMPTY_FORM);
-    setEditingId(null);
-    setError("");
-    setShowForm(true);
-  };
-
-  const abrirEditar = (franja) => {
-    setForm({
-      esRecurrente: franja.esRecurrente,
-      diaSemana: franja.diaSemana || "MONDAY",
-
-      fechaPuntual: franja.fechaPuntual
-        ? franja.fechaPuntual.slice(0, 16)
-        : "",
-      horaInicio: (franja.horaInicio || "").substring(0, 5),
-      horaFin: (franja.horaFin || "").substring(0, 5),
-      modalidad: franja.modalidad === "VIRTUAL" ? "ONLINE" : (franja.modalidad || "ONLINE"),
-      ubicacionPresencial: franja.ubicacionPresencial || "",
-    });
-    setEditingId(franja.id);
     setError("");
     setShowForm(true);
   };
 
   const cancelarForm = () => {
     setShowForm(false);
-    setEditingId(null);
     setError("");
   };
 
@@ -127,7 +105,7 @@ const GestionDisponibilidad = ({ tutorId, onClose }) => {
         esRecurrente: form.esRecurrente,
         diaSemana: form.esRecurrente ? form.diaSemana : null,
         fechaPuntual: !form.esRecurrente
-          ? form.fechaPuntual + ":00"
+          ? form.fechaPuntual + "T" + form.horaInicio + ":00"
           : null,
         horaInicio: form.horaInicio + ":00",
         horaFin: form.horaFin + ":00",
@@ -135,19 +113,27 @@ const GestionDisponibilidad = ({ tutorId, onClose }) => {
         ubicacionPresencial:
           form.modalidad === "PRESENCIAL" ? form.ubicacionPresencial : null,
       };
-      if (editingId) {
-        await actualizarDisponibilidad(editingId, payload);
-      } else {
-        await crearDisponibilidad(payload);
-      }
+      await crearDisponibilidad(payload);
       setShowForm(false);
-      setEditingId(null);
       await cargar();
     } catch (err) {
-      const msg =
+      const status = err?.status ?? err?.response?.status;
+      const backendMsg =
+        err?.message ||
+        err?.details?.message ||
+        err?.details?.error ||
         err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        "No se pudo guardar la disponibilidad.";
+        err?.response?.data?.error;
+      let msg = backendMsg;
+      if (!msg) {
+        if (status === 409) {
+          msg = "La franja se solapa con otra disponibilidad existente.";
+        } else if (status >= 500) {
+          msg = "Error interno al guardar. Inténtalo de nuevo en unos segundos.";
+        } else {
+          msg = "No se pudo guardar la disponibilidad.";
+        }
+      }
       setError(msg);
     } finally {
       setSaving(false);
@@ -240,13 +226,6 @@ const GestionDisponibilidad = ({ tutorId, onClose }) => {
                   </div>
                   <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                     <button
-                      className="tp-btn tp-btn--edit"
-                      style={{ padding: "4px 10px", fontSize: "0.8rem" }}
-                      onClick={() => abrirEditar(f)}
-                    >
-                      Editar
-                    </button>
-                    <button
                       className="tp-btn"
                       style={{
                         padding: "4px 10px",
@@ -287,7 +266,7 @@ const GestionDisponibilidad = ({ tutorId, onClose }) => {
           >
             <hr style={{ margin: "0 0 16px" }} />
             <h3 style={{ margin: "0 0 12px", fontSize: "1rem" }}>
-              {editingId ? "Editar franja" : "Nueva franja horaria"}
+              Nueva franja horaria
             </h3>
 
             {/* Tipo: recurrente o puntual */}
@@ -335,16 +314,16 @@ const GestionDisponibilidad = ({ tutorId, onClose }) => {
             ) : (
               <div className="tm-field">
                 <label className="tm-field__label" htmlFor="fechaPuntual">
-                  Fecha y hora de inicio del evento
+                  Fecha de inicio del evento
                 </label>
                 <input
                   id="fechaPuntual"
                   name="fechaPuntual"
-                  type="datetime-local"
+                  type="date"
                   className="tm-field__input"
                   value={form.fechaPuntual}
                   onChange={handleChange}
-                  min={new Date().toISOString().slice(0, 16)}
+                  min={new Date().toISOString().slice(0, 10)}
                 />
               </div>
             )}
@@ -432,7 +411,7 @@ const GestionDisponibilidad = ({ tutorId, onClose }) => {
                 className="tp-btn tp-btn--hire"
                 disabled={saving}
               >
-                {saving ? "Guardando…" : editingId ? "Guardar cambios" : "Añadir"}
+                {saving ? "Guardando…" : "Añadir"}
               </button>
               <button
                 type="button"

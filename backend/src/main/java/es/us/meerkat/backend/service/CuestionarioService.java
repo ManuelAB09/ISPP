@@ -66,7 +66,7 @@ public class CuestionarioService {
         cuestionario.setDescripcion(dto.getDescripcion());
         cuestionario.setImagenUrl(dto.getImagenUrl());
         cuestionario.setMateria(dto.getMateria());
-        cuestionario.setTags(dto.getTags());
+        cuestionario.setTags(dto.getTags() != null ? dto.getTags() : new java.util.ArrayList<>());
         cuestionario.setDificultad(dto.getDificultad());
         cuestionario.setNivelEducativo(dto.getNivelEducativo());
         cuestionario.setNumPreguntas(dto.getNumPreguntas() != null ? dto.getNumPreguntas() : 0);
@@ -74,6 +74,11 @@ public class CuestionarioService {
         cuestionario.setActivo(dto.getActivo() != null ? dto.getActivo() : true);
         cuestionario.setPublicado(dto.getPublicado() != null ? dto.getPublicado() : false);
         cuestionario.setCreador(creador);
+        cuestionario.setCreatedAt(java.time.LocalDateTime.now());
+        cuestionario.setIntentos(0L);
+        cuestionario.setPreguntas(new java.util.ArrayList<>());
+        cuestionario.setComunidades(new java.util.HashSet<>());
+        cuestionario.setAlumnos(new java.util.HashSet<>());
 
         // preguntas
         if (dto.getPreguntas() != null) {
@@ -81,6 +86,7 @@ public class CuestionarioService {
                 Pregunta p = new Pregunta();
                 p.setEnunciado(pr.getEnunciado());
                 p.setTipo(pr.getTipo());
+                p.setOpciones(new java.util.ArrayList<>());
                 p.setRespuestasAceptables(
                         pr.getRespuestasAceptables() != null
                                 ? pr.getRespuestasAceptables()

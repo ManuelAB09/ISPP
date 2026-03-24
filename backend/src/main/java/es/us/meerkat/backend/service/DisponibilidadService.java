@@ -2,6 +2,7 @@ package es.us.meerkat.backend.service;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -57,25 +58,11 @@ public class DisponibilidadService {
             }
         }
 
-        if (request.getHoraInicio().isAfter(request.getHoraFin())) {
+        if (!request.getHoraInicio().isBefore(request.getHoraFin())) {
             throw new IllegalArgumentException("La hora de inicio debe ser anterior a la de fin");
         }
 
-        // Buscar solapamientos con otras disponibilidades
-        if (request.getEsRecurrente()) {
-            List<DisponibilidadTutor> existentes =
-                    disponibilidadRepository.findByTutorIdAndActivaTrueAndEsRecurrenteTrue(tutorId);
-            for (DisponibilidadTutor existente : existentes) {
-                if (existente.getDiaSemana().equals(request.getDiaSemana())) {
-                    // Verificar solapamiento temporal
-                    if (request.getHoraInicio().isBefore(existente.getHoraFin())
-                            && request.getHoraFin().isAfter(existente.getHoraInicio())) {
-                        throw new IllegalArgumentException(
-                                "Esta disponibilidad se solapa con otra existente en el mismo día");
-                    }
-                }
-            }
-        }
+        validarNoSolapamiento(tutorId, request, null);
 
         DisponibilidadTutor disponibilidad =
                 DisponibilidadTutor.builder()
@@ -147,29 +134,27 @@ public class DisponibilidadService {
         }
 
         // Validaciones (igual que en crear)
-        if (request.getHoraInicio().isAfter(request.getHoraFin())) {
-            throw new IllegalArgumentException("La hora de inicio debe ser anterior a la de fin");
-        }
-
-        // Verificar solapamiento con otras franjas del mismo día (excluyendo la propia)
-        if (Boolean.TRUE.equals(disponibilidad.getEsRecurrente())) {
-            List<DisponibilidadTutor> existentes =
-                    disponibilidadRepository.findByTutorIdAndActivaTrueAndEsRecurrenteTrue(
-                            disponibilidad.getTutor().getId());
-            for (DisponibilidadTutor existente : existentes) {
-                if (existente.getId().equals(disponibilidadId)) {
-                    continue;
-                }
-                if (existente.getDiaSemana().equals(disponibilidad.getDiaSemana())) {
-                    if (request.getHoraInicio().isBefore(existente.getHoraFin())
-                            && request.getHoraFin().isAfter(existente.getHoraInicio())) {
-                        throw new IllegalArgumentException(
-                                "Esta disponibilidad se solapa con otra existente en el mismo día");
-                    }
-                }
+        if (request.getEsRecurrente()) {
+            if (request.getDiaSemana() == null) {
+                throw new IllegalArgumentException(
+                        "Día de semana requerido para disponibilidad recurrente");
+            }
+        } else {
+            if (request.getFechaPuntual() == null) {
+                throw new IllegalArgumentException(
+                        "Fecha específica requerida para disponibilidad puntual");
             }
         }
 
+        if (!request.getHoraInicio().isBefore(request.getHoraFin())) {
+            throw new IllegalArgumentException("La hora de inicio debe ser anterior a la de fin");
+        }
+
+        validarNoSolapamiento(disponibilidad.getTutor().getId(), request, disponibilidadId);
+
+        disponibilidad.setEsRecurrente(request.getEsRecurrente());
+        disponibilidad.setDiaSemana(request.getDiaSemana());
+        disponibilidad.setFechaPuntual(request.getFechaPuntual());
         disponibilidad.setHoraInicio(request.getHoraInicio());
         disponibilidad.setHoraFin(request.getHoraFin());
         disponibilidad.setModalidad(request.getModalidad());
@@ -186,6 +171,73 @@ public class DisponibilidadService {
     }
 
     // ==================== Métodos Privados ====================
+
+    private void validarNoSolapamiento(
+            Long tutorId, CreateDisponibilidadRequest request, Long disponibilidadIdExcluir) {
+        final List<DisponibilidadTutor> existentes =
+                disponibilidadRepository.findByTutorIdAndActivaTrue(tutorId);
+        final List<DisponibilidadTutor> seguras =
+                existentes == null ? Collections.emptyList() : existentes;
+
+        for (DisponibilidadTutor existente : seguras) {
+            if (disponibilidadIdExcluir != null
+                    && disponibilidadIdExcluir.equals(existente.getId())) {
+                continue;
+            }
+
+            if (seSolapan(existente, request)) {
+                throw new IllegalArgumentException(
+                        "Esta disponibilidad se solapa con otra existente en el mismo día");
+            }
+        }
+    }
+
+    private boolean seSolapan(DisponibilidadTutor existente, CreateDisponibilidadRequest request) {
+        if (!coincidenEnMismoDia(existente, request)) {
+            return false;
+        }
+
+        return request.getHoraInicio().isBefore(existente.getHoraFin())
+                && request.getHoraFin().isAfter(existente.getHoraInicio());
+    }
+
+    private boolean coincidenEnMismoDia(
+            DisponibilidadTutor existente, CreateDisponibilidadRequest request) {
+        final Boolean requestEsRecurrente = request.getEsRecurrente();
+        final Boolean existenteEsRecurrente = existente.getEsRecurrente();
+
+        if (Boolean.TRUE.equals(requestEsRecurrente)
+                && Boolean.TRUE.equals(existenteEsRecurrente)) {
+            return request.getDiaSemana() != null
+                    && existente.getDiaSemana() != null
+                    && request.getDiaSemana().equals(existente.getDiaSemana());
+        }
+
+        if (Boolean.FALSE.equals(requestEsRecurrente)
+                && Boolean.FALSE.equals(existenteEsRecurrente)) {
+            return request.getFechaPuntual() != null
+                    && existente.getFechaPuntual() != null
+                    && request.getFechaPuntual()
+                            .toLocalDate()
+                            .equals(existente.getFechaPuntual().toLocalDate());
+        }
+
+        if (Boolean.TRUE.equals(requestEsRecurrente)
+                && Boolean.FALSE.equals(existenteEsRecurrente)) {
+            return request.getDiaSemana() != null
+                    && existente.getFechaPuntual() != null
+                    && request.getDiaSemana().equals(existente.getFechaPuntual().getDayOfWeek());
+        }
+
+        if (Boolean.FALSE.equals(requestEsRecurrente)
+                && Boolean.TRUE.equals(existenteEsRecurrente)) {
+            return request.getFechaPuntual() != null
+                    && existente.getDiaSemana() != null
+                    && request.getFechaPuntual().getDayOfWeek().equals(existente.getDiaSemana());
+        }
+
+        return false;
+    }
 
     private DisponibilidadTutorResponse mapToResponse(DisponibilidadTutor disponibilidad) {
         return DisponibilidadTutorResponse.builder()

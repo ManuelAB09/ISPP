@@ -459,7 +459,7 @@ const VerifiedTeachers = () => {
                           className="vt-btn vt-btn--primary"
                           onClick={() => {
                             const nombre = getNombre(tutor);
-                            const params = new URLSearchParams({ userId: String(targetUserId), userName: nombre });
+                            const params = new URLSearchParams({ userId: String(targetUserId), userName: nombre, autoStart: 'true' });
                             if (tutor.usuario?.foto) params.set('userPhoto', tutor.usuario.foto);
                             navigate(`/chats?${params.toString()}`);
                           }}

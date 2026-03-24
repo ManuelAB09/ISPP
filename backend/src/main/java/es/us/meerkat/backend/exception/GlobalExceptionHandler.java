@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -117,6 +118,24 @@ public class GlobalExceptionHandler {
                 new ErrorResponse(
                         HttpStatus.FORBIDDEN.value(), ex.getMessage(), request.getRequestURI());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+
+    /**
+     * Maneja conflictos de integridad en base de datos (409 Conflict).
+     *
+     * @param ex Excepción de integridad de datos.
+     * @param request Solicitud HTTP que causó el error.
+     * @return ResponseEntity con estado 409 y mensaje legible.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(
+            final DataIntegrityViolationException ex, final HttpServletRequest request) {
+        final String message =
+                "Conflicto de datos al guardar. Revisa que la franja no se solape con otra"
+                        + " existente.";
+        final ErrorResponse errorResponse =
+                new ErrorResponse(HttpStatus.CONFLICT.value(), message, request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 
     /**
