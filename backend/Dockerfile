@@ -70,11 +70,12 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 # Ejecutar la aplicación
 ENTRYPOINT ["java", \
-  "-XX:+UseContainerSupport", \
-  "-XX:MaxRAMPercentage=60.0", \
+  "-Xmx256m", \
+  "-Xms128m", \
   "-XX:MetaspaceSize=64M", \
-  "-XX:MaxMetaspaceSize=128M", \
+  "-XX:MaxMetaspaceSize=100M", \
   "-XX:+UseSerialGC", \
+  "-XX:ReservedCodeCacheSize=64M", \
   "-Xss256k", \
   "-Djava.security.egd=file:/dev/./urandom", \
   "-jar", "app.jar"]
