@@ -4,9 +4,11 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import ComunidadCard from './ComunidadCard';
 import { communitiesApi } from '../../api/communities.api';
+import { subscriptionsApi } from '../../api/subscriptions.api';
 
 // Mocks
 jest.mock('../../api/communities.api');
+jest.mock('../../api/subscriptions.api');
 jest.mock('../icons/Person', () => {
   return function MockPersonIcon() {
     return <span data-testid="person-icon">👤</span>;
@@ -36,6 +38,8 @@ describe('ComunidadCard', () => {
     localStorage.clear();
     communitiesApi.join.mockResolvedValue({});
     communitiesApi.getMyRequestStatus.mockResolvedValue({ pending: false });
+    communitiesApi.listMine.mockResolvedValue({ content: [], page: { totalElements: 0 } });
+    subscriptionsApi.getMySubscription.mockResolvedValue({ plan: 'FREE', activa: true });
   });
 
   const renderComponent = (comunidad = mockComunidad, onJoined = jest.fn()) => {
@@ -185,6 +189,24 @@ describe('ComunidadCard', () => {
     userEvent.click(joinButton);
 
     await screen.findByText(/Error al unirse/i);
+  });
+
+  test('bloquea unirse cuando alcanza el límite de comunidades activas del plan', async () => {
+    localStorage.setItem('userId', '100');
+    localStorage.setItem('accessToken', 'test-token');
+    subscriptionsApi.getMySubscription.mockResolvedValueOnce({ plan: 'FREE', activa: true });
+    communitiesApi.listMine.mockResolvedValueOnce({
+      content: [{ id: 1 }, { id: 2 }, { id: 3 }],
+      page: { totalElements: 3 },
+    });
+
+    renderComponent();
+
+    const joinButton = screen.getByRole('button', { name: /Unirse/i });
+    userEvent.click(joinButton);
+
+    await screen.findByText(/Has alcanzado el límite de 3 comunidades activas para tu plan/i);
+    expect(communitiesApi.join).not.toHaveBeenCalled();
   });
 
   test('muestra estado de carga mientras se une', async () => {

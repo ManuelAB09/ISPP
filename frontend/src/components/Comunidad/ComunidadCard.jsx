@@ -2,8 +2,44 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PersonIcon from '../icons/Person';
 import { communitiesApi } from '../../api/communities.api';
+import { subscriptionsApi } from '../../api/subscriptions.api';
 import { getApiBaseUrl } from '../../api/baseUrl';
 import './ComunidadCard.css';
+
+const DEFAULT_COMMUNITY_IMAGE =
+    'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
+
+const PLAN_MAX_ACTIVE_COMMUNITIES = {
+    FREE: 3,
+    PREMIUM: 10,
+    PRO: 25,
+};
+
+const normalizeSubscriptionPayload = (payload) => {
+    if (!payload || typeof payload !== 'object') return {};
+    if (payload.subscription && typeof payload.subscription === 'object') {
+        return payload.subscription;
+    }
+    if (payload.data && typeof payload.data === 'object') {
+        if (payload.data.subscription && typeof payload.data.subscription === 'object') {
+            return payload.data.subscription;
+        }
+        return payload.data;
+    }
+    return payload;
+};
+
+const extractCommunitiesFromResponse = (response) => {
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response?.content)) return response.content;
+    return [];
+};
+
+const resolveMaxActiveCommunitiesByPlan = (subscriptionRaw) => {
+    const subscription = normalizeSubscriptionPayload(subscriptionRaw);
+    const planKey = String(subscription?.plan || 'FREE').toUpperCase();
+    return PLAN_MAX_ACTIVE_COMMUNITIES[planKey] ?? PLAN_MAX_ACTIVE_COMMUNITIES.FREE;
+};
 
 export default function ComunidadCard({ comunidad, onJoined }) {
     const navigate = useNavigate();
@@ -25,11 +61,16 @@ export default function ComunidadCard({ comunidad, onJoined }) {
     const isMember = comunidad.esMiembro || false;
     const communityImageRaw = comunidad.imagen || comunidad.imagenUrl || comunidad.foto;
     const communityImage = (() => {
-        if (!communityImageRaw || !String(communityImageRaw).trim() || String(communityImageRaw).trim().toLowerCase() === 'empty') {
-            return 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80';
+        if (!communityImageRaw || !String(communityImageRaw).trim()) {
+            return DEFAULT_COMMUNITY_IMAGE;
         }
 
         const value = String(communityImageRaw).trim();
+        const normalizedValue = value.toLowerCase();
+        if (normalizedValue === 'empty' || normalizedValue === 'null' || normalizedValue === 'undefined') {
+            return DEFAULT_COMMUNITY_IMAGE;
+        }
+
         if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
             return value;
         }
@@ -111,6 +152,26 @@ export default function ComunidadCard({ comunidad, onJoined }) {
             return;
         }
 
+        try {
+            const [subscriptionRaw, myCommunitiesRaw] = await Promise.all([
+                subscriptionsApi.getMySubscription(),
+                communitiesApi.listMine({ page: 0, size: 200 }),
+            ]);
+
+            const maxActiveCommunities = resolveMaxActiveCommunitiesByPlan(subscriptionRaw);
+            const myActiveCommunities = extractCommunitiesFromResponse(myCommunitiesRaw).length;
+
+            if (myActiveCommunities >= maxActiveCommunities) {
+                setError(
+                    `Has alcanzado el límite de ${maxActiveCommunities} comunidades activas para tu plan.`
+                );
+                return;
+            }
+        } catch {
+            setError('No se pudo validar tu límite de comunidades activas. Inténtalo de nuevo.');
+            return;
+        }
+
         if (hasTeacherProfile) {
             setShowRolePicker(true);
             return;
@@ -133,7 +194,15 @@ export default function ComunidadCard({ comunidad, onJoined }) {
             }}
             style={{ cursor: 'pointer' }}
         >
-            <img src={communityImage} alt={comunidad.nombre} className="comunidad-image" />
+            <img
+                src={communityImage}
+                alt={comunidad.nombre}
+                className="comunidad-image"
+                onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = DEFAULT_COMMUNITY_IMAGE;
+                }}
+            />
             <div className="comunidad-info">
                 <div className='top-info'>
                     <h2>
