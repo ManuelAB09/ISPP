@@ -8,8 +8,9 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -31,8 +32,16 @@ public class LinkPreviewService {
     /** User-Agent explícito para peticiones salientes. */
     private static final String PREVIEW_USER_AGENT = "MeerkatBot/1.0 (+https://meerkat.es)";
 
-    /** Caché simple en memoria por URL normalizada. */
-    private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
+    private static final int MAX_CACHE_SIZE = 100;
+
+    /** Caché simple en memoria por URL normalizada, limitada a MAX_CACHE_SIZE entradas. */
+    private final Map<String, CacheEntry> cache = Collections.synchronizedMap(
+            new LinkedHashMap<>(MAX_CACHE_SIZE, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(final Map.Entry<String, CacheEntry> eldest) {
+                    return size() > MAX_CACHE_SIZE || eldest.getValue().isExpired();
+                }
+            });
 
     /**
      * Obtiene la previsualización de una URL con validación, extracción y caché.

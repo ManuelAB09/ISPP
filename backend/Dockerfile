@@ -26,6 +26,8 @@ RUN npm ci
 #    REACT_APP_API_URL vacío = usa la misma URL base (mismo origen)
 COPY frontend/ ./
 ENV REACT_APP_API_URL=""
+ARG REACT_APP_STRIPE_PUBLIC_KEY=""
+ENV REACT_APP_STRIPE_PUBLIC_KEY=$REACT_APP_STRIPE_PUBLIC_KEY
 RUN npm run build
 
 # ── Stage 2: Build Backend ─────────────────────────────────
@@ -70,7 +72,11 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 # Ejecutar la aplicación
 ENTRYPOINT ["java", \
-  "-XX:+UseContainerSupport", \
-  "-XX:MaxRAMPercentage=75.0", \
+  "-Xmx200m", \
+  "-Xms200m", \
+  "-XX:MaxMetaspaceSize=150M", \
+  "-XX:+UseSerialGC", \
+  "-XX:ReservedCodeCacheSize=48M", \
+  "-Xss256k", \
   "-Djava.security.egd=file:/dev/./urandom", \
   "-jar", "app.jar"]
