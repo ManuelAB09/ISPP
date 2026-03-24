@@ -531,6 +531,17 @@ const MyProfile = () => {
                         </div>
                     </div>
 
+                    {isOwner && (
+                        <div className="profile-nav-actions">
+                            <button className="profile-nav-btn" onClick={() => navigate('/pagos')}>
+                                💳 Mis pagos
+                            </button>
+                            <button className="profile-nav-btn" onClick={() => navigate('/ganancias')}>
+                                💰 Mis ganancias
+                            </button>
+                        </div>
+                    )}
+
                     {isOwner && <div className="activity-card">
                         <h3 className="activity-card__title">Tu Actividad</h3>
                         <div className="activity-card__grid">

@@ -231,6 +231,34 @@
     border-color: #ef4444;
 }
 
+/* Botones de navegación de perfil (Mis pagos, Mis ganancias) */
+.profile-nav-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.profile-nav-btn {
+    font-family: 'inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 20px;
+    background-color: var(--whiteSmoke);
+    color: var(--spaceIndigo);
+    border: 1px solid var(--alabasterGray);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.profile-nav-btn:hover {
+    background-color: var(--spaceIndigo);
+    color: white;
+    border-color: var(--spaceIndigo);
+    transform: translateY(-1px);
+}
+
 /* ═══════════════════════════════════════════════════════════════
    Sección Mis Datos + Tu Actividad
    ═══════════════════════════════════════════════════════════════ */

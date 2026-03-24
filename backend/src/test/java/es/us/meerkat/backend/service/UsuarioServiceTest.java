@@ -2,7 +2,10 @@ package es.us.meerkat.backend.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -37,6 +40,7 @@ import es.us.meerkat.backend.repository.TransaccionPagoRepository;
 import es.us.meerkat.backend.repository.UbicacionRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 
 @ExtendWith(MockitoExtension.class)
 class UsuarioServiceTest {
@@ -155,6 +159,13 @@ class UsuarioServiceTest {
         // Mock comunidades (no hay comunidades del usuario)
         when(comunidadRepository.findByCreadorId(12L)).thenReturn(List.of());
 
+        Query mockQuery = mock(Query.class);
+        when(entityManager.createQuery(anyString())).thenReturn(mockQuery);
+        when(entityManager.createNativeQuery(anyString())).thenReturn(mockQuery);
+        when(mockQuery.setParameter(anyString(), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(mockQuery);
+        when(mockQuery.executeUpdate()).thenReturn(0);
+
         usuarioService.eliminarCuenta(usuario);
 
         // Verificar que todas las dependencias fueron eliminadas en orden
@@ -162,7 +173,7 @@ class UsuarioServiceTest {
         verify(asistenciaEventoRepository).deleteByEventoCreadorId(12L);
         verify(eventoRepository).deleteByUsuarioId(12L);
         verify(mensajeComunidadRepository).deleteByUsuarioId(12L);
-        verify(entityManager).clear();
+        verify(entityManager, times(2)).clear();
         verify(solicitudComunidadRepository).deleteBySolicitanteId(12L);
         verify(solicitudComunidadRepository).deleteByRespondidaPorId(12L);
         verify(googleClassroomConnectionRepository).deleteByUsuarioId(12L);

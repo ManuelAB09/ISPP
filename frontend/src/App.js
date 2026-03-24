@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Link, Navigate, Route, Routes } from 'react-router-dom';
 import './App.css';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { NotificationProvider } from './contexts/NotificationContext';
+import { NotificationProvider, useNotificationContext } from './contexts/NotificationContext';
 import { SocketProvider } from './contexts/SocketContext';
 import Login from './screens/auth/Login';
 import Register from './screens/auth/Register';
@@ -38,6 +38,20 @@ import CuestionarioResolver from './screens/cuestionarios/CuestionarioResolver';
 import CuestionarioResultado from './screens/cuestionarios/CuestionarioResultado';
 import Chats from './screens/chat/Chats';
 import NotificationTab from './screens/notificaciones/NotificationTab';
+
+function FloatingNotifButton() {
+  const { panelUnreadCount } = useNotificationContext();
+  const isAuthenticated = Boolean(localStorage.getItem('accessToken'));
+  if (!isAuthenticated) return null;
+  return (
+    <Link to="/notificaciones" className="floating-notif-btn" aria-label="Notificaciones">
+      🔔
+      {panelUnreadCount > 0 && (
+        <span className="floating-notif-badge">{panelUnreadCount}</span>
+      )}
+    </Link>
+  );
+}
 
 function AppRoutes() {
   const { isAuthenticated, loading } = useAuth();
@@ -92,6 +106,7 @@ function AppRoutes() {
   return (
     <SocketProvider token={socketToken}>
       <NotificationProvider>
+      <FloatingNotifButton />
       <Routes>
         {/* Ruta principal - muestra landing page si no está autenticado */}
         <Route path="/" element={
