@@ -84,7 +84,7 @@ export default function CrearComunidad() {
         planCode: null,
     });
     const [createAsInstitutional, setCreateAsInstitutional] = useState(false);
-    const [myCommunitiesCount, setMyCommunitiesCount] = useState(0);
+    const [myActiveCommunitiesCount, setMyActiveCommunitiesCount] = useState(0);
     const [rolInicial, setRolInicial] = useState("ALUMNO");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -99,8 +99,8 @@ export default function CrearComunidad() {
         createAsInstitutional && institutionalLimits ? institutionalLimits : planLimits;
     const maxMembersAllowed = effectiveLimits.maxMembers;
     const maxCommunitiesAllowed = effectiveLimits.maxCommunities;
-    const communitiesRemaining = Math.max(0, maxCommunitiesAllowed - myCommunitiesCount);
-    const reachedCommunityLimit = myCommunitiesCount >= maxCommunitiesAllowed;
+    const communitiesRemaining = Math.max(0, maxCommunitiesAllowed - myActiveCommunitiesCount);
+    const reachedCommunityLimit = myActiveCommunitiesCount >= maxCommunitiesAllowed;
     const isUnlimitedCommunities = maxCommunitiesAllowed >= Number.MAX_SAFE_INTEGER;
     const currentLimitsLabel =
         createAsInstitutional && institutionalLimits
@@ -175,6 +175,41 @@ export default function CrearComunidad() {
     }, []);
 
     useEffect(() => {
+        const extractCommunitiesFromResponse = (response) => {
+            if (Array.isArray(response)) {
+                return response;
+            }
+            if (Array.isArray(response?.content)) {
+                return response.content;
+            }
+            return [];
+        };
+
+        const loadAllMyCommunities = async () => {
+            const pageSize = 100;
+            const firstPage = await communitiesApi.listMine({ page: 0, size: pageSize });
+            const firstPageCommunities = extractCommunitiesFromResponse(firstPage);
+            const totalPages =
+                typeof firstPage?.page?.totalPages === "number" && firstPage.page.totalPages > 0
+                    ? firstPage.page.totalPages
+                    : 1;
+
+            if (totalPages <= 1) {
+                return firstPageCommunities;
+            }
+
+            const remainingPagePromises = [];
+            for (let page = 1; page < totalPages; page += 1) {
+                remainingPagePromises.push(communitiesApi.listMine({ page, size: pageSize }));
+            }
+
+            const remainingPages = await Promise.all(remainingPagePromises);
+            return remainingPages.reduce(
+                (acc, response) => acc.concat(extractCommunitiesFromResponse(response)),
+                [...firstPageCommunities]
+            );
+        };
+
         const resolveLimits = (subscription) => {
             const planKey = (subscription?.plan || "FREE").toUpperCase();
             if (PLAN_LIMITS[planKey]) {
@@ -187,7 +222,7 @@ export default function CrearComunidad() {
             try {
                 const [subscriptionRaw, myCommunities] = await Promise.all([
                     subscriptionsApi.getMySubscription(),
-                    communitiesApi.listMine({ page: 0, size: 1 }),
+                    loadAllMyCommunities(),
                 ]);
 
                 const subscription = normalizeSubscriptionPayload(subscriptionRaw);
@@ -217,13 +252,8 @@ export default function CrearComunidad() {
                     setCreateAsInstitutional(false);
                 }
 
-                const total =
-                    typeof myCommunities?.page?.totalElements === "number"
-                        ? myCommunities.page.totalElements
-                        : Array.isArray(myCommunities?.content)
-                        ? myCommunities.content.length
-                        : 0;
-                setMyCommunitiesCount(total);
+                const activeCount = Array.isArray(myCommunities) ? myCommunities.length : 0;
+                setMyActiveCommunitiesCount(activeCount);
 
                 setMaxMiembros((prev) => {
                     const parsed = Number(prev);
@@ -240,7 +270,7 @@ export default function CrearComunidad() {
                     planCode: null,
                 });
                 setCreateAsInstitutional(false);
-                setMyCommunitiesCount(0);
+                setMyActiveCommunitiesCount(0);
                 setMaxMiembros((prev) => {
                     const parsed = Number(prev);
                     if (!Number.isFinite(parsed) || parsed < 1) return PLAN_LIMITS.FREE.maxMembers;
@@ -250,7 +280,7 @@ export default function CrearComunidad() {
         };
 
         loadLimitsAndCount();
-    }, []);
+    }, [user?.id]);
 
     useEffect(() => {
         setMaxMiembros((prev) => {
@@ -280,7 +310,7 @@ export default function CrearComunidad() {
         if (reachedCommunityLimit) {
             const maxCommunitiesText = isUnlimitedCommunities ? "ilimitadas" : maxCommunitiesAllowed;
             setError(
-                `Has alcanzado el límite de ${maxCommunitiesText} comunidades para tu plan ${currentLimitsLabel}.`
+                `Has alcanzado el límite de ${maxCommunitiesText} comunidades activas para tu plan ${currentLimitsLabel}.`
             );
             return;
         }
@@ -492,10 +522,10 @@ export default function CrearComunidad() {
 
                             <p><strong>Plan aplicado:</strong> {currentLimitsLabel}</p>
                             <p>
-                                <strong>Comunidades creadas:</strong>{' '}
+                                <strong>Comunidades activas:</strong>{' '}
                                 {isUnlimitedCommunities
-                                    ? `${myCommunitiesCount} / Ilimitadas`
-                                    : `${myCommunitiesCount} / ${maxCommunitiesAllowed}`}
+                                    ? `${myActiveCommunitiesCount} / Ilimitadas`
+                                    : `${myActiveCommunitiesCount} / ${maxCommunitiesAllowed}`}
                             </p>
                             <p>
                                 <strong>Comunidades restantes:</strong>{' '}

@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { within } from '@testing-library/dom';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import axiosInstance from '../../api/axiosConfig';
 import { communitiesApi } from '../../api/communities.api';
@@ -126,15 +127,29 @@ describe('DetalleEvento', () => {
     expect(await screen.findByRole('button', { name: /Confirmar asistencia/i })).toBeInTheDocument();
   });
 
+  test('deshabilita confirmar asistencia si no es miembro de la comunidad', async () => {
+    communitiesApi.getMyMembership.mockResolvedValueOnce(null);
+
+    renderComponent();
+
+    const btn = await screen.findByRole('button', { name: /Confirmar asistencia/i });
+    expect(btn).toBeDisabled();
+  });
+
   test('confirma asistencia al pulsar botón', async () => {
     renderComponent();
 
     const btn = await screen.findByRole('button', { name: /Confirmar asistencia/i });
+    await waitFor(() => {
+      expect(btn).toBeEnabled();
+    });
     fireEvent.click(btn);
 
     // El botón abre un modal; hay que confirmar en él
-    const modalConfirmBtn = await screen.findAllByRole('button', { name: /Confirmar asistencia/i });
-    fireEvent.click(modalConfirmBtn[modalConfirmBtn.length - 1]);
+    await screen.findByText(/¿Quieres recibir alarmas para recordarte este evento\?/i);
+    const modal = document.querySelector('.ed-modal');
+    const modalConfirmBtn = within(modal).getByRole('button', { name: /Confirmar asistencia/i });
+    fireEvent.click(modalConfirmBtn);
 
     await waitFor(() => {
       expect(attendEvent).toHaveBeenCalledWith('77');
