@@ -26,8 +26,13 @@ export const resolveCommunityImage = (community) => {
     }
 
     const value = String(raw).trim();
+    const normalizedValue = value.toLowerCase();
 
-    if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
+    if (normalizedValue === 'empty' || normalizedValue === 'null' || normalizedValue === 'undefined') {
+        return DEFAULT_COMMUNITY_IMAGE;
+    }
+
+    if (/^https?:\/\//i.test(value) || value.startsWith('data:') || value.startsWith('blob:')) {
         return value;
     }
 
@@ -46,8 +51,13 @@ const resolveUserImage = (rawPhoto) => {
     }
 
     const value = String(rawPhoto).trim();
+    const normalizedValue = value.toLowerCase();
 
-    if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
+    if (normalizedValue === 'empty' || normalizedValue === 'null' || normalizedValue === 'undefined') {
+        return DEFAULT_PROFILE_AVATAR;
+    }
+
+    if (/^https?:\/\//i.test(value) || value.startsWith('data:') || value.startsWith('blob:')) {
         return value;
     }
 
@@ -310,6 +320,16 @@ export default function Chats() {
         );
     };
 
+    const handleCommunityImageError = (e) => {
+        e.currentTarget.onerror = null;
+        e.currentTarget.src = DEFAULT_COMMUNITY_IMAGE;
+    };
+
+    const handleProfileImageError = (e) => {
+        e.currentTarget.onerror = null;
+        e.currentTarget.src = DEFAULT_PROFILE_AVATAR;
+    };
+
     const openPrivateChat = async (target) => {
         const id = Number(target.userId ?? target.id);
         const nombre = target.userName ?? target.nombre ?? `Usuario ${id}`;
@@ -444,6 +464,7 @@ export default function Chats() {
                                             src={resolveCommunityImage(selectedCommunity)}
                                             alt="Comunidad actual"
                                             className="mobile-selector-image"
+                                            onError={handleCommunityImageError}
                                         />
                                         <span className="mobile-selector-text">
                                             {selectedCommunity?.nombre ||
@@ -500,6 +521,7 @@ export default function Chats() {
                                                             )}
                                                             alt={community.nombre}
                                                             className="mobile-dropdown-image"
+                                                            onError={handleCommunityImageError}
                                                         />
                                                         {communityUnreadById[
                                                             String(community.id)
@@ -541,6 +563,7 @@ export default function Chats() {
                                                         )}
                                                         alt={community.nombre}
                                                         className="chat-list-image"
+                                                        onError={handleCommunityImageError}
                                                     />
                                                     {communityUnreadById[
                                                         String(community.id)
@@ -633,6 +656,7 @@ export default function Chats() {
                                                         )}
                                                         alt={privateTarget.nombre}
                                                         className="mobile-selector-image"
+                                                        onError={handleProfileImageError}
                                                         style={{
                                                             backgroundColor:
                                                                 privateTarget.fotoBackgroundColor ||
@@ -692,6 +716,7 @@ export default function Chats() {
                                                                     src={resolveUserImage(conv.usuarioFoto)}
                                                                     alt={conv.usuarioNombre}
                                                                     className="chat-list-image"
+                                                                    onError={handleProfileImageError}
                                                                     style={{
                                                                         backgroundColor: conv.usuarioFotoBackgroundColor || '#ffffff',
                                                                     }}
@@ -736,6 +761,7 @@ export default function Chats() {
                                                             src={resolveUserImage(conv.usuarioFoto)}
                                                             alt={conv.usuarioNombre}
                                                             className="chat-list-image"
+                                                            onError={handleProfileImageError}
                                                             style={{
                                                                 backgroundColor: conv.usuarioFotoBackgroundColor || '#ffffff',
                                                             }}

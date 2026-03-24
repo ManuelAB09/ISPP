@@ -56,6 +56,13 @@
 			<artifactId>jakarta.mail-api</artifactId>
 		</dependency>
 
+		<!-- SendGrid HTTP API (alternativa a SMTP para Render) -->
+		<dependency>
+			<groupId>com.sendgrid</groupId>
+			<artifactId>sendgrid-java</artifactId>
+			<version>4.10.3</version>
+		</dependency>
+
 		<!-- Commons Lang - Para generar contraseñas aleatorias -->
 		<dependency>
 			<groupId>org.apache.commons</groupId>

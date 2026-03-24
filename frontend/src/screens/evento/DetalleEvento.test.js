@@ -126,15 +126,29 @@ describe('DetalleEvento', () => {
     expect(await screen.findByRole('button', { name: /Confirmar asistencia/i })).toBeInTheDocument();
   });
 
+  test('deshabilita confirmar asistencia si no es miembro de la comunidad', async () => {
+    communitiesApi.getMyMembership.mockResolvedValueOnce(null);
+
+    renderComponent();
+
+    const btn = await screen.findByRole('button', { name: /Confirmar asistencia/i });
+    expect(btn).toBeDisabled();
+  });
+
   test('confirma asistencia al pulsar botón', async () => {
     renderComponent();
 
     const btn = await screen.findByRole('button', { name: /Confirmar asistencia/i });
+    await waitFor(() => {
+      expect(btn).toBeEnabled();
+    });
     fireEvent.click(btn);
 
     // El botón abre un modal; hay que confirmar en él
-    const modalConfirmBtn = await screen.findAllByRole('button', { name: /Confirmar asistencia/i });
-    fireEvent.click(modalConfirmBtn[modalConfirmBtn.length - 1]);
+    await screen.findByText(/¿Quieres recibir alarmas para recordarte este evento\?/i);
+    const confirmButtons = await screen.findAllByRole('button', { name: /Confirmar asistencia/i });
+    const modalConfirmBtn = confirmButtons[confirmButtons.length - 1];
+    fireEvent.click(modalConfirmBtn);
 
     await waitFor(() => {
       expect(attendEvent).toHaveBeenCalledWith('77');
