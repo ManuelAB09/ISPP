@@ -267,6 +267,25 @@ export default function CommunityDetail() {
       || null
     );
   };
+  const getRankingUserPhoto = (rankingItem) => {
+    const userData = rankingItem?.usuario || rankingItem;
+
+    if (!userData || typeof userData !== 'object') {
+      return null;
+    }
+
+    return (
+      userData.avatarUrl
+      || userData.foto
+      || userData.fotoUrl
+      || userData.fotoPerfil
+      || userData.avatar
+      || userData.imagen
+      || userData.image
+      || userData.usuarioFoto
+      || null
+    );
+  };
   const getMemberInitial = (member) => getMemberName(member).trim().charAt(0).toUpperCase() || 'U';
   const canExpelMember = (member) => isAdmin && String(getMemberId(member)) !== String(currentUserId);
   const handleOpenMemberProfile = (member) => {
@@ -1879,6 +1898,7 @@ export default function CommunityDetail() {
                   <tbody>
                     {ranking.map((item, index) => {
                       const isMe = item.usuario?.id === Number(currentUserId);
+                      const rankingUserPhoto = getRankingUserPhoto(item);
 
                       return (
                         <tr
@@ -1897,9 +1917,9 @@ export default function CommunityDetail() {
 
                           {/* Columna de Usuario */}
                           <td className="cd-ranking-user-cell">
-                            {item.usuario?.avatarUrl ? (
+                            {rankingUserPhoto ? (
                               <img
-                                src={item.usuario.avatarUrl}
+                                src={toAbsoluteImageUrl(rankingUserPhoto)}
                                 alt={item.usuario?.nombre || 'Usuario'}
                                 className="cd-ranking-avatar"
                               />
