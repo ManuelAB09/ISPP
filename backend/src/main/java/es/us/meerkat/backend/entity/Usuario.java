@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -127,7 +129,7 @@ public class Usuario {
 
     /** Indica si el usuario quiere recibir notificaciones push. */
     @Column(nullable = true)
-    private Boolean notificacionesPush = false;
+    private Boolean notificacionesPush = true;
 
     // AÑADIR tipo plan cuando se cree la clase
     @Enumerated(EnumType.STRING)
@@ -150,6 +152,7 @@ public class Usuario {
     private LocalDateTime createdAt;
 
     /** Perfil de tutor del usuario (null si no es tutor). */
+    @JsonIgnore
     @OneToOne(
             mappedBy = "usuario",
             cascade = CascadeType.ALL,

@@ -151,6 +151,25 @@ public class DisponibilidadService {
             throw new IllegalArgumentException("La hora de inicio debe ser anterior a la de fin");
         }
 
+        // Verificar solapamiento con otras franjas del mismo día (excluyendo la propia)
+        if (Boolean.TRUE.equals(disponibilidad.getEsRecurrente())) {
+            List<DisponibilidadTutor> existentes =
+                    disponibilidadRepository.findByTutorIdAndActivaTrueAndEsRecurrenteTrue(
+                            disponibilidad.getTutor().getId());
+            for (DisponibilidadTutor existente : existentes) {
+                if (existente.getId().equals(disponibilidadId)) {
+                    continue;
+                }
+                if (existente.getDiaSemana().equals(disponibilidad.getDiaSemana())) {
+                    if (request.getHoraInicio().isBefore(existente.getHoraFin())
+                            && request.getHoraFin().isAfter(existente.getHoraInicio())) {
+                        throw new IllegalArgumentException(
+                                "Esta disponibilidad se solapa con otra existente en el mismo día");
+                    }
+                }
+            }
+        }
+
         disponibilidad.setHoraInicio(request.getHoraInicio());
         disponibilidad.setHoraFin(request.getHoraFin());
         disponibilidad.setModalidad(request.getModalidad());

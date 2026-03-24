@@ -1628,7 +1628,8 @@ export default function CommunityDetail() {
                   <div key={req.id} className="cd-request-item">
                     <div className="cd-request-info">
                       <span className="cd-request-name">
-                        {req.solicitante?.nombre || 'Usuario'}
+                        {req.solicitante?.nombre || 'Usuario'} quiere unirse como{' '}
+                        <strong>{getCommunityRoleLabel(req.rolDeseado || 'ALUMNO')}</strong>
                       </span>
                       {req.mensaje && (
                         <span className="cd-request-message">{req.mensaje}</span>

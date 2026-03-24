@@ -72,6 +72,22 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Maneja excepciones de argumento inválido (400 Bad Request).
+     *
+     * @param ex Excepción de argumento inválido.
+     * @param request Solicitud HTTP que causó el error.
+     * @return ResponseEntity con estado 400 y detalles del error.
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
+            final IllegalArgumentException ex, final HttpServletRequest request) {
+        final ErrorResponse errorResponse =
+                new ErrorResponse(
+                        HttpStatus.BAD_REQUEST.value(), ex.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    /**
      * Maneja excepciones de conflicto (409 Conflict).
      *
      * @param ex Excepción de conflicto.
