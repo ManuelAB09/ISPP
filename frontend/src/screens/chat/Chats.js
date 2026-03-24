@@ -85,6 +85,7 @@ export default function Chats() {
     const [, setCommunityUnreadMap] = useState({});
 
 
+
     const currentUser = {
         id: Number(localStorage.getItem('userId')),
         nombre: user?.nombre || 'Usuario',
@@ -106,6 +107,7 @@ export default function Chats() {
     const privateUserIdFromQuery = Number(searchParams.get('userId'));
     const privateUserNameFromQuery = searchParams.get('userName');
     const privateUserPhotoFromQuery = searchParams.get('userPhoto');
+    const autoStartQuery = searchParams.get('autoStart') === 'true';
 
     const sidebarConversations = useMemo(() => {
         return conversaciones;
@@ -767,6 +769,7 @@ export default function Chats() {
                                                 privateTarget.id
                                             )}
                                             onClose={() => setPrivateTarget(null)}
+                                            autoStart={autoStartQuery}
                                         />
                                     ) : (
                                         <div className="chats-main-empty">

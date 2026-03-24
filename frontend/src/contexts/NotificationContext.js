@@ -320,6 +320,8 @@ export const NotificationProvider = ({ children }) => {
             if (shouldSkipNotification(msg.emisorId)) return;
             if (isChatMuted('private', msg.emisorId)) return;
 
+            // Bloquear notificación push para el mensaje automático de inicio de chat
+            if (msg.contenido === "¡Hola! Me gustaría contactar contigo.") return;
             const notificationId = `dm-${msg.id}`;
             const alreadyShown = shownNotificationsRef.current.has(notificationId);
             
@@ -533,6 +535,7 @@ export const NotificationProvider = ({ children }) => {
             if (isChatMuted('community', msg.comunidadId) && !isMentioned) return;
 
             const key = `community-${msg.comunidadId}`;
+
             const known = knownConversationsRef.current;
             const current = msg.contenido || msg.archivoNombre || '';
             const prev = known.get(key);
