@@ -10,13 +10,13 @@
 
 **Proyecto:** MeerKatters  
 **Documento:** Acta  
-**Sprint:** Sprint [Número del Sprint]  
-**Semana:** Semana [Número de la Semana]  
+**Sprint:** Sprint 2
+**Semana:** Semana 3 
 **Estado:** Aprobado  
 **Fecha:** 23/03/2026  
-**Hora:** [HH:MM] – [HH:MM]  
+**Hora:** 17:30 – 17:45  
 **Lugar:** Online (Teams)  
-**Autor:** [Tu Nombre / Scrum Master]  
+**Autor:** Manuel Artero Bellido 
 
 ---
 
