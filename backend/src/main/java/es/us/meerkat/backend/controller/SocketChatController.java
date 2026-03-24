@@ -339,7 +339,7 @@ public class SocketChatController {
     }
 
     private String getUserDestinationKey(final Usuario usuario) {
-        return usuario.getEmail();
+        return usuario.getId().toString();
     }
 
     private void sendError(final Principal principal, final String code, final String message) {

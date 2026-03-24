@@ -13,6 +13,8 @@ import es.us.meerkat.backend.dto.CreateCuestionarioRequest;
 import es.us.meerkat.backend.dto.SubmitAttemptRequest;
 import es.us.meerkat.backend.entity.Cuestionario;
 import es.us.meerkat.backend.entity.CuestionarioIntento;
+import es.us.meerkat.backend.entity.Opcion;
+import es.us.meerkat.backend.entity.Pregunta;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.CuestionarioService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -44,6 +46,39 @@ public class CuestionarioController {
         response.put(
                 "comunidadesIds", c.getComunidades().stream().map(com -> com.getId()).toList());
         return response;
+    }
+
+    private static Map<String, Object> toPreguntaResolver(Pregunta p) {
+        Map<String, Object> item = new LinkedHashMap<>();
+        item.put("id", p.getId());
+        item.put("enunciado", p.getEnunciado());
+        item.put("tipo", p.getTipo() != null ? p.getTipo().name() : null);
+        item.put(
+                "opciones",
+                p.getOpciones().stream()
+                        .sorted(
+                                java.util.Comparator.comparing(
+                                        Opcion::getOrden,
+                                        java.util.Comparator.nullsLast(
+                                                java.util.Comparator.naturalOrder())))
+                        .map(
+                                o -> {
+                                    Map<String, Object> op = new LinkedHashMap<>();
+                                    op.put("id", o.getId());
+                                    op.put("texto", o.getTexto());
+                                    op.put("orden", o.getOrden());
+                                    return op;
+                                })
+                        .toList());
+        return item;
+    }
+
+    private static Map<String, Object> toIntentoResumen(CuestionarioIntento intento) {
+        Map<String, Object> item = new LinkedHashMap<>();
+        item.put("id", intento.getId());
+        item.put("puntuacion", intento.getPuntuacion());
+        item.put("createdAt", intento.getCreatedAt());
+        return item;
     }
 
     /**
@@ -92,6 +127,17 @@ public class CuestionarioController {
         return ResponseEntity.ok(items);
     }
 
+    /** Lista cuestionarios públicos creados por un usuario específico (para visitar su perfil). */
+    @GetMapping("/user/{userId}/public")
+    public ResponseEntity<List<Map<String, Object>>> listPublicByUserId(@PathVariable Long userId) {
+        List<Map<String, Object>> items =
+                cuestionarioService.findByCreadorId(userId).stream()
+                        .filter(c -> Boolean.TRUE.equals(c.getPublicado()))
+                        .map(CuestionarioController::toResponse)
+                        .toList();
+        return ResponseEntity.ok(items);
+    }
+
     /** Obtiene un cuestionario por id. */
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable Long id) {
@@ -99,6 +145,58 @@ public class CuestionarioController {
                 .findById(id)
                 .map(CuestionarioController::toResponse)
                 .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /** Vista previa para iniciar el cuestionario, con intentos previos del usuario. */
+    @GetMapping("/{id}/preview")
+    public ResponseEntity<?> getPreview(
+            @PathVariable Long id, @AuthenticationPrincipal Usuario usuario) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        return cuestionarioService
+                .findById(id)
+                .map(
+                        cuestionario -> {
+                            Map<String, Object> body = toResponse(cuestionario);
+                            List<Map<String, Object>> intentos =
+                                    cuestionarioService
+                                            .findAttemptsByUsuarioAndCuestionario(
+                                                    usuario.getId(), id)
+                                            .stream()
+                                            .map(CuestionarioController::toIntentoResumen)
+                                            .toList();
+
+                            body.put("intentosPrevios", intentos);
+                            body.put(
+                                    "puedeResolver", Boolean.TRUE.equals(cuestionario.getActivo()));
+                            return ResponseEntity.ok(body);
+                        })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /** Obtiene el cuestionario para resolverlo (sin revelar respuestas correctas). */
+    @GetMapping("/{id}/resolver")
+    public ResponseEntity<?> getResolver(
+            @PathVariable Long id, @AuthenticationPrincipal Usuario usuario) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        return cuestionarioService
+                .findById(id)
+                .map(
+                        cuestionario -> {
+                            Map<String, Object> body = toResponse(cuestionario);
+                            body.put(
+                                    "preguntas",
+                                    cuestionario.getPreguntas().stream()
+                                            .map(CuestionarioController::toPreguntaResolver)
+                                            .toList());
+                            return ResponseEntity.ok(body);
+                        })
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -117,8 +215,36 @@ public class CuestionarioController {
         }
 
         try {
-            CuestionarioIntento intento = cuestionarioService.submitAttempt(id, request, usuario);
-            return ResponseEntity.ok(intento);
+            CuestionarioService.AttemptSubmissionResult resultado =
+                    cuestionarioService.submitAttempt(id, request, usuario);
+
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("attemptId", resultado.intento().getId());
+            body.put("cuestionarioId", id);
+            body.put("puntuacion", resultado.intento().getPuntuacion());
+            body.put("createdAt", resultado.intento().getCreatedAt());
+            body.put("totalPreguntas", resultado.totalPreguntas());
+            body.put("preguntasCorrectas", resultado.preguntasCorrectas());
+            body.put(
+                    "preguntasIncorrectas",
+                    Math.max(0, resultado.totalPreguntas() - resultado.preguntasCorrectas()));
+            body.put(
+                    "preguntas",
+                    resultado.preguntas().stream()
+                            .map(
+                                    p -> {
+                                        Map<String, Object> item = new LinkedHashMap<>();
+                                        item.put("preguntaId", p.preguntaId());
+                                        item.put("enunciado", p.enunciado());
+                                        item.put("tipo", p.tipo() != null ? p.tipo().name() : null);
+                                        item.put("acertada", p.acertada());
+                                        item.put("respuestaUsuario", p.respuestaUsuario());
+                                        item.put("respuestaCorrecta", p.respuestaCorrecta());
+                                        return item;
+                                    })
+                            .toList());
+
+            return ResponseEntity.ok(body);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
         }

@@ -12,6 +12,9 @@ import es.us.meerkat.backend.entity.CuestionarioIntento;
 public interface CuestionarioIntentoRepository extends JpaRepository<CuestionarioIntento, Long> {
     List<CuestionarioIntento> findByUsuarioIdOrderByCreatedAtDesc(Long usuarioId);
 
+    List<CuestionarioIntento> findByUsuarioIdAndCuestionarioIdOrderByCreatedAtDesc(
+            Long usuarioId, Long cuestionarioId);
+
     @Query(
             "SELECT ci FROM CuestionarioIntento ci JOIN FETCH ci.cuestionario WHERE ci.usuario.id ="
                     + " :usuarioId ORDER BY ci.createdAt DESC")

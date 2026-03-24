@@ -403,7 +403,12 @@ export default function PlansScreen() {
 
           {!loading && (
             <section className="plansStatus">
-              <h3>Tu suscripción</h3>
+              <div className="plansStatus__header">
+                <h3>Tu suscripción</h3>
+                <button className="plansStatus__pagos-btn" onClick={() => navigate('/pagos')}>
+                  💳 Mis pagos
+                </button>
+              </div>
 
               {hasInstitutionPlan ? (
                 <div className="statusBox">

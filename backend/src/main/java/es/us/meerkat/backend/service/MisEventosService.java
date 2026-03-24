@@ -167,7 +167,7 @@ public class MisEventosService {
 
         alerta.marcarComoLeida();
         AlertaEventoResponse response = mapToAlertaResponse(alertaEventoRepository.save(alerta));
-        broadcastAlertCount(usuarioId, alerta.getUsuario().getEmail());
+        broadcastAlertCount(usuarioId);
         return response;
     }
 
@@ -178,12 +178,8 @@ public class MisEventosService {
      */
     @Transactional
     public void marcarTodasComoLeidas(final Long usuarioId) {
-        Usuario usuario =
-                usuarioRepository
-                        .findById(usuarioId)
-                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         alertaEventoRepository.markAllAsReadByUsuarioId(usuarioId, LocalDateTime.now());
-        broadcastAlertCount(usuarioId, usuario.getEmail());
+        broadcastAlertCount(usuarioId);
     }
 
     // ===============================
@@ -247,7 +243,7 @@ public class MisEventosService {
                         alerta.setEvento(evento);
                         alerta.setUsuario(usuario);
                         alertaEventoRepository.save(alerta);
-                        broadcastAlertCount(usuario.getId(), usuario.getEmail());
+                        broadcastAlertCount(usuario.getId());
                         log.info(
                                 "Alerta {} generada para usuario {} en evento {}",
                                 tipoAlerta,
@@ -261,10 +257,11 @@ public class MisEventosService {
     // BROADCAST WEBSOCKET
     // ===============================
 
-    private void broadcastAlertCount(final Long usuarioId, final String email) {
+    private void broadcastAlertCount(final Long usuarioId) {
         try {
             Long count = alertaEventoRepository.countUnreadByUsuarioId(usuarioId);
-            messagingTemplate.convertAndSendToUser(email, "/queue/alerts_count", count);
+            messagingTemplate.convertAndSendToUser(
+                    usuarioId.toString(), "/queue/alerts_count", count);
         } catch (Exception e) {
             log.warn(
                     "No se pudo enviar alert count por WS al usuario {}: {}",

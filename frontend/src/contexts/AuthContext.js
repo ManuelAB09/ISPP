@@ -91,7 +91,7 @@ export const AuthProvider = ({ children }) => {
             autenticacionDosFactores:
               storedData?.autenticacionDosFactores ?? userData?.autenticacionDosFactores ?? false,
             notificacionesPush:
-              storedData?.notificacionesPush ?? userData?.notificacionesPush ?? false,
+              storedData?.notificacionesPush ?? userData?.notificacionesPush ?? true,
           };
           setUser(combinedUser);
           saveUserToStorage(userData, {
@@ -334,7 +334,7 @@ export const AuthProvider = ({ children }) => {
         autenticacionDosFactores:
           storedData?.autenticacionDosFactores ?? userData?.autenticacionDosFactores ?? false,
         notificacionesPush:
-          storedData?.notificacionesPush ?? userData?.notificacionesPush ?? false,
+          storedData?.notificacionesPush ?? userData?.notificacionesPush ?? true,
       };
       setUser(combinedUser);
       saveUserToStorage(userData, {

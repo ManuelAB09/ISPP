@@ -99,9 +99,9 @@ class CommunityControllerTest {
                         null))
                 .thenReturn(comunidad);
         when(communityService.countMembers(comunidad.getId())).thenReturn(1L);
-        when(authorizationService.getUserRoleInCommunityAsString(
-                        usuario.getId(), comunidad.getId()))
-                .thenReturn("ADMIN");
+        MiembroComunidad membership = MiembroComunidad.builder().rol(RolComunidad.ADMIN).build();
+        when(authorizationService.getMembership(usuario.getId(), comunidad.getId()))
+                .thenReturn(membership);
 
         ResponseEntity<CommunityDetailResponse> response =
                 (ResponseEntity<CommunityDetailResponse>)

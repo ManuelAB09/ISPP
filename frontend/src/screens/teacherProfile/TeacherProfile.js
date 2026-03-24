@@ -12,6 +12,7 @@ import TutorSolicitudes from "./TutorSolicitudes";
 import TutorConversaciones from "./TutorConversaciones";
 import GestionDisponibilidad from "./GestionDisponibilidad";
 import AlumnoSolicitudes from "./AlumnoSolicitudes";
+import TeacherAvailabilityCalendar from "./TeacherAvailabilityCalendar";
 import PrivateChat from "../chat/PrivateChat";
 import { getApiBaseUrl } from "../../api/baseUrl";
 import "./TeacherProfile.css";
@@ -61,6 +62,7 @@ const TeacherProfile = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showDisponibilidad, setShowDisponibilidad] = useState(false);
   const [showHireModal, setShowHireModal] = useState(false);
+  const [hirePrefill, setHirePrefill] = useState(null);
   const [showChat, setShowChat] = useState(false);
   const [stripeLoading, setStripeLoading] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
@@ -101,6 +103,11 @@ const TeacherProfile = () => {
   // Callback: redirige al nuevo perfil tras crearlo
   const handlePerfilCreado = (newTutor) => {
     navigate(`/profesores/${newTutor.id}`, { replace: true });
+  };
+
+  const handlePickCalendarSlot = (slot) => {
+    setHirePrefill(slot);
+    setShowHireModal(true);
   };
 
   useEffect(() => {
@@ -349,7 +356,13 @@ const TeacherProfile = () => {
                 >
                   {showChat ? '✕ Cerrar chat' : '💬 Contactar'}
                 </button>
-                <button className="tp-btn tp-btn--hire" onClick={() => setShowHireModal(true)}>
+                <button
+                  className="tp-btn tp-btn--hire"
+                  onClick={() => {
+                    setHirePrefill(null);
+                    setShowHireModal(true);
+                  }}
+                >
                   🎓 Contratar
                 </button>
               </div>
@@ -375,6 +388,12 @@ const TeacherProfile = () => {
 
         {/* ═══════════════ CONTENIDO PRINCIPAL (fondo blanco plano) ═══════════════ */}
         <div className="tp-content">
+
+          <TeacherAvailabilityCalendar
+            tutorId={tutor.id}
+            canHire={Boolean(user && user?.id !== tutor.usuario?.id)}
+            onPickSlot={handlePickCalendarSlot}
+          />
 
           {/* Solicitudes de contratación (solo visible para el dueño del perfil) */}
           {user?.id === tutor.usuario?.id && user?.esTutor && (
@@ -578,7 +597,14 @@ const TeacherProfile = () => {
       </div>
 
       {showHireModal && (
-        <HireDirectModal tutor={tutor} onClose={() => setShowHireModal(false)} />
+        <HireDirectModal
+          tutor={tutor}
+          initialSelection={hirePrefill}
+          onClose={() => {
+            setShowHireModal(false);
+            setHirePrefill(null);
+          }}
+        />
       )}
     </>
   );

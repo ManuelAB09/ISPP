@@ -86,11 +86,12 @@ const GestionDisponibilidad = ({ tutorId, onClose }) => {
     setForm({
       esRecurrente: franja.esRecurrente,
       diaSemana: franja.diaSemana || "MONDAY",
+
       fechaPuntual: franja.fechaPuntual
         ? franja.fechaPuntual.slice(0, 16)
         : "",
-      horaInicio: franja.horaInicio || "",
-      horaFin: franja.horaFin || "",
+      horaInicio: (franja.horaInicio || "").substring(0, 5),
+      horaFin: (franja.horaFin || "").substring(0, 5),
       modalidad: franja.modalidad === "VIRTUAL" ? "ONLINE" : (franja.modalidad || "ONLINE"),
       ubicacionPresencial: franja.ubicacionPresencial || "",
     });
