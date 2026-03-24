@@ -11,6 +11,7 @@ jest.mock('../../api/communities.api', () => ({
   communitiesApi: {
     getMyMembership: jest.fn(),
     listMine: jest.fn(),
+    getClassroom: jest.fn(),
   },
 }));
 jest.mock('../../components/Header/Header', () => {
@@ -38,6 +39,7 @@ describe('CrearEvento', () => {
 
     communitiesApi.getMyMembership.mockResolvedValue({ rol: 'ADMIN' });
     communitiesApi.listMine.mockResolvedValue([]);
+    communitiesApi.getClassroom.mockResolvedValue({});
     createEvent.mockResolvedValue({});
     updateEvent.mockResolvedValue({});
     getEventById.mockResolvedValue({});

@@ -45,12 +45,12 @@ public class JwtHandshakeHandler extends DefaultHandshakeHandler {
             if (email != null && jwtService.isTokenValid(token, email)) {
                 Usuario usuario = usuarioRepository.findByEmail(email).orElse(null);
                 if (usuario != null) {
-                    final String userEmail = usuario.getEmail();
+                    final String userId = usuario.getId().toString();
                     return new UsernamePasswordAuthenticationToken(
                             usuario, null, List.of(new SimpleGrantedAuthority("ROLE_USER"))) {
                         @Override
                         public String getName() {
-                            return userEmail;
+                            return userId;
                         }
                     };
                 }

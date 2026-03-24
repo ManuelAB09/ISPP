@@ -21,22 +21,30 @@ public class NotificacionService {
         return notificacionRepository.findByUsuarioOrderByCreatedAtDesc(usuario);
     }
 
-    public void marcarComoLeida(Long id) {
-        notificacionRepository
-                .findById(id)
-                .ifPresent(
+    @Transactional
+    public boolean marcarComoLeida(Long id, Long usuarioId) {
+        return notificacionRepository
+                .findByIdAndUsuarioId(id, usuarioId)
+                .map(
                         n -> {
                             n.setLeida(true);
                             notificacionRepository.save(n);
-                        });
+                            return true;
+                        })
+                .orElse(false);
     }
 
     @Transactional
     public Notificacion crearYNotificar(Notificacion notificacion) {
         Notificacion guardada = notificacionRepository.save(notificacion);
-        // Enviar por WebSocket al usuario
-        messagingTemplate.convertAndSendToUser(
-                notificacion.getUsuario().getId().toString(), "/queue/notificaciones", guardada);
+        // Enviar por WebSocket solo si el usuario tiene las notificaciones push activadas
+        Boolean pushEnabled = notificacion.getUsuario().getNotificacionesPush();
+        if (pushEnabled == null || pushEnabled) {
+            messagingTemplate.convertAndSendToUser(
+                    notificacion.getUsuario().getId().toString(),
+                    "/queue/notificaciones",
+                    guardada);
+        }
         return guardada;
     }
 }

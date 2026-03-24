@@ -3,28 +3,35 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import axiosInstance from '../../api/axiosConfig';
 import { communitiesApi } from '../../api/communities.api';
 import {
-    attendEvent,
-    cancelAttendance,
-    cancelEvent,
-    getConfirmedAttendees,
-    getEventById,
-    getMyAttendance,
+  attendEvent,
+  cancelAttendance,
+  cancelEvent,
+  getConfirmedAttendees,
+  getEventById,
+  getMyAttendance,
 } from '../../api/eventEndpoints';
 import { checkAlreadyRated } from '../../api/valoraciones.api';
 import DetalleEvento from './DetalleEvento';
 
 // Mocks
 jest.mock('../../api/eventEndpoints');
+jest.mock('../../api/valoraciones.api', () => ({
+  checkAlreadyRated: jest.fn(),
+}));
 jest.mock('../../api/axiosConfig', () => ({
   __esModule: true,
   default: {
-    get: jest.fn(),
-    post: jest.fn(),
-    delete: jest.fn(),
-  },
+    get: jest.fn().mockResolvedValue({ data: [] }),
+    post: jest.fn().mockResolvedValue({ data: {} }),
+    delete: jest.fn().mockResolvedValue({ data: {} }),
+    put: jest.fn().mockResolvedValue({ data: {} }),
+  }
 }));
-jest.mock('../../api/valoraciones.api', () => ({
-  checkAlreadyRated: jest.fn(),
+jest.mock('../../api/zoom.api', () => ({
+  ZoomApi: {
+    getEventRecordings: jest.fn().mockResolvedValue([]),
+    uploadRecordingToClassroom: jest.fn().mockResolvedValue({}),
+  }
 }));
 jest.mock('../../api/communities.api', () => ({
   communitiesApi: {

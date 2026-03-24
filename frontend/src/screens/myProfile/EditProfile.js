@@ -329,8 +329,11 @@ const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
 
             // Solo enviamos foto cuando no se subió archivo en esta misma acción.
             // Si hubo upload, el backend ya guardó la imagen y evitamos reenviar un payload grande.
+            // Tampoco reenviamos data URIs base64 (fotos ya guardadas) porque superan el límite de 2048 chars.
             if (!selectedPhotoFile) {
-                profileData.foto = fotoToSave
+                if (!fotoToSave || !fotoToSave.startsWith('data:image/')) {
+                    profileData.foto = fotoToSave
+                }
             }
 
             const ubicacionParaGuardar =

@@ -1,11 +1,11 @@
-import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useNotifications } from '../hooks/useNotifications';
-import { obtenerConversaciones, obtenerHistorialComunidad } from '../api/mensajeService';
-import { getAllEventAlerts, getAllUserNotifications } from '../api/notificationService';
-import { communitiesApi } from '../api/communities.api';
 import { authApi } from '../api/auth.api';
 import { getApiBaseUrl } from '../api/baseUrl';
+import { communitiesApi } from '../api/communities.api';
+import { obtenerConversaciones, obtenerHistorialComunidad } from '../api/mensajeService';
+import { getAllEventAlerts, getAllUserNotifications } from '../api/notificationService';
+import { useNotifications } from '../hooks/useNotifications';
 import { resolveCommunityImage } from '../screens/chat/Chats';
 import { useAuth } from './AuthContext';
 import { useSocketContext } from './SocketContext';
@@ -176,8 +176,9 @@ export const NotificationProvider = ({ children }) => {
                 const notifUnread = (Array.isArray(userNotifications) ? userNotifications : []).filter((n) => !n?.leida).length;
                 setPanelUnreadCount(eventUnread + notifUnread);
             })
-            .catch(() => {
+            .catch((error) => {
                 // Keep last known count if refresh fails
+                console.error('Error al refrescar el contador de notificaciones:', error);
             });
     }, [isAuthenticated]);
 
@@ -260,7 +261,7 @@ export const NotificationProvider = ({ children }) => {
                         foto: conv.usuarioFoto,
                     });
                 });
-            } catch { /* silent */ }
+            } catch (error) { console.error('Error al obtener conversaciones:', error); }
 
             try {
                 const { content: communities } = await communitiesApi.listMine({ page: 0, size: 100 });
@@ -274,9 +275,9 @@ export const NotificationProvider = ({ children }) => {
                                 lastMessage.contenido || ''
                             );
                         }
-                    } catch { /* silent */ }
+                    } catch (error) { console.error('Error al obtener historial de comunidad:', error); }
                 }
-            } catch { /* silent */ }
+            } catch (error) { console.error('Error al obtener comunidades:', error); }
         };
 
         seedKnown();
@@ -319,6 +320,8 @@ export const NotificationProvider = ({ children }) => {
             if (shouldSkipNotification(msg.emisorId)) return;
             if (isChatMuted('private', msg.emisorId)) return;
 
+            // Bloquear notificación push para el mensaje automático de inicio de chat
+            if (msg.contenido === "¡Hola! Me gustaría contactar contigo.") return;
             const notificationId = `dm-${msg.id}`;
             const alreadyShown = shownNotificationsRef.current.has(notificationId);
             
@@ -532,6 +535,7 @@ export const NotificationProvider = ({ children }) => {
             if (isChatMuted('community', msg.comunidadId) && !isMentioned) return;
 
             const key = `community-${msg.comunidadId}`;
+
             const known = knownConversationsRef.current;
             const current = msg.contenido || msg.archivoNombre || '';
             const prev = known.get(key);
@@ -630,7 +634,7 @@ export const NotificationProvider = ({ children }) => {
                         });
                     });
                 })
-                .catch(() => {});
+                .catch((error) => { console.error('Error al obtener conversaciones (ruta chats/comunidades):', error); });
         }
     }, [isInChatRoute, location.pathname, isAuthenticated]);
 
@@ -707,9 +711,5 @@ export const NotificationProvider = ({ children }) => {
  * Hook para acceder al contexto de notificaciones.
  */
 export const useNotificationContext = () => {
-    const context = useContext(NotificationContext);
-    if (!context) {
-        throw new Error('useNotificationContext debe usarse dentro de <NotificationProvider>');
-    }
-    return context;
+    return useContext(NotificationContext);
 };

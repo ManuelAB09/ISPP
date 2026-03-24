@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getApiBaseUrl } from '../api/baseUrl';
 
 const GoogleAuthButton = ({ onSuccess, onError, text = "Continuar con Google", flowType = "login" }) => {
   const [loading, setLoading] = useState(false);
@@ -6,8 +7,8 @@ const GoogleAuthButton = ({ onSuccess, onError, text = "Continuar con Google", f
   const handleGoogleClick = async () => {
     setLoading(true);
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-      const endpoint = flowType === 'link' 
+      const API_URL = getApiBaseUrl();
+      const endpoint = flowType === 'link'
         ? `${API_URL}/api/v1/auth/google/link/authorize`
         : `${API_URL}/api/v1/auth/google/authorize`;
 

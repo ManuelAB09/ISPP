@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react"
+import { QRCodeCanvas } from "qrcode.react"
+import { useCallback, useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { authApi } from "../../api/auth.api"
+import { getApiBaseUrl } from "../../api/baseUrl"
 import axiosInstance from "../../api/axiosConfig"
 import { apiClient } from "../../api/client"
-import { authApi } from "../../api/auth.api"
 import { useAuth } from "../../contexts/AuthContext"
-import { QRCodeCanvas } from "qrcode.react"
 import { useNotificationContext } from "../../contexts/NotificationContext"
 import "./Settings.css"
 
@@ -31,29 +32,21 @@ const EVENT_TYPES = [
     { value: 'OTRO', label: 'Otros' },
 ]
 
+const noop = () => {}
+const deniedPermissionFallback = () => Promise.resolve('denied')
+
 const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNotificationRead }) => {
     const navigate = useNavigate()
     const { logout, user, updateProfile } = useAuth()
-    
-    // Intentar usar el contexto de notificaciones, pero fallback si no está disponible
-    let notificationsEnabled = false
-    let toggleNotifications = () => {}
-    let requestPermission = () => Promise.resolve('denied')
-    let permission = 'denied'
-    let isSupported = false
-    
-    try {
-        const notifContext = useNotificationContext()
-        if (notifContext) {
-            notificationsEnabled = notifContext.notificationsEnabled
-            toggleNotifications = notifContext.toggleNotifications
-            requestPermission = notifContext.requestPermission
-            permission = notifContext.permission
-            isSupported = notifContext.isSupported
-        }
-    } catch (e) {
-        console.warn('NotificationContext no disponible:', e.message)
-    }
+    const notifContext = useNotificationContext()
+
+    const fallbackToggleNotifications = useCallback(noop, [])
+    const fallbackRequestPermission = useCallback(deniedPermissionFallback, [])
+    const notificationsEnabled = notifContext?.notificationsEnabled ?? false
+    const toggleNotifications = notifContext?.toggleNotifications ?? fallbackToggleNotifications
+    const requestPermission = notifContext?.requestPermission ?? fallbackRequestPermission
+    const permission = notifContext?.permission ?? 'denied'
+    const isSupported = notifContext?.isSupported ?? false
 
     // Estados para los toggles y configuraciones
     const [profileVisibility, setProfileVisibility] = useState(true)
@@ -382,7 +375,7 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
     const handleLinkGoogle = () => {
         setIsLinkingGoogle(true)
         setGoogleLinkMsg(null)
-        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080'
+        const API_URL = getApiBaseUrl()
         fetch(`${API_URL}/api/v1/auth/google/link/authorize`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
         })

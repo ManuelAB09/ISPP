@@ -79,9 +79,10 @@ public class CommunityService {
             Long institutionId,
             Integer maxMiembrosSolicitado) {
         // Validar que el usuario exista
-        Usuario usuario = usuarioRepository
-                .findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        Usuario usuario =
+                usuarioRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
         // Si es una comunidad institucional, no aplicar límites de FREE
         Institution institution = null;
@@ -93,8 +94,10 @@ public class CommunityService {
             validarUsuarioPerteneceAInstitucion(usuario, institution);
             validarPlanInstitucionalActivo(institution);
 
-            InstitutionPlanLimits institutionPlanLimits = obtenerLimitesPlanInstitucional(institution);
-            long totalInstitutionalCommunities = comunidadRepository.countByInstitutionId(institutionId);
+            InstitutionPlanLimits institutionPlanLimits =
+                    obtenerLimitesPlanInstitucional(institution);
+            long totalInstitutionalCommunities =
+                    comunidadRepository.countByInstitutionId(institutionId);
 
             if (institutionPlanLimits.maxCommunities() != Integer.MAX_VALUE
                     && totalInstitutionalCommunities >= institutionPlanLimits.maxCommunities()) {
@@ -123,13 +126,19 @@ public class CommunityService {
 
             // Se usa UNLIMITED para distinguir comunidades institucionales.
             tipoPlan = TipoPlanComunidad.UNLIMITED;
-            maxMiembros = maxMiembrosSolicitado != null
-                    ? maxMiembrosSolicitado
-                    : institutionPlanLimits.maxMembers();
+            maxMiembros =
+                    maxMiembrosSolicitado != null
+                            ? maxMiembrosSolicitado
+                            : institutionPlanLimits.maxMembers();
+            maxMiembros =
+                    maxMiembrosSolicitado != null
+                            ? maxMiembrosSolicitado
+                            : institutionPlanLimits.maxMembers();
         } else {
             Optional<Suscripcion> suscripcionOpt = suscripcionService.obtenerMiSuscripcion(userId);
             TipoPlan userPlan = suscripcionOpt.map(Suscripcion::getPlan).orElse(TipoPlan.FREE);
-            long totalCommunities = comunidadRepository.countByCreadorIdAndInstitutionIsNull(userId);
+            long totalCommunities =
+                    comunidadRepository.countByCreadorIdAndInstitutionIsNull(userId);
 
             int maxCommunities = getMaxCommunitiesByPlan(userPlan);
             if (totalCommunities >= maxCommunities) {
@@ -158,30 +167,37 @@ public class CommunityService {
             }
 
             maxMiembros = maxMiembrosSolicitado != null ? maxMiembrosSolicitado : maxAllowedMembers;
-            tipoPlan = userPlan == TipoPlan.FREE ? TipoPlanComunidad.FREE : TipoPlanComunidad.PREMIUM;
+            tipoPlan =
+                    userPlan == TipoPlan.FREE ? TipoPlanComunidad.FREE : TipoPlanComunidad.PREMIUM;
+        }
+
+        if (imagenUrl == null || imagenUrl.isBlank()) {
+            imagenUrl = "https://i.postimg.cc/Bb8f1dDC/community-default.png";
         }
 
         // Crear comunidad
-        Comunidad comunidad = Comunidad.builder()
-                .nombre(nombre)
-                .descripcion(descripcion)
-                .tipoGrupo(tipoGrupo)
-                .imagenUrl(imagenUrl)
-                .creador(usuario)
-                .institution(institution)
-                .tipoPlan(tipoPlan)
-                .estado(EstadoComunidad.ACTIVA)
-                .maxMiembros(maxMiembros)
-                .build();
+        Comunidad comunidad =
+                Comunidad.builder()
+                        .nombre(nombre)
+                        .descripcion(descripcion)
+                        .tipoGrupo(tipoGrupo)
+                        .imagenUrl(imagenUrl)
+                        .creador(usuario)
+                        .institution(institution)
+                        .tipoPlan(tipoPlan)
+                        .estado(EstadoComunidad.ACTIVA)
+                        .maxMiembros(maxMiembros)
+                        .build();
 
         Comunidad savedComunidad = comunidadRepository.save(comunidad);
 
         // Asignar al creador como ADMIN
-        MiembroComunidad miembro = MiembroComunidad.builder()
-                .usuario(usuario)
-                .comunidad(savedComunidad)
-                .rol(RolComunidad.ADMIN)
-                .build();
+        MiembroComunidad miembro =
+                MiembroComunidad.builder()
+                        .usuario(usuario)
+                        .comunidad(savedComunidad)
+                        .rol(RolComunidad.ADMIN)
+                        .build();
 
         miembroComunidadRepository.save(miembro);
 
@@ -226,14 +242,7 @@ public class CommunityService {
             Long institutionId,
             RolComunidad rolInicial) {
         return createCommunity(
-                userId,
-                nombre,
-                descripcion,
-                tipoGrupo,
-                imagenUrl,
-                institutionId,
-                null,
-                rolInicial);
+                userId, nombre, descripcion, tipoGrupo, imagenUrl, institutionId, null, rolInicial);
     }
 
     public Comunidad createCommunity(
@@ -247,20 +256,23 @@ public class CommunityService {
             RolComunidad rolInicial) {
         // Validar perfil de tutor si el creador quiere rol PROFESOR
         if (rolInicial == RolComunidad.PROFESOR) {
-            Usuario usuario = usuarioRepository
-                    .findById(userId)
-                    .orElseThrow(
-                            () -> new IllegalArgumentException("Usuario no encontrado"));
+            Usuario usuario =
+                    usuarioRepository
+                            .findById(userId)
+                            .orElseThrow(
+                                    () -> new IllegalArgumentException("Usuario no encontrado"));
             if (usuario.getEsTutor() == null || !usuario.getEsTutor()) {
                 throw new IllegalArgumentException(
                         "Solo los usuarios tutores pueden crear una comunidad como profesor");
             }
-            Tutor tutor = tutorRepository
-                    .findByUsuario(usuario)
-                    .orElseThrow(
-                            () -> new IllegalArgumentException(
-                                    "Debes completar tu perfil de tutor antes de"
-                                            + " crear una comunidad como profesor"));
+            Tutor tutor =
+                    tutorRepository
+                            .findByUsuario(usuario)
+                            .orElseThrow(
+                                    () ->
+                                            new IllegalArgumentException(
+                                                    "Debes completar tu perfil de tutor antes de"
+                                                        + " crear una comunidad como profesor"));
             if (tutor.getEspecialidades() == null
                     || tutor.getEspecialidades().isEmpty()
                     || tutor.getTarifaHora() == null
@@ -272,14 +284,15 @@ public class CommunityService {
             }
         }
 
-        Comunidad savedComunidad = createCommunity(
-                userId,
-                nombre,
-                descripcion,
-                tipoGrupo,
-                imagenUrl,
-                institutionId,
-                maxMiembrosSolicitado);
+        Comunidad savedComunidad =
+                createCommunity(
+                        userId,
+                        nombre,
+                        descripcion,
+                        tipoGrupo,
+                        imagenUrl,
+                        institutionId,
+                        maxMiembrosSolicitado);
 
         // El creador mantiene rol ADMIN; rolDocente modela su rol de contenido.
         if (rolInicial != null && rolInicial != RolComunidad.ADMIN) {
@@ -325,10 +338,12 @@ public class CommunityService {
     }
 
     private void validarUsuarioPerteneceAInstitucion(Usuario usuario, Institution institution) {
-        boolean isLinkedMember = usuario.getInstitution() != null
-                && institution.getId().equals(usuario.getInstitution().getId());
-        boolean isInstitutionAdmin = institution.getUsuarioAdmin() != null
-                && institution.getUsuarioAdmin().getId().equals(usuario.getId());
+        boolean isLinkedMember =
+                usuario.getInstitution() != null
+                        && institution.getId().equals(usuario.getInstitution().getId());
+        boolean isInstitutionAdmin =
+                institution.getUsuarioAdmin() != null
+                        && institution.getUsuarioAdmin().getId().equals(usuario.getId());
 
         if (!isLinkedMember && !isInstitutionAdmin) {
             throw new IllegalArgumentException(
@@ -338,9 +353,10 @@ public class CommunityService {
     }
 
     private void validarPlanInstitucionalActivo(Institution institution) {
-        boolean planActivo = Boolean.TRUE.equals(institution.getPlanActivo())
-                && (institution.getFechaFinPlan() == null
-                        || institution.getFechaFinPlan().isAfter(LocalDateTime.now()));
+        boolean planActivo =
+                Boolean.TRUE.equals(institution.getPlanActivo())
+                        && (institution.getFechaFinPlan() == null
+                                || institution.getFechaFinPlan().isAfter(LocalDateTime.now()));
         if (!planActivo || institution.getPlanCorporativo() == null) {
             throw new IllegalArgumentException(
                     "La institución no tiene un plan corporativo activo para crear comunidades"
@@ -351,32 +367,29 @@ public class CommunityService {
     private InstitutionPlanLimits obtenerLimitesPlanInstitucional(Institution institution) {
         TipoPlanCorporativo tipoPlan = institution.getPlanCorporativo();
         if (tipoPlan == null) {
-            throw new IllegalArgumentException("La institución no tiene plan corporativo asignado.");
+            throw new IllegalArgumentException(
+                    "La institución no tiene plan corporativo asignado.");
         }
 
         return switch (tipoPlan) {
             case BASICO, REDUCIDO_PUBLICA, REDUCIDO_PRIVADA ->
-                new InstitutionPlanLimits(
-                        INST_ACADEMY_MAX_COMMUNITIES, INST_ACADEMY_MAX_MEMBERS);
+                    new InstitutionPlanLimits(
+                            INST_ACADEMY_MAX_COMMUNITIES, INST_ACADEMY_MAX_MEMBERS);
             case ESTANDAR ->
-                new InstitutionPlanLimits(
-                        INST_SCHOOL_MAX_COMMUNITIES, INST_SCHOOL_MAX_MEMBERS);
+                    new InstitutionPlanLimits(INST_SCHOOL_MAX_COMMUNITIES, INST_SCHOOL_MAX_MEMBERS);
             case PREMIUM ->
-                new InstitutionPlanLimits(
-                        INST_UNIVERSITY_MAX_COMMUNITIES, INST_UNIVERSITY_MAX_MEMBERS);
+                    new InstitutionPlanLimits(
+                            INST_UNIVERSITY_MAX_COMMUNITIES, INST_UNIVERSITY_MAX_MEMBERS);
         };
     }
 
-    private record InstitutionPlanLimits(int maxCommunities, int maxMembers) {
-    }
+    private record InstitutionPlanLimits(int maxCommunities, int maxMembers) {}
 
     /**
-     * Indica si una comunidad está vinculada a una institución (es
-     * corporativa/institucional).
+     * Indica si una comunidad está vinculada a una institución (es corporativa/institucional).
      *
      * @param communityId ID de la comunidad
-     * @return true si la comunidad tiene una institución asociada, false en caso
-     *         contrario
+     * @return true si la comunidad tiene una institución asociada, false en caso contrario
      */
     @Transactional(readOnly = true)
     public boolean isCommunityCorporate(Long communityId) {
@@ -386,15 +399,13 @@ public class CommunityService {
                 .orElse(false);
     }
 
-    /**
-     * Obtiene una comunidad por ID. Comunidades privadas solo son visibles para
-     * miembros.
-     */
+    /** Obtiene una comunidad por ID. Comunidades privadas solo son visibles para miembros. */
     @Transactional(readOnly = true)
     public Comunidad getCommunityById(Long communityId, Long userId) {
-        Comunidad comunidad = comunidadRepository
-                .findById(communityId)
-                .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
+        Comunidad comunidad =
+                comunidadRepository
+                        .findById(communityId)
+                        .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
 
         if (comunidad.getTipoGrupo() == TipoGrupo.GRUPO_PRIVADO
                 && !authorizationService.isMemberOf(userId, communityId)) {
@@ -411,9 +422,10 @@ public class CommunityService {
             throw new IllegalArgumentException("Solo admins pueden actualizar la comunidad");
         }
 
-        Comunidad comunidad = comunidadRepository
-                .findById(communityId)
-                .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
+        Comunidad comunidad =
+                comunidadRepository
+                        .findById(communityId)
+                        .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
 
         if (nombre != null && !nombre.isBlank()) {
             comunidad.setNombre(nombre);
@@ -434,9 +446,10 @@ public class CommunityService {
             throw new IllegalArgumentException("Solo admins pueden eliminar la comunidad");
         }
 
-        Comunidad comunidad = comunidadRepository
-                .findById(communityId)
-                .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
+        Comunidad comunidad =
+                comunidadRepository
+                        .findById(communityId)
+                        .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
 
         // Desvincular eventos antes de eliminar para evitar violación de FK
         eventoRepository.disassociateFromComunidad(communityId);
@@ -459,9 +472,10 @@ public class CommunityService {
             throw new IllegalArgumentException("Solo admins pueden cambiar la privacidad");
         }
 
-        Comunidad comunidad = comunidadRepository
-                .findById(communityId)
-                .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
+        Comunidad comunidad =
+                comunidadRepository
+                        .findById(communityId)
+                        .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
 
         comunidad.setTipoGrupo(nuevoTipo);
         return comunidadRepository.save(comunidad);
@@ -473,9 +487,10 @@ public class CommunityService {
             throw new IllegalArgumentException("Solo admins pueden mejorar la comunidad");
         }
 
-        Comunidad comunidad = comunidadRepository
-                .findById(communityId)
-                .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
+        Comunidad comunidad =
+                comunidadRepository
+                        .findById(communityId)
+                        .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
 
         if (comunidad.getTipoPlan() == TipoPlanComunidad.PREMIUM) {
             throw new IllegalArgumentException("La comunidad ya es Premium");
@@ -510,9 +525,10 @@ public class CommunityService {
      */
     @Transactional(readOnly = true)
     public boolean canAddMember(Long communityId) {
-        Comunidad comunidad = comunidadRepository
-                .findById(communityId)
-                .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
+        Comunidad comunidad =
+                comunidadRepository
+                        .findById(communityId)
+                        .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
 
         // Si maxMiembros es null, es ilimitado
         if (comunidad.getMaxMiembros() == null) {
@@ -528,11 +544,11 @@ public class CommunityService {
     // ===============================
 
     private static final long MAX_IMAGE_SIZE_BYTES = 5L * 1024L * 1024L;
-    private static final Set<String> ALLOWED_IMAGE_MIME_TYPES = Set.of("image/jpeg", "image/png", "image/webp");
+    private static final Set<String> ALLOWED_IMAGE_MIME_TYPES =
+            Set.of("image/jpeg", "image/png", "image/webp");
 
     /**
-     * Actualiza la imagen/portada de una comunidad a partir de un archivo
-     * multipart. Solo admins
+     * Actualiza la imagen/portada de una comunidad a partir de un archivo multipart. Solo admins
      * pueden realizar esta operación.
      */
     public Comunidad actualizarFotoComunidad(Long userId, Long communityId, MultipartFile file) {
@@ -553,9 +569,10 @@ public class CommunityService {
             throw new IllegalArgumentException("Formato no permitido. Solo JPG, PNG o WEBP");
         }
 
-        Comunidad comunidad = comunidadRepository
-                .findById(communityId)
-                .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
+        Comunidad comunidad =
+                comunidadRepository
+                        .findById(communityId)
+                        .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
 
         try {
             String base64 = Base64.getEncoder().encodeToString(file.getBytes());
@@ -575,12 +592,14 @@ public class CommunityService {
             throw new IllegalArgumentException("No eres miembro de esta comunidad");
         }
 
-        List<MiembroComunidad> miembros = miembroComunidadRepository
-                .findByComunidadId(communityId, Pageable.unpaged())
-                .getContent();
+        List<MiembroComunidad> miembros =
+                miembroComunidadRepository
+                        .findByComunidadId(communityId, Pageable.unpaged())
+                        .getContent();
 
-        Map<Long, Long> mensajesPorUsuario = mensajeComunidadRepository.countMensajesByComunidad(communityId).stream()
-                .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
+        Map<Long, Long> mensajesPorUsuario =
+                mensajeComunidadRepository.countMensajesByComunidad(communityId).stream()
+                        .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
 
         List<Evento> eventos = eventoRepository.findByComunidadId(communityId);
         Map<Long, Long> eventosCreados = new HashMap<>();
@@ -593,9 +612,10 @@ public class CommunityService {
             Long creadorId = evento.getCreador().getId();
             eventosCreados.merge(creadorId, 1L, Long::sum);
 
-            long asistentes = evento.getAsistentesConfirmados() != null
-                    ? evento.getAsistentesConfirmados()
-                    : 0L;
+            long asistentes =
+                    evento.getAsistentesConfirmados() != null
+                            ? evento.getAsistentesConfirmados()
+                            : 0L;
             asistentesPorCreador.merge(creadorId, asistentes, Long::sum);
         }
 
@@ -605,7 +625,8 @@ public class CommunityService {
                             var usuario = miembro.getUsuario();
                             long mensajes = mensajesPorUsuario.getOrDefault(usuario.getId(), 0L);
                             long eventosCount = eventosCreados.getOrDefault(usuario.getId(), 0L);
-                            long asistentes = asistentesPorCreador.getOrDefault(usuario.getId(), 0L);
+                            long asistentes =
+                                    asistentesPorCreador.getOrDefault(usuario.getId(), 0L);
 
                             long puntos = mensajes + (asistentes * 5);
 

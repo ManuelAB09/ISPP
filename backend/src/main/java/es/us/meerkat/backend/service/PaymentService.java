@@ -142,8 +142,7 @@ public class PaymentService {
 
     public PaymentUrlResponse generarPagoSuscripcion(Usuario usuario, TipoPlan plan, String periodo)
             throws StripeException {
-        TipoPlan planSolicitado =
-                (plan == null || plan == TipoPlan.FREE) ? TipoPlan.PREMIUM : plan;
+        TipoPlan planSolicitado = (plan == null || plan == TipoPlan.FREE) ? TipoPlan.PREMIUM : plan;
         boolean esAnual = "anual".equalsIgnoreCase(periodo);
 
         // PREMIUM usa sesión de suscripción (recurring) con Price IDs existentes
@@ -182,7 +181,8 @@ public class PaymentService {
         metadata.put("plan", planSolicitado.name());
         metadata.put("periodo", esAnual ? "anual" : "mensual");
 
-        Session session = crearSesionPagoUnico("Suscripcion " + planSolicitado.name(), monto, metadata);
+        Session session =
+                crearSesionPagoUnico("Suscripcion " + planSolicitado.name(), monto, metadata);
         return new PaymentUrlResponse(session.getUrl(), session.getId());
     }
 
@@ -397,22 +397,21 @@ public class PaymentService {
      */
     public Map<String, String> crearPaymentIntentSuscripcion(
             Usuario usuario, TipoPlan plan, String periodo) throws StripeException {
-                TipoPlan planSolicitado =
-                                (plan == null || plan == TipoPlan.FREE) ? TipoPlan.PREMIUM : plan;
-                boolean esAnual = "anual".equalsIgnoreCase(periodo);
+        TipoPlan planSolicitado = (plan == null || plan == TipoPlan.FREE) ? TipoPlan.PREMIUM : plan;
+        boolean esAnual = "anual".equalsIgnoreCase(periodo);
 
-                long amount;
-                if (planSolicitado == TipoPlan.PRO) {
-                        amount = esAnual ? 20000L : 1999L;
-                } else {
-                        amount = esAnual ? 5000L : 499L;
-                }
-                String description =
-                                "Suscripcion "
-                                                + planSolicitado.name()
-                                                + " "
-                                                + (esAnual ? "Anual" : "Mensual")
-                                                + " - MeerKatters";
+        long amount;
+        if (planSolicitado == TipoPlan.PRO) {
+            amount = esAnual ? 20000L : 1999L;
+        } else {
+            amount = esAnual ? 5000L : 499L;
+        }
+        String description =
+                "Suscripcion "
+                        + planSolicitado.name()
+                        + " "
+                        + (esAnual ? "Anual" : "Mensual")
+                        + " - MeerKatters";
 
         PaymentIntentCreateParams params =
                 PaymentIntentCreateParams.builder()
@@ -421,8 +420,8 @@ public class PaymentService {
                         .setDescription(description)
                         .setReceiptEmail(usuario.getEmail())
                         .putMetadata("usuarioId", usuario.getId().toString())
-                                                .putMetadata("plan", planSolicitado.name())
-                                                .putMetadata("periodo", esAnual ? "anual" : "mensual")
+                        .putMetadata("plan", planSolicitado.name())
+                        .putMetadata("periodo", esAnual ? "anual" : "mensual")
                         .putMetadata("tipo", TipoTransaccion.SUSCRIPCION.name())
                         .addPaymentMethodType("card")
                         .build();

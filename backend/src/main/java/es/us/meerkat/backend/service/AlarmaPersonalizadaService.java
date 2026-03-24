@@ -234,10 +234,10 @@ public class AlarmaPersonalizadaService {
 
             final long unreadCount = alertaEventoRepository.countUnreadByUsuarioId(usuario.getId());
             messagingTemplate.convertAndSendToUser(
-                    usuario.getEmail(), "/queue/alerts_count", unreadCount);
+                    usuario.getId().toString(), "/queue/alerts_count", unreadCount);
 
             messagingTemplate.convertAndSendToUser(
-                    usuario.getEmail(),
+                    usuario.getId().toString(),
                     "/queue/notificaciones",
                     Map.of(
                             "tipo",

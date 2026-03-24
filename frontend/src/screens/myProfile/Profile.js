@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom"
 import { authApi } from "../../api/auth.api"
 import { getApiBaseUrl } from "../../api/baseUrl"
 import { communitiesApi } from "../../api/communities.api"
+import { cuestionariosApi } from "../../api/cuestionarios.api"
 import { getMyTutorProfiles, getVerifiedTutors } from "../../api/tutorEndpoints"
 import Header from "../../components/Header/Header"
 import { useAuth } from "../../contexts/AuthContext"
@@ -52,6 +53,8 @@ const MyProfile = () => {
     const [misComunidades, setMisComunidades] = useState([])
     const [comunidadesCreadas, setComunidadesCreadas] = useState([])
     const [loadingCommunities, setLoadingCommunities] = useState(true)
+    const [misCuestionarios, setMisCuestionarios] = useState([])
+    const [loadingMisCuestionarios, setLoadingMisCuestionarios] = useState(true)
     const [stats, setStats] = useState({
         comunidades: 0,
         apuntesSubidos: 0,
@@ -131,6 +134,38 @@ const MyProfile = () => {
             })
             .finally(() => setLoadingTutorProfile(false));
     }, [isAuthenticated, isOwner, loading, user]);
+
+    useEffect(() => {
+        if (!isAuthenticated || loading) {
+            setMisCuestionarios([])
+            setLoadingMisCuestionarios(false)
+            return
+        }
+
+        const fetchCuestionarios = async () => {
+            setLoadingMisCuestionarios(true)
+            try {
+                if (isOwner) {
+                    const data = await cuestionariosApi.listMine()
+                    setMisCuestionarios(Array.isArray(data) ? data : [])
+                } else if (publicProfile?.id) {
+                    const data = await cuestionariosApi.listPublicByUserId(publicProfile.id)
+                    setMisCuestionarios(Array.isArray(data) ? data : [])
+                } else {
+                    setMisCuestionarios([])
+                }
+            } catch (err) {
+                console.error('Error al cargar cuestionarios:', err)
+                setMisCuestionarios([])
+            } finally {
+                setLoadingMisCuestionarios(false)
+            }
+        }
+
+        if (isOwner || publicProfile) {
+            fetchCuestionarios()
+        }
+    }, [isAuthenticated, loading, isOwner, publicProfile])
 
     // Abrir modal de edición/configuración cuando se navega con estado desde otras pantallas.
     useEffect(() => {
@@ -331,6 +366,23 @@ const MyProfile = () => {
         return `${base}/${value}`;
     }
 
+    const formatCuestionarioDate = (dateValue) => {
+        if (!dateValue) {
+            return 'Fecha desconocida'
+        }
+
+        const parsed = new Date(dateValue)
+        if (Number.isNaN(parsed.getTime())) {
+            return 'Fecha desconocida'
+        }
+
+        return parsed.toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        })
+    }
+
     // Función para manejar cierre de sesión
     const handleLogout = async () => {
         // Validar que sea el propietario
@@ -479,6 +531,17 @@ const MyProfile = () => {
                         </div>
                     </div>
 
+                    {isOwner && (
+                        <div className="profile-nav-actions">
+                            <button className="profile-nav-btn" onClick={() => navigate('/pagos')}>
+                                💳 Mis pagos
+                            </button>
+                            <button className="profile-nav-btn" onClick={() => navigate('/ganancias')}>
+                                💰 Mis ganancias
+                            </button>
+                        </div>
+                    )}
+
                     {isOwner && <div className="activity-card">
                         <h3 className="activity-card__title">Tu Actividad</h3>
                         <div className="activity-card__grid">
@@ -550,6 +613,56 @@ const MyProfile = () => {
                         )
                     }
                 </section >}
+
+                <section className="my-questionnaires-section">
+                    <h2 className="section-title">{isOwner ? 'Mis cuestionarios' : 'Cuestionarios públicos'}</h2>
+                    {loadingMisCuestionarios ? (
+                        <div className="loading-communities">Cargando cuestionarios...</div>
+                    ) : misCuestionarios.length > 0 ? (
+                        <div className="my-questionnaires-list">
+                            {misCuestionarios.map((cuestionario) => (
+                                <article
+                                    key={cuestionario.id}
+                                    className="my-questionnaire-card"
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={() => navigate(`/cuestionarios/${cuestionario.id}`)}
+                                    onKeyDown={(event) => {
+                                        if (event.key === 'Enter' || event.key === ' ') {
+                                            event.preventDefault()
+                                            navigate(`/cuestionarios/${cuestionario.id}`)
+                                        }
+                                    }}
+                                >
+                                    <div className="my-questionnaire-card__header">
+                                        <h3>{cuestionario.titulo || 'Cuestionario sin titulo'}</h3>
+                                        <span className={`my-questionnaire-status ${cuestionario.publicado ? 'is-published' : 'is-draft'}`}>
+                                            {cuestionario.publicado ? 'Publicado' : 'Borrador'}
+                                        </span>
+                                    </div>
+                                    <p className="my-questionnaire-card__meta">
+                                        Materia: {cuestionario.materia || 'Sin materia'}
+                                    </p>
+                                    <p className="my-questionnaire-card__meta">
+                                        Preguntas: {cuestionario.numPreguntas || 0}
+                                    </p>
+                                    <p className="my-questionnaire-card__meta">
+                                        Creado: {formatCuestionarioDate(cuestionario.createdAt)}
+                                    </p>
+                                </article>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="no-communities-created">
+                            <p>{isOwner ? 'Todavía no has creado cuestionarios.' : 'Aún no hay cuestionarios públicos.'}</p>
+                            {isOwner && (
+                                <button className="btn-create-first" onClick={() => navigate('/cuestionarios/crear')}>
+                                    Crear mi primer cuestionario
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </section>
 
                 {/* Sección Perfil de Profesor / Convertirse en tutor */}
                 {isOwner &&
