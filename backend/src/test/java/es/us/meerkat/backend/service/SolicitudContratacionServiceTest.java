@@ -406,8 +406,12 @@ class SolicitudContratacionServiceTest {
                         LocalTime.of(10, 0),
                         LocalTime.of(11, 0));
 
-        assertThat(solicitud.getDia()).isEqualTo(LocalDate.of(2027, 6, 17));
-        assertThat(result.getDia()).isEqualTo(LocalDate.of(2027, 6, 17));
+        assertThat(solicitud.getEstado())
+                .isEqualTo(EstadoSolicitudContratacion.REPROGRAMACION_PENDIENTE);
+        assertThat(solicitud.getDia()).isEqualTo(LocalDate.of(2027, 6, 15));
+        assertThat(solicitud.getReprogramacionDia()).isEqualTo(LocalDate.of(2027, 6, 17));
+        assertThat(result.getDia()).isEqualTo(LocalDate.of(2027, 6, 15));
+        assertThat(result.getReprogramacionDia()).isEqualTo("2027-06-17");
     }
 
     @Test
@@ -500,6 +504,9 @@ class SolicitudContratacionServiceTest {
         // Primer aplazamiento: +2 días (Día 17)
         service.reprogramarSolicitud(
                 100L, 2L, LocalDate.of(2027, 6, 17), LocalTime.of(10, 0), LocalTime.of(11, 0));
+
+        // El alumno aprueba para aplicar la nueva fecha.
+        service.aprobarReprogramacion(100L, 1L);
         assertThat(solicitud.getDia()).isEqualTo(LocalDate.of(2027, 6, 17));
 
         // Segundo aplazamiento: +2 días desde el día 17 (Día 19)
@@ -511,8 +518,10 @@ class SolicitudContratacionServiceTest {
                         LocalTime.of(10, 0),
                         LocalTime.of(11, 0));
 
-        assertThat(solicitud.getDia()).isEqualTo(LocalDate.of(2027, 6, 19));
-        assertThat(result2.getDia()).isEqualTo(LocalDate.of(2027, 6, 19));
+        assertThat(solicitud.getDia()).isEqualTo(LocalDate.of(2027, 6, 17));
+        assertThat(solicitud.getReprogramacionDia()).isEqualTo(LocalDate.of(2027, 6, 19));
+        assertThat(result2.getDia()).isEqualTo(LocalDate.of(2027, 6, 17));
+        assertThat(result2.getReprogramacionDia()).isEqualTo("2027-06-19");
     }
 
     @Test
@@ -545,6 +554,9 @@ class SolicitudContratacionServiceTest {
         // Primer aplazamiento: +2 días (Día 17) -> Legal
         service.reprogramarSolicitud(
                 100L, 2L, LocalDate.of(2027, 6, 17), LocalTime.of(10, 0), LocalTime.of(11, 0));
+
+        // El alumno aprueba para consolidar el cambio y permitir nueva reprogramación.
+        service.aprobarReprogramacion(100L, 1L);
         assertThat(solicitud.getDia()).isEqualTo(LocalDate.of(2027, 6, 17));
 
         // Segundo aplazamiento: +3 días desde el día 17 (Día 20) -> Ilegal
