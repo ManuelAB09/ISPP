@@ -61,6 +61,7 @@ public class DisponibilidadTutor {
 
     /** Modalidad de clase (PRESENCIAL, VIRTUAL, HIBRIDA). */
     @Column(nullable = false)
+    @lombok.Builder.Default
     private String modalidad = "VIRTUAL";
 
     /** Ubicación si es presencial. */
