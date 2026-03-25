@@ -30,6 +30,8 @@
 
 Toda la información presente se encuentra en un [Repo Github compartido](https://github.com/ASoult10/Knowledge-Base-Turno-De-Tarde-ISPP-25-26) entre los líderes/representantes de cada grupo, de forma que solo ellos pueden editarlo.
 
+Todo esta desplegado en un documento [Docusaurus](https://asoult10.github.io/Knowledge-Base-Turno-De-Tarde-ISPP-25-26/) de forma que todos los miembros de todos los grupos pueden consultarlo cuando quieran.
+
 ---
 
 ## 2. Contenido específico aportado

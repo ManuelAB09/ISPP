@@ -11,7 +11,7 @@
 **Proyecto:** MeerKatters  
 **Documento:** Plan de proyecto / Seguimiento  
 **Sprint:** Sprint 2  
-**Semana:** Semana 2  
+**Semana:** Semana 3  
 **Estado:** Aprobado  
 **Fecha:** 24/03/2026  
 **Autor(es):** Alejandro Soult Toacano
@@ -45,7 +45,7 @@ Durante este periodo, se han materializado diversos riesgos tanto a nivel organi
   * Mejora en los canales de comunicación interna.
   * Seguimiento más activo del estado de cada miembro.
 * **Medidas de validación:**
-  * Diferencia de rendimiento en promedio: X% / 10%
+  * Diferencia de rendimiento en promedio: 4% / 10%
 
 ---
 
@@ -56,7 +56,7 @@ Durante este periodo, se han materializado diversos riesgos tanto a nivel organi
   * Implementación de una estructura clara basada en squads y duos.
   * Mezcla de personas de backend y frontend en cada squad o duo, dividiendo el desarrollo en funcionalidades concretas y completas.
 * **Medidas de validación:**
-  * Diferencia de rendimiento en promedio: X% / 10%
+  * Diferencia de rendimiento en promedio: 3% / 10%
 
 ---
 
@@ -69,7 +69,7 @@ Durante este periodo, se han materializado diversos riesgos tanto a nivel organi
   * Revisión del reparto de responsabilidades en retrospectiva.
   * Introducción de mayor rigurosidad organizativa y asignación de roles (QA, squads, duos).
 * **Medidas de validación:**
-  * Diferencia de rendimiento en promedio: X% / 10%
+  * Diferencia de rendimiento en promedio: 6% / 10%
 
 ---
 
@@ -81,8 +81,8 @@ Durante este periodo, se han materializado diversos riesgos tanto a nivel organi
   * Control más estricto en el proceso de merge.
   * Sistema de penalizaciones (*strikes*) para evitar errores reiterados.
 * **Medidas de validación:**
-  * Número de conflictos con pérdidas significativas de código: X / 3
-  * Sistema de strikes: X / 2
+  * Número de conflictos con pérdidas significativas de código: 2 / 3
+  * Sistema de strikes: 0 / 2
 
 ---
 
@@ -94,7 +94,7 @@ Durante este periodo, se han materializado diversos riesgos tanto a nivel organi
   * Reducción temporal del alcance en funcionalidades dependientes.
   * Estabilización progresiva del sistema.
 * **Medidas de validación:**
-  * Número de tareas sin completar: X / 2
+  * Número de tareas sin completar: 1 / 2
 
 ---
 
@@ -105,7 +105,7 @@ Durante este periodo, se han materializado diversos riesgos tanto a nivel organi
   * Refuerzo de la propuesta de valor frente a herramientas generalistas.
   * Mejora en la comunicación y branding.
 * **Medidas de validación:**
-  * Número de usuarios de la plataforma: X / 10
+  * Número de usuarios de la plataforma: 8 / 10
 
 ---
 
@@ -117,8 +117,8 @@ Durante este periodo, se han materializado diversos riesgos tanto a nivel organi
   * Ajuste de la estrategia de expansión geográfica.
   * Foco en comunidades activas.
 * **Medidas de validación:**
-  * Número de comunidades nuevas activas: X / 3
-  * Número de usuarios de la plataforma: X / 10
+  * Número de comunidades nuevas activas: 2 / 3
+  * Número de usuarios de la plataforma: 8 / 10
 
 ---
 
