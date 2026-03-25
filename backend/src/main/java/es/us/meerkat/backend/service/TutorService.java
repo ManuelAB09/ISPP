@@ -190,10 +190,17 @@ public class TutorService {
                                 .nombre(tutor.getUsuario().getNombre())
                                 .foto(tutor.getUsuario().getFoto())
                                 .bio(tutor.getUsuario().getBio())
-                                .intereses(tutor.getUsuario().getIntereses() != null ? new ArrayList<>(tutor.getUsuario().getIntereses()) : List.of())
+                                .intereses(
+                                        tutor.getUsuario().getIntereses() != null
+                                                ? new ArrayList<>(
+                                                        tutor.getUsuario().getIntereses())
+                                                : List.of())
                                 .esTutor(tutor.getUsuario().getEsTutor())
                                 .build())
-                .especialidades(tutor.getEspecialidades() != null ? new ArrayList<>(tutor.getEspecialidades()) : List.of())
+                .especialidades(
+                        tutor.getEspecialidades() != null
+                                ? new ArrayList<>(tutor.getEspecialidades())
+                                : List.of())
                 .tarifaHora(tutor.getTarifaHora())
                 .disponibilidad(tutor.getDisponibilidad())
                 .bio(tutor.getBio())

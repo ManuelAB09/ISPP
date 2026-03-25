@@ -432,7 +432,11 @@ public class TutorController {
                 .biografia(tutor.getBio())
                 .disponibilidad(tutor.getDisponibilidad())
                 .tarifaPorHora(tutor.getTarifaHora())
-                .especialidades(tutor.getEspecialidades() != null ? new java.util.ArrayList<>(tutor.getEspecialidades()) : java.util.List.of())
+                .especialidades(
+                        tutor.getEspecialidades() != null
+                                ? new java.util.ArrayList<>(
+                                        tutor.getEspecialidades())
+                                : java.util.List.of())
                 .verificado(tutor.getVerificado())
                 .classroomConectado(tutor.getClassroomConectado())
                 .createdAt(tutor.getCreatedAt() != null ? tutor.getCreatedAt().toString() : null)
