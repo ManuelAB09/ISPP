@@ -52,8 +52,13 @@ La planificación se estructura de la siguiente manera:
 
 - **Final de Sprint:**  
   Se ampliará el conjunto de pruebas incluyendo:
-  - **Tests unitarios completos** sobre todo el resto del código desarrollado en el sprint.
+  - **Tests unitarios completos** sobre todo el resto del código desarrollado en el sprint, y con las mismas características nombradas anteriormente.
   - **Tests de controladores** sobre todo el código, utilizando **mocks** para simular dependencias del sistema.
+
+En cuanto a las tecnologías usadas, estas serán:
+
+- **JUnit5** como framework de pruebas unitarias en backend.
+- **Mockito** como librería para simular mocks en las pruebas de controladores.
 
 ---
 
@@ -66,6 +71,11 @@ La estrategia de pruebas consiste en:
 - **Final de cada Sprint:**  
   Se realizarán **tests sobre componentes React**, usando **respuestas JSON mockeadas** para simular las respuestas de la API.
 
+En cuanto a las tecnologías usadas, estas serán:
+
+- **Jest** como framework de pruebas en frontend.
+- **React Testing Library** como librería para testear componentes en React.
+
 ---
 
 ## 4. Plan de Pruebas: Integración Backend + Frontend
@@ -76,6 +86,10 @@ Estas pruebas se realizarán principalmente en las fases finales del desarrollo:
 
 - **En la segunda mitad del Sprint 3:**
   Se llevarán a cabo **tests de interfaz de usuario (UI)** que simulan el comportamiento real de un usuario utilizando la aplicación. Para ello se empleará la herramienta **Selenium**, que permitirá automatizar interacciones con la interfaz web y comprobar que los flujos principales del sistema funcionan correctamente.
+
+En cuanto a las tecnologías usadas, estas serán:
+
+- **Selenium** como framework para pruebas de interfaz (UI).
 
 Estas pruebas permitirán validar escenarios completos de uso del sistema, verificando que las funcionalidades implementadas funcionan correctamente en un entorno cercano al de producción.
 
