@@ -59,7 +59,7 @@ public class Tutor {
     private Usuario usuario;
 
     /** Lista de especialidades del tutor. */
-    @ElementCollection
+    @ElementCollection(fetch = jakarta.persistence.FetchType.EAGER)
     @CollectionTable(name = "esp", joinColumns = @JoinColumn(name = "t_id"))
     @Column(name = "especialidad")
     private List<String> especialidades = new ArrayList<>();
