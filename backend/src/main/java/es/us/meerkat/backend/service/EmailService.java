@@ -116,12 +116,14 @@ public class EmailService {
             log.info("SendGrid API respondió {} para email a {}", response.getStatusCode(), to);
             if (response.getStatusCode() >= 400) {
                 log.error("SendGrid API error body: {}", response.getBody());
-                throw new RuntimeException(
-                        "SendGrid API respondió " + response.getStatusCode());
+                throw new RuntimeException("SendGrid API respondió " + response.getStatusCode());
             }
         } catch (IOException e) {
-            log.error("SendGrid API I/O error para {}: [{}] {}",
-                    to, e.getClass().getSimpleName(), e.getMessage());
+            log.error(
+                    "SendGrid API I/O error para {}: [{}] {}",
+                    to,
+                    e.getClass().getSimpleName(),
+                    e.getMessage());
             throw new RuntimeException("No se pudo enviar email vía SendGrid API", e);
         }
     }
