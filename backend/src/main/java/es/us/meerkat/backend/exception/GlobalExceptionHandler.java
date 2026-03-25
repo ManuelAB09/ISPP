@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Manejador global de excepciones para toda la aplicación.
@@ -20,6 +21,7 @@ import jakarta.servlet.http.HttpServletRequest;
  * <p>Centraliza el manejo de excepciones y proporciona respuestas HTTP coherentes según el tipo de
  * error. Excluye rutas de Swagger para evitar interferencias con la documentación automática.
  */
+@Slf4j
 @RestControllerAdvice()
 @Hidden
 public class GlobalExceptionHandler {
@@ -151,6 +153,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(
             final Exception ex, final HttpServletRequest request) {
+        log.error("Error no controlado en {} {}: {}", request.getMethod(), request.getRequestURI(),
+                ex.getMessage(), ex);
         final ErrorResponse errorResponse =
                 new ErrorResponse(
                         HttpStatus.INTERNAL_SERVER_ERROR.value(),
