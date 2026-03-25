@@ -34,8 +34,6 @@ Todo el contenido final ha sido revisado, modificado y validado por los integran
 
 A continuación, se incluyen algunos ejemplos representativos de los prompts utilizados:
 
-- **Generación de imágenes:** *"Crea una imagen que represente cómo se va a monetizar la aplicación basándote en este informe de monetización."*
-
-- **Redacción de documentos:** *"Ayúdame a mejorar la redacción y estructurar la introducción del documento de arquitectura para nuestra plataforma de comunidades de estudio."*
-
 - **Generación de código:** *"Escribe una función que permita filtrar una lista de comunidades de estudio por asignatura y disponibilidad de horarios de los usuarios."*
+
+- **Resolución de errores:** *"Me ha dado este error en la terminal a la hora de hacer esta petición. Hice esta petición HTTP. Mira el código y ayúdame a orientarme en dónde ha podido fallar y por qué."*
