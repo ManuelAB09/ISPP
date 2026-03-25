@@ -9,9 +9,9 @@
 **Proyecto:** MeerKatters  
 **Documento:** Entrega  
 **Sprint:** Sprint S2  
-**Semana:** Semana 2  
+**Semana:** Semana 3  
 **Estado:** Aprobado  
-**Fecha:** 16/03/2026  
+**Fecha:** 25/03/2026  
 **Autor(es):** Alejandro Soult Toscano
 
 ---
