@@ -23,7 +23,6 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: false
-    open-in-view: false
     properties:
       hibernate:
         format_sql: false

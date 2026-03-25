@@ -26,7 +26,7 @@ const toAbsoluteImageUrl = (imageUrl, fallback = DEFAULT_PROFILE_AVATAR) => {
 export default function Header({ user, page }) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { showBanner, planName, fechaFin, dismiss } = useSubscriptionExpiry();
-    const { panelUnreadCount, communityUnreadById } = useNotificationContext();
+    const { communityUnreadById } = useNotificationContext();
     // Calcular total de no leídos de chats privados y comunidades
     const [privateUnread, setPrivateUnread] = useState(0);
     useEffect(() => {

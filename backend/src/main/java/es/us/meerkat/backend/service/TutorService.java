@@ -2,6 +2,7 @@ package es.us.meerkat.backend.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -134,6 +135,7 @@ public class TutorService {
      * @param tutorIdParam Identificador del tutor.
      * @return DTO con los datos públicos del tutor.
      */
+    @Transactional(readOnly = true)
     public TutorProfileResponse obtenerPerfilPublico(final Long tutorIdParam) {
 
         final Tutor tutor =
@@ -188,10 +190,17 @@ public class TutorService {
                                 .nombre(tutor.getUsuario().getNombre())
                                 .foto(tutor.getUsuario().getFoto())
                                 .bio(tutor.getUsuario().getBio())
-                                .intereses(tutor.getUsuario().getIntereses())
+                                .intereses(
+                                        tutor.getUsuario().getIntereses() != null
+                                                ? new ArrayList<>(
+                                                        tutor.getUsuario().getIntereses())
+                                                : List.of())
                                 .esTutor(tutor.getUsuario().getEsTutor())
                                 .build())
-                .especialidades(tutor.getEspecialidades())
+                .especialidades(
+                        tutor.getEspecialidades() != null
+                                ? new ArrayList<>(tutor.getEspecialidades())
+                                : List.of())
                 .tarifaHora(tutor.getTarifaHora())
                 .disponibilidad(tutor.getDisponibilidad())
                 .bio(tutor.getBio())
@@ -226,6 +235,7 @@ public class TutorService {
      * @param size Tamano de pagina
      * @return Pagina de tutores filtrados, verificados primero
      */
+    @Transactional(readOnly = true)
     public Page<TutorProfileResponse> obtenerTutoresVerificados(
             String especialidad, BigDecimal tarifaMin, BigDecimal tarifaMax, int page, int size) {
 
