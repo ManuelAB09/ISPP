@@ -134,6 +134,7 @@ public class TutorService {
      * @param tutorIdParam Identificador del tutor.
      * @return DTO con los datos públicos del tutor.
      */
+    @Transactional(readOnly = true)
     public TutorProfileResponse obtenerPerfilPublico(final Long tutorIdParam) {
 
         final Tutor tutor =
@@ -226,6 +227,7 @@ public class TutorService {
      * @param size Tamano de pagina
      * @return Pagina de tutores filtrados, verificados primero
      */
+    @Transactional(readOnly = true)
     public Page<TutorProfileResponse> obtenerTutoresVerificados(
             String especialidad, BigDecimal tarifaMin, BigDecimal tarifaMax, int page, int size) {
 
