@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import es.us.meerkat.backend.entity.Institution;
+import es.us.meerkat.backend.entity.communities.Institution;
 
 /** Repositorio para manejar operaciones de base de datos sobre instituciones. */
 @Repository

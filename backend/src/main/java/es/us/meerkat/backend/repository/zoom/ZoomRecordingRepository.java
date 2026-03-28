@@ -6,7 +6,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import es.us.meerkat.backend.entity.ZoomRecording;
+import es.us.meerkat.backend.entity.zoom.ZoomRecording;
 
 /** Repositorio para las grabaciones sincronizadas desde Zoom. */
 public interface ZoomRecordingRepository extends JpaRepository<ZoomRecording, Long> {

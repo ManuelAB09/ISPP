@@ -4,7 +4,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import es.us.meerkat.backend.entity.GoogleCalendarToken;
+import es.us.meerkat.backend.entity.google.GoogleCalendarToken;
 
 /** Repositorio JPA para {@link GoogleCalendarToken}. */
 public interface GoogleCalendarTokenRepository extends JpaRepository<GoogleCalendarToken, Long> {

@@ -20,10 +20,10 @@ import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import es.us.meerkat.backend.dto.google.ClassroomUserResponse;
-import es.us.meerkat.backend.entity.Comunidad;
-import es.us.meerkat.backend.entity.ComunidadClassroom;
-import es.us.meerkat.backend.entity.GoogleClassroomConnection;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.communities.Comunidad;
+import es.us.meerkat.backend.entity.google.ComunidadClassroom;
+import es.us.meerkat.backend.entity.google.GoogleClassroomConnection;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.google.ComunidadClassroomRepository;
 import es.us.meerkat.backend.repository.google.GoogleClassroomConnectionRepository;

@@ -6,7 +6,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import es.us.meerkat.backend.entity.Suscripcion;
+import es.us.meerkat.backend.entity.suscriptions.Suscripcion;
 
 /** Repositorio para gestionar la persistencia de entidades Suscripcion. */
 public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> {

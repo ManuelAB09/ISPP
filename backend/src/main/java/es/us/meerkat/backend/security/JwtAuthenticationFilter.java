@@ -11,7 +11,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

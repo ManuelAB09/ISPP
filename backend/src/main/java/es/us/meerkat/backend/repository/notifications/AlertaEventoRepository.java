@@ -9,8 +9,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import es.us.meerkat.backend.entity.AlertaEvento;
-import es.us.meerkat.backend.entity.TipoAlerta;
+import es.us.meerkat.backend.entity.notifications.AlertaEvento;
+import es.us.meerkat.backend.entity.notifications.TipoAlerta;
 
 /**
  * Repositorio JPA para la entidad {@link AlertaEvento}.

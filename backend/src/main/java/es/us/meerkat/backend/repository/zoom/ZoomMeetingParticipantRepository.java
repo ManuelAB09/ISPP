@@ -5,7 +5,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import es.us.meerkat.backend.entity.ZoomMeetingParticipant;
+import es.us.meerkat.backend.entity.zoom.ZoomMeetingParticipant;
 
 /** Repositorio de participantes en llamadas Zoom. */
 public interface ZoomMeetingParticipantRepository

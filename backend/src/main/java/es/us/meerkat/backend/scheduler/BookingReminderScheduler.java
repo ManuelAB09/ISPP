@@ -7,8 +7,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import es.us.meerkat.backend.entity.EstadoSolicitudContratacion;
-import es.us.meerkat.backend.entity.SolicitudContratacionDirecta;
+import es.us.meerkat.backend.entity.tutors.EstadoSolicitudContratacion;
+import es.us.meerkat.backend.entity.tutors.SolicitudContratacionDirecta;
 import es.us.meerkat.backend.repository.tutors.SolicitudContratacionDirectaRepository;
 import es.us.meerkat.backend.service.emails.EmailService;
 import lombok.RequiredArgsConstructor;

@@ -7,9 +7,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import es.us.meerkat.backend.entity.Mensaje;
-import es.us.meerkat.backend.entity.MensajeLeido;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.chats.Mensaje;
+import es.us.meerkat.backend.entity.chats.MensajeLeido;
+import es.us.meerkat.backend.entity.users.Usuario;
 
 public interface MensajeLeidoRepository extends JpaRepository<MensajeLeido, Long> {
     Optional<MensajeLeido> findByMensajeAndUsuario(Mensaje mensaje, Usuario usuario);

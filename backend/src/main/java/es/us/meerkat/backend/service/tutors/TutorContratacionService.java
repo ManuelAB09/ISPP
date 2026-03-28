@@ -11,10 +11,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.dto.suscriptions.PaymentUrlResponse;
 import es.us.meerkat.backend.dto.tutors.HireTutorRequest;
-import es.us.meerkat.backend.entity.Comunidad;
-import es.us.meerkat.backend.entity.EstadoContratacion;
-import es.us.meerkat.backend.entity.Tutor;
-import es.us.meerkat.backend.entity.TutorContratacion;
+import es.us.meerkat.backend.entity.communities.Comunidad;
+import es.us.meerkat.backend.entity.tutors.EstadoContratacion;
+import es.us.meerkat.backend.entity.tutors.Tutor;
+import es.us.meerkat.backend.entity.tutors.TutorContratacion;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.tutors.TutorContratacionRepository;
 import es.us.meerkat.backend.repository.tutors.TutorRepository;

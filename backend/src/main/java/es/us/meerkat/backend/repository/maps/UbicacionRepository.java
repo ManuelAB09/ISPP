@@ -5,7 +5,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import es.us.meerkat.backend.entity.Ubicacion;
+import es.us.meerkat.backend.entity.maps.Ubicacion;
 
 /**
  * Repositorio JPA para la entidad {@link Ubicacion}.

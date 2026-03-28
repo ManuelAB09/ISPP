@@ -5,10 +5,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import es.us.meerkat.backend.entity.Comunidad;
-import es.us.meerkat.backend.entity.Feedback;
-import es.us.meerkat.backend.entity.RolComunidad;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.communities.Comunidad;
+import es.us.meerkat.backend.entity.communities.RolComunidad;
+import es.us.meerkat.backend.entity.recommendations.Feedback;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.recommendations.FeedbackRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;

@@ -5,8 +5,8 @@ import java.time.LocalDateTime;
 
 import es.us.meerkat.backend.dto.tutors.TutorResponse;
 import es.us.meerkat.backend.dto.users.UserPublicResponse;
-import es.us.meerkat.backend.entity.EstadoTransaccion;
-import es.us.meerkat.backend.entity.TipoTransaccion;
+import es.us.meerkat.backend.entity.suscriptions.EstadoTransaccion;
+import es.us.meerkat.backend.entity.suscriptions.TipoTransaccion;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;

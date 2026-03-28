@@ -20,8 +20,8 @@ import es.us.meerkat.backend.controller.communities.AnuncioController;
 import es.us.meerkat.backend.dto.communities.AnuncioListResponse;
 import es.us.meerkat.backend.dto.communities.AnuncioResponse;
 import es.us.meerkat.backend.dto.communities.CreateAnuncioRequest;
-import es.us.meerkat.backend.entity.Anuncio;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.communities.Anuncio;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.service.communities.AnuncioService;
 
 @ExtendWith(MockitoExtension.class)

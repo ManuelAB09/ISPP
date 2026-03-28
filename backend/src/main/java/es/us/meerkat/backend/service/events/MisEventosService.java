@@ -11,12 +11,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.dto.events.MisEventosItemResponse;
 import es.us.meerkat.backend.dto.notifications.AlertaEventoResponse;
-import es.us.meerkat.backend.entity.AlertaEvento;
-import es.us.meerkat.backend.entity.EstadoAsistencia;
-import es.us.meerkat.backend.entity.Evento;
-import es.us.meerkat.backend.entity.TipoAlerta;
-import es.us.meerkat.backend.entity.TipoEvento;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.events.EstadoAsistencia;
+import es.us.meerkat.backend.entity.events.Evento;
+import es.us.meerkat.backend.entity.events.TipoEvento;
+import es.us.meerkat.backend.entity.notifications.AlertaEvento;
+import es.us.meerkat.backend.entity.notifications.TipoAlerta;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.events.AsistenciaEventoRepository;
 import es.us.meerkat.backend.repository.events.EventoRepository;
 import es.us.meerkat.backend.repository.notifications.AlertaEventoRepository;

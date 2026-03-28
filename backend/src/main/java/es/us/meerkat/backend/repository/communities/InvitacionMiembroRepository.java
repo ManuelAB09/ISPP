@@ -8,9 +8,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import es.us.meerkat.backend.entity.Comunidad;
-import es.us.meerkat.backend.entity.EstadoInvitacion;
-import es.us.meerkat.backend.entity.InvitacionMiembro;
+import es.us.meerkat.backend.entity.communities.Comunidad;
+import es.us.meerkat.backend.entity.communities.EstadoInvitacion;
+import es.us.meerkat.backend.entity.communities.InvitacionMiembro;
 
 /** Repositorio para la gestión de invitaciones a miembros en la base de datos. */
 @Repository

@@ -3,8 +3,8 @@ package es.us.meerkat.backend.service.communities;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import es.us.meerkat.backend.entity.MiembroComunidad;
-import es.us.meerkat.backend.entity.RolComunidad;
+import es.us.meerkat.backend.entity.communities.MiembroComunidad;
+import es.us.meerkat.backend.entity.communities.RolComunidad;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
 import lombok.RequiredArgsConstructor;

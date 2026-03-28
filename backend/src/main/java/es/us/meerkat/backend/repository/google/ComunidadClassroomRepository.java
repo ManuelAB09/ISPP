@@ -4,8 +4,8 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import es.us.meerkat.backend.entity.Comunidad;
-import es.us.meerkat.backend.entity.ComunidadClassroom;
+import es.us.meerkat.backend.entity.communities.Comunidad;
+import es.us.meerkat.backend.entity.google.ComunidadClassroom;
 
 /**
  * Repositorio JPA para la entidad {@link ComunidadClassroom}.

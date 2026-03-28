@@ -8,7 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import es.us.meerkat.backend.entity.TutorContratacion;
+import es.us.meerkat.backend.entity.tutors.TutorContratacion;
 
 /** Repositorio para manejar operaciones de base de datos sobre contrataciones de tutores. */
 @Repository

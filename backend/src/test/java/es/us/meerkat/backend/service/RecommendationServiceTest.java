@@ -15,8 +15,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import es.us.meerkat.backend.dto.recommendations.FeedbackRecomendacionRequest;
-import es.us.meerkat.backend.entity.Recomendacion;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.recommendations.Recomendacion;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.recommendations.FeedbackRecomendacionRepository;

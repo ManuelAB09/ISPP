@@ -6,8 +6,8 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import es.us.meerkat.backend.entity.Notificacion;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.notifications.Notificacion;
+import es.us.meerkat.backend.entity.users.Usuario;
 
 @Repository
 public interface NotificacionRepository extends JpaRepository<Notificacion, Long> {

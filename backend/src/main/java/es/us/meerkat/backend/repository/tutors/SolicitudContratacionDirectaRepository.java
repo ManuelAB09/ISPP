@@ -9,8 +9,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import es.us.meerkat.backend.entity.EstadoSolicitudContratacion;
-import es.us.meerkat.backend.entity.SolicitudContratacionDirecta;
+import es.us.meerkat.backend.entity.tutors.EstadoSolicitudContratacion;
+import es.us.meerkat.backend.entity.tutors.SolicitudContratacionDirecta;
 
 @Repository
 public interface SolicitudContratacionDirectaRepository

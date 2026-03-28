@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import es.us.meerkat.backend.entity.Contenido;
+import es.us.meerkat.backend.entity.google.Contenido;
 
 @Repository
 public interface ContenidoRepository extends JpaRepository<Contenido, Long> {

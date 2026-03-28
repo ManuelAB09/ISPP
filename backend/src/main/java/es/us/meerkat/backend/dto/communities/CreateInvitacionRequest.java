@@ -1,6 +1,6 @@
 package es.us.meerkat.backend.dto.communities;
 
-import es.us.meerkat.backend.entity.RolComunidad;
+import es.us.meerkat.backend.entity.communities.RolComunidad;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

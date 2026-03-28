@@ -15,11 +15,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import es.us.meerkat.backend.entity.AsistenciaEvento;
-import es.us.meerkat.backend.entity.Comunidad;
-import es.us.meerkat.backend.entity.EstadoAsistencia;
-import es.us.meerkat.backend.entity.Evento;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.communities.Comunidad;
+import es.us.meerkat.backend.entity.events.AsistenciaEvento;
+import es.us.meerkat.backend.entity.events.EstadoAsistencia;
+import es.us.meerkat.backend.entity.events.Evento;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.events.AsistenciaEventoRepository;
 import es.us.meerkat.backend.repository.events.EventoRepository;

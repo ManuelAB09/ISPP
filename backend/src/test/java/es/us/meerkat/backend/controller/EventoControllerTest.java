@@ -20,10 +20,10 @@ import es.us.meerkat.backend.controller.events.EventoController;
 import es.us.meerkat.backend.dto.events.CreateEventRequest;
 import es.us.meerkat.backend.dto.events.EventDetailResponse;
 import es.us.meerkat.backend.dto.events.EventSummaryResponse;
-import es.us.meerkat.backend.entity.Comunidad;
-import es.us.meerkat.backend.entity.Evento;
-import es.us.meerkat.backend.entity.Ubicacion;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.communities.Comunidad;
+import es.us.meerkat.backend.entity.events.Evento;
+import es.us.meerkat.backend.entity.maps.Ubicacion;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.service.events.EventoService;
 
 @ExtendWith(MockitoExtension.class)

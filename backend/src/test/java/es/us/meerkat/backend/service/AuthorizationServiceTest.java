@@ -11,8 +11,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import es.us.meerkat.backend.entity.MiembroComunidad;
-import es.us.meerkat.backend.entity.RolComunidad;
+import es.us.meerkat.backend.entity.communities.MiembroComunidad;
+import es.us.meerkat.backend.entity.communities.RolComunidad;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
 import es.us.meerkat.backend.service.communities.AuthorizationService;

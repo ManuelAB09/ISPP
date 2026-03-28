@@ -3,8 +3,8 @@ package es.us.meerkat.backend.dto.communities;
 import java.time.LocalDateTime;
 
 import es.us.meerkat.backend.dto.users.UserSimpleResponse;
-import es.us.meerkat.backend.entity.EstadoInvitacion;
-import es.us.meerkat.backend.entity.RolComunidad;
+import es.us.meerkat.backend.entity.communities.EstadoInvitacion;
+import es.us.meerkat.backend.entity.communities.RolComunidad;
 
 /** DTO de respuesta para invitaciones a comunidades. */
 public record InvitacionResponse(

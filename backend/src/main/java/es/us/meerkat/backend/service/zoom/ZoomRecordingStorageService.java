@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import es.us.meerkat.backend.entity.ZoomRecording;
+import es.us.meerkat.backend.entity.zoom.ZoomRecording;
 
 /** Gestiona el almacenamiento persistente de grabaciones de Zoom. */
 @Service

@@ -18,7 +18,7 @@ import es.us.meerkat.backend.dto.users.UpdateUserRequest;
 import es.us.meerkat.backend.dto.users.UserDetailResponse;
 import es.us.meerkat.backend.dto.users.UserPublicResponse;
 import es.us.meerkat.backend.dto.users.VisibilityRequest;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.service.users.UsuarioService;
 
 @ExtendWith(MockitoExtension.class)

@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import es.us.meerkat.backend.entity.ActividadUsuario;
+import es.us.meerkat.backend.entity.users.ActividadUsuario;
 
 @Repository
 public interface ActividadUsuarioRepository extends JpaRepository<ActividadUsuario, Long> {

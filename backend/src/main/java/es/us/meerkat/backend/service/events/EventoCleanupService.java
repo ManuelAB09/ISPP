@@ -6,7 +6,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import es.us.meerkat.backend.entity.Evento;
+import es.us.meerkat.backend.entity.events.Evento;
 import es.us.meerkat.backend.repository.emails.RecordatorioEmailRepository;
 import es.us.meerkat.backend.repository.events.AsistenciaEventoRepository;
 import es.us.meerkat.backend.repository.events.EventoRepository;

@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import es.us.meerkat.backend.entity.Valoracion;
+import es.us.meerkat.backend.entity.recommendations.Valoracion;
 import es.us.meerkat.backend.service.recommendations.ValoracionService;
 
 @RestController

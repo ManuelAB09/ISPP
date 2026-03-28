@@ -19,7 +19,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import es.us.meerkat.backend.controller.chats.MensajeComunidadController;
 import es.us.meerkat.backend.dto.chats.EnviarMensajeComunidadRequest;
 import es.us.meerkat.backend.dto.chats.MensajeComunidadResponse;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import es.us.meerkat.backend.service.chats.ChatFileStorageService;

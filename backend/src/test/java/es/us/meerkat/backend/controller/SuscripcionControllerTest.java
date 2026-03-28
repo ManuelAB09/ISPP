@@ -20,9 +20,9 @@ import es.us.meerkat.backend.controller.suscriptions.SuscripcionController;
 import es.us.meerkat.backend.dto.suscriptions.PaymentUrlResponse;
 import es.us.meerkat.backend.dto.suscriptions.SubscribeRequest;
 import es.us.meerkat.backend.dto.suscriptions.SubscriptionResponse;
-import es.us.meerkat.backend.entity.Suscripcion;
-import es.us.meerkat.backend.entity.TipoPlan;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.suscriptions.Suscripcion;
+import es.us.meerkat.backend.entity.suscriptions.TipoPlan;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.service.suscriptions.PaymentService;
 import es.us.meerkat.backend.service.suscriptions.SuscripcionService;
 

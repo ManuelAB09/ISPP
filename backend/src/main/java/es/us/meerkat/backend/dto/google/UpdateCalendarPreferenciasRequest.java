@@ -2,7 +2,7 @@ package es.us.meerkat.backend.dto.google;
 
 import java.util.List;
 
-import es.us.meerkat.backend.entity.TipoEvento;
+import es.us.meerkat.backend.entity.events.TipoEvento;
 import lombok.Data;
 
 /** DTO para actualizar las preferencias de sincronización con Google Calendar. */

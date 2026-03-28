@@ -17,7 +17,7 @@ import org.springframework.http.ResponseEntity;
 import es.us.meerkat.backend.controller.maps.UbicacionController;
 import es.us.meerkat.backend.dto.maps.UbicacionRequest;
 import es.us.meerkat.backend.dto.maps.UbicacionResponse;
-import es.us.meerkat.backend.entity.Ubicacion;
+import es.us.meerkat.backend.entity.maps.Ubicacion;
 import es.us.meerkat.backend.service.maps.UbicacionService;
 
 @ExtendWith(MockitoExtension.class)

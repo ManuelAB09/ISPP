@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import es.us.meerkat.backend.entity.GrabacionClase;
+import es.us.meerkat.backend.entity.zoom.GrabacionClase;
 
 /** Repositorio JPA para la entidad {@link GrabacionClase}. */
 public interface GrabacionClaseRepository extends JpaRepository<GrabacionClase, Long> {

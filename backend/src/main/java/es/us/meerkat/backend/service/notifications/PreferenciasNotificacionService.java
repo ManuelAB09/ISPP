@@ -5,8 +5,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.dto.events.UpdatePreferenciasRequest;
 import es.us.meerkat.backend.dto.notifications.PreferenciasNotificacionResponse;
-import es.us.meerkat.backend.entity.PreferenciasNotificacion;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.notifications.PreferenciasNotificacion;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.notifications.PreferenciasNotificacionRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import lombok.RequiredArgsConstructor;

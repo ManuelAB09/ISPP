@@ -2,7 +2,7 @@ package es.us.meerkat.backend.dto.notifications;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-import es.us.meerkat.backend.entity.TipoCanal;
+import es.us.meerkat.backend.entity.notifications.TipoCanal;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

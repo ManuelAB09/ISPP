@@ -5,8 +5,8 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import es.us.meerkat.backend.entity.Tutor;
-import es.us.meerkat.backend.entity.Valoracion;
+import es.us.meerkat.backend.entity.recommendations.Valoracion;
+import es.us.meerkat.backend.entity.tutors.Tutor;
 import es.us.meerkat.backend.repository.recommendations.ValoracionRepository;
 import es.us.meerkat.backend.repository.tutors.TutorRepository;
 

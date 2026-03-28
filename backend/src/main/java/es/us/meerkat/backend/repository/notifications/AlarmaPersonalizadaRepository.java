@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import es.us.meerkat.backend.entity.AlarmaPersonalizada;
+import es.us.meerkat.backend.entity.notifications.AlarmaPersonalizada;
 
 /** Repositorio JPA para {@link AlarmaPersonalizada}. */
 public interface AlarmaPersonalizadaRepository extends JpaRepository<AlarmaPersonalizada, Long> {

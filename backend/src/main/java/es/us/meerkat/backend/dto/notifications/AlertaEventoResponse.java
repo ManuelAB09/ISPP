@@ -4,8 +4,8 @@ import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-import es.us.meerkat.backend.entity.TipoAlerta;
-import es.us.meerkat.backend.entity.TipoEvento;
+import es.us.meerkat.backend.entity.events.TipoEvento;
+import es.us.meerkat.backend.entity.notifications.TipoAlerta;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

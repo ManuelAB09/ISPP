@@ -8,9 +8,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.dto.chats.EnviarMensajeRequest;
 import es.us.meerkat.backend.dto.chats.MensajeResponse;
-import es.us.meerkat.backend.entity.Mensaje;
-import es.us.meerkat.backend.entity.Tutor;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.chats.Mensaje;
+import es.us.meerkat.backend.entity.tutors.Tutor;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.chats.MensajeRepository;
 import es.us.meerkat.backend.repository.tutors.TutorRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
@@ -33,8 +33,8 @@ public class MensajeService {
                 if (!mensajeLeidoRepository
                         .findByMensajeAndUsuario(m, m.getReceptor())
                         .isPresent()) {
-                    es.us.meerkat.backend.entity.MensajeLeido ml =
-                            es.us.meerkat.backend.entity.MensajeLeido.builder()
+                    es.us.meerkat.backend.entity.chats.MensajeLeido ml =
+                            es.us.meerkat.backend.entity.chats.MensajeLeido.builder()
                                     .mensaje(m)
                                     .usuario(m.getReceptor())
                                     .leidoAt(java.time.LocalDateTime.now())

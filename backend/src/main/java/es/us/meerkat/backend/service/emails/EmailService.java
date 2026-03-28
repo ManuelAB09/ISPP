@@ -24,13 +24,13 @@ import com.sendgrid.helpers.mail.Mail;
 import com.sendgrid.helpers.mail.objects.Content;
 import com.sendgrid.helpers.mail.objects.Email;
 
-import es.us.meerkat.backend.entity.AsistenciaEvento;
-import es.us.meerkat.backend.entity.Comunidad;
-import es.us.meerkat.backend.entity.EstadoAsistencia;
-import es.us.meerkat.backend.entity.Evento;
-import es.us.meerkat.backend.entity.TipoEvento;
-import es.us.meerkat.backend.entity.TipoRecordatorio;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.communities.Comunidad;
+import es.us.meerkat.backend.entity.events.AsistenciaEvento;
+import es.us.meerkat.backend.entity.events.EstadoAsistencia;
+import es.us.meerkat.backend.entity.events.Evento;
+import es.us.meerkat.backend.entity.events.TipoEvento;
+import es.us.meerkat.backend.entity.notifications.TipoRecordatorio;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.events.AsistenciaEventoRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -1261,7 +1261,7 @@ public class EmailService {
             final Usuario destinatario,
             final Comunidad comunidad,
             final Usuario autor,
-            final es.us.meerkat.backend.entity.Anuncio anuncio) {
+            final es.us.meerkat.backend.entity.communities.Anuncio anuncio) {
         if (destinatario == null
                 || destinatario.getEmail() == null
                 || destinatario.getEmail().isBlank()

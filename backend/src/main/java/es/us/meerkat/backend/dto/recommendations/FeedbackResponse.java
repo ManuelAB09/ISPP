@@ -2,7 +2,7 @@ package es.us.meerkat.backend.dto.recommendations;
 
 import java.time.LocalDateTime;
 
-import es.us.meerkat.backend.entity.Feedback;
+import es.us.meerkat.backend.entity.recommendations.Feedback;
 
 public record FeedbackResponse(
         Long id,

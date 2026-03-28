@@ -13,10 +13,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import es.us.meerkat.backend.controller.events.AsistenciaEventoController;
-import es.us.meerkat.backend.entity.AsistenciaEvento;
-import es.us.meerkat.backend.entity.EstadoAsistencia;
-import es.us.meerkat.backend.entity.Evento;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.events.AsistenciaEvento;
+import es.us.meerkat.backend.entity.events.EstadoAsistencia;
+import es.us.meerkat.backend.entity.events.Evento;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.service.events.AsistenciaEventoService;
 
 @ExtendWith(MockitoExtension.class)

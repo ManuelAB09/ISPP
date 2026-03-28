@@ -11,8 +11,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import es.us.meerkat.backend.entity.Recomendacion;
-import es.us.meerkat.backend.entity.TipoRecomendacion;
+import es.us.meerkat.backend.entity.recommendations.Recomendacion;
+import es.us.meerkat.backend.entity.recommendations.TipoRecomendacion;
 
 @Repository
 public interface RecomendacionRepository extends JpaRepository<Recomendacion, Long> {

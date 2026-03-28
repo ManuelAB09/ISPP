@@ -8,9 +8,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import es.us.meerkat.backend.entity.EstadoTransaccion;
-import es.us.meerkat.backend.entity.TipoTransaccion;
-import es.us.meerkat.backend.entity.TransaccionPago;
+import es.us.meerkat.backend.entity.suscriptions.EstadoTransaccion;
+import es.us.meerkat.backend.entity.suscriptions.TipoTransaccion;
+import es.us.meerkat.backend.entity.suscriptions.TransaccionPago;
 
 @Repository
 public interface TransaccionPagoRepository extends JpaRepository<TransaccionPago, Long> {

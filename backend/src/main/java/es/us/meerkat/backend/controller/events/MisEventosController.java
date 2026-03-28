@@ -16,7 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 import es.us.meerkat.backend.dto.events.MisEventosItemResponse;
 import es.us.meerkat.backend.dto.notifications.AlarmaPersonalizadaResponse;
 import es.us.meerkat.backend.dto.notifications.AlertaEventoResponse;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.service.events.AlarmaPersonalizadaService;
 import es.us.meerkat.backend.service.events.MisEventosService;
 import io.swagger.v3.oas.annotations.Operation;

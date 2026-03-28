@@ -34,8 +34,8 @@ import es.us.meerkat.backend.dto.tutors.TutorProfileResponse;
 import es.us.meerkat.backend.dto.tutors.TutorResponse;
 import es.us.meerkat.backend.dto.tutors.UpdateTutorRequest;
 import es.us.meerkat.backend.dto.users.PageInfo;
-import es.us.meerkat.backend.entity.Tutor;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.tutors.Tutor;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.tutors.SolicitudContratacionDirectaRepository;
 import es.us.meerkat.backend.service.google.GoogleCalendarService;
 import es.us.meerkat.backend.service.suscriptions.PaymentService;
@@ -536,7 +536,7 @@ public class TutorController {
             Tutor tutor = tutorService.obtenerTutorPorId(tutorId).orElse(null);
             paymentService.procesarPagoExitoso(
                     usuario.getId(),
-                    es.us.meerkat.backend.entity.TipoTransaccion.PAGO_VERIFICACION,
+                    es.us.meerkat.backend.entity.suscriptions.TipoTransaccion.PAGO_VERIFICACION,
                     monto,
                     "Verificación de tutor completada vía Stripe Elements",
                     tutor);
@@ -589,7 +589,7 @@ public class TutorController {
 
             // 3. Verificar que es una sesión de verificación de tutor
             String tipo = session.getMetadata().get("tipo");
-            if (!es.us.meerkat.backend.entity.TipoTransaccion.PAGO_VERIFICACION
+            if (!es.us.meerkat.backend.entity.suscriptions.TipoTransaccion.PAGO_VERIFICACION
                     .name()
                     .equals(tipo)) {
                 return ResponseEntity.badRequest()
@@ -620,7 +620,7 @@ public class TutorController {
             Tutor tutor = tutorService.obtenerTutorPorId(tutorId).orElse(null);
             paymentService.procesarPagoExitoso(
                     usuario.getId(),
-                    es.us.meerkat.backend.entity.TipoTransaccion.PAGO_VERIFICACION,
+                    es.us.meerkat.backend.entity.suscriptions.TipoTransaccion.PAGO_VERIFICACION,
                     monto,
                     "Verificación de tutor completada",
                     tutor);

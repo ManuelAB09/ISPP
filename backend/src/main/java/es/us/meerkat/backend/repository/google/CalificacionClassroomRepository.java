@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import es.us.meerkat.backend.entity.CalificacionClassroom;
+import es.us.meerkat.backend.entity.google.CalificacionClassroom;
 
 /** Repositorio JPA para la entidad {@link CalificacionClassroom}. */
 public interface CalificacionClassroomRepository

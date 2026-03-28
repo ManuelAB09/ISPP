@@ -7,10 +7,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import es.us.meerkat.backend.entity.Comunidad;
-import es.us.meerkat.backend.entity.EstadoComunidad;
-import es.us.meerkat.backend.entity.TipoGrupo;
-import es.us.meerkat.backend.entity.TipoPlanComunidad;
+import es.us.meerkat.backend.entity.communities.Comunidad;
+import es.us.meerkat.backend.entity.communities.EstadoComunidad;
+import es.us.meerkat.backend.entity.communities.TipoGrupo;
+import es.us.meerkat.backend.entity.suscriptions.TipoPlanComunidad;
 
 @Repository
 public interface ComunidadRepository extends JpaRepository<Comunidad, Long> {

@@ -16,10 +16,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import es.us.meerkat.backend.entity.Institution;
-import es.us.meerkat.backend.entity.Suscripcion;
-import es.us.meerkat.backend.entity.TipoPlan;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.communities.Institution;
+import es.us.meerkat.backend.entity.suscriptions.Suscripcion;
+import es.us.meerkat.backend.entity.suscriptions.TipoPlan;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.communities.InstitutionRepository;
 import es.us.meerkat.backend.repository.suscriptions.SuscripcionRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;

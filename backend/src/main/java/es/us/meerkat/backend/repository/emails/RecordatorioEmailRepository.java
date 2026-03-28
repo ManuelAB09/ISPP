@@ -8,8 +8,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import es.us.meerkat.backend.entity.RecordatorioEmail;
-import es.us.meerkat.backend.entity.TipoRecordatorio;
+import es.us.meerkat.backend.entity.emails.RecordatorioEmail;
+import es.us.meerkat.backend.entity.notifications.TipoRecordatorio;
 
 /**
  * Repositorio JPA para {@link RecordatorioEmail}.

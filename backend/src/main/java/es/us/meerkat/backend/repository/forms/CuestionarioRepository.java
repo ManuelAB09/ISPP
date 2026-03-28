@@ -8,8 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import es.us.meerkat.backend.entity.Cuestionario;
-import es.us.meerkat.backend.entity.NivelDificultad;
+import es.us.meerkat.backend.entity.forms.Cuestionario;
+import es.us.meerkat.backend.entity.forms.NivelDificultad;
 
 @Repository
 public interface CuestionarioRepository extends JpaRepository<Cuestionario, Long> {

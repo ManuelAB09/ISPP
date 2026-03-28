@@ -1,6 +1,6 @@
 package es.us.meerkat.backend.dto.events;
 
-import es.us.meerkat.backend.entity.TipoEvento;
+import es.us.meerkat.backend.entity.events.TipoEvento;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 

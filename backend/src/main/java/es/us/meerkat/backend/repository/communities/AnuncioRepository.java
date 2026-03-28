@@ -7,8 +7,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import es.us.meerkat.backend.entity.Anuncio;
-import es.us.meerkat.backend.entity.Comunidad;
+import es.us.meerkat.backend.entity.communities.Anuncio;
+import es.us.meerkat.backend.entity.communities.Comunidad;
 
 /** Repositorio para la gestión de anuncios en la base de datos. */
 @Repository

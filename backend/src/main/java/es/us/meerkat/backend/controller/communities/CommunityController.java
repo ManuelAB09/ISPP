@@ -50,15 +50,15 @@ import es.us.meerkat.backend.dto.users.RequestListResponse;
 import es.us.meerkat.backend.dto.users.RequestResponse;
 import es.us.meerkat.backend.dto.users.RespondRequestBody;
 import es.us.meerkat.backend.dto.users.UserSimpleResponse;
-import es.us.meerkat.backend.entity.Categoria;
-import es.us.meerkat.backend.entity.Comunidad;
-import es.us.meerkat.backend.entity.ComunidadClassroom;
-import es.us.meerkat.backend.entity.EstadoSolicitud;
-import es.us.meerkat.backend.entity.Evento;
-import es.us.meerkat.backend.entity.MiembroComunidad;
-import es.us.meerkat.backend.entity.RolComunidad;
-import es.us.meerkat.backend.entity.SolicitudComunidad;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.communities.Categoria;
+import es.us.meerkat.backend.entity.communities.Comunidad;
+import es.us.meerkat.backend.entity.communities.MiembroComunidad;
+import es.us.meerkat.backend.entity.communities.RolComunidad;
+import es.us.meerkat.backend.entity.communities.SolicitudComunidad;
+import es.us.meerkat.backend.entity.events.Evento;
+import es.us.meerkat.backend.entity.google.ComunidadClassroom;
+import es.us.meerkat.backend.entity.tutors.EstadoSolicitud;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.exception.ValidationException;
 import es.us.meerkat.backend.service.communities.AuthorizationService;
 import es.us.meerkat.backend.service.communities.CategoryService;
@@ -190,9 +190,10 @@ public class CommunityController {
                             request.nombre(),
                             request.descripcion(),
                             request.tipoGrupo() != null
-                                    ? es.us.meerkat.backend.entity.TipoGrupo.valueOf(
+                                    ? es.us.meerkat.backend.entity.communities.TipoGrupo.valueOf(
                                             request.tipoGrupo())
-                                    : es.us.meerkat.backend.entity.TipoGrupo.COMUNIDAD_PUBLICA,
+                                    : es.us.meerkat.backend.entity.communities.TipoGrupo
+                                            .COMUNIDAD_PUBLICA,
                             request.imagenUrl(),
                             request.institutionId(),
                             request.maxMiembros(),
@@ -315,7 +316,8 @@ public class CommunityController {
                 communityService.updatePrivacy(
                         usuario.getId(),
                         communityId,
-                        es.us.meerkat.backend.entity.TipoGrupo.valueOf(request.tipoGrupo()));
+                        es.us.meerkat.backend.entity.communities.TipoGrupo.valueOf(
+                                request.tipoGrupo()));
         return ResponseEntity.ok(entityToDetailResponse(comunidad, usuario.getId()));
     }
 
@@ -1241,7 +1243,7 @@ public class CommunityController {
         Boolean esMiembro = false;
 
         if (userId != null) {
-            es.us.meerkat.backend.entity.MiembroComunidad membership =
+            es.us.meerkat.backend.entity.communities.MiembroComunidad membership =
                     authorizationService.getMembership(userId, comunidad.getId());
             if (membership != null) {
                 miRol = membership.getRol().name();
@@ -1447,7 +1449,7 @@ public class CommunityController {
 
             paymentService.procesarPagoExitoso(
                     usuario.getId(),
-                    es.us.meerkat.backend.entity.TipoTransaccion.PAGO_TUTOR,
+                    es.us.meerkat.backend.entity.suscriptions.TipoTransaccion.PAGO_TUTOR,
                     monto,
                     "Contratación de tutor completada vía Stripe Elements",
                     null);

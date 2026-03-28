@@ -20,8 +20,8 @@ import es.us.meerkat.backend.controller.tutors.TutorController;
 import es.us.meerkat.backend.dto.tutors.CreateTutorRequest;
 import es.us.meerkat.backend.dto.tutors.TutorResponse;
 import es.us.meerkat.backend.dto.tutors.UpdateTutorRequest;
-import es.us.meerkat.backend.entity.Tutor;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.tutors.Tutor;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.service.suscriptions.PaymentService;
 import es.us.meerkat.backend.service.tutors.TutorService;
 

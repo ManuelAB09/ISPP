@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import es.us.meerkat.backend.entity.GoogleCalendarBooking;
+import es.us.meerkat.backend.entity.google.GoogleCalendarBooking;
 
 /** Repositorio JPA para {@link GoogleCalendarBooking}. */
 public interface GoogleCalendarBookingRepository

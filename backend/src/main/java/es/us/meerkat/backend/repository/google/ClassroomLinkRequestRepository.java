@@ -5,8 +5,8 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import es.us.meerkat.backend.entity.ClassroomLinkRequest;
-import es.us.meerkat.backend.entity.ClassroomLinkRequestStatus;
+import es.us.meerkat.backend.entity.google.ClassroomLinkRequest;
+import es.us.meerkat.backend.entity.google.ClassroomLinkRequestStatus;
 
 public interface ClassroomLinkRequestRepository extends JpaRepository<ClassroomLinkRequest, Long> {
 

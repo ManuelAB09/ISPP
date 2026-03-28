@@ -8,8 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import es.us.meerkat.backend.entity.Mensaje;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.chats.Mensaje;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.chats.MensajeRepository;
 import es.us.meerkat.backend.service.chats.MensajeLeidoService;
 import io.swagger.v3.oas.annotations.Operation;

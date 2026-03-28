@@ -7,8 +7,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import es.us.meerkat.backend.entity.EstadoSolicitud;
-import es.us.meerkat.backend.entity.SolicitudComunidad;
+import es.us.meerkat.backend.entity.communities.SolicitudComunidad;
+import es.us.meerkat.backend.entity.tutors.EstadoSolicitud;
 
 @Repository
 public interface SolicitudComunidadRepository extends JpaRepository<SolicitudComunidad, Long> {

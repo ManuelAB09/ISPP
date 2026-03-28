@@ -7,8 +7,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import es.us.meerkat.backend.entity.Notificacion;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.notifications.Notificacion;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.notifications.NotificacionRepository;
 
 @Service

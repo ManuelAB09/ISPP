@@ -12,7 +12,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import es.us.meerkat.backend.dto.events.UpdatePreferenciasRequest;
 import es.us.meerkat.backend.dto.notifications.PreferenciasNotificacionResponse;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.service.notifications.PreferenciasNotificacionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

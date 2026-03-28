@@ -3,7 +3,7 @@ package es.us.meerkat.backend.dto.events;
 import java.time.LocalDateTime;
 
 import es.us.meerkat.backend.dto.maps.UbicacionResponse;
-import es.us.meerkat.backend.entity.TipoEvento;
+import es.us.meerkat.backend.entity.events.TipoEvento;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

@@ -1,6 +1,6 @@
 package es.us.meerkat.backend.dto.events;
 
-import es.us.meerkat.backend.entity.TipoCanal;
+import es.us.meerkat.backend.entity.notifications.TipoCanal;
 import lombok.Data;
 
 /**

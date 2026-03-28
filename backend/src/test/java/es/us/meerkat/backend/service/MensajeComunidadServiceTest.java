@@ -18,10 +18,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import es.us.meerkat.backend.dto.chats.EnviarMensajeComunidadRequest;
 import es.us.meerkat.backend.dto.chats.MensajeComunidadResponse;
-import es.us.meerkat.backend.entity.Comunidad;
-import es.us.meerkat.backend.entity.MensajeComunidad;
-import es.us.meerkat.backend.entity.PreferenciasNotificacion;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.chats.MensajeComunidad;
+import es.us.meerkat.backend.entity.communities.Comunidad;
+import es.us.meerkat.backend.entity.notifications.PreferenciasNotificacion;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.chats.MensajeComunidadRepository;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;

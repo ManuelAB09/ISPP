@@ -23,7 +23,7 @@ import es.us.meerkat.backend.dto.users.AuthResponse;
 import es.us.meerkat.backend.dto.users.ForgotPasswordRequest;
 import es.us.meerkat.backend.dto.users.LoginRequest;
 import es.us.meerkat.backend.dto.users.RegisterRequest;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.exception.ConflictException;
 import es.us.meerkat.backend.exception.EmailNotVerifiedException;
 import es.us.meerkat.backend.exception.ValidationException;

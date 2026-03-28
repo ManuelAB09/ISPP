@@ -23,10 +23,10 @@ import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
 
 import es.us.meerkat.backend.dto.suscriptions.PaymentUrlResponse;
-import es.us.meerkat.backend.entity.EstadoTransaccion;
-import es.us.meerkat.backend.entity.TipoTransaccion;
-import es.us.meerkat.backend.entity.TransaccionPago;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.suscriptions.EstadoTransaccion;
+import es.us.meerkat.backend.entity.suscriptions.TipoTransaccion;
+import es.us.meerkat.backend.entity.suscriptions.TransaccionPago;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.suscriptions.TransaccionPagoRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import es.us.meerkat.backend.service.suscriptions.PaymentService;

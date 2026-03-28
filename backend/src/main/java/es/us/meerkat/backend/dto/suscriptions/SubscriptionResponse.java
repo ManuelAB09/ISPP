@@ -4,7 +4,7 @@ import java.time.LocalDate;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import es.us.meerkat.backend.entity.TipoPlan;
+import es.us.meerkat.backend.entity.suscriptions.TipoPlan;
 import lombok.Builder;
 import lombok.Data;
 

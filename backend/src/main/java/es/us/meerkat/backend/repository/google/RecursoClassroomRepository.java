@@ -5,7 +5,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import es.us.meerkat.backend.entity.RecursoClassroom;
+import es.us.meerkat.backend.entity.google.RecursoClassroom;
 
 /** Repositorio JPA para la entidad {@link RecursoClassroom}. */
 public interface RecursoClassroomRepository extends JpaRepository<RecursoClassroom, Long> {

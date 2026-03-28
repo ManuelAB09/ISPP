@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.*;
 
 import es.us.meerkat.backend.dto.recommendations.CreateFeedbackRequest;
 import es.us.meerkat.backend.dto.recommendations.FeedbackResponse;
-import es.us.meerkat.backend.entity.Feedback;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.recommendations.Feedback;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.service.recommendations.FeedbackService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

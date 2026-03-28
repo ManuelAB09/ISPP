@@ -6,9 +6,9 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import es.us.meerkat.backend.entity.MensajeComunidad;
-import es.us.meerkat.backend.entity.MensajeComunidadLeido;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.chats.MensajeComunidad;
+import es.us.meerkat.backend.entity.chats.MensajeComunidadLeido;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.chats.MensajeComunidadLeidoRepository;
 
 @Service

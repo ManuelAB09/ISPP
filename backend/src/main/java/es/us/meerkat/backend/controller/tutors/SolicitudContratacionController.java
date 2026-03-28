@@ -14,8 +14,8 @@ import es.us.meerkat.backend.dto.tutors.DisponibilidadTutorResponse;
 import es.us.meerkat.backend.dto.tutors.HorarioOcupadoResponse;
 import es.us.meerkat.backend.dto.tutors.SolicitudContratacionRequest;
 import es.us.meerkat.backend.dto.tutors.SolicitudContratacionResponse;
-import es.us.meerkat.backend.entity.Tutor;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.tutors.Tutor;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.service.emails.EmailService;
 import es.us.meerkat.backend.service.suscriptions.PaymentService;
 import es.us.meerkat.backend.service.tutors.DisponibilidadService;
@@ -333,7 +333,7 @@ public class SolicitudContratacionController {
 
             paymentService.procesarPagoExitoso(
                     usuario.getId(),
-                    es.us.meerkat.backend.entity.TipoTransaccion.PAGO_TUTOR,
+                    es.us.meerkat.backend.entity.suscriptions.TipoTransaccion.PAGO_TUTOR,
                     monto,
                     "Pago contratación directa de tutor",
                     tutor);

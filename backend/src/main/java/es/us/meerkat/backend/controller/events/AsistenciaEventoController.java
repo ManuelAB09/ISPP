@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import es.us.meerkat.backend.dto.events.AttendanceResponse;
-import es.us.meerkat.backend.entity.AsistenciaEvento;
+import es.us.meerkat.backend.entity.events.AsistenciaEvento;
 import es.us.meerkat.backend.service.events.AsistenciaEventoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

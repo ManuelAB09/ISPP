@@ -12,8 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.dto.tutors.CreateDisponibilidadRequest;
 import es.us.meerkat.backend.dto.tutors.DisponibilidadTutorResponse;
-import es.us.meerkat.backend.entity.DisponibilidadTutor;
-import es.us.meerkat.backend.entity.Tutor;
+import es.us.meerkat.backend.entity.tutors.DisponibilidadTutor;
+import es.us.meerkat.backend.entity.tutors.Tutor;
 import es.us.meerkat.backend.repository.tutors.DisponibilidadTutorRepository;
 import es.us.meerkat.backend.repository.tutors.TutorRepository;
 

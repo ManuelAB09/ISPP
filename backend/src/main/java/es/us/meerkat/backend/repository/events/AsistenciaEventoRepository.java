@@ -8,8 +8,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import es.us.meerkat.backend.entity.AsistenciaEvento;
-import es.us.meerkat.backend.entity.EstadoAsistencia;
+import es.us.meerkat.backend.entity.events.AsistenciaEvento;
+import es.us.meerkat.backend.entity.events.EstadoAsistencia;
 
 /**
  * Repositorio JPA para la entidad {@link AsistenciaEvento}.

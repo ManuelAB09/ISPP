@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import es.us.meerkat.backend.dto.tutors.CreateDisponibilidadRequest;
 import es.us.meerkat.backend.dto.tutors.DisponibilidadTutorResponse;
-import es.us.meerkat.backend.entity.Tutor;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.tutors.Tutor;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.tutors.TutorRepository;
 import es.us.meerkat.backend.service.tutors.DisponibilidadService;
 import jakarta.validation.Valid;

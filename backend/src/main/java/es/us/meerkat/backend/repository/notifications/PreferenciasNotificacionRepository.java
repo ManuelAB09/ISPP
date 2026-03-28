@@ -4,7 +4,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import es.us.meerkat.backend.entity.PreferenciasNotificacion;
+import es.us.meerkat.backend.entity.notifications.PreferenciasNotificacion;
 
 /** Repositorio JPA para {@link PreferenciasNotificacion}. */
 public interface PreferenciasNotificacionRepository

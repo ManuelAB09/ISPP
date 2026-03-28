@@ -3,7 +3,7 @@ package es.us.meerkat.backend.dto.events;
 import java.time.LocalDateTime;
 
 import es.us.meerkat.backend.dto.users.UserPublicResponse;
-import es.us.meerkat.backend.entity.EstadoAsistencia;
+import es.us.meerkat.backend.entity.events.EstadoAsistencia;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

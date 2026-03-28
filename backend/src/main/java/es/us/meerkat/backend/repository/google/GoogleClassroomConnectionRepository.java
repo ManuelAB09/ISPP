@@ -4,8 +4,8 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import es.us.meerkat.backend.entity.GoogleClassroomConnection;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.google.GoogleClassroomConnection;
+import es.us.meerkat.backend.entity.users.Usuario;
 
 /**
  * Repositorio JPA para la entidad {@link GoogleClassroomConnection}.

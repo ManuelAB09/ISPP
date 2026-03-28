@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import es.us.meerkat.backend.entity.TareaClassroom;
+import es.us.meerkat.backend.entity.google.TareaClassroom;
 
 /** Repositorio JPA para la entidad {@link TareaClassroom}. */
 public interface TareaClassroomRepository extends JpaRepository<TareaClassroom, Long> {

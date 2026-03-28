@@ -1,6 +1,6 @@
 package es.us.meerkat.backend.dto.notifications;
 
-import es.us.meerkat.backend.entity.TipoCanal;
+import es.us.meerkat.backend.entity.notifications.TipoCanal;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;

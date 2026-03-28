@@ -17,7 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 import es.us.meerkat.backend.dto.notifications.AlarmaPersonalizadaResponse;
 import es.us.meerkat.backend.dto.notifications.CrearAlarmaRequest;
 import es.us.meerkat.backend.dto.notifications.CrearAlarmasLoteRequest;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.service.events.AlarmaPersonalizadaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

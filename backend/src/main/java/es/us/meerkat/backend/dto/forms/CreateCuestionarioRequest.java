@@ -2,8 +2,8 @@ package es.us.meerkat.backend.dto.forms;
 
 import java.util.List;
 
-import es.us.meerkat.backend.entity.NivelDificultad;
-import es.us.meerkat.backend.entity.TipoPregunta;
+import es.us.meerkat.backend.entity.forms.NivelDificultad;
+import es.us.meerkat.backend.entity.recommendations.TipoPregunta;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

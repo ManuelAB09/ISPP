@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import es.us.meerkat.backend.entity.DisponibilidadTutor;
+import es.us.meerkat.backend.entity.tutors.DisponibilidadTutor;
 
 /** Repositorio JPA para la entidad {@link DisponibilidadTutor}. */
 public interface DisponibilidadTutorRepository extends JpaRepository<DisponibilidadTutor, Long> {

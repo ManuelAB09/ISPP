@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import es.us.meerkat.backend.entity.CuestionarioIntento;
+import es.us.meerkat.backend.entity.forms.CuestionarioIntento;
 
 @Repository
 public interface CuestionarioIntentoRepository extends JpaRepository<CuestionarioIntento, Long> {

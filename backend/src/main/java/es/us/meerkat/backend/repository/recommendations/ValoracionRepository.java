@@ -5,7 +5,7 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import es.us.meerkat.backend.entity.Valoracion;
+import es.us.meerkat.backend.entity.recommendations.Valoracion;
 
 public interface ValoracionRepository extends JpaRepository<Valoracion, Long> {
     List<Valoracion> findByProfesorId(Long profesorId);

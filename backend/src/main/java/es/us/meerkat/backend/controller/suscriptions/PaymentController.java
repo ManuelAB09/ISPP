@@ -30,9 +30,9 @@ import com.stripe.net.Webhook;
 import es.us.meerkat.backend.dto.suscriptions.TransactionListResponse;
 import es.us.meerkat.backend.dto.suscriptions.TransactionResponse;
 import es.us.meerkat.backend.dto.users.PageInfo;
-import es.us.meerkat.backend.entity.TipoTransaccion;
-import es.us.meerkat.backend.entity.TransaccionPago;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.suscriptions.TipoTransaccion;
+import es.us.meerkat.backend.entity.suscriptions.TransaccionPago;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.service.communities.InstitutionService;
 import es.us.meerkat.backend.service.suscriptions.PaymentService;
 import es.us.meerkat.backend.service.suscriptions.SuscripcionService;
@@ -248,10 +248,10 @@ public class PaymentController {
                     // Activa suscripción + crea transacción + actualiza plan usuario
                     String periodo = session.getMetadata().get("periodo");
                     String planMeta = session.getMetadata().get("plan");
-                    es.us.meerkat.backend.entity.TipoPlan plan =
+                    es.us.meerkat.backend.entity.suscriptions.TipoPlan plan =
                             "PRO".equalsIgnoreCase(planMeta)
-                                    ? es.us.meerkat.backend.entity.TipoPlan.PRO
-                                    : es.us.meerkat.backend.entity.TipoPlan.PREMIUM;
+                                    ? es.us.meerkat.backend.entity.suscriptions.TipoPlan.PRO
+                                    : es.us.meerkat.backend.entity.suscriptions.TipoPlan.PREMIUM;
                     suscripcionService.activarSuscripcionTrasStripe(
                             usuarioId, monto, periodo, plan);
                 }
@@ -288,11 +288,13 @@ public class PaymentController {
                                 session.getMetadata().get("tipoPlanCorporativo");
                         Integer duracionMeses =
                                 duracionStr != null ? Integer.parseInt(duracionStr) : 12;
-                        es.us.meerkat.backend.entity.TipoPlanCorporativo tipoPlanCorporativo =
-                                tipoPlanCorporativoStr != null
-                                        ? es.us.meerkat.backend.entity.TipoPlanCorporativo.valueOf(
-                                                tipoPlanCorporativoStr)
-                                        : null;
+                        es.us.meerkat.backend.entity.suscriptions.TipoPlanCorporativo
+                                tipoPlanCorporativo =
+                                        tipoPlanCorporativoStr != null
+                                                ? es.us.meerkat.backend.entity.suscriptions
+                                                        .TipoPlanCorporativo.valueOf(
+                                                        tipoPlanCorporativoStr)
+                                                : null;
                         institutionService.activarPlanCorporativo(
                                 institucionId, duracionMeses, emailContacto, tipoPlanCorporativo);
                     }
@@ -347,10 +349,10 @@ public class PaymentController {
 
             String planMeta =
                     invoice.getMetadata() != null ? invoice.getMetadata().get("plan") : null;
-            es.us.meerkat.backend.entity.TipoPlan plan =
+            es.us.meerkat.backend.entity.suscriptions.TipoPlan plan =
                     "PRO".equalsIgnoreCase(planMeta)
-                            ? es.us.meerkat.backend.entity.TipoPlan.PRO
-                            : es.us.meerkat.backend.entity.TipoPlan.PREMIUM;
+                            ? es.us.meerkat.backend.entity.suscriptions.TipoPlan.PRO
+                            : es.us.meerkat.backend.entity.suscriptions.TipoPlan.PREMIUM;
 
             suscripcionService.renovarSuscripcionTrasStripe(usuarioId, monto, plan);
 

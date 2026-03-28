@@ -20,9 +20,9 @@ import es.us.meerkat.backend.controller.communities.InvitacionMiembroController;
 import es.us.meerkat.backend.dto.communities.CreateInvitacionRequest;
 import es.us.meerkat.backend.dto.communities.InvitacionListResponse;
 import es.us.meerkat.backend.dto.communities.InvitacionResponse;
-import es.us.meerkat.backend.entity.InvitacionMiembro;
-import es.us.meerkat.backend.entity.RolComunidad;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.communities.InvitacionMiembro;
+import es.us.meerkat.backend.entity.communities.RolComunidad;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.service.communities.InvitacionMiembroService;
 
 @ExtendWith(MockitoExtension.class)

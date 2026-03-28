@@ -15,8 +15,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import es.us.meerkat.backend.entity.Categoria;
-import es.us.meerkat.backend.entity.Comunidad;
+import es.us.meerkat.backend.entity.communities.Categoria;
+import es.us.meerkat.backend.entity.communities.Comunidad;
 import es.us.meerkat.backend.repository.communities.CategoriaRepository;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.service.communities.AuthorizationService;

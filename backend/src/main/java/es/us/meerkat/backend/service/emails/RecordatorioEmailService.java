@@ -6,11 +6,11 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import es.us.meerkat.backend.entity.Evento;
-import es.us.meerkat.backend.entity.PreferenciasNotificacion;
-import es.us.meerkat.backend.entity.RecordatorioEmail;
-import es.us.meerkat.backend.entity.TipoRecordatorio;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.emails.RecordatorioEmail;
+import es.us.meerkat.backend.entity.events.Evento;
+import es.us.meerkat.backend.entity.notifications.PreferenciasNotificacion;
+import es.us.meerkat.backend.entity.notifications.TipoRecordatorio;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.emails.RecordatorioEmailRepository;
 import es.us.meerkat.backend.repository.events.EventoRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
