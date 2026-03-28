@@ -1,0 +1,302 @@
+package es.us.meerkat.backend.service.users;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
+import es.us.meerkat.backend.dto.users.ChangePasswordRequest;
+import es.us.meerkat.backend.dto.users.UpdateUserRequest;
+import es.us.meerkat.backend.dto.users.UserDetailResponse;
+import es.us.meerkat.backend.dto.users.UserPublicResponse;
+import es.us.meerkat.backend.dto.users.VisibilityRequest;
+import es.us.meerkat.backend.entity.maps.Ubicacion;
+import es.us.meerkat.backend.entity.users.Usuario;
+import es.us.meerkat.backend.repository.chats.MensajeComunidadRepository;
+import es.us.meerkat.backend.repository.communities.ComunidadRepository;
+import es.us.meerkat.backend.repository.communities.InstitutionRepository;
+import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.communities.SolicitudComunidadRepository;
+import es.us.meerkat.backend.repository.events.AsistenciaEventoRepository;
+import es.us.meerkat.backend.repository.events.EventoRepository;
+import es.us.meerkat.backend.repository.google.GoogleClassroomConnectionRepository;
+import es.us.meerkat.backend.repository.maps.UbicacionRepository;
+import es.us.meerkat.backend.repository.notifications.PreferenciasNotificacionRepository;
+import es.us.meerkat.backend.repository.suscriptions.SuscripcionRepository;
+import es.us.meerkat.backend.repository.suscriptions.TransaccionPagoRepository;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
+import es.us.meerkat.backend.service.users.UsuarioService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
+
+@ExtendWith(MockitoExtension.class)
+class UsuarioServiceTest {
+
+    @Mock private UsuarioRepository usuarioRepository;
+
+    @Mock private UbicacionRepository ubicacionRepository;
+    @Mock private MiembroComunidadRepository miembroComunidadRepository;
+
+    @Mock private ComunidadRepository comunidadRepository;
+
+    @Mock private SuscripcionRepository suscripcionRepository;
+
+    @Mock private TransaccionPagoRepository transaccionPagoRepository;
+
+    @Mock private AsistenciaEventoRepository asistenciaEventoRepository;
+
+    @Mock private EventoRepository eventoRepository;
+
+    @Mock private SolicitudComunidadRepository solicitudComunidadRepository;
+
+    @Mock private MensajeComunidadRepository mensajeComunidadRepository;
+
+    @Mock private GoogleClassroomConnectionRepository googleClassroomConnectionRepository;
+
+    @Mock private InstitutionRepository institutionRepository;
+
+    @Mock private PreferenciasNotificacionRepository preferenciasNotificacionRepository;
+
+    @Mock private EntityManager entityManager;
+
+    @Mock private BCryptPasswordEncoder passwordEncoder;
+
+    @InjectMocks private UsuarioService usuarioService;
+
+    @Test
+    void obtenerPerfilPropioShouldReturnPersistedUserProfile() {
+        Usuario principal = new Usuario();
+        principal.setEmail("user@meerkat.es");
+
+        Usuario persisted = new Usuario();
+        persisted.setId(1L);
+        persisted.setEmail("user@meerkat.es");
+        persisted.setNombre("Nombre Usuario");
+        persisted.setVisibleEnListados(true);
+        persisted.setEsTutor(false);
+        persisted.setIntereses(List.of("java", "spring"));
+
+        when(usuarioRepository.findByEmail(principal.getEmail()))
+                .thenReturn(Optional.of(persisted));
+
+        UserDetailResponse response = usuarioService.obtenerPerfilPropio(principal);
+
+        assertThat(response.getId()).isEqualTo(1L);
+        assertThat(response.getEmail()).isEqualTo("user@meerkat.es");
+        assertThat(response.getNombre()).isEqualTo("Nombre Usuario");
+        assertThat(response.getIntereses()).containsExactly("java", "spring");
+    }
+
+    @Test
+    void obtenerPerfilPropioShouldThrowWhenUserNotFound() {
+        Usuario principal = new Usuario();
+        principal.setEmail("missing@meerkat.es");
+
+        when(usuarioRepository.findByEmail(principal.getEmail())).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> usuarioService.obtenerPerfilPropio(principal))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Usuario no encontrado");
+    }
+
+    @Test
+    void actualizarPerfilShouldUpdateProvidedFieldsAndSave() {
+        Usuario usuario = new Usuario();
+        Ubicacion ubicacion = new Ubicacion();
+        ubicacion.setNombre("Sevilla");
+        ubicacion.setCoste("100");
+        ubicacion.setLatitud(24.0);
+        ubicacion.setLongitud(42.0);
+        ubicacion.setDireccion("Casa");
+
+        usuario.setEmail("user@meerkat.es");
+        usuario.setNombre("Nombre anterior");
+
+        when(ubicacionRepository.findByNombre("Sevilla")).thenReturn(Optional.of(ubicacion));
+
+        UpdateUserRequest request = new UpdateUserRequest();
+        request.setNombre("Nombre nuevo");
+        request.setFoto("https://img.com/foto.png");
+        request.setBio("Nueva bio");
+        request.setUniversidad("US");
+        request.setGrado("Ingeniería");
+        request.setUbicacion(ubicacion.getNombre());
+        request.setIntereses(List.of("backend", "arquitectura"));
+
+        UserDetailResponse response = usuarioService.actualizarPerfil(usuario, request);
+
+        verify(usuarioRepository).save(usuario);
+        assertThat(usuario.getNombre()).isEqualTo("Nombre nuevo");
+        assertThat(usuario.getFoto()).isEqualTo("https://img.com/foto.png");
+        assertThat(usuario.getBio()).isEqualTo("Nueva bio");
+        assertThat(usuario.getUniversidad()).isEqualTo("US");
+        assertThat(usuario.getGrado()).isEqualTo("Ingeniería");
+        assertThat(usuario.getUbicacion().getNombre()).isEqualTo("Sevilla");
+        assertThat(usuario.getIntereses()).containsExactly("backend", "arquitectura");
+
+        assertThat(response.getNombre()).isEqualTo("Nombre nuevo");
+        assertThat(response.getBio()).isEqualTo("Nueva bio");
+    }
+
+    @Test
+    void eliminarCuentaShouldDeleteUsuario() {
+        Usuario usuario = new Usuario();
+        usuario.setId(12L);
+
+        // Mock comunidades (no hay comunidades del usuario)
+        when(comunidadRepository.findByCreadorId(12L)).thenReturn(List.of());
+
+        Query mockQuery = mock(Query.class);
+        when(entityManager.createQuery(anyString())).thenReturn(mockQuery);
+        when(entityManager.createNativeQuery(anyString())).thenReturn(mockQuery);
+        when(mockQuery.setParameter(anyString(), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(mockQuery);
+        when(mockQuery.executeUpdate()).thenReturn(0);
+
+        usuarioService.eliminarCuenta(usuario);
+
+        // Verificar que todas las dependencias fueron eliminadas en orden
+        verify(asistenciaEventoRepository).deleteByUsuarioId(12L);
+        verify(asistenciaEventoRepository).deleteByEventoCreadorId(12L);
+        verify(eventoRepository).deleteByUsuarioId(12L);
+        verify(mensajeComunidadRepository).deleteByUsuarioId(12L);
+        verify(entityManager, times(2)).clear();
+        verify(solicitudComunidadRepository).deleteBySolicitanteId(12L);
+        verify(solicitudComunidadRepository).deleteByRespondidaPorId(12L);
+        verify(googleClassroomConnectionRepository).deleteByUsuarioId(12L);
+        verify(institutionRepository).deleteByUsuarioAdminId(12L);
+        verify(transaccionPagoRepository).deleteByUsuarioId(12L);
+        verify(suscripcionRepository).deleteByUsuarioId(12L);
+        verify(miembroComunidadRepository).deleteByUsuarioId(12L);
+        verify(usuarioRepository).delete(usuario);
+    }
+
+    @Test
+    void cambiarPasswordShouldSaveEncodedPasswordWhenDataIsValid() {
+        Usuario usuario = new Usuario();
+        usuario.setPassword("encoded-current");
+
+        ChangePasswordRequest request = new ChangePasswordRequest();
+        request.setCurrentPassword("current-password");
+        request.setNewPassword("newPassword123");
+
+        when(passwordEncoder.matches(request.getCurrentPassword(), usuario.getPassword()))
+                .thenReturn(true);
+        when(passwordEncoder.encode(request.getNewPassword())).thenReturn("encoded-new-password");
+
+        usuarioService.cambiarPassword(usuario, request);
+
+        assertThat(usuario.getPassword()).isEqualTo("encoded-new-password");
+        verify(usuarioRepository).save(usuario);
+    }
+
+    @Test
+    void cambiarPasswordShouldThrowWhenCurrentPasswordIsIncorrect() {
+        Usuario usuario = new Usuario();
+        usuario.setPassword("encoded-current");
+
+        ChangePasswordRequest request = new ChangePasswordRequest();
+        request.setCurrentPassword("wrong-current");
+        request.setNewPassword("newPassword123");
+
+        when(passwordEncoder.matches(request.getCurrentPassword(), usuario.getPassword()))
+                .thenReturn(false);
+
+        assertThatThrownBy(() -> usuarioService.cambiarPassword(usuario, request))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("La contraseña actual es incorrecta");
+
+        verify(usuarioRepository, never()).save(usuario);
+    }
+
+    @Test
+    void cambiarPasswordShouldThrowWhenNewPasswordIsTooShort() {
+        Usuario usuario = new Usuario();
+        usuario.setPassword("encoded-current");
+
+        ChangePasswordRequest request = new ChangePasswordRequest();
+        request.setCurrentPassword("current-password");
+        request.setNewPassword("short");
+
+        when(passwordEncoder.matches(request.getCurrentPassword(), usuario.getPassword()))
+                .thenReturn(true);
+
+        assertThatThrownBy(() -> usuarioService.cambiarPassword(usuario, request))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("La nueva contraseña debe tener al menos 8 caracteres");
+
+        verify(usuarioRepository, never()).save(usuario);
+    }
+
+    @Test
+    void actualizarVisibilidadShouldSaveWhenVisibilityIsProvided() {
+        Usuario usuario = new Usuario();
+        usuario.setVisibleEnListados(true);
+
+        VisibilityRequest request = new VisibilityRequest();
+        request.setVisibleEnListados(false);
+
+        UserDetailResponse response = usuarioService.actualizarVisibilidad(usuario, request);
+
+        verify(usuarioRepository).save(usuario);
+        assertThat(usuario.getVisibleEnListados()).isFalse();
+        assertThat(response.getVisibleEnListados()).isFalse();
+    }
+
+    @Test
+    void actualizarVisibilidadShouldNotSaveWhenVisibilityIsNull() {
+        Usuario usuario = new Usuario();
+        usuario.setVisibleEnListados(true);
+
+        VisibilityRequest request = new VisibilityRequest();
+        request.setVisibleEnListados(null);
+
+        UserDetailResponse response = usuarioService.actualizarVisibilidad(usuario, request);
+
+        verify(usuarioRepository, never()).save(usuario);
+        assertThat(response.getVisibleEnListados()).isTrue();
+    }
+
+    @Test
+    void obtenerPerfilPublicoShouldReturnPublicProfile() {
+        Usuario usuario = new Usuario();
+        usuario.setId(99L);
+        usuario.setNombre("Perfil público");
+        usuario.setFoto("https://img.com/public.png");
+        usuario.setBio("Bio pública");
+        usuario.setIntereses(List.of("testing"));
+        usuario.setEsTutor(false);
+
+        when(usuarioRepository.findById(99L)).thenReturn(Optional.of(usuario));
+
+        UserPublicResponse response = usuarioService.obtenerPerfilPublico(99L);
+
+        assertThat(response.getId()).isEqualTo(99L);
+        assertThat(response.getNombre()).isEqualTo("Perfil público");
+        assertThat(response.getBio()).isEqualTo("Bio pública");
+        assertThat(response.getIntereses()).containsExactly("testing");
+    }
+
+    @Test
+    void obtenerPerfilPublicoShouldThrowWhenUserDoesNotExist() {
+        when(usuarioRepository.findById(404L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> usuarioService.obtenerPerfilPublico(404L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Usuario no encontrado");
+    }
+}
