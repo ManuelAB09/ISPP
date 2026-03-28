@@ -26,7 +26,7 @@ public class UpdateUserRequest {
     private String fotoBackgroundColor;
 
     /** Nueva biografía. */
-    @Size(max = 500, message = "La bio no puede exceder 500 caracteres")
+    @Size(max = 255, message = "La bio no puede exceder 255 caracteres")
     private String bio;
 
     /** Universidad del usuario. */

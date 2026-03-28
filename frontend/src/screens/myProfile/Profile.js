@@ -28,7 +28,7 @@ const toAbsoluteImageUrl = (imageUrl, fallback = DEFAULT_PROFILE_AVATAR) => {
     }
 
     const value = String(imageUrl).trim();
-    if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
+    if (/^https?:\/\//i.test(value) || value.startsWith('data:image/') || value.startsWith('blob:')) {
         return value;
     }
 
