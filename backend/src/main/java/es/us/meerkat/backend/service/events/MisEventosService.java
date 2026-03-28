@@ -17,10 +17,10 @@ import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.TipoAlerta;
 import es.us.meerkat.backend.entity.TipoEvento;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.AlertaEventoRepository;
-import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
-import es.us.meerkat.backend.repository.EventoRepository;
-import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.repository.events.AsistenciaEventoRepository;
+import es.us.meerkat.backend.repository.events.EventoRepository;
+import es.us.meerkat.backend.repository.notifications.AlertaEventoRepository;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

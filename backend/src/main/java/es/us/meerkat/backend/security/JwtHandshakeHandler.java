@@ -14,7 +14,7 @@ import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
 /**

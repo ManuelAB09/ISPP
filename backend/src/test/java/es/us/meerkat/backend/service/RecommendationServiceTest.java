@@ -17,13 +17,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import es.us.meerkat.backend.dto.recommendations.FeedbackRecomendacionRequest;
 import es.us.meerkat.backend.entity.Recomendacion;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.ActividadUsuarioRepository;
-import es.us.meerkat.backend.repository.ComunidadRepository;
-import es.us.meerkat.backend.repository.FeedbackRecomendacionRepository;
-import es.us.meerkat.backend.repository.MiembroComunidadRepository;
-import es.us.meerkat.backend.repository.RecomendacionRepository;
-import es.us.meerkat.backend.repository.TutorRepository;
-import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.repository.communities.ComunidadRepository;
+import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.recommendations.FeedbackRecomendacionRepository;
+import es.us.meerkat.backend.repository.recommendations.RecomendacionRepository;
+import es.us.meerkat.backend.repository.tutors.TutorRepository;
+import es.us.meerkat.backend.repository.users.ActividadUsuarioRepository;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import es.us.meerkat.backend.service.recommendations.RecommendationService;
 
 @ExtendWith(MockitoExtension.class)

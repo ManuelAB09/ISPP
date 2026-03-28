@@ -9,9 +9,9 @@ import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.Feedback;
 import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.ComunidadRepository;
-import es.us.meerkat.backend.repository.FeedbackRepository;
-import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.repository.communities.ComunidadRepository;
+import es.us.meerkat.backend.repository.recommendations.FeedbackRepository;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import es.us.meerkat.backend.service.communities.AuthorizationService;
 import lombok.RequiredArgsConstructor;
 

@@ -11,9 +11,9 @@ import es.us.meerkat.backend.dto.chats.MensajeResponse;
 import es.us.meerkat.backend.entity.Mensaje;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.MensajeRepository;
-import es.us.meerkat.backend.repository.TutorRepository;
-import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.repository.chats.MensajeRepository;
+import es.us.meerkat.backend.repository.tutors.TutorRepository;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +54,8 @@ public class MensajeService {
     private final MensajeRepository mensajeRepository;
     private final JdbcTemplate jdbcTemplate;
 
-    private final es.us.meerkat.backend.repository.MensajeLeidoRepository mensajeLeidoRepository;
+    private final es.us.meerkat.backend.repository.chats.MensajeLeidoRepository
+            mensajeLeidoRepository;
 
     @PostConstruct
     void ensureTutorColumnNullable() {

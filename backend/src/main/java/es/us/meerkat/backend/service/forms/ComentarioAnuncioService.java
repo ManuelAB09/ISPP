@@ -11,9 +11,9 @@ import es.us.meerkat.backend.dto.users.UserSimpleResponse;
 import es.us.meerkat.backend.entity.Anuncio;
 import es.us.meerkat.backend.entity.ComentarioAnuncio;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.AnuncioRepository;
-import es.us.meerkat.backend.repository.ComentarioAnuncioRepository;
-import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.repository.communities.AnuncioRepository;
+import es.us.meerkat.backend.repository.communities.ComentarioAnuncioRepository;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service

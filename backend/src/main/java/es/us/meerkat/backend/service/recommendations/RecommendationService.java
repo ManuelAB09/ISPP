@@ -20,7 +20,16 @@ import es.us.meerkat.backend.dto.recommendations.RecomendacionesPageResponse;
 import es.us.meerkat.backend.dto.recommendations.RegistrarActividadRequest;
 import es.us.meerkat.backend.dto.recommendations.ValoracionTutorRequest;
 import es.us.meerkat.backend.entity.*;
-import es.us.meerkat.backend.repository.*;
+import es.us.meerkat.backend.repository.communities.ComunidadRepository;
+import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.forms.CuestionarioRepository;
+import es.us.meerkat.backend.repository.recommendations.ContenidoRepository;
+import es.us.meerkat.backend.repository.recommendations.FeedbackRecomendacionRepository;
+import es.us.meerkat.backend.repository.recommendations.RecomendacionRepository;
+import es.us.meerkat.backend.repository.recommendations.ValoracionTutorRepository;
+import es.us.meerkat.backend.repository.tutors.TutorRepository;
+import es.us.meerkat.backend.repository.users.ActividadUsuarioRepository;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
 
 @Service
 public class RecommendationService {

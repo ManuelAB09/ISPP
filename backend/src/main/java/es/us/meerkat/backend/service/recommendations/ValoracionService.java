@@ -7,8 +7,8 @@ import org.springframework.stereotype.Service;
 
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Valoracion;
-import es.us.meerkat.backend.repository.TutorRepository;
-import es.us.meerkat.backend.repository.ValoracionRepository;
+import es.us.meerkat.backend.repository.recommendations.ValoracionRepository;
+import es.us.meerkat.backend.repository.tutors.TutorRepository;
 
 @Service
 public class ValoracionService {

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import es.us.meerkat.backend.entity.MensajeComunidad;
 import es.us.meerkat.backend.entity.MensajeComunidadLeido;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.MensajeComunidadLeidoRepository;
+import es.us.meerkat.backend.repository.chats.MensajeComunidadLeidoRepository;
 
 @Service
 public class MensajeComunidadLeidoService {

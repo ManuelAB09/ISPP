@@ -27,8 +27,8 @@ import es.us.meerkat.backend.entity.EstadoTransaccion;
 import es.us.meerkat.backend.entity.TipoTransaccion;
 import es.us.meerkat.backend.entity.TransaccionPago;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.TransaccionPagoRepository;
-import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.repository.suscriptions.TransaccionPagoRepository;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import es.us.meerkat.backend.service.suscriptions.PaymentService;
 
 @ExtendWith(MockitoExtension.class)

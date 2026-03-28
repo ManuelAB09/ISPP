@@ -20,10 +20,10 @@ import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.EstadoAsistencia;
 import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
-import es.us.meerkat.backend.repository.EventoRepository;
-import es.us.meerkat.backend.repository.MiembroComunidadRepository;
-import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.events.AsistenciaEventoRepository;
+import es.us.meerkat.backend.repository.events.EventoRepository;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import es.us.meerkat.backend.service.events.AsistenciaEventoService;
 import es.us.meerkat.backend.service.google.GoogleCalendarService;
 

@@ -31,7 +31,7 @@ import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.TipoEvento;
 import es.us.meerkat.backend.entity.TipoRecordatorio;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
+import es.us.meerkat.backend.repository.events.AsistenciaEventoRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;

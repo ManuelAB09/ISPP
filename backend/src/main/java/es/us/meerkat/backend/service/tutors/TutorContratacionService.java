@@ -15,9 +15,9 @@ import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.EstadoContratacion;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.TutorContratacion;
-import es.us.meerkat.backend.repository.ComunidadRepository;
-import es.us.meerkat.backend.repository.TutorContratacionRepository;
-import es.us.meerkat.backend.repository.TutorRepository;
+import es.us.meerkat.backend.repository.communities.ComunidadRepository;
+import es.us.meerkat.backend.repository.tutors.TutorContratacionRepository;
+import es.us.meerkat.backend.repository.tutors.TutorRepository;
 import es.us.meerkat.backend.service.google.ClassroomLinkRequestService;
 import es.us.meerkat.backend.service.suscriptions.PaymentService;
 

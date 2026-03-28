@@ -23,8 +23,8 @@ import es.us.meerkat.backend.dto.tutors.DisponibilidadTutorResponse;
 import es.us.meerkat.backend.entity.DisponibilidadTutor;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.DisponibilidadTutorRepository;
-import es.us.meerkat.backend.repository.TutorRepository;
+import es.us.meerkat.backend.repository.tutors.DisponibilidadTutorRepository;
+import es.us.meerkat.backend.repository.tutors.TutorRepository;
 import es.us.meerkat.backend.service.tutors.DisponibilidadService;
 
 @ExtendWith(MockitoExtension.class)

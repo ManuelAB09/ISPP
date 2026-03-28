@@ -55,7 +55,7 @@ import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.exception.ConflictException;
 import es.us.meerkat.backend.exception.EmailNotVerifiedException;
 import es.us.meerkat.backend.exception.ValidationException;
-import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import es.us.meerkat.backend.security.JwtService;
 import es.us.meerkat.backend.service.emails.EmailService;
 import lombok.RequiredArgsConstructor;

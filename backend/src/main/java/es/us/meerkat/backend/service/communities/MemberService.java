@@ -12,12 +12,12 @@ import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.TipoGrupo;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
-import es.us.meerkat.backend.repository.ComunidadClassroomRepository;
-import es.us.meerkat.backend.repository.ComunidadRepository;
-import es.us.meerkat.backend.repository.MiembroComunidadRepository;
-import es.us.meerkat.backend.repository.TutorRepository;
-import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.repository.communities.ComunidadRepository;
+import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.events.AsistenciaEventoRepository;
+import es.us.meerkat.backend.repository.google.ComunidadClassroomRepository;
+import es.us.meerkat.backend.repository.tutors.TutorRepository;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import es.us.meerkat.backend.service.google.GoogleClassroomService;
 import lombok.RequiredArgsConstructor;
 

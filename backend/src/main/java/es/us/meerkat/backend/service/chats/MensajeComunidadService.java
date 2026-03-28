@@ -16,10 +16,10 @@ import es.us.meerkat.backend.entity.MensajeComunidad;
 import es.us.meerkat.backend.entity.MensajeComunidadLeido;
 import es.us.meerkat.backend.entity.PreferenciasNotificacion;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.ComunidadRepository;
-import es.us.meerkat.backend.repository.MensajeComunidadRepository;
-import es.us.meerkat.backend.repository.MiembroComunidadRepository;
-import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.repository.chats.MensajeComunidadRepository;
+import es.us.meerkat.backend.repository.communities.ComunidadRepository;
+import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import es.us.meerkat.backend.service.emails.EmailService;
 import es.us.meerkat.backend.service.notifications.PreferenciasNotificacionService;
 import lombok.RequiredArgsConstructor;
@@ -56,7 +56,7 @@ public class MensajeComunidadService {
         }
     }
 
-    private final es.us.meerkat.backend.repository.MensajeComunidadLeidoRepository
+    private final es.us.meerkat.backend.repository.chats.MensajeComunidadLeidoRepository
             mensajeComunidadLeidoRepository;
 
     /**

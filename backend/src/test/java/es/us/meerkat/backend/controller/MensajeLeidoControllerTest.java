@@ -16,7 +16,7 @@ import org.springframework.http.ResponseEntity;
 
 import es.us.meerkat.backend.controller.chats.MensajeLeidoController;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.MensajeRepository;
+import es.us.meerkat.backend.repository.chats.MensajeRepository;
 import es.us.meerkat.backend.service.chats.MensajeLeidoService;
 
 @ExtendWith(MockitoExtension.class)

@@ -19,7 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import es.us.meerkat.backend.dto.google.ClassroomLinkRequestResponse;
 import es.us.meerkat.backend.entity.ClassroomLinkRequest;
 import es.us.meerkat.backend.entity.ClassroomLinkRequestStatus;
-import es.us.meerkat.backend.repository.ClassroomLinkRequestRepository;
+import es.us.meerkat.backend.repository.google.ClassroomLinkRequestRepository;
 import es.us.meerkat.backend.service.communities.AuthorizationService;
 import es.us.meerkat.backend.service.google.ClassroomLinkRequestService;
 import es.us.meerkat.backend.service.google.GoogleClassroomService;

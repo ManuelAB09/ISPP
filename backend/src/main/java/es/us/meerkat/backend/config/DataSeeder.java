@@ -25,15 +25,15 @@ import es.us.meerkat.backend.entity.TipoPlanCorporativo;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Ubicacion;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
-import es.us.meerkat.backend.repository.CategoriaRepository;
-import es.us.meerkat.backend.repository.ComunidadRepository;
-import es.us.meerkat.backend.repository.EventoRepository;
-import es.us.meerkat.backend.repository.InstitutionRepository;
-import es.us.meerkat.backend.repository.MiembroComunidadRepository;
-import es.us.meerkat.backend.repository.TutorRepository;
-import es.us.meerkat.backend.repository.UbicacionRepository;
-import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.repository.communities.CategoriaRepository;
+import es.us.meerkat.backend.repository.communities.ComunidadRepository;
+import es.us.meerkat.backend.repository.communities.InstitutionRepository;
+import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.events.AsistenciaEventoRepository;
+import es.us.meerkat.backend.repository.events.EventoRepository;
+import es.us.meerkat.backend.repository.maps.UbicacionRepository;
+import es.us.meerkat.backend.repository.tutors.TutorRepository;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
 
 /**
  * Seeder de datos iniciales para desarrollo.

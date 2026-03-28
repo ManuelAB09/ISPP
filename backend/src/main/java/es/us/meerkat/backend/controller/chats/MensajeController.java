@@ -22,7 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import es.us.meerkat.backend.dto.chats.EnviarMensajeRequest;
 import es.us.meerkat.backend.dto.chats.MensajeResponse;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import es.us.meerkat.backend.service.chats.ChatFileStorageService;
 import es.us.meerkat.backend.service.chats.MensajeService;
 import lombok.RequiredArgsConstructor;

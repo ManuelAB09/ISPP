@@ -7,13 +7,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.entity.Evento;
-import es.us.meerkat.backend.repository.AlarmaPersonalizadaRepository;
-import es.us.meerkat.backend.repository.AlertaEventoRepository;
-import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
-import es.us.meerkat.backend.repository.EventoRepository;
-import es.us.meerkat.backend.repository.GoogleCalendarEventoRepository;
-import es.us.meerkat.backend.repository.RecordatorioEmailRepository;
-import es.us.meerkat.backend.repository.ZoomMeetingRepository;
+import es.us.meerkat.backend.repository.emails.RecordatorioEmailRepository;
+import es.us.meerkat.backend.repository.events.AsistenciaEventoRepository;
+import es.us.meerkat.backend.repository.events.EventoRepository;
+import es.us.meerkat.backend.repository.google.GoogleCalendarEventoRepository;
+import es.us.meerkat.backend.repository.notifications.AlarmaPersonalizadaRepository;
+import es.us.meerkat.backend.repository.notifications.AlertaEventoRepository;
+import es.us.meerkat.backend.repository.zoom.ZoomMeetingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

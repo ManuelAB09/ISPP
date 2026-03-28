@@ -19,8 +19,8 @@ import org.springframework.security.core.Authentication;
 
 import es.us.meerkat.backend.controller.chats.SocketChatController;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.MensajeRepository;
-import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.repository.chats.MensajeRepository;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import es.us.meerkat.backend.service.chats.MensajeComunidadService;
 import es.us.meerkat.backend.service.chats.MensajeService;
 

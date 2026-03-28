@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import es.us.meerkat.backend.entity.Mensaje;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.MensajeRepository;
+import es.us.meerkat.backend.repository.chats.MensajeRepository;
 import es.us.meerkat.backend.service.chats.MensajeLeidoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

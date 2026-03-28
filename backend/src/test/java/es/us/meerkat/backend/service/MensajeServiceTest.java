@@ -18,9 +18,9 @@ import es.us.meerkat.backend.dto.chats.EnviarMensajeRequest;
 import es.us.meerkat.backend.entity.Mensaje;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.MensajeRepository;
-import es.us.meerkat.backend.repository.TutorRepository;
-import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.repository.chats.MensajeRepository;
+import es.us.meerkat.backend.repository.tutors.TutorRepository;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import es.us.meerkat.backend.service.chats.MensajeService;
 
 @ExtendWith(MockitoExtension.class)

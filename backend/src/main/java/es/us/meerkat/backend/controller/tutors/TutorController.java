@@ -36,7 +36,7 @@ import es.us.meerkat.backend.dto.tutors.UpdateTutorRequest;
 import es.us.meerkat.backend.dto.users.PageInfo;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.SolicitudContratacionDirectaRepository;
+import es.us.meerkat.backend.repository.tutors.SolicitudContratacionDirectaRepository;
 import es.us.meerkat.backend.service.google.GoogleCalendarService;
 import es.us.meerkat.backend.service.suscriptions.PaymentService;
 import es.us.meerkat.backend.service.tutors.TutorService;

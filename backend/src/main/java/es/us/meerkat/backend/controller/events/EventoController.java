@@ -25,7 +25,7 @@ import es.us.meerkat.backend.dto.events.EventSummaryResponse;
 import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
 import es.us.meerkat.backend.service.communities.AuthorizationService;
 import es.us.meerkat.backend.service.events.EventoService;
 import io.swagger.v3.oas.annotations.Operation;

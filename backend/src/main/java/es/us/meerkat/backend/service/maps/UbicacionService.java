@@ -15,7 +15,7 @@ import es.us.meerkat.backend.client.OverpassClient;
 import es.us.meerkat.backend.dto.maps.UbicacionRequest;
 import es.us.meerkat.backend.dto.maps.UbicacionResponse;
 import es.us.meerkat.backend.entity.Ubicacion;
-import es.us.meerkat.backend.repository.UbicacionRepository;
+import es.us.meerkat.backend.repository.maps.UbicacionRepository;
 import lombok.RequiredArgsConstructor;
 
 /**

@@ -34,12 +34,12 @@ import es.us.meerkat.backend.entity.ZoomMeeting;
 import es.us.meerkat.backend.entity.ZoomMeetingParticipant;
 import es.us.meerkat.backend.entity.ZoomMeetingStatus;
 import es.us.meerkat.backend.entity.ZoomRecording;
-import es.us.meerkat.backend.repository.ComunidadRepository;
-import es.us.meerkat.backend.repository.MiembroComunidadRepository;
-import es.us.meerkat.backend.repository.UsuarioRepository;
-import es.us.meerkat.backend.repository.ZoomMeetingParticipantRepository;
-import es.us.meerkat.backend.repository.ZoomMeetingRepository;
-import es.us.meerkat.backend.repository.ZoomRecordingRepository;
+import es.us.meerkat.backend.repository.communities.ComunidadRepository;
+import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
+import es.us.meerkat.backend.repository.zoom.ZoomMeetingParticipantRepository;
+import es.us.meerkat.backend.repository.zoom.ZoomMeetingRepository;
+import es.us.meerkat.backend.repository.zoom.ZoomRecordingRepository;
 import es.us.meerkat.backend.service.zoom.ZoomIntegrationService;
 import es.us.meerkat.backend.service.zoom.ZoomRecordingStorageService;
 

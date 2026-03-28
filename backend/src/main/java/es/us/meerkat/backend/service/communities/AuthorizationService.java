@@ -5,8 +5,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.entity.MiembroComunidad;
 import es.us.meerkat.backend.entity.RolComunidad;
-import es.us.meerkat.backend.repository.ComunidadRepository;
-import es.us.meerkat.backend.repository.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.communities.ComunidadRepository;
+import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service

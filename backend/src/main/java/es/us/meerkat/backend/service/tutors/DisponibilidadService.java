@@ -14,8 +14,8 @@ import es.us.meerkat.backend.dto.tutors.CreateDisponibilidadRequest;
 import es.us.meerkat.backend.dto.tutors.DisponibilidadTutorResponse;
 import es.us.meerkat.backend.entity.DisponibilidadTutor;
 import es.us.meerkat.backend.entity.Tutor;
-import es.us.meerkat.backend.repository.DisponibilidadTutorRepository;
-import es.us.meerkat.backend.repository.TutorRepository;
+import es.us.meerkat.backend.repository.tutors.DisponibilidadTutorRepository;
+import es.us.meerkat.backend.repository.tutors.TutorRepository;
 
 /**
  * Servicio para gestionar disponibilidades horarias de tutores.

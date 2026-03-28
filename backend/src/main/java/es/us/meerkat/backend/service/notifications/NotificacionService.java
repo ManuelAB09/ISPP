@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.entity.Notificacion;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.NotificacionRepository;
+import es.us.meerkat.backend.repository.notifications.NotificacionRepository;
 
 @Service
 public class NotificacionService {

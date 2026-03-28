@@ -14,7 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
 /** Interceptor que valida el token JWT en el handshake WebSocket STOMP. */

@@ -24,10 +24,10 @@ import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.ComunidadClassroom;
 import es.us.meerkat.backend.entity.GoogleClassroomConnection;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.ComunidadClassroomRepository;
-import es.us.meerkat.backend.repository.ComunidadRepository;
-import es.us.meerkat.backend.repository.GoogleClassroomConnectionRepository;
-import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.repository.communities.ComunidadRepository;
+import es.us.meerkat.backend.repository.google.ComunidadClassroomRepository;
+import es.us.meerkat.backend.repository.google.GoogleClassroomConnectionRepository;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service

@@ -23,8 +23,8 @@ import es.us.meerkat.backend.dto.tutors.CreateStudentRequest;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.ComunidadClassroom;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.ComunidadClassroomRepository;
-import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.repository.google.ComunidadClassroomRepository;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import es.us.meerkat.backend.service.communities.AuthorizationService;
 import es.us.meerkat.backend.service.google.GoogleClassroomService;
 

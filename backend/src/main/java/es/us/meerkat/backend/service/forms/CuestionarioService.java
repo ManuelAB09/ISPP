@@ -19,10 +19,10 @@ import es.us.meerkat.backend.entity.Opcion;
 import es.us.meerkat.backend.entity.Pregunta;
 import es.us.meerkat.backend.entity.TipoPregunta;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.ComunidadRepository;
-import es.us.meerkat.backend.repository.CuestionarioIntentoRepository;
-import es.us.meerkat.backend.repository.CuestionarioRepository;
-import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.repository.communities.ComunidadRepository;
+import es.us.meerkat.backend.repository.forms.CuestionarioIntentoRepository;
+import es.us.meerkat.backend.repository.forms.CuestionarioRepository;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service

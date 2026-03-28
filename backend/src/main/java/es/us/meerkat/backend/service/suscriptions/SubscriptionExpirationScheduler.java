@@ -12,9 +12,9 @@ import es.us.meerkat.backend.entity.Institution;
 import es.us.meerkat.backend.entity.Suscripcion;
 import es.us.meerkat.backend.entity.TipoPlan;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.InstitutionRepository;
-import es.us.meerkat.backend.repository.SuscripcionRepository;
-import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.repository.communities.InstitutionRepository;
+import es.us.meerkat.backend.repository.suscriptions.SuscripcionRepository;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
