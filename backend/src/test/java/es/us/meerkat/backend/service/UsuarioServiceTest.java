@@ -39,6 +39,7 @@ import es.us.meerkat.backend.repository.SuscripcionRepository;
 import es.us.meerkat.backend.repository.TransaccionPagoRepository;
 import es.us.meerkat.backend.repository.UbicacionRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.service.users.UsuarioService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 

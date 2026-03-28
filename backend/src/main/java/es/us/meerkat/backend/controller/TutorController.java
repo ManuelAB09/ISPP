@@ -37,9 +37,9 @@ import es.us.meerkat.backend.dto.UpdateTutorRequest;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.SolicitudContratacionDirectaRepository;
-import es.us.meerkat.backend.service.GoogleCalendarService;
-import es.us.meerkat.backend.service.PaymentService;
-import es.us.meerkat.backend.service.TutorService;
+import es.us.meerkat.backend.service.google.GoogleCalendarService;
+import es.us.meerkat.backend.service.suscriptions.PaymentService;
+import es.us.meerkat.backend.service.tutors.TutorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -434,8 +434,7 @@ public class TutorController {
                 .tarifaPorHora(tutor.getTarifaHora())
                 .especialidades(
                         tutor.getEspecialidades() != null
-                                ? new java.util.ArrayList<>(
-                                        tutor.getEspecialidades())
+                                ? new java.util.ArrayList<>(tutor.getEspecialidades())
                                 : java.util.List.of())
                 .verificado(tutor.getVerificado())
                 .classroomConectado(tutor.getClassroomConectado())

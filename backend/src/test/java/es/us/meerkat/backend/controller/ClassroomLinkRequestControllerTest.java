@@ -17,7 +17,7 @@ import org.springframework.http.ResponseEntity;
 import es.us.meerkat.backend.dto.ClassroomLinkRequestResponse;
 import es.us.meerkat.backend.dto.CompleteClassroomLinkRequest;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.service.ClassroomLinkRequestService;
+import es.us.meerkat.backend.service.google.ClassroomLinkRequestService;
 
 @ExtendWith(MockitoExtension.class)
 class ClassroomLinkRequestControllerTest {

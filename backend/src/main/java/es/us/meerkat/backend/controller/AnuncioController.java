@@ -14,7 +14,7 @@ import es.us.meerkat.backend.dto.CreateAnuncioRequest;
 import es.us.meerkat.backend.dto.UpdateAnuncioRequest;
 import es.us.meerkat.backend.entity.Anuncio;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.service.AnuncioService;
+import es.us.meerkat.backend.service.communities.AnuncioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

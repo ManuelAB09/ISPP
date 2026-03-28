@@ -21,10 +21,10 @@ import es.us.meerkat.backend.dto.TransactionListResponse;
 import es.us.meerkat.backend.dto.TransactionResponse;
 import es.us.meerkat.backend.entity.TransaccionPago;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.service.InstitutionService;
-import es.us.meerkat.backend.service.PaymentService;
-import es.us.meerkat.backend.service.SuscripcionService;
-import es.us.meerkat.backend.service.TutorService;
+import es.us.meerkat.backend.service.communities.InstitutionService;
+import es.us.meerkat.backend.service.suscriptions.PaymentService;
+import es.us.meerkat.backend.service.suscriptions.SuscripcionService;
+import es.us.meerkat.backend.service.tutors.TutorService;
 
 @ExtendWith(MockitoExtension.class)
 class PaymentControllerTest {

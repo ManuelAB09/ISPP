@@ -26,6 +26,9 @@ import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.MensajeComunidadRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.service.chats.MensajeComunidadService;
+import es.us.meerkat.backend.service.emails.EmailService;
+import es.us.meerkat.backend.service.notifications.PreferenciasNotificacionService;
 
 @ExtendWith(MockitoExtension.class)
 class MensajeComunidadServiceTest {

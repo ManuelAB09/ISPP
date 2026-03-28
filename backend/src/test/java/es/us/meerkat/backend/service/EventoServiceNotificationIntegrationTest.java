@@ -26,6 +26,9 @@ import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.EventoRepository;
 import es.us.meerkat.backend.repository.PreferenciasNotificacionRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.service.emails.EmailService;
+import es.us.meerkat.backend.service.events.EventoService;
+import es.us.meerkat.backend.service.google.GoogleCalendarService;
 
 @SpringBootTest
 @ActiveProfiles("test")

@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import es.us.meerkat.backend.dto.LinkPreviewRequest;
 import es.us.meerkat.backend.dto.LinkPreviewResponse;
-import es.us.meerkat.backend.service.LinkPreviewService;
+import es.us.meerkat.backend.service.chats.LinkPreviewService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 

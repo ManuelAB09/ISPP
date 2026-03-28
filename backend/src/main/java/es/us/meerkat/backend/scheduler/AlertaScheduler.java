@@ -6,7 +6,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import es.us.meerkat.backend.entity.TipoAlerta;
-import es.us.meerkat.backend.service.MisEventosService;
+import es.us.meerkat.backend.service.events.MisEventosService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

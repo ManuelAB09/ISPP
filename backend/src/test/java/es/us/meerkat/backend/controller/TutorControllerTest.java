@@ -21,8 +21,8 @@ import es.us.meerkat.backend.dto.TutorResponse;
 import es.us.meerkat.backend.dto.UpdateTutorRequest;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.service.PaymentService;
-import es.us.meerkat.backend.service.TutorService;
+import es.us.meerkat.backend.service.suscriptions.PaymentService;
+import es.us.meerkat.backend.service.tutors.TutorService;
 
 @ExtendWith(MockitoExtension.class)
 class TutorControllerTest {

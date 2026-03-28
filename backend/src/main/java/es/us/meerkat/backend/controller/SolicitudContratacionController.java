@@ -16,11 +16,11 @@ import es.us.meerkat.backend.dto.SolicitudContratacionRequest;
 import es.us.meerkat.backend.dto.SolicitudContratacionResponse;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.service.DisponibilidadService;
-import es.us.meerkat.backend.service.EmailService;
-import es.us.meerkat.backend.service.PaymentService;
-import es.us.meerkat.backend.service.SolicitudContratacionService;
-import es.us.meerkat.backend.service.TutorService;
+import es.us.meerkat.backend.service.emails.EmailService;
+import es.us.meerkat.backend.service.suscriptions.PaymentService;
+import es.us.meerkat.backend.service.tutors.DisponibilidadService;
+import es.us.meerkat.backend.service.tutors.SolicitudContratacionService;
+import es.us.meerkat.backend.service.tutors.TutorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 

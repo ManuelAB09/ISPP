@@ -22,7 +22,7 @@ import es.us.meerkat.backend.dto.InvitacionResponse;
 import es.us.meerkat.backend.entity.InvitacionMiembro;
 import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.service.InvitacionMiembroService;
+import es.us.meerkat.backend.service.communities.InvitacionMiembroService;
 
 @ExtendWith(MockitoExtension.class)
 class InvitacionMiembroControllerTest {

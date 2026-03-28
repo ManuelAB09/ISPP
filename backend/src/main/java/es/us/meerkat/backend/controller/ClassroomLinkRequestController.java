@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import es.us.meerkat.backend.dto.ClassroomLinkRequestResponse;
 import es.us.meerkat.backend.dto.CompleteClassroomLinkRequest;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.service.ClassroomLinkRequestService;
+import es.us.meerkat.backend.service.google.ClassroomLinkRequestService;
 import lombok.RequiredArgsConstructor;
 
 @RestController

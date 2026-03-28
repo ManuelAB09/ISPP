@@ -12,7 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
 
-import es.us.meerkat.backend.service.GoogleCalendarService;
+import es.us.meerkat.backend.service.google.GoogleCalendarService;
 
 @ExtendWith(MockitoExtension.class)
 class GoogleCalendarControllerTest {

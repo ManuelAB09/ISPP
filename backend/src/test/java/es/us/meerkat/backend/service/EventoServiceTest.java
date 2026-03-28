@@ -28,6 +28,9 @@ import es.us.meerkat.backend.repository.EventoRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.UbicacionRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.service.communities.AuthorizationService;
+import es.us.meerkat.backend.service.events.EventoService;
+import es.us.meerkat.backend.service.google.GoogleCalendarService;
 
 @ExtendWith(MockitoExtension.class)
 class EventoServiceTest {

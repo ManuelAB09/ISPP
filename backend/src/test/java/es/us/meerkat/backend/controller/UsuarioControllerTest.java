@@ -18,7 +18,7 @@ import es.us.meerkat.backend.dto.UserDetailResponse;
 import es.us.meerkat.backend.dto.UserPublicResponse;
 import es.us.meerkat.backend.dto.VisibilityRequest;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.service.UsuarioService;
+import es.us.meerkat.backend.service.users.UsuarioService;
 
 @ExtendWith(MockitoExtension.class)
 class UsuarioControllerTest {

@@ -25,6 +25,8 @@ import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.InstitutionRepository;
 import es.us.meerkat.backend.repository.SuscripcionRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.service.suscriptions.PaymentService;
+import es.us.meerkat.backend.service.suscriptions.SuscripcionService;
 
 /**
  * Tests unitarios para SuscripcionService.

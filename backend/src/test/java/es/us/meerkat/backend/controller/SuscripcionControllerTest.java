@@ -22,8 +22,8 @@ import es.us.meerkat.backend.dto.SubscriptionResponse;
 import es.us.meerkat.backend.entity.Suscripcion;
 import es.us.meerkat.backend.entity.TipoPlan;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.service.PaymentService;
-import es.us.meerkat.backend.service.SuscripcionService;
+import es.us.meerkat.backend.service.suscriptions.PaymentService;
+import es.us.meerkat.backend.service.suscriptions.SuscripcionService;
 
 /**
  * Tests de integración para SuscripcionController.

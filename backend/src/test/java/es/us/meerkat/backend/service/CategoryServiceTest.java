@@ -19,6 +19,8 @@ import es.us.meerkat.backend.entity.Categoria;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.repository.CategoriaRepository;
 import es.us.meerkat.backend.repository.ComunidadRepository;
+import es.us.meerkat.backend.service.communities.AuthorizationService;
+import es.us.meerkat.backend.service.communities.CategoryService;
 
 @ExtendWith(MockitoExtension.class)
 class CategoryServiceTest {

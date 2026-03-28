@@ -18,7 +18,7 @@ import es.us.meerkat.backend.dto.LoginRequest;
 import es.us.meerkat.backend.dto.MessageResponse;
 import es.us.meerkat.backend.dto.RegisterRequest;
 import es.us.meerkat.backend.dto.UserDetailResponse;
-import es.us.meerkat.backend.service.AuthService;
+import es.us.meerkat.backend.service.users.AuthService;
 
 @ExtendWith(MockitoExtension.class)
 class AuthControllerTest {

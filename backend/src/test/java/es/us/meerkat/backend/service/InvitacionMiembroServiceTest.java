@@ -30,6 +30,9 @@ import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.InvitacionMiembroRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.service.communities.AuthorizationService;
+import es.us.meerkat.backend.service.communities.InvitacionMiembroService;
+import es.us.meerkat.backend.service.emails.EmailService;
 
 @ExtendWith(MockitoExtension.class)
 class InvitacionMiembroServiceTest {

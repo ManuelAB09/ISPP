@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import es.us.meerkat.backend.dto.*;
 import es.us.meerkat.backend.dto.ValoracionTutorRequest;
-import es.us.meerkat.backend.service.RecommendationService;
+import es.us.meerkat.backend.service.recommendations.RecommendationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 

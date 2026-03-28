@@ -24,8 +24,8 @@ import es.us.meerkat.backend.entity.ComunidadClassroom;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.ComunidadClassroomRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
-import es.us.meerkat.backend.service.AuthorizationService;
-import es.us.meerkat.backend.service.GoogleClassroomService;
+import es.us.meerkat.backend.service.communities.AuthorizationService;
+import es.us.meerkat.backend.service.google.GoogleClassroomService;
 
 @ExtendWith(MockitoExtension.class)
 class GoogleClassroomControllerTest {

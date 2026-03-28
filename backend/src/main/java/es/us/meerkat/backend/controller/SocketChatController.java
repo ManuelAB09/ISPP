@@ -18,8 +18,8 @@ import es.us.meerkat.backend.entity.Mensaje;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.MensajeRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
-import es.us.meerkat.backend.service.MensajeComunidadService;
-import es.us.meerkat.backend.service.MensajeService;
+import es.us.meerkat.backend.service.chats.MensajeComunidadService;
+import es.us.meerkat.backend.service.chats.MensajeService;
 import lombok.RequiredArgsConstructor;
 
 /** Controlador WebSocket STOMP para manejo de mensajes privados y de eventos en tiempo real. */

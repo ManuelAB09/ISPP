@@ -35,6 +35,7 @@ import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.TransaccionPagoRepository;
 import es.us.meerkat.backend.repository.TutorRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.service.tutors.TutorService;
 
 @ExtendWith(MockitoExtension.class)
 class TutorServiceTest {

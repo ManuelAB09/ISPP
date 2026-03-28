@@ -12,7 +12,7 @@ import es.us.meerkat.backend.dto.CreateFeedbackRequest;
 import es.us.meerkat.backend.dto.FeedbackResponse;
 import es.us.meerkat.backend.entity.Feedback;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.service.FeedbackService;
+import es.us.meerkat.backend.service.recommendations.FeedbackService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;

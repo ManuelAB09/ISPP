@@ -16,7 +16,7 @@ import es.us.meerkat.backend.entity.CuestionarioIntento;
 import es.us.meerkat.backend.entity.Opcion;
 import es.us.meerkat.backend.entity.Pregunta;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.service.CuestionarioService;
+import es.us.meerkat.backend.service.forms.CuestionarioService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

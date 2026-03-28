@@ -22,6 +22,10 @@ import es.us.meerkat.backend.repository.ComunidadClassroomRepository;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.service.communities.AuthorizationService;
+import es.us.meerkat.backend.service.communities.CommunityService;
+import es.us.meerkat.backend.service.communities.MemberService;
+import es.us.meerkat.backend.service.google.GoogleClassroomService;
 
 @ExtendWith(MockitoExtension.class)
 class MemberServiceTest {

@@ -30,6 +30,11 @@ import es.us.meerkat.backend.repository.AnuncioRepository;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.service.communities.AnuncioService;
+import es.us.meerkat.backend.service.communities.AuthorizationService;
+import es.us.meerkat.backend.service.emails.EmailService;
+import es.us.meerkat.backend.service.notifications.NotificacionService;
+import es.us.meerkat.backend.service.notifications.PreferenciasNotificacionService;
 
 @ExtendWith(MockitoExtension.class)
 class AnuncioServiceTest {

@@ -13,7 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import es.us.meerkat.backend.service.FeedbackService;
+import es.us.meerkat.backend.service.recommendations.FeedbackService;
 
 @ExtendWith(MockitoExtension.class)
 class FeedbackControllerTest {

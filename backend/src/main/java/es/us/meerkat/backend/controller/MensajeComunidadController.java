@@ -27,9 +27,9 @@ import es.us.meerkat.backend.dto.MensajeComunidadResponse;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
-import es.us.meerkat.backend.service.AuthorizationService;
-import es.us.meerkat.backend.service.ChatFileStorageService;
-import es.us.meerkat.backend.service.MensajeComunidadService;
+import es.us.meerkat.backend.service.chats.ChatFileStorageService;
+import es.us.meerkat.backend.service.chats.MensajeComunidadService;
+import es.us.meerkat.backend.service.communities.AuthorizationService;
 import lombok.RequiredArgsConstructor;
 
 /** Controlador REST para gestionar mensajes de comunidades. */

@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import es.us.meerkat.backend.entity.Notificacion;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.service.NotificacionService;
+import es.us.meerkat.backend.service.notifications.NotificacionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;

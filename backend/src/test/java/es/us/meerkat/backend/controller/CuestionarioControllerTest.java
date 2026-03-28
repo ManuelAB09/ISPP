@@ -13,7 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import es.us.meerkat.backend.service.CuestionarioService;
+import es.us.meerkat.backend.service.forms.CuestionarioService;
 
 @ExtendWith(MockitoExtension.class)
 class CuestionarioControllerTest {

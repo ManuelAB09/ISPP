@@ -10,6 +10,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.multipart.MultipartFile;
 
+import es.us.meerkat.backend.service.chats.ChatFileStorageService;
+
 @ExtendWith(MockitoExtension.class)
 class ChatFileStorageServiceTest {
 

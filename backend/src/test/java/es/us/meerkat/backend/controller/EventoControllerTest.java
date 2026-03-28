@@ -23,13 +23,15 @@ import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.Ubicacion;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.service.EventoService;
+import es.us.meerkat.backend.service.events.EventoService;
 
 @ExtendWith(MockitoExtension.class)
 class EventoControllerTest {
 
     @Mock private EventoService eventoService;
-    @Mock private es.us.meerkat.backend.service.AuthorizationService authorizationService;
+
+    @Mock
+    private es.us.meerkat.backend.service.communities.AuthorizationService authorizationService;
 
     @InjectMocks private EventoController eventoController;
 

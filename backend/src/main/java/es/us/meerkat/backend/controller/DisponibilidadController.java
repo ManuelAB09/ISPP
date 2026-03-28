@@ -19,7 +19,7 @@ import es.us.meerkat.backend.dto.DisponibilidadTutorResponse;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.TutorRepository;
-import es.us.meerkat.backend.service.DisponibilidadService;
+import es.us.meerkat.backend.service.tutors.DisponibilidadService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 

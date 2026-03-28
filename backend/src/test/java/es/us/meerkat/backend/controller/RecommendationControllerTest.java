@@ -16,7 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import es.us.meerkat.backend.dto.RecomendacionResponse;
-import es.us.meerkat.backend.service.RecommendationService;
+import es.us.meerkat.backend.service.recommendations.RecommendationService;
 
 @ExtendWith(MockitoExtension.class)
 class RecommendationControllerTest {

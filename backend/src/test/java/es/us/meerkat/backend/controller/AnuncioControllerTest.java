@@ -21,7 +21,7 @@ import es.us.meerkat.backend.dto.AnuncioResponse;
 import es.us.meerkat.backend.dto.CreateAnuncioRequest;
 import es.us.meerkat.backend.entity.Anuncio;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.service.AnuncioService;
+import es.us.meerkat.backend.service.communities.AnuncioService;
 
 @ExtendWith(MockitoExtension.class)
 class AnuncioControllerTest {

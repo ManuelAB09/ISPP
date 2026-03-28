@@ -18,8 +18,8 @@ import es.us.meerkat.backend.dto.InstitutionResponse;
 import es.us.meerkat.backend.dto.UpdateInstitutionRequest;
 import es.us.meerkat.backend.entity.Institution;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.service.InstitutionService;
-import es.us.meerkat.backend.service.PaymentService;
+import es.us.meerkat.backend.service.communities.InstitutionService;
+import es.us.meerkat.backend.service.suscriptions.PaymentService;
 
 @ExtendWith(MockitoExtension.class)
 class InstitutionControllerTest {

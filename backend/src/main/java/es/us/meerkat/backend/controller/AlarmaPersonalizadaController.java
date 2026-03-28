@@ -18,7 +18,7 @@ import es.us.meerkat.backend.dto.AlarmaPersonalizadaResponse;
 import es.us.meerkat.backend.dto.CrearAlarmaRequest;
 import es.us.meerkat.backend.dto.CrearAlarmasLoteRequest;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.service.AlarmaPersonalizadaService;
+import es.us.meerkat.backend.service.events.AlarmaPersonalizadaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

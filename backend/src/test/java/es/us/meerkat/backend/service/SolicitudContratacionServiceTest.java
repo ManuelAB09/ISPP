@@ -30,6 +30,11 @@ import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.SolicitudContratacionDirectaRepository;
 import es.us.meerkat.backend.repository.TutorRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.service.emails.EmailService;
+import es.us.meerkat.backend.service.google.GoogleCalendarService;
+import es.us.meerkat.backend.service.suscriptions.PaymentService;
+import es.us.meerkat.backend.service.tutors.DisponibilidadService;
+import es.us.meerkat.backend.service.tutors.SolicitudContratacionService;
 
 @ExtendWith(MockitoExtension.class)
 class SolicitudContratacionServiceTest {

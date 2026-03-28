@@ -18,7 +18,7 @@ import es.us.meerkat.backend.dto.ResendVerificationRequest;
 import es.us.meerkat.backend.dto.TotpEnableResponse;
 import es.us.meerkat.backend.dto.TotpSetupResponse;
 import es.us.meerkat.backend.dto.TotpVerifyRequest;
-import es.us.meerkat.backend.service.AuthService;
+import es.us.meerkat.backend.service.users.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 

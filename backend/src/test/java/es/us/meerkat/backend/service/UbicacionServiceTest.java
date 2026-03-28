@@ -23,6 +23,7 @@ import es.us.meerkat.backend.dto.UbicacionRequest;
 import es.us.meerkat.backend.dto.UbicacionResponse;
 import es.us.meerkat.backend.entity.Ubicacion;
 import es.us.meerkat.backend.repository.UbicacionRepository;
+import es.us.meerkat.backend.service.maps.UbicacionService;
 
 @ExtendWith(MockitoExtension.class)
 class UbicacionServiceTest {

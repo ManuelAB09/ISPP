@@ -33,7 +33,7 @@ import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.AsistenciaEventoRepository;
 import es.us.meerkat.backend.repository.CuestionarioIntentoRepository;
 import es.us.meerkat.backend.repository.FeedbackRepository;
-import es.us.meerkat.backend.service.UsuarioService;
+import es.us.meerkat.backend.service.users.UsuarioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 

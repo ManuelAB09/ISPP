@@ -29,6 +29,8 @@ import es.us.meerkat.backend.exception.EmailNotVerifiedException;
 import es.us.meerkat.backend.exception.ValidationException;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import es.us.meerkat.backend.security.JwtService;
+import es.us.meerkat.backend.service.emails.EmailService;
+import es.us.meerkat.backend.service.users.AuthService;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {

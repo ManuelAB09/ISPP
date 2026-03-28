@@ -15,7 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import es.us.meerkat.backend.repository.MensajeComunidadRepository;
-import es.us.meerkat.backend.service.MensajeComunidadLeidoService;
+import es.us.meerkat.backend.service.chats.MensajeComunidadLeidoService;
 
 @ExtendWith(MockitoExtension.class)
 class MensajeComunidadLeidoControllerTest {

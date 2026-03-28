@@ -15,6 +15,7 @@ import es.us.meerkat.backend.entity.MiembroComunidad;
 import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
+import es.us.meerkat.backend.service.communities.AuthorizationService;
 
 @ExtendWith(MockitoExtension.class)
 class AuthorizationServiceTest {

@@ -29,14 +29,14 @@ import es.us.meerkat.backend.entity.SolicitudComunidad;
 import es.us.meerkat.backend.entity.TipoGrupo;
 import es.us.meerkat.backend.entity.TipoPlanComunidad;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.service.AuthorizationService;
-import es.us.meerkat.backend.service.CategoryService;
-import es.us.meerkat.backend.service.CommunityService;
-import es.us.meerkat.backend.service.EventoService;
-import es.us.meerkat.backend.service.GoogleClassroomService;
-import es.us.meerkat.backend.service.MemberService;
-import es.us.meerkat.backend.service.RequestService;
-import es.us.meerkat.backend.service.TutorContratacionService;
+import es.us.meerkat.backend.service.communities.AuthorizationService;
+import es.us.meerkat.backend.service.communities.CategoryService;
+import es.us.meerkat.backend.service.communities.CommunityService;
+import es.us.meerkat.backend.service.communities.MemberService;
+import es.us.meerkat.backend.service.communities.RequestService;
+import es.us.meerkat.backend.service.events.EventoService;
+import es.us.meerkat.backend.service.google.GoogleClassroomService;
+import es.us.meerkat.backend.service.tutors.TutorContratacionService;
 
 @ExtendWith(MockitoExtension.class)
 class CommunityControllerTest {

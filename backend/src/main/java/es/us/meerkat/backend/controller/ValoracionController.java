@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import es.us.meerkat.backend.entity.Valoracion;
-import es.us.meerkat.backend.service.ValoracionService;
+import es.us.meerkat.backend.service.recommendations.ValoracionService;
 
 @RestController
 @RequestMapping("/api/valoraciones")

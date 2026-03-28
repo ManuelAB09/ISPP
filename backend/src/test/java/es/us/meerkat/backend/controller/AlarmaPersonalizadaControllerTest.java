@@ -10,7 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
-import es.us.meerkat.backend.service.AlarmaPersonalizadaService;
+import es.us.meerkat.backend.service.events.AlarmaPersonalizadaService;
 
 @ExtendWith(MockitoExtension.class)
 class AlarmaPersonalizadaControllerTest {

@@ -15,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 
 import es.us.meerkat.backend.dto.DisponibilidadTutorResponse;
 import es.us.meerkat.backend.repository.TutorRepository;
-import es.us.meerkat.backend.service.DisponibilidadService;
+import es.us.meerkat.backend.service.tutors.DisponibilidadService;
 
 @ExtendWith(MockitoExtension.class)
 class DisponibilidadControllerTest {

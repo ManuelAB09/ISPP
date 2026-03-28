@@ -31,6 +31,9 @@ import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.TutorRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.service.communities.AuthorizationService;
+import es.us.meerkat.backend.service.communities.CommunityService;
+import es.us.meerkat.backend.service.suscriptions.SuscripcionService;
 
 @ExtendWith(MockitoExtension.class)
 class CommunityServiceTest {

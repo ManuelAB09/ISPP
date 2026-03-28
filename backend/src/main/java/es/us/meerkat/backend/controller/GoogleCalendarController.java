@@ -15,7 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import es.us.meerkat.backend.dto.GoogleCalendarStatusResponse;
 import es.us.meerkat.backend.dto.UpdateCalendarPreferenciasRequest;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.service.GoogleCalendarService;
+import es.us.meerkat.backend.service.google.GoogleCalendarService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;

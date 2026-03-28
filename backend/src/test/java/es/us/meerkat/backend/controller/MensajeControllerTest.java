@@ -19,8 +19,8 @@ import es.us.meerkat.backend.dto.EnviarMensajeRequest;
 import es.us.meerkat.backend.dto.MensajeResponse;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.UsuarioRepository;
-import es.us.meerkat.backend.service.ChatFileStorageService;
-import es.us.meerkat.backend.service.MensajeService;
+import es.us.meerkat.backend.service.chats.ChatFileStorageService;
+import es.us.meerkat.backend.service.chats.MensajeService;
 
 @ExtendWith(MockitoExtension.class)
 class MensajeControllerTest {

@@ -153,8 +153,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(
             final Exception ex, final HttpServletRequest request) {
-        log.error("Error no controlado en {} {}: {}", request.getMethod(), request.getRequestURI(),
-                ex.getMessage(), ex);
+        log.error(
+                "Error no controlado en {} {}: {}",
+                request.getMethod(),
+                request.getRequestURI(),
+                ex.getMessage(),
+                ex);
         final ErrorResponse errorResponse =
                 new ErrorResponse(
                         HttpStatus.INTERNAL_SERVER_ERROR.value(),

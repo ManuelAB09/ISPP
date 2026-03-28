@@ -35,6 +35,9 @@ import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.ComunidadRepository;
 import es.us.meerkat.backend.repository.TutorContratacionRepository;
 import es.us.meerkat.backend.repository.TutorRepository;
+import es.us.meerkat.backend.service.google.ClassroomLinkRequestService;
+import es.us.meerkat.backend.service.suscriptions.PaymentService;
+import es.us.meerkat.backend.service.tutors.TutorContratacionService;
 
 @ExtendWith(MockitoExtension.class)
 class TutorContratacionServiceTest {

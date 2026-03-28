@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 
 import es.us.meerkat.backend.dto.LinkPreviewRequest;
 import es.us.meerkat.backend.dto.LinkPreviewResponse;
-import es.us.meerkat.backend.service.LinkPreviewService;
+import es.us.meerkat.backend.service.chats.LinkPreviewService;
 
 @ExtendWith(MockitoExtension.class)
 class LinkPreviewControllerTest {

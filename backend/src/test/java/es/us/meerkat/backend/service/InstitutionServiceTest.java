@@ -29,6 +29,9 @@ import es.us.meerkat.backend.entity.TipoPlanCorporativo;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.InstitutionRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.service.communities.InstitutionService;
+import es.us.meerkat.backend.service.emails.EmailService;
+import es.us.meerkat.backend.service.suscriptions.PaymentService;
 
 @ExtendWith(MockitoExtension.class)
 class InstitutionServiceTest {

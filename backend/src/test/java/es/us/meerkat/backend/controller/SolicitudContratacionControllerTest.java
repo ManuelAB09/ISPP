@@ -19,10 +19,10 @@ import org.springframework.http.ResponseEntity;
 import es.us.meerkat.backend.dto.SolicitudContratacionRequest;
 import es.us.meerkat.backend.dto.SolicitudContratacionResponse;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.service.EmailService;
-import es.us.meerkat.backend.service.PaymentService;
-import es.us.meerkat.backend.service.SolicitudContratacionService;
-import es.us.meerkat.backend.service.TutorService;
+import es.us.meerkat.backend.service.emails.EmailService;
+import es.us.meerkat.backend.service.suscriptions.PaymentService;
+import es.us.meerkat.backend.service.tutors.SolicitudContratacionService;
+import es.us.meerkat.backend.service.tutors.TutorService;
 
 @ExtendWith(MockitoExtension.class)
 class SolicitudContratacionControllerTest {

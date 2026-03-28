@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import es.us.meerkat.backend.dto.AttendanceResponse;
 import es.us.meerkat.backend.entity.AsistenciaEvento;
-import es.us.meerkat.backend.service.AsistenciaEventoService;
+import es.us.meerkat.backend.service.events.AsistenciaEventoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

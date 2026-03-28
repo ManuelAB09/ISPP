@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import es.us.meerkat.backend.entity.EstadoSolicitudContratacion;
 import es.us.meerkat.backend.entity.SolicitudContratacionDirecta;
 import es.us.meerkat.backend.repository.SolicitudContratacionDirectaRepository;
-import es.us.meerkat.backend.service.EmailService;
+import es.us.meerkat.backend.service.emails.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

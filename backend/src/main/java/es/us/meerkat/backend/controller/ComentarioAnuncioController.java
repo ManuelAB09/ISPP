@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import es.us.meerkat.backend.dto.ComentarioAnuncioResponse;
 import es.us.meerkat.backend.dto.CreateComentarioAnuncioRequest;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.service.ComentarioAnuncioService;
+import es.us.meerkat.backend.service.forms.ComentarioAnuncioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

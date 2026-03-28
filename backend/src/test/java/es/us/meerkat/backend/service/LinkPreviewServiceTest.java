@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.Test;
 
 import es.us.meerkat.backend.exception.ValidationException;
+import es.us.meerkat.backend.service.chats.LinkPreviewService;
 
 class LinkPreviewServiceTest {
 

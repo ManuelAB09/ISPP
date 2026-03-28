@@ -16,7 +16,7 @@ import es.us.meerkat.backend.entity.AsistenciaEvento;
 import es.us.meerkat.backend.entity.EstadoAsistencia;
 import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.service.AsistenciaEventoService;
+import es.us.meerkat.backend.service.events.AsistenciaEventoService;
 
 @ExtendWith(MockitoExtension.class)
 class AsistenciaEventoControllerTest {
