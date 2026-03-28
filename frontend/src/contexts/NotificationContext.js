@@ -52,7 +52,10 @@ export const NotificationProvider = ({ children }) => {
     const conversationUsersRef = useRef(new Map()); // Mapa de usuarioId -> {nombre, foto}
     const shownNotificationsRef = useRef(new Set());
     const [hasRequestedPermission, setHasRequestedPermission] = useState(false);
-    const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+    const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
+        const saved = localStorage.getItem('notificationsEnabled');
+        return saved !== null ? JSON.parse(saved) : false;
+    });
     const [mutedChats, setMutedChats] = useState({ private: {}, community: {} });
     const [panelUnreadCount, setPanelUnreadCount] = useState(0);
     const [communityUnreadById, setCommunityUnreadById] = useState({});
@@ -165,7 +168,7 @@ export const NotificationProvider = ({ children }) => {
     }, []);
 
     const refreshPanelUnreadCount = useCallback(() => {
-        if (!isAuthenticated) {
+        if (!isAuthenticated || !notificationsEnabled) {
             setPanelUnreadCount(0);
             return;
         }
@@ -180,7 +183,7 @@ export const NotificationProvider = ({ children }) => {
                 // Keep last known count if refresh fails
                 console.error('Error al refrescar el contador de notificaciones:', error);
             });
-    }, [isAuthenticated]);
+    }, [isAuthenticated, notificationsEnabled]);
 
     /**
      * Obtiene datos del usuario desde el mapa de caché o desde la API
@@ -290,6 +293,11 @@ export const NotificationProvider = ({ children }) => {
             return;
         }
 
+        if (!notificationsEnabled) {
+            setPanelUnreadCount(0);
+            return;
+        }
+
         refreshPanelUnreadCount();
 
         const intervalId = window.setInterval(() => {
@@ -309,7 +317,7 @@ export const NotificationProvider = ({ children }) => {
             window.removeEventListener('focus', handleFocus);
             document.removeEventListener('visibilitychange', handleVisibility);
         };
-    }, [isAuthenticated, refreshPanelUnreadCount]);
+    }, [isAuthenticated, notificationsEnabled, refreshPanelUnreadCount]);
 
     // Listen for real-time private messages via WebSocket
     useEffect(() => {
@@ -638,13 +646,12 @@ export const NotificationProvider = ({ children }) => {
         }
     }, [isInChatRoute, location.pathname, isAuthenticated]);
 
-    // Load notifications preference from localStorage on mount
+    // Sync notificationsEnabled from user backend preference
     useEffect(() => {
-        const saved = localStorage.getItem('notificationsEnabled');
-        if (saved !== null) {
-            setNotificationsEnabled(JSON.parse(saved));
+        if (user?.notificacionesPush != null) {
+            setNotificationsEnabled(user.notificacionesPush);
         }
-    }, []);
+    }, [user?.notificacionesPush]);
 
     // Save notifications preference to localStorage when it changes
     useEffect(() => {

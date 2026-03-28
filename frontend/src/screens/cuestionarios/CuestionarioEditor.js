@@ -35,7 +35,7 @@ const CuestionarioEditor = () => {
 
   const [scope, setScope] = useState('GENERAL');
   const [selectedCommunityId, setSelectedCommunityId] = useState('');
-  const [studentIdsText, setStudentIdsText] = useState('');
+  const [studentEmailsText, setStudentEmailsText] = useState('');
 
   useEffect(() => {
     const loadCommunities = async () => {
@@ -61,12 +61,12 @@ const CuestionarioEditor = () => {
     loadCommunities();
   }, [searchParams]);
 
-  const parsedStudentIds = useMemo(
-    () => studentIdsText
+  const parsedStudentEmails = useMemo(
+    () => studentEmailsText
       .split(',')
-      .map((v) => Number(v.trim()))
-      .filter((v) => Number.isInteger(v) && v > 0),
-    [studentIdsText]
+      .map((v) => v.trim())
+      .filter((v) => v.length > 0 && v.includes('@')),
+    [studentEmailsText]
   );
 
   const handleBasicInfoChange = (e) => {
@@ -187,8 +187,8 @@ const CuestionarioEditor = () => {
       return;
     }
 
-    if (scope === 'PERSONA' && parsedStudentIds.length === 0) {
-      alert('Introduce al menos un ID de alumno para publicar el cuestionario');
+    if (scope === 'PERSONA' && parsedStudentEmails.length === 0) {
+      alert('Introduce al menos un email de alumno para publicar el cuestionario');
       return;
     }
 
@@ -207,7 +207,7 @@ const CuestionarioEditor = () => {
         tiempoEstimadoMinutos: tiempo,
         dificultad: formData.dificultad || 'INTERMEDIO',
         comunidadesIds: scope === 'COMUNIDAD' ? [Number(selectedCommunityId)] : [],
-        alumnosIds: scope === 'PERSONA' ? parsedStudentIds : [],
+        alumnosEmails: scope === 'PERSONA' ? parsedStudentEmails : [],
         // Limpiamos los arrays según el tipo
         preguntas: formData.preguntas.map(q => ({
           enunciado: q.enunciado.trim(),
@@ -360,13 +360,13 @@ const CuestionarioEditor = () => {
           {scope === 'PERSONA' && (
             <div className="form-group-row">
               <div className="form-group">
-                <label>IDs de alumnos (separados por coma)</label>
+                <label>Emails de alumnos (separados por coma)</label>
                 <input
                   type="text"
                   className="form-control"
-                  value={studentIdsText}
-                  onChange={(e) => setStudentIdsText(e.target.value)}
-                  placeholder="Ej: 12, 45, 78"
+                  value={studentEmailsText}
+                  onChange={(e) => setStudentEmailsText(e.target.value)}
+                  placeholder="Ej: alumno1@email.com, alumno2@email.com"
                 />
               </div>
             </div>

@@ -9,6 +9,14 @@ export const cuestionariosApi = {
     const response = await axiosInstance.get('/api/v1/cuestionarios/mine');
     return response.data;
   },
+  listPublic: async () => {
+    const response = await axiosInstance.get('/api/v1/cuestionarios/public');
+    return response.data;
+  },
+  listAssigned: async () => {
+    const response = await axiosInstance.get('/api/v1/cuestionarios/assigned');
+    return response.data;
+  },
   listPublicByUserId: async (userId) => {
     const response = await axiosInstance.get(`/api/v1/cuestionarios/user/${userId}/public`);
     return response.data;

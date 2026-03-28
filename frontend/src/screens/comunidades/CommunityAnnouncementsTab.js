@@ -266,6 +266,7 @@ function CommentsSection({ anuncioId }) {
                     className="catab-comment-avatar"
                   />
                   <span className="catab-comment-author">{c.usuario?.nombre || 'Usuario'}</span>
+                  {' '}
                   {c.texto}
                   <span style={{ float: 'right', color: '#94a3b8', fontSize: '0.93em' }}>
                     {c.createdAt ? formatDateTime(c.createdAt) : ''}

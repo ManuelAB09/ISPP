@@ -4,8 +4,9 @@ import { MemoryRouter } from 'react-router-dom';
 import CommunityChat from './CommunityChat';
 import { obtenerHistorialComunidad } from '../../api/mensajeService';
 
-// Mock scrollIntoView para jsdom
+// Mock scrollIntoView y scrollTo para jsdom
 window.HTMLElement.prototype.scrollIntoView = jest.fn();
+window.HTMLElement.prototype.scrollTo = jest.fn();
 
 // Mock de contextos y dependencias
 jest.mock('react-router-dom', () => ({

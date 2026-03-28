@@ -116,10 +116,21 @@ public class CuestionarioService {
             cuestionario.getComunidades().addAll(found);
         }
 
-        // alumnos
+        // alumnos por ids
         if (dto.getAlumnosIds() != null && !dto.getAlumnosIds().isEmpty()) {
             java.util.List<Usuario> users = usuarioRepository.findAllById(dto.getAlumnosIds());
             cuestionario.getAlumnos().addAll(users);
+        }
+
+        // alumnos por emails
+        if (dto.getAlumnosEmails() != null && !dto.getAlumnosEmails().isEmpty()) {
+            for (String email : dto.getAlumnosEmails()) {
+                if (email != null && !email.isBlank()) {
+                    usuarioRepository
+                            .findByEmail(email.trim())
+                            .ifPresent(u -> cuestionario.getAlumnos().add(u));
+                }
+            }
         }
 
         return cuestionarioRepository.save(cuestionario);
@@ -243,6 +254,14 @@ public class CuestionarioService {
         cuestionarioRepository.incrementarIntentos(c.getId());
 
         return new AttemptSubmissionResult(saved, total, correct, questionsEvaluation);
+    }
+
+    public java.util.List<Cuestionario> findAllPublic() {
+        return cuestionarioRepository.findPublicGeneralQuizzes();
+    }
+
+    public java.util.List<Cuestionario> findAssignedToUser(Long userId) {
+        return cuestionarioRepository.findPublishedByAlumnoId(userId);
     }
 
     public java.util.Optional<Cuestionario> findById(Long id) {

@@ -47,6 +47,9 @@ public class CreateCuestionarioRequest {
     /** Lista de ids de usuarios (alumnos) asociados */
     private List<Long> alumnosIds;
 
+    /** Lista de emails de alumnos asociados (alternativa a alumnosIds) */
+    private List<String> alumnosEmails;
+
     @Data
     @Builder
     @NoArgsConstructor

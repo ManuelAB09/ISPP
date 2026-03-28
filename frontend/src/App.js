@@ -36,13 +36,15 @@ import CuestionarioEditor from './screens/cuestionarios/CuestionarioEditor';
 import CuestionarioPreview from './screens/cuestionarios/CuestionarioPreview';
 import CuestionarioResolver from './screens/cuestionarios/CuestionarioResolver';
 import CuestionarioResultado from './screens/cuestionarios/CuestionarioResultado';
+import CuestionariosPublicos from './screens/cuestionarios/CuestionariosPublicos';
 import Chats from './screens/chat/Chats';
 import NotificationTab from './screens/notificaciones/NotificationTab';
 
 function FloatingNotifButton() {
-  const { panelUnreadCount } = useNotificationContext();
+  const { panelUnreadCount, notificationsEnabled } = useNotificationContext();
   const isAuthenticated = Boolean(localStorage.getItem('accessToken'));
   if (!isAuthenticated) return null;
+  if (!notificationsEnabled) return null;
   return (
     <Link to="/notificaciones" className="floating-notif-btn" aria-label="Notificaciones">
       🔔
@@ -142,6 +144,7 @@ function AppRoutes() {
         <Route path="/comunidades/:communityId" element={<CommunityDetail />} />
         <Route path="/comunidades/:communityId/apuntes" element={<CommunityDetail />} />
         <Route path="/comunidades/:communityId/editar" element={<CommunityDetail />} />
+        <Route path="/cuestionarios" element={<CuestionariosPublicos />} />
 
         {/* Rutas protegidas - solo disponibles si está autenticado */}
         {ownerRoutes}

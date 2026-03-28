@@ -65,6 +65,26 @@ public interface CuestionarioRepository extends JpaRepository<Cuestionario, Long
             """)
     List<Cuestionario> findByIdIn(@Param("ids") List<Long> ids);
 
+    /** Lista todos los cuestionarios públicos generales (sin comunidades ni alumnos asignados). */
+    @Query(
+            """
+                SELECT q FROM Cuestionario q
+                WHERE q.publicado = true AND q.activo = true
+                  AND q.comunidades IS EMPTY AND q.alumnos IS EMPTY
+                ORDER BY q.createdAt DESC
+            """)
+    List<Cuestionario> findPublicGeneralQuizzes();
+
+    /** Lista cuestionarios publicados asignados a un alumno concreto. */
+    @Query(
+            """
+                SELECT q FROM Cuestionario q
+                JOIN q.alumnos a
+                WHERE a.id = :userId AND q.publicado = true AND q.activo = true
+                ORDER BY q.createdAt DESC
+            """)
+    List<Cuestionario> findPublishedByAlumnoId(@Param("userId") Long userId);
+
     /** Incrementa el contador de intentos. */
     @Modifying
     @Query("UPDATE Cuestionario q SET q.intentos = q.intentos + 1 WHERE q.id = :id")

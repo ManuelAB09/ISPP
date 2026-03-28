@@ -349,7 +349,13 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose, autoStart, 
      * Desplaza la vista al último mensaje.
      */
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        const container = messagesEndRef.current?.parentElement;
+        if (container) {
+            container.scrollTo({
+                top: container.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
     };
 
     /**

@@ -98,9 +98,7 @@ export default function Header({ user, page }) {
                     <Link to="/" className={page === 'inicio' ? 'active' : ''}>Inicio</Link>
                     <Link to="/comunidades" className={page === 'comunidades' ? 'active' : ''}>Comunidades</Link>
                     <Link to="/profesores" className={page === 'profesores' ? 'active' : ''}>Profesores</Link>
-                    {isAuthenticated && (
-                        <Link to="/cuestionarios/crear" className={page === 'cuestionarios' ? 'active' : ''}>Cuestionarios</Link>
-                    )}
+                    <Link to="/cuestionarios" className={page === 'cuestionarios' ? 'active' : ''}>Cuestionarios</Link>
                     <Link to="/chats" className={page === 'chats' ? 'active' : ''}>
                         Chats
                         {totalChatsUnread > 0 && (
@@ -141,9 +139,7 @@ export default function Header({ user, page }) {
                     <Link to="/" className={page === 'inicio' ? 'active' : ''} onClick={closeMenu}>Inicio</Link>
                     <Link to="/comunidades" className={page === 'comunidades' ? 'active' : ''} onClick={closeMenu}>Comunidades</Link>
                     <Link to="/profesores" className={page === 'profesores' ? 'active' : ''} onClick={closeMenu}>Profesores</Link>
-                    {isAuthenticated && (
-                        <Link to="/cuestionarios/crear" className={page === 'cuestionarios' ? 'active' : ''} onClick={closeMenu}>Cuestionarios</Link>
-                    )}
+                    <Link to="/cuestionarios" className={page === 'cuestionarios' ? 'active' : ''} onClick={closeMenu}>Cuestionarios</Link>
                     <Link to="/chats" className={page === 'chats' ? 'active' : ''} onClick={closeMenu}>
                         Chats
                         {totalChatsUnread > 0 && (

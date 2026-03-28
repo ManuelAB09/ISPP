@@ -127,6 +127,29 @@ public class CuestionarioController {
         return ResponseEntity.ok(items);
     }
 
+    /** Lista todos los cuestionarios públicos generales de la plataforma. */
+    @GetMapping("/public")
+    public ResponseEntity<List<Map<String, Object>>> listAllPublic() {
+        List<Map<String, Object>> items =
+                cuestionarioService.findAllPublic().stream()
+                        .map(CuestionarioController::toResponse)
+                        .toList();
+        return ResponseEntity.ok(items);
+    }
+
+    /** Lista cuestionarios asignados al usuario autenticado. */
+    @GetMapping("/assigned")
+    public ResponseEntity<?> listAssignedToMe(@AuthenticationPrincipal Usuario usuario) {
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        List<Map<String, Object>> items =
+                cuestionarioService.findAssignedToUser(usuario.getId()).stream()
+                        .map(CuestionarioController::toResponse)
+                        .toList();
+        return ResponseEntity.ok(items);
+    }
+
     /** Lista cuestionarios públicos creados por un usuario específico (para visitar su perfil). */
     @GetMapping("/user/{userId}/public")
     public ResponseEntity<List<Map<String, Object>>> listPublicByUserId(@PathVariable Long userId) {

@@ -1,0 +1,116 @@
+.quizzes-public-page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 30px 20px 50px;
+}
+
+.quizzes-public-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.quizzes-public-header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  color: #242c4f;
+}
+
+.quizzes-public-btn-create {
+  background: #4f5fff;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background 0.2s;
+}
+
+.quizzes-public-btn-create:hover {
+  background: #3a4de0;
+}
+
+.quizzes-public-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.quizzes-public-card {
+  background: #ffffff;
+  border: 1px solid #e5e9f5;
+  border-radius: 14px;
+  padding: 20px;
+  cursor: pointer;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.quizzes-public-card:hover {
+  box-shadow: 0 4px 16px rgba(79, 95, 255, 0.12);
+  border-color: #c5cbf5;
+}
+
+.quizzes-public-card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #242c4f;
+  margin-bottom: 6px;
+}
+
+.quizzes-public-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.quizzes-public-chip {
+  background: #eef2ff;
+  color: #3c4a8c;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.quizzes-public-chip--difficulty {
+  background: #fff4e6;
+  color: #b5730a;
+}
+
+.quizzes-public-card-desc {
+  color: #5f6688;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  margin-bottom: 8px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.quizzes-public-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #94a3b8;
+  font-size: 0.82rem;
+}
+
+.quizzes-public-loading,
+.quizzes-public-error,
+.quizzes-public-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #64748b;
+  font-size: 1rem;
+}
+
+.quizzes-public-error {
+  color: #c00;
+}
