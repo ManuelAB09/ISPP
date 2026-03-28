@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import es.us.meerkat.backend.dto.UbicacionRequest;
-import es.us.meerkat.backend.dto.UbicacionResponse;
+import es.us.meerkat.backend.dto.maps.UbicacionRequest;
+import es.us.meerkat.backend.dto.maps.UbicacionResponse;
 import es.us.meerkat.backend.entity.Ubicacion;
 import es.us.meerkat.backend.service.maps.UbicacionService;
 import lombok.RequiredArgsConstructor;

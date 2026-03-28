@@ -10,8 +10,8 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import es.us.meerkat.backend.dto.CreateCuestionarioRequest;
-import es.us.meerkat.backend.dto.SubmitAttemptRequest;
+import es.us.meerkat.backend.dto.forms.CreateCuestionarioRequest;
+import es.us.meerkat.backend.dto.forms.SubmitAttemptRequest;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.Cuestionario;
 import es.us.meerkat.backend.entity.CuestionarioIntento;

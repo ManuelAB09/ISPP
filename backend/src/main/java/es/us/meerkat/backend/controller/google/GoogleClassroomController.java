@@ -22,9 +22,9 @@ import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import es.us.meerkat.backend.dto.ClassroomUserResponse;
-import es.us.meerkat.backend.dto.CreateStudentRequest;
-import es.us.meerkat.backend.dto.CreateTeacherRequest;
+import es.us.meerkat.backend.dto.google.ClassroomUserResponse;
+import es.us.meerkat.backend.dto.tutors.CreateStudentRequest;
+import es.us.meerkat.backend.dto.tutors.CreateTeacherRequest;
 import es.us.meerkat.backend.entity.ComunidadClassroom;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.ComunidadClassroomRepository;

@@ -17,8 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import es.us.meerkat.backend.controller.tutors.SolicitudContratacionController;
-import es.us.meerkat.backend.dto.SolicitudContratacionRequest;
-import es.us.meerkat.backend.dto.SolicitudContratacionResponse;
+import es.us.meerkat.backend.dto.tutors.SolicitudContratacionRequest;
+import es.us.meerkat.backend.dto.tutors.SolicitudContratacionResponse;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.emails.EmailService;
 import es.us.meerkat.backend.service.suscriptions.PaymentService;

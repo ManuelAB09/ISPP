@@ -6,7 +6,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import es.us.meerkat.backend.dto.ClassroomLinkRequestResponse;
+import es.us.meerkat.backend.dto.google.ClassroomLinkRequestResponse;
 import es.us.meerkat.backend.entity.ClassroomLinkRequest;
 import es.us.meerkat.backend.entity.ClassroomLinkRequestStatus;
 import es.us.meerkat.backend.repository.ClassroomLinkRequestRepository;

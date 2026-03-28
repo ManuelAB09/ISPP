@@ -13,11 +13,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import es.us.meerkat.backend.controller.users.UsuarioController;
-import es.us.meerkat.backend.dto.ChangePasswordRequest;
-import es.us.meerkat.backend.dto.UpdateUserRequest;
-import es.us.meerkat.backend.dto.UserDetailResponse;
-import es.us.meerkat.backend.dto.UserPublicResponse;
-import es.us.meerkat.backend.dto.VisibilityRequest;
+import es.us.meerkat.backend.dto.users.ChangePasswordRequest;
+import es.us.meerkat.backend.dto.users.UpdateUserRequest;
+import es.us.meerkat.backend.dto.users.UserDetailResponse;
+import es.us.meerkat.backend.dto.users.UserPublicResponse;
+import es.us.meerkat.backend.dto.users.VisibilityRequest;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.users.UsuarioService;
 
@@ -86,7 +86,7 @@ class UsuarioControllerTest {
         request.setCurrentPassword("oldPassword");
         request.setNewPassword("newPassword123");
 
-        ResponseEntity<es.us.meerkat.backend.dto.MessageResponse> response =
+        ResponseEntity<es.us.meerkat.backend.dto.chats.MessageResponse> response =
                 usuarioController.changePassword(usuario, request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);

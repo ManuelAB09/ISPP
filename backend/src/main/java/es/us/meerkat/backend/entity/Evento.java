@@ -3,10 +3,10 @@ package es.us.meerkat.backend.entity;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import es.us.meerkat.backend.dto.EventDetailResponse;
-import es.us.meerkat.backend.dto.EventSummaryResponse;
-import es.us.meerkat.backend.dto.UbicacionResponse;
-import es.us.meerkat.backend.dto.UserPublicResponse;
+import es.us.meerkat.backend.dto.events.EventDetailResponse;
+import es.us.meerkat.backend.dto.events.EventSummaryResponse;
+import es.us.meerkat.backend.dto.maps.UbicacionResponse;
+import es.us.meerkat.backend.dto.users.UserPublicResponse;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;

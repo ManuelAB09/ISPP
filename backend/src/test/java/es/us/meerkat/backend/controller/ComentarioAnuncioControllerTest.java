@@ -15,7 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import es.us.meerkat.backend.controller.forms.ComentarioAnuncioController;
-import es.us.meerkat.backend.dto.ComentarioAnuncioResponse;
+import es.us.meerkat.backend.dto.communities.ComentarioAnuncioResponse;
 import es.us.meerkat.backend.service.forms.ComentarioAnuncioService;
 
 @ExtendWith(MockitoExtension.class)

@@ -20,9 +20,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
-import es.us.meerkat.backend.dto.DisponibilidadTutorResponse;
-import es.us.meerkat.backend.dto.SolicitudContratacionRequest;
-import es.us.meerkat.backend.dto.SolicitudContratacionResponse;
+import es.us.meerkat.backend.dto.tutors.DisponibilidadTutorResponse;
+import es.us.meerkat.backend.dto.tutors.SolicitudContratacionRequest;
+import es.us.meerkat.backend.dto.tutors.SolicitudContratacionResponse;
 import es.us.meerkat.backend.entity.EstadoSolicitudContratacion;
 import es.us.meerkat.backend.entity.SolicitudContratacionDirecta;
 import es.us.meerkat.backend.entity.Tutor;

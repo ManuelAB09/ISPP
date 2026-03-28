@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import es.us.meerkat.backend.dto.PreferenciasNotificacionResponse;
-import es.us.meerkat.backend.dto.UpdatePreferenciasRequest;
+import es.us.meerkat.backend.dto.events.UpdatePreferenciasRequest;
+import es.us.meerkat.backend.dto.notifications.PreferenciasNotificacionResponse;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.notifications.PreferenciasNotificacionService;
 import io.swagger.v3.oas.annotations.Operation;

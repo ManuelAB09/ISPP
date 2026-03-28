@@ -14,11 +14,11 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import es.us.meerkat.backend.dto.FeedbackRecomendacionRequest;
-import es.us.meerkat.backend.dto.RecomendacionResponse;
-import es.us.meerkat.backend.dto.RecomendacionesPageResponse;
-import es.us.meerkat.backend.dto.RegistrarActividadRequest;
-import es.us.meerkat.backend.dto.ValoracionTutorRequest;
+import es.us.meerkat.backend.dto.recommendations.FeedbackRecomendacionRequest;
+import es.us.meerkat.backend.dto.recommendations.RecomendacionResponse;
+import es.us.meerkat.backend.dto.recommendations.RecomendacionesPageResponse;
+import es.us.meerkat.backend.dto.recommendations.RegistrarActividadRequest;
+import es.us.meerkat.backend.dto.recommendations.ValoracionTutorRequest;
 import es.us.meerkat.backend.entity.*;
 import es.us.meerkat.backend.repository.*;
 

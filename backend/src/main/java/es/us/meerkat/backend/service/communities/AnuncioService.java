@@ -5,9 +5,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import es.us.meerkat.backend.dto.AnuncioResponse;
-import es.us.meerkat.backend.dto.CreateAnuncioRequest;
-import es.us.meerkat.backend.dto.UpdateAnuncioRequest;
+import es.us.meerkat.backend.dto.communities.AnuncioResponse;
+import es.us.meerkat.backend.dto.communities.CreateAnuncioRequest;
+import es.us.meerkat.backend.dto.communities.UpdateAnuncioRequest;
 import es.us.meerkat.backend.entity.Anuncio;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.Notificacion;
@@ -224,7 +224,7 @@ public class AnuncioService {
                 anuncio.getId(),
                 anuncio.getTitulo(),
                 anuncio.getContenido(),
-                new es.us.meerkat.backend.dto.UserSimpleResponse(
+                new es.us.meerkat.backend.dto.users.UserSimpleResponse(
                         anuncio.getUsuario().getId(),
                         anuncio.getUsuario().getNombre(),
                         anuncio.getUsuario().getEmail(),

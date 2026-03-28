@@ -10,10 +10,10 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
-import es.us.meerkat.backend.dto.EnviarMensajeComunidadRequest;
-import es.us.meerkat.backend.dto.EnviarMensajeRequest;
-import es.us.meerkat.backend.dto.MensajeComunidadResponse;
-import es.us.meerkat.backend.dto.MensajeResponse;
+import es.us.meerkat.backend.dto.chats.EnviarMensajeComunidadRequest;
+import es.us.meerkat.backend.dto.chats.EnviarMensajeRequest;
+import es.us.meerkat.backend.dto.chats.MensajeComunidadResponse;
+import es.us.meerkat.backend.dto.chats.MensajeResponse;
 import es.us.meerkat.backend.entity.Mensaje;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.MensajeRepository;

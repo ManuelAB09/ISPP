@@ -18,9 +18,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import es.us.meerkat.backend.dto.CreateZoomMeetingRequest;
-import es.us.meerkat.backend.dto.MessageResponse;
-import es.us.meerkat.backend.dto.ZoomMeetingResponse;
+import es.us.meerkat.backend.dto.chats.MessageResponse;
+import es.us.meerkat.backend.dto.zoom.CreateZoomMeetingRequest;
+import es.us.meerkat.backend.dto.zoom.ZoomMeetingResponse;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.entity.ZoomMeeting;
 import es.us.meerkat.backend.service.communities.AuthorizationService;

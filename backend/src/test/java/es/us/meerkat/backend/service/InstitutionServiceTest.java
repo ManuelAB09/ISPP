@@ -20,10 +20,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import es.us.meerkat.backend.dto.CorporatePlanRequest;
-import es.us.meerkat.backend.dto.CreateInstitutionRequest;
-import es.us.meerkat.backend.dto.PaymentUrlResponse;
-import es.us.meerkat.backend.dto.UpdateInstitutionRequest;
+import es.us.meerkat.backend.dto.communities.CreateInstitutionRequest;
+import es.us.meerkat.backend.dto.communities.UpdateInstitutionRequest;
+import es.us.meerkat.backend.dto.suscriptions.CorporatePlanRequest;
+import es.us.meerkat.backend.dto.suscriptions.PaymentUrlResponse;
 import es.us.meerkat.backend.entity.Institution;
 import es.us.meerkat.backend.entity.TipoPlanCorporativo;
 import es.us.meerkat.backend.entity.Usuario;

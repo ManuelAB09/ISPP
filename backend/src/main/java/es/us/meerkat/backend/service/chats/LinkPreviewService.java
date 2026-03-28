@@ -15,7 +15,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Service;
 
-import es.us.meerkat.backend.dto.LinkPreviewResponse;
+import es.us.meerkat.backend.dto.chats.LinkPreviewResponse;
 import es.us.meerkat.backend.exception.ValidationException;
 
 /** Servicio para obtener metadatos de URLs y generar tarjetas de vista previa. */

@@ -17,8 +17,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 
 import es.us.meerkat.backend.controller.chats.MensajeComunidadController;
-import es.us.meerkat.backend.dto.EnviarMensajeComunidadRequest;
-import es.us.meerkat.backend.dto.MensajeComunidadResponse;
+import es.us.meerkat.backend.dto.chats.EnviarMensajeComunidadRequest;
+import es.us.meerkat.backend.dto.chats.MensajeComunidadResponse;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.UsuarioRepository;

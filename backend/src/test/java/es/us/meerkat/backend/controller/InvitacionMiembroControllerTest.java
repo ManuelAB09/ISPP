@@ -17,9 +17,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import es.us.meerkat.backend.controller.communities.InvitacionMiembroController;
-import es.us.meerkat.backend.dto.CreateInvitacionRequest;
-import es.us.meerkat.backend.dto.InvitacionListResponse;
-import es.us.meerkat.backend.dto.InvitacionResponse;
+import es.us.meerkat.backend.dto.communities.CreateInvitacionRequest;
+import es.us.meerkat.backend.dto.communities.InvitacionListResponse;
+import es.us.meerkat.backend.dto.communities.InvitacionResponse;
 import es.us.meerkat.backend.entity.InvitacionMiembro;
 import es.us.meerkat.backend.entity.RolComunidad;
 import es.us.meerkat.backend.entity.Usuario;

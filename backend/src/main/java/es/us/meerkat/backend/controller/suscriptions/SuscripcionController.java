@@ -16,9 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
 
-import es.us.meerkat.backend.dto.PaymentUrlResponse;
-import es.us.meerkat.backend.dto.SubscribeRequest;
-import es.us.meerkat.backend.dto.SubscriptionResponse;
+import es.us.meerkat.backend.dto.suscriptions.PaymentUrlResponse;
+import es.us.meerkat.backend.dto.suscriptions.SubscribeRequest;
+import es.us.meerkat.backend.dto.suscriptions.SubscriptionResponse;
 import es.us.meerkat.backend.entity.Suscripcion;
 import es.us.meerkat.backend.entity.TipoPlan;
 import es.us.meerkat.backend.entity.Usuario;

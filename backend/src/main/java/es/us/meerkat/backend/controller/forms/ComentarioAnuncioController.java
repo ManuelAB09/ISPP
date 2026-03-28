@@ -7,8 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import es.us.meerkat.backend.dto.ComentarioAnuncioResponse;
-import es.us.meerkat.backend.dto.CreateComentarioAnuncioRequest;
+import es.us.meerkat.backend.dto.communities.ComentarioAnuncioResponse;
+import es.us.meerkat.backend.dto.communities.CreateComentarioAnuncioRequest;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.forms.ComentarioAnuncioService;
 import io.swagger.v3.oas.annotations.Operation;

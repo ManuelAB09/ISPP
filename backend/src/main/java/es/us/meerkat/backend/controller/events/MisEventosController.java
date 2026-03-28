@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import es.us.meerkat.backend.dto.AlarmaPersonalizadaResponse;
-import es.us.meerkat.backend.dto.AlertaEventoResponse;
-import es.us.meerkat.backend.dto.MisEventosItemResponse;
+import es.us.meerkat.backend.dto.events.MisEventosItemResponse;
+import es.us.meerkat.backend.dto.notifications.AlarmaPersonalizadaResponse;
+import es.us.meerkat.backend.dto.notifications.AlertaEventoResponse;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.events.AlarmaPersonalizadaService;
 import es.us.meerkat.backend.service.events.MisEventosService;

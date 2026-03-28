@@ -18,8 +18,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import es.us.meerkat.backend.dto.CreateDisponibilidadRequest;
-import es.us.meerkat.backend.dto.DisponibilidadTutorResponse;
+import es.us.meerkat.backend.dto.tutors.CreateDisponibilidadRequest;
+import es.us.meerkat.backend.dto.tutors.DisponibilidadTutorResponse;
 import es.us.meerkat.backend.entity.DisponibilidadTutor;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;

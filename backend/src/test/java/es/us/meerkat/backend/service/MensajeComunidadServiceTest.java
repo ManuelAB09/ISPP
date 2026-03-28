@@ -16,8 +16,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import es.us.meerkat.backend.dto.EnviarMensajeComunidadRequest;
-import es.us.meerkat.backend.dto.MensajeComunidadResponse;
+import es.us.meerkat.backend.dto.chats.EnviarMensajeComunidadRequest;
+import es.us.meerkat.backend.dto.chats.MensajeComunidadResponse;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.MensajeComunidad;
 import es.us.meerkat.backend.entity.PreferenciasNotificacion;

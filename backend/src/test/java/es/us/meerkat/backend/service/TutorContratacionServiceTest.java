@@ -23,8 +23,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import es.us.meerkat.backend.dto.HireTutorRequest;
-import es.us.meerkat.backend.dto.PaymentUrlResponse;
+import es.us.meerkat.backend.dto.suscriptions.PaymentUrlResponse;
+import es.us.meerkat.backend.dto.tutors.HireTutorRequest;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.EstadoContratacion;
 import es.us.meerkat.backend.entity.TipoGrupo;

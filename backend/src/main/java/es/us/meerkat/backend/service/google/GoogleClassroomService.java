@@ -19,7 +19,7 @@ import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import es.us.meerkat.backend.dto.ClassroomUserResponse;
+import es.us.meerkat.backend.dto.google.ClassroomUserResponse;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.ComunidadClassroom;
 import es.us.meerkat.backend.entity.GoogleClassroomConnection;

@@ -3,8 +3,8 @@ package es.us.meerkat.backend.service.notifications;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import es.us.meerkat.backend.dto.PreferenciasNotificacionResponse;
-import es.us.meerkat.backend.dto.UpdatePreferenciasRequest;
+import es.us.meerkat.backend.dto.events.UpdatePreferenciasRequest;
+import es.us.meerkat.backend.dto.notifications.PreferenciasNotificacionResponse;
 import es.us.meerkat.backend.entity.PreferenciasNotificacion;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.PreferenciasNotificacionRepository;

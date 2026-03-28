@@ -17,9 +17,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import es.us.meerkat.backend.controller.tutors.TutorController;
-import es.us.meerkat.backend.dto.CreateTutorRequest;
-import es.us.meerkat.backend.dto.TutorResponse;
-import es.us.meerkat.backend.dto.UpdateTutorRequest;
+import es.us.meerkat.backend.dto.tutors.CreateTutorRequest;
+import es.us.meerkat.backend.dto.tutors.TutorResponse;
+import es.us.meerkat.backend.dto.tutors.UpdateTutorRequest;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.suscriptions.PaymentService;

@@ -2,7 +2,7 @@ package es.us.meerkat.backend.entity;
 
 import java.time.LocalDate;
 
-import es.us.meerkat.backend.dto.SubscriptionResponse;
+import es.us.meerkat.backend.dto.suscriptions.SubscriptionResponse;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

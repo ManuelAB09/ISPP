@@ -8,8 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import es.us.meerkat.backend.dto.CreateFeedbackRequest;
-import es.us.meerkat.backend.dto.FeedbackResponse;
+import es.us.meerkat.backend.dto.recommendations.CreateFeedbackRequest;
+import es.us.meerkat.backend.dto.recommendations.FeedbackResponse;
 import es.us.meerkat.backend.entity.Feedback;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.recommendations.FeedbackService;

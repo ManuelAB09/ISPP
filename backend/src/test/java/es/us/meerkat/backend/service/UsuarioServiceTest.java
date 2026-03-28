@@ -19,11 +19,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import es.us.meerkat.backend.dto.ChangePasswordRequest;
-import es.us.meerkat.backend.dto.UpdateUserRequest;
-import es.us.meerkat.backend.dto.UserDetailResponse;
-import es.us.meerkat.backend.dto.UserPublicResponse;
-import es.us.meerkat.backend.dto.VisibilityRequest;
+import es.us.meerkat.backend.dto.users.ChangePasswordRequest;
+import es.us.meerkat.backend.dto.users.UpdateUserRequest;
+import es.us.meerkat.backend.dto.users.UserDetailResponse;
+import es.us.meerkat.backend.dto.users.UserPublicResponse;
+import es.us.meerkat.backend.dto.users.VisibilityRequest;
 import es.us.meerkat.backend.entity.Ubicacion;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.AsistenciaEventoRepository;

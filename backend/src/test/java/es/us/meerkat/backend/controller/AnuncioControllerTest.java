@@ -17,9 +17,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import es.us.meerkat.backend.controller.communities.AnuncioController;
-import es.us.meerkat.backend.dto.AnuncioListResponse;
-import es.us.meerkat.backend.dto.AnuncioResponse;
-import es.us.meerkat.backend.dto.CreateAnuncioRequest;
+import es.us.meerkat.backend.dto.communities.AnuncioListResponse;
+import es.us.meerkat.backend.dto.communities.AnuncioResponse;
+import es.us.meerkat.backend.dto.communities.CreateAnuncioRequest;
 import es.us.meerkat.backend.entity.Anuncio;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.communities.AnuncioService;

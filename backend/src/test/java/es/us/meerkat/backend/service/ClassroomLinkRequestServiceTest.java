@@ -16,7 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import es.us.meerkat.backend.dto.ClassroomLinkRequestResponse;
+import es.us.meerkat.backend.dto.google.ClassroomLinkRequestResponse;
 import es.us.meerkat.backend.entity.ClassroomLinkRequest;
 import es.us.meerkat.backend.entity.ClassroomLinkRequestStatus;
 import es.us.meerkat.backend.repository.ClassroomLinkRequestRepository;

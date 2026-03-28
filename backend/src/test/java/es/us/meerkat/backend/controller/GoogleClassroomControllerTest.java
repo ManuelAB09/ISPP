@@ -18,8 +18,8 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import es.us.meerkat.backend.controller.google.GoogleClassroomController;
-import es.us.meerkat.backend.dto.ClassroomUserResponse;
-import es.us.meerkat.backend.dto.CreateStudentRequest;
+import es.us.meerkat.backend.dto.google.ClassroomUserResponse;
+import es.us.meerkat.backend.dto.tutors.CreateStudentRequest;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.ComunidadClassroom;
 import es.us.meerkat.backend.entity.Usuario;

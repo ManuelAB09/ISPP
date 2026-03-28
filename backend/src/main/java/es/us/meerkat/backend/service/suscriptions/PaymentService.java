@@ -25,7 +25,7 @@ import com.stripe.param.PaymentIntentCreateParams;
 import com.stripe.param.RefundCreateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 
-import es.us.meerkat.backend.dto.PaymentUrlResponse;
+import es.us.meerkat.backend.dto.suscriptions.PaymentUrlResponse;
 import es.us.meerkat.backend.entity.EstadoTransaccion;
 import es.us.meerkat.backend.entity.TipoPlan;
 import es.us.meerkat.backend.entity.TipoPlanCorporativo;

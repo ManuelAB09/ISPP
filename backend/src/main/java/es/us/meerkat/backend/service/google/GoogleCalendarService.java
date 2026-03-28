@@ -32,9 +32,9 @@ import com.google.api.services.calendar.model.FreeBusyResponse;
 import com.google.api.services.calendar.model.TimePeriod;
 
 import es.us.meerkat.backend.config.GoogleCalendarConfig;
-import es.us.meerkat.backend.dto.AvailabilitySlot;
-import es.us.meerkat.backend.dto.GoogleCalendarStatusResponse;
-import es.us.meerkat.backend.dto.UpdateCalendarPreferenciasRequest;
+import es.us.meerkat.backend.dto.google.GoogleCalendarStatusResponse;
+import es.us.meerkat.backend.dto.google.UpdateCalendarPreferenciasRequest;
+import es.us.meerkat.backend.dto.tutors.AvailabilitySlot;
 import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.GoogleCalendarBooking;
 import es.us.meerkat.backend.entity.GoogleCalendarEvento;

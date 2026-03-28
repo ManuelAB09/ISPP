@@ -7,7 +7,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import es.us.meerkat.backend.dto.SubscriptionResponse;
+import es.us.meerkat.backend.dto.suscriptions.SubscriptionResponse;
 import es.us.meerkat.backend.entity.Institution;
 import es.us.meerkat.backend.entity.Suscripcion;
 import es.us.meerkat.backend.entity.TipoPlan;

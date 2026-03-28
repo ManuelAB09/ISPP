@@ -22,7 +22,7 @@ import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
 
-import es.us.meerkat.backend.dto.PaymentUrlResponse;
+import es.us.meerkat.backend.dto.suscriptions.PaymentUrlResponse;
 import es.us.meerkat.backend.entity.EstadoTransaccion;
 import es.us.meerkat.backend.entity.TipoTransaccion;
 import es.us.meerkat.backend.entity.TransaccionPago;

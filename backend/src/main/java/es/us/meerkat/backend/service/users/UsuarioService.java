@@ -18,12 +18,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import es.us.meerkat.backend.dto.ChangePasswordRequest;
-import es.us.meerkat.backend.dto.UbicacionResponse;
-import es.us.meerkat.backend.dto.UpdateUserRequest;
-import es.us.meerkat.backend.dto.UserDetailResponse;
-import es.us.meerkat.backend.dto.UserPublicResponse;
-import es.us.meerkat.backend.dto.VisibilityRequest;
+import es.us.meerkat.backend.dto.maps.UbicacionResponse;
+import es.us.meerkat.backend.dto.users.ChangePasswordRequest;
+import es.us.meerkat.backend.dto.users.UpdateUserRequest;
+import es.us.meerkat.backend.dto.users.UserDetailResponse;
+import es.us.meerkat.backend.dto.users.UserPublicResponse;
+import es.us.meerkat.backend.dto.users.VisibilityRequest;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.TipoPlanComunidad;
 import es.us.meerkat.backend.entity.Ubicacion;

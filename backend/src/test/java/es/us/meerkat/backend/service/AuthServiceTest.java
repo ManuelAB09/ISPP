@@ -18,11 +18,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import es.us.meerkat.backend.dto.AuthResponse;
-import es.us.meerkat.backend.dto.ForgotPasswordRequest;
-import es.us.meerkat.backend.dto.LoginRequest;
-import es.us.meerkat.backend.dto.MessageResponse;
-import es.us.meerkat.backend.dto.RegisterRequest;
+import es.us.meerkat.backend.dto.chats.MessageResponse;
+import es.us.meerkat.backend.dto.users.AuthResponse;
+import es.us.meerkat.backend.dto.users.ForgotPasswordRequest;
+import es.us.meerkat.backend.dto.users.LoginRequest;
+import es.us.meerkat.backend.dto.users.RegisterRequest;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.exception.ConflictException;
 import es.us.meerkat.backend.exception.EmailNotVerifiedException;

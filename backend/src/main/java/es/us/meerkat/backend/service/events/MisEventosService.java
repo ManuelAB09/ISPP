@@ -9,8 +9,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import es.us.meerkat.backend.dto.AlertaEventoResponse;
-import es.us.meerkat.backend.dto.MisEventosItemResponse;
+import es.us.meerkat.backend.dto.events.MisEventosItemResponse;
+import es.us.meerkat.backend.dto.notifications.AlertaEventoResponse;
 import es.us.meerkat.backend.entity.AlertaEvento;
 import es.us.meerkat.backend.entity.EstadoAsistencia;
 import es.us.meerkat.backend.entity.Evento;

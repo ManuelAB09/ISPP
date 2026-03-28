@@ -19,8 +19,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import es.us.meerkat.backend.dto.EnviarMensajeRequest;
-import es.us.meerkat.backend.dto.MensajeResponse;
+import es.us.meerkat.backend.dto.chats.EnviarMensajeRequest;
+import es.us.meerkat.backend.dto.chats.MensajeResponse;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.UsuarioRepository;
 import es.us.meerkat.backend.service.chats.ChatFileStorageService;

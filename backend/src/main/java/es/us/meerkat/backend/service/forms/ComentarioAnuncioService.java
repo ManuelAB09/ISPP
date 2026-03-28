@@ -5,9 +5,9 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import es.us.meerkat.backend.dto.ComentarioAnuncioResponse;
-import es.us.meerkat.backend.dto.CreateComentarioAnuncioRequest;
-import es.us.meerkat.backend.dto.UserSimpleResponse;
+import es.us.meerkat.backend.dto.communities.ComentarioAnuncioResponse;
+import es.us.meerkat.backend.dto.communities.CreateComentarioAnuncioRequest;
+import es.us.meerkat.backend.dto.users.UserSimpleResponse;
 import es.us.meerkat.backend.entity.Anuncio;
 import es.us.meerkat.backend.entity.ComentarioAnuncio;
 import es.us.meerkat.backend.entity.Usuario;

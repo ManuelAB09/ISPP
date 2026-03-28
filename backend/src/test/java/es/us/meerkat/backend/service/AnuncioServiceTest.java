@@ -19,9 +19,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
-import es.us.meerkat.backend.dto.AnuncioResponse;
-import es.us.meerkat.backend.dto.CreateAnuncioRequest;
-import es.us.meerkat.backend.dto.UpdateAnuncioRequest;
+import es.us.meerkat.backend.dto.communities.AnuncioResponse;
+import es.us.meerkat.backend.dto.communities.CreateAnuncioRequest;
+import es.us.meerkat.backend.dto.communities.UpdateAnuncioRequest;
 import es.us.meerkat.backend.entity.Anuncio;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.PreferenciasNotificacion;

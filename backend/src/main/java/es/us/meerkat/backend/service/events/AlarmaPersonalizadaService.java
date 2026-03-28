@@ -9,9 +9,9 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import es.us.meerkat.backend.dto.AlarmaPersonalizadaResponse;
-import es.us.meerkat.backend.dto.CrearAlarmaRequest;
-import es.us.meerkat.backend.dto.CrearAlarmasLoteRequest;
+import es.us.meerkat.backend.dto.notifications.AlarmaPersonalizadaResponse;
+import es.us.meerkat.backend.dto.notifications.CrearAlarmaRequest;
+import es.us.meerkat.backend.dto.notifications.CrearAlarmasLoteRequest;
 import es.us.meerkat.backend.entity.AlarmaPersonalizada;
 import es.us.meerkat.backend.entity.AlertaEvento;
 import es.us.meerkat.backend.entity.Evento;

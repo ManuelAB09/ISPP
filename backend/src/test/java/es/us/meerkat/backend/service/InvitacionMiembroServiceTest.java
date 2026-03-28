@@ -18,8 +18,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
-import es.us.meerkat.backend.dto.CreateInvitacionRequest;
-import es.us.meerkat.backend.dto.InvitacionResponse;
+import es.us.meerkat.backend.dto.communities.CreateInvitacionRequest;
+import es.us.meerkat.backend.dto.communities.InvitacionResponse;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.EstadoInvitacion;
 import es.us.meerkat.backend.entity.InvitacionMiembro;

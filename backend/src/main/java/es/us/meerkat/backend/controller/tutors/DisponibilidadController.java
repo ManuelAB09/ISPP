@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import es.us.meerkat.backend.dto.CreateDisponibilidadRequest;
-import es.us.meerkat.backend.dto.DisponibilidadTutorResponse;
+import es.us.meerkat.backend.dto.tutors.CreateDisponibilidadRequest;
+import es.us.meerkat.backend.dto.tutors.DisponibilidadTutorResponse;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.repository.TutorRepository;

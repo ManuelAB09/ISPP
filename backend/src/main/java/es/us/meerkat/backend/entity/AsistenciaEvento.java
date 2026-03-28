@@ -2,8 +2,8 @@ package es.us.meerkat.backend.entity;
 
 import java.time.LocalDateTime;
 
-import es.us.meerkat.backend.dto.AttendanceResponse;
-import es.us.meerkat.backend.dto.UserPublicResponse;
+import es.us.meerkat.backend.dto.events.AttendanceResponse;
+import es.us.meerkat.backend.dto.users.UserPublicResponse;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -67,7 +67,7 @@ public class AsistenciaEvento {
         UserPublicResponse userDto = null;
         if (this.usuario != null) {
             userDto =
-                    es.us.meerkat.backend.dto.UserPublicResponse.builder()
+                    es.us.meerkat.backend.dto.users.UserPublicResponse.builder()
                             .id(this.usuario.getId())
                             .nombre(this.usuario.getNombre())
                             .foto(this.usuario.getFoto())

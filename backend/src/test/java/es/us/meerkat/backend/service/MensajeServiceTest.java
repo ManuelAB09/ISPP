@@ -14,7 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import es.us.meerkat.backend.dto.EnviarMensajeRequest;
+import es.us.meerkat.backend.dto.chats.EnviarMensajeRequest;
 import es.us.meerkat.backend.entity.Mensaje;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;

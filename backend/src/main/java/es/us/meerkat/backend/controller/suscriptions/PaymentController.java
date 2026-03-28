@@ -27,9 +27,9 @@ import com.stripe.model.Invoice;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
 
-import es.us.meerkat.backend.dto.PageInfo;
-import es.us.meerkat.backend.dto.TransactionListResponse;
-import es.us.meerkat.backend.dto.TransactionResponse;
+import es.us.meerkat.backend.dto.suscriptions.TransactionListResponse;
+import es.us.meerkat.backend.dto.suscriptions.TransactionResponse;
+import es.us.meerkat.backend.dto.users.PageInfo;
 import es.us.meerkat.backend.entity.TipoTransaccion;
 import es.us.meerkat.backend.entity.TransaccionPago;
 import es.us.meerkat.backend.entity.Usuario;

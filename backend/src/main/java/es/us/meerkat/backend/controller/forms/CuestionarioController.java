@@ -9,8 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import es.us.meerkat.backend.dto.CreateCuestionarioRequest;
-import es.us.meerkat.backend.dto.SubmitAttemptRequest;
+import es.us.meerkat.backend.dto.forms.CreateCuestionarioRequest;
+import es.us.meerkat.backend.dto.forms.SubmitAttemptRequest;
 import es.us.meerkat.backend.entity.Cuestionario;
 import es.us.meerkat.backend.entity.CuestionarioIntento;
 import es.us.meerkat.backend.entity.Opcion;

@@ -17,9 +17,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
 
 import es.us.meerkat.backend.controller.events.EventoController;
-import es.us.meerkat.backend.dto.CreateEventRequest;
-import es.us.meerkat.backend.dto.EventDetailResponse;
-import es.us.meerkat.backend.dto.EventSummaryResponse;
+import es.us.meerkat.backend.dto.events.CreateEventRequest;
+import es.us.meerkat.backend.dto.events.EventDetailResponse;
+import es.us.meerkat.backend.dto.events.EventSummaryResponse;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.Ubicacion;

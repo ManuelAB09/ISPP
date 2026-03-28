@@ -9,8 +9,8 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import es.us.meerkat.backend.dto.EnviarMensajeComunidadRequest;
-import es.us.meerkat.backend.dto.MensajeComunidadResponse;
+import es.us.meerkat.backend.dto.chats.EnviarMensajeComunidadRequest;
+import es.us.meerkat.backend.dto.chats.MensajeComunidadResponse;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.MensajeComunidad;
 import es.us.meerkat.backend.entity.MensajeComunidadLeido;

@@ -12,8 +12,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import es.us.meerkat.backend.client.OverpassClient;
-import es.us.meerkat.backend.dto.UbicacionRequest;
-import es.us.meerkat.backend.dto.UbicacionResponse;
+import es.us.meerkat.backend.dto.maps.UbicacionRequest;
+import es.us.meerkat.backend.dto.maps.UbicacionResponse;
 import es.us.meerkat.backend.entity.Ubicacion;
 import es.us.meerkat.backend.repository.UbicacionRepository;
 import lombok.RequiredArgsConstructor;

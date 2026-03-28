@@ -8,10 +8,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import es.us.meerkat.backend.dto.AnuncioListResponse;
-import es.us.meerkat.backend.dto.AnuncioResponse;
-import es.us.meerkat.backend.dto.CreateAnuncioRequest;
-import es.us.meerkat.backend.dto.UpdateAnuncioRequest;
+import es.us.meerkat.backend.dto.communities.AnuncioListResponse;
+import es.us.meerkat.backend.dto.communities.AnuncioResponse;
+import es.us.meerkat.backend.dto.communities.CreateAnuncioRequest;
+import es.us.meerkat.backend.dto.communities.UpdateAnuncioRequest;
 import es.us.meerkat.backend.entity.Anuncio;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.communities.AnuncioService;

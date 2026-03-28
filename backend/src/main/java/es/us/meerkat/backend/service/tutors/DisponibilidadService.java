@@ -10,8 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import es.us.meerkat.backend.dto.CreateDisponibilidadRequest;
-import es.us.meerkat.backend.dto.DisponibilidadTutorResponse;
+import es.us.meerkat.backend.dto.tutors.CreateDisponibilidadRequest;
+import es.us.meerkat.backend.dto.tutors.DisponibilidadTutorResponse;
 import es.us.meerkat.backend.entity.DisponibilidadTutor;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.repository.DisponibilidadTutorRepository;

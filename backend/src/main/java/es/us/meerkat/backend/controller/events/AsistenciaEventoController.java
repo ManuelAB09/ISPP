@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import es.us.meerkat.backend.dto.AttendanceResponse;
+import es.us.meerkat.backend.dto.events.AttendanceResponse;
 import es.us.meerkat.backend.entity.AsistenciaEvento;
 import es.us.meerkat.backend.service.events.AsistenciaEventoService;
 import io.swagger.v3.oas.annotations.Operation;

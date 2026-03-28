@@ -7,8 +7,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import es.us.meerkat.backend.dto.CreateInvitacionRequest;
-import es.us.meerkat.backend.dto.InvitacionResponse;
+import es.us.meerkat.backend.dto.communities.CreateInvitacionRequest;
+import es.us.meerkat.backend.dto.communities.InvitacionResponse;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.EstadoInvitacion;
 import es.us.meerkat.backend.entity.InvitacionMiembro;
@@ -219,13 +219,13 @@ public class InvitacionMiembroService {
                 invitacion.getCreatedAt(),
                 invitacion.getFechaExpiracion(),
                 invitacion.getFechaAceptacion(),
-                new es.us.meerkat.backend.dto.UserSimpleResponse(
+                new es.us.meerkat.backend.dto.users.UserSimpleResponse(
                         invitacion.getUsuarioInvitador().getId(),
                         invitacion.getUsuarioInvitador().getNombre(),
                         invitacion.getUsuarioInvitador().getEmail(),
                         invitacion.getUsuarioInvitador().getFoto()),
                 invitacion.getUsuarioAceptador() != null
-                        ? new es.us.meerkat.backend.dto.UserSimpleResponse(
+                        ? new es.us.meerkat.backend.dto.users.UserSimpleResponse(
                                 invitacion.getUsuarioAceptador().getId(),
                                 invitacion.getUsuarioAceptador().getNombre(),
                                 invitacion.getUsuarioAceptador().getEmail(),

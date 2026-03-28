@@ -13,12 +13,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import es.us.meerkat.backend.controller.users.AuthController;
-import es.us.meerkat.backend.dto.AuthResponse;
-import es.us.meerkat.backend.dto.ForgotPasswordRequest;
-import es.us.meerkat.backend.dto.LoginRequest;
-import es.us.meerkat.backend.dto.MessageResponse;
-import es.us.meerkat.backend.dto.RegisterRequest;
-import es.us.meerkat.backend.dto.UserDetailResponse;
+import es.us.meerkat.backend.dto.chats.MessageResponse;
+import es.us.meerkat.backend.dto.users.AuthResponse;
+import es.us.meerkat.backend.dto.users.ForgotPasswordRequest;
+import es.us.meerkat.backend.dto.users.LoginRequest;
+import es.us.meerkat.backend.dto.users.RegisterRequest;
+import es.us.meerkat.backend.dto.users.UserDetailResponse;
 import es.us.meerkat.backend.service.users.AuthService;
 
 @ExtendWith(MockitoExtension.class)

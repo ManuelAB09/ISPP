@@ -10,9 +10,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import es.us.meerkat.backend.dto.TutorProfileRequest;
-import es.us.meerkat.backend.dto.TutorProfileResponse;
-import es.us.meerkat.backend.dto.UbicacionResponse;
+import es.us.meerkat.backend.dto.maps.UbicacionResponse;
+import es.us.meerkat.backend.dto.tutors.TutorProfileRequest;
+import es.us.meerkat.backend.dto.tutors.TutorProfileResponse;
 import es.us.meerkat.backend.entity.EstadoTransaccion;
 import es.us.meerkat.backend.entity.TipoTransaccion;
 import es.us.meerkat.backend.entity.TransaccionPago;
@@ -355,7 +355,8 @@ public class TutorService {
      * @return tutor creado
      */
     @Transactional
-    public Tutor crearPerfil(Long usuarioId, es.us.meerkat.backend.dto.CreateTutorRequest request) {
+    public Tutor crearPerfil(
+            Long usuarioId, es.us.meerkat.backend.dto.tutors.CreateTutorRequest request) {
         Usuario usuario =
                 usuarioRepository
                         .findById(usuarioId)
@@ -387,7 +388,7 @@ public class TutorService {
      */
     @Transactional
     public Tutor actualizarPerfil(
-            Long usuarioId, es.us.meerkat.backend.dto.UpdateTutorRequest request) {
+            Long usuarioId, es.us.meerkat.backend.dto.tutors.UpdateTutorRequest request) {
         Usuario usuario =
                 usuarioRepository
                         .findById(usuarioId)

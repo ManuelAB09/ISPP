@@ -7,8 +7,11 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import es.us.meerkat.backend.dto.*;
-import es.us.meerkat.backend.dto.ValoracionTutorRequest;
+import es.us.meerkat.backend.dto.recommendations.FeedbackRecomendacionRequest;
+import es.us.meerkat.backend.dto.recommendations.RecomendacionResponse;
+import es.us.meerkat.backend.dto.recommendations.RecomendacionesPageResponse;
+import es.us.meerkat.backend.dto.recommendations.RegistrarActividadRequest;
+import es.us.meerkat.backend.dto.recommendations.ValoracionTutorRequest;
 import es.us.meerkat.backend.service.recommendations.RecommendationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

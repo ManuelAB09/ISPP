@@ -6,8 +6,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import es.us.meerkat.backend.dto.EnviarMensajeRequest;
-import es.us.meerkat.backend.dto.MensajeResponse;
+import es.us.meerkat.backend.dto.chats.EnviarMensajeRequest;
+import es.us.meerkat.backend.dto.chats.MensajeResponse;
 import es.us.meerkat.backend.entity.Mensaje;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;

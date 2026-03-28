@@ -17,8 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import es.us.meerkat.backend.dto.CommunityRankingEntryResponse;
-import es.us.meerkat.backend.dto.UserSimpleResponse;
+import es.us.meerkat.backend.dto.communities.CommunityRankingEntryResponse;
+import es.us.meerkat.backend.dto.users.UserSimpleResponse;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.EstadoComunidad;
 import es.us.meerkat.backend.entity.Evento;

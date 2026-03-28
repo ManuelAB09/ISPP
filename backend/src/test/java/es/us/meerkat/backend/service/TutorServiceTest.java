@@ -23,10 +23,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
-import es.us.meerkat.backend.dto.CreateTutorRequest;
-import es.us.meerkat.backend.dto.TutorProfileRequest;
-import es.us.meerkat.backend.dto.TutorProfileResponse;
-import es.us.meerkat.backend.dto.UpdateTutorRequest;
+import es.us.meerkat.backend.dto.tutors.CreateTutorRequest;
+import es.us.meerkat.backend.dto.tutors.TutorProfileRequest;
+import es.us.meerkat.backend.dto.tutors.TutorProfileResponse;
+import es.us.meerkat.backend.dto.tutors.UpdateTutorRequest;
 import es.us.meerkat.backend.entity.EstadoTransaccion;
 import es.us.meerkat.backend.entity.TipoTransaccion;
 import es.us.meerkat.backend.entity.TransaccionPago;

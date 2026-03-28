@@ -18,8 +18,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import es.us.meerkat.backend.controller.suscriptions.PaymentController;
-import es.us.meerkat.backend.dto.TransactionListResponse;
-import es.us.meerkat.backend.dto.TransactionResponse;
+import es.us.meerkat.backend.dto.suscriptions.TransactionListResponse;
+import es.us.meerkat.backend.dto.suscriptions.TransactionResponse;
 import es.us.meerkat.backend.entity.TransaccionPago;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.communities.InstitutionService;

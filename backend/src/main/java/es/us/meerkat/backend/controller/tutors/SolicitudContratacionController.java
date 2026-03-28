@@ -10,10 +10,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import es.us.meerkat.backend.dto.DisponibilidadTutorResponse;
-import es.us.meerkat.backend.dto.HorarioOcupadoResponse;
-import es.us.meerkat.backend.dto.SolicitudContratacionRequest;
-import es.us.meerkat.backend.dto.SolicitudContratacionResponse;
+import es.us.meerkat.backend.dto.tutors.DisponibilidadTutorResponse;
+import es.us.meerkat.backend.dto.tutors.HorarioOcupadoResponse;
+import es.us.meerkat.backend.dto.tutors.SolicitudContratacionRequest;
+import es.us.meerkat.backend.dto.tutors.SolicitudContratacionResponse;
 import es.us.meerkat.backend.entity.Tutor;
 import es.us.meerkat.backend.entity.Usuario;
 import es.us.meerkat.backend.service.emails.EmailService;

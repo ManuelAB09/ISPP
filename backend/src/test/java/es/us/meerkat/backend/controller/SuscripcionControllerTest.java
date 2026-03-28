@@ -17,9 +17,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import es.us.meerkat.backend.controller.suscriptions.SuscripcionController;
-import es.us.meerkat.backend.dto.PaymentUrlResponse;
-import es.us.meerkat.backend.dto.SubscribeRequest;
-import es.us.meerkat.backend.dto.SubscriptionResponse;
+import es.us.meerkat.backend.dto.suscriptions.PaymentUrlResponse;
+import es.us.meerkat.backend.dto.suscriptions.SubscribeRequest;
+import es.us.meerkat.backend.dto.suscriptions.SubscriptionResponse;
 import es.us.meerkat.backend.entity.Suscripcion;
 import es.us.meerkat.backend.entity.TipoPlan;
 import es.us.meerkat.backend.entity.Usuario;

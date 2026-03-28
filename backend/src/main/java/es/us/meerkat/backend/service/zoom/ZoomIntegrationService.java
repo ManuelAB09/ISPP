@@ -29,10 +29,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import es.us.meerkat.backend.dto.ZoomJoinResponse;
-import es.us.meerkat.backend.dto.ZoomParticipantResponse;
-import es.us.meerkat.backend.dto.ZoomRecordingResponse;
-import es.us.meerkat.backend.dto.ZoomUserCallResponse;
+import es.us.meerkat.backend.dto.zoom.ZoomJoinResponse;
+import es.us.meerkat.backend.dto.zoom.ZoomParticipantResponse;
+import es.us.meerkat.backend.dto.zoom.ZoomRecordingResponse;
+import es.us.meerkat.backend.dto.zoom.ZoomUserCallResponse;
 import es.us.meerkat.backend.entity.Comunidad;
 import es.us.meerkat.backend.entity.Evento;
 import es.us.meerkat.backend.entity.Usuario;
