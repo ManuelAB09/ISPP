@@ -17,6 +17,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import es.us.meerkat.backend.controller.suscriptions.PaymentController;
 import es.us.meerkat.backend.dto.TransactionListResponse;
 import es.us.meerkat.backend.dto.TransactionResponse;
 import es.us.meerkat.backend.entity.TransaccionPago;

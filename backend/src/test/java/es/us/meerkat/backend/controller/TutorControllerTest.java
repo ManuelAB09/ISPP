@@ -16,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import es.us.meerkat.backend.controller.tutors.TutorController;
 import es.us.meerkat.backend.dto.CreateTutorRequest;
 import es.us.meerkat.backend.dto.TutorResponse;
 import es.us.meerkat.backend.dto.UpdateTutorRequest;

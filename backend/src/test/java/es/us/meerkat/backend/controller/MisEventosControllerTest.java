@@ -10,6 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import es.us.meerkat.backend.controller.events.MisEventosController;
 import es.us.meerkat.backend.service.events.AlarmaPersonalizadaService;
 import es.us.meerkat.backend.service.events.MisEventosService;
 

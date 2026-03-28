@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import es.us.meerkat.backend.controller.events.AsistenciaEventoController;
 import es.us.meerkat.backend.entity.AsistenciaEvento;
 import es.us.meerkat.backend.entity.EstadoAsistencia;
 import es.us.meerkat.backend.entity.Evento;

@@ -16,6 +16,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import es.us.meerkat.backend.controller.communities.InvitacionMiembroController;
 import es.us.meerkat.backend.dto.CreateInvitacionRequest;
 import es.us.meerkat.backend.dto.InvitacionListResponse;
 import es.us.meerkat.backend.dto.InvitacionResponse;

@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import es.us.meerkat.backend.controller.communities.InstitutionController;
 import es.us.meerkat.backend.dto.CreateInstitutionRequest;
 import es.us.meerkat.backend.dto.InstitutionResponse;
 import es.us.meerkat.backend.dto.UpdateInstitutionRequest;

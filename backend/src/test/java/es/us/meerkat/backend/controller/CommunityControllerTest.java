@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import es.us.meerkat.backend.controller.communities.CommunityController;
 import es.us.meerkat.backend.dto.AccessRequestBody;
 import es.us.meerkat.backend.dto.CommunityDetailResponse;
 import es.us.meerkat.backend.dto.CreateCommunityRequest;

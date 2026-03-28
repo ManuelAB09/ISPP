@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import es.us.meerkat.backend.controller.users.AuthController;
 import es.us.meerkat.backend.dto.AuthResponse;
 import es.us.meerkat.backend.dto.ForgotPasswordRequest;
 import es.us.meerkat.backend.dto.LoginRequest;

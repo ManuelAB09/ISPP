@@ -14,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import es.us.meerkat.backend.controller.maps.UbicacionController;
 import es.us.meerkat.backend.dto.UbicacionRequest;
 import es.us.meerkat.backend.dto.UbicacionResponse;
 import es.us.meerkat.backend.entity.Ubicacion;

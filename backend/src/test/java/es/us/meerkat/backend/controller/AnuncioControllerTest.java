@@ -16,6 +16,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import es.us.meerkat.backend.controller.communities.AnuncioController;
 import es.us.meerkat.backend.dto.AnuncioListResponse;
 import es.us.meerkat.backend.dto.AnuncioResponse;
 import es.us.meerkat.backend.dto.CreateAnuncioRequest;

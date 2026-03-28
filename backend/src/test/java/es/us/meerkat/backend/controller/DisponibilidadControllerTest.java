@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import es.us.meerkat.backend.controller.tutors.DisponibilidadController;
 import es.us.meerkat.backend.dto.DisponibilidadTutorResponse;
 import es.us.meerkat.backend.repository.TutorRepository;
 import es.us.meerkat.backend.service.tutors.DisponibilidadService;
