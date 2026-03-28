@@ -40,8 +40,6 @@ import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import es.us.meerkat.backend.repository.zoom.ZoomMeetingParticipantRepository;
 import es.us.meerkat.backend.repository.zoom.ZoomMeetingRepository;
 import es.us.meerkat.backend.repository.zoom.ZoomRecordingRepository;
-import es.us.meerkat.backend.service.zoom.ZoomIntegrationService;
-import es.us.meerkat.backend.service.zoom.ZoomRecordingStorageService;
 
 @SpringBootTest
 @Transactional

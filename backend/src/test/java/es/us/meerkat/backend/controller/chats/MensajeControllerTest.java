@@ -15,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 
-import es.us.meerkat.backend.controller.chats.MensajeController;
 import es.us.meerkat.backend.dto.chats.EnviarMensajeRequest;
 import es.us.meerkat.backend.dto.chats.MensajeResponse;
 import es.us.meerkat.backend.entity.users.Usuario;

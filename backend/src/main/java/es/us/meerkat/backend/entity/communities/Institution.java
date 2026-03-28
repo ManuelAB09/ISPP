@@ -2,7 +2,7 @@ package es.us.meerkat.backend.entity.communities;
 
 import java.time.LocalDateTime;
 
-import es.us.meerkat.backend.entity.suscriptions.TipoPlanCorporativo;
+import es.us.meerkat.backend.entity.subscriptions.TipoPlanCorporativo;
 import es.us.meerkat.backend.entity.users.Usuario;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

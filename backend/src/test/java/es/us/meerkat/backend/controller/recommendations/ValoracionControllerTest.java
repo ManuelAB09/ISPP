@@ -13,7 +13,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import es.us.meerkat.backend.controller.recommendations.ValoracionController;
 import es.us.meerkat.backend.service.recommendations.ValoracionService;
 
 @ExtendWith(MockitoExtension.class)

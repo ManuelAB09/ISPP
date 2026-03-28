@@ -13,14 +13,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import es.us.meerkat.backend.controller.communities.InstitutionController;
 import es.us.meerkat.backend.dto.communities.CreateInstitutionRequest;
 import es.us.meerkat.backend.dto.communities.InstitutionResponse;
 import es.us.meerkat.backend.dto.communities.UpdateInstitutionRequest;
 import es.us.meerkat.backend.entity.communities.Institution;
 import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.service.communities.InstitutionService;
-import es.us.meerkat.backend.service.suscriptions.PaymentService;
+import es.us.meerkat.backend.service.subscriptions.PaymentService;
 
 @ExtendWith(MockitoExtension.class)
 class InstitutionControllerTest {

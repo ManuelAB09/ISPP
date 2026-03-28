@@ -11,7 +11,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import es.us.meerkat.backend.controller.communities.CommunityController;
 import es.us.meerkat.backend.dto.communities.CommunityDetailResponse;
 import es.us.meerkat.backend.dto.communities.CreateCommunityRequest;
 import es.us.meerkat.backend.dto.communities.JoinCommunityRequest;
@@ -27,7 +26,7 @@ import es.us.meerkat.backend.entity.communities.MiembroComunidad;
 import es.us.meerkat.backend.entity.communities.RolComunidad;
 import es.us.meerkat.backend.entity.communities.SolicitudComunidad;
 import es.us.meerkat.backend.entity.communities.TipoGrupo;
-import es.us.meerkat.backend.entity.suscriptions.TipoPlanComunidad;
+import es.us.meerkat.backend.entity.subscriptions.TipoPlanComunidad;
 import es.us.meerkat.backend.entity.tutors.EstadoSolicitud;
 import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.service.communities.AuthorizationService;

@@ -24,7 +24,6 @@ import es.us.meerkat.backend.repository.recommendations.RecomendacionRepository;
 import es.us.meerkat.backend.repository.tutors.TutorRepository;
 import es.us.meerkat.backend.repository.users.ActividadUsuarioRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
-import es.us.meerkat.backend.service.recommendations.RecommendationService;
 
 @ExtendWith(MockitoExtension.class)
 class RecommendationServiceTest {

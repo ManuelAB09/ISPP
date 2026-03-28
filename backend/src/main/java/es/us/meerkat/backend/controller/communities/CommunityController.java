@@ -42,7 +42,7 @@ import es.us.meerkat.backend.dto.events.EventDetailResponse;
 import es.us.meerkat.backend.dto.events.EventSummaryResponse;
 import es.us.meerkat.backend.dto.google.ClassroomInfoResponse;
 import es.us.meerkat.backend.dto.google.LinkClassroomRequest;
-import es.us.meerkat.backend.dto.suscriptions.PaymentUrlResponse;
+import es.us.meerkat.backend.dto.subscriptions.PaymentUrlResponse;
 import es.us.meerkat.backend.dto.tutors.HireTutorRequest;
 import es.us.meerkat.backend.dto.users.AccessRequestBody;
 import es.us.meerkat.backend.dto.users.PrivacyRequest;
@@ -67,7 +67,7 @@ import es.us.meerkat.backend.service.communities.MemberService;
 import es.us.meerkat.backend.service.communities.RequestService;
 import es.us.meerkat.backend.service.events.EventoService;
 import es.us.meerkat.backend.service.google.GoogleClassroomService;
-import es.us.meerkat.backend.service.suscriptions.PaymentService;
+import es.us.meerkat.backend.service.subscriptions.PaymentService;
 import es.us.meerkat.backend.service.tutors.TutorContratacionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -1449,7 +1449,7 @@ public class CommunityController {
 
             paymentService.procesarPagoExitoso(
                     usuario.getId(),
-                    es.us.meerkat.backend.entity.suscriptions.TipoTransaccion.PAGO_TUTOR,
+                    es.us.meerkat.backend.entity.subscriptions.TipoTransaccion.PAGO_TUTOR,
                     monto,
                     "Contratación de tutor completada vía Stripe Elements",
                     null);

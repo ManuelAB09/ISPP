@@ -16,7 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
 
-import es.us.meerkat.backend.controller.events.EventoController;
 import es.us.meerkat.backend.dto.events.CreateEventRequest;
 import es.us.meerkat.backend.dto.events.EventDetailResponse;
 import es.us.meerkat.backend.dto.events.EventSummaryResponse;

@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import es.us.meerkat.backend.entity.communities.Comunidad;
-import es.us.meerkat.backend.entity.suscriptions.TransaccionPago;
+import es.us.meerkat.backend.entity.subscriptions.TransaccionPago;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

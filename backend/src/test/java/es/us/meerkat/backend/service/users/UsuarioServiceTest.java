@@ -36,10 +36,9 @@ import es.us.meerkat.backend.repository.events.EventoRepository;
 import es.us.meerkat.backend.repository.google.GoogleClassroomConnectionRepository;
 import es.us.meerkat.backend.repository.maps.UbicacionRepository;
 import es.us.meerkat.backend.repository.notifications.PreferenciasNotificacionRepository;
-import es.us.meerkat.backend.repository.suscriptions.SuscripcionRepository;
-import es.us.meerkat.backend.repository.suscriptions.TransaccionPagoRepository;
+import es.us.meerkat.backend.repository.subscriptions.SuscripcionRepository;
+import es.us.meerkat.backend.repository.subscriptions.TransaccionPagoRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
-import es.us.meerkat.backend.service.users.UsuarioService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 

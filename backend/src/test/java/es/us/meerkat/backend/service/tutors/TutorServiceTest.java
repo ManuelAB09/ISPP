@@ -27,15 +27,14 @@ import es.us.meerkat.backend.dto.tutors.CreateTutorRequest;
 import es.us.meerkat.backend.dto.tutors.TutorProfileRequest;
 import es.us.meerkat.backend.dto.tutors.TutorProfileResponse;
 import es.us.meerkat.backend.dto.tutors.UpdateTutorRequest;
-import es.us.meerkat.backend.entity.suscriptions.EstadoTransaccion;
-import es.us.meerkat.backend.entity.suscriptions.TipoTransaccion;
-import es.us.meerkat.backend.entity.suscriptions.TransaccionPago;
+import es.us.meerkat.backend.entity.subscriptions.EstadoTransaccion;
+import es.us.meerkat.backend.entity.subscriptions.TipoTransaccion;
+import es.us.meerkat.backend.entity.subscriptions.TransaccionPago;
 import es.us.meerkat.backend.entity.tutors.Tutor;
 import es.us.meerkat.backend.entity.users.Usuario;
-import es.us.meerkat.backend.repository.suscriptions.TransaccionPagoRepository;
+import es.us.meerkat.backend.repository.subscriptions.TransaccionPagoRepository;
 import es.us.meerkat.backend.repository.tutors.TutorRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
-import es.us.meerkat.backend.service.tutors.TutorService;
 
 @ExtendWith(MockitoExtension.class)
 class TutorServiceTest {

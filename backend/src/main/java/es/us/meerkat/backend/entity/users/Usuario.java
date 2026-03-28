@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import es.us.meerkat.backend.entity.communities.Institution;
 import es.us.meerkat.backend.entity.maps.Ubicacion;
-import es.us.meerkat.backend.entity.suscriptions.TipoPlan;
+import es.us.meerkat.backend.entity.subscriptions.TipoPlan;
 import es.us.meerkat.backend.entity.tutors.Tutor;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;

@@ -23,11 +23,11 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import es.us.meerkat.backend.dto.suscriptions.PaymentUrlResponse;
+import es.us.meerkat.backend.dto.subscriptions.PaymentUrlResponse;
 import es.us.meerkat.backend.dto.tutors.HireTutorRequest;
 import es.us.meerkat.backend.entity.communities.Comunidad;
 import es.us.meerkat.backend.entity.communities.TipoGrupo;
-import es.us.meerkat.backend.entity.suscriptions.TipoPlanComunidad;
+import es.us.meerkat.backend.entity.subscriptions.TipoPlanComunidad;
 import es.us.meerkat.backend.entity.tutors.EstadoContratacion;
 import es.us.meerkat.backend.entity.tutors.Tutor;
 import es.us.meerkat.backend.entity.tutors.TutorContratacion;
@@ -36,8 +36,7 @@ import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.tutors.TutorContratacionRepository;
 import es.us.meerkat.backend.repository.tutors.TutorRepository;
 import es.us.meerkat.backend.service.google.ClassroomLinkRequestService;
-import es.us.meerkat.backend.service.suscriptions.PaymentService;
-import es.us.meerkat.backend.service.tutors.TutorContratacionService;
+import es.us.meerkat.backend.service.subscriptions.PaymentService;
 
 @ExtendWith(MockitoExtension.class)
 class TutorContratacionServiceTest {

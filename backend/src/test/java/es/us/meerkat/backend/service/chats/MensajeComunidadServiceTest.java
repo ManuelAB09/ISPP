@@ -26,7 +26,6 @@ import es.us.meerkat.backend.repository.chats.MensajeComunidadRepository;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
-import es.us.meerkat.backend.service.chats.MensajeComunidadService;
 import es.us.meerkat.backend.service.emails.EmailService;
 import es.us.meerkat.backend.service.notifications.PreferenciasNotificacionService;
 

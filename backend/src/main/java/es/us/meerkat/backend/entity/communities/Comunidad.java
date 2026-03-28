@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import es.us.meerkat.backend.entity.chats.MensajeComunidad;
-import es.us.meerkat.backend.entity.suscriptions.TipoPlanComunidad;
+import es.us.meerkat.backend.entity.subscriptions.TipoPlanComunidad;
 import es.us.meerkat.backend.entity.users.Usuario;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;

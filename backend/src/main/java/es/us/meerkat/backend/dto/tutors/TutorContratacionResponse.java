@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import es.us.meerkat.backend.dto.communities.CommunityDetailResponse;
-import es.us.meerkat.backend.dto.suscriptions.TransactionResponse;
+import es.us.meerkat.backend.dto.subscriptions.TransactionResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;

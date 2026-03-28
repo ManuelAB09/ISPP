@@ -30,8 +30,6 @@ import es.us.meerkat.backend.repository.communities.AnuncioRepository;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
-import es.us.meerkat.backend.service.communities.AnuncioService;
-import es.us.meerkat.backend.service.communities.AuthorizationService;
 import es.us.meerkat.backend.service.emails.EmailService;
 import es.us.meerkat.backend.service.notifications.NotificacionService;
 import es.us.meerkat.backend.service.notifications.PreferenciasNotificacionService;

@@ -13,15 +13,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.dto.communities.CreateInstitutionRequest;
 import es.us.meerkat.backend.dto.communities.UpdateInstitutionRequest;
-import es.us.meerkat.backend.dto.suscriptions.CorporatePlanRequest;
-import es.us.meerkat.backend.dto.suscriptions.PaymentUrlResponse;
+import es.us.meerkat.backend.dto.subscriptions.CorporatePlanRequest;
+import es.us.meerkat.backend.dto.subscriptions.PaymentUrlResponse;
 import es.us.meerkat.backend.entity.communities.Institution;
-import es.us.meerkat.backend.entity.suscriptions.TipoPlanCorporativo;
+import es.us.meerkat.backend.entity.subscriptions.TipoPlanCorporativo;
 import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.communities.InstitutionRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import es.us.meerkat.backend.service.emails.EmailService;
-import es.us.meerkat.backend.service.suscriptions.PaymentService;
+import es.us.meerkat.backend.service.subscriptions.PaymentService;
 import lombok.extern.slf4j.Slf4j;
 
 /** Servicio para manejar operaciones de instituciones educativas y planes corporativos. */

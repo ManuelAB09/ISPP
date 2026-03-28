@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 import es.us.meerkat.backend.dto.chats.MessageResponse;
 import es.us.meerkat.backend.dto.google.ConnectClassroomRequest;
 import es.us.meerkat.backend.dto.maps.UbicacionResponse;
-import es.us.meerkat.backend.dto.suscriptions.PaymentUrlResponse;
+import es.us.meerkat.backend.dto.subscriptions.PaymentUrlResponse;
 import es.us.meerkat.backend.dto.tutors.AvailabilitySlot;
 import es.us.meerkat.backend.dto.tutors.CreateTutorRequest;
 import es.us.meerkat.backend.dto.tutors.TutorListResponse;
@@ -38,7 +38,7 @@ import es.us.meerkat.backend.entity.tutors.Tutor;
 import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.tutors.SolicitudContratacionDirectaRepository;
 import es.us.meerkat.backend.service.google.GoogleCalendarService;
-import es.us.meerkat.backend.service.suscriptions.PaymentService;
+import es.us.meerkat.backend.service.subscriptions.PaymentService;
 import es.us.meerkat.backend.service.tutors.TutorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -536,7 +536,7 @@ public class TutorController {
             Tutor tutor = tutorService.obtenerTutorPorId(tutorId).orElse(null);
             paymentService.procesarPagoExitoso(
                     usuario.getId(),
-                    es.us.meerkat.backend.entity.suscriptions.TipoTransaccion.PAGO_VERIFICACION,
+                    es.us.meerkat.backend.entity.subscriptions.TipoTransaccion.PAGO_VERIFICACION,
                     monto,
                     "Verificación de tutor completada vía Stripe Elements",
                     tutor);
@@ -589,7 +589,7 @@ public class TutorController {
 
             // 3. Verificar que es una sesión de verificación de tutor
             String tipo = session.getMetadata().get("tipo");
-            if (!es.us.meerkat.backend.entity.suscriptions.TipoTransaccion.PAGO_VERIFICACION
+            if (!es.us.meerkat.backend.entity.subscriptions.TipoTransaccion.PAGO_VERIFICACION
                     .name()
                     .equals(tipo)) {
                 return ResponseEntity.badRequest()
@@ -620,7 +620,7 @@ public class TutorController {
             Tutor tutor = tutorService.obtenerTutorPorId(tutorId).orElse(null);
             paymentService.procesarPagoExitoso(
                     usuario.getId(),
-                    es.us.meerkat.backend.entity.suscriptions.TipoTransaccion.PAGO_VERIFICACION,
+                    es.us.meerkat.backend.entity.subscriptions.TipoTransaccion.PAGO_VERIFICACION,
                     monto,
                     "Verificación de tutor completada",
                     tutor);

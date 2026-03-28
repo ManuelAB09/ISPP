@@ -27,7 +27,7 @@ import es.us.meerkat.backend.repository.tutors.TutorRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import es.us.meerkat.backend.service.emails.EmailService;
 import es.us.meerkat.backend.service.google.GoogleCalendarService;
-import es.us.meerkat.backend.service.suscriptions.PaymentService;
+import es.us.meerkat.backend.service.subscriptions.PaymentService;
 import es.us.meerkat.backend.service.zoom.ZoomIntegrationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

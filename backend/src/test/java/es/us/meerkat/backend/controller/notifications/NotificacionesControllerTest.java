@@ -10,7 +10,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
-import es.us.meerkat.backend.controller.notifications.NotificacionesController;
 import es.us.meerkat.backend.service.notifications.PreferenciasNotificacionService;
 
 @ExtendWith(MockitoExtension.class)

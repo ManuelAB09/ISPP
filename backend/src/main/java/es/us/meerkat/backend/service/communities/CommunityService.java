@@ -26,10 +26,10 @@ import es.us.meerkat.backend.entity.communities.MiembroComunidad;
 import es.us.meerkat.backend.entity.communities.RolComunidad;
 import es.us.meerkat.backend.entity.communities.TipoGrupo;
 import es.us.meerkat.backend.entity.events.Evento;
-import es.us.meerkat.backend.entity.suscriptions.Suscripcion;
-import es.us.meerkat.backend.entity.suscriptions.TipoPlan;
-import es.us.meerkat.backend.entity.suscriptions.TipoPlanComunidad;
-import es.us.meerkat.backend.entity.suscriptions.TipoPlanCorporativo;
+import es.us.meerkat.backend.entity.subscriptions.Suscripcion;
+import es.us.meerkat.backend.entity.subscriptions.TipoPlan;
+import es.us.meerkat.backend.entity.subscriptions.TipoPlanComunidad;
+import es.us.meerkat.backend.entity.subscriptions.TipoPlanCorporativo;
 import es.us.meerkat.backend.entity.tutors.Tutor;
 import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.chats.MensajeComunidadRepository;
@@ -39,7 +39,7 @@ import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.events.EventoRepository;
 import es.us.meerkat.backend.repository.tutors.TutorRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
-import es.us.meerkat.backend.service.suscriptions.SuscripcionService;
+import es.us.meerkat.backend.service.subscriptions.SuscripcionService;
 import lombok.RequiredArgsConstructor;
 
 @Service

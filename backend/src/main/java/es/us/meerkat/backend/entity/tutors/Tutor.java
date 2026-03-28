@@ -8,7 +8,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import es.us.meerkat.backend.entity.maps.Ubicacion;
-import es.us.meerkat.backend.entity.suscriptions.TransaccionPago;
+import es.us.meerkat.backend.entity.subscriptions.TransaccionPago;
 import es.us.meerkat.backend.entity.users.Usuario;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;

@@ -25,7 +25,6 @@ import es.us.meerkat.backend.entity.tutors.Tutor;
 import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.tutors.DisponibilidadTutorRepository;
 import es.us.meerkat.backend.repository.tutors.TutorRepository;
-import es.us.meerkat.backend.service.tutors.DisponibilidadService;
 
 @ExtendWith(MockitoExtension.class)
 class DisponibilidadServiceTest {

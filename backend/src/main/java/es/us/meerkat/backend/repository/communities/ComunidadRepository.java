@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 import es.us.meerkat.backend.entity.communities.Comunidad;
 import es.us.meerkat.backend.entity.communities.EstadoComunidad;
 import es.us.meerkat.backend.entity.communities.TipoGrupo;
-import es.us.meerkat.backend.entity.suscriptions.TipoPlanComunidad;
+import es.us.meerkat.backend.entity.subscriptions.TipoPlanComunidad;
 
 @Repository
 public interface ComunidadRepository extends JpaRepository<Comunidad, Long> {

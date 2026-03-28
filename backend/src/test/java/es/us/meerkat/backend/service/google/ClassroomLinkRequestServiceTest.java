@@ -21,8 +21,6 @@ import es.us.meerkat.backend.entity.google.ClassroomLinkRequest;
 import es.us.meerkat.backend.entity.google.ClassroomLinkRequestStatus;
 import es.us.meerkat.backend.repository.google.ClassroomLinkRequestRepository;
 import es.us.meerkat.backend.service.communities.AuthorizationService;
-import es.us.meerkat.backend.service.google.ClassroomLinkRequestService;
-import es.us.meerkat.backend.service.google.GoogleClassroomService;
 
 @ExtendWith(MockitoExtension.class)
 class ClassroomLinkRequestServiceTest {

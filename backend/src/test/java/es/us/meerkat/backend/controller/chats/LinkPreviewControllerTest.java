@@ -11,7 +11,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import es.us.meerkat.backend.controller.chats.LinkPreviewController;
 import es.us.meerkat.backend.dto.chats.LinkPreviewRequest;
 import es.us.meerkat.backend.dto.chats.LinkPreviewResponse;
 import es.us.meerkat.backend.service.chats.LinkPreviewService;

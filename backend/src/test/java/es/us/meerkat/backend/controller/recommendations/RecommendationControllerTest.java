@@ -15,7 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import es.us.meerkat.backend.controller.recommendations.RecommendationController;
 import es.us.meerkat.backend.dto.recommendations.RecomendacionResponse;
 import es.us.meerkat.backend.service.recommendations.RecommendationService;
 

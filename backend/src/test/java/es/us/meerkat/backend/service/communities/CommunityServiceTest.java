@@ -22,18 +22,16 @@ import es.us.meerkat.backend.entity.communities.EstadoComunidad;
 import es.us.meerkat.backend.entity.communities.MiembroComunidad;
 import es.us.meerkat.backend.entity.communities.RolComunidad;
 import es.us.meerkat.backend.entity.communities.TipoGrupo;
-import es.us.meerkat.backend.entity.suscriptions.Suscripcion;
-import es.us.meerkat.backend.entity.suscriptions.TipoPlan;
-import es.us.meerkat.backend.entity.suscriptions.TipoPlanComunidad;
+import es.us.meerkat.backend.entity.subscriptions.Suscripcion;
+import es.us.meerkat.backend.entity.subscriptions.TipoPlan;
+import es.us.meerkat.backend.entity.subscriptions.TipoPlanComunidad;
 import es.us.meerkat.backend.entity.tutors.Tutor;
 import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.tutors.TutorRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
-import es.us.meerkat.backend.service.communities.AuthorizationService;
-import es.us.meerkat.backend.service.communities.CommunityService;
-import es.us.meerkat.backend.service.suscriptions.SuscripcionService;
+import es.us.meerkat.backend.service.subscriptions.SuscripcionService;
 
 @ExtendWith(MockitoExtension.class)
 class CommunityServiceTest {
