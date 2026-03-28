@@ -65,6 +65,9 @@ public class UsuarioService {
     /** Longitud mínima requerida para las contraseñas. */
     private static final int MIN_PASSWORD_LENGTH = 8;
 
+    /** Longitud máxima permitida para las contraseñas. */
+    private static final int MAX_PASSWORD_LENGTH = 128;
+
     /** Tamaño máximo de foto de perfil en bytes (5MB). */
     private static final long MAX_PROFILE_PHOTO_SIZE_BYTES = 5L * 1024L * 1024L;
 
@@ -586,6 +589,18 @@ public class UsuarioService {
         if (requestParam.getNewPassword() == null
                 || requestParam.getNewPassword().length() < MIN_PASSWORD_LENGTH) {
             throw new ValidationException("La nueva contraseña debe tener al menos 8 caracteres");
+        }
+
+        if (requestParam.getNewPassword().length() > MAX_PASSWORD_LENGTH) {
+            throw new ValidationException(
+                    "La nueva contraseña no puede tener más de 128 caracteres");
+        }
+
+        if (!requestParam.getNewPassword().matches(".*[A-Z].*")
+                || !requestParam.getNewPassword().matches(".*[a-z].*")
+                || !requestParam.getNewPassword().matches(".*[0-9].*")) {
+            throw new ValidationException(
+                    "La contraseña debe contener mayúsculas, minúsculas y números");
         }
 
         // Validar que la nueva contraseña no sea igual a la actual
