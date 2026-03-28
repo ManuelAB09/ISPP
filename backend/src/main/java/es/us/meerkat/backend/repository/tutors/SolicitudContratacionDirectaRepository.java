@@ -43,8 +43,7 @@ public interface SolicitudContratacionDirectaRepository
     @Query(
             "SELECT s FROM SolicitudContratacionDirecta s WHERE s.tutor.id = :tutorId AND s.dia ="
                     + " :dia AND s.estado IN"
-                    + " (es.us.meerkat.backend.entity.EstadoSolicitudContratacion.ACEPTADA,"
-                    + " es.us.meerkat.backend.entity.EstadoSolicitudContratacion.PAGADA) AND"
+                    + " ('ACEPTADA', 'PAGADA') AND"
                     + " s.horaInicio < :horaFin AND s.horaFin > :horaInicio")
     List<SolicitudContratacionDirecta> findConflictingBookings(
             @Param("tutorId") Long tutorId,
@@ -56,8 +55,7 @@ public interface SolicitudContratacionDirectaRepository
     @Query(
             "SELECT s FROM SolicitudContratacionDirecta s WHERE s.tutor.id = :tutorId AND s.dia ="
                     + " :dia AND s.id <> :excludeId AND s.estado IN"
-                    + " (es.us.meerkat.backend.entity.EstadoSolicitudContratacion.ACEPTADA,"
-                    + " es.us.meerkat.backend.entity.EstadoSolicitudContratacion.PAGADA) AND"
+                    + " ('ACEPTADA', 'PAGADA') AND"
                     + " s.horaInicio < :horaFin AND s.horaFin > :horaInicio")
     List<SolicitudContratacionDirecta> findConflictingBookingsExcluding(
             @Param("tutorId") Long tutorId,
@@ -73,9 +71,7 @@ public interface SolicitudContratacionDirectaRepository
     @Query(
             "SELECT s FROM SolicitudContratacionDirecta s WHERE s.tutor.id = :tutorId AND s.dia ="
                     + " :dia AND s.estado NOT IN"
-                    + " (es.us.meerkat.backend.entity.EstadoSolicitudContratacion.CANCELADA_ALUMNO,"
-                    + " es.us.meerkat.backend.entity.EstadoSolicitudContratacion.CANCELADA_TUTOR,"
-                    + " es.us.meerkat.backend.entity.EstadoSolicitudContratacion.RECHAZADA) AND"
+                    + " ('CANCELADA_ALUMNO', 'CANCELADA_TUTOR', 'RECHAZADA') AND"
                     + " s.horaInicio < :horaFin AND s.horaFin > :horaInicio")
     List<SolicitudContratacionDirecta> findConflictingBookingsAnyState(
             @Param("tutorId") Long tutorId,
@@ -86,7 +82,7 @@ public interface SolicitudContratacionDirectaRepository
     /** Reservas confirmadas (PAGADA) cuya clase es mañana para enviar recordatorio. */
     @Query(
             "SELECT s FROM SolicitudContratacionDirecta s WHERE s.dia = :manana AND s.estado ="
-                    + " es.us.meerkat.backend.entity.EstadoSolicitudContratacion.PAGADA")
+                    + " 'PAGADA'")
     List<SolicitudContratacionDirecta> findBookingsForDate(@Param("manana") LocalDate manana);
 
     /**
@@ -95,8 +91,7 @@ public interface SolicitudContratacionDirectaRepository
      */
     @Query(
             "SELECT s FROM SolicitudContratacionDirecta s WHERE s.dia <= :fecha"
-                    + " AND s.estado ="
-                    + " es.us.meerkat.backend.entity.EstadoSolicitudContratacion.ACEPTADA")
+                    + " AND s.estado = 'ACEPTADA'")
     List<SolicitudContratacionDirecta> findExpiredAcceptedBookings(@Param("fecha") LocalDate fecha);
 
     /**
@@ -105,8 +100,7 @@ public interface SolicitudContratacionDirectaRepository
      */
     @Query(
             "SELECT s FROM SolicitudContratacionDirecta s WHERE s.dia <= :fecha"
-                    + " AND s.estado ="
-                    + " es.us.meerkat.backend.entity.EstadoSolicitudContratacion.PENDIENTE")
+                    + " AND s.estado = 'PENDIENTE'")
     List<SolicitudContratacionDirecta> findExpiredPendingBookings(@Param("fecha") LocalDate fecha);
 
     /**
@@ -115,11 +109,9 @@ public interface SolicitudContratacionDirectaRepository
      */
     @Query(
             "SELECT s FROM SolicitudContratacionDirecta s WHERE s.tutor.id = :tutorId AND s.dia ="
-                + " :dia AND s.estado IN"
-                + " (es.us.meerkat.backend.entity.EstadoSolicitudContratacion.ACEPTADA,"
-                + " es.us.meerkat.backend.entity.EstadoSolicitudContratacion.PAGADA,"
-                + " es.us.meerkat.backend.entity.EstadoSolicitudContratacion.REPROGRAMACION_PENDIENTE)"
-                + " ORDER BY s.horaInicio ASC")
+                    + " :dia AND s.estado IN"
+                    + " ('ACEPTADA', 'PAGADA', 'REPROGRAMACION_PENDIENTE')"
+                    + " ORDER BY s.horaInicio ASC")
     List<SolicitudContratacionDirecta> findActiveBookingsByTutorAndDate(
             @Param("tutorId") Long tutorId, @Param("dia") LocalDate dia);
 }

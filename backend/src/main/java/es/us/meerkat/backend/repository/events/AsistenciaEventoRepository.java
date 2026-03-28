@@ -27,7 +27,7 @@ public interface AsistenciaEventoRepository extends JpaRepository<AsistenciaEven
      */
     @Query(
             "SELECT a FROM AsistenciaEvento a WHERE a.evento.id = :eventoId AND a.estado ="
-                    + " es.us.meerkat.backend.entity.EstadoAsistencia.CONFIRMADA")
+                    + " 'CONFIRMADA'")
     List<AsistenciaEvento> findConfirmedAttendanceByEvent(@Param("eventoId") Long eventoId);
 
     /**
@@ -59,7 +59,7 @@ public interface AsistenciaEventoRepository extends JpaRepository<AsistenciaEven
      */
     @Query(
             "SELECT COUNT(a) FROM AsistenciaEvento a WHERE a.evento.id = :eventoId AND a.estado ="
-                    + " es.us.meerkat.backend.entity.EstadoAsistencia.CONFIRMADA")
+                    + " 'CONFIRMADA'")
     long countConfirmedByEvent(@Param("eventoId") Long eventoId);
 
     /**
@@ -123,7 +123,7 @@ public interface AsistenciaEventoRepository extends JpaRepository<AsistenciaEven
             "SELECT COUNT(a) FROM AsistenciaEvento a "
                     + "WHERE a.usuario.id = :usuarioId "
                     + "AND a.evento.comunidad.id = :comunidadId "
-                    + "AND a.estado = es.us.meerkat.backend.entity.EstadoAsistencia.CONFIRMADA "
+                    + "AND a.estado = 'CONFIRMADA' "
                     + "AND a.evento.cancelado = false "
                     + "AND a.evento.fechaHora >= :ahora")
     long countActiveEventAttendances(
