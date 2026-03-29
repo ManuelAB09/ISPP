@@ -18,6 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import es.us.meerkat.backend.entity.communities.Institution;
 import es.us.meerkat.backend.entity.subscriptions.Suscripcion;
 import es.us.meerkat.backend.entity.subscriptions.TipoPlan;
 import es.us.meerkat.backend.entity.subscriptions.TipoTransaccion;
@@ -501,5 +502,334 @@ class SuscripcionServiceTest {
         suscripcion.setFechaInicio(LocalDate.now());
         suscripcion.setFechaFin(LocalDate.now().plusMonths(1));
         return suscripcion;
+    }
+
+    // ================================================================
+    // obtenerMiSuscripcionCompleta
+    // ================================================================
+
+    @Test
+    void obtenerMiSuscripcionCompletaShouldReturnFreePlanWhenNoSuscripcion() {
+        when(suscripcionRepository.findByUsuarioIdAndActiva(1L, true)).thenReturn(Optional.empty());
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.empty());
+
+        var response = suscripcionService.obtenerMiSuscripcionCompleta(1L);
+
+        assertThat(response.getPlan()).isEqualTo(TipoPlan.FREE);
+        assertThat(response.getActiva()).isTrue();
+    }
+
+    @Test
+    void obtenerMiSuscripcionCompletaShouldReturnExistingSuscripcion() {
+        Suscripcion sub = buildSuscripcion(1L, 1L, true);
+        sub.setPlan(TipoPlan.PREMIUM);
+        sub.setPeriodo("MENSUAL");
+        when(suscripcionRepository.findByUsuarioIdAndActiva(1L, true)).thenReturn(Optional.of(sub));
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.empty());
+
+        var response = suscripcionService.obtenerMiSuscripcionCompleta(1L);
+
+        assertThat(response.getPlan()).isEqualTo(TipoPlan.PREMIUM);
+    }
+
+    @Test
+    void obtenerMiSuscripcionCompletaShouldEnrichWithInstitutionData() {
+        when(suscripcionRepository.findByUsuarioIdAndActiva(1L, true)).thenReturn(Optional.empty());
+
+        Usuario usuario = buildUsuario(1L);
+        Institution institution =
+                Institution.builder()
+                        .id(100L)
+                        .nombre("MIT")
+                        .planActivo(true)
+                        .planCorporativo(
+                                es.us.meerkat.backend.entity.subscriptions.TipoPlanCorporativo
+                                        .PREMIUM)
+                        .fechaFinPlan(java.time.LocalDateTime.now().plusDays(30))
+                        .build();
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(institutionRepository
+                        .findFirstByUsuarioAdminIdAndPlanActivoTrueOrderByFechaFinPlanDesc(1L))
+                .thenReturn(Optional.of(institution));
+
+        var response = suscripcionService.obtenerMiSuscripcionCompleta(1L);
+
+        assertThat(response.getInstitutionNombre()).isEqualTo("MIT");
+        assertThat(response.getInstitutionId()).isEqualTo(100L);
+        assertThat(response.getPlanCorporativoActivo()).isTrue();
+    }
+
+    @Test
+    void obtenerMiSuscripcionCompletaShouldSetCorporatePlanInactiveWhenExpired() {
+        when(suscripcionRepository.findByUsuarioIdAndActiva(1L, true)).thenReturn(Optional.empty());
+
+        Usuario usuario = buildUsuario(1L);
+        Institution institution =
+                Institution.builder()
+                        .id(100L)
+                        .nombre("OldUni")
+                        .planActivo(true)
+                        .planCorporativo(
+                                es.us.meerkat.backend.entity.subscriptions.TipoPlanCorporativo
+                                        .BASICO)
+                        .fechaFinPlan(java.time.LocalDateTime.now().minusDays(1))
+                        .build();
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(institutionRepository
+                        .findFirstByUsuarioAdminIdAndPlanActivoTrueOrderByFechaFinPlanDesc(1L))
+                .thenReturn(Optional.of(institution));
+
+        var response = suscripcionService.obtenerMiSuscripcionCompleta(1L);
+
+        assertThat(response.getPlanCorporativoActivo()).isFalse();
+    }
+
+    @Test
+    void obtenerMiSuscripcionCompletaShouldResolveInstitutionByLinkedUser() {
+        when(suscripcionRepository.findByUsuarioIdAndActiva(1L, true)).thenReturn(Optional.empty());
+
+        Usuario usuario = buildUsuario(1L);
+        Institution institution =
+                Institution.builder()
+                        .id(200L)
+                        .nombre("LinkedUni")
+                        .planActivo(true)
+                        .planCorporativo(
+                                es.us.meerkat.backend.entity.subscriptions.TipoPlanCorporativo
+                                        .ESTANDAR)
+                        .fechaFinPlan(java.time.LocalDateTime.now().plusDays(30))
+                        .build();
+        usuario.setInstitution(institution);
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(institutionRepository
+                        .findFirstByUsuarioAdminIdAndPlanActivoTrueOrderByFechaFinPlanDesc(1L))
+                .thenReturn(Optional.empty());
+
+        var response = suscripcionService.obtenerMiSuscripcionCompleta(1L);
+
+        assertThat(response.getInstitutionNombre()).isEqualTo("LinkedUni");
+    }
+
+    @Test
+    void obtenerMiSuscripcionCompletaShouldResolveInstitutionByContactEmail() {
+        when(suscripcionRepository.findByUsuarioIdAndActiva(1L, true)).thenReturn(Optional.empty());
+
+        Usuario usuario = buildUsuario(1L);
+        usuario.setInstitution(null);
+        Institution institution =
+                Institution.builder()
+                        .id(300L)
+                        .nombre("EmailUni")
+                        .planActivo(true)
+                        .planCorporativo(
+                                es.us.meerkat.backend.entity.subscriptions.TipoPlanCorporativo
+                                        .PREMIUM)
+                        .fechaFinPlan(java.time.LocalDateTime.now().plusDays(30))
+                        .build();
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(institutionRepository
+                        .findFirstByUsuarioAdminIdAndPlanActivoTrueOrderByFechaFinPlanDesc(1L))
+                .thenReturn(Optional.empty());
+        when(institutionRepository
+                        .findFirstByEmailContactoIgnoreCaseAndPlanActivoTrueOrderByFechaFinPlanDesc(
+                                usuario.getEmail()))
+                .thenReturn(Optional.of(institution));
+
+        var response = suscripcionService.obtenerMiSuscripcionCompleta(1L);
+
+        assertThat(response.getInstitutionNombre()).isEqualTo("EmailUni");
+    }
+
+    // ================================================================
+    // tienePlanInstitucionalActivo
+    // ================================================================
+
+    @Test
+    void tienePlanInstitucionalActivoShouldReturnFalseWhenNullUser() {
+        assertThat(suscripcionService.tienePlanInstitucionalActivo(null)).isFalse();
+    }
+
+    @Test
+    void tienePlanInstitucionalActivoShouldReturnTrueWhenActiveInstitution() {
+        Usuario usuario = buildUsuario(1L);
+        Institution institution =
+                Institution.builder()
+                        .id(100L)
+                        .planActivo(true)
+                        .fechaFinPlan(java.time.LocalDateTime.now().plusDays(30))
+                        .build();
+
+        when(institutionRepository
+                        .findFirstByUsuarioAdminIdAndPlanActivoTrueOrderByFechaFinPlanDesc(1L))
+                .thenReturn(Optional.of(institution));
+
+        assertThat(suscripcionService.tienePlanInstitucionalActivo(usuario)).isTrue();
+    }
+
+    @Test
+    void tienePlanInstitucionalActivoShouldReturnFalseWhenExpired() {
+        Usuario usuario = buildUsuario(1L);
+        Institution institution =
+                Institution.builder()
+                        .id(100L)
+                        .planActivo(true)
+                        .fechaFinPlan(java.time.LocalDateTime.now().minusDays(1))
+                        .build();
+
+        when(institutionRepository
+                        .findFirstByUsuarioAdminIdAndPlanActivoTrueOrderByFechaFinPlanDesc(1L))
+                .thenReturn(Optional.of(institution));
+
+        assertThat(suscripcionService.tienePlanInstitucionalActivo(usuario)).isFalse();
+    }
+
+    @Test
+    void tienePlanInstitucionalActivoShouldReturnTrueWhenNullEndDate() {
+        Usuario usuario = buildUsuario(1L);
+        Institution institution =
+                Institution.builder().id(100L).planActivo(true).fechaFinPlan(null).build();
+
+        when(institutionRepository
+                        .findFirstByUsuarioAdminIdAndPlanActivoTrueOrderByFechaFinPlanDesc(1L))
+                .thenReturn(Optional.of(institution));
+
+        assertThat(suscripcionService.tienePlanInstitucionalActivo(usuario)).isTrue();
+    }
+
+    // ================================================================
+    // activarSuscripcionTrasStripe – with TipoPlan parameter
+    // ================================================================
+
+    @Test
+    void activarSuscripcionTrasStripeShouldDefaultToPremiumWhenFreeProvided() {
+        Usuario usuario = buildUsuario(1L);
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(institutionRepository
+                        .findFirstByUsuarioAdminIdAndPlanActivoTrueOrderByFechaFinPlanDesc(1L))
+                .thenReturn(Optional.empty());
+        when(suscripcionRepository.findByUsuarioId(1L)).thenReturn(Optional.empty());
+        when(suscripcionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        suscripcionService.activarSuscripcionTrasStripe(
+                1L, BigDecimal.TEN, "MENSUAL", TipoPlan.FREE);
+
+        ArgumentCaptor<Suscripcion> captor = ArgumentCaptor.forClass(Suscripcion.class);
+        verify(suscripcionRepository).save(captor.capture());
+        assertThat(captor.getValue().getPlan()).isEqualTo(TipoPlan.PREMIUM);
+    }
+
+    @Test
+    void activarSuscripcionTrasStripeShouldThrowWhenInstitutionalPlanActive() {
+        Usuario usuario = buildUsuario(1L);
+        Institution inst =
+                Institution.builder()
+                        .id(1L)
+                        .planActivo(true)
+                        .fechaFinPlan(java.time.LocalDateTime.now().plusDays(30))
+                        .build();
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(institutionRepository
+                        .findFirstByUsuarioAdminIdAndPlanActivoTrueOrderByFechaFinPlanDesc(1L))
+                .thenReturn(Optional.of(inst));
+
+        assertThatThrownBy(
+                        () ->
+                                suscripcionService.activarSuscripcionTrasStripe(
+                                        1L, BigDecimal.TEN, "MENSUAL", TipoPlan.PRO))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("institucional");
+    }
+
+    @Test
+    void suscribirseShouldThrowWhenInstitutionalPlanActive() {
+        Usuario usuario = buildUsuario(1L);
+        Institution inst =
+                Institution.builder()
+                        .id(1L)
+                        .planActivo(true)
+                        .fechaFinPlan(java.time.LocalDateTime.now().plusDays(30))
+                        .build();
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(institutionRepository
+                        .findFirstByUsuarioAdminIdAndPlanActivoTrueOrderByFechaFinPlanDesc(1L))
+                .thenReturn(Optional.of(inst));
+
+        assertThatThrownBy(() -> suscripcionService.suscribirse(1L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("institucional");
+    }
+
+    // ── renovarSuscripcionTrasStripe ──────────────────────────────────
+
+    @Test
+    void renovarSuscripcionTrasStripeShouldRenewAndSave() {
+        Suscripcion suscripcion = buildSuscripcion(1L, 1L, true);
+        Usuario usuario = buildUsuario(1L);
+
+        when(suscripcionRepository.findByUsuarioId(1L)).thenReturn(Optional.of(suscripcion));
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+
+        suscripcionService.renovarSuscripcionTrasStripe(1L, BigDecimal.TEN, TipoPlan.PREMIUM);
+
+        verify(suscripcionRepository).save(suscripcion);
+        verify(usuarioRepository).save(usuario);
+        assertThat(usuario.getPlan()).isEqualTo(TipoPlan.PREMIUM);
+    }
+
+    @Test
+    void renovarSuscripcionTrasStripeShouldDefaultToPremiuWhenPlanNull() {
+        Suscripcion suscripcion = buildSuscripcion(1L, 1L, true);
+        Usuario usuario = buildUsuario(1L);
+
+        when(suscripcionRepository.findByUsuarioId(1L)).thenReturn(Optional.of(suscripcion));
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+
+        suscripcionService.renovarSuscripcionTrasStripe(1L, BigDecimal.TEN, null);
+
+        assertThat(usuario.getPlan()).isEqualTo(TipoPlan.PREMIUM);
+    }
+
+    @Test
+    void renovarSuscripcionTrasStripeShouldDefaultToPremiuWhenPlanFree() {
+        Suscripcion suscripcion = buildSuscripcion(1L, 1L, true);
+        Usuario usuario = buildUsuario(1L);
+
+        when(suscripcionRepository.findByUsuarioId(1L)).thenReturn(Optional.of(suscripcion));
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+
+        suscripcionService.renovarSuscripcionTrasStripe(1L, BigDecimal.TEN, TipoPlan.FREE);
+
+        assertThat(usuario.getPlan()).isEqualTo(TipoPlan.PREMIUM);
+    }
+
+    @Test
+    void renovarSuscripcionTrasStripeShouldThrowWhenNoSuscripcion() {
+        when(suscripcionRepository.findByUsuarioId(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(
+                        () ->
+                                suscripcionService.renovarSuscripcionTrasStripe(
+                                        99L, BigDecimal.TEN, TipoPlan.PREMIUM))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("No se encontró suscripción");
+    }
+
+    @Test
+    void renovarSuscripcionTrasStripeShouldThrowWhenUserNotFound() {
+        Suscripcion suscripcion = buildSuscripcion(1L, 1L, true);
+
+        when(suscripcionRepository.findByUsuarioId(1L)).thenReturn(Optional.of(suscripcion));
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(
+                        () ->
+                                suscripcionService.renovarSuscripcionTrasStripe(
+                                        1L, BigDecimal.TEN, TipoPlan.PREMIUM))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Usuario no encontrado");
     }
 }
