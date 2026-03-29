@@ -4,6 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -109,5 +112,57 @@ class JwtAuthenticationFilterTest {
 
         verify(filterChain).doFilter(request, response);
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+    }
+
+    @Test
+    void shouldRejectTokenIssuedBeforePasswordChange() throws Exception {
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        usuario.setEmail("user@test.es");
+        usuario.setPasswordChangedAt(LocalDateTime.now());
+
+        when(request.getHeader("Authorization")).thenReturn("Bearer old-token");
+        when(jwtService.extractEmail("old-token")).thenReturn("user@test.es");
+        when(usuarioRepository.findByEmail("user@test.es")).thenReturn(Optional.of(usuario));
+        when(jwtService.isTokenValid("old-token", "user@test.es")).thenReturn(true);
+        // Token was issued 1 hour before password change
+        when(jwtService.extractIssuedAt("old-token"))
+                .thenReturn(
+                        Date.from(
+                                usuario.getPasswordChangedAt()
+                                        .minusHours(1)
+                                        .atZone(ZoneId.systemDefault())
+                                        .toInstant()));
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+    }
+
+    @Test
+    void shouldAcceptTokenIssuedAfterPasswordChange() throws Exception {
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        usuario.setEmail("user@test.es");
+        usuario.setPasswordChangedAt(LocalDateTime.now().minusHours(2));
+
+        when(request.getHeader("Authorization")).thenReturn("Bearer new-token");
+        when(jwtService.extractEmail("new-token")).thenReturn("user@test.es");
+        when(usuarioRepository.findByEmail("user@test.es")).thenReturn(Optional.of(usuario));
+        when(jwtService.isTokenValid("new-token", "user@test.es")).thenReturn(true);
+        // Token was issued 1 hour after password change
+        when(jwtService.extractIssuedAt("new-token"))
+                .thenReturn(
+                        Date.from(
+                                usuario.getPasswordChangedAt()
+                                        .plusHours(1)
+                                        .atZone(ZoneId.systemDefault())
+                                        .toInstant()));
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
     }
 }

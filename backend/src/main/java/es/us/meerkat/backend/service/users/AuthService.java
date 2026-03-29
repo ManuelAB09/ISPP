@@ -1041,12 +1041,19 @@ public class AuthService {
         // Eliminar intentos fuera de la ventana
         attempts.removeIf(ts -> now - ts > PASSWORD_RESET_WINDOW_MS);
 
+        // Evitar acumulación de entradas vacías en memoria
+        if (attempts.isEmpty()) {
+            passwordResetAttempts.remove(email);
+        }
+
         if (attempts.size() >= PASSWORD_RESET_MAX_REQUESTS) {
             log.warn("Rate limit alcanzado para recuperación de contraseña: {}", email);
             // Devolver respuesta genérica para no revelar que se ha bloqueado
             return genericResponse;
         }
-        attempts.add(now);
+        passwordResetAttempts
+                .computeIfAbsent(email, k -> new java.util.concurrent.CopyOnWriteArrayList<>())
+                .add(now);
 
         try {
             final Usuario usuario = usuarioRepository.findByEmail(email).orElse(null);
@@ -1100,6 +1107,19 @@ public class AuthService {
                                         new ValidationException(
                                                 "No se encontró una cuenta con ese email"));
 
+        // Rechazar token si la contraseña ya fue cambiada después de su emisión (single-use)
+        if (usuario.getPasswordChangedAt() != null) {
+            final java.util.Date tokenIssuedAt = jwtService.extractIssuedAt(request.getToken());
+            final java.time.Instant passwordChangedInstant =
+                    usuario.getPasswordChangedAt()
+                            .atZone(java.time.ZoneId.systemDefault())
+                            .toInstant();
+            if (tokenIssuedAt.toInstant().isBefore(passwordChangedInstant)) {
+                throw new ValidationException(
+                        "El enlace de recuperación es inválido o ha expirado. Solicita uno nuevo.");
+            }
+        }
+
         // Validar complejidad de la nueva contraseña
         final String newPassword = request.getNewPassword();
         if (newPassword == null || newPassword.length() < MIN_PASSWORD_LENGTH) {
@@ -1116,6 +1136,7 @@ public class AuthService {
         }
 
         usuario.setPassword(passwordEncoder.encode(newPassword));
+        usuario.setPasswordChangedAt(LocalDateTime.now());
         usuarioRepository.save(usuario);
 
         return MessageResponse.builder()

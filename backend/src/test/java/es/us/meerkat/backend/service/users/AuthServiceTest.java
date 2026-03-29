@@ -320,6 +320,53 @@ class AuthServiceTest {
                 .hasMessageContaining("al menos 8 caracteres");
     }
 
+    @Test
+    void restablecerContrasenaShouldRejectReusedToken() {
+        ResetPasswordRequest request =
+                ResetPasswordRequest.builder()
+                        .token("reused-token")
+                        .newPassword("NewPass1")
+                        .build();
+
+        Usuario usuario = new Usuario();
+        usuario.setEmail("user@meerkat.es");
+        // Simulate password already changed after token was issued
+        usuario.setPasswordChangedAt(LocalDateTime.now());
+
+        when(jwtService.validatePasswordResetToken("reused-token")).thenReturn("user@meerkat.es");
+        when(usuarioRepository.findByEmail("user@meerkat.es")).thenReturn(Optional.of(usuario));
+        // Token was issued 5 minutes before the password change
+        when(jwtService.extractIssuedAt("reused-token"))
+                .thenReturn(
+                        java.util.Date.from(
+                                usuario.getPasswordChangedAt()
+                                        .minusMinutes(5)
+                                        .atZone(java.time.ZoneId.systemDefault())
+                                        .toInstant()));
+
+        assertThatThrownBy(() -> authService.restablecerContrasena(request))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("inválido o ha expirado");
+    }
+
+    @Test
+    void restablecerContrasenaShouldSetPasswordChangedAt() {
+        ResetPasswordRequest request =
+                ResetPasswordRequest.builder().token("valid-token").newPassword("NewPass1").build();
+
+        Usuario usuario = new Usuario();
+        usuario.setEmail("user@meerkat.es");
+
+        when(jwtService.validatePasswordResetToken("valid-token")).thenReturn("user@meerkat.es");
+        when(usuarioRepository.findByEmail("user@meerkat.es")).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.encode("NewPass1")).thenReturn("encoded-new-password");
+
+        authService.restablecerContrasena(request);
+
+        assertThat(usuario.getPasswordChangedAt()).isNotNull();
+        verify(usuarioRepository).save(usuario);
+    }
+
     // ── registrar validation branches ─────────────────────────────────────
 
     @Test

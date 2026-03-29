@@ -98,4 +98,16 @@ class JwtServiceTest {
 
         assertThatThrownBy(() -> jwtService.extractEmail(tampered)).isInstanceOf(Exception.class);
     }
+
+    @Test
+    void extractIssuedAtShouldReturnNonNullDate() {
+        String token = jwtService.generateToken("user@test.es");
+
+        java.util.Date issuedAt = jwtService.extractIssuedAt(token);
+
+        assertThat(issuedAt).isNotNull();
+        // Should be within the last few seconds
+        assertThat(issuedAt.getTime())
+                .isCloseTo(System.currentTimeMillis(), org.assertj.core.data.Offset.offset(5000L));
+    }
 }

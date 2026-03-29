@@ -71,7 +71,20 @@ public class JwtService {
         if (purpose != null) {
             return false;
         }
-        return claims.getSubject().equals(email) && !isTokenExpired(token);
+        final Date expiration = claims.getExpiration();
+        return claims.getSubject().equals(email)
+                && expiration != null
+                && expiration.after(new Date());
+    }
+
+    /**
+     * Extrae la fecha de emisión (iat) del token JWT.
+     *
+     * @param token Token JWT.
+     * @return Date de emisión del token.
+     */
+    public Date extractIssuedAt(final String token) {
+        return extractClaim(token, Claims::getIssuedAt);
     }
 
     /**

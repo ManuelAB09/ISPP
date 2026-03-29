@@ -75,6 +75,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 if (usuario != null && jwtService.isTokenValid(token, email)) {
 
+                    // Rechazar tokens emitidos antes del último cambio de contraseña
+                    if (usuario.getPasswordChangedAt() != null) {
+                        final java.util.Date tokenIssuedAt = jwtService.extractIssuedAt(token);
+                        final java.time.Instant passwordChangedInstant =
+                                usuario.getPasswordChangedAt()
+                                        .atZone(java.time.ZoneId.systemDefault())
+                                        .toInstant();
+                        if (tokenIssuedAt.toInstant().isBefore(passwordChangedInstant)) {
+                            filterChain.doFilter(request, response);
+                            return;
+                        }
+                    }
+
                     final UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(
                                     usuario,
