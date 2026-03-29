@@ -174,13 +174,13 @@ public class EmailService {
                 + "</div>"
                 + "<div class='content'>"
                 + "<p>Hola <strong>"
-                + userName
+                + escapeHtml(userName)
                 + "</strong>,</p>"
                 + "<p>Hemos recibido una solicitud para restablecer tu contraseña. "
                 + "Haz clic en el siguiente botón para crear una nueva:</p>"
                 + "<div style='text-align: center;'>"
                 + "<a href='"
-                + resetLink
+                + escapeHtml(resetLink)
                 + "' class='btn'>Restablecer contraseña</a>"
                 + "</div>"
                 + "<div class='warning'>"
@@ -194,9 +194,9 @@ public class EmailService {
                 + "<p style='font-size: 12px; color: #666;'>Si el botón no funciona, "
                 + "copia y pega este enlace en tu navegador:<br>"
                 + "<a href='"
-                + resetLink
+                + escapeHtml(resetLink)
                 + "'>"
-                + resetLink
+                + escapeHtml(resetLink)
                 + "</a></p>"
                 + "</div>"
                 + "<div class='footer'>"

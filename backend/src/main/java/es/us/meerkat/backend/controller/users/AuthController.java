@@ -187,7 +187,7 @@ public final class AuthController {
      */
     @PostMapping("/password/forgot")
     public ResponseEntity<MessageResponse> forgotPassword(
-            @RequestBody final ForgotPasswordRequest request) {
+            @Valid @RequestBody final ForgotPasswordRequest request) {
         return ResponseEntity.ok(authService.recuperarContrasena(request));
     }
 

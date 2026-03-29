@@ -45,6 +45,7 @@ import es.us.meerkat.backend.dto.users.AuthResponse;
 import es.us.meerkat.backend.dto.users.ForgotPasswordRequest;
 import es.us.meerkat.backend.dto.users.LoginRequest;
 import es.us.meerkat.backend.dto.users.RegisterRequest;
+import es.us.meerkat.backend.dto.users.ResetPasswordRequest;
 import es.us.meerkat.backend.dto.users.TotpEnableResponse;
 import es.us.meerkat.backend.dto.users.TotpSetupResponse;
 import es.us.meerkat.backend.dto.users.TwoFactorChallengeResponse;
@@ -86,6 +87,20 @@ public class AuthService {
 
     /** Longitud de cada código de respaldo (sin separador). */
     private static final int BACKUP_CODE_LENGTH = 8;
+
+    /** Máximo de solicitudes de recuperación por email en la ventana de tiempo. */
+    private static final int PASSWORD_RESET_MAX_REQUESTS = 3;
+
+    /** Ventana de tiempo del rate limit para recuperación de contraseña (15 minutos). */
+    private static final long PASSWORD_RESET_WINDOW_MS = 15 * 60 * 1000L;
+
+    /**
+     * Cache in-memory para rate-limiting de solicitudes de recuperación de contraseña. Clave: email
+     * normalizado, Valor: lista de timestamps de solicitudes.
+     */
+    private final java.util.concurrent.ConcurrentHashMap<
+                    String, java.util.concurrent.CopyOnWriteArrayList<Long>>
+            passwordResetAttempts = new java.util.concurrent.ConcurrentHashMap<>();
 
     /** URL base de la aplicación frontend para verificación. */
     @Value("${app.frontend.url:http://localhost:3000}")
@@ -1008,13 +1023,30 @@ public class AuthService {
      * @return MessageResponse con confirmación (siempre genérica por seguridad)
      */
     public MessageResponse recuperarContrasena(final ForgotPasswordRequest request) {
-        final String email = request.getEmail();
+        final String email = request.getEmail().toLowerCase().trim();
         final MessageResponse genericResponse =
                 MessageResponse.builder()
                         .message(
                                 "Si el email existe en el sistema, recibirás instrucciones "
                                         + "de recuperación de contraseña en tu bandeja de entrada")
                         .build();
+
+        // Rate limiting: máximo PASSWORD_RESET_MAX_REQUESTS solicitudes por email
+        // en una ventana de PASSWORD_RESET_WINDOW_MS
+        final long now = System.currentTimeMillis();
+        final java.util.concurrent.CopyOnWriteArrayList<Long> attempts =
+                passwordResetAttempts.computeIfAbsent(
+                        email, k -> new java.util.concurrent.CopyOnWriteArrayList<>());
+
+        // Eliminar intentos fuera de la ventana
+        attempts.removeIf(ts -> now - ts > PASSWORD_RESET_WINDOW_MS);
+
+        if (attempts.size() >= PASSWORD_RESET_MAX_REQUESTS) {
+            log.warn("Rate limit alcanzado para recuperación de contraseña: {}", email);
+            // Devolver respuesta genérica para no revelar que se ha bloqueado
+            return genericResponse;
+        }
+        attempts.add(now);
 
         try {
             final Usuario usuario = usuarioRepository.findByEmail(email).orElse(null);
@@ -1036,7 +1068,7 @@ public class AuthService {
             return genericResponse;
 
         } catch (Exception e) {
-            log.error("Error al procesar solicitud de recuperación: {}", e.getMessage());
+            log.error("Error al procesar solicitud de recuperación", e);
             // Devolver respuesta genérica para no revelar errores internos
             return genericResponse;
         }
@@ -1051,8 +1083,7 @@ public class AuthService {
      *     requisitos.
      */
     @Transactional
-    public MessageResponse restablecerContrasena(
-            final es.us.meerkat.backend.dto.users.ResetPasswordRequest request) {
+    public MessageResponse restablecerContrasena(final ResetPasswordRequest request) {
         final String email;
         try {
             email = jwtService.validatePasswordResetToken(request.getToken());
