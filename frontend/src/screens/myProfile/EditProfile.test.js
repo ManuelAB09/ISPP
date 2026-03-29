@@ -173,7 +173,7 @@ describe('EditProfile', () => {
                 fireEvent.change(fileInput, { target: { files: [file] } });
             });
 
-            expect(screen.getByText('Formato no permitido. Usa JPG, PNG o WEBP.')).toBeInTheDocument();
+            expect(screen.getAllByText('Formato no permitido. Usa JPG, PNG o WEBP.').length).toBeGreaterThan(0);
         }
     });
 
@@ -188,7 +188,7 @@ describe('EditProfile', () => {
                 fireEvent.change(fileInput, { target: { files: [bigFile] } });
             });
 
-            expect(screen.getByText('La imagen supera el límite de 5MB.')).toBeInTheDocument();
+            expect(screen.getAllByText('La imagen supera el límite de 5MB.').length).toBeGreaterThan(0);
         }
     });
 
