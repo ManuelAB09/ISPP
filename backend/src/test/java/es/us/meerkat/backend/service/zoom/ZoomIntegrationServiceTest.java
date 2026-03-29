@@ -29,6 +29,7 @@ import es.us.meerkat.backend.entity.communities.Comunidad;
 import es.us.meerkat.backend.entity.communities.MiembroComunidad;
 import es.us.meerkat.backend.entity.communities.RolComunidad;
 import es.us.meerkat.backend.entity.communities.TipoGrupo;
+import es.us.meerkat.backend.entity.events.Evento;
 import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.entity.zoom.ZoomMeeting;
 import es.us.meerkat.backend.entity.zoom.ZoomMeetingParticipant;
@@ -36,6 +37,7 @@ import es.us.meerkat.backend.entity.zoom.ZoomMeetingStatus;
 import es.us.meerkat.backend.entity.zoom.ZoomRecording;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.events.EventoRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import es.us.meerkat.backend.repository.zoom.ZoomMeetingParticipantRepository;
 import es.us.meerkat.backend.repository.zoom.ZoomMeetingRepository;
@@ -55,10 +57,12 @@ class ZoomIntegrationServiceTest {
     @Autowired private ZoomMeetingRepository zoomMeetingRepository;
     @Autowired private ZoomMeetingParticipantRepository participantRepository;
     @Autowired private ZoomRecordingRepository recordingRepository;
+    @Autowired private EventoRepository eventoRepository;
 
     private Long memberUserId;
     private Long outsiderUserId;
     private Long comunidadId;
+    private Long eventoId;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -70,6 +74,13 @@ class ZoomIntegrationServiceTest {
         memberUserId = member.getId();
         outsiderUserId = outsider.getId();
         comunidadId = comunidad.getId();
+
+        Evento evento = new Evento();
+        evento.setTitulo("Evento Zoom Test");
+        evento.setCreador(member);
+        evento.setComunidad(comunidad);
+        evento = eventoRepository.save(evento);
+        eventoId = evento.getId();
 
         ReflectionTestUtils.setField(service, "zoomClientId", "test-client-id");
         ReflectionTestUtils.setField(service, "zoomClientSecret", "test-client-secret");
@@ -356,6 +367,269 @@ class ZoomIntegrationServiceTest {
         assertThatThrownBy(() -> service.processWebhook(payload, "v0=invalid", "123456"))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("Webhook no autorizado");
+    }
+
+    // ── Event-based meeting tests ────────────────────────────────────────
+
+    @Test
+    void createOrGetActiveMeetingForEvent_shouldCreateMeeting() {
+        ZoomMeeting result =
+                service.createOrGetActiveMeetingForEvent(eventoId, memberUserId, "Evento Zoom", 30);
+
+        assertThat(result.getId()).isNotNull();
+        assertThat(result.getStatus()).isEqualTo(ZoomMeetingStatus.ACTIVE);
+        assertThat(result.getTopic()).isEqualTo("Evento Zoom");
+        assertThat(result.getDurationMinutes()).isEqualTo(30);
+        assertThat(result.getJoinUrl()).contains("zoom.us/j/");
+    }
+
+    @Test
+    void createOrGetActiveMeetingForEvent_shouldReuseActiveMeeting() {
+        ZoomMeeting first =
+                service.createOrGetActiveMeetingForEvent(eventoId, memberUserId, "Topic A", null);
+        ZoomMeeting second =
+                service.createOrGetActiveMeetingForEvent(eventoId, memberUserId, "Topic B", 15);
+
+        assertThat(second.getId()).isEqualTo(first.getId());
+    }
+
+    @Test
+    void createOrGetActiveMeetingForEvent_shouldUseDefaultTopicWhenNull() {
+        ZoomMeeting result =
+                service.createOrGetActiveMeetingForEvent(eventoId, memberUserId, null, null);
+
+        assertThat(result.getTopic()).isEqualTo("Evento: Evento Zoom Test");
+    }
+
+    @Test
+    void createOrGetActiveMeetingForEvent_shouldThrowWhenNotOrganizer() {
+        // outsider is not a member, but even if they were, they aren't the organizer
+        assertThatThrownBy(
+                        () ->
+                                service.createOrGetActiveMeetingForEvent(
+                                        eventoId, outsiderUserId, "Topic", null))
+                .isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    void createOrGetActiveMeetingForEvent_shouldThrowWhenEventNotFound() {
+        assertThatThrownBy(
+                        () ->
+                                service.createOrGetActiveMeetingForEvent(
+                                        99999L, memberUserId, "Topic", null))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Evento no encontrado");
+    }
+
+    @Test
+    void getActiveMeetingForEvent_shouldReturnMeeting() {
+        ZoomMeeting created =
+                service.createOrGetActiveMeetingForEvent(
+                        eventoId, memberUserId, "Sesion Evento", null);
+
+        ZoomMeeting found = service.getActiveMeetingForEvent(eventoId, memberUserId);
+
+        assertThat(found.getId()).isEqualTo(created.getId());
+    }
+
+    @Test
+    void getActiveMeetingForEvent_shouldThrowWhenNoActiveMeeting() {
+        assertThatThrownBy(() -> service.getActiveMeetingForEvent(eventoId, memberUserId))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("No hay llamada activa en este evento");
+    }
+
+    @Test
+    void joinActiveMeetingForEvent_shouldReturnCredentials() {
+        ZoomMeeting meeting =
+                service.createOrGetActiveMeetingForEvent(eventoId, memberUserId, "Sesion", null);
+
+        var response = service.joinActiveMeetingForEvent(eventoId, memberUserId);
+
+        assertThat(response.zoomMeetingId()).isEqualTo(meeting.getZoomMeetingId());
+        assertThat(response.joinUrl()).isEqualTo(meeting.getJoinUrl());
+    }
+
+    @Test
+    void getActiveParticipantsForEvent_shouldReturnParticipants() {
+        ZoomMeeting meeting =
+                service.createOrGetActiveMeetingForEvent(eventoId, memberUserId, "Sesion", null);
+
+        ZoomMeetingParticipant participant = new ZoomMeetingParticipant();
+        participant.setZoomMeeting(meeting);
+        participant.setUsuario(usuarioRepository.findById(memberUserId).orElseThrow());
+        participant.setZoomParticipantId("p-event-1");
+        participant.setDisplayName("Member");
+        participant.setEmail("member@test.com");
+        participant.setJoinedAt(LocalDateTime.now());
+        participant.setInCall(true);
+        participantRepository.save(participant);
+
+        var participants = service.getActiveParticipantsForEvent(eventoId, memberUserId);
+
+        assertThat(participants).hasSize(1);
+        assertThat(participants.get(0).userId()).isEqualTo(memberUserId);
+    }
+
+    @Test
+    void endActiveMeetingForEvent_shouldEndMeeting() {
+        service.createOrGetActiveMeetingForEvent(eventoId, memberUserId, "Sesion", null);
+
+        service.endActiveMeetingForEvent(eventoId, memberUserId);
+
+        assertThatThrownBy(() -> service.getActiveMeetingForEvent(eventoId, memberUserId))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("No hay llamada activa en este evento");
+    }
+
+    // ── Additional coverage: recordings, validation, mime types ──────────
+
+    @Test
+    void getRecordingsForCommunity_shouldReturnList() {
+        ZoomMeeting meeting =
+                service.createOrGetActiveMeeting(comunidadId, memberUserId, "Sesion", null);
+        MultipartFile file = new InMemoryMultipartFile("recording.mp4", "video/mp4", "abc123");
+        service.uploadRecordingForMeeting(comunidadId, meeting.getId(), memberUserId, file);
+
+        var recordings = service.getRecordingsForCommunity(comunidadId, memberUserId);
+
+        assertThat(recordings).hasSize(1);
+        assertThat(recordings.get(0).fileType()).isEqualTo("MP4");
+    }
+
+    @Test
+    void getRecordingForCommunity_shouldReturnSingleRecording() {
+        ZoomMeeting meeting =
+                service.createOrGetActiveMeeting(comunidadId, memberUserId, "Sesion", null);
+        MultipartFile file = new InMemoryMultipartFile("recording.mp4", "video/mp4", "abc123");
+        var uploaded =
+                service.uploadRecordingForMeeting(comunidadId, meeting.getId(), memberUserId, file);
+
+        var recording =
+                service.getRecordingForCommunity(
+                        comunidadId, uploaded.zoomRecordingId(), memberUserId);
+
+        assertThat(recording.zoomRecordingId()).isEqualTo(uploaded.zoomRecordingId());
+    }
+
+    @Test
+    void uploadRecording_shouldRejectNullFile() {
+        ZoomMeeting meeting =
+                service.createOrGetActiveMeeting(comunidadId, memberUserId, "Sesion", null);
+
+        assertThatThrownBy(
+                        () ->
+                                service.uploadRecordingForMeeting(
+                                        comunidadId, meeting.getId(), memberUserId, null))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Debes subir un archivo de grabacion");
+    }
+
+    @Test
+    void uploadRecording_shouldRejectEmptyFile() {
+        ZoomMeeting meeting =
+                service.createOrGetActiveMeeting(comunidadId, memberUserId, "Sesion", null);
+
+        MultipartFile file = new InMemoryMultipartFile("recording.mp4", "video/mp4", "");
+
+        assertThatThrownBy(
+                        () ->
+                                service.uploadRecordingForMeeting(
+                                        comunidadId, meeting.getId(), memberUserId, file))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Debes subir un archivo de grabacion");
+    }
+
+    @Test
+    void uploadRecording_shouldRejectUnsupportedFormat() {
+        ZoomMeeting meeting =
+                service.createOrGetActiveMeeting(comunidadId, memberUserId, "Sesion", null);
+
+        MultipartFile file = new InMemoryMultipartFile("recording.pdf", "application/pdf", "data");
+
+        assertThatThrownBy(
+                        () ->
+                                service.uploadRecordingForMeeting(
+                                        comunidadId, meeting.getId(), memberUserId, file))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Formato no permitido. Solo MP4, MOV, WEBM o M4A");
+    }
+
+    @Test
+    void uploadRecording_shouldAcceptMovFormat() {
+        ZoomMeeting meeting =
+                service.createOrGetActiveMeeting(comunidadId, memberUserId, "Sesion", null);
+
+        MultipartFile file =
+                new InMemoryMultipartFile("recording.mov", "video/quicktime", "movdata");
+
+        var response =
+                service.uploadRecordingForMeeting(comunidadId, meeting.getId(), memberUserId, file);
+
+        assertThat(response.fileType()).isEqualTo("MOV");
+    }
+
+    @Test
+    void uploadRecording_shouldAcceptWebmFormat() {
+        ZoomMeeting meeting =
+                service.createOrGetActiveMeeting(comunidadId, memberUserId, "Sesion", null);
+
+        MultipartFile file = new InMemoryMultipartFile("recording.webm", "video/webm", "webmdata");
+
+        var response =
+                service.uploadRecordingForMeeting(comunidadId, meeting.getId(), memberUserId, file);
+
+        assertThat(response.fileType()).isEqualTo("WEBM");
+    }
+
+    @Test
+    void uploadRecording_shouldAcceptM4aFormat() {
+        ZoomMeeting meeting =
+                service.createOrGetActiveMeeting(comunidadId, memberUserId, "Sesion", null);
+
+        MultipartFile file = new InMemoryMultipartFile("recording.m4a", "audio/mp4", "m4adata");
+
+        var response =
+                service.uploadRecordingForMeeting(comunidadId, meeting.getId(), memberUserId, file);
+
+        assertThat(response.fileType()).isEqualTo("M4A");
+    }
+
+    @Test
+    void processWebhook_shouldHandleUrlValidationEvent() {
+        ReflectionTestUtils.setField(service, "zoomWebhookSecretToken", "testtoken");
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("event", "endpoint.url_validation");
+        Map<String, Object> eventPayload = new HashMap<>();
+        eventPayload.put("plainToken", "abcdef123456");
+        payload.put("payload", eventPayload);
+
+        Map<String, Object> response = service.processWebhook(payload, null, null);
+
+        assertThat(response).containsKey("plainToken");
+        assertThat(response).containsKey("encryptedToken");
+        assertThat(response.get("plainToken")).isEqualTo("abcdef123456");
+    }
+
+    @Test
+    void processWebhook_shouldThrowWhenSignatureOrTimestampNull() {
+        ReflectionTestUtils.setField(service, "zoomWebhookSecretToken", "secret-enabled");
+
+        Map<String, Object> payload = webhookPayload("meeting.ended", "12345");
+
+        assertThatThrownBy(() -> service.processWebhook(payload, null, null))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Webhook no autorizado");
+    }
+
+    @Test
+    void crearReunionSimple_shouldReturnJoinUrlAndStartUrl() {
+        Map<String, Object> result = service.crearReunionSimple("Simple meeting", 15);
+
+        assertThat(result).containsKey("join_url");
+        assertThat(result).containsKey("start_url");
+        assertThat(result).containsKey("password");
     }
 
     private Usuario createUser(final String email, final String nombre) {

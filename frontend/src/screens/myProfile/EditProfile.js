@@ -202,7 +202,7 @@ const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
 
     useEffect(() => {
         return () => {
-            if (profileImagePreview.startsWith('blob:')) {
+            if (profileImagePreview?.startsWith('blob:')) {
                 URL.revokeObjectURL(profileImagePreview)
             }
         }
