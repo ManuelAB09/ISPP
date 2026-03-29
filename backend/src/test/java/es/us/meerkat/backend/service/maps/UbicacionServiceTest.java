@@ -3,6 +3,7 @@ package es.us.meerkat.backend.service.maps;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -133,5 +134,105 @@ class UbicacionServiceTest {
         request.setTipo("library");
         request.setCoste("GRATIS");
         return request;
+    }
+
+    // ── editarUbicacion ──────────────────────────────────────────────────
+
+    @Test
+    void editarUbicacionShouldUpdateFieldsAndSave() {
+        Ubicacion existente =
+                Ubicacion.builder()
+                        .id(5L)
+                        .nombre("Old")
+                        .direccion("Old St")
+                        .latitud(0.0)
+                        .longitud(0.0)
+                        .tipo("park")
+                        .coste("GRATIS")
+                        .build();
+        when(ubicacionRepository.findById(5L)).thenReturn(Optional.of(existente));
+        when(ubicacionRepository.save(any(Ubicacion.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UbicacionRequest request = buildRequest();
+        UbicacionResponse response = ubicacionService.editarUbicacion(5L, request);
+
+        verify(ubicacionRepository).save(existente);
+        assertThat(response.getNombre()).isEqualTo("Biblioteca Central");
+        assertThat(response.getDireccion()).isEqualTo("Calle Real 1");
+    }
+
+    @Test
+    void editarUbicacionShouldThrowWhenNotFound() {
+        when(ubicacionRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> ubicacionService.editarUbicacion(99L, buildRequest()))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Ubicación no encontrada");
+    }
+
+    // ── obtenerUbicacion ─────────────────────────────────────────────────
+
+    @Test
+    void obtenerUbicacionShouldReturnResponse() {
+        Ubicacion ubicacion =
+                Ubicacion.builder()
+                        .id(3L)
+                        .nombre("Parque")
+                        .direccion("Av. Principal")
+                        .latitud(37.0)
+                        .longitud(-6.0)
+                        .tipo("park")
+                        .coste("GRATIS")
+                        .build();
+        when(ubicacionRepository.findById(3L)).thenReturn(Optional.of(ubicacion));
+
+        UbicacionResponse response = ubicacionService.obtenerUbicacion(3L);
+
+        assertThat(response.getId()).isEqualTo(3L);
+        assertThat(response.getNombre()).isEqualTo("Parque");
+    }
+
+    @Test
+    void obtenerUbicacionShouldThrowWhenNotFound() {
+        when(ubicacionRepository.findById(404L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> ubicacionService.obtenerUbicacion(404L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Ubicación no encontrada");
+    }
+
+    // ── eliminarUbicacion ────────────────────────────────────────────────
+
+    @Test
+    void eliminarUbicacionShouldDeleteWhenExists() {
+        when(ubicacionRepository.existsById(10L)).thenReturn(true);
+
+        ubicacionService.eliminarUbicacion(10L);
+
+        verify(ubicacionRepository).deleteById(10L);
+    }
+
+    @Test
+    void eliminarUbicacionShouldThrowWhenNotFound() {
+        when(ubicacionRepository.existsById(10L)).thenReturn(false);
+
+        assertThatThrownBy(() -> ubicacionService.eliminarUbicacion(10L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Ubicación no encontrada");
+
+        verify(ubicacionRepository, never()).deleteById(10L);
+    }
+
+    // ── obtenerTodas ─────────────────────────────────────────────────────
+
+    @Test
+    void obtenerTodasShouldReturnAllUbicaciones() {
+        Ubicacion u1 = Ubicacion.builder().id(1L).nombre("A").build();
+        Ubicacion u2 = Ubicacion.builder().id(2L).nombre("B").build();
+        when(ubicacionRepository.findAll()).thenReturn(List.of(u1, u2));
+
+        List<Ubicacion> result = ubicacionService.obtenerTodas();
+
+        assertThat(result).hasSize(2);
     }
 }

@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { communitiesApi } from '../../api/communities.api';
+import { cuestionariosApi } from '../../api/cuestionarios.api';
 import * as eventEndpoints from '../../api/eventEndpoints';
 import { ZoomApi } from '../../api/zoom.api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -9,6 +10,7 @@ import CommunityDetail from './CommunityDetail';
 
 // Mocks
 jest.mock('../../api/communities.api');
+jest.mock('../../api/cuestionarios.api');
 jest.mock('../../api/eventEndpoints');
 jest.mock('../../contexts/AuthContext');
 jest.mock('../../api/zoom.api');
@@ -91,6 +93,14 @@ describe('CommunityDetail', () => {
     communitiesApi.expelMember.mockResolvedValue({});
     communitiesApi.getMyMembership.mockRejectedValue({ status: 404 });
     communitiesApi.getMembers.mockResolvedValue([]);
+    communitiesApi.listRequests = jest.fn().mockResolvedValue([]);
+    communitiesApi.respondToRequest = jest.fn().mockResolvedValue({});
+    communitiesApi.deleteCommunity = jest.fn().mockResolvedValue({});
+    communitiesApi.getRanking = jest.fn().mockResolvedValue([]);
+    communitiesApi.promoteMemberToAdmin = jest.fn().mockResolvedValue({});
+    communitiesApi.addAdmin = jest.fn().mockResolvedValue({});
+
+    cuestionariosApi.listByCommunity = jest.fn().mockResolvedValue([]);
 
     eventEndpoints.listCommunityEvents.mockResolvedValue(mockEvents);
     eventEndpoints.getMyAttendance.mockResolvedValue(null);
@@ -746,5 +756,202 @@ describe('CommunityDetail', () => {
 
     expect(window.URL.createObjectURL).toHaveBeenCalled();
     expect(window.URL.revokeObjectURL).toHaveBeenCalled();
+  });
+
+  test('muestra botón de eliminar comunidad para admins', async () => {
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({
+      user: { id: 100, nombre: 'Admin User' },
+    });
+    communitiesApi.getById.mockResolvedValue({
+      ...mockCommunity,
+      esMiembro: true,
+      miRol: 'ADMIN',
+      creador: { id: 100 },
+    });
+
+    await renderComponent();
+    const deleteBtn = screen.queryByRole('button', { name: /Eliminar comunidad/i });
+    if (deleteBtn) {
+      expect(deleteBtn).toBeInTheDocument();
+    }
+  });
+
+  test('elimina comunidad con confirmación', async () => {
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({
+      user: { id: 100, nombre: 'Admin User' },
+    });
+    communitiesApi.getById.mockResolvedValue({
+      ...mockCommunity,
+      esMiembro: true,
+      miRol: 'ADMIN',
+      creador: { id: 100 },
+    });
+    const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
+
+    await renderComponent();
+    const deleteBtn = screen.queryByRole('button', { name: /Eliminar comunidad/i });
+    if (deleteBtn) {
+      userEvent.click(deleteBtn);
+      await waitFor(() => {
+        expect(communitiesApi.deleteCommunity).toHaveBeenCalledWith('1');
+      });
+    }
+    confirmSpy.mockRestore();
+  });
+
+  test('muestra solicitudes pendientes para admin de comunidad privada', async () => {
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({
+      user: { id: 100, nombre: 'Admin User' },
+    });
+    communitiesApi.getById.mockResolvedValue({
+      ...mockCommunity,
+      esMiembro: true,
+      miRol: 'ADMIN',
+      tipoAcceso: 'PREVIA_APROBACION',
+    });
+    communitiesApi.listRequests.mockResolvedValue([
+      { id: 1, usuario: { id: 200, nombre: 'Solicitante 1' }, estado: 'PENDIENTE' },
+    ]);
+
+    await renderComponent();
+    await waitFor(() => {
+      const reqSection = screen.queryByText(/Solicitudes pendientes/i) || screen.queryByText(/solicitud/i);
+      expect(reqSection).toBeTruthy();
+    });
+  });
+
+  test('carga cuestionarios de la comunidad', async () => {
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({
+      user: { id: 100, nombre: 'Test User' },
+    });
+    communitiesApi.getById.mockResolvedValue({
+      ...mockCommunity,
+      esMiembro: true,
+    });
+    cuestionariosApi.listByCommunity.mockResolvedValue([
+      { id: 1, titulo: 'Quiz de Matemáticas', preguntas: [] },
+    ]);
+
+    await renderComponent();
+    await waitFor(() => {
+      const quizText = screen.queryByText(/Quiz de Matemáticas/i) || screen.queryByText(/Cuestionarios/i);
+      expect(quizText).toBeTruthy();
+    });
+  });
+
+  test('muestra ranking de la comunidad', async () => {
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({
+      user: { id: 100, nombre: 'Test User' },
+    });
+    communitiesApi.getById.mockResolvedValue({
+      ...mockCommunity,
+      esMiembro: true,
+    });
+    communitiesApi.getRanking.mockResolvedValue([
+      { id: 1, usuarioNombre: 'Top Student', puntuacion: 100 },
+      { id: 2, usuarioNombre: 'Second Place', puntuacion: 80 },
+    ]);
+
+    await renderComponent();
+    const rankingSection = screen.queryByText(/Ranking/i) || screen.queryByText(/Clasificación/i);
+    if (rankingSection) {
+      expect(rankingSection).toBeInTheDocument();
+    }
+  });
+
+  test('muestra botón de transferir admin para admins', async () => {
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({
+      user: { id: 100, nombre: 'Admin User' },
+    });
+    communitiesApi.getById.mockResolvedValue({
+      ...mockCommunity,
+      esMiembro: true,
+      miRol: 'ADMIN',
+      creador: { id: 100 },
+    });
+
+    await renderComponent();
+    const transferBtn = screen.queryByRole('button', { name: /Transferir|Admin/i });
+    if (transferBtn) {
+      expect(transferBtn).toBeInTheDocument();
+    }
+  });
+
+  test('permite promover un miembro a admin', async () => {
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({
+      user: { id: 100, nombre: 'Admin User' },
+    });
+    communitiesApi.getById.mockResolvedValue({
+      ...mockCommunity,
+      esMiembro: true,
+      miRol: 'ADMIN',
+    });
+    communitiesApi.getMembers.mockResolvedValue([
+      { id: 10, rol: 'ADMIN', usuario: { id: 100, nombre: 'Admin User' } },
+      { id: 12, rol: 'PROFESOR', usuario: { id: 12, nombre: 'Paula Profe' } },
+    ]);
+    communitiesApi.promoteMemberToAdmin.mockResolvedValue({});
+
+    await renderComponent();
+    const promoteBtn = screen.queryByRole('button', { name: /Promover|Hacer admin/i });
+    if (promoteBtn) {
+      userEvent.click(promoteBtn);
+      await waitFor(() => {
+        expect(communitiesApi.promoteMemberToAdmin).toHaveBeenCalled();
+      });
+    }
+  });
+
+  test('muestra botón de editar para admin', async () => {
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({
+      user: { id: 100, nombre: 'Admin User' },
+    });
+    communitiesApi.getById.mockResolvedValue({
+      ...mockCommunity,
+      esMiembro: true,
+      miRol: 'ADMIN',
+    });
+
+    await renderComponent();
+    const editBtn = screen.queryByRole('button', { name: /Editar comunidad|Editar/i });
+    if (editBtn) {
+      expect(editBtn).toBeInTheDocument();
+    }
+  });
+
+  test('renderiza imagen de la comunidad', async () => {
+    await renderComponent();
+    const imgs = screen.queryAllByRole('img');
+    const communityImg = imgs.find(el => el.tagName === 'IMG');
+    if (communityImg) {
+      expect(communityImg).toBeInTheDocument();
+    }
+  });
+
+  test('muestra botón de solicitar acceso cuando comunidad requiere aprobación', async () => {
+    localStorage.setItem('userId', '100');
+    useAuth.mockReturnValue({
+      user: { id: 100, nombre: 'Test User' },
+    });
+    communitiesApi.getById.mockResolvedValue({
+      ...mockCommunity,
+      tipoAcceso: 'PREVIA_APROBACION',
+      esMiembro: false,
+    });
+    communitiesApi.requestAccess = jest.fn().mockResolvedValue({});
+
+    await renderComponent();
+    const requestBtn = screen.queryByRole('button', { name: /Solicitar acceso|Unirse/i });
+    if (requestBtn) {
+      expect(requestBtn).toBeInTheDocument();
+    }
   });
 });

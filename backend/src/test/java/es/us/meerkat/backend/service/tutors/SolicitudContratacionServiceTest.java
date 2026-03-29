@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import es.us.meerkat.backend.dto.tutors.DisponibilidadTutorResponse;
+import es.us.meerkat.backend.dto.tutors.HorarioOcupadoResponse;
 import es.us.meerkat.backend.dto.tutors.SolicitudContratacionRequest;
 import es.us.meerkat.backend.dto.tutors.SolicitudContratacionResponse;
 import es.us.meerkat.backend.entity.tutors.EstadoSolicitudContratacion;
@@ -573,5 +574,601 @@ class SolicitudContratacionServiceTest {
                                         LocalTime.of(11, 0)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("máximo de 2 días desde la fecha actual");
+    }
+
+    // ── obtenerSolicitudesPendientesDelTutor ──────────────────────────
+
+    @Test
+    void obtenerSolicitudesPendientesDelTutorShouldReturnMappedList() {
+        Usuario tutorUser = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUser);
+        Usuario alumno = buildUsuario(1L, "alumno@test.es");
+
+        when(tutorRepository.findByUsuarioId(2L)).thenReturn(Optional.of(tutor));
+
+        SolicitudContratacionDirecta sol =
+                SolicitudContratacionDirecta.builder()
+                        .id(100L)
+                        .alumno(alumno)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.PENDIENTE)
+                        .dia(LocalDate.of(2027, 6, 15))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .tarifaHora(BigDecimal.valueOf(20))
+                        .importeTotal(BigDecimal.valueOf(20))
+                        .build();
+
+        when(solicitudRepository.findPendientesByTutorId(10L)).thenReturn(List.of(sol));
+
+        List<SolicitudContratacionResponse> result =
+                service.obtenerSolicitudesPendientesDelTutor(2L);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getId()).isEqualTo(100L);
+    }
+
+    @Test
+    void obtenerSolicitudesPendientesDelTutorShouldThrowWhenTutorNotFound() {
+        when(tutorRepository.findByUsuarioId(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.obtenerSolicitudesPendientesDelTutor(99L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Perfil de tutor no encontrado");
+    }
+
+    // ── getHorariosOcupados ──────────────────────────────────────────
+
+    @Test
+    void getHorariosOcupadosShouldReturnOccupiedSlots() {
+        Usuario alumno = buildUsuario(1L, "alumno@test.es");
+        Usuario tutorUser = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUser);
+
+        SolicitudContratacionDirecta sol =
+                SolicitudContratacionDirecta.builder()
+                        .id(1L)
+                        .alumno(alumno)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.PAGADA)
+                        .dia(LocalDate.of(2027, 6, 15))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .tarifaHora(BigDecimal.valueOf(20))
+                        .importeTotal(BigDecimal.valueOf(20))
+                        .build();
+
+        when(solicitudRepository.findActiveBookingsByTutorAndDate(10L, LocalDate.of(2027, 6, 15)))
+                .thenReturn(List.of(sol));
+
+        List<HorarioOcupadoResponse> result =
+                service.getHorariosOcupados(10L, LocalDate.of(2027, 6, 15));
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).horaInicio()).isEqualTo("10:00");
+        assertThat(result.get(0).horaFin()).isEqualTo("11:00");
+    }
+
+    // ── obtenerSolicitudParaPago ─────────────────────────────────────
+
+    @Test
+    void obtenerSolicitudParaPagoShouldReturnWhenAccepted() {
+        Usuario alumno = buildUsuario(1L, "alumno@test.es");
+        Usuario tutorUser = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUser);
+
+        SolicitudContratacionDirecta sol =
+                SolicitudContratacionDirecta.builder()
+                        .id(100L)
+                        .alumno(alumno)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.ACEPTADA)
+                        .dia(LocalDate.of(2027, 6, 15))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .tarifaHora(BigDecimal.valueOf(20))
+                        .importeTotal(BigDecimal.valueOf(20))
+                        .build();
+
+        when(solicitudRepository.findById(100L)).thenReturn(Optional.of(sol));
+
+        SolicitudContratacionResponse result = service.obtenerSolicitudParaPago(100L, 1L);
+
+        assertThat(result.getId()).isEqualTo(100L);
+    }
+
+    @Test
+    void obtenerSolicitudParaPagoShouldThrowWhenNotAlumno() {
+        Usuario alumno = buildUsuario(1L, "alumno@test.es");
+        Usuario tutorUser = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUser);
+
+        SolicitudContratacionDirecta sol =
+                SolicitudContratacionDirecta.builder()
+                        .id(100L)
+                        .alumno(alumno)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.ACEPTADA)
+                        .dia(LocalDate.of(2027, 6, 15))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .tarifaHora(BigDecimal.valueOf(20))
+                        .importeTotal(BigDecimal.valueOf(20))
+                        .build();
+
+        when(solicitudRepository.findById(100L)).thenReturn(Optional.of(sol));
+
+        assertThatThrownBy(() -> service.obtenerSolicitudParaPago(100L, 99L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("No tienes permiso para esta operación");
+    }
+
+    @Test
+    void obtenerSolicitudParaPagoShouldThrowWhenNotAccepted() {
+        Usuario alumno = buildUsuario(1L, "alumno@test.es");
+        Usuario tutorUser = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUser);
+
+        SolicitudContratacionDirecta sol =
+                SolicitudContratacionDirecta.builder()
+                        .id(100L)
+                        .alumno(alumno)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.PENDIENTE)
+                        .dia(LocalDate.of(2027, 6, 15))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .tarifaHora(BigDecimal.valueOf(20))
+                        .importeTotal(BigDecimal.valueOf(20))
+                        .build();
+
+        when(solicitudRepository.findById(100L)).thenReturn(Optional.of(sol));
+
+        assertThatThrownBy(() -> service.obtenerSolicitudParaPago(100L, 1L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("La solicitud debe estar aceptada para poder pagarla");
+    }
+
+    @Test
+    void obtenerSolicitudParaPagoShouldThrowWhenDateInPast() {
+        Usuario alumno = buildUsuario(1L, "alumno@test.es");
+        Usuario tutorUser = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUser);
+
+        SolicitudContratacionDirecta sol =
+                SolicitudContratacionDirecta.builder()
+                        .id(100L)
+                        .alumno(alumno)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.ACEPTADA)
+                        .dia(LocalDate.of(2020, 1, 1))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .tarifaHora(BigDecimal.valueOf(20))
+                        .importeTotal(BigDecimal.valueOf(20))
+                        .build();
+
+        when(solicitudRepository.findById(100L)).thenReturn(Optional.of(sol));
+
+        assertThatThrownBy(() -> service.obtenerSolicitudParaPago(100L, 1L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("ya ha pasado");
+    }
+
+    // ── calificarSolicitud ──────────────────────────────────────────
+
+    @Test
+    void calificarSolicitudShouldSetCalificacionAndSave() {
+        Usuario alumno = buildUsuario(1L, "alumno@test.es");
+        Usuario tutorUser = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUser);
+
+        SolicitudContratacionDirecta sol =
+                SolicitudContratacionDirecta.builder()
+                        .id(100L)
+                        .alumno(alumno)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.COMPLETADA)
+                        .dia(LocalDate.of(2027, 6, 15))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .tarifaHora(BigDecimal.valueOf(20))
+                        .importeTotal(BigDecimal.valueOf(20))
+                        .build();
+
+        when(solicitudRepository.findById(100L)).thenReturn(Optional.of(sol));
+        when(solicitudRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        SolicitudContratacionResponse result = service.calificarSolicitud(100L, 1L, 5, "Excelente");
+
+        assertThat(sol.getCalificacion()).isEqualTo(5);
+        assertThat(sol.getComentarioAlumno()).isEqualTo("Excelente");
+        verify(solicitudRepository).save(sol);
+    }
+
+    @Test
+    void calificarSolicitudShouldThrowWhenNotAlumno() {
+        Usuario alumno = buildUsuario(1L, "alumno@test.es");
+        Usuario tutorUser = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUser);
+
+        SolicitudContratacionDirecta sol =
+                SolicitudContratacionDirecta.builder()
+                        .id(100L)
+                        .alumno(alumno)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.COMPLETADA)
+                        .dia(LocalDate.of(2027, 6, 15))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .tarifaHora(BigDecimal.valueOf(20))
+                        .importeTotal(BigDecimal.valueOf(20))
+                        .build();
+
+        when(solicitudRepository.findById(100L)).thenReturn(Optional.of(sol));
+
+        assertThatThrownBy(() -> service.calificarSolicitud(100L, 99L, 5, "ok"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Solo el alumno puede calificar esta clase");
+    }
+
+    @Test
+    void calificarSolicitudShouldThrowWhenInvalidRating() {
+        Usuario alumno = buildUsuario(1L, "alumno@test.es");
+        Usuario tutorUser = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUser);
+
+        SolicitudContratacionDirecta sol =
+                SolicitudContratacionDirecta.builder()
+                        .id(100L)
+                        .alumno(alumno)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.COMPLETADA)
+                        .dia(LocalDate.of(2027, 6, 15))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .tarifaHora(BigDecimal.valueOf(20))
+                        .importeTotal(BigDecimal.valueOf(20))
+                        .build();
+
+        when(solicitudRepository.findById(100L)).thenReturn(Optional.of(sol));
+
+        assertThatThrownBy(() -> service.calificarSolicitud(100L, 1L, 6, "too high"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("entre 1 y 5");
+    }
+
+    // ── cancelarSolicitud (por tutor) ────────────────────────────────
+
+    @Test
+    void cancelarSolicitudShouldCancelWhenPendiente() {
+        Usuario alumno = buildUsuario(1L, "alumno@test.es");
+        Usuario tutorUser = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUser);
+
+        SolicitudContratacionDirecta sol =
+                SolicitudContratacionDirecta.builder()
+                        .id(100L)
+                        .alumno(alumno)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.PENDIENTE)
+                        .dia(LocalDate.of(2027, 6, 15))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .tarifaHora(BigDecimal.valueOf(20))
+                        .importeTotal(BigDecimal.valueOf(20))
+                        .build();
+
+        when(solicitudRepository.findById(100L)).thenReturn(Optional.of(sol));
+        when(solicitudRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        SolicitudContratacionResponse result = service.cancelarSolicitud(100L, 2L, "No disponible");
+
+        assertThat(sol.getEstado()).isEqualTo(EstadoSolicitudContratacion.CANCELADA_TUTOR);
+        assertThat(sol.getMotivoRechazo()).isEqualTo("No disponible");
+        verify(solicitudRepository).save(sol);
+        verify(broker)
+                .convertAndSendToUser(
+                        eq("1"), eq("/queue/solicitud_contratacion_respuesta"), any());
+    }
+
+    @Test
+    void cancelarSolicitudShouldRefundWhenPagada() throws Exception {
+        Usuario alumno = buildUsuario(1L, "alumno@test.es");
+        Usuario tutorUser = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUser);
+
+        SolicitudContratacionDirecta sol =
+                SolicitudContratacionDirecta.builder()
+                        .id(100L)
+                        .alumno(alumno)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.PAGADA)
+                        .dia(LocalDate.of(2027, 6, 15))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .tarifaHora(BigDecimal.valueOf(20))
+                        .importeTotal(BigDecimal.valueOf(20))
+                        .stripePaymentIntentId("pi_test")
+                        .build();
+
+        when(solicitudRepository.findById(100L)).thenReturn(Optional.of(sol));
+        when(solicitudRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        service.cancelarSolicitud(100L, 2L, "Urgencia");
+
+        verify(paymentService)
+                .reembolsarPago(
+                        eq("pi_test"), any(Usuario.class), any(Tutor.class), any(BigDecimal.class));
+        assertThat(sol.getEstado()).isEqualTo(EstadoSolicitudContratacion.CANCELADA_TUTOR);
+    }
+
+    @Test
+    void cancelarSolicitudShouldThrowWhenNotTutor() {
+        Usuario alumno = buildUsuario(1L, "alumno@test.es");
+        Usuario tutorUser = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUser);
+
+        SolicitudContratacionDirecta sol =
+                SolicitudContratacionDirecta.builder()
+                        .id(100L)
+                        .alumno(alumno)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.PENDIENTE)
+                        .dia(LocalDate.of(2027, 6, 15))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .tarifaHora(BigDecimal.valueOf(20))
+                        .importeTotal(BigDecimal.valueOf(20))
+                        .build();
+
+        when(solicitudRepository.findById(100L)).thenReturn(Optional.of(sol));
+
+        assertThatThrownBy(() -> service.cancelarSolicitud(100L, 99L, "motivo"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("No tienes permiso para gestionar esta solicitud");
+    }
+
+    @Test
+    void cancelarSolicitudShouldThrowWhenBadState() {
+        Usuario alumno = buildUsuario(1L, "alumno@test.es");
+        Usuario tutorUser = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUser);
+
+        SolicitudContratacionDirecta sol =
+                SolicitudContratacionDirecta.builder()
+                        .id(100L)
+                        .alumno(alumno)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.COMPLETADA)
+                        .dia(LocalDate.of(2027, 6, 15))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .tarifaHora(BigDecimal.valueOf(20))
+                        .importeTotal(BigDecimal.valueOf(20))
+                        .build();
+
+        when(solicitudRepository.findById(100L)).thenReturn(Optional.of(sol));
+
+        assertThatThrownBy(() -> service.cancelarSolicitud(100L, 2L, "motivo"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("no se puede cancelar");
+    }
+
+    // ── cancelarPorAlumno ────────────────────────────────────────────
+
+    @Test
+    void cancelarPorAlumnoShouldCancelWhenAceptada() {
+        Usuario alumno = buildUsuario(1L, "alumno@test.es");
+        Usuario tutorUser = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUser);
+
+        SolicitudContratacionDirecta sol =
+                SolicitudContratacionDirecta.builder()
+                        .id(100L)
+                        .alumno(alumno)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.ACEPTADA)
+                        .dia(LocalDate.of(2027, 6, 15))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .tarifaHora(BigDecimal.valueOf(20))
+                        .importeTotal(BigDecimal.valueOf(20))
+                        .build();
+
+        when(solicitudRepository.findById(100L)).thenReturn(Optional.of(sol));
+        when(solicitudRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        SolicitudContratacionResponse result =
+                service.cancelarPorAlumno(100L, 1L, "Cambio de planes");
+
+        assertThat(sol.getEstado()).isEqualTo(EstadoSolicitudContratacion.CANCELADA_ALUMNO);
+        assertThat(sol.getMotivoRechazo()).isEqualTo("Cambio de planes");
+        verify(solicitudRepository).save(sol);
+        verify(broker)
+                .convertAndSendToUser(
+                        eq("2"), eq("/queue/solicitud_contratacion_respuesta"), any());
+    }
+
+    @Test
+    void cancelarPorAlumnoShouldThrowWhenNotAlumno() {
+        Usuario alumno = buildUsuario(1L, "alumno@test.es");
+        Usuario tutorUser = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUser);
+
+        SolicitudContratacionDirecta sol =
+                SolicitudContratacionDirecta.builder()
+                        .id(100L)
+                        .alumno(alumno)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.ACEPTADA)
+                        .dia(LocalDate.of(2027, 6, 15))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .tarifaHora(BigDecimal.valueOf(20))
+                        .importeTotal(BigDecimal.valueOf(20))
+                        .build();
+
+        when(solicitudRepository.findById(100L)).thenReturn(Optional.of(sol));
+
+        assertThatThrownBy(() -> service.cancelarPorAlumno(100L, 99L, "motivo"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("No tienes permiso para esta operación");
+    }
+
+    @Test
+    void cancelarPorAlumnoShouldThrowWhenBadState() {
+        Usuario alumno = buildUsuario(1L, "alumno@test.es");
+        Usuario tutorUser = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUser);
+
+        SolicitudContratacionDirecta sol =
+                SolicitudContratacionDirecta.builder()
+                        .id(100L)
+                        .alumno(alumno)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.COMPLETADA)
+                        .dia(LocalDate.of(2027, 6, 15))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .tarifaHora(BigDecimal.valueOf(20))
+                        .importeTotal(BigDecimal.valueOf(20))
+                        .build();
+
+        when(solicitudRepository.findById(100L)).thenReturn(Optional.of(sol));
+
+        assertThatThrownBy(() -> service.cancelarPorAlumno(100L, 1L, "motivo"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("no se puede cancelar");
+    }
+
+    // ── rechazarReprogramacion ───────────────────────────────────────
+
+    @Test
+    void rechazarReprogramacionShouldRestoreEstadoAnterior() {
+        Usuario alumno = buildUsuario(1L, "alumno@test.es");
+        Usuario tutorUser = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUser);
+
+        SolicitudContratacionDirecta sol =
+                SolicitudContratacionDirecta.builder()
+                        .id(100L)
+                        .alumno(alumno)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.REPROGRAMACION_PENDIENTE)
+                        .estadoAnterior(EstadoSolicitudContratacion.PAGADA)
+                        .dia(LocalDate.of(2027, 6, 15))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .tarifaHora(BigDecimal.valueOf(20))
+                        .importeTotal(BigDecimal.valueOf(20))
+                        .reprogramacionDia(LocalDate.of(2027, 6, 20))
+                        .reprogramacionHoraInicio(LocalTime.of(14, 0))
+                        .reprogramacionHoraFin(LocalTime.of(15, 0))
+                        .build();
+
+        when(solicitudRepository.findById(100L)).thenReturn(Optional.of(sol));
+        when(solicitudRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        SolicitudContratacionResponse result = service.rechazarReprogramacion(100L, 1L);
+
+        assertThat(sol.getEstado()).isEqualTo(EstadoSolicitudContratacion.PAGADA);
+        assertThat(sol.getReprogramacionDia()).isNull();
+        assertThat(sol.getReprogramacionHoraInicio()).isNull();
+        assertThat(sol.getReprogramacionHoraFin()).isNull();
+        assertThat(sol.getEstadoAnterior()).isNull();
+        verify(solicitudRepository).save(sol);
+    }
+
+    @Test
+    void rechazarReprogramacionShouldThrowWhenNotReprogramacionPendiente() {
+        Usuario alumno = buildUsuario(1L, "alumno@test.es");
+        Usuario tutorUser = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUser);
+
+        SolicitudContratacionDirecta sol =
+                SolicitudContratacionDirecta.builder()
+                        .id(100L)
+                        .alumno(alumno)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.PAGADA)
+                        .dia(LocalDate.of(2027, 6, 15))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .tarifaHora(BigDecimal.valueOf(20))
+                        .importeTotal(BigDecimal.valueOf(20))
+                        .build();
+
+        when(solicitudRepository.findById(100L)).thenReturn(Optional.of(sol));
+
+        assertThatThrownBy(() -> service.rechazarReprogramacion(100L, 1L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("No hay reprogramación pendiente");
+    }
+
+    // ── aprobarReprogramacion ────────────────────────────────────────
+
+    @Test
+    void aprobarReprogramacionShouldApplyNewScheduleAndRecalculate() {
+        Usuario alumno = buildUsuario(1L, "alumno@test.es");
+        Usuario tutorUser = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUser);
+
+        SolicitudContratacionDirecta sol =
+                SolicitudContratacionDirecta.builder()
+                        .id(100L)
+                        .alumno(alumno)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.REPROGRAMACION_PENDIENTE)
+                        .estadoAnterior(EstadoSolicitudContratacion.PAGADA)
+                        .dia(LocalDate.of(2027, 6, 15))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .tarifaHora(BigDecimal.valueOf(30))
+                        .importeTotal(BigDecimal.valueOf(30))
+                        .reprogramacionDia(LocalDate.of(2027, 6, 20))
+                        .reprogramacionHoraInicio(LocalTime.of(14, 0))
+                        .reprogramacionHoraFin(LocalTime.of(16, 0))
+                        .build();
+
+        when(solicitudRepository.findById(100L)).thenReturn(Optional.of(sol));
+        when(solicitudRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        SolicitudContratacionResponse result = service.aprobarReprogramacion(100L, 1L);
+
+        assertThat(sol.getDia()).isEqualTo(LocalDate.of(2027, 6, 20));
+        assertThat(sol.getHoraInicio()).isEqualTo(LocalTime.of(14, 0));
+        assertThat(sol.getHoraFin()).isEqualTo(LocalTime.of(16, 0));
+        // 2 hours * 30 = 60
+        assertThat(sol.getImporteTotal()).isEqualByComparingTo(BigDecimal.valueOf(60));
+        assertThat(sol.getEstado()).isEqualTo(EstadoSolicitudContratacion.PAGADA);
+        assertThat(sol.getReprogramacionDia()).isNull();
+        verify(solicitudRepository).save(sol);
+    }
+
+    @Test
+    void aprobarReprogramacionShouldThrowWhenNotReprogramacionPendiente() {
+        Usuario alumno = buildUsuario(1L, "alumno@test.es");
+        Usuario tutorUser = buildUsuario(2L, "tutor@test.es");
+        Tutor tutor = buildTutor(10L, tutorUser);
+
+        SolicitudContratacionDirecta sol =
+                SolicitudContratacionDirecta.builder()
+                        .id(100L)
+                        .alumno(alumno)
+                        .tutor(tutor)
+                        .estado(EstadoSolicitudContratacion.ACEPTADA)
+                        .dia(LocalDate.of(2027, 6, 15))
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .tarifaHora(BigDecimal.valueOf(20))
+                        .importeTotal(BigDecimal.valueOf(20))
+                        .build();
+
+        when(solicitudRepository.findById(100L)).thenReturn(Optional.of(sol));
+
+        assertThatThrownBy(() -> service.aprobarReprogramacion(100L, 1L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("No hay reprogramación pendiente");
     }
 }
