@@ -16,7 +16,6 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -986,53 +985,111 @@ public class AuthService {
     }
 
     /**
-     * Solicita la recuperación de contraseña para un usuario.
+     * Genera una contraseña aleatoria segura con la longitud especificada.
+     *
+     * @param length longitud de la contraseña
+     * @return contraseña aleatoria con mayúsculas, minúsculas y dígitos
+     */
+    private String generarContrasenaSegura(final int length) {
+        final String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        final java.security.SecureRandom random = new java.security.SecureRandom();
+        final StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Solicita la recuperación de contraseña para un usuario. Genera un token JWT de corta duración
+     * y envía un enlace de restablecimiento por email.
      *
      * @param request DTO con el email del usuario
-     * @return MessageResponse con confirmación
-     * @throws ValidationException si hay error al procesar la solicitud (400).
+     * @return MessageResponse con confirmación (siempre genérica por seguridad)
      */
     public MessageResponse recuperarContrasena(final ForgotPasswordRequest request) {
         final String email = request.getEmail();
+        final MessageResponse genericResponse =
+                MessageResponse.builder()
+                        .message(
+                                "Si el email existe en el sistema, recibirás instrucciones "
+                                        + "de recuperación de contraseña en tu bandeja de entrada")
+                        .build();
 
         try {
-            Usuario usuario =
-                    usuarioRepository
-                            .findByEmail(email)
-                            .orElseThrow(
-                                    () -> {
-                                        // log.warn("Email no existe: {}", email);
-                                        return new NotFoundException();
-                                    });
+            final Usuario usuario = usuarioRepository.findByEmail(email).orElse(null);
 
-            // Generar contraseña temporal segura
-            final String temporaryPassword = generarContrasenaSegura(12);
+            // Respuesta genérica aunque el email no exista (evita enumeración de usuarios)
+            if (usuario == null) {
+                return genericResponse;
+            }
 
-            // Guardar contraseña temporal codificada
-            usuario.setPassword(passwordEncoder.encode(temporaryPassword));
-            usuarioRepository.save(usuario);
+            // Generar token JWT de restablecimiento (15 min de expiración)
+            final String resetToken = jwtService.generatePasswordResetToken(email);
 
-            // Enviar email
-            emailService.sendPasswordResetEmail(
-                    usuario.getEmail(), usuario.getNombre(), temporaryPassword);
+            // Construir enlace de restablecimiento
+            final String resetLink = frontendUrl + "/reset-password?token=" + resetToken;
 
-            return MessageResponse.builder()
-                    .message(
-                            "Si el email existe en el sistema, recibirás instrucciones "
-                                    + "de recuperación de contraseña en tu bandeja de entrada")
-                    .build();
+            // Enviar email con enlace
+            emailService.sendPasswordResetEmail(usuario.getEmail(), usuario.getNombre(), resetLink);
+
+            return genericResponse;
 
         } catch (Exception e) {
-            // log.error("Error al enviar email de recuperación: {}", e.getMessage());
-            throw new ValidationException("No se pudo enviar el email de recuperación", e);
+            log.error("Error al procesar solicitud de recuperación: {}", e.getMessage());
+            // Devolver respuesta genérica para no revelar errores internos
+            return genericResponse;
         }
     }
 
-    /** Genera una contraseña segura aleatoría. */
-    @SuppressWarnings("deprecation")
-    private String generarContrasenaSegura(final int length) {
-        return RandomStringUtils.randomAlphanumeric(length).toUpperCase()
-                + RandomStringUtils.randomNumeric(2);
+    /**
+     * Restablece la contraseña usando un token JWT de recuperación.
+     *
+     * @param request DTO con el token y la nueva contraseña.
+     * @return MessageResponse con confirmación.
+     * @throws ValidationException si el token es inválido, ha expirado, o la contraseña no cumple
+     *     requisitos.
+     */
+    @Transactional
+    public MessageResponse restablecerContrasena(
+            final es.us.meerkat.backend.dto.users.ResetPasswordRequest request) {
+        final String email;
+        try {
+            email = jwtService.validatePasswordResetToken(request.getToken());
+        } catch (Exception e) {
+            throw new ValidationException(
+                    "El enlace de recuperación es inválido o ha expirado. Solicita uno nuevo.");
+        }
+
+        final Usuario usuario =
+                usuarioRepository
+                        .findByEmail(email)
+                        .orElseThrow(
+                                () ->
+                                        new ValidationException(
+                                                "No se encontró una cuenta con ese email"));
+
+        // Validar complejidad de la nueva contraseña
+        final String newPassword = request.getNewPassword();
+        if (newPassword == null || newPassword.length() < MIN_PASSWORD_LENGTH) {
+            throw new ValidationException("La contraseña debe tener al menos 8 caracteres");
+        }
+        if (newPassword.length() > MAX_PASSWORD_LENGTH) {
+            throw new ValidationException("La contraseña no puede tener más de 128 caracteres");
+        }
+        if (!newPassword.matches(".*[A-Z].*")
+                || !newPassword.matches(".*[a-z].*")
+                || !newPassword.matches(".*[0-9].*")) {
+            throw new ValidationException(
+                    "La contraseña debe contener mayúsculas, minúsculas y números");
+        }
+
+        usuario.setPassword(passwordEncoder.encode(newPassword));
+        usuarioRepository.save(usuario);
+
+        return MessageResponse.builder()
+                .message("Contraseña restablecida correctamente. Ya puedes iniciar sesión.")
+                .build();
     }
 
     // ===============================

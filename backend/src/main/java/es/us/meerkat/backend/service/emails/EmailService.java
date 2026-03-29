@@ -133,10 +133,10 @@ public class EmailService {
     // ===============================
 
     public void sendPasswordResetEmail(
-            final String to, final String userName, final String temporaryPassword)
+            final String to, final String userName, final String resetLink)
             throws MessagingException {
         String subject = appName + " - Recuperación de contraseña";
-        String htmlContent = buildPasswordResetHtmlEmail(userName, temporaryPassword);
+        String htmlContent = buildPasswordResetHtmlEmail(userName, resetLink);
 
         try {
             doSendHtml(to, subject, htmlContent);
@@ -147,8 +147,7 @@ public class EmailService {
         }
     }
 
-    private String buildPasswordResetHtmlEmail(
-            final String userName, final String temporaryPassword) {
+    private String buildPasswordResetHtmlEmail(final String userName, final String resetLink) {
         return "<html>"
                 + "<head>"
                 + "<style>"
@@ -159,9 +158,9 @@ public class EmailService {
                 + ".content { background-color: #f9f9f9; padding: 20px; border: 1px solid #ddd; }"
                 + ".footer { background-color: #f0f0f0; padding: 15px; text-align: "
                 + "center; font-size: 12px; border-radius: 0 0 5px 5px; }"
-                + ".password-box { background-color: #e8f4f8; "
-                + "padding: 15px; border-left: 4px solid #2E75B6;"
-                + " margin: 20px 0; font-family: monospace; font-size: 14px; }"
+                + ".btn { display: inline-block; background-color: #2E75B6; color: white; "
+                + "padding: 12px 30px; text-decoration: none; border-radius: 5px; "
+                + "font-weight: bold; margin: 20px 0; }"
                 + ".warning { background-color: #fff3cd; padding: 10px; border-left:"
                 + " 4px solid #ffc107; margin: 15px 0; }"
                 + "</style>"
@@ -177,21 +176,28 @@ public class EmailService {
                 + "<p>Hola <strong>"
                 + userName
                 + "</strong>,</p>"
-                + "<p>Hemos recibido una solicitud para recuperar tu contraseña."
-                + "Si fuiste tú, utiliza la contraseña temporal a continuación:</p>"
-                + "<div class='password-box'>"
-                + "<strong>Contraseña temporal:</strong><br>"
-                + temporaryPassword
+                + "<p>Hemos recibido una solicitud para restablecer tu contraseña. "
+                + "Haz clic en el siguiente botón para crear una nueva:</p>"
+                + "<div style='text-align: center;'>"
+                + "<a href='"
+                + resetLink
+                + "' class='btn'>Restablecer contraseña</a>"
                 + "</div>"
                 + "<div class='warning'>"
                 + "<strong>⚠️ Importante:</strong>"
                 + "<ul>"
-                + "<li>Esta contraseña expirará en 24 horas.</li>"
-                + "<li>No compartas esta contraseña con nadie.</li>"
-                + "<li>Cambia tu contraseña lo antes posible después de acceder.</li>"
+                + "<li>Este enlace expirará en 15 minutos.</li>"
+                + "<li>Si no solicitaste esto, ignora este email.</li>"
+                + "<li>Tu cuenta permanece segura si no haces clic.</li>"
                 + "</ul>"
                 + "</div>"
-                + "<p>Si no solicitaste esto, ignora el email. Tu cuenta permanece segura.</p>"
+                + "<p style='font-size: 12px; color: #666;'>Si el botón no funciona, "
+                + "copia y pega este enlace en tu navegador:<br>"
+                + "<a href='"
+                + resetLink
+                + "'>"
+                + resetLink
+                + "</a></p>"
                 + "</div>"
                 + "<div class='footer'>"
                 + "<p>&copy; "

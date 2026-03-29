@@ -41,7 +41,8 @@ class EmailServiceTest {
     void sendPasswordResetEmailShouldCreateAndSendMimeMessage() throws Exception {
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
 
-        emailService.sendPasswordResetEmail("user@test.es", "Test User", "temp123");
+        emailService.sendPasswordResetEmail(
+                "user@test.es", "Test User", "http://localhost:3000/reset-password?token=abc123");
 
         verify(mailSender).send(mimeMessage);
     }
@@ -54,7 +55,9 @@ class EmailServiceTest {
         assertThatThrownBy(
                         () ->
                                 emailService.sendPasswordResetEmail(
-                                        "user@test.es", "Test User", "temp123"))
+                                        "user@test.es",
+                                        "Test User",
+                                        "http://localhost:3000/reset-password?token=abc123"))
                 .isInstanceOf(RuntimeException.class);
     }
 
