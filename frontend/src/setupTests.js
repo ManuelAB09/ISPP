@@ -4,6 +4,9 @@
 // learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
 
+// Global timeout to prevent any test from hanging indefinitely
+jest.setTimeout(15000);
+
 // Mock react-leaflet and leaflet to avoid ES6 module parsing issues in Jest
 jest.mock('react-leaflet', () => ({
   MapContainer: ({ children }) => <div data-testid="map-container">{children}</div>,

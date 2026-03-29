@@ -30,7 +30,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
+    "test": "react-scripts test --watchAll=false --forceExit",
     "eject": "react-scripts eject",
     "lint": "eslint src/"
   },
@@ -38,6 +38,18 @@
     "extends": [
       "react-app",
       "react-app/jest"
+    ],
+    "overrides": [
+      {
+        "files": ["**/*.test.{js,jsx}", "**/*.spec.{js,jsx}"],
+        "rules": {
+          "testing-library/no-unnecessary-act": "off",
+          "testing-library/no-node-access": "off",
+          "testing-library/no-wait-for-multiple-assertions": "off",
+          "testing-library/no-container": "off",
+          "jest/no-conditional-expect": "off"
+        }
+      }
     ]
   },
   "browserslist": {

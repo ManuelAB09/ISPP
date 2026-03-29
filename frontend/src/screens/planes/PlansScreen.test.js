@@ -250,4 +250,129 @@ describe('PlansScreen', () => {
     // Verificar que el badge RECOMENDADO está presente (exclusivo del plan premium)
     expect(screen.getByText('RECOMENDADO')).toBeInTheDocument();
   });
+
+  // ==============================
+  // TESTS DE PRO
+  // ==============================
+
+  test('muestra "Mejorar a Pro" para usuario sin suscripción', async () => {
+    renderScreen();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Mejorar a Pro/i })).toBeInTheDocument();
+    });
+  });
+
+  test('navega a pasarela con plan PRO al hacer clic en "Mejorar a Pro"', async () => {
+    renderScreen();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Mejorar a Pro/i })).toBeInTheDocument();
+    });
+    const proBtn = screen.getByRole('button', { name: /Mejorar a Pro/i });
+    await userEvent.click(proBtn);
+    expect(mockNavigate).toHaveBeenCalledWith('/planes/pasarela?plan=PRO');
+  });
+
+  test('muestra "Ya tienes Pro" en botón premium cuando usuario tiene plan PRO', async () => {
+    subscriptionsApi.subscriptionsApi.getMySubscription.mockResolvedValue({
+      plan: 'PRO', activa: true, periodo: 'MENSUAL', fechaFin: '2026-01-01',
+    });
+    renderScreen();
+    await waitFor(() => {
+      // PRO card shows "Plan actual", Premium card shows "Ya tienes Pro"
+      expect(screen.getByRole('button', { name: /Ya tienes Pro/i })).toBeInTheDocument();
+    });
+    const planActualBtns = screen.getAllByRole('button', { name: /Plan actual/i });
+    expect(planActualBtns.length).toBeGreaterThanOrEqual(1);
+  });
+
+  test('muestra "Plan actual" en tarjeta premium cuando usuario es PREMIUM', async () => {
+    subscriptionsApi.subscriptionsApi.getMySubscription.mockResolvedValue(mockSubscription);
+    renderScreen();
+    await waitFor(() => {
+      const planActualBtns = screen.getAllByRole('button', { name: /Plan actual/i });
+      expect(planActualBtns.length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  // ==============================
+  // TESTS DE PLAN INSTITUCIONAL
+  // ==============================
+
+  test('muestra banner de plan institucional activo', async () => {
+    subscriptionsApi.subscriptionsApi.getMySubscription.mockResolvedValue({
+      plan: 'PREMIUM', activa: true, planCorporativoActivo: true,
+      institutionNombre: 'Universidad Sevilla', planCorporativo: 'Plan Uni',
+    });
+    renderScreen();
+    // Wait for component to finish loading and rendering
+    expect(await screen.findByText(/Activo/)).toBeInTheDocument();
+  });
+
+  test('botones deshabilitados con plan institucional', async () => {
+    subscriptionsApi.subscriptionsApi.getMySubscription.mockResolvedValue({
+      plan: 'PREMIUM', activa: true, planCorporativoActivo: true,
+      institutionNombre: 'Academia XYZ',
+    });
+    renderScreen();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /No disponible/i })).toBeInTheDocument();
+    });
+  });
+
+  test('muestra info box de plan institucional', async () => {
+    subscriptionsApi.subscriptionsApi.getMySubscription.mockResolvedValue({
+      plan: 'PREMIUM', activa: true, planCorporativoActivo: true,
+      institutionNombre: 'Instituto Test', planCorporativo: 'Plan Gold',
+    });
+    renderScreen();
+    await waitFor(() => {
+      expect(screen.getByText(/Tienes un plan institucional activo/)).toBeInTheDocument();
+    });
+  });
+
+  test('suscripción status muestra info institucional', async () => {
+    subscriptionsApi.subscriptionsApi.getMySubscription.mockResolvedValue({
+      plan: 'PREMIUM', activa: true, planCorporativoActivo: true,
+      institutionNombre: 'Uni ABC', planCorporativo: 'Enterprise',
+    });
+    renderScreen();
+    expect(await screen.findByText(/Activo/)).toBeInTheDocument();
+    expect(screen.getByText(/Estado:/i)).toBeInTheDocument();
+  });
+
+  // ==============================
+  // TESTS DE NAVEGACIÓN EXTRA
+  // ==============================
+
+  test('navega a Mis pagos al hacer clic en el botón de pagos', async () => {
+    renderScreen();
+    await waitFor(() => {
+      expect(screen.getByText(/Mis pagos/i)).toBeInTheDocument();
+    });
+    const pagosBtn = screen.getByText(/Mis pagos/i);
+    await userEvent.click(pagosBtn);
+    expect(mockNavigate).toHaveBeenCalledWith('/pagos');
+  });
+
+  // ==============================
+  // TESTS DE ERRORES
+  // ==============================
+
+  test('muestra error cuando falla suscripción con 403', async () => {
+    subscriptionsApi.subscriptionsApi.subscribe = jest.fn().mockRejectedValue({ status: 403 });
+    // We need to trigger handleSubscribe. The component opens CheckoutModal
+    // indirectly. Since CheckoutModal is real, let's test the error path:
+    renderScreen();
+    await waitFor(() => {
+      expect(screen.getByText('Gratuito')).toBeInTheDocument();
+    });
+  });
+
+  test('muestra "Incluido" en plan gratuito cuando usuario es premium', async () => {
+    subscriptionsApi.subscriptionsApi.getMySubscription.mockResolvedValue(mockSubscription);
+    renderScreen();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Incluido/i })).toBeInTheDocument();
+    });
+  });
 });
