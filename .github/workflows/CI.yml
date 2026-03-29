@@ -66,6 +66,17 @@ jobs:
             else
               COMMITS=$(git log --format="%H" -1)
             fi
+          elif ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+            # Force-push: el SHA anterior ya no existe en el historial
+            BASE=$(git merge-base origin/develop HEAD 2>/dev/null \
+                || git merge-base origin/trunk HEAD 2>/dev/null \
+                || git merge-base origin/main HEAD 2>/dev/null \
+                || echo "")
+            if [[ -n "$BASE" ]]; then
+              COMMITS=$(git log --format="%H" "${BASE}..HEAD")
+            else
+              COMMITS=$(git log --format="%H" -1)
+            fi
           else
             COMMITS=$(git log --format="%H" "${BEFORE}..${{ github.sha }}")
           fi
