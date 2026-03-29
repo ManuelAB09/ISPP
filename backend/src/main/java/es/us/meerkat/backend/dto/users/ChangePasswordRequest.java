@@ -16,8 +16,11 @@ public class ChangePasswordRequest {
     @NotBlank(message = "La contraseña actual no puede estar vacía")
     private String currentPassword;
 
-    /** Nueva contraseña deseada. Debe tener al menos 8 caracteres. */
+    /**
+     * Nueva contraseña deseada. Debe tener entre 8 y 128 caracteres, con mayúsculas, minúsculas y
+     * números.
+     */
     @NotBlank(message = "La nueva contraseña no puede estar vacía")
-    @Size(min = 8, message = "La nueva contraseña debe tener al menos 8 caracteres")
+    @Size(min = 8, max = 128, message = "La nueva contraseña debe tener entre 8 y 128 caracteres")
     private String newPassword;
 }

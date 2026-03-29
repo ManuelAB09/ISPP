@@ -273,6 +273,18 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
             return
         }
 
+        // Validar longitud máxima
+        if (newPassword.trim().length > 128) {
+            setPasswordError("La nueva contraseña no puede tener más de 128 caracteres")
+            return
+        }
+
+        // Validar complejidad: mayúsculas, minúsculas y números
+        if (!/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+            setPasswordError("La contraseña debe contener mayúsculas, minúsculas y números")
+            return
+        }
+
         setIsChangingPassword(true)
 
         try {
