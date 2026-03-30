@@ -15,6 +15,7 @@ import es.us.meerkat.backend.dto.users.ForgotPasswordRequest;
 import es.us.meerkat.backend.dto.users.LoginRequest;
 import es.us.meerkat.backend.dto.users.RegisterRequest;
 import es.us.meerkat.backend.dto.users.ResendVerificationRequest;
+import es.us.meerkat.backend.dto.users.ResetPasswordRequest;
 import es.us.meerkat.backend.dto.users.TotpEnableResponse;
 import es.us.meerkat.backend.dto.users.TotpSetupResponse;
 import es.us.meerkat.backend.dto.users.TotpVerifyRequest;
@@ -186,7 +187,23 @@ public final class AuthController {
      */
     @PostMapping("/password/forgot")
     public ResponseEntity<MessageResponse> forgotPassword(
-            @RequestBody final ForgotPasswordRequest request) {
+            @Valid @RequestBody final ForgotPasswordRequest request) {
         return ResponseEntity.ok(authService.recuperarContrasena(request));
+    }
+
+    /**
+     * Restablece la contraseña usando un token de recuperación.
+     *
+     * <p>POST /api/v1/auth/password/reset Valida el token JWT y establece la nueva contraseña.
+     * Devuelve 200 si la contraseña se restableció correctamente. Devuelve 400 si el token es
+     * inválido, ha expirado, o la contraseña no cumple requisitos.
+     *
+     * @param request DTO con el token y la nueva contraseña.
+     * @return MessageResponse con confirmación.
+     */
+    @PostMapping("/password/reset")
+    public ResponseEntity<MessageResponse> resetPassword(
+            @Valid @RequestBody final ResetPasswordRequest request) {
+        return ResponseEntity.ok(authService.restablecerContrasena(request));
     }
 }

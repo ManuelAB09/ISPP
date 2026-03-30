@@ -17,6 +17,7 @@ import es.us.meerkat.backend.dto.users.AuthResponse;
 import es.us.meerkat.backend.dto.users.ForgotPasswordRequest;
 import es.us.meerkat.backend.dto.users.LoginRequest;
 import es.us.meerkat.backend.dto.users.RegisterRequest;
+import es.us.meerkat.backend.dto.users.ResetPasswordRequest;
 import es.us.meerkat.backend.dto.users.UserDetailResponse;
 import es.us.meerkat.backend.service.users.AuthService;
 
@@ -91,5 +92,22 @@ class AuthControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(serviceResponse);
         verify(authService).recuperarContrasena(request);
+    }
+
+    @Test
+    void resetPasswordShouldReturnOkWithServiceMessage() {
+        ResetPasswordRequest request =
+                ResetPasswordRequest.builder().token("reset-token").newPassword("NewPass1").build();
+        MessageResponse serviceResponse =
+                MessageResponse.builder()
+                        .message("Contraseña restablecida correctamente. Ya puedes iniciar sesión.")
+                        .build();
+        when(authService.restablecerContrasena(request)).thenReturn(serviceResponse);
+
+        ResponseEntity<MessageResponse> response = authController.resetPassword(request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo(serviceResponse);
+        verify(authService).restablecerContrasena(request);
     }
 }

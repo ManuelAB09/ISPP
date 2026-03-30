@@ -165,6 +165,13 @@ public class Usuario {
     /** Fecha de expiración del token de verificación. */
     private LocalDateTime tokenExpiration;
 
+    /**
+     * Fecha y hora del último cambio de contraseña. Se usa para invalidar tokens JWT emitidos antes
+     * de este instante (single-use reset tokens y revocación de sesiones tras cambio de
+     * contraseña).
+     */
+    private LocalDateTime passwordChangedAt;
+
     /** Fecha y hora de creación de la cuenta. */
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

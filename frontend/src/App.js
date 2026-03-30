@@ -7,6 +7,8 @@ import { SocketProvider } from './contexts/SocketContext';
 import Login from './screens/auth/Login';
 import Register from './screens/auth/Register';
 import VerifyEmail from './screens/auth/VerifyEmail';
+import ForgotPassword from './screens/auth/ForgotPassword';
+import ResetPassword from './screens/auth/ResetPassword';
 import Terms from './screens/legal/Terms';
 import Privacy from './screens/legal/Privacy';
 import LandingPage from './screens/landing/LandingPage';
@@ -138,6 +140,8 @@ function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/comunidades" element={<Comunidades />} />

@@ -609,6 +609,7 @@ public class UsuarioService {
         }
 
         usuario.setPassword(passwordEncoder.encode(requestParam.getNewPassword()));
+        usuario.setPasswordChangedAt(java.time.LocalDateTime.now());
         usuarioRepository.save(usuario);
     }
 

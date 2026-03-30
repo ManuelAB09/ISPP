@@ -33,6 +33,7 @@ import es.us.meerkat.backend.dto.users.AuthResponse;
 import es.us.meerkat.backend.dto.users.ForgotPasswordRequest;
 import es.us.meerkat.backend.dto.users.LoginRequest;
 import es.us.meerkat.backend.dto.users.RegisterRequest;
+import es.us.meerkat.backend.dto.users.ResetPasswordRequest;
 import es.us.meerkat.backend.dto.users.TotpSetupResponse;
 import es.us.meerkat.backend.dto.users.TwoFactorChallengeResponse;
 import es.us.meerkat.backend.entity.users.Usuario;
@@ -234,7 +235,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void recuperarContrasenaShouldPersistTemporaryPasswordAndSendEmail() throws Exception {
+    void recuperarContrasenaShouldGenerateTokenAndSendEmail() throws Exception {
         ForgotPasswordRequest request =
                 ForgotPasswordRequest.builder().email("user@meerkat.es").build();
 
@@ -243,27 +244,127 @@ class AuthServiceTest {
         usuario.setNombre("Usuario Reset");
 
         when(usuarioRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(usuario));
-        when(passwordEncoder.encode(any(String.class))).thenReturn("encoded-temp-password");
+        when(jwtService.generatePasswordResetToken(request.getEmail()))
+                .thenReturn("reset-jwt-token");
 
         MessageResponse response = authService.recuperarContrasena(request);
 
-        verify(usuarioRepository).save(usuario);
+        verify(jwtService).generatePasswordResetToken(request.getEmail());
         verify(emailService)
                 .sendPasswordResetEmail(any(String.class), any(String.class), any(String.class));
-        assertThat(usuario.getPassword()).isEqualTo("encoded-temp-password");
+        verify(usuarioRepository, never()).save(any());
         assertThat(response.getMessage())
                 .contains("Si el email existe en el sistema, recibirás instrucciones");
     }
 
     @Test
-    void recuperarContrasenaShouldThrowValidationExceptionWhenProcessingFails() {
+    void recuperarContrasenaShouldReturnGenericResponseForNonExistentEmail() {
         ForgotPasswordRequest request =
                 ForgotPasswordRequest.builder().email("missing@meerkat.es").build();
         when(usuarioRepository.findByEmail(request.getEmail())).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> authService.recuperarContrasena(request))
+        MessageResponse response = authService.recuperarContrasena(request);
+
+        assertThat(response.getMessage())
+                .contains("Si el email existe en el sistema, recibirás instrucciones");
+    }
+
+    @Test
+    void restablecerContrasenaShouldResetPasswordWithValidToken() {
+        ResetPasswordRequest request =
+                ResetPasswordRequest.builder().token("valid-token").newPassword("NewPass1").build();
+
+        Usuario usuario = new Usuario();
+        usuario.setEmail("user@meerkat.es");
+
+        when(jwtService.validatePasswordResetToken("valid-token")).thenReturn("user@meerkat.es");
+        when(usuarioRepository.findByEmail("user@meerkat.es")).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.encode("NewPass1")).thenReturn("encoded-new-password");
+
+        MessageResponse response = authService.restablecerContrasena(request);
+
+        verify(usuarioRepository).save(usuario);
+        assertThat(usuario.getPassword()).isEqualTo("encoded-new-password");
+        assertThat(response.getMessage()).contains("Contraseña restablecida correctamente");
+    }
+
+    @Test
+    void restablecerContrasenaShouldThrowWhenTokenIsInvalid() {
+        ResetPasswordRequest request =
+                ResetPasswordRequest.builder()
+                        .token("expired-token")
+                        .newPassword("NewPass1")
+                        .build();
+
+        when(jwtService.validatePasswordResetToken("expired-token"))
+                .thenThrow(new RuntimeException("Token expired"));
+
+        assertThatThrownBy(() -> authService.restablecerContrasena(request))
                 .isInstanceOf(ValidationException.class)
-                .hasMessage("No se pudo enviar el email de recuperación");
+                .hasMessageContaining("inválido o ha expirado");
+    }
+
+    @Test
+    void restablecerContrasenaShouldThrowWhenPasswordTooWeak() {
+        ResetPasswordRequest request =
+                ResetPasswordRequest.builder().token("valid-token").newPassword("weak").build();
+
+        Usuario usuario = new Usuario();
+        usuario.setEmail("user@meerkat.es");
+
+        when(jwtService.validatePasswordResetToken("valid-token")).thenReturn("user@meerkat.es");
+        when(usuarioRepository.findByEmail("user@meerkat.es")).thenReturn(Optional.of(usuario));
+
+        assertThatThrownBy(() -> authService.restablecerContrasena(request))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("al menos 8 caracteres");
+    }
+
+    @Test
+    void restablecerContrasenaShouldRejectReusedToken() {
+        ResetPasswordRequest request =
+                ResetPasswordRequest.builder()
+                        .token("reused-token")
+                        .newPassword("NewPass1")
+                        .build();
+
+        Usuario usuario = new Usuario();
+        usuario.setEmail("user@meerkat.es");
+        // Simulate password already changed after token was issued
+        usuario.setPasswordChangedAt(LocalDateTime.now());
+
+        when(jwtService.validatePasswordResetToken("reused-token")).thenReturn("user@meerkat.es");
+        when(usuarioRepository.findByEmail("user@meerkat.es")).thenReturn(Optional.of(usuario));
+        // Token was issued 5 minutes before the password change
+        when(jwtService.extractIssuedAt("reused-token"))
+                .thenReturn(
+                        java.util.Date.from(
+                                usuario.getPasswordChangedAt()
+                                        .minusMinutes(5)
+                                        .atZone(java.time.ZoneId.systemDefault())
+                                        .toInstant()));
+
+        assertThatThrownBy(() -> authService.restablecerContrasena(request))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("inválido o ha expirado");
+    }
+
+    @Test
+    void restablecerContrasenaShouldSetPasswordChangedAt() {
+        ResetPasswordRequest request =
+                ResetPasswordRequest.builder().token("valid-token").newPassword("NewPass1").build();
+
+        Usuario usuario = new Usuario();
+        usuario.setEmail("user@meerkat.es");
+
+        when(jwtService.validatePasswordResetToken("valid-token")).thenReturn("user@meerkat.es");
+        when(usuarioRepository.findByEmail("user@meerkat.es")).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.encode("NewPass1")).thenReturn("encoded-new-password");
+
+        authService.restablecerContrasena(request);
+
+        assertThat(usuario.getPasswordChangedAt()).isNotNull();
+        verify(usuarioRepository).save(usuario);
     }
 
     // ── registrar validation branches ─────────────────────────────────────
