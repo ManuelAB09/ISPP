@@ -86,9 +86,8 @@ class JwtServiceTest {
 
         String token = jwtService.generateToken("user@test.es");
 
-        // JJWT throws ExpiredJwtException during parsing, which means the token is rejected
-        assertThatThrownBy(() -> jwtService.isTokenValid(token, "user@test.es"))
-                .isInstanceOf(io.jsonwebtoken.ExpiredJwtException.class);
+        // isTokenValid catches ExpiredJwtException internally and returns false
+        assertThat(jwtService.isTokenValid(token, "user@test.es")).isFalse();
     }
 
     @Test

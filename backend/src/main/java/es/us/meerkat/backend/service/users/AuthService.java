@@ -1105,7 +1105,8 @@ public class AuthService {
                         .orElseThrow(
                                 () ->
                                         new ValidationException(
-                                                "No se encontró una cuenta con ese email"));
+                                                "El enlace de recuperación es inválido o ha"
+                                                        + " expirado. Solicita uno nuevo."));
 
         // Rechazar token si la contraseña ya fue cambiada después de su emisión (single-use)
         if (usuario.getPasswordChangedAt() != null) {

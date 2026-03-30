@@ -65,16 +65,20 @@ public class JwtService {
      * @return true si el token es válido.
      */
     public boolean isTokenValid(final String token, final String email) {
-        final Claims claims = extractAllClaims(token);
-        final String purpose = claims.get("purpose", String.class);
-        // Rechazar tokens con propósito específico (p.ej. password-reset)
-        if (purpose != null) {
+        try {
+            final Claims claims = extractAllClaims(token);
+            final String purpose = claims.get("purpose", String.class);
+            // Rechazar tokens con propósito específico (p.ej. password-reset)
+            if (purpose != null) {
+                return false;
+            }
+            final Date expiration = claims.getExpiration();
+            return claims.getSubject().equals(email)
+                    && expiration != null
+                    && expiration.after(new Date());
+        } catch (Exception e) {
             return false;
         }
-        final Date expiration = claims.getExpiration();
-        return claims.getSubject().equals(email)
-                && expiration != null
-                && expiration.after(new Date());
     }
 
     /**
