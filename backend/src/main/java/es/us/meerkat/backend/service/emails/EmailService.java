@@ -135,7 +135,7 @@ public class EmailService {
     public void sendPasswordResetEmail(
             final String to, final String userName, final String resetLink)
             throws MessagingException {
-        String subject = appName + " - Recuperación de contraseña";
+        String subject = "Meerkatters - Recuperación de contraseña";
         String htmlContent = buildPasswordResetHtmlEmail(userName, resetLink);
 
         try {
@@ -168,9 +168,7 @@ public class EmailService {
                 + "<body>"
                 + "<div class='container'>"
                 + "<div class='header'>"
-                + "<h1>"
-                + appName
-                + " - Recuperación de Contraseña</h1>"
+                + "<h1>Meerkatters - Recuperación de Contraseña</h1>"
                 + "</div>"
                 + "<div class='content'>"
                 + "<p>Hola <strong>"
@@ -181,28 +179,19 @@ public class EmailService {
                 + "<div style='text-align: center;'>"
                 + "<a href='"
                 + escapeHtml(resetLink)
-                + "' class='btn'>Restablecer contraseña</a>"
-                + "</div>"
-                + "<div class='warning'>"
-                + "<strong>⚠️ Importante:</strong>"
-                + "<ul>"
-                + "<li>Este enlace expirará en 15 minutos.</li>"
-                + "<li>Si no solicitaste esto, ignora este email.</li>"
-                + "<li>Tu cuenta permanece segura si no haces clic.</li>"
-                + "</ul>"
-                + "</div>"
-                + "<p style='font-size: 12px; color: #666;'>Si el botón no funciona, "
-                + "copia y pega este enlace en tu navegador:<br>"
-                + "<a href='"
+                + "' class='btn' style='color: white !important; text-decoration:"
+                + " none;'>Restablecer contraseña</a></div><div class='warning'><strong>⚠️"
+                + " Importante:</strong><ul><li>Este enlace expirará en 15 minutos.</li><li>Si no"
+                + " solicitaste esto, ignora este email.</li><li>Tu cuenta permanece segura si no"
+                + " haces clic.</li></ul></div><p style='font-size: 12px; color: #666;'>Si el botón"
+                + " no funciona, copia y pega este enlace en tu navegador:<br><a href='"
                 + escapeHtml(resetLink)
                 + "'>"
                 + escapeHtml(resetLink)
                 + "</a></p>"
                 + "</div>"
                 + "<div class='footer'>"
-                + "<p>&copy; "
-                + appName
-                + "</p>"
+                + "<p>&copy; Meerkatters</p>"
                 + "</div>"
                 + "</div>"
                 + "</body>"
@@ -469,7 +458,7 @@ public class EmailService {
             final String verificationToken,
             final String verificationUrl)
             throws MessagingException {
-        String subject = appName + " - Verifica tu cuenta";
+        String subject = "Meerkatters - Verifica tu cuenta";
         String htmlContent =
                 buildVerificationHtmlEmail(userName, verificationToken, verificationUrl);
 
@@ -497,16 +486,13 @@ public class EmailService {
                 + " bold; margin: 20px 0; }.button:hover { background-color: #1e2340; }.info {"
                 + " background-color: #e8f4f8; padding: 15px; border-left: 4px solid #2D3250;"
                 + " margin: 20px 0; }</style></head><body><div class='container'><div"
-                + " class='header'><h1>¡Bienvenido a "
-                + appName
-                + "!</h1>"
+                + " class='header'><h1>¡Bienvenido a Meerkatters!</h1>"
                 + "</div>"
                 + "<div class='content'>"
                 + "<p>Hola <strong>"
                 + userName
                 + "</strong>,</p>"
-                + "<p>Gracias por registrarte en "
-                + appName
+                + "<p>Gracias por registrarte en Meerkatters"
                 + ". Para completar tu registro y activar tu cuenta, por favor verifica tu"
                 + " dirección de correo electrónico haciendo clic en el siguiente botón:</p><div"
                 + " style='text-align: center;'><a href='"
@@ -521,9 +507,7 @@ public class EmailService {
                 + "</p>"
                 + "</div>"
                 + "<div class='footer'>"
-                + "<p>&copy; "
-                + appName
-                + " - Universidad de Sevilla</p>"
+                + "<p>&copy; Meerkatters - Universidad de Sevilla</p>"
                 + "</div>"
                 + "</div>"
                 + "</body>"
