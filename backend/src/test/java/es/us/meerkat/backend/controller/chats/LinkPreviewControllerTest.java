@@ -53,4 +53,40 @@ class LinkPreviewControllerTest {
             assertThat(e).isInstanceOf(IllegalArgumentException.class);
         }
     }
+
+    @Test
+    void previewShouldReturnOkWithMetadata() {
+        LinkPreviewRequest req = new LinkPreviewRequest();
+        req.setUrl("https://test.com");
+        LinkPreviewResponse resp =
+                LinkPreviewResponse.builder()
+                        .url("https://test.com")
+                        .domain("test.com")
+                        .title("Test Site")
+                        .description("A test site")
+                        .build();
+        when(service.getPreview(req.getUrl())).thenReturn(resp);
+
+        ResponseEntity<LinkPreviewResponse> response = controller.preview(req);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().getTitle()).isEqualTo("Test Site");
+    }
+
+    @Test
+    void previewShouldReturnOkWithMinimalData() {
+        LinkPreviewRequest req = new LinkPreviewRequest();
+        req.setUrl("https://minimal.com");
+        LinkPreviewResponse resp =
+                LinkPreviewResponse.builder()
+                        .url("https://minimal.com")
+                        .domain("minimal.com")
+                        .build();
+        when(service.getPreview(req.getUrl())).thenReturn(resp);
+
+        ResponseEntity<LinkPreviewResponse> response = controller.preview(req);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+    }
 }
