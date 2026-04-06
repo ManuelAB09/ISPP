@@ -2,17 +2,21 @@ package es.us.meerkat.backend.service.subscriptions;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.dto.subscriptions.SubscriptionResponse;
+import es.us.meerkat.backend.entity.communities.Comunidad;
 import es.us.meerkat.backend.entity.communities.Institution;
 import es.us.meerkat.backend.entity.subscriptions.Suscripcion;
 import es.us.meerkat.backend.entity.subscriptions.TipoPlan;
+import es.us.meerkat.backend.entity.subscriptions.TipoPlanComunidad;
 import es.us.meerkat.backend.entity.subscriptions.TipoTransaccion;
 import es.us.meerkat.backend.entity.users.Usuario;
+import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.InstitutionRepository;
 import es.us.meerkat.backend.repository.subscriptions.SuscripcionRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
@@ -26,7 +30,10 @@ public class SuscripcionService {
     private final SuscripcionRepository suscripcionRepository;
     private final UsuarioRepository usuarioRepository;
     private final InstitutionRepository institutionRepository;
+    private final ComunidadRepository comunidadRepository;
     private final PaymentService paymentService;
+
+    private static final int PREMIUM_COMMUNITY_MAX_MEMBERS = 75;
 
     /**
      * Obtiene todos los planes disponibles.
@@ -281,6 +288,16 @@ public class SuscripcionService {
         // 3. Actualizar plan del usuario
         usuario.setPlan(planSolicitado);
         usuarioRepository.save(usuario);
+
+        // Upgrade all communities created by the user (non-institutional) to PREMIUM
+        List<Comunidad> comunidades = comunidadRepository.findByCreadorId(usuarioId);
+        for (Comunidad c : comunidades) {
+            if (c.getInstitution() == null && c.getTipoPlan() != TipoPlanComunidad.PREMIUM) {
+                c.setTipoPlan(TipoPlanComunidad.PREMIUM);
+                c.setMaxMiembros(PREMIUM_COMMUNITY_MAX_MEMBERS);
+            }
+        }
+        comunidadRepository.saveAll(comunidades);
     }
 
     /** Compatibilidad: activa suscripción asumiendo plan PREMIUM. */
