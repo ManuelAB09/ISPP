@@ -1,3 +1,4 @@
+// src/components/Header/Header.jsx
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getApiBaseUrl } from '../../api/baseUrl';
@@ -27,23 +28,42 @@ export default function Header({ user, page }) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { showBanner, planName, fechaFin, dismiss } = useSubscriptionExpiry();
     const { communityUnreadById } = useNotificationContext();
-    // Calcular total de no leídos de chats privados y comunidades
     const [privateUnread, setPrivateUnread] = useState(0);
+
+    // Contar borradores guardados para mostrar badge
+    const [draftsCount, setDraftsCount] = useState(0);
+
     useEffect(() => {
-        // Obtener de localStorage o API si es necesario, aquí solo ejemplo simple
         const conversaciones = JSON.parse(localStorage.getItem('conversacionesNoLeidas') || '[]');
         setPrivateUnread(conversaciones.reduce((acc, c) => acc + (c.noLeidos || 0), 0));
     }, []);
+
+    useEffect(() => {
+        const countDrafts = () => {
+            let count = 0;
+            try {
+                const eventDrafts = JSON.parse(localStorage.getItem('eventDrafts') || '[]');
+                count += Array.isArray(eventDrafts) ? eventDrafts.length : 0;
+            } catch { /* empty */ }
+            try {
+                if (localStorage.getItem('crearComunidadDraft')) count += 1;
+            } catch { /* empty */ }
+            setDraftsCount(count);
+        };
+
+        countDrafts();
+
+        // Escuchar cambios en localStorage (por si se guarda un borrador en otra pestaña)
+        window.addEventListener('storage', countDrafts);
+        return () => window.removeEventListener('storage', countDrafts);
+    }, []);
+
     const communityUnread = Object.values(communityUnreadById || {}).reduce((acc, n) => acc + (n || 0), 0);
     const totalChatsUnread = privateUnread + communityUnread;
 
-    const toggleMenu = () => {
-        setIsMenuOpen(!isMenuOpen);
-    };
+    const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+    const closeMenu = () => setIsMenuOpen(false);
 
-    const closeMenu = () => {
-        setIsMenuOpen(false);
-    };
     const storedUser = (() => {
         try {
             return JSON.parse(localStorage.getItem('userProfile') || 'null');
@@ -106,6 +126,14 @@ export default function Header({ user, page }) {
                         )}
                     </Link>
                     <Link to="/planes" className={page === 'planes' ? 'active' : ''}>Planes</Link>
+                    {isAuthenticated && (
+                        <Link to="/mis-borradores" className={page === 'borradores' ? 'active' : ''}>
+                            Borradores
+                            {draftsCount > 0 && (
+                                <span className="header-notification-badge">{draftsCount}</span>
+                            )}
+                        </Link>
+                    )}
                     {!isAuthenticated && (
                         <Link to="/login">Iniciar sesión</Link>
                     )}
@@ -147,6 +175,14 @@ export default function Header({ user, page }) {
                         )}
                     </Link>
                     <Link to="/planes" className={page === 'planes' ? 'active' : ''} onClick={closeMenu}>Planes</Link>
+                    {isAuthenticated && (
+                        <Link to="/mis-borradores" className={page === 'borradores' ? 'active' : ''} onClick={closeMenu}>
+                            Borradores
+                            {draftsCount > 0 && (
+                                <span className="header-notification-badge">{draftsCount}</span>
+                            )}
+                        </Link>
+                    )}
                     {!isAuthenticated && (
                         <Link to="/login" onClick={closeMenu}>Iniciar sesión</Link>
                     )}
@@ -155,5 +191,3 @@ export default function Header({ user, page }) {
         </>
     );
 }
-
-

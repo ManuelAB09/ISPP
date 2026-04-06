@@ -461,10 +461,27 @@ const CrearEvento = () => {
   };
 
   const handleSaveDraft = () => {
-    localStorage.setItem('eventDraft', JSON.stringify(formData));
-    alert('Borrador guardado correctamente.');
+    const draft = {
+      ...formData,
+      selectedCommunityId,
+      savedAt: new Date().toISOString(),
+    };
+    try {
+      const existing = JSON.parse(localStorage.getItem('eventDrafts') || '[]');
+      // Busca si ya hay borrador con mismo título para actualizar
+      const idx = existing.findIndex(d => d.nombre === formData.nombre && d.selectedCommunityId === selectedCommunityId);
+      if (idx >= 0) {
+        existing[idx] = draft;
+      } else {
+        existing.push(draft);
+      }
+      localStorage.setItem('eventDrafts', JSON.stringify(existing));
+      alert('Borrador guardado correctamente.');
+    } catch (err) {
+      console.error('Error guardando borrador:', err);
+      alert('No se pudo guardar el borrador.');
+    }
   };
-
 
   return (
     <div className="page-container">
@@ -500,340 +517,340 @@ const CrearEvento = () => {
             </button>
           </div>
         ) : (
-        <>
-        <div className="dotted-divider"></div>
+          <>
+            <div className="dotted-divider"></div>
 
-        <div className="form-grid">
-          <div className="left-column">
-            <div className="community-info">
-              <div className="community-image">
-                <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=150&q=80" alt="Evento" />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                <h3 className="community-title">Evento de comunidad</h3>
-                {!isEdit && myCommunities.length > 0 && (
-                  <select
-                    className="input-box" 
-                    style={{ marginTop: '8px', padding: '8px' }}
-                    value={selectedCommunityId} 
-                    onChange={(e) => setSelectedCommunityId(e.target.value)}
-                  >
-                    <option value="" disabled>Selecciona una comunidad...</option>
-                    {myCommunities.map(c => (
-                      <option key={c.id} value={c.id}>
-                        {c.nombre}{c.miRol ? ` · ${getCommunityRoleLabel(c.miRol)}` : ''}
-                      </option>
-                    ))}
-                  </select>
-                )}
-                {!isEdit && selectedCommunityRole && (
-                  <span className="field-hint" style={{ marginTop: '8px' }}>
-                    Rol detectado en esta comunidad: {getCommunityRoleLabel(selectedCommunityRole)}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="input-group">
-              <label className="input-label">Fecha de inicio *</label>
-              <div className="input-row">
-                <input type="text" name="dia" placeholder="DD" value={formData.dia} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-small ${validationErrors.fecha ? 'input-error' : ''}`} maxLength={2} />
-                <input type="text" name="mes" placeholder="MM" value={formData.mes} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-small ${validationErrors.fecha ? 'input-error' : ''}`} maxLength={2} />
-                <input type="text" name="anio" placeholder="YYYY" value={formData.anio} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-medium ${validationErrors.fecha ? 'input-error' : ''}`} maxLength={4} />
-                <LuCalendar className="input-icon" />
-              </div>
-              {validationErrors.fecha && <span className="field-error">{validationErrors.fecha}</span>}
-            </div>
-
-            <div className="input-group">
-              <label className="input-label">Hora de inicio *</label>
-              <div className="input-row">
-                <input type="text" name="hora" placeholder="HH" value={formData.hora} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-medium ${validationErrors.hora ? 'input-error' : ''}`} maxLength={2} />
-                <input type="text" name="minuto" placeholder="mm" value={formData.minuto} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-medium ${validationErrors.hora ? 'input-error' : ''}`} maxLength={2} />
-                <LuSquareCheck className="input-icon" />
-              </div>
-              {validationErrors.hora && <span className="field-error">{validationErrors.hora}</span>}
-            </div>
-
-            <div className="input-group">
-              <label className="input-label">Fecha de fin (opcional)</label>
-              <div className="input-row">
-                <input type="text" name="diaFin" placeholder="DD" value={formData.diaFin} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-small ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={2} />
-                <input type="text" name="mesFin" placeholder="MM" value={formData.mesFin} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-small ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={2} />
-                <input type="text" name="anioFin" placeholder="YYYY" value={formData.anioFin} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-medium ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={4} />
-                <LuCalendar className="input-icon" />
-              </div>
-              {validationErrors.fechaFin && <span className="field-error">{validationErrors.fechaFin}</span>}
-            </div>
-
-            <div className="input-group">
-              <label className="input-label">Hora de fin (opcional)</label>
-              <div className="input-row">
-                <input type="text" name="horaFin" placeholder="HH" value={formData.horaFin} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-medium ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={2} />
-                <input type="text" name="minutoFin" placeholder="mm" value={formData.minutoFin} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-medium ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={2} />
-                <LuSquareCheck className="input-icon" />
-              </div>
-            </div>
-
-            <div className="input-group">
-              <label className="input-label">Aforo máximo *</label>
-              <div className="input-row">
-                <input type="text" name="aforo" placeholder="Ej. 30" value={formData.aforo} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-medium ${validationErrors.aforo ? 'input-error' : ''}`} min={1} max={999} maxLength={AFORO_MAX_DIGITS} />
-                <LuUsers className="input-icon" />
-              </div>
-              {validationErrors.aforo && <span className="field-error">{validationErrors.aforo}</span>}
-              <span className="field-hint">Solo números (máximo 3 cifras).</span>
-            </div>
-          </div>
-
-          <div className="right-column">
-            <div className="input-group">
-              <label className="input-label">Nombre del Evento *</label>
-              <input type="text" name="nombre" placeholder="Ej. Clase de NodeJS + Sequelize" value={formData.nombre} onChange={handleChange} className={`input-box input-large ${validationErrors.nombre ? 'input-error' : ''}`} />
-              {validationErrors.nombre && <span className="field-error">{validationErrors.nombre}</span>}
-            </div>
-
-            <div className="input-group">
-              <label className="input-label">Descripción</label>
-              <textarea name="descripcion" placeholder="¿De qué trata este evento? Comparte los objetivos" value={formData.descripcion} onChange={handleChange} rows="3" className="input-box input-large"></textarea>
-            </div>
-
-            <div className="input-group">
-              <label className="input-label">Materiales necesarios</label>
-              <div className="materials-input-row">
-                <input
-                  type="text"
-                  placeholder="Ej. Libro de texto"
-                  value={materialInput}
-                  onChange={(e) => setMaterialInput(e.target.value)}
-                  onKeyDown={handleMaterialKeyDown}
-                  className="input-box input-large"
-                />
-                <button type="button" className="btn-material-add" onClick={handleAddMaterial}>
-                  Añadir
-                </button>
-              </div>
-              {formData.materiales.length > 0 && (
-                <div className="materials-list">
-                  {formData.materiales.map((material, index) => (
-                    <span key={`${material}-${index}`} className="material-chip">
-                      {material}
-                      <button
-                        type="button"
-                        className="material-chip-remove"
-                        onClick={() => handleRemoveMaterial(index)}
-                        aria-label={`Eliminar ${material}`}
+            <div className="form-grid">
+              <div className="left-column">
+                <div className="community-info">
+                  <div className="community-image">
+                    <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=150&q=80" alt="Evento" />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                    <h3 className="community-title">Evento de comunidad</h3>
+                    {!isEdit && myCommunities.length > 0 && (
+                      <select
+                        className="input-box"
+                        style={{ marginTop: '8px', padding: '8px' }}
+                        value={selectedCommunityId}
+                        onChange={(e) => setSelectedCommunityId(e.target.value)}
                       >
-                        ×
-                      </button>
-                    </span>
-                  ))}
+                        <option value="" disabled>Selecciona una comunidad...</option>
+                        {myCommunities.map(c => (
+                          <option key={c.id} value={c.id}>
+                            {c.nombre}{c.miRol ? ` · ${getCommunityRoleLabel(c.miRol)}` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    {!isEdit && selectedCommunityRole && (
+                      <span className="field-hint" style={{ marginTop: '8px' }}>
+                        Rol detectado en esta comunidad: {getCommunityRoleLabel(selectedCommunityRole)}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              )}
-              <span className="field-hint">Escribe un material y pulsa "Añadir" o Enter.</span>
-            </div>
 
-            <div className="input-group">
-              <label className="input-label">Visibilidad del evento</label>
-              <div className="toggle-container">
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, privado: false })}
-                  className={`toggle-btn ${!formData.privado ? 'active' : 'inactive'}`}
-                >
-                  <LuEye className="toggle-icon" /> Público
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, privado: true })}
-                  className={`toggle-btn ${formData.privado ? 'active' : 'inactive'}`}
-                >
-                  <LuEyeOff className="toggle-icon" /> Privado
-                </button>
-              </div>
-              <span className="field-hint">
-                {formData.privado 
-                  ? 'Solo visible para miembros de la comunidad' 
-                  : 'Visible para todos los usuarios de la plataforma'}
-              </span>
-            </div>
-
-            <div className="input-group">
-              <label className="input-label">Mostrar en mapa</label>
-              <div className="toggle-container">
-                <button
-                  type="button"
-                  onClick={() => !formData.tipoLocalizacion !== 'Online' && setFormData({ ...formData, visibleEnMapa: true })}
-                  className={`toggle-btn ${formData.visibleEnMapa && formData.tipoLocalizacion !== 'Online' ? 'active' : 'inactive'} ${formData.tipoLocalizacion === 'Online' ? 'toggle-btn--disabled' : ''}`}
-                  disabled={formData.tipoLocalizacion === 'Online'}
-                >
-                  <LuMap className="toggle-icon" /> Sí
-                </button>
-                <button
-                  type="button"
-                  onClick={() => formData.tipoLocalizacion !== 'Online' && setFormData({ ...formData, visibleEnMapa: false })}
-                  className={`toggle-btn ${(!formData.visibleEnMapa || formData.tipoLocalizacion === 'Online') ? 'active' : 'inactive'} ${formData.tipoLocalizacion === 'Online' ? 'toggle-btn--disabled' : ''}`}
-                  disabled={formData.tipoLocalizacion === 'Online'}
-                >
-                  <LuMapPinOff className="toggle-icon" /> No
-                </button>
-              </div>
-              {formData.tipoLocalizacion === 'Online' && (
-                <span className="field-hint">Los eventos online no se muestran en el mapa</span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="dotted-divider"></div>
-
-        <div className="form-grid">
-          <div className="left-column">
-            <h3 className="location-title">Localización</h3>
-            <p className="location-desc">Define dónde ocurrirá el evento.</p>
-
-            <div className="toggle-container">
-              <button
-                onClick={() => setFormData({ ...formData, tipoLocalizacion: 'Presencial' })}
-                className={`toggle-btn ${formData.tipoLocalizacion === 'Presencial' ? 'active' : 'inactive'}`}
-              >
-                <LuMapPin className="toggle-icon" /> Presencial
-              </button>
-              <button
-                onClick={() => setFormData({ ...formData, tipoLocalizacion: 'Online' })}
-                className={`toggle-btn ${formData.tipoLocalizacion === 'Online' ? 'active' : 'inactive'}`}
-              >
-                <LuLink className="toggle-icon" /> Online
-              </button>
-            </div>
-          </div>
-
-          <div className="right-column">
-            {formData.tipoLocalizacion === 'Online' && (
-              <div style={{ marginTop: '12px' }}>
-                <div style={{
-                  background: '#f0f7ff',
-                  border: '1px solid #91caff',
-                  borderRadius: 10,
-                  padding: '16px',
-                  marginBottom: 4
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                    <LuVideo style={{ color: '#1890ff', fontSize: '1.3rem' }} />
-                    <span style={{ fontWeight: 700, fontSize: '1.05rem', color: '#222' }}>
-                      Reunión por Zoom
-                    </span>
+                <div className="input-group">
+                  <label className="input-label">Fecha de inicio *</label>
+                  <div className="input-row">
+                    <input type="text" name="dia" placeholder="DD" value={formData.dia} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-small ${validationErrors.fecha ? 'input-error' : ''}`} maxLength={2} />
+                    <input type="text" name="mes" placeholder="MM" value={formData.mes} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-small ${validationErrors.fecha ? 'input-error' : ''}`} maxLength={2} />
+                    <input type="text" name="anio" placeholder="YYYY" value={formData.anio} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-medium ${validationErrors.fecha ? 'input-error' : ''}`} maxLength={4} />
+                    <LuCalendar className="input-icon" />
                   </div>
-                  <p style={{ margin: '0 0 12px 0', color: '#555', fontSize: '0.9rem', lineHeight: 1.4 }}>
-                    Se creará automáticamente una sala de Zoom cuando inicies la reunión desde el detalle del evento.
-                  </p>
-                  <div className="input-group" style={{ marginBottom: 0 }}>
-                    <label className="input-label">Duración máxima (minutos) *</label>
-                    <div className="input-row">
-                      <input
-                        type="number"
-                        name="zoomDuration"
-                        min="5"
-                        max="480"
-                        step="5"
-                        value={formData.zoomDuration}
-                        onChange={handleChange}
-                        className={`input-box input-medium ${validationErrors.zoomDuration ? 'input-error' : ''}`}
-                      />
-                      <LuVideo className="input-icon" />
-                    </div>
-                    {validationErrors.zoomDuration && <span className="field-error">{validationErrors.zoomDuration}</span>}
-                    <span className="field-hint">Entre 5 y 480 minutos.</span></div>{communityHasClassroom && <div className="input-group checkbox-group" style={{ marginTop: '1rem', background: '#e6f7ff', padding: '10px', borderRadius: '8px', border: '1px solid #91d5ff' }}><input type="checkbox" id="subirGrabacionCheckbox" name="subirGrabacion" checked={formData.subirGrabacion} onChange={(e) => setFormData({ ...formData, subirGrabacion: e.target.checked })} /><label htmlFor="subirGrabacionCheckbox" style={{ marginLeft: '8px', fontWeight: 'bold', color: '#0050b3' }}>Subir grabación automáticamente a Google Classroom al finalizar</label></div>}</div>
-              </div>
-            )}
+                  {validationErrors.fecha && <span className="field-error">{validationErrors.fecha}</span>}
+                </div>
 
-            {formData.tipoLocalizacion === 'Presencial' && (
-              <div style={{ marginTop: '12px' }}>
-                {formData.ubicacionId ? (
-                  <div style={{
-                    background: '#f0faf5',
-                    border: '1px solid #b7eb8f',
-                    borderRadius: 10,
-                    padding: '16px',
-                    marginBottom: 4
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                          <LuMapPin style={{ color: '#52c41a', fontSize: '1.2rem' }} />
-                          <span style={{ fontWeight: 700, fontSize: '1.05rem', color: '#222' }}>
-                            {formData.ubicacionNombre || 'Ubicación seleccionada'}
-                          </span>
-                        </div>
-                        {formData.ubicacionDireccion && (
-                          <p style={{ margin: '0 0 6px 0', color: '#555', fontSize: '0.9rem', lineHeight: 1.4 }}>
-                            {formData.ubicacionDireccion}
-                          </p>
-                        )}
-                        {formData.ubicacionLatitud && formData.ubicacionLongitud && (
-                          <p style={{ margin: 0, color: '#888', fontSize: '0.8rem' }}>
-                            📍 {Number(formData.ubicacionLatitud).toFixed(5)}, {Number(formData.ubicacionLongitud).toFixed(5)}
-                          </p>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        className="btn btn-outline"
-                        style={{ fontSize: '0.85rem', padding: '6px 14px', whiteSpace: 'nowrap' }}
-                        onClick={() => {
-                          const returnPath = isEdit ? `/crear-evento/${id}` : `/crear-evento/new`;
-                          const returnQuery = selectedCommunityId ? `?communityId=${selectedCommunityId}` : '';
-                          navigate('/crear-ubicacion?returnTo=' + encodeURIComponent(returnPath + returnQuery), {
-                            state: { eventFormDraft: formData }
-                          });
-                        }}
-                      >
-                        Cambiar
-                      </button>
-                    </div>
+                <div className="input-group">
+                  <label className="input-label">Hora de inicio *</label>
+                  <div className="input-row">
+                    <input type="text" name="hora" placeholder="HH" value={formData.hora} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-medium ${validationErrors.hora ? 'input-error' : ''}`} maxLength={2} />
+                    <input type="text" name="minuto" placeholder="mm" value={formData.minuto} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-medium ${validationErrors.hora ? 'input-error' : ''}`} maxLength={2} />
+                    <LuSquareCheck className="input-icon" />
                   </div>
-                ) : (
-                  <>
+                  {validationErrors.hora && <span className="field-error">{validationErrors.hora}</span>}
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label">Fecha de fin (opcional)</label>
+                  <div className="input-row">
+                    <input type="text" name="diaFin" placeholder="DD" value={formData.diaFin} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-small ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={2} />
+                    <input type="text" name="mesFin" placeholder="MM" value={formData.mesFin} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-small ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={2} />
+                    <input type="text" name="anioFin" placeholder="YYYY" value={formData.anioFin} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-medium ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={4} />
+                    <LuCalendar className="input-icon" />
+                  </div>
+                  {validationErrors.fechaFin && <span className="field-error">{validationErrors.fechaFin}</span>}
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label">Hora de fin (opcional)</label>
+                  <div className="input-row">
+                    <input type="text" name="horaFin" placeholder="HH" value={formData.horaFin} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-medium ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={2} />
+                    <input type="text" name="minutoFin" placeholder="mm" value={formData.minutoFin} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-medium ${validationErrors.fechaFin ? 'input-error' : ''}`} maxLength={2} />
+                    <LuSquareCheck className="input-icon" />
+                  </div>
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label">Aforo máximo *</label>
+                  <div className="input-row">
+                    <input type="text" name="aforo" placeholder="Ej. 30" value={formData.aforo} onChange={handleChange} onKeyDown={handleNumericKeyDown} inputMode="numeric" pattern="\d*" className={`input-box input-medium ${validationErrors.aforo ? 'input-error' : ''}`} min={1} max={999} maxLength={AFORO_MAX_DIGITS} />
+                    <LuUsers className="input-icon" />
+                  </div>
+                  {validationErrors.aforo && <span className="field-error">{validationErrors.aforo}</span>}
+                  <span className="field-hint">Solo números (máximo 3 cifras).</span>
+                </div>
+              </div>
+
+              <div className="right-column">
+                <div className="input-group">
+                  <label className="input-label">Nombre del Evento *</label>
+                  <input type="text" name="nombre" placeholder="Ej. Clase de NodeJS + Sequelize" value={formData.nombre} onChange={handleChange} className={`input-box input-large ${validationErrors.nombre ? 'input-error' : ''}`} />
+                  {validationErrors.nombre && <span className="field-error">{validationErrors.nombre}</span>}
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label">Descripción</label>
+                  <textarea name="descripcion" placeholder="¿De qué trata este evento? Comparte los objetivos" value={formData.descripcion} onChange={handleChange} rows="3" className="input-box input-large"></textarea>
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label">Materiales necesarios</label>
+                  <div className="materials-input-row">
+                    <input
+                      type="text"
+                      placeholder="Ej. Libro de texto"
+                      value={materialInput}
+                      onChange={(e) => setMaterialInput(e.target.value)}
+                      onKeyDown={handleMaterialKeyDown}
+                      className="input-box input-large"
+                    />
+                    <button type="button" className="btn-material-add" onClick={handleAddMaterial}>
+                      Añadir
+                    </button>
+                  </div>
+                  {formData.materiales.length > 0 && (
+                    <div className="materials-list">
+                      {formData.materiales.map((material, index) => (
+                        <span key={`${material}-${index}`} className="material-chip">
+                          {material}
+                          <button
+                            type="button"
+                            className="material-chip-remove"
+                            onClick={() => handleRemoveMaterial(index)}
+                            aria-label={`Eliminar ${material}`}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <span className="field-hint">Escribe un material y pulsa "Añadir" o Enter.</span>
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label">Visibilidad del evento</label>
+                  <div className="toggle-container">
                     <button
                       type="button"
-                      className="btn btn-outline"
-                      style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                      onClick={() => {
-                        const returnPath = isEdit ? `/crear-evento/${id}` : `/crear-evento/new`;
-                        const returnQuery = selectedCommunityId ? `?communityId=${selectedCommunityId}` : '';
-                        navigate('/crear-ubicacion?returnTo=' + encodeURIComponent(returnPath + returnQuery), {
-                          state: { eventFormDraft: formData }
-                        });
-                      }}
+                      onClick={() => setFormData({ ...formData, privado: false })}
+                      className={`toggle-btn ${!formData.privado ? 'active' : 'inactive'}`}
                     >
-                      <LuPlus /> Añadir ubicación del mapa
+                      <LuEye className="toggle-icon" /> Público
                     </button>
-                    {validationErrors.ubicacion && <span className="field-error">{validationErrors.ubicacion}</span>}
-                  </>
-                )}
-                <span className="field-hint" style={{ marginTop: 4, display: 'block' }}>
-                  Selecciona o crea una ubicación para que aparezca en el mapa de eventos
-                </span>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, privado: true })}
+                      className={`toggle-btn ${formData.privado ? 'active' : 'inactive'}`}
+                    >
+                      <LuEyeOff className="toggle-icon" /> Privado
+                    </button>
+                  </div>
+                  <span className="field-hint">
+                    {formData.privado
+                      ? 'Solo visible para miembros de la comunidad'
+                      : 'Visible para todos los usuarios de la plataforma'}
+                  </span>
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label">Mostrar en mapa</label>
+                  <div className="toggle-container">
+                    <button
+                      type="button"
+                      onClick={() => !formData.tipoLocalizacion !== 'Online' && setFormData({ ...formData, visibleEnMapa: true })}
+                      className={`toggle-btn ${formData.visibleEnMapa && formData.tipoLocalizacion !== 'Online' ? 'active' : 'inactive'} ${formData.tipoLocalizacion === 'Online' ? 'toggle-btn--disabled' : ''}`}
+                      disabled={formData.tipoLocalizacion === 'Online'}
+                    >
+                      <LuMap className="toggle-icon" /> Sí
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => formData.tipoLocalizacion !== 'Online' && setFormData({ ...formData, visibleEnMapa: false })}
+                      className={`toggle-btn ${(!formData.visibleEnMapa || formData.tipoLocalizacion === 'Online') ? 'active' : 'inactive'} ${formData.tipoLocalizacion === 'Online' ? 'toggle-btn--disabled' : ''}`}
+                      disabled={formData.tipoLocalizacion === 'Online'}
+                    >
+                      <LuMapPinOff className="toggle-icon" /> No
+                    </button>
+                  </div>
+                  {formData.tipoLocalizacion === 'Online' && (
+                    <span className="field-hint">Los eventos online no se muestran en el mapa</span>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
-        </div>
+            </div>
 
-        <div className="actions-container">
-          <div className="buttons-row">
-            <button className="btn btn-outline" onClick={handleSaveDraft} disabled={loading}>
-              Guardar Borrador
-            </button>
-            <button className="btn btn-primary" onClick={handleSubmit} disabled={loading || (isEdit && eventStarted)}>
-              {loading ? 'Guardando...' : (isEdit ? (eventStarted ? 'Evento iniciado' : 'Actualizar Evento') : 'Crear Evento')}
-            </button>
-          </div>
+            <div className="dotted-divider"></div>
 
-          <button className="back-link" onClick={() => navigate(-1)}>
-            <LuArrowLeft /> Volver al Dashboard
-          </button>
-        </div>
-        </>
+            <div className="form-grid">
+              <div className="left-column">
+                <h3 className="location-title">Localización</h3>
+                <p className="location-desc">Define dónde ocurrirá el evento.</p>
+
+                <div className="toggle-container">
+                  <button
+                    onClick={() => setFormData({ ...formData, tipoLocalizacion: 'Presencial' })}
+                    className={`toggle-btn ${formData.tipoLocalizacion === 'Presencial' ? 'active' : 'inactive'}`}
+                  >
+                    <LuMapPin className="toggle-icon" /> Presencial
+                  </button>
+                  <button
+                    onClick={() => setFormData({ ...formData, tipoLocalizacion: 'Online' })}
+                    className={`toggle-btn ${formData.tipoLocalizacion === 'Online' ? 'active' : 'inactive'}`}
+                  >
+                    <LuLink className="toggle-icon" /> Online
+                  </button>
+                </div>
+              </div>
+
+              <div className="right-column">
+                {formData.tipoLocalizacion === 'Online' && (
+                  <div style={{ marginTop: '12px' }}>
+                    <div style={{
+                      background: '#f0f7ff',
+                      border: '1px solid #91caff',
+                      borderRadius: 10,
+                      padding: '16px',
+                      marginBottom: 4
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                        <LuVideo style={{ color: '#1890ff', fontSize: '1.3rem' }} />
+                        <span style={{ fontWeight: 700, fontSize: '1.05rem', color: '#222' }}>
+                          Reunión por Zoom
+                        </span>
+                      </div>
+                      <p style={{ margin: '0 0 12px 0', color: '#555', fontSize: '0.9rem', lineHeight: 1.4 }}>
+                        Se creará automáticamente una sala de Zoom cuando inicies la reunión desde el detalle del evento.
+                      </p>
+                      <div className="input-group" style={{ marginBottom: 0 }}>
+                        <label className="input-label">Duración máxima (minutos) *</label>
+                        <div className="input-row">
+                          <input
+                            type="number"
+                            name="zoomDuration"
+                            min="5"
+                            max="480"
+                            step="5"
+                            value={formData.zoomDuration}
+                            onChange={handleChange}
+                            className={`input-box input-medium ${validationErrors.zoomDuration ? 'input-error' : ''}`}
+                          />
+                          <LuVideo className="input-icon" />
+                        </div>
+                        {validationErrors.zoomDuration && <span className="field-error">{validationErrors.zoomDuration}</span>}
+                        <span className="field-hint">Entre 5 y 480 minutos.</span></div>{communityHasClassroom && <div className="input-group checkbox-group" style={{ marginTop: '1rem', background: '#e6f7ff', padding: '10px', borderRadius: '8px', border: '1px solid #91d5ff' }}><input type="checkbox" id="subirGrabacionCheckbox" name="subirGrabacion" checked={formData.subirGrabacion} onChange={(e) => setFormData({ ...formData, subirGrabacion: e.target.checked })} /><label htmlFor="subirGrabacionCheckbox" style={{ marginLeft: '8px', fontWeight: 'bold', color: '#0050b3' }}>Subir grabación automáticamente a Google Classroom al finalizar</label></div>}</div>
+                  </div>
+                )}
+
+                {formData.tipoLocalizacion === 'Presencial' && (
+                  <div style={{ marginTop: '12px' }}>
+                    {formData.ubicacionId ? (
+                      <div style={{
+                        background: '#f0faf5',
+                        border: '1px solid #b7eb8f',
+                        borderRadius: 10,
+                        padding: '16px',
+                        marginBottom: 4
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                              <LuMapPin style={{ color: '#52c41a', fontSize: '1.2rem' }} />
+                              <span style={{ fontWeight: 700, fontSize: '1.05rem', color: '#222' }}>
+                                {formData.ubicacionNombre || 'Ubicación seleccionada'}
+                              </span>
+                            </div>
+                            {formData.ubicacionDireccion && (
+                              <p style={{ margin: '0 0 6px 0', color: '#555', fontSize: '0.9rem', lineHeight: 1.4 }}>
+                                {formData.ubicacionDireccion}
+                              </p>
+                            )}
+                            {formData.ubicacionLatitud && formData.ubicacionLongitud && (
+                              <p style={{ margin: 0, color: '#888', fontSize: '0.8rem' }}>
+                                📍 {Number(formData.ubicacionLatitud).toFixed(5)}, {Number(formData.ubicacionLongitud).toFixed(5)}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            className="btn btn-outline"
+                            style={{ fontSize: '0.85rem', padding: '6px 14px', whiteSpace: 'nowrap' }}
+                            onClick={() => {
+                              const returnPath = isEdit ? `/crear-evento/${id}` : `/crear-evento/new`;
+                              const returnQuery = selectedCommunityId ? `?communityId=${selectedCommunityId}` : '';
+                              navigate('/crear-ubicacion?returnTo=' + encodeURIComponent(returnPath + returnQuery), {
+                                state: { eventFormDraft: formData }
+                              });
+                            }}
+                          >
+                            Cambiar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className="btn btn-outline"
+                          style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                          onClick={() => {
+                            const returnPath = isEdit ? `/crear-evento/${id}` : `/crear-evento/new`;
+                            const returnQuery = selectedCommunityId ? `?communityId=${selectedCommunityId}` : '';
+                            navigate('/crear-ubicacion?returnTo=' + encodeURIComponent(returnPath + returnQuery), {
+                              state: { eventFormDraft: formData }
+                            });
+                          }}
+                        >
+                          <LuPlus /> Añadir ubicación del mapa
+                        </button>
+                        {validationErrors.ubicacion && <span className="field-error">{validationErrors.ubicacion}</span>}
+                      </>
+                    )}
+                    <span className="field-hint" style={{ marginTop: 4, display: 'block' }}>
+                      Selecciona o crea una ubicación para que aparezca en el mapa de eventos
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="actions-container">
+              <div className="buttons-row">
+                <button className="btn btn-outline" onClick={handleSaveDraft} disabled={loading}>
+                  Guardar Borrador
+                </button>
+                <button className="btn btn-primary" onClick={handleSubmit} disabled={loading || (isEdit && eventStarted)}>
+                  {loading ? 'Guardando...' : (isEdit ? (eventStarted ? 'Evento iniciado' : 'Actualizar Evento') : 'Crear Evento')}
+                </button>
+              </div>
+
+              <button className="back-link" onClick={() => navigate(-1)}>
+                <LuArrowLeft /> Volver al Dashboard
+              </button>
+            </div>
+          </>
         )}
       </div>
     </div>

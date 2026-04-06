@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -230,5 +231,140 @@ class AsistenciaEventoServiceTest {
         when(asistenciaRepository.countConfirmedByEvent(10L)).thenReturn(5L);
 
         assertThat(asistenciaEventoService.contarAsistentesConfirmados(10L)).isEqualTo(5L);
+    }
+
+    @Test
+    void cancelarAsistenciaShouldThrowWhenCreadorIntentaCancelar() {
+        Usuario creador = new Usuario();
+        creador.setId(1L);
+
+        Evento evento = new Evento();
+        evento.setId(10L);
+        evento.setCreador(creador);
+        evento.setFechaHora(LocalDateTime.now().plusDays(1));
+
+        AsistenciaEvento asistencia = new AsistenciaEvento();
+        asistencia.setEvento(evento);
+        asistencia.setEstado(EstadoAsistencia.CONFIRMADA);
+
+        when(asistenciaRepository.findByEventoAndUsuario(10L, 1L))
+                .thenReturn(Optional.of(asistencia));
+
+        assertThatThrownBy(() -> asistenciaEventoService.cancelarAsistencia(10L, 1L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("creador del evento no puede cancelar");
+    }
+
+    @Test
+    void cancelarAsistenciaShouldThrowWhenEventoYaFinalizoConFechaFin() {
+        Usuario creador = new Usuario();
+        creador.setId(99L);
+
+        Evento evento = new Evento();
+        evento.setId(10L);
+        evento.setCreador(creador);
+        evento.setFechaHora(LocalDateTime.now().minusDays(2));
+        evento.setFechaFin(LocalDateTime.now().minusDays(1));
+
+        AsistenciaEvento asistencia = new AsistenciaEvento();
+        asistencia.setEvento(evento);
+        asistencia.setEstado(EstadoAsistencia.CONFIRMADA);
+
+        when(asistenciaRepository.findByEventoAndUsuario(10L, 1L))
+                .thenReturn(Optional.of(asistencia));
+
+        assertThatThrownBy(() -> asistenciaEventoService.cancelarAsistencia(10L, 1L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("ya ha finalizado");
+    }
+
+    @Test
+    void cancelarAsistenciaShouldThrowWhenEventoYaEmpezaSinFechaFin() {
+        Usuario creador = new Usuario();
+        creador.setId(99L);
+
+        Evento evento = new Evento();
+        evento.setId(10L);
+        evento.setCreador(creador);
+        evento.setFechaHora(LocalDateTime.now().minusHours(1));
+        // fechaFin null → usa fechaHora como fin
+
+        AsistenciaEvento asistencia = new AsistenciaEvento();
+        asistencia.setEvento(evento);
+        asistencia.setEstado(EstadoAsistencia.CONFIRMADA);
+
+        when(asistenciaRepository.findByEventoAndUsuario(10L, 1L))
+                .thenReturn(Optional.of(asistencia));
+
+        assertThatThrownBy(() -> asistenciaEventoService.cancelarAsistencia(10L, 1L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("ya ha finalizado");
+    }
+
+    @Test
+    void confirmarAsistenciaShouldThrowWhenEventoYaComenzo() {
+        Evento evento = new Evento();
+        evento.setId(10L);
+        evento.setFechaHora(LocalDateTime.now().minusHours(1));
+
+        when(eventoRepository.findById(10L)).thenReturn(Optional.of(evento));
+
+        assertThatThrownBy(() -> asistenciaEventoService.confirmarAsistencia(10L, 1L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("ya ha comenzado");
+    }
+
+    @Test
+    void confirmarAsistenciaShouldNotIncrementWhenAlreadyConfirmed() {
+        Evento evento = new Evento();
+        evento.setId(10L);
+        evento.setAsistentesConfirmados(3);
+        evento.setAforo(100);
+
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+
+        AsistenciaEvento existing = new AsistenciaEvento();
+        existing.setEvento(evento);
+        existing.setUsuario(usuario);
+        existing.setEstado(EstadoAsistencia.CONFIRMADA);
+
+        when(eventoRepository.findById(10L)).thenReturn(Optional.of(evento));
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(asistenciaRepository.findByEventoAndUsuario(10L, 1L))
+                .thenReturn(Optional.of(existing));
+        when(asistenciaRepository.save(any(AsistenciaEvento.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        AsistenciaEvento result = asistenciaEventoService.confirmarAsistencia(10L, 1L);
+
+        assertThat(result.getEstado()).isEqualTo(EstadoAsistencia.CONFIRMADA);
+        // El contador no debe cambiar porque ya estaba confirmada
+        assertThat(evento.getAsistentesConfirmados()).isEqualTo(3);
+    }
+
+    @Test
+    void cancelarAsistenciaShouldNotDecrementWhenNotConfirmed() {
+        Usuario creador = new Usuario();
+        creador.setId(99L);
+
+        Evento evento = new Evento();
+        evento.setId(10L);
+        evento.setCreador(creador);
+        evento.setFechaHora(LocalDateTime.now().plusDays(1));
+        evento.setAsistentesConfirmados(2);
+
+        AsistenciaEvento asistencia = new AsistenciaEvento();
+        asistencia.setEvento(evento);
+        asistencia.setEstado(EstadoAsistencia.CANCELADA); // ya estaba cancelada
+
+        when(asistenciaRepository.findByEventoAndUsuario(10L, 1L))
+                .thenReturn(Optional.of(asistencia));
+
+        asistenciaEventoService.cancelarAsistencia(10L, 1L);
+
+        assertThat(asistencia.getEstado()).isEqualTo(EstadoAsistencia.CANCELADA);
+        // No debe tocar el contador ni el repositorio de eventos
+        assertThat(evento.getAsistentesConfirmados()).isEqualTo(2);
     }
 }

@@ -130,6 +130,7 @@ export default function CrearComunidad() {
         setCategorias(categorias.filter(cat => cat !== categoriaAEliminar));
     };
 
+    // En CrearComunidad.jsx, reemplaza handleGuardarBorrador:
     const handleGuardarBorrador = () => {
         const draft = {
             nombre: nombre.trim(),
@@ -138,15 +139,16 @@ export default function CrearComunidad() {
             maxMiembros,
             createAsInstitutional,
             categorias,
-            imagenPreview // store preview data URL, file cannot be stored
+            imagenPreview,
+            savedAt: new Date().toISOString(),
         };
 
         try {
             localStorage.setItem('crearComunidadDraft', JSON.stringify(draft));
-            setSuccess('Borrador guardado');
+            setSuccess('Borrador guardado correctamente');
             setTimeout(() => {
-                navigate(`/comunidades`);
-            }, 1000);
+                navigate('/mis-borradores');
+            }, 1200);
         } catch (err) {
             console.error('Error guardando borrador:', err);
             setError('No se pudo guardar el borrador en el navegador.');
@@ -373,7 +375,7 @@ export default function CrearComunidad() {
                 formData.append('file', imagenPortada);
                 await communitiesApi.uploadPhoto(response.id, formData);
             }
-            
+
             setSuccess('¡Comunidad creada con éxito!');
             // Clear saved draft on successful creation
             try { localStorage.removeItem('crearComunidadDraft'); } catch (e) { console.warn(e); }
@@ -394,13 +396,13 @@ export default function CrearComunidad() {
         <div className="crear-comunidad-container">
             <Header page={'comunidades'} />
             <div className="header">
-                <PageHeader 
+                <PageHeader
                     title="Crear Comunidad"
                     subtitle="Explora las comunidades que mejor se adaptan a tus necesidades y ganas de aprender"
                 />
             </div>
             <div className="body">
-               <div className="first-section">
+                <div className="first-section">
                     <div className="image-upload">
                         <label htmlFor="file-input" className="upload-label">
                             {imagenPreview ? (
@@ -444,8 +446,8 @@ export default function CrearComunidad() {
                             />
                         </div>
                     </div>
-               </div>
-               <div className="second-section">
+                </div>
+                <div className="second-section">
                     <h3>Categorías</h3>
                     <div className="categoria-input-container">
                         <input
@@ -473,8 +475,8 @@ export default function CrearComunidad() {
                             </div>
                         ))}
                     </div>
-               </div>
-               <div className="third-section">
+                </div>
+                <div className="third-section">
                     <h3>Configuración de la Comunidad</h3>
                     <div className="config-group">
                         <label>Tipo de Comunidad</label>
@@ -554,8 +556,8 @@ export default function CrearComunidad() {
                             </p>
                         </div>
                     </div>
-               </div>
-               <div className="third-section">
+                </div>
+                <div className="third-section">
                     <h3>Tu rol en la comunidad</h3>
                     <div className="config-group">
                         <p style={{ fontSize: '14px', color: '#444', marginTop: 0, lineHeight: 1.5 }}>
@@ -587,8 +589,8 @@ export default function CrearComunidad() {
                             </label>
                         </div>
                     </div>
-               </div>
-               <div className="third-section">
+                </div>
+                <div className="third-section">
                     <h3>Comunidades corporativas</h3>
                     <div className="config-group">
                         <p style={{ fontSize: '14px', color: '#444', marginTop: 0, lineHeight: 1.5 }}>
@@ -604,8 +606,8 @@ export default function CrearComunidad() {
                             Ir a planes institucionales
                         </button>
                     </div>
-               </div>
-               <div>
+                </div>
+                <div>
                     <div>
                         {error && (
                             <div style={{ width: '100%', padding: '10px', backgroundColor: '#f8d7da', color: '#721c24', borderRadius: '4px', marginBottom: '15px' }}>
@@ -630,24 +632,24 @@ export default function CrearComunidad() {
                         )}
                     </div>
                     <div className="buttons-container">
-                    
-                        <button 
-                            onClick={handleGuardarBorrador} 
+
+                        <button
+                            onClick={handleGuardarBorrador}
                             className="btn btn-secondary"
                             disabled={loading}
                         >
                             Guardar Borrador
                         </button>
-                        <button 
-                            onClick={handleCrearComunidad} 
+                        <button
+                            onClick={handleCrearComunidad}
                             className="btn btn-primary"
                             disabled={loading || !nombre.trim() || reachedCommunityLimit}
                         >
                             {loading ? "Creando..." : "Crear Comunidad"}
                         </button>
+                    </div>
                 </div>
-               </div>
-               
+
             </div>
         </div>
     );
