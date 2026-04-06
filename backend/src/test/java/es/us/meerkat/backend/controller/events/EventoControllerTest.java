@@ -143,6 +143,26 @@ class EventoControllerTest {
     }
 
     @Test
+    void cancelarEventoShouldFailWhenUserIsNotCreatorOrAdmin() {
+        Usuario creador = new Usuario();
+        creador.setId(99L);
+
+        Usuario otroUsuario = new Usuario();
+        otroUsuario.setId(1L);
+
+        Evento evento = buildEvento(1L, true);
+        evento.setCreador(creador);
+        evento.setFechaHora(LocalDateTime.now().plusDays(1));
+        when(eventoService.obtenerEventoInterno(1L)).thenReturn(evento);
+        when(authorizationService.isAdminOf(otroUsuario.getId(), evento.getComunidad().getId()))
+                .thenReturn(false);
+
+        assertThatThrownBy(() -> eventoController.cancelarEvento(1L, "motivo", otroUsuario))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("403 FORBIDDEN");
+    }
+
+    @Test
     void cancelarEventoShouldFailWhenEventAlreadyStarted() {
         Usuario creador = new Usuario();
         creador.setId(1L);
