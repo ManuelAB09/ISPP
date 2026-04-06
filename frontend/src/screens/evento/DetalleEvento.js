@@ -98,7 +98,7 @@ const DetalleEvento = () => {
         const ratedEvents = JSON.parse(localStorage.getItem('ratedEvents') || '{}');
         ratedEvents[`${userId}_${eventId}`] = true;
         localStorage.setItem('ratedEvents', JSON.stringify(ratedEvents));
-      } catch {}
+      } catch { }
     }
   }, [valorado, eventId]);
   const navigate = useNavigate();
@@ -229,8 +229,8 @@ const DetalleEvento = () => {
   const isStarted = event?.fechaHora ? new Date(event.fechaHora).getTime() <= Date.now() : false;
   const isEnded = event?.fechaFin
     ? new Date(event.fechaFin).getTime() <= Date.now()
-    : isStarted && event?.fechaHora
-      ? Date.now() - new Date(event.fechaHora).getTime() > 2 * 60 * 60 * 1000
+    : event?.fechaHora
+      ? new Date(event.fechaHora).getTime() <= Date.now()
       : false;
 
   // Abre el modal de confirmación de asistencia
@@ -511,7 +511,7 @@ const DetalleEvento = () => {
       const data = await ZoomApi.listRecordings(event.comunidadId);
       let list = Array.isArray(data) ? data : (data?.recordings || data?.content || data?.items || []);
       setRecordings(list);
-    } catch(err) {
+    } catch (err) {
       setRecordings([]);
     } finally {
       setRecordingsLoading(false);
@@ -528,7 +528,7 @@ const DetalleEvento = () => {
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
-    } catch(err) {
+    } catch (err) {
       alert('Error descargando la grabación');
     }
   };
@@ -1007,8 +1007,8 @@ const DetalleEvento = () => {
                                       <strong style={{ fontSize: '0.85rem', display: 'block' }}>{rec.topic}</strong>
                                       <span style={{ fontSize: '0.8rem', color: '#888' }}>{new Date(rec.startTime).toLocaleString()} • {rec.duration} min</span>
                                     </div>
-                                    <button 
-                                      onClick={() => handleDownloadRecording(rec.id)} 
+                                    <button
+                                      onClick={() => handleDownloadRecording(rec.id)}
                                       style={{ padding: '4px 12px', fontSize: '0.8rem', cursor: 'pointer', background: '#e6f4ff', color: '#1890ff', border: '1px solid #91caff', borderRadius: '4px' }}
                                     >
                                       Descargar

@@ -143,25 +143,37 @@ public class AsistenciaEventoService {
                             + " lugar.");
         }
 
+        // *** FIX: No permitir cancelar si el evento ya ha terminado ***
+        final Evento evento = asistencia.getEvento();
+        final LocalDateTime ahora = LocalDateTime.now();
+
+        // Si el evento tiene fecha de fin, usar esa; si no, usar fecha de inicio
+        final LocalDateTime finEvento =
+                evento.getFechaFin() != null ? evento.getFechaFin() : evento.getFechaHora();
+
+        if (finEvento != null && !finEvento.isAfter(ahora)) {
+            throw new IllegalStateException(
+                    "No puedes cancelar la asistencia a un evento que ya ha finalizado.");
+        }
+
         final boolean estabaConfirmada = EstadoAsistencia.CONFIRMADA.equals(asistencia.getEstado());
         asistencia.cancelarAsistencia();
         asistenciaRepository.save(asistencia);
 
-        // Actualizar contador de asistentes en el evento
         if (estabaConfirmada) {
-            final Evento evento =
+            final Evento eventoActualizado =
                     eventoRepository
                             .findById(eventoIdParam)
                             .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
-            evento.setAsistentesConfirmados(Math.max(evento.contarAsistentes() - 1, 0));
-            eventoRepository.save(evento);
+            eventoActualizado.setAsistentesConfirmados(
+                    Math.max(eventoActualizado.contarAsistentes() - 1, 0));
+            eventoRepository.save(eventoActualizado);
 
-            // Eliminar evento de Google Calendar del usuario
             final Usuario usuario =
                     usuarioRepository
                             .findById(usuarioIdParam)
                             .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-            googleCalendarService.desincronizarParaUsuario(evento, usuario);
+            googleCalendarService.desincronizarParaUsuario(eventoActualizado, usuario);
         }
     }
 

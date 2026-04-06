@@ -10,6 +10,33 @@
     margin: 0 auto;
 }
 
+/* Añadir a src/pages/comunidades/Comunidades.css */
+
+.search {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.create-community-btn {
+    padding: 0.6rem 1.4rem;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+    flex-shrink: 0;
+}
+
+.create-community-btn:hover {
+    background: #1d4ed8;
+}
+
 .search {
     display: flex;
     flex-direction: row;
@@ -73,7 +100,7 @@
     margin-bottom: 24px;
 }
 
-.body > p {
+.body>p {
     text-align: center;
     font-family: 'inter', sans-serif;
     font-size: 16px;
@@ -137,6 +164,7 @@
     .header {
         padding: 30px 40px 10px;
     }
+
     .body {
         padding: 20px 40px 60px;
     }
@@ -146,13 +174,16 @@
     .header {
         padding: 20px 20px 10px;
     }
+
     .body {
         padding: 20px 20px 40px;
     }
+
     .search {
         flex-direction: column;
         align-items: stretch;
     }
+
     .create-community-btn {
         width: 100%;
         text-align: center;
