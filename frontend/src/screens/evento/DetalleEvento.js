@@ -67,6 +67,11 @@ const getUserPhoto = (user) => {
   return user.foto || user.fotoPerfil || user.avatar || user.imagen || user.image || '';
 };
 
+const getAttendeeUserId = (attendee) => {
+  const user = attendee?.usuario || attendee;
+  return user?.id || attendee?.usuarioId || attendee?.userId || null;
+};
+
 const eventIconRed = L.icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
   iconSize: [25, 41],
@@ -1302,18 +1307,38 @@ const DetalleEvento = () => {
                   {attendees.map((att) => {
                     const user = att.usuario || att;
                     const participantPhoto = getUserPhoto(user);
+                    const participantUserId = getAttendeeUserId(att);
+                    const participantName = user.nombre || user.username || 'Usuario';
                     return (
                       <li key={att.id || user.id} className="ed-participant">
-                        <div className="ed-participant-avatar">
-                          {participantPhoto ? (
-                            <img src={toAbsoluteImageUrl(participantPhoto)} alt={user.nombre || user.username} />
-                          ) : (
-                            <LuUser />
-                          )}
-                        </div>
-                        <span className="ed-participant-name">
-                          {user.nombre || user.username || 'Usuario'}
-                        </span>
+                        {participantUserId ? (
+                          <button
+                            type="button"
+                            className="ed-participant-link"
+                            onClick={() => navigate(`/perfil/${participantUserId}`)}
+                            aria-label={`Ver perfil de ${participantName}`}
+                          >
+                            <div className="ed-participant-avatar">
+                              {participantPhoto ? (
+                                <img src={toAbsoluteImageUrl(participantPhoto)} alt={participantName} />
+                              ) : (
+                                <LuUser />
+                              )}
+                            </div>
+                            <span className="ed-participant-name">{participantName}</span>
+                          </button>
+                        ) : (
+                          <>
+                            <div className="ed-participant-avatar">
+                              {participantPhoto ? (
+                                <img src={toAbsoluteImageUrl(participantPhoto)} alt={participantName} />
+                              ) : (
+                                <LuUser />
+                              )}
+                            </div>
+                            <span className="ed-participant-name">{participantName}</span>
+                          </>
+                        )}
                       </li>
                     );
                   })}

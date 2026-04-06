@@ -78,7 +78,12 @@ jest.mock('./CommunityChat', () => {
 
 jest.mock('./PrivateChat', () => {
     return function MockPrivateChat(props) {
-        return <div data-testid="mock-private-chat">{props.targetUser?.nombre}</div>;
+        return (
+            <div data-testid="mock-private-chat">
+                {props.tutorNombre}
+                {props.headerActions}
+            </div>
+        );
     };
 });
 
@@ -258,6 +263,35 @@ describe('Chats', () => {
             });
         });
 
+
+    describe('Perfil público desde privados', () => {
+        it('muestra acceso a ver perfil cuando abre un chat privado', async () => {
+            mockSearchParams = new URLSearchParams('userId=2&userName=OtroUser');
+
+            await act(async () => {
+                render(<MemoryRouter><Chats /></MemoryRouter>);
+            });
+
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: /Ver perfil/i })).toBeInTheDocument();
+            });
+        });
+
+        it('navega al perfil público desde un chat privado', async () => {
+            mockSearchParams = new URLSearchParams('userId=2&userName=OtroUser');
+
+            await act(async () => {
+                render(<MemoryRouter><Chats /></MemoryRouter>);
+            });
+
+            const verPerfilBtn = await screen.findByRole('button', { name: /Ver perfil/i });
+            await act(async () => {
+                fireEvent.click(verPerfilBtn);
+            });
+
+            expect(mockNavigate).toHaveBeenCalledWith('/perfil/2');
+        });
+    });
         it('muestra botón explorar comunidades', async () => {
             await act(async () => {
                 render(<MemoryRouter><Chats /></MemoryRouter>);
