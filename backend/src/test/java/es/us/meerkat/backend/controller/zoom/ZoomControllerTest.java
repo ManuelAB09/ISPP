@@ -48,6 +48,48 @@ class ZoomControllerTest {
     }
 
     @Test
+    void createOrGetMeetingShouldReturnUnauthorizedWhenUserIsNull() {
+        ResponseEntity<?> response = controller.createOrGetMeeting(1L, null, null);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void getActiveMeetingShouldReturnUnauthorizedWhenUserIsNull() {
+        ResponseEntity<?> response = controller.getActiveMeeting(1L, null);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void joinMeetingShouldReturnUnauthorizedWhenUserIsNull() {
+        ResponseEntity<?> response = controller.joinMeeting(1L, null);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void listParticipantsShouldReturnUnauthorizedWhenUserIsNull() {
+        ResponseEntity<?> response = controller.listParticipants(1L, null);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void listMeetingsShouldReturnUnauthorizedWhenUserIsNull() {
+        ResponseEntity<?> response = controller.listMeetings(1L, null);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void listRecordingsShouldReturnUnauthorizedWhenUserIsNull() {
+        ResponseEntity<?> response = controller.listRecordings(1L, null);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void endMeetingShouldReturnUnauthorizedWhenUserIsNull() {
+        ResponseEntity<?> response = controller.endMeeting(1L, null);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
     void zoomWebhookShouldReturnOkOnSuccess() {
         Map<String, Object> payload = Map.of("event", "meeting.started");
         when(zoomIntegrationService.processWebhook(payload, "sig", "ts"))
