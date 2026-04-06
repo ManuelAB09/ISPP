@@ -13,7 +13,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -40,6 +42,86 @@ class PaymentControllerTest {
         Usuario u = new Usuario();
         u.setId(id);
         return u;
+    }
+
+    private TransaccionPago buildTransaccion(Long id) {
+        TransaccionPago t = new TransaccionPago();
+        t.setId(id);
+        t.setMonto(java.math.BigDecimal.ZERO);
+        return t;
+    }
+
+    @Test
+    void getPaymentHistoryShouldReturnOk() {
+        Usuario usuario = buildUsuario(1L);
+        TransaccionPago transaccion = buildTransaccion(1L);
+        Page<TransaccionPago> page =
+                new PageImpl<>(java.util.List.of(transaccion), PageRequest.of(0, 20), 1);
+
+        when(paymentService.obtenerHistorialPagos(1L, PageRequest.of(0, 20))).thenReturn(page);
+
+        ResponseEntity<TransactionListResponse> response =
+                controller.getPaymentHistory(usuario, null, null, null, 0, 20);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getContent()).hasSize(1);
+    }
+
+    @Test
+    void getPaymentHistoryShouldReturnEmptyList() {
+        Usuario usuario = buildUsuario(1L);
+        Page<TransaccionPago> emptyPage =
+                new PageImpl<>(java.util.List.of(), PageRequest.of(0, 20), 0);
+
+        when(paymentService.obtenerHistorialPagos(1L, PageRequest.of(0, 20))).thenReturn(emptyPage);
+
+        ResponseEntity<TransactionListResponse> response =
+                controller.getPaymentHistory(usuario, null, null, null, 0, 20);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().getContent()).isEmpty();
+    }
+
+    @Test
+    void getTransactionShouldReturnOkWhenExists() {
+        Usuario usuario = buildUsuario(1L);
+        TransaccionPago transaccion = buildTransaccion(1L);
+
+        when(paymentService.obtenerTransaccion(1L, 1L)).thenReturn(Optional.of(transaccion));
+
+        ResponseEntity<TransactionResponse> response = controller.getTransaction(1L, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void getTransactionShouldReturnNotFoundWhenDoesNotExist() {
+        Usuario usuario = buildUsuario(1L);
+
+        when(paymentService.obtenerTransaccion(1L, 1L)).thenReturn(Optional.empty());
+
+        ResponseEntity<TransactionResponse> response = controller.getTransaction(1L, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void getPaymentHistoryShouldHandleMultiplePages() {
+        Usuario usuario = buildUsuario(1L);
+        TransaccionPago t1 = buildTransaccion(1L);
+        TransaccionPago t2 = buildTransaccion(2L);
+        Page<TransaccionPago> page =
+                new PageImpl<>(java.util.List.of(t1, t2), PageRequest.of(0, 20), 40);
+
+        when(paymentService.obtenerHistorialPagos(1L, PageRequest.of(0, 20))).thenReturn(page);
+
+        ResponseEntity<TransactionListResponse> response =
+                controller.getPaymentHistory(usuario, null, null, null, 0, 20);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().getContent()).hasSize(2);
+        assertThat(response.getBody().getPage().getTotalElements()).isEqualTo(40);
     }
 
     @Test
