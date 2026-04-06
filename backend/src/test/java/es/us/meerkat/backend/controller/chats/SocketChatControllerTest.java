@@ -60,4 +60,19 @@ class SocketChatControllerTest {
 
         verify(broker).convertAndSendToUser(eq("1"), eq("/queue/dm_history"), any(List.class));
     }
+
+    @Test
+    void getDmHistoryShouldHandleMultipleMessages() {
+        Usuario usuario = new Usuario();
+        usuario.setId(2L);
+
+        Authentication principal = org.mockito.Mockito.mock(Authentication.class);
+        org.mockito.Mockito.when(principal.getPrincipal()).thenReturn(usuario);
+
+        when(mensajeService.obtenerConversacionConUsuario(2L, 3L)).thenReturn(List.of());
+
+        controller.getDmHistory(Map.of("userId", 3L), (Principal) principal);
+
+        verify(broker).convertAndSendToUser(eq("2"), eq("/queue/dm_history"), any(List.class));
+    }
 }

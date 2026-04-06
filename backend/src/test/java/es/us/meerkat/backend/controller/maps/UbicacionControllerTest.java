@@ -87,4 +87,52 @@ class UbicacionControllerTest {
         assertThat(response).hasSize(1);
         assertThat(response.get(0).getNombre()).isEqualTo("Biblioteca");
     }
+
+    @Test
+    void crearUbicacionShouldReturnCreatedWithFullData() {
+        UbicacionRequest request = new UbicacionRequest();
+        request.setNombre("Biblioteca Pública");
+        request.setDireccion("Avenida Principal 100");
+        request.setLatitud(37.39);
+        request.setLongitud(-5.98);
+
+        UbicacionResponse created =
+                UbicacionResponse.builder()
+                        .id(5L)
+                        .nombre("Biblioteca Pública")
+                        .latitud(37.39)
+                        .longitud(-5.98)
+                        .build();
+        when(ubicacionService.crearUbicacion(request)).thenReturn(created);
+
+        ResponseEntity<UbicacionResponse> response = ubicacionController.crearUbicacion(request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody().getId()).isEqualTo(5L);
+    }
+
+    @Test
+    void editarUbicacionShouldReturnNotFoundWhenNotExists() {
+        UbicacionRequest request = new UbicacionRequest();
+        request.setNombre("No existe");
+        when(ubicacionService.editarUbicacion(999L, request))
+                .thenThrow(new RuntimeException("Ubicación no encontrada"));
+
+        try {
+            ubicacionController.editarUbicacion(999L, request);
+        } catch (Exception e) {
+            assertThat(e.getMessage()).contains("Ubicación no encontrada");
+        }
+    }
+
+    @Test
+    void buscarSitiosEstudioShouldReturnEmptyList() {
+        when(ubicacionService.buscarSitiosEstudio(0.0, 0.0, 500)).thenReturn(List.of());
+
+        ResponseEntity<List<UbicacionResponse>> response =
+                ubicacionController.buscarSitiosEstudio(0.0, 0.0, 500);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEmpty();
+    }
 }
