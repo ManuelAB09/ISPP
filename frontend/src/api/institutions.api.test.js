@@ -17,6 +17,11 @@ const { institutionsApi } = require('./institutions.api');
 describe('institutionsApi', () => {
     beforeEach(() => jest.clearAllMocks());
 
+    test('list', () => {
+        institutionsApi.list();
+        expect(mockGet).toHaveBeenCalledWith('/api/v1/institutions');
+    });
+
     test('create', () => {
         institutionsApi.create({ nombre: 'Test' });
         expect(mockPost).toHaveBeenCalledWith('/api/v1/institutions', { nombre: 'Test' });

@@ -17,6 +17,11 @@ const { communitiesApi } = require('./communities.api');
 describe('communitiesApi', () => {
     beforeEach(() => jest.clearAllMocks());
 
+    test('listCategories', () => {
+        communitiesApi.listCategories();
+        expect(mockGet).toHaveBeenCalledWith('/api/v1/communities/categories');
+    });
+
     test('list without params', () => {
         communitiesApi.list();
         expect(mockGet).toHaveBeenCalledWith('/api/v1/communities');
@@ -25,6 +30,27 @@ describe('communitiesApi', () => {
     test('list with search param', () => {
         communitiesApi.list({ search: 'math' });
         expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('search=math'));
+    });
+
+    test('list with filters', () => {
+        communitiesApi.list({
+            search: 'java',
+            categoria: ['Matemáticas', 'Física'],
+            institucion: 'Universidad',
+            tipoGrupo: ['GRUPO_PRIVADO', 'COMUNIDAD_PUBLICA'],
+            tipoPlan: ['PREMIUM', 'FREE'],
+            page: 2,
+            size: 10,
+        });
+
+        expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('search=java'));
+        expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('categoria=Matem%C3%A1ticas'));
+        expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('categoria=F%C3%ADsica'));
+        expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('institucion=Universidad'));
+        expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('tipoGrupo=GRUPO_PRIVADO'));
+        expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('tipoGrupo=COMUNIDAD_PUBLICA'));
+        expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('tipoPlan=PREMIUM'));
+        expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('tipoPlan=FREE'));
     });
 
     test('listMine', () => {
