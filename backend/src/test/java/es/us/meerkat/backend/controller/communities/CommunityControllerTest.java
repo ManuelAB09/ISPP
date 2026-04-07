@@ -16,6 +16,7 @@ import es.us.meerkat.backend.dto.communities.CreateCommunityRequest;
 import es.us.meerkat.backend.dto.communities.JoinCommunityRequest;
 import es.us.meerkat.backend.dto.communities.MemberResponse;
 import es.us.meerkat.backend.dto.communities.UpgradeCommunityRequest;
+import es.us.meerkat.backend.dto.events.CreateEventRequest;
 import es.us.meerkat.backend.dto.users.AccessRequestBody;
 import es.us.meerkat.backend.dto.users.PrivacyRequest;
 import es.us.meerkat.backend.dto.users.RequestResponse;
@@ -26,6 +27,7 @@ import es.us.meerkat.backend.entity.communities.MiembroComunidad;
 import es.us.meerkat.backend.entity.communities.RolComunidad;
 import es.us.meerkat.backend.entity.communities.SolicitudComunidad;
 import es.us.meerkat.backend.entity.communities.TipoGrupo;
+import es.us.meerkat.backend.entity.events.Evento;
 import es.us.meerkat.backend.entity.subscriptions.TipoPlanComunidad;
 import es.us.meerkat.backend.entity.tutors.EstadoSolicitud;
 import es.us.meerkat.backend.entity.users.Usuario;
@@ -260,6 +262,50 @@ class CommunityControllerTest {
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().id()).isEqualTo(90L);
         assertThat(response.getBody().rol()).isEqualTo("ADMIN");
+    }
+
+    @Test
+    void createEventShouldForwardPrivateFlagFromRequest() {
+        Usuario usuario = buildUsuario(1L);
+        CreateEventRequest request = new CreateEventRequest();
+        request.setTitulo("Evento privado");
+        request.setPrivado(true);
+
+        Evento evento = mock(Evento.class);
+        when(eventoService.crearEvento(
+                        eq(usuario.getId()),
+                        eq(100L),
+                        eq(request.getTitulo()),
+                        eq(request.getDescripcion()),
+                        eq(request.getFechaHora()),
+                        eq(request.getFechaFin()),
+                        eq(request.getAforo()),
+                        eq(request.getQueLlevar()),
+                        eq(request.getEsVirtual()),
+                        eq(true),
+                        eq(request.getEnlaceVirtual()),
+                        eq(request.getVisibleEnMapa()),
+                        eq(request.getUbicacionId())))
+                .thenReturn(evento);
+
+        ResponseEntity<?> response = communityController.createEvent(100L, request, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        verify(eventoService)
+                .crearEvento(
+                        eq(usuario.getId()),
+                        eq(100L),
+                        eq(request.getTitulo()),
+                        eq(request.getDescripcion()),
+                        eq(request.getFechaHora()),
+                        eq(request.getFechaFin()),
+                        eq(request.getAforo()),
+                        eq(request.getQueLlevar()),
+                        eq(request.getEsVirtual()),
+                        eq(true),
+                        eq(request.getEnlaceVirtual()),
+                        eq(request.getVisibleEnMapa()),
+                        eq(request.getUbicacionId()));
     }
 
     private Usuario buildUsuario(final Long id) {
