@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { LuPlus, LuTrash2, LuSave, LuCheck, LuArrowLeft } from 'react-icons/lu';
 import { cuestionariosApi } from '../../api/cuestionarios.api';
 import { communitiesApi } from '../../api/communities.api';
 import './CuestionarioEditor.css';
 import Header from '../../components/Header/Header';
+import StudentSelector from '../../components/StudentSelector/StudentSelector';
 
 const cloneInitialQuestion = () => ({
   enunciado: '',
@@ -35,7 +36,7 @@ const CuestionarioEditor = () => {
 
   const [scope, setScope] = useState('GENERAL');
   const [selectedCommunityId, setSelectedCommunityId] = useState('');
-  const [studentEmailsText, setStudentEmailsText] = useState('');
+  const [selectedStudents, setSelectedStudents] = useState([]);
 
   useEffect(() => {
     const loadCommunities = async () => {
@@ -61,13 +62,12 @@ const CuestionarioEditor = () => {
     loadCommunities();
   }, [searchParams]);
 
-  const parsedStudentEmails = useMemo(
-    () => studentEmailsText
-      .split(',')
-      .map((v) => v.trim())
-      .filter((v) => v.length > 0 && v.includes('@')),
-    [studentEmailsText]
-  );
+  // Reset selected students when scope changes away from PERSONA
+  useEffect(() => {
+    if (scope !== 'PERSONA') {
+      setSelectedStudents([]);
+    }
+  }, [scope]);
 
   const handleBasicInfoChange = (e) => {
     const { name, value } = e.target;
@@ -187,8 +187,8 @@ const CuestionarioEditor = () => {
       return;
     }
 
-    if (scope === 'PERSONA' && parsedStudentEmails.length === 0) {
-      alert('Introduce al menos un email de alumno para publicar el cuestionario');
+    if (scope === 'PERSONA' && selectedStudents.length === 0) {
+      alert('Selecciona al menos un alumno para publicar el cuestionario');
       return;
     }
 
@@ -207,7 +207,7 @@ const CuestionarioEditor = () => {
         tiempoEstimadoMinutos: tiempo,
         dificultad: formData.dificultad || 'INTERMEDIO',
         comunidadesIds: scope === 'COMUNIDAD' ? [Number(selectedCommunityId)] : [],
-        alumnosEmails: scope === 'PERSONA' ? parsedStudentEmails : [],
+        alumnosEmails: scope === 'PERSONA' ? selectedStudents.map(s => s.email) : [],
         // Limpiamos los arrays según el tipo
         preguntas: formData.preguntas.map(q => ({
           enunciado: q.enunciado.trim(),
@@ -360,13 +360,10 @@ const CuestionarioEditor = () => {
           {scope === 'PERSONA' && (
             <div className="form-group-row">
               <div className="form-group">
-                <label>Emails de alumnos (separados por coma)</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={studentEmailsText}
-                  onChange={(e) => setStudentEmailsText(e.target.value)}
-                  placeholder="Ej: alumno1@email.com, alumno2@email.com"
+                <label>Selecciona alumnos</label>
+                <StudentSelector 
+                  selectedStudents={selectedStudents}
+                  onStudentsChange={setSelectedStudents}
                 />
               </div>
             </div>
