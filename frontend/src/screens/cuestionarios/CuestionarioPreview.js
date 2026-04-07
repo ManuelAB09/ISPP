@@ -64,7 +64,7 @@ const CuestionarioPreview = () => {
         <button
           className="quiz-preview-back"
           type="button"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/cuestionarios')}
         >
           Volver
         </button>
