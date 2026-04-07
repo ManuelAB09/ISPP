@@ -1,7 +1,7 @@
 # Documentación del Presupuesto del Proyecto MeerKatters
 
 ### Grupo 9 – Turno de tarde
-
+![Logo App](../../images/logoapp.jpeg)
 ---
 
 **Proyecto:** MeerKatters  

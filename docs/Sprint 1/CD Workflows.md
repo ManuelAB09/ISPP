@@ -1,5 +1,27 @@
 # Despliegue Continuo – Workflows por Sprint y Azure
 
+### Grupo 9 – Turno de tarde
+
+![Logo App](../images/logoapp.jpeg)
+
+---
+
+**Proyecto:** MeerKatters  
+**Autor:** Arquitectura 
+
+---
+
+## Índice
+
+1. [Introducción](#1-introducción)
+2. [Ramas de despliegue en Azure](#2-ramas-de-despliegue-en-azure)
+3. [Workflows para ramas de sprint (Render)](#3-workflows-para-ramas-de-sprint-render)
+   1. [Funcionamiento general](#31-funcionamiento-general)
+   2. [Congelación de ramas](#32-congelación-de-ramas)
+   3. [Neon Database](#33-neon-database)
+4. [Consideraciones operativas](#4-consideraciones-operativas)
+---
+## 1. Introduccíon
 Este documento complementa la sección de CI/CD principal explicando cómo se
 configuran los *workflows* específicos que gestionan el despliegue automático
 de las distintas ramas de desarrollo.
@@ -16,7 +38,7 @@ La estrategia general se basa en dos ejes:
 
 ---
 
-## 1. Ramas de despliegue en Azure
+## 2. Ramas de despliegue en Azure
 
 Las dos principales ramas productivas son:
 
@@ -41,7 +63,7 @@ Estos entornos se mantienen siempre activos y se actualizan con cada commit
 aceptado en su rama correspondiente. Son ideales para las pruebas continuas
 de la aplicación mientras se desarrolla.
 
-## 2. Workflows para ramas de sprint (Render)
+## 3. Workflows para ramas de sprint (Render)
 
 Para los tres primeros sprints se han preparado flujos de despliegue separados
 en Render. Cada sprint tiene una rama dedicada y un *workflow* propio:
@@ -87,7 +109,7 @@ Estas instancias se crean al principio del sprint y se destruyen tras el
 final. Los workflows incluyen pasos para ejecutar migraciones (`Flyway`/`Liquibase`)
 contra la base correspondiente.
 
-## 3. Consideraciones operativas
+## 4. Consideraciones operativas
 
 * Los workflows de sprint no ejecutan SonarQube ni análisis de cobertura; su
   objetivo es únicamente el despliegue funcional.
