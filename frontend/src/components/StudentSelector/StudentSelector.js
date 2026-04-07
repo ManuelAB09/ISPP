@@ -28,22 +28,10 @@ const StudentSelector = ({ selectedStudents, onStudentsChange }) => {
     searchTimeoutRef.current = setTimeout(async () => {
       try {
         const results = await usersApi.searchUsers(searchInput.trim());
-
-        const filteredResults = results.filter((user) => {
-          
-          if (selectedStudents.some((s) => s.id === user.id)) {
-            return false;
-          }
-          
-          if (user.rol === 'ADMIN' || user.rol === 'ADMINISTRADOR') {
-            return false;
-          }
-          
-          if (user.email && user.email.toLowerCase().includes('admin')) {
-            return false;
-          }
-          return true;
-        });
+        // Filtra resultados para excluir alumnos ya seleccionados
+        const filteredResults = results.filter(
+          (user) => !selectedStudents.some((s) => s.id === user.id)
+        );
         setSearchResults(filteredResults);
       } catch (error) {
         console.error('Error searching users:', error);
