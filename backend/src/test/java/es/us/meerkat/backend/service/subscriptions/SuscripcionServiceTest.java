@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -18,11 +19,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import es.us.meerkat.backend.entity.communities.Comunidad;
 import es.us.meerkat.backend.entity.communities.Institution;
 import es.us.meerkat.backend.entity.subscriptions.Suscripcion;
 import es.us.meerkat.backend.entity.subscriptions.TipoPlan;
+import es.us.meerkat.backend.entity.subscriptions.TipoPlanComunidad;
 import es.us.meerkat.backend.entity.subscriptions.TipoTransaccion;
 import es.us.meerkat.backend.entity.users.Usuario;
+import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.InstitutionRepository;
 import es.us.meerkat.backend.repository.subscriptions.SuscripcionRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
@@ -41,6 +45,7 @@ class SuscripcionServiceTest {
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private InstitutionRepository institutionRepository;
     @Mock private PaymentService paymentService;
+    @Mock private ComunidadRepository comunidadRepository;
 
     @InjectMocks private SuscripcionService suscripcionService;
 
@@ -49,6 +54,14 @@ class SuscripcionServiceTest {
 
     @BeforeEach
     void setUp() {
+        suscripcionService =
+                new SuscripcionService(
+                        suscripcionRepository,
+                        usuarioRepository,
+                        institutionRepository,
+                        paymentService,
+                        comunidadRepository);
+
         usuario = new Usuario();
         usuario.setId(1L);
         usuario.setEmail("test@example.com");
@@ -324,6 +337,53 @@ class SuscripcionServiceTest {
         assertThatThrownBy(() -> suscripcionService.cancelarSuscripcion(usuarioId))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("No tienes una suscripción activa");
+    }
+
+    @Test
+    void cancelarSuscripcionShouldDowngradePremiumCommunitiesToFree() {
+        Long usuarioId = 1L;
+        Suscripcion suscripcion = buildSuscripcion(1L, usuarioId, true);
+        Comunidad comunidadPremium =
+                Comunidad.builder()
+                        .id(10L)
+                        .tipoPlan(TipoPlanComunidad.PREMIUM)
+                        .maxMiembros(75)
+                        .build();
+
+        when(suscripcionRepository.findByUsuarioIdAndActiva(usuarioId, true))
+                .thenReturn(Optional.of(suscripcion));
+        when(suscripcionRepository.save(any(Suscripcion.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+        when(comunidadRepository.findByCreadorId(usuarioId)).thenReturn(List.of(comunidadPremium));
+
+        suscripcionService.cancelarSuscripcion(usuarioId);
+
+        assertThat(comunidadPremium.getTipoPlan()).isEqualTo(TipoPlanComunidad.FREE);
+        assertThat(comunidadPremium.getMaxMiembros()).isEqualTo(30);
+        verify(comunidadRepository).save(comunidadPremium);
+    }
+
+    @Test
+    void cancelarSuscripcionShouldNotTouchFreeOrUnlimitedCommunities() {
+        Long usuarioId = 1L;
+        Suscripcion suscripcion = buildSuscripcion(1L, usuarioId, true);
+        Comunidad comunidadFree =
+                Comunidad.builder()
+                        .id(11L)
+                        .tipoPlan(TipoPlanComunidad.FREE)
+                        .maxMiembros(30)
+                        .build();
+
+        when(suscripcionRepository.findByUsuarioIdAndActiva(usuarioId, true))
+                .thenReturn(Optional.of(suscripcion));
+        when(suscripcionRepository.save(any(Suscripcion.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+        when(comunidadRepository.findByCreadorId(usuarioId)).thenReturn(List.of(comunidadFree));
+
+        suscripcionService.cancelarSuscripcion(usuarioId);
+
+        assertThat(comunidadFree.getTipoPlan()).isEqualTo(TipoPlanComunidad.FREE);
+        verify(comunidadRepository, never()).save(comunidadFree);
     }
 
     @Test

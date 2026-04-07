@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -73,6 +74,36 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getStatus()).isEqualTo(500);
         assertThat(response.getBody().getMessage()).isEqualTo("Error interno del servidor");
+    }
+
+    @Test
+    void handleResponseStatusExceptionShouldForwardStatusAndReason() {
+        HttpServletRequest request = mockRequest("/api/v1/events/1/cancel");
+        ResponseStatusException ex =
+                new ResponseStatusException(
+                        HttpStatus.FORBIDDEN, "Solo el creador del evento puede cancelarlo");
+
+        ResponseEntity<ErrorResponse> response = handler.handleResponseStatusException(ex, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getStatus()).isEqualTo(403);
+        assertThat(response.getBody().getMessage())
+                .isEqualTo("Solo el creador del evento puede cancelarlo");
+        assertThat(response.getBody().getPath()).isEqualTo("/api/v1/events/1/cancel");
+    }
+
+    @Test
+    void handleResponseStatusExceptionShouldPreserveNonForbiddenStatuses() {
+        HttpServletRequest request = mockRequest("/api/v1/communities/99");
+        ResponseStatusException ex =
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Comunidad no encontrada");
+
+        ResponseEntity<ErrorResponse> response = handler.handleResponseStatusException(ex, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody().getStatus()).isEqualTo(404);
+        assertThat(response.getBody().getMessage()).isEqualTo("Comunidad no encontrada");
     }
 
     @Test
