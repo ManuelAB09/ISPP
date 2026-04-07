@@ -387,31 +387,33 @@ public class EventoService {
 
             // Notificar a todos los miembros de la comunidad (excepto el creador)
             Comunidad comunidad = eventoActualizado.getComunidad();
-            List<Long> miembrosIds =
-                    miembroComunidadRepository.findUsuarioIdsByComunidadId(comunidad.getId());
-            for (Long usuarioId : miembrosIds) {
-                if (!usuarioId.equals(eventoActualizado.getCreador().getId())) {
-                    Usuario usuario = usuarioRepository.findById(usuarioId).orElse(null);
-                    if (usuario != null) {
-                        Notificacion notificacion =
-                                Notificacion.builder()
-                                        .usuario(usuario)
-                                        .titulo(
-                                                "Evento actualizado en la comunidad "
-                                                        + comunidad.getNombre())
-                                        .mensaje(
-                                                "El evento '"
-                                                        + eventoActualizado.getTitulo()
-                                                        + "' ha sido actualizado.\n\nCambios:\n"
-                                                        + resumenCambios)
-                                        .tipo("EVENTO")
-                                        .leida(false)
-                                        .comunidadId(comunidad.getId())
-                                        .comunidadNombre(comunidad.getNombre())
-                                        .comunidadImagenUrl(comunidad.getImagenUrl())
-                                        .eventoId(eventoActualizado.getId())
-                                        .build();
-                        notificacionService.crearYNotificar(notificacion);
+            if (comunidad != null) {
+                List<Long> miembrosIds =
+                        miembroComunidadRepository.findUsuarioIdsByComunidadId(comunidad.getId());
+                for (Long usuarioId : miembrosIds) {
+                    if (!usuarioId.equals(eventoActualizado.getCreador().getId())) {
+                        Usuario usuario = usuarioRepository.findById(usuarioId).orElse(null);
+                        if (usuario != null) {
+                            Notificacion notificacion =
+                                    Notificacion.builder()
+                                            .usuario(usuario)
+                                            .titulo(
+                                                    "Evento actualizado en la comunidad "
+                                                            + comunidad.getNombre())
+                                            .mensaje(
+                                                    "El evento '"
+                                                            + eventoActualizado.getTitulo()
+                                                            + "' ha sido actualizado.\n\nCambios:\n"
+                                                            + resumenCambios)
+                                            .tipo("EVENTO")
+                                            .leida(false)
+                                            .comunidadId(comunidad.getId())
+                                            .comunidadNombre(comunidad.getNombre())
+                                            .comunidadImagenUrl(comunidad.getImagenUrl())
+                                            .eventoId(eventoActualizado.getId())
+                                            .build();
+                            notificacionService.crearYNotificar(notificacion);
+                        }
                     }
                 }
             }
