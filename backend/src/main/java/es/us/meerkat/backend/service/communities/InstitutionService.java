@@ -2,11 +2,13 @@ package es.us.meerkat.backend.service.communities;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,20 +26,28 @@ import es.us.meerkat.backend.service.emails.EmailService;
 import es.us.meerkat.backend.service.subscriptions.PaymentService;
 import lombok.extern.slf4j.Slf4j;
 
-/** Servicio para manejar operaciones de instituciones educativas y planes corporativos. */
+/**
+ * Servicio para manejar operaciones de instituciones educativas y planes
+ * corporativos.
+ */
 @Slf4j
 @Service
 public class InstitutionService {
 
-    @Autowired private InstitutionRepository institutionRepository;
+    @Autowired
+    private InstitutionRepository institutionRepository;
 
-    @Autowired private UsuarioRepository usuarioRepository;
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
-    @Autowired private PaymentService paymentService;
+    @Autowired
+    private PaymentService paymentService;
 
-    @Autowired private EmailService emailService;
+    @Autowired
+    private EmailService emailService;
 
-    @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Value("${app.frontend.url:http://localhost:3000}")
     private String frontendUrl;
@@ -50,15 +60,14 @@ public class InstitutionService {
      * Crea una nueva institución.
      *
      * @param usuarioId ID del usuario administrador
-     * @param request datos de la institución
+     * @param request   datos de la institución
      * @return Institución creada
      */
     @Transactional
     public Institution crearInstitucion(Long usuarioId, CreateInstitutionRequest request) {
-        Usuario usuario =
-                usuarioRepository
-                        .findById(usuarioId)
-                        .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        Usuario usuario = usuarioRepository
+                .findById(usuarioId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
         // Validar que no existe otra institución con el mismo dominio de email
         if (institutionRepository.findByDominioEmail(request.getDominioEmail()).isPresent()) {
@@ -87,16 +96,15 @@ public class InstitutionService {
      * Obtiene los detalles de una institución.
      *
      * @param institutionId ID de la institución
-     * @param usuarioId ID del usuario (para verificar permisos de admin)
+     * @param usuarioId     ID del usuario (para verificar permisos de admin)
      * @return Institución
      */
     @Transactional(readOnly = true)
     public Institution obtenerInstitucion(Long institutionId, Long usuarioId) {
-        Institution institution =
-                institutionRepository
-                        .findById(institutionId)
-                        .orElseThrow(
-                                () -> new IllegalArgumentException("Institución no encontrada"));
+        Institution institution = institutionRepository
+                .findById(institutionId)
+                .orElseThrow(
+                        () -> new IllegalArgumentException("Institución no encontrada"));
 
         // Verificar que el usuario es administrador de la institución
         if (!institution.getUsuarioAdmin().getId().equals(usuarioId)) {
@@ -124,8 +132,8 @@ public class InstitutionService {
      * Actualiza los datos de una institución.
      *
      * @param institutionId ID de la institución
-     * @param usuarioId ID del usuario administrador
-     * @param request datos actualizados
+     * @param usuarioId     ID del usuario administrador
+     * @param request       datos actualizados
      * @return Institución actualizada
      */
     @Transactional
@@ -159,6 +167,16 @@ public class InstitutionService {
         return institutionRepository.save(institution);
     }
 
+    /**
+     * Lista todas las instituciones para filtros y desplegables públicos.
+     *
+     * @return instituciones ordenadas alfabéticamente
+     */
+    @Transactional(readOnly = true)
+    public List<Institution> listarInstituciones() {
+        return institutionRepository.findAll(Sort.by(Sort.Direction.ASC, "nombre"));
+    }
+
     // ===============================
     // PLANES CORPORATIVOS
     // ===============================
@@ -167,8 +185,8 @@ public class InstitutionService {
      * Contrata un plan corporativo para una institución.
      *
      * @param institutionId ID de la institución
-     * @param usuarioId ID del usuario administrador
-     * @param request datos del plan
+     * @param usuarioId     ID del usuario administrador
+     * @param request       datos del plan
      * @return Respuesta con URL de pago
      */
     @Transactional
@@ -198,13 +216,12 @@ public class InstitutionService {
 
         PaymentUrlResponse paymentUrl;
         try {
-            paymentUrl =
-                    paymentService.generarPagoPlanCorporativo(
-                            institutionId,
-                            tipoPlan,
-                            montoEstimado,
-                            request.getPeriodo(),
-                            institution.getEmailContacto()); // ← email para prerellenar Stripe
+            paymentUrl = paymentService.generarPagoPlanCorporativo(
+                    institutionId,
+                    tipoPlan,
+                    montoEstimado,
+                    request.getPeriodo(),
+                    institution.getEmailContacto()); // ← email para prerellenar Stripe
         } catch (com.stripe.exception.StripeException e) {
             throw new RuntimeException("Error al conectar con la pasarela de pago", e);
         }
@@ -217,11 +234,12 @@ public class InstitutionService {
     }
 
     /**
-     * Persiste la configuración del plan corporativo para el flujo de PaymentIntent embebido.
+     * Persiste la configuración del plan corporativo para el flujo de PaymentIntent
+     * embebido.
      *
      * @param institutionId ID de la institución
-     * @param usuarioId ID del usuario administrador
-     * @param request datos del plan
+     * @param usuarioId     ID del usuario administrador
+     * @param request       datos del plan
      * @return institución actualizada
      */
     @Transactional
@@ -253,7 +271,8 @@ public class InstitutionService {
     }
 
     /**
-     * Valida la elegibilidad de una institución para planes reducidos basándose en el dominio de
+     * Valida la elegibilidad de una institución para planes reducidos basándose en
+     * el dominio de
      * email.
      *
      * @param dominioEmail dominio de email institucional
@@ -262,13 +281,13 @@ public class InstitutionService {
     public boolean validarEligibilidadPlanReducido(String dominioEmail) {
         // Dominios educativos públicos españoles comunes
         String[] dominiosPublicos = {
-            ".es.gov",
-            ".educacion.es",
-            ".junta.es",
-            ".xunta.es",
-            ".gencat.es",
-            ".eus",
-            ".infonavit.org.mx"
+                ".es.gov",
+                ".educacion.es",
+                ".junta.es",
+                ".xunta.es",
+                ".gencat.es",
+                ".eus",
+                ".infonavit.org.mx"
         };
 
         for (String dominio : dominiosPublicos) {
@@ -284,7 +303,8 @@ public class InstitutionService {
     }
 
     /**
-     * Activa un plan corporativo después de que el pago se completa. También gestiona la creación o
+     * Activa un plan corporativo después de que el pago se completa. También
+     * gestiona la creación o
      * vinculación de la cuenta del email de contacto.
      *
      * @param institutionId ID de la institución
@@ -303,11 +323,10 @@ public class InstitutionService {
             Integer duracionMeses,
             String emailContacto,
             TipoPlanCorporativo tipoPlanCorporativo) {
-        Institution institution =
-                institutionRepository
-                        .findById(institutionId)
-                        .orElseThrow(
-                                () -> new IllegalArgumentException("Institución no encontrada"));
+        Institution institution = institutionRepository
+                .findById(institutionId)
+                .orElseThrow(
+                        () -> new IllegalArgumentException("Institución no encontrada"));
 
         if (tipoPlanCorporativo != null) {
             institution.setPlanCorporativo(tipoPlanCorporativo);
@@ -337,11 +356,10 @@ public class InstitutionService {
     /** Sobrecarga sin emailContacto para compatibilidad. */
     @Transactional
     public void activarPlanCorporativo(Long institutionId, Integer duracionMeses) {
-        Institution institution =
-                institutionRepository
-                        .findById(institutionId)
-                        .orElseThrow(
-                                () -> new IllegalArgumentException("Institución no encontrada"));
+        Institution institution = institutionRepository
+                .findById(institutionId)
+                .orElseThrow(
+                        () -> new IllegalArgumentException("Institución no encontrada"));
         activarPlanCorporativo(institutionId, duracionMeses, institution.getEmailContacto(), null);
     }
 
@@ -375,10 +393,9 @@ public class InstitutionService {
         usuarioRepository.save(usuario);
 
         // Enviar email de invitación
-        String planName =
-                institution.getPlanCorporativo() != null
-                        ? institution.getPlanCorporativo().name()
-                        : "Institucional";
+        String planName = institution.getPlanCorporativo() != null
+                ? institution.getPlanCorporativo().name()
+                : "Institucional";
         try {
             emailService.sendInstitutionInviteEmail(
                     email,
@@ -399,7 +416,7 @@ public class InstitutionService {
      * Cancela un plan corporativo.
      *
      * @param institutionId ID de la institución
-     * @param usuarioId ID del usuario administrador
+     * @param usuarioId     ID del usuario administrador
      */
     @Transactional
     public void cancelarPlanCorporativo(Long institutionId, Long usuarioId) {
@@ -420,11 +437,10 @@ public class InstitutionService {
      */
     @Transactional(readOnly = true)
     public boolean esPlanActivo(Long institutionId) {
-        Institution institution =
-                institutionRepository
-                        .findById(institutionId)
-                        .orElseThrow(
-                                () -> new IllegalArgumentException("Institución no encontrada"));
+        Institution institution = institutionRepository
+                .findById(institutionId)
+                .orElseThrow(
+                        () -> new IllegalArgumentException("Institución no encontrada"));
 
         if (!institution.getPlanActivo()) {
             return false;
@@ -445,11 +461,10 @@ public class InstitutionService {
      */
     @Transactional(readOnly = true)
     public Integer obtenerNumUsuariosPermitidos(Long institutionId) {
-        Institution institution =
-                institutionRepository
-                        .findById(institutionId)
-                        .orElseThrow(
-                                () -> new IllegalArgumentException("Institución no encontrada"));
+        Institution institution = institutionRepository
+                .findById(institutionId)
+                .orElseThrow(
+                        () -> new IllegalArgumentException("Institución no encontrada"));
 
         return institution.getNumUsuariosPermitidos() != null
                 ? institution.getNumUsuariosPermitidos()
@@ -458,11 +473,10 @@ public class InstitutionService {
 
     @Transactional(readOnly = true)
     public long contarUsuarios(Long institutionId) {
-        Institution institution =
-                institutionRepository
-                        .findById(institutionId)
-                        .orElseThrow(
-                                () -> new IllegalArgumentException("Institución no encontrada"));
+        Institution institution = institutionRepository
+                .findById(institutionId)
+                .orElseThrow(
+                        () -> new IllegalArgumentException("Institución no encontrada"));
         return institutionRepository.countUsuariosByDominioEmail(institution.getDominioEmail());
     }
 

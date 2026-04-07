@@ -1,6 +1,7 @@
 package es.us.meerkat.backend.controller.communities;
 
 import java.util.Map;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -36,20 +37,36 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 /**
- * Controlador para manejar operaciones con instituciones educativas y planes corporativos.
+ * Controlador para manejar operaciones con instituciones educativas y planes
+ * corporativos.
  *
- * <p>Base path: /api/v1/institutions
+ * <p>
+ * Base path: /api/v1/institutions
  */
 @RestController
 @RequestMapping("/api/v1/institutions")
-@Tag(
-        name = "Institutions",
-        description = "Gestión de instituciones educativas y planes corporativos")
+@Tag(name = "Institutions", description = "Gestión de instituciones educativas y planes corporativos")
 @SecurityRequirement(name = "bearer")
 public class InstitutionController {
 
-    @Autowired private InstitutionService institutionService;
-    @Autowired private PaymentService paymentService;
+    @Autowired
+    private InstitutionService institutionService;
+    @Autowired
+    private PaymentService paymentService;
+
+    /**
+     * Lista instituciones para filtros y formularios públicos.
+     *
+     * @return instituciones ordenadas alfabéticamente
+     */
+    @GetMapping
+    @Operation(summary = "Listar instituciones")
+    public ResponseEntity<List<InstitutionResponse>> listarInstituciones() {
+        List<InstitutionResponse> response = institutionService.listarInstituciones().stream()
+                .map(this::toInstitutionResponse)
+                .toList();
+        return ResponseEntity.ok(response);
+    }
 
     // ===============================
     // CRUD OPERATIONS
@@ -90,7 +107,7 @@ public class InstitutionController {
      * Obtiene los detalles de una institución.
      *
      * @param institutionId ID de la institución
-     * @param usuario Usuario autenticado
+     * @param usuario       Usuario autenticado
      * @return InstitutionResponse con detalles
      */
     @GetMapping("/{institutionId}")
@@ -98,8 +115,7 @@ public class InstitutionController {
     public ResponseEntity<InstitutionResponse> obtenerInstitucion(
             @PathVariable Long institutionId, @AuthenticationPrincipal Usuario usuario) {
 
-        Institution institution =
-                institutionService.obtenerInstitucion(institutionId, usuario.getId());
+        Institution institution = institutionService.obtenerInstitucion(institutionId, usuario.getId());
         InstitutionResponse response = toInstitutionResponse(institution);
 
         return ResponseEntity.ok(response);
@@ -109,8 +125,8 @@ public class InstitutionController {
      * Actualiza los datos de una institución.
      *
      * @param institutionId ID de la institución
-     * @param usuario Usuario autenticado (debe ser administrador)
-     * @param request Datos actualizados
+     * @param usuario       Usuario autenticado (debe ser administrador)
+     * @param request       Datos actualizados
      * @return InstitutionResponse actualizada
      */
     @PutMapping("/{institutionId}")
@@ -120,8 +136,7 @@ public class InstitutionController {
             @AuthenticationPrincipal Usuario usuario,
             @Valid @RequestBody UpdateInstitutionRequest request) {
 
-        Institution institution =
-                institutionService.actualizarInstitucion(institutionId, usuario.getId(), request);
+        Institution institution = institutionService.actualizarInstitucion(institutionId, usuario.getId(), request);
         InstitutionResponse response = toInstitutionResponse(institution);
 
         return ResponseEntity.ok(response);
@@ -132,12 +147,13 @@ public class InstitutionController {
     // ===============================
 
     /**
-     * Contrata un plan corporativo para una institución. Genera una URL de pago que el cliente debe
+     * Contrata un plan corporativo para una institución. Genera una URL de pago que
+     * el cliente debe
      * procesar.
      *
      * @param institutionId ID de la institución
-     * @param usuario Usuario autenticado (administrador)
-     * @param request Datos del plan a contratar
+     * @param usuario       Usuario autenticado (administrador)
+     * @param request       Datos del plan a contratar
      * @return PaymentUrlResponse con URL de pago
      */
     @PostMapping("/{institutionId}/plan")
@@ -152,9 +168,8 @@ public class InstitutionController {
         }
 
         try {
-            PaymentUrlResponse paymentUrl =
-                    institutionService.contratarPlanCorporativo(
-                            institutionId, usuario.getId(), request);
+            PaymentUrlResponse paymentUrl = institutionService.contratarPlanCorporativo(
+                    institutionId, usuario.getId(), request);
             return ResponseEntity.ok(paymentUrl);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
@@ -165,11 +180,12 @@ public class InstitutionController {
     }
 
     /**
-     * Cancela el plan corporativo de una institución. Requiere autenticación como administrador de
+     * Cancela el plan corporativo de una institución. Requiere autenticación como
+     * administrador de
      * la institución.
      *
      * @param institutionId ID de la institución
-     * @param usuario Usuario autenticado (administrador)
+     * @param usuario       Usuario autenticado (administrador)
      * @return InstitutionResponse actualizada
      */
     @DeleteMapping("/{institutionId}/plan")
@@ -179,8 +195,7 @@ public class InstitutionController {
 
         institutionService.cancelarPlanCorporativo(institutionId, usuario.getId());
 
-        Institution institution =
-                institutionService.obtenerInstitucion(institutionId, usuario.getId());
+        Institution institution = institutionService.obtenerInstitucion(institutionId, usuario.getId());
         InstitutionResponse response = toInstitutionResponse(institution);
 
         return ResponseEntity.ok(response);
@@ -190,7 +205,7 @@ public class InstitutionController {
      * Verifica si el plan corporativo de una institución está activo.
      *
      * @param institutionId ID de la institución
-     * @param usuario Usuario autenticado
+     * @param usuario       Usuario autenticado
      * @return Mapa con estado del plan
      */
     @GetMapping("/{institutionId}/plan/status")
@@ -198,8 +213,7 @@ public class InstitutionController {
     public ResponseEntity<?> verificarEstadoPlan(
             @PathVariable Long institutionId, @AuthenticationPrincipal Usuario usuario) {
 
-        Institution institution =
-                institutionService.obtenerInstitucion(institutionId, usuario.getId());
+        Institution institution = institutionService.obtenerInstitucion(institutionId, usuario.getId());
         boolean planActivo = institutionService.esPlanActivo(institutionId);
 
         return ResponseEntity.ok(
@@ -249,9 +263,7 @@ public class InstitutionController {
     }
 
     @PostMapping("/{institutionId}/create-plan-payment-intent")
-    @Operation(
-            summary = "Crear PaymentIntent para plan corporativo",
-            description = "Devuelve el clientSecret para usar con Stripe Elements embebido")
+    @Operation(summary = "Crear PaymentIntent para plan corporativo", description = "Devuelve el clientSecret para usar con Stripe Elements embebido")
     public ResponseEntity<?> crearPlanPaymentIntent(
             @PathVariable Long institutionId,
             @AuthenticationPrincipal Usuario usuario,
@@ -262,21 +274,19 @@ public class InstitutionController {
         }
 
         try {
-            Institution institution =
-                    institutionService.preconfigurarPlanCorporativo(
-                            institutionId, usuario.getId(), request);
+            Institution institution = institutionService.preconfigurarPlanCorporativo(
+                    institutionId, usuario.getId(), request);
 
             TipoPlanCorporativo tipoPlan = institution.getPlanCorporativo();
             String periodo = request.getPeriodo();
             Integer duracionMeses = request.getDuracionMeses();
 
-            Map<String, String> result =
-                    paymentService.crearPaymentIntentPlanCorporativo(
-                            institutionId,
-                            tipoPlan,
-                            periodo,
-                            institution.getEmailContacto(),
-                            duracionMeses);
+            Map<String, String> result = paymentService.crearPaymentIntentPlanCorporativo(
+                    institutionId,
+                    tipoPlan,
+                    periodo,
+                    institution.getEmailContacto(),
+                    duracionMeses);
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -288,9 +298,7 @@ public class InstitutionController {
     }
 
     @PostMapping("/confirm-plan-payment")
-    @Operation(
-            summary = "Confirmar pago de plan corporativo con Stripe Elements",
-            description = "Verifica el PaymentIntent y activa el plan institucional")
+    @Operation(summary = "Confirmar pago de plan corporativo con Stripe Elements", description = "Verifica el PaymentIntent y activa el plan institucional")
     public ResponseEntity<?> confirmarPagoPlan(@RequestBody Map<String, String> body) {
 
         String paymentIntentId = body.get("paymentIntentId");
@@ -299,8 +307,7 @@ public class InstitutionController {
         }
 
         try {
-            com.stripe.model.PaymentIntent intent =
-                    com.stripe.model.PaymentIntent.retrieve(paymentIntentId);
+            com.stripe.model.PaymentIntent intent = com.stripe.model.PaymentIntent.retrieve(paymentIntentId);
 
             if (!"succeeded".equals(intent.getStatus())) {
                 return ResponseEntity.badRequest()
@@ -320,10 +327,9 @@ public class InstitutionController {
 
             Long institucionId = Long.parseLong(institucionIdStr);
             Integer duracionMeses = duracionStr != null ? Integer.parseInt(duracionStr) : 12;
-            TipoPlanCorporativo tipoPlanCorporativo =
-                    tipoPlanCorporativoStr != null
-                            ? TipoPlanCorporativo.valueOf(tipoPlanCorporativoStr)
-                            : null;
+            TipoPlanCorporativo tipoPlanCorporativo = tipoPlanCorporativoStr != null
+                    ? TipoPlanCorporativo.valueOf(tipoPlanCorporativoStr)
+                    : null;
 
             institutionService.activarPlanCorporativo(
                     institucionId, duracionMeses, emailContacto, tipoPlanCorporativo);
@@ -381,10 +387,9 @@ public class InstitutionController {
 
             Long institucionId = Long.parseLong(institucionIdStr);
             Integer duracionMeses = duracionStr != null ? Integer.parseInt(duracionStr) : 12;
-            TipoPlanCorporativo tipoPlanCorporativo =
-                    tipoPlanCorporativoStr != null
-                            ? TipoPlanCorporativo.valueOf(tipoPlanCorporativoStr)
-                            : null;
+            TipoPlanCorporativo tipoPlanCorporativo = tipoPlanCorporativoStr != null
+                    ? TipoPlanCorporativo.valueOf(tipoPlanCorporativoStr)
+                    : null;
 
             institutionService.activarPlanCorporativo(
                     institucionId, duracionMeses, emailContacto, tipoPlanCorporativo);
