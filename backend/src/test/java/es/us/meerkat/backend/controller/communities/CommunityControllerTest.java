@@ -43,286 +43,293 @@ import es.us.meerkat.backend.service.tutors.TutorContratacionService;
 @ExtendWith(MockitoExtension.class)
 class CommunityControllerTest {
 
-        @Mock
-        private CommunityService communityService;
-        @Mock
-        private MemberService memberService;
-        @Mock
-        private RequestService requestService;
-        @Mock
-        private CategoryService categoryService;
-        @Mock
-        private AuthorizationService authorizationService;
-        @Mock
-        private TutorContratacionService tutorContratacionService;
-        @Mock
-        private EventoService eventoService;
-        @Mock
-        private GoogleClassroomService googleClassroomService;
+    @Mock private CommunityService communityService;
+    @Mock private MemberService memberService;
+    @Mock private RequestService requestService;
+    @Mock private CategoryService categoryService;
+    @Mock private AuthorizationService authorizationService;
+    @Mock private TutorContratacionService tutorContratacionService;
+    @Mock private EventoService eventoService;
+    @Mock private GoogleClassroomService googleClassroomService;
 
-        @InjectMocks
-        private CommunityController communityController;
+    @InjectMocks private CommunityController communityController;
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void createCommunityShouldReturnUnauthorizedWhenUserIsNull() {
+        CreateCommunityRequest request =
+                new CreateCommunityRequest(
+                        "Comunidad Java",
+                        "Descripción",
+                        "COMUNIDAD_PUBLICA",
+                        null,
+                        null,
+                        null,
+                        null);
+
+        ResponseEntity<CommunityDetailResponse> response =
+                (ResponseEntity<CommunityDetailResponse>)
+                        communityController.createCommunity(request, null);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void createCommunityShouldReturnCreatedWhenServiceSucceeds() {
+        Usuario usuario = buildUsuario(1L);
+        CreateCommunityRequest request =
+                new CreateCommunityRequest(
+                        "Comunidad Java",
+                        "Descripción",
+                        "COMUNIDAD_PUBLICA",
+                        "img.png",
+                        null,
+                        null,
+                        null);
+        Comunidad comunidad =
+                buildComunidad(10L, usuario, TipoGrupo.COMUNIDAD_PUBLICA, TipoPlanComunidad.FREE);
+
+        when(communityService.createCommunity(
+                        usuario.getId(),
+                        request.nombre(),
+                        request.descripcion(),
+                        TipoGrupo.COMUNIDAD_PUBLICA,
+                        request.imagenUrl(),
+                        request.institutionId(),
+                        request.maxMiembros(),
+                        null))
+                .thenReturn(comunidad);
+        when(communityService.countMembers(comunidad.getId())).thenReturn(1L);
+        MiembroComunidad membership = MiembroComunidad.builder().rol(RolComunidad.ADMIN).build();
+        when(authorizationService.getMembership(usuario.getId(), comunidad.getId()))
+                .thenReturn(membership);
+
+        ResponseEntity<CommunityDetailResponse> response =
+                (ResponseEntity<CommunityDetailResponse>)
+                        communityController.createCommunity(request, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().id()).isEqualTo(comunidad.getId());
+        assertThat(response.getBody().miRol()).isEqualTo("ADMIN");
+    }
+
+    @Test
+    void createCommunityShouldReturnBadRequestWhenServiceFails() {
+        Usuario usuario = buildUsuario(1L);
+        CreateCommunityRequest request =
+                new CreateCommunityRequest(
+                        "Comunidad Java",
+                        "Descripción",
+                        "COMUNIDAD_PUBLICA",
+                        null,
+                        null,
+                        null,
+                        null);
+
+        when(communityService.createCommunity(
+                        usuario.getId(),
+                        request.nombre(),
+                        request.descripcion(),
+                        TipoGrupo.COMUNIDAD_PUBLICA,
+                        request.imagenUrl(),
+                        request.institutionId(),
+                        request.maxMiembros(),
+                        null))
+                .thenThrow(new IllegalArgumentException("límite alcanzado"));
+
+        ResponseEntity<?> response = communityController.createCommunity(request, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void updatePrivacyShouldReturnForbiddenWhenUserIsNotAdmin() {
+        Usuario usuario = buildUsuario(1L);
+        when(authorizationService.isAdminOf(usuario.getId(), 100L)).thenReturn(false);
+
+        ResponseEntity<CommunityDetailResponse> response =
+                communityController.updateCommunityPrivacy(
+                        100L, new PrivacyRequest("GRUPO_PRIVADO"), usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    void joinPublicCommunityShouldReturnCreatedWhenServiceSucceeds() {
+        Usuario usuario = buildUsuario(1L);
+        MiembroComunidad miembro =
+                MiembroComunidad.builder()
+                        .id(50L)
+                        .usuario(usuario)
+                        .rol(RolComunidad.ALUMNO)
+                        .build();
+
+        when(memberService.joinPublicCommunity(usuario.getId(), 100L, null)).thenReturn(miembro);
 
         @SuppressWarnings("unchecked")
-        @Test
-        void createCommunityShouldReturnUnauthorizedWhenUserIsNull() {
-                CreateCommunityRequest request = new CreateCommunityRequest(
-                                "Comunidad Java",
-                                "Descripción",
-                                "COMUNIDAD_PUBLICA",
-                                null,
-                                null,
-                                null,
-                                null);
+        ResponseEntity<MemberResponse> response =
+                (ResponseEntity<MemberResponse>)
+                        communityController.joinPublicCommunity(
+                                100L, new JoinCommunityRequest(null), usuario);
 
-                ResponseEntity<CommunityDetailResponse> response = (ResponseEntity<CommunityDetailResponse>) communityController
-                                .createCommunity(request, null);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().id()).isEqualTo(50L);
+        verify(memberService).joinPublicCommunity(usuario.getId(), 100L, null);
+    }
 
-                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-        }
+    @Test
+    void requestAccessShouldReturnCreatedWhenServiceSucceeds() {
+        Usuario usuario = buildUsuario(2L);
+        SolicitudComunidad solicitud =
+                SolicitudComunidad.builder()
+                        .id(77L)
+                        .solicitante(usuario)
+                        .estado(EstadoSolicitud.PENDIENTE)
+                        .mensaje("Quiero entrar")
+                        .build();
 
-        @SuppressWarnings("unchecked")
-        @Test
-        void createCommunityShouldReturnCreatedWhenServiceSucceeds() {
-                Usuario usuario = buildUsuario(1L);
-                CreateCommunityRequest request = new CreateCommunityRequest(
-                                "Comunidad Java",
-                                "Descripción",
-                                "COMUNIDAD_PUBLICA",
-                                "img.png",
-                                null,
-                                null,
-                                null);
-                Comunidad comunidad = buildComunidad(10L, usuario, TipoGrupo.COMUNIDAD_PUBLICA, TipoPlanComunidad.FREE);
+        when(requestService.requestAccess(
+                        usuario.getId(), 100L, "Quiero entrar", RolComunidad.ALUMNO))
+                .thenReturn(solicitud);
 
-                when(communityService.createCommunity(
-                                usuario.getId(),
-                                request.nombre(),
-                                request.descripcion(),
-                                TipoGrupo.COMUNIDAD_PUBLICA,
-                                request.imagenUrl(),
-                                request.institutionId(),
-                                request.maxMiembros(),
-                                null))
-                                .thenReturn(comunidad);
-                when(communityService.countMembers(comunidad.getId())).thenReturn(1L);
-                MiembroComunidad membership = MiembroComunidad.builder().rol(RolComunidad.ADMIN).build();
-                when(authorizationService.getMembership(usuario.getId(), comunidad.getId()))
-                                .thenReturn(membership);
+        ResponseEntity<RequestResponse> response =
+                communityController.requestAccess(
+                        100L, new AccessRequestBody("Quiero entrar", null), usuario);
 
-                ResponseEntity<CommunityDetailResponse> response = (ResponseEntity<CommunityDetailResponse>) communityController
-                                .createCommunity(request, usuario);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().id()).isEqualTo(77L);
+    }
 
-                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-                assertThat(response.getBody()).isNotNull();
-                assertThat(response.getBody().id()).isEqualTo(comunidad.getId());
-                assertThat(response.getBody().miRol()).isEqualTo("ADMIN");
-        }
+    @Test
+    void respondToRequestShouldReturnForbiddenWhenUserIsNotAdmin() {
+        Usuario usuario = buildUsuario(1L);
+        when(authorizationService.isAdminOf(usuario.getId(), 100L)).thenReturn(false);
 
-        @Test
-        void createCommunityShouldReturnBadRequestWhenServiceFails() {
-                Usuario usuario = buildUsuario(1L);
-                CreateCommunityRequest request = new CreateCommunityRequest(
-                                "Comunidad Java",
-                                "Descripción",
-                                "COMUNIDAD_PUBLICA",
-                                null,
-                                null,
-                                null,
-                                null);
+        ResponseEntity<RequestResponse> response =
+                communityController.respondToRequest(
+                        100L, 200L, new RespondRequestBody(true), usuario);
 
-                when(communityService.createCommunity(
-                                usuario.getId(),
-                                request.nombre(),
-                                request.descripcion(),
-                                TipoGrupo.COMUNIDAD_PUBLICA,
-                                request.imagenUrl(),
-                                request.institutionId(),
-                                request.maxMiembros(),
-                                null))
-                                .thenThrow(new IllegalArgumentException("límite alcanzado"));
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
 
-                ResponseEntity<?> response = communityController.createCommunity(request, usuario);
+    @Test
+    void upgradeCommunityShouldReturnBadRequestWhenAlreadyPremium() {
+        Usuario usuario = buildUsuario(1L);
+        when(authorizationService.isAdminOf(usuario.getId(), 100L)).thenReturn(true);
+        when(communityService.upgradeToPremium(usuario.getId(), 100L))
+                .thenThrow(new IllegalArgumentException("ya premium"));
 
-                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        }
+        ResponseEntity<CommunityDetailResponse> response =
+                communityController.upgradeCommunity(
+                        100L, new UpgradeCommunityRequest("premium"), usuario);
 
-        @Test
-        void updatePrivacyShouldReturnForbiddenWhenUserIsNotAdmin() {
-                Usuario usuario = buildUsuario(1L);
-                when(authorizationService.isAdminOf(usuario.getId(), 100L)).thenReturn(false);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
 
-                ResponseEntity<CommunityDetailResponse> response = communityController.updateCommunityPrivacy(
-                                100L, new PrivacyRequest("GRUPO_PRIVADO"), usuario);
+    @Test
+    void promoteMemberToAdminShouldReturnForbiddenWhenUserIsNotAdmin() {
+        Usuario usuario = buildUsuario(1L);
+        when(authorizationService.isAdminOf(usuario.getId(), 100L)).thenReturn(false);
 
-                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-        }
+        ResponseEntity<MemberResponse> response =
+                communityController.promoteMemberToAdmin(100L, 2L, usuario);
 
-        @Test
-        void joinPublicCommunityShouldReturnCreatedWhenServiceSucceeds() {
-                Usuario usuario = buildUsuario(1L);
-                MiembroComunidad miembro = MiembroComunidad.builder()
-                                .id(50L)
-                                .usuario(usuario)
-                                .rol(RolComunidad.ALUMNO)
-                                .build();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
 
-                when(memberService.joinPublicCommunity(usuario.getId(), 100L, null)).thenReturn(miembro);
+    @Test
+    void promoteMemberToAdminShouldReturnOkWhenServiceSucceeds() {
+        Usuario usuario = buildUsuario(1L);
+        Usuario targetUser = buildUsuario(2L);
+        MiembroComunidad promoted =
+                MiembroComunidad.builder()
+                        .id(90L)
+                        .usuario(targetUser)
+                        .rol(RolComunidad.ADMIN)
+                        .build();
 
-                @SuppressWarnings("unchecked")
-                ResponseEntity<MemberResponse> response = (ResponseEntity<MemberResponse>) communityController
-                                .joinPublicCommunity(
-                                                100L, new JoinCommunityRequest(null), usuario);
+        when(authorizationService.isAdminOf(usuario.getId(), 100L)).thenReturn(true);
+        when(memberService.promoteToAdmin(usuario.getId(), 100L, 2L)).thenReturn(promoted);
 
-                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-                assertThat(response.getBody()).isNotNull();
-                assertThat(response.getBody().id()).isEqualTo(50L);
-                verify(memberService).joinPublicCommunity(usuario.getId(), 100L, null);
-        }
+        ResponseEntity<MemberResponse> response =
+                communityController.promoteMemberToAdmin(100L, 2L, usuario);
 
-        @Test
-        void requestAccessShouldReturnCreatedWhenServiceSucceeds() {
-                Usuario usuario = buildUsuario(2L);
-                SolicitudComunidad solicitud = SolicitudComunidad.builder()
-                                .id(77L)
-                                .solicitante(usuario)
-                                .estado(EstadoSolicitud.PENDIENTE)
-                                .mensaje("Quiero entrar")
-                                .build();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().id()).isEqualTo(90L);
+        assertThat(response.getBody().rol()).isEqualTo("ADMIN");
+    }
 
-                when(requestService.requestAccess(
-                                usuario.getId(), 100L, "Quiero entrar", RolComunidad.ALUMNO))
-                                .thenReturn(solicitud);
+    @Test
+    void createEventShouldForwardPrivateFlagFromRequest() {
+        Usuario usuario = buildUsuario(1L);
+        CreateEventRequest request = new CreateEventRequest();
+        request.setTitulo("Evento privado");
+        request.setPrivado(true);
 
-                ResponseEntity<RequestResponse> response = communityController.requestAccess(
-                                100L, new AccessRequestBody("Quiero entrar", null), usuario);
+        Evento evento = mock(Evento.class);
+        when(eventoService.crearEvento(
+                        eq(usuario.getId()),
+                        eq(100L),
+                        eq(request.getTitulo()),
+                        eq(request.getDescripcion()),
+                        eq(request.getFechaHora()),
+                        eq(request.getFechaFin()),
+                        eq(request.getAforo()),
+                        eq(request.getQueLlevar()),
+                        eq(request.getEsVirtual()),
+                        eq(true),
+                        eq(request.getEnlaceVirtual()),
+                        eq(request.getVisibleEnMapa()),
+                        eq(request.getUbicacionId())))
+                .thenReturn(evento);
 
-                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-                assertThat(response.getBody()).isNotNull();
-                assertThat(response.getBody().id()).isEqualTo(77L);
-        }
+        ResponseEntity<?> response = communityController.createEvent(100L, request, usuario);
 
-        @Test
-        void respondToRequestShouldReturnForbiddenWhenUserIsNotAdmin() {
-                Usuario usuario = buildUsuario(1L);
-                when(authorizationService.isAdminOf(usuario.getId(), 100L)).thenReturn(false);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        verify(eventoService)
+                .crearEvento(
+                        eq(usuario.getId()),
+                        eq(100L),
+                        eq(request.getTitulo()),
+                        eq(request.getDescripcion()),
+                        eq(request.getFechaHora()),
+                        eq(request.getFechaFin()),
+                        eq(request.getAforo()),
+                        eq(request.getQueLlevar()),
+                        eq(request.getEsVirtual()),
+                        eq(true),
+                        eq(request.getEnlaceVirtual()),
+                        eq(request.getVisibleEnMapa()),
+                        eq(request.getUbicacionId()));
+    }
 
-                ResponseEntity<RequestResponse> response = communityController.respondToRequest(
-                                100L, 200L, new RespondRequestBody(true), usuario);
+    private Usuario buildUsuario(final Long id) {
+        Usuario usuario = new Usuario();
+        usuario.setId(id);
+        usuario.setNombre("Usuario " + id);
+        usuario.setEmail("user" + id + "@meerkat.es");
+        return usuario;
+    }
 
-                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-        }
-
-        @Test
-        void upgradeCommunityShouldReturnBadRequestWhenAlreadyPremium() {
-                Usuario usuario = buildUsuario(1L);
-                when(authorizationService.isAdminOf(usuario.getId(), 100L)).thenReturn(true);
-                when(communityService.upgradeToPremium(usuario.getId(), 100L))
-                                .thenThrow(new IllegalArgumentException("ya premium"));
-
-                ResponseEntity<CommunityDetailResponse> response = communityController.upgradeCommunity(
-                                100L, new UpgradeCommunityRequest("premium"), usuario);
-
-                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        }
-
-        @Test
-        void promoteMemberToAdminShouldReturnForbiddenWhenUserIsNotAdmin() {
-                Usuario usuario = buildUsuario(1L);
-                when(authorizationService.isAdminOf(usuario.getId(), 100L)).thenReturn(false);
-
-                ResponseEntity<MemberResponse> response = communityController.promoteMemberToAdmin(100L, 2L, usuario);
-
-                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-        }
-
-        @Test
-        void promoteMemberToAdminShouldReturnOkWhenServiceSucceeds() {
-                Usuario usuario = buildUsuario(1L);
-                Usuario targetUser = buildUsuario(2L);
-                MiembroComunidad promoted = MiembroComunidad.builder()
-                                .id(90L)
-                                .usuario(targetUser)
-                                .rol(RolComunidad.ADMIN)
-                                .build();
-
-                when(authorizationService.isAdminOf(usuario.getId(), 100L)).thenReturn(true);
-                when(memberService.promoteToAdmin(usuario.getId(), 100L, 2L)).thenReturn(promoted);
-
-                ResponseEntity<MemberResponse> response = communityController.promoteMemberToAdmin(100L, 2L, usuario);
-
-                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-                assertThat(response.getBody()).isNotNull();
-                assertThat(response.getBody().id()).isEqualTo(90L);
-                assertThat(response.getBody().rol()).isEqualTo("ADMIN");
-        }
-
-        @Test
-        void createEventShouldForwardPrivateFlagFromRequest() {
-                Usuario usuario = buildUsuario(1L);
-                CreateEventRequest request = new CreateEventRequest();
-                request.setTitulo("Evento privado");
-                request.setPrivado(true);
-
-                Evento evento = mock(Evento.class);
-                when(eventoService.crearEvento(
-                                eq(usuario.getId()),
-                                eq(100L),
-                                eq(request.getTitulo()),
-                                eq(request.getDescripcion()),
-                                eq(request.getFechaHora()),
-                                eq(request.getFechaFin()),
-                                eq(request.getAforo()),
-                                eq(request.getQueLlevar()),
-                                eq(request.getEsVirtual()),
-                                eq(true),
-                                eq(request.getEnlaceVirtual()),
-                                eq(request.getVisibleEnMapa()),
-                                eq(request.getUbicacionId())))
-                                .thenReturn(evento);
-
-                ResponseEntity<?> response = communityController.createEvent(100L, request, usuario);
-
-                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-                verify(eventoService)
-                                .crearEvento(
-                                                eq(usuario.getId()),
-                                                eq(100L),
-                                                eq(request.getTitulo()),
-                                                eq(request.getDescripcion()),
-                                                eq(request.getFechaHora()),
-                                                eq(request.getFechaFin()),
-                                                eq(request.getAforo()),
-                                                eq(request.getQueLlevar()),
-                                                eq(request.getEsVirtual()),
-                                                eq(true),
-                                                eq(request.getEnlaceVirtual()),
-                                                eq(request.getVisibleEnMapa()),
-                                                eq(request.getUbicacionId()));
-        }
-
-        private Usuario buildUsuario(final Long id) {
-                Usuario usuario = new Usuario();
-                usuario.setId(id);
-                usuario.setNombre("Usuario " + id);
-                usuario.setEmail("user" + id + "@meerkat.es");
-                return usuario;
-        }
-
-        private Comunidad buildComunidad(
-                        final Long id,
-                        final Usuario creador,
-                        final TipoGrupo tipoGrupo,
-                        final TipoPlanComunidad tipoPlan) {
-                return Comunidad.builder()
-                                .id(id)
-                                .nombre("Comunidad")
-                                .descripcion("Desc")
-                                .tipoGrupo(tipoGrupo)
-                                .tipoPlan(tipoPlan)
-                                .estado(EstadoComunidad.ACTIVA)
-                                .maxMiembros(50)
-                                .creador(creador)
-                                .build();
-        }
+    private Comunidad buildComunidad(
+            final Long id,
+            final Usuario creador,
+            final TipoGrupo tipoGrupo,
+            final TipoPlanComunidad tipoPlan) {
+        return Comunidad.builder()
+                .id(id)
+                .nombre("Comunidad")
+                .descripcion("Desc")
+                .tipoGrupo(tipoGrupo)
+                .tipoPlan(tipoPlan)
+                .estado(EstadoComunidad.ACTIVA)
+                .maxMiembros(50)
+                .creador(creador)
+                .build();
+    }
 }

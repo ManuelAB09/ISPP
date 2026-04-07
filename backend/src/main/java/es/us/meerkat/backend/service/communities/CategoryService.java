@@ -1,7 +1,7 @@
 package es.us.meerkat.backend.service.communities;
 
-import java.util.List;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,20 +31,23 @@ public class CategoryService {
             throw new IllegalArgumentException("Solo admins pueden crear categorías");
         }
 
-        Comunidad comunidad = comunidadRepository
-                .findById(communityId)
-                .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
+        Comunidad comunidad =
+                comunidadRepository
+                        .findById(communityId)
+                        .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
 
         // Obtener el próximo orden
         List<Categoria> categorias = categoriaRepository.findByComunidadIdOrderByOrden(communityId);
-        int nextOrder = categorias.isEmpty() ? 1 : categorias.get(categorias.size() - 1).getOrden() + 1;
+        int nextOrder =
+                categorias.isEmpty() ? 1 : categorias.get(categorias.size() - 1).getOrden() + 1;
 
-        Categoria categoria = Categoria.builder()
-                .nombre(nombre)
-                .descripcion(descripcion)
-                .orden(nextOrder)
-                .comunidad(comunidad)
-                .build();
+        Categoria categoria =
+                Categoria.builder()
+                        .nombre(nombre)
+                        .descripcion(descripcion)
+                        .orden(nextOrder)
+                        .comunidad(comunidad)
+                        .build();
 
         return categoriaRepository.save(categoria);
     }
@@ -56,9 +59,10 @@ public class CategoryService {
             throw new IllegalArgumentException("Solo admins pueden actualizar categorías");
         }
 
-        Categoria categoria = categoriaRepository
-                .findById(categoryId)
-                .orElseThrow(() -> new IllegalArgumentException("Categoría no encontrada"));
+        Categoria categoria =
+                categoriaRepository
+                        .findById(categoryId)
+                        .orElseThrow(() -> new IllegalArgumentException("Categoría no encontrada"));
 
         // Verificar que la categoría pertenezca a esta comunidad
         if (!categoria.getComunidad().getId().equals(communityId)) {
@@ -81,9 +85,10 @@ public class CategoryService {
             throw new IllegalArgumentException("Solo admins pueden eliminar categorías");
         }
 
-        Categoria categoria = categoriaRepository
-                .findById(categoryId)
-                .orElseThrow(() -> new IllegalArgumentException("Categoría no encontrada"));
+        Categoria categoria =
+                categoriaRepository
+                        .findById(categoryId)
+                        .orElseThrow(() -> new IllegalArgumentException("Categoría no encontrada"));
 
         // Verificar que la categoría pertenezca a esta comunidad
         if (!categoria.getComunidad().getId().equals(communityId)) {
@@ -102,14 +107,25 @@ public class CategoryService {
     /** Lista las categorías disponibles para filtros globales. */
     @Transactional(readOnly = true)
     public List<Categoria> listAvailableCategories() {
-        Map<String, Categoria> uniqueCategories = categoriaRepository.findAll().stream()
-                .filter(categoria -> categoria.getNombre() != null && !categoria.getNombre().isBlank())
-                .sorted((left, right) -> left.getNombre().compareToIgnoreCase(right.getNombre()))
-                .collect(Collectors.toMap(
-                        categoria -> categoria.getNombre().trim().toLowerCase(Locale.ROOT),
-                        categoria -> categoria,
-                        (existing, replacement) -> existing,
-                        LinkedHashMap::new));
+        Map<String, Categoria> uniqueCategories =
+                categoriaRepository.findAll().stream()
+                        .filter(
+                                categoria ->
+                                        categoria.getNombre() != null
+                                                && !categoria.getNombre().isBlank())
+                        .sorted(
+                                (left, right) ->
+                                        left.getNombre().compareToIgnoreCase(right.getNombre()))
+                        .collect(
+                                Collectors.toMap(
+                                        categoria ->
+                                                categoria
+                                                        .getNombre()
+                                                        .trim()
+                                                        .toLowerCase(Locale.ROOT),
+                                        categoria -> categoria,
+                                        (existing, replacement) -> existing,
+                                        LinkedHashMap::new));
 
         return List.copyOf(uniqueCategories.values());
     }
@@ -124,11 +140,13 @@ public class CategoryService {
         for (int i = 0; i < categoryIds.size(); i++) {
             final int index = i;
             Long categoryId = categoryIds.get(i);
-            Categoria categoria = categoriaRepository
-                    .findById(categoryId)
-                    .orElseThrow(
-                            () -> new IllegalArgumentException(
-                                    "Categoría no encontrada: " + categoryId));
+            Categoria categoria =
+                    categoriaRepository
+                            .findById(categoryId)
+                            .orElseThrow(
+                                    () ->
+                                            new IllegalArgumentException(
+                                                    "Categoría no encontrada: " + categoryId));
 
             // Verificar que pertenezca a esta comunidad
             if (!categoria.getComunidad().getId().equals(communityId)) {
