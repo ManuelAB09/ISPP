@@ -91,7 +91,7 @@ class AuthServiceTest {
     @Test
     void registrarShouldCreateUserAndReturnMessageResponse() {
         RegisterRequest request = new RegisterRequest();
-        request.setEmail("new.user@meerkat.es");
+        request.setEmail("new.user@alum.us.es");
         request.setPassword("Password123");
         request.setNombre("Nuevo Usuario");
 
@@ -118,7 +118,7 @@ class AuthServiceTest {
     @Test
     void registrarShouldThrowConflictWhenEmailAlreadyExists() {
         RegisterRequest request = new RegisterRequest();
-        request.setEmail("used@meerkat.es");
+        request.setEmail("used@alum.us.es");
         request.setPassword("Password123");
         request.setNombre("Usuario Test");
 
@@ -145,7 +145,7 @@ class AuthServiceTest {
     @Test
     void registrarShouldThrowValidationWhenPasswordTooShort() {
         RegisterRequest request = new RegisterRequest();
-        request.setEmail("user@meerkat.es");
+        request.setEmail("user@alum.us.es");
         request.setPassword("short");
         request.setNombre("Usuario Test");
 
@@ -157,7 +157,7 @@ class AuthServiceTest {
     @Test
     void iniciarSesionShouldReturnAuthResponseWhenCredentialsAreValid() {
         LoginRequest request = new LoginRequest();
-        request.setEmail("user@meerkat.es");
+        request.setEmail("user@alum.us.es");
         request.setPassword("password123");
 
         Usuario usuario = new Usuario();
@@ -184,7 +184,7 @@ class AuthServiceTest {
     @Test
     void iniciarSesionShouldThrowValidationWhenEmailDoesNotExist() {
         LoginRequest request = new LoginRequest();
-        request.setEmail("missing@meerkat.es");
+        request.setEmail("missing@alum.us.es");
         request.setPassword("password123");
 
         when(usuarioRepository.findByEmail(request.getEmail())).thenReturn(Optional.empty());
@@ -197,7 +197,7 @@ class AuthServiceTest {
     @Test
     void iniciarSesionShouldThrowValidationWhenPasswordIsIncorrect() {
         LoginRequest request = new LoginRequest();
-        request.setEmail("user@meerkat.es");
+        request.setEmail("user@alum.us.es");
         request.setPassword("wrong-password");
 
         Usuario usuario = new Usuario();
@@ -216,7 +216,7 @@ class AuthServiceTest {
     @Test
     void iniciarSesionShouldThrowEmailNotVerifiedWhenEmailNotVerified() {
         LoginRequest request = new LoginRequest();
-        request.setEmail("user@meerkat.es");
+        request.setEmail("user@alum.us.es");
         request.setPassword("password123");
 
         Usuario usuario = new Usuario();
@@ -237,7 +237,7 @@ class AuthServiceTest {
     @Test
     void recuperarContrasenaShouldGenerateTokenAndSendEmail() throws Exception {
         ForgotPasswordRequest request =
-                ForgotPasswordRequest.builder().email("user@meerkat.es").build();
+                ForgotPasswordRequest.builder().email("user@alum.us.es").build();
 
         Usuario usuario = new Usuario();
         usuario.setEmail(request.getEmail());
@@ -260,7 +260,7 @@ class AuthServiceTest {
     @Test
     void recuperarContrasenaShouldReturnGenericResponseForNonExistentEmail() {
         ForgotPasswordRequest request =
-                ForgotPasswordRequest.builder().email("missing@meerkat.es").build();
+                ForgotPasswordRequest.builder().email("missing@alum.us.es").build();
         when(usuarioRepository.findByEmail(request.getEmail())).thenReturn(Optional.empty());
 
         MessageResponse response = authService.recuperarContrasena(request);
@@ -275,10 +275,10 @@ class AuthServiceTest {
                 ResetPasswordRequest.builder().token("valid-token").newPassword("NewPass1").build();
 
         Usuario usuario = new Usuario();
-        usuario.setEmail("user@meerkat.es");
+        usuario.setEmail("user@alum.us.es");
 
-        when(jwtService.validatePasswordResetToken("valid-token")).thenReturn("user@meerkat.es");
-        when(usuarioRepository.findByEmail("user@meerkat.es")).thenReturn(Optional.of(usuario));
+        when(jwtService.validatePasswordResetToken("valid-token")).thenReturn("user@alum.us.es");
+        when(usuarioRepository.findByEmail("user@alum.us.es")).thenReturn(Optional.of(usuario));
         when(passwordEncoder.encode("NewPass1")).thenReturn("encoded-new-password");
 
         MessageResponse response = authService.restablecerContrasena(request);
@@ -310,10 +310,10 @@ class AuthServiceTest {
                 ResetPasswordRequest.builder().token("valid-token").newPassword("weak").build();
 
         Usuario usuario = new Usuario();
-        usuario.setEmail("user@meerkat.es");
+        usuario.setEmail("user@alum.us.es");
 
-        when(jwtService.validatePasswordResetToken("valid-token")).thenReturn("user@meerkat.es");
-        when(usuarioRepository.findByEmail("user@meerkat.es")).thenReturn(Optional.of(usuario));
+        when(jwtService.validatePasswordResetToken("valid-token")).thenReturn("user@alum.us.es");
+        when(usuarioRepository.findByEmail("user@alum.us.es")).thenReturn(Optional.of(usuario));
 
         assertThatThrownBy(() -> authService.restablecerContrasena(request))
                 .isInstanceOf(ValidationException.class)
@@ -329,12 +329,12 @@ class AuthServiceTest {
                         .build();
 
         Usuario usuario = new Usuario();
-        usuario.setEmail("user@meerkat.es");
+        usuario.setEmail("user@alum.us.es");
         // Simulate password already changed after token was issued
         usuario.setPasswordChangedAt(LocalDateTime.now());
 
-        when(jwtService.validatePasswordResetToken("reused-token")).thenReturn("user@meerkat.es");
-        when(usuarioRepository.findByEmail("user@meerkat.es")).thenReturn(Optional.of(usuario));
+        when(jwtService.validatePasswordResetToken("reused-token")).thenReturn("user@alum.us.es");
+        when(usuarioRepository.findByEmail("user@alum.us.es")).thenReturn(Optional.of(usuario));
         // Token was issued 5 minutes before the password change
         when(jwtService.extractIssuedAt("reused-token"))
                 .thenReturn(
@@ -355,10 +355,10 @@ class AuthServiceTest {
                 ResetPasswordRequest.builder().token("valid-token").newPassword("NewPass1").build();
 
         Usuario usuario = new Usuario();
-        usuario.setEmail("user@meerkat.es");
+        usuario.setEmail("user@alum.us.es");
 
-        when(jwtService.validatePasswordResetToken("valid-token")).thenReturn("user@meerkat.es");
-        when(usuarioRepository.findByEmail("user@meerkat.es")).thenReturn(Optional.of(usuario));
+        when(jwtService.validatePasswordResetToken("valid-token")).thenReturn("user@alum.us.es");
+        when(usuarioRepository.findByEmail("user@alum.us.es")).thenReturn(Optional.of(usuario));
         when(passwordEncoder.encode("NewPass1")).thenReturn("encoded-new-password");
 
         authService.restablecerContrasena(request);
@@ -384,7 +384,7 @@ class AuthServiceTest {
     @Test
     void registrarShouldThrowWhenNombreIsBlank() {
         RegisterRequest request = new RegisterRequest();
-        request.setEmail("valid@meerkat.es");
+        request.setEmail("valid@alum.us.es");
         request.setPassword("Password123");
         request.setNombre("   ");
 
@@ -396,7 +396,7 @@ class AuthServiceTest {
     @Test
     void registrarShouldThrowWhenNombreIsNull() {
         RegisterRequest request = new RegisterRequest();
-        request.setEmail("valid@meerkat.es");
+        request.setEmail("valid@alum.us.es");
         request.setPassword("Password123");
         request.setNombre(null);
 
@@ -408,7 +408,7 @@ class AuthServiceTest {
     @Test
     void registrarShouldThrowWhenPasswordTooLong() {
         RegisterRequest request = new RegisterRequest();
-        request.setEmail("valid@meerkat.es");
+        request.setEmail("valid@alum.us.es");
         request.setPassword("A1a" + "x".repeat(126)); // 129 chars
         request.setNombre("Test");
 
@@ -420,7 +420,7 @@ class AuthServiceTest {
     @Test
     void registrarShouldThrowWhenPasswordMissingComplexity() {
         RegisterRequest request = new RegisterRequest();
-        request.setEmail("valid@meerkat.es");
+        request.setEmail("valid@alum.us.es");
         request.setPassword("alllowercase1"); // no uppercase
         request.setNombre("Test");
 
@@ -432,7 +432,7 @@ class AuthServiceTest {
     @Test
     void registrarShouldThrowWhenPasswordMissingDigit() {
         RegisterRequest request = new RegisterRequest();
-        request.setEmail("valid@meerkat.es");
+        request.setEmail("valid@alum.us.es");
         request.setPassword("NoDigitHere");
         request.setNombre("Test");
 
@@ -441,7 +441,29 @@ class AuthServiceTest {
                 .hasMessage("La contraseña debe contener mayúsculas, minúsculas y números");
     }
 
-    // ── iniciarSesion 2FA branch ──────────────────────────────────────────
+    @Test
+    void registrarShouldThrowWhenEmailDomainNotAllowed() {
+        RegisterRequest request = new RegisterRequest();
+        request.setEmail("usuario@gmail.com"); // Dominio no universitario
+        request.setPassword("Password123");
+        request.setNombre("Test");
+
+        assertThatThrownBy(() -> authService.registrar(request))
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("El email debe pertenecer a un dominio universitario autorizado");
+    }
+
+    @Test
+    void registrarShouldAllowUniversityDomain() {
+        RegisterRequest request = new RegisterRequest();
+        request.setEmail("test@alum.us.es"); // Dominio permitido
+        request.setPassword("Password123");
+        request.setNombre("Test");
+        when(usuarioRepository.existsByEmail(request.getEmail())).thenReturn(false);
+        when(passwordEncoder.encode(request.getPassword())).thenReturn("encoded-password");
+        MessageResponse response = authService.registrar(request);
+        assertThat(response.getMessage()).contains("verificar");
+    }
 
     @Test
     void iniciarSesionShouldReturnTwoFactorChallengeWhen2FAEnabled() {
