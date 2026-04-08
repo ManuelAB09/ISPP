@@ -297,7 +297,7 @@ class SuscripcionServiceTest {
     }
 
     @Test
-    void cancelarSuscripcionShouldDeactivateSuscripcion() {
+    void cancelarSuscripcionShouldDisableAutoRenovarButKeepActiveUntilPeriodEnd() {
         Long usuarioId = 1L;
         Suscripcion suscripcion = buildSuscripcion(1L, usuarioId, true);
 
@@ -311,7 +311,10 @@ class SuscripcionServiceTest {
         ArgumentCaptor<Suscripcion> captor = ArgumentCaptor.forClass(Suscripcion.class);
         verify(suscripcionRepository).save(captor.capture());
 
-        assertThat(captor.getValue().getActiva()).isFalse();
+        Suscripcion saved = captor.getValue();
+        assertThat(saved.getAutoRenovar()).isFalse();
+        assertThat(saved.getActiva()).isTrue();
+        assertThat(saved.getPlan()).isEqualTo(TipoPlan.PREMIUM);
     }
 
     @Test
