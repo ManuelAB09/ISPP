@@ -943,7 +943,6 @@ const MyProfile = () => {
                                             {isOwner && (
                                                 <div className="created-community-card__actions">
                                                     <Link to={`/comunidades/${comunidad.id}/editar`} className="action-link" onClick={(e) => e.stopPropagation()}> Editar</Link>
-                                                    <Link to={`/comunidades/${comunidad.id}/apuntes`} className="action-link" onClick={(e) => e.stopPropagation()}> Subir apuntes</Link>
                                                 </div>
                                             )}
                                         </div>
