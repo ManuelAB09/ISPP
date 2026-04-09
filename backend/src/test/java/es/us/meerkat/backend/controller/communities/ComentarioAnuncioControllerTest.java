@@ -39,6 +39,7 @@ class ComentarioAnuncioControllerTest {
         ResponseEntity<List<ComentarioAnuncioResponse>> response = controller.listarComentarios(1L);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        verify(comentarioService).listarComentarios(1L);
     }
 
     @Test
@@ -55,6 +56,7 @@ class ComentarioAnuncioControllerTest {
         List<ComentarioAnuncioResponse> comments =
                 List.of(
                         mock(ComentarioAnuncioResponse.class),
+                        mock(ComentarioAnuncioResponse.class),
                         mock(ComentarioAnuncioResponse.class));
 
         when(comentarioService.listarComentarios(1L)).thenReturn(comments);
@@ -62,7 +64,7 @@ class ComentarioAnuncioControllerTest {
         ResponseEntity<List<ComentarioAnuncioResponse>> response = controller.listarComentarios(1L);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).hasSize(2);
+        assertThat(response.getBody()).hasSize(3);
     }
 
     @Test
@@ -74,5 +76,41 @@ class ComentarioAnuncioControllerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEmpty();
+    }
+
+    @Test
+    void listarComentariosShouldReturnOkWithSingleComment() {
+        ComentarioAnuncioResponse comment = mock(ComentarioAnuncioResponse.class);
+        when(comentarioService.listarComentarios(2L)).thenReturn(List.of(comment));
+
+        ResponseEntity<List<ComentarioAnuncioResponse>> response = controller.listarComentarios(2L);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).hasSize(1);
+        verify(comentarioService).listarComentarios(2L);
+    }
+
+    @Test
+    void listarComentariosShouldThrowWhenAnuncioNotFound() {
+        when(comentarioService.listarComentarios(999L))
+                .thenThrow(new IllegalArgumentException("Anuncio no encontrado"));
+
+        try {
+            controller.listarComentarios(999L);
+        } catch (IllegalArgumentException e) {
+            assertThat(e.getMessage()).isEqualTo("Anuncio no encontrado");
+        }
+    }
+
+    @Test
+    void listarComentariosShouldReturnOkWithOrderedComments() {
+        ComentarioAnuncioResponse comment1 = mock(ComentarioAnuncioResponse.class);
+        ComentarioAnuncioResponse comment2 = mock(ComentarioAnuncioResponse.class);
+        when(comentarioService.listarComentarios(3L)).thenReturn(List.of(comment1, comment2));
+
+        ResponseEntity<List<ComentarioAnuncioResponse>> response = controller.listarComentarios(3L);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).containsExactly(comment1, comment2);
     }
 }
