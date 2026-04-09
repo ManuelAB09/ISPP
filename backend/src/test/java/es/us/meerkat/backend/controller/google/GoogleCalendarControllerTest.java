@@ -221,4 +221,108 @@ class GoogleCalendarControllerTest {
         // The service exception should be allowed to propagate
         assertThrows(RuntimeException.class, () -> controller.disconnect(usuario));
     }
+
+    // ============ ADDITIONAL TESTS ============
+    @Test
+    void getAuthUrlShouldReturnValidUrlFormat() throws Exception {
+        String expectedUrl =
+                "https://accounts.google.com/oauth/authorize?client_id=123&redirect_uri=http://localhost:3000";
+        when(googleCalendarService.generarUrlAutorizacion(1L)).thenReturn(expectedUrl);
+
+        ResponseEntity<?> response = controller.getAuthUrl(usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).asString().contains("accounts.google.com");
+    }
+
+    @Test
+    void oauthCallbackShouldHandleNullStateParameter() {
+        ResponseEntity<Void> response = controller.oauthCallback("auth_code_123", null, null);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FOUND);
+        assertThat(response.getHeaders().getLocation()).isNotNull();
+    }
+
+    @Test
+    void oauthCallbackShouldHandleInvalidStateFormat() {
+        ResponseEntity<Void> response =
+                controller.oauthCallback("auth_code_123", "malformed", null);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FOUND);
+    }
+
+    @Test
+    void getStatusShouldReturnStatusWithPreferences() {
+        statusResponse.setConectado(true);
+        when(googleCalendarService.obtenerEstado(1L)).thenReturn(statusResponse);
+
+        ResponseEntity<GoogleCalendarStatusResponse> response = controller.getStatus(usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+    }
+
+    @Test
+    void updatePreferencesShouldActivateSynchronization() {
+        UpdateCalendarPreferenciasRequest request = new UpdateCalendarPreferenciasRequest();
+        request.setSincronizacionActiva(true);
+
+        statusResponse.setConectado(true);
+        when(googleCalendarService.actualizarPreferencias(1L, request)).thenReturn(statusResponse);
+
+        ResponseEntity<GoogleCalendarStatusResponse> response =
+                controller.updatePreferences(request, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        verify(googleCalendarService).actualizarPreferencias(1L, request);
+    }
+
+    @Test
+    void updatePreferencesShouldDeactivateSynchronization() {
+        UpdateCalendarPreferenciasRequest request = new UpdateCalendarPreferenciasRequest();
+        request.setSincronizacionActiva(false);
+
+        statusResponse.setConectado(true);
+        when(googleCalendarService.actualizarPreferencias(1L, request)).thenReturn(statusResponse);
+
+        ResponseEntity<GoogleCalendarStatusResponse> response =
+                controller.updatePreferences(request, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void disconnectShouldCallServiceWithCorrectUserId() {
+        ResponseEntity<Void> response = controller.disconnect(usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        verify(googleCalendarService).desconectar(1L);
+    }
+
+    @Test
+    void getAuthUrlShouldGenerateDifferentUrlsForDifferentUsers() throws Exception {
+        Usuario otherUser = new Usuario();
+        otherUser.setId(2L);
+
+        String url1 = "https://accounts.google.com/oauth/authorize?client_id=123&state=user1";
+        String url2 = "https://accounts.google.com/oauth/authorize?client_id=123&state=user2";
+
+        when(googleCalendarService.generarUrlAutorizacion(1L)).thenReturn(url1);
+        when(googleCalendarService.generarUrlAutorizacion(2L)).thenReturn(url2);
+
+        ResponseEntity<?> response1 = controller.getAuthUrl(usuario);
+        ResponseEntity<?> response2 = controller.getAuthUrl(otherUser);
+
+        assertThat(response1.getBody()).isNotEqualTo(response2.getBody());
+    }
+
+    @Test
+    void oauthCallbackShouldProcessValidCode() throws Exception {
+        doNothing().when(googleCalendarService).procesarCallback("valid_code", 1L);
+
+        ResponseEntity<Void> response = controller.oauthCallback("valid_code", "1", null);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FOUND);
+        verify(googleCalendarService).procesarCallback("valid_code", 1L);
+    }
 }
