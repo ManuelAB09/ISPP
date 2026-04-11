@@ -4351,10 +4351,20 @@ class AcceptanceE2ETest {
                         "//button[contains(@class,'tp-btn') and"
                                 + " (contains(normalize-space(),'Configurar pagos') or"
                                 + " contains(normalize-space(),'Pagos configurados'))]");
-        waitForVisible(stripeButton);
+        try {
+            waitForVisible(stripeButton);
+        } catch (TimeoutException timeoutException) {
+            logPa61StripeButtonDebug("waitForVisible-stripeButton", stripeButton);
+            throw timeoutException;
+        }
 
         String profileUrl = driver.getCurrentUrl();
-        wait.until(ExpectedConditions.elementToBeClickable(stripeButton)).click();
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(stripeButton)).click();
+        } catch (TimeoutException timeoutException) {
+            logPa61StripeButtonDebug("elementToBeClickable-stripeButton", stripeButton);
+            throw timeoutException;
+        }
 
         boolean alertShown = false;
         try {
@@ -4378,7 +4388,12 @@ class AcceptanceE2ETest {
             if (externalRedirect) {
                 driver.navigate().to(profileUrl);
                 waitForPageReady();
-                waitForVisible(stripeButton);
+                try {
+                    waitForVisible(stripeButton);
+                } catch (TimeoutException timeoutException) {
+                    logPa61StripeButtonDebug("waitForVisible-afterStripeReturn", stripeButton);
+                    throw timeoutException;
+                }
             }
         }
 
@@ -4389,6 +4404,61 @@ class AcceptanceE2ETest {
         assertTrue(
                 alertShown || externalRedirect || configuredStateVisible,
                 "PA-61 should trigger Stripe onboarding action from tutor profile UI");
+    }
+
+    private void logPa61StripeButtonDebug(final String stage, final By stripeButtonLocator) {
+        try {
+            String currentUrl = driver.getCurrentUrl();
+            String pageTitle = driver.getTitle();
+            List<WebElement> genericStripeButtons =
+                    driver.findElements(By.cssSelector("button.tp-btn"));
+
+            String buttonTexts =
+                    genericStripeButtons.stream()
+                            .map(WebElement::getText)
+                            .filter(text -> text != null && !text.isBlank())
+                            .map(text -> text.trim().replaceAll("\\s+", " "))
+                            .limit(12)
+                            .collect(Collectors.joining(" | "));
+
+            String pageSource = driver.getPageSource();
+            String compactSource = pageSource.replaceAll("\\s+", " ");
+            if (compactSource.length() > 1400) {
+                compactSource = compactSource.substring(0, 1400);
+            }
+
+            System.out.println(
+                    "[E2E DEBUG][PA-61]["
+                            + stage
+                            + "] URL="
+                            + currentUrl
+                            + " | title="
+                            + pageTitle);
+            System.out.println(
+                    "[E2E DEBUG][PA-61]["
+                            + stage
+                            + "] stripeLocatorMatches="
+                            + driver.findElements(stripeButtonLocator).size()
+                            + " | tpBtnCount="
+                            + genericStripeButtons.size()
+                            + " | tpBtnTexts="
+                            + buttonTexts);
+            System.out.println(
+                    "[E2E DEBUG][PA-61]["
+                            + stage
+                            + "] hasConfigurarPagos="
+                            + pageSource.contains("Configurar pagos")
+                            + " | hasPagosConfigurados="
+                            + pageSource.contains("Pagos configurados"));
+            System.out.println(
+                    "[E2E DEBUG][PA-61][" + stage + "] pageSourceSnippet=" + compactSource);
+        } catch (RuntimeException runtimeException) {
+            System.out.println(
+                    "[E2E DEBUG][PA-61]["
+                            + stage
+                            + "] No se pudo capturar contexto de depuracion: "
+                            + runtimeException.getMessage());
+        }
     }
 
     private void executePa62ZoomRecordingHistoryFlow() throws Exception {
