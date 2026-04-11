@@ -30,7 +30,6 @@ public class SuscripcionService {
     private final SuscripcionRepository suscripcionRepository;
     private final UsuarioRepository usuarioRepository;
     private final InstitutionRepository institutionRepository;
-    private final ComunidadRepository comunidadRepository;
     private final PaymentService paymentService;
     private final ComunidadRepository comunidadRepository;
 
