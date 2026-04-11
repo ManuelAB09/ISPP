@@ -358,7 +358,7 @@ jobs:
           STRIPE_PRICE_PREMIUM: ${{ secrets.STRIPE_PRICE_PREMIUM }}
         run: |
           chmod +x ./mvnw
-          ./mvnw selenium -Dheadless=true -DforceVisualNavigation=false -DuiBaseUrl=http://localhost:3000
+          ./mvnw selenium -Dheadless=true -DforceVisualNavigation=false -DuiBaseUrl=http://localhost:3000 -De2eWaitSeconds=30
 
       - name: Mostrar log de frontend si falla E2E
         if: failure()

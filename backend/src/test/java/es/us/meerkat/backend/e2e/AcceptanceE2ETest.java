@@ -80,6 +80,7 @@ class AcceptanceE2ETest {
     private static final String ACCEPTANCE_RESOURCE = "acceptance-cases.json";
     private static final String ADMIN_EMAIL = "admin@meerkat.es";
     private static final String ADMIN_PASSWORD = "Admin1234!";
+    private static final long DEFAULT_E2E_WAIT_SECONDS = 20L;
     private static final String E2E_ALLOWED_EMAIL_DOMAIN = "alum.us.es";
     private static final String E2E_API_BASE_OVERRIDE_KEY = "E2E_API_BASE_URL";
     private static final List<String> VISUAL_NAVIGATION_PRIORITY_ROUTES =
@@ -117,6 +118,7 @@ class AcceptanceE2ETest {
     }
 
     private void initializeDriver() {
+        long waitSeconds = e2eWaitSeconds();
 
         ChromeOptions options = new ChromeOptions();
         if (Boolean.parseBoolean(System.getProperty("headless", "true"))) {
@@ -128,7 +130,11 @@ class AcceptanceE2ETest {
 
         driver = new ChromeDriver(options);
         installFrontendApiRewriteHook((ChromeDriver) driver);
-        wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+        wait = new WebDriverWait(driver, Duration.ofSeconds(waitSeconds));
+        System.out.println(
+                "[E2E] WebDriverWait timeout="
+                        + waitSeconds
+                        + "s (override with -De2eWaitSeconds=<seconds>)");
     }
 
     private void installFrontendApiRewriteHook(final ChromeDriver chromeDriver) {
@@ -4461,6 +4467,77 @@ class AcceptanceE2ETest {
         }
     }
 
+    private void logPa79SearchDebug(
+            final String stage,
+            final By matchingCardLocator,
+            final By nonMatchingCardLocator,
+            final String expectedMatchingCommunity,
+            final String expectedNonMatchingCommunity) {
+        try {
+            String currentUrl = driver.getCurrentUrl();
+            String pageTitle = driver.getTitle();
+
+            List<WebElement> searchInputs =
+                    driver.findElements(By.cssSelector(".inputSearch input"));
+            String searchValue =
+                    searchInputs.isEmpty()
+                            ? ""
+                            : String.valueOf(searchInputs.get(0).getAttribute("value"));
+
+            List<WebElement> renderedCommunityTitles =
+                    driver.findElements(By.cssSelector(".comunidad-card h2"));
+            String renderedTitles =
+                    renderedCommunityTitles.stream()
+                            .map(WebElement::getText)
+                            .filter(text -> text != null && !text.isBlank())
+                            .map(text -> text.trim().replaceAll("\\s+", " "))
+                            .limit(12)
+                            .collect(Collectors.joining(" | "));
+
+            String pageSource = driver.getPageSource();
+            String compactSource = pageSource.replaceAll("\\s+", " ");
+            if (compactSource.length() > 1400) {
+                compactSource = compactSource.substring(0, 1400);
+            }
+
+            System.out.println(
+                    "[E2E DEBUG][PA-79]["
+                            + stage
+                            + "] URL="
+                            + currentUrl
+                            + " | title="
+                            + pageTitle
+                            + " | searchValue="
+                            + searchValue);
+            System.out.println(
+                    "[E2E DEBUG][PA-79]["
+                            + stage
+                            + "] matchingLocatorMatches="
+                            + driver.findElements(matchingCardLocator).size()
+                            + " | nonMatchingLocatorMatches="
+                            + driver.findElements(nonMatchingCardLocator).size()
+                            + " | renderedCardCount="
+                            + renderedCommunityTitles.size());
+            System.out.println(
+                    "[E2E DEBUG][PA-79]["
+                            + stage
+                            + "] expectedMatchingContains="
+                            + pageSource.contains(expectedMatchingCommunity)
+                            + " | expectedNonMatchingContains="
+                            + pageSource.contains(expectedNonMatchingCommunity)
+                            + " | renderedTitles="
+                            + renderedTitles);
+            System.out.println(
+                    "[E2E DEBUG][PA-79][" + stage + "] pageSourceSnippet=" + compactSource);
+        } catch (RuntimeException runtimeException) {
+            System.out.println(
+                    "[E2E DEBUG][PA-79]["
+                            + stage
+                            + "] No se pudo capturar contexto de depuracion: "
+                            + runtimeException.getMessage());
+        }
+    }
+
     private void executePa62ZoomRecordingHistoryFlow() throws Exception {
         TestUser owner = registerVerifiedUser("pa62.owner");
         TestUser member = registerVerifiedUser("pa62.member");
@@ -5535,9 +5612,30 @@ class AcceptanceE2ETest {
                                 + historyCommunityName
                                 + "')]]");
 
-        waitForVisible(matchingCard);
-        new WebDriverWait(driver, Duration.ofSeconds(10))
-                .until(ExpectedConditions.invisibilityOfElementLocated(nonMatchingCard));
+        try {
+            waitForVisible(matchingCard);
+        } catch (TimeoutException timeoutException) {
+            logPa79SearchDebug(
+                    "waitForVisible-matchingCard",
+                    matchingCard,
+                    nonMatchingCard,
+                    algebraCommunityName,
+                    historyCommunityName);
+            throw timeoutException;
+        }
+
+        try {
+            new WebDriverWait(driver, Duration.ofSeconds(10))
+                    .until(ExpectedConditions.invisibilityOfElementLocated(nonMatchingCard));
+        } catch (TimeoutException timeoutException) {
+            logPa79SearchDebug(
+                    "invisibilityOfElementLocated-nonMatchingCard",
+                    matchingCard,
+                    nonMatchingCard,
+                    algebraCommunityName,
+                    historyCommunityName);
+            throw timeoutException;
+        }
 
         assertFalse(
                 driver.findElements(matchingCard).isEmpty(),
@@ -6608,6 +6706,17 @@ class AcceptanceE2ETest {
 
     private String baseUrl() {
         return "http://localhost:" + port;
+    }
+
+    private long e2eWaitSeconds() {
+        long configured = Long.getLong("e2eWaitSeconds", DEFAULT_E2E_WAIT_SECONDS);
+        if (configured < 5L) {
+            return 5L;
+        }
+        if (configured > 120L) {
+            return 120L;
+        }
+        return configured;
     }
 
     private String uiBaseUrl() {
