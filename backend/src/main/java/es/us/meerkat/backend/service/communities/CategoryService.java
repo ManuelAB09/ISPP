@@ -1,6 +1,10 @@
 package es.us.meerkat.backend.service.communities;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -98,6 +102,32 @@ public class CategoryService {
     @Transactional(readOnly = true)
     public List<Categoria> listCategories(Long communityId) {
         return categoriaRepository.findByComunidadIdOrderByOrden(communityId);
+    }
+
+    /** Lista las categorías disponibles para filtros globales. */
+    @Transactional(readOnly = true)
+    public List<Categoria> listAvailableCategories() {
+        Map<String, Categoria> uniqueCategories =
+                categoriaRepository.findAll().stream()
+                        .filter(
+                                categoria ->
+                                        categoria.getNombre() != null
+                                                && !categoria.getNombre().isBlank())
+                        .sorted(
+                                (left, right) ->
+                                        left.getNombre().compareToIgnoreCase(right.getNombre()))
+                        .collect(
+                                Collectors.toMap(
+                                        categoria ->
+                                                categoria
+                                                        .getNombre()
+                                                        .trim()
+                                                        .toLowerCase(Locale.ROOT),
+                                        categoria -> categoria,
+                                        (existing, replacement) -> existing,
+                                        LinkedHashMap::new));
+
+        return List.copyOf(uniqueCategories.values());
     }
 
     /** Reordena las categorías de una comunidad (solo ADMIN). */

@@ -32,6 +32,7 @@ public class SuscripcionService {
     private final InstitutionRepository institutionRepository;
     private final ComunidadRepository comunidadRepository;
     private final PaymentService paymentService;
+    private final ComunidadRepository comunidadRepository;
 
     private static final int PREMIUM_COMMUNITY_MAX_MEMBERS = 75;
 
@@ -207,6 +208,16 @@ public class SuscripcionService {
 
         suscripcion.cancelar();
         Suscripcion cancelada = suscripcionRepository.save(suscripcion);
+
+        List<Comunidad> comunidades = comunidadRepository.findByCreadorId(usuarioId);
+        for (Comunidad c : comunidades) {
+            if (c.getTipoPlan() == TipoPlanComunidad.PREMIUM) {
+                c.setTipoPlan(TipoPlanComunidad.FREE);
+                c.setMaxMiembros(30);
+                comunidadRepository.save(c);
+            }
+        }
+
         return cancelada;
     }
 
