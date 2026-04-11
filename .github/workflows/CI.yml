@@ -335,10 +335,27 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('backend/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
 
+      - name: Validar secreto Stripe para E2E
+        env:
+          STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
+        run: |
+          if [[ -z "$STRIPE_API_KEY" ]]; then
+            echo "[FALLO] Falta el secret STRIPE_API_KEY en GitHub Actions."
+            exit 1
+          fi
+          if [[ "$STRIPE_API_KEY" != sk_* ]]; then
+            echo "[FALLO] STRIPE_API_KEY no parece una clave secreta valida de Stripe (esperado prefijo sk_)."
+            exit 1
+          fi
+          echo "[OK] Secret STRIPE_API_KEY detectado."
+
       - name: Ejecutar tests E2E de aceptacion
         working-directory: backend
         env:
           SPRING_PROFILES_ACTIVE: test
+          STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          STRIPE_PRICE_PREMIUM: ${{ secrets.STRIPE_PRICE_PREMIUM }}
         run: |
           chmod +x ./mvnw
           ./mvnw selenium -Dheadless=true -DforceVisualNavigation=false -DuiBaseUrl=http://localhost:3000
