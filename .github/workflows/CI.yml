@@ -333,7 +333,9 @@ jobs:
         working-directory: backend
         env:
           SPRING_PROFILES_ACTIVE: test
-        run: ./mvnw selenium -Dheadless=true -DforceVisualNavigation=false -DuiBaseUrl=http://localhost:3000
+        run: |
+          chmod +x ./mvnw
+          ./mvnw selenium -Dheadless=true -DforceVisualNavigation=false -DuiBaseUrl=http://localhost:3000
 
       - name: Mostrar log de frontend si falla E2E
         if: failure()
