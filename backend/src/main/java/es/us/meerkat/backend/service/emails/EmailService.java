@@ -55,7 +55,7 @@ public class EmailService {
     private String sendgridApiKey;
 
     @Value("${app.email.enabled:true}")
-    private boolean emailEnabled;
+    private boolean emailEnabled = true;
 
     private final JavaMailSender mailSender;
     private final AsistenciaEventoRepository asistenciaEventoRepository;
