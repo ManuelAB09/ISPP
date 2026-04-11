@@ -24,6 +24,22 @@ public interface ComunidadRepository extends JpaRepository<Comunidad, Long> {
 
     long countByCreadorIdAndInstitutionIsNull(Long userId);
 
+    @Query(
+            """
+SELECT COUNT(DISTINCT c.id)
+FROM Comunidad c
+LEFT JOIN MiembroComunidad mc ON mc.comunidad.id = c.id
+WHERE c.institution IS NULL
+        AND (
+                                c.creador.id = :userId
+                                OR (
+                                                mc.usuario.id = :userId
+                                                AND mc.rol = es.us.meerkat.backend.entity.communities.RolComunidad.ADMIN
+                                )
+                        )
+""")
+    long countManagedNonInstitutionCommunities(@Param("userId") Long userId);
+
     long countByInstitutionId(Long institutionId);
 
     List<Comunidad> findByCreadorId(Long userId);
