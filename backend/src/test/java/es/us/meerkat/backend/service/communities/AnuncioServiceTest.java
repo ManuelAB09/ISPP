@@ -275,6 +275,121 @@ class AnuncioServiceTest {
         assertThat(response.permitirComentarios()).isTrue();
     }
 
+    @Test
+    void deleteAnuncioShouldFailWhenUserNotCreatorAndNotAdmin() {
+        Long userId = 999L; // Different user (not creator, not admin)
+        Long anuncioId = 100L;
+        Anuncio anuncio = buildAnuncio(anuncioId); // Created by user 1
+
+        when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.of(anuncio));
+        when(authorizationService.isAdminOf(userId, anuncio.getComunidad().getId()))
+                .thenReturn(false);
+
+        assertThatThrownBy(() -> anuncioService.deleteAnuncio(userId, anuncioId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("permisos");
+    }
+
+    @Test
+    void deleteAnuncioShouldSucceedWhenUserIsCreator() {
+        Long userId = 1L; // Creator
+        Long anuncioId = 100L;
+        Anuncio anuncio = buildAnuncio(anuncioId); // Created by user 1
+
+        when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.of(anuncio));
+
+        anuncioService.deleteAnuncio(userId, anuncioId);
+
+        verify(anuncioRepository).delete(anuncio);
+    }
+
+    @Test
+    void updateAnuncioShouldSucceedWhenUserIsCreator() {
+        Long userId = 1L; // Creator
+        Long anuncioId = 100L;
+        Anuncio anuncio = buildAnuncio(anuncioId);
+        UpdateAnuncioRequest request =
+                new UpdateAnuncioRequest("Nuevo título", "Nuevo contenido", false);
+
+        when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.of(anuncio));
+        when(anuncioRepository.save(any(Anuncio.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Anuncio result = anuncioService.updateAnuncio(userId, anuncioId, request);
+
+        assertThat(result.getTitulo()).isEqualTo("Nuevo título");
+        verify(anuncioRepository).save(result);
+    }
+
+    @Test
+    void deleteAnuncioShouldFailWhenNotFound() {
+        Long userId = 1L;
+        Long anuncioId = 999L;
+
+        when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> anuncioService.deleteAnuncio(userId, anuncioId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Anuncio no encontrado");
+    }
+
+    @Test
+    void updateAnuncioShouldFailWhenNotFound() {
+        Long userId = 1L;
+        Long anuncioId = 999L;
+        UpdateAnuncioRequest request =
+                new UpdateAnuncioRequest("Nuevo título", "Nuevo contenido", true);
+
+        when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> anuncioService.updateAnuncio(userId, anuncioId, request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Anuncio no encontrado");
+    }
+
+    @Test
+    void getAnunciosByCommunityShouldFailWhenCommunityNotFound() {
+        Long communityId = 999L;
+
+        when(comunidadRepository.findById(communityId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(
+                        () ->
+                                anuncioService.getAnunciosByCommunity(
+                                        communityId, PageRequest.of(0, 10)))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void createAnuncioShouldFailWhenCommunityNotFound() {
+        Long userId = 1L;
+        Long communityId = 999L;
+        CreateAnuncioRequest request =
+                new CreateAnuncioRequest("Anuncio Title", "Contenido del anuncio", true);
+
+        when(authorizationService.isAdminOf(userId, communityId)).thenReturn(true);
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(buildUsuario(userId)));
+        when(comunidadRepository.findById(communityId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> anuncioService.createAnuncio(userId, communityId, request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Comunidad");
+    }
+
+    @Test
+    void createAnuncioShouldFailWhenUserNotFound() {
+        Long userId = 999L;
+        Long communityId = 10L;
+        CreateAnuncioRequest request =
+                new CreateAnuncioRequest("Anuncio Title", "Contenido del anuncio", true);
+
+        when(authorizationService.isAdminOf(userId, communityId)).thenReturn(true);
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> anuncioService.createAnuncio(userId, communityId, request))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
     private Usuario buildUsuario(final Long id) {
         Usuario usuario = new Usuario();
         usuario.setId(id);

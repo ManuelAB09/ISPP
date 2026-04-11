@@ -46,4 +46,45 @@ class MensajeLeidoControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).containsExactly(10L);
     }
+
+    @Test
+    void obtenerLeidosShouldReturnEmptyListWhenNoMessagesRead() {
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        when(mensajeLeidoService.obtenerIdsMensajesLeidos(1L, List.of(10L, 11L)))
+                .thenReturn(List.of());
+
+        ResponseEntity<java.util.List<Long>> response =
+                controller.obtenerLeidos(Map.of("mensajeIds", List.of(10L, 11L)), usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEmpty();
+    }
+
+    @Test
+    void obtenerLeidosShouldReturnAllWhenAllMessagesRead() {
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        List<Long> ids = List.of(10L, 11L, 12L);
+        when(mensajeLeidoService.obtenerIdsMensajesLeidos(1L, ids)).thenReturn(ids);
+
+        ResponseEntity<java.util.List<Long>> response =
+                controller.obtenerLeidos(Map.of("mensajeIds", ids), usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).containsExactlyElementsOf(ids);
+    }
+
+    @Test
+    void obtenerLeidosShouldHandleEmptyMessageIdsList() {
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        when(mensajeLeidoService.obtenerIdsMensajesLeidos(1L, List.of())).thenReturn(List.of());
+
+        ResponseEntity<java.util.List<Long>> response =
+                controller.obtenerLeidos(Map.of("mensajeIds", List.of()), usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEmpty();
+    }
 }
