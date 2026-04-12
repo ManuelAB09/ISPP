@@ -155,6 +155,17 @@
   color: #0f2d37;
 }
 
+.landing-hero .landing-btn-outline {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+}
+
+.landing-hero .landing-btn-outline:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
 .landing-btn-outline-white {
   background: transparent;
   color: var(--white);
@@ -305,8 +316,9 @@
 /* Hero Visual */
 .landing-hero-visual {
   position: relative;
-  height: 500px;
-  width: 620px;
+  height: 480px;
+  width: min(100%, 560px);
+  justify-self: end;
 }
 
 .landing-hero-image {
@@ -323,6 +335,7 @@
   justify-content: center;
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255,255,255,0.22);
+  z-index: 1;
 }
 
 .landing-hero-image img {
@@ -341,24 +354,25 @@
   gap: 12px;
   box-shadow: 0 20px 50px rgba(0,0,0,0.2);
   animation: float 6s ease-in-out infinite;
-  max-width: 220px;
+  max-width: 230px;
+  z-index: 3;
 }
 
 .landing-hero-card-1 {
-  top: 10%;
-  left: 0;
+  top: 8%;
+  left: 2%;
   animation-delay: 0s;
 }
 
 .landing-hero-card-2 {
-  top: 50%;
-  left: 70%;
+  top: 48%;
+  right: 1%;
   animation-delay: 2s;
 }
 
 .landing-hero-card-3 {
-  bottom: 10%;
-  left: 10%;
+  bottom: 8%;
+  left: 4%;
   animation-delay: 4s;
 }
 
@@ -376,6 +390,7 @@
 .landing-card-text {
   font-size: 13px;
   font-weight: 700;
+  line-height: 1.35;
   color: var(--primary-color);
 }
 
@@ -390,21 +405,22 @@
   color: #f8fcff;
   background: rgba(16, 52, 65, 0.78);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  z-index: 4;
 }
 
 .landing-campus-chip-1 {
-  top: 8%;
-  right: 10%;
+  top: 6%;
+  right: 6%;
 }
 
 .landing-campus-chip-2 {
-  top: 64%;
-  right: -2%;
+  top: 72%;
+  right: 8%;
 }
 
 .landing-campus-chip-3 {
-  bottom: 12%;
-  right: 21%;
+  bottom: 4%;
+  right: 28%;
 }
 
 @keyframes float {
