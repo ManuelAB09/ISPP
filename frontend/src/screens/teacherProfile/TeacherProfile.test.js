@@ -114,10 +114,9 @@ describe('TeacherProfile', () => {
       descargas: 1500,
     },
     opiniones: [{ id: 1 }, { id: 2 }, { id: 3 }],
-    comunidades: [
-      { nombre: 'Matemáticas Avanzadas', descripcion: 'Grupo de estudio' },
+    comunidadesAdministradas: [
+      { id: 1, nombre: 'Matemáticas Avanzadas', descripcion: 'Grupo de estudio' },
     ],
-    comunidadesCreadas: [],
   };
 
   beforeEach(() => {
@@ -404,13 +403,6 @@ describe('TeacherProfile', () => {
     renderWithId();
     await waitFor(() => {
       expect(screen.getByText('Mis comunidades')).toBeInTheDocument();
-    });
-  });
-
-  test('muestra la sección Comunidades creadas', async () => {
-    renderWithId();
-    await waitFor(() => {
-      expect(screen.getByText('Comunidades creadas')).toBeInTheDocument();
     });
   });
 

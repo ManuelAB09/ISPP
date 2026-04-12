@@ -34,8 +34,10 @@ import es.us.meerkat.backend.dto.tutors.TutorProfileResponse;
 import es.us.meerkat.backend.dto.tutors.TutorResponse;
 import es.us.meerkat.backend.dto.tutors.UpdateTutorRequest;
 import es.us.meerkat.backend.dto.users.PageInfo;
+import es.us.meerkat.backend.entity.communities.RolComunidad;
 import es.us.meerkat.backend.entity.tutors.Tutor;
 import es.us.meerkat.backend.entity.users.Usuario;
+import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.tutors.SolicitudContratacionDirectaRepository;
 import es.us.meerkat.backend.service.google.GoogleCalendarService;
 import es.us.meerkat.backend.service.subscriptions.PaymentService;
@@ -76,6 +78,7 @@ public class TutorController {
     private final PaymentService paymentService;
     private final GoogleCalendarService googleCalendarService;
     private final SolicitudContratacionDirectaRepository solicitudRepository;
+    private final MiembroComunidadRepository miembroComunidadRepository;
 
     /**
      * Lista tutores disponibles con filtros opcionales.
@@ -419,6 +422,23 @@ public class TutorController {
      * @return DTO de tutor
      */
     private TutorResponse toTutorResponse(Tutor tutor) {
+        List<TutorResponse.ComunidadSummaryDto> comunidadesAdministradas = java.util.List.of();
+        if (tutor.getUsuario() != null) {
+            comunidadesAdministradas =
+                    miembroComunidadRepository
+                            .findByUsuarioIdAndRolWithComunidad(
+                                    tutor.getUsuario().getId(), RolComunidad.ADMIN)
+                            .stream()
+                            .map(
+                                    m ->
+                                            TutorResponse.ComunidadSummaryDto.builder()
+                                                    .id(m.getComunidad().getId())
+                                                    .nombre(m.getComunidad().getNombre())
+                                                    .descripcion(m.getComunidad().getDescripcion())
+                                                    .build())
+                            .toList();
+        }
+
         return TutorResponse.builder()
                 .id(tutor.getId())
                 .usuario(
@@ -451,6 +471,7 @@ public class TutorController {
                                         .coste(tutor.getUsuario().getUbicacion().getCoste())
                                         .build()
                                 : null)
+                .comunidadesAdministradas(comunidadesAdministradas)
                 .build();
     }
 
