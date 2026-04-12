@@ -313,6 +313,7 @@ class SuscripcionServiceTest {
     void cancelarSuscripcionShouldDisableAutoRenovarButKeepActiveUntilPeriodEnd() {
         Long usuarioId = 1L;
         Suscripcion suscripcion = buildSuscripcion(1L, usuarioId, true);
+        suscripcion.setPlan(TipoPlan.PREMIUM);
 
         when(suscripcionRepository.findByUsuarioIdAndActiva(usuarioId, true))
                 .thenReturn(Optional.of(suscripcion));
