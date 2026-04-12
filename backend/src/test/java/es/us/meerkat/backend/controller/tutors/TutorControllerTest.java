@@ -31,6 +31,8 @@ import es.us.meerkat.backend.dto.tutors.TutorResponse;
 import es.us.meerkat.backend.dto.tutors.UpdateTutorRequest;
 import es.us.meerkat.backend.entity.tutors.Tutor;
 import es.us.meerkat.backend.entity.users.Usuario;
+import es.us.meerkat.backend.entity.communities.RolComunidad;
+import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.tutors.SolicitudContratacionDirectaRepository;
 import es.us.meerkat.backend.service.google.GoogleCalendarService;
 import es.us.meerkat.backend.service.subscriptions.PaymentService;
@@ -43,6 +45,7 @@ class TutorControllerTest {
     @Mock private PaymentService paymentService;
     @Mock private GoogleCalendarService googleCalendarService;
     @Mock private SolicitudContratacionDirectaRepository solicitudRepository;
+    @Mock private MiembroComunidadRepository miembroComunidadRepository;
 
     @InjectMocks private TutorController tutorController;
 
@@ -57,6 +60,10 @@ class TutorControllerTest {
         tutor = buildTutor(10L, usuario);
         createTutorRequest = new CreateTutorRequest();
         updateTutorRequest = new UpdateTutorRequest();
+        org.mockito.Mockito.lenient()
+                .when(miembroComunidadRepository.findByUsuarioIdAndRolWithComunidad(
+                        anyLong(), any(RolComunidad.class)))
+                .thenReturn(List.of());
     }
 
     private Usuario buildUsuario(Long id) {
