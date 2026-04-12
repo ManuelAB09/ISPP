@@ -4943,8 +4943,29 @@ class AcceptanceE2ETest {
                                             + " publicación')]/following::select[contains(@class,'form-control')][1]/option[@value='PERSONA']")))
                 .click();
 
-        setInputValue(
-                By.xpath("//input[contains(@placeholder,'alumno1@email.com')]"), student.email());
+        // Usar StudentSelector para buscar y seleccionar estudiante
+        By studentSelectorInput = By.xpath("//input[@data-testid='student-selector-input']");
+        wait.until(ExpectedConditions.visibilityOfElementLocated(studentSelectorInput));
+        WebElement input = driver.findElement(studentSelectorInput);
+        input.sendKeys(student.email());
+
+        // Esperar a que aparezca el resultado en el dropdown
+        By studentResults = By.xpath("//div[@data-testid='student-selector-results']");
+        wait.until(ExpectedConditions.visibilityOfElementLocated(studentResults));
+
+        // Hacer click en el primer resultado (que debe contener el email del estudiante)
+        By resultItem =
+                By.xpath(
+                        "//div[@data-testid='student-selector-results']//div[contains(@data-testid,'student-result-')]");
+        wait.until(ExpectedConditions.elementToBeClickable(resultItem)).click();
+
+        // Esperar a que el estudiante se agregue a la lista de seleccionados
+        wait.until(
+                ExpectedConditions.visibilityOfElementLocated(
+                        By.xpath(
+                                "//div[@data-testid='student-selector-selected']//div[contains(@data-testid,'student-chip-')]")));
+
+        // Continuar con las preguntas
         setInputValue(
                 By.xpath(
                         "//div[contains(@class,'pregunta-card')][1]//input[contains(@placeholder,'Escribe"

@@ -72,12 +72,13 @@ const StudentSelector = ({ selectedStudents, onStudentsChange }) => {
   };
 
   return (
-    <div className="student-selector-container">
+    <div className="student-selector-container" data-testid="student-selector">
       <div className="search-input-wrapper">
         <LuSearch className="search-icon" size={20} />
         <input
           type="text"
           className="search-input"
+          data-testid="student-selector-input"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           onFocus={() => searchInput.trim() !== '' && setShowResults(true)}
@@ -89,13 +90,14 @@ const StudentSelector = ({ selectedStudents, onStudentsChange }) => {
 
       {/* Results Dropdown */}
       {showResults && (searchResults.length > 0 || isSearching) && (
-        <div className="search-results-dropdown">
+        <div className="search-results-dropdown" data-testid="student-selector-results">
           {isSearching ? (
             <div className="result-item loading">Buscando...</div>
           ) : searchResults.length > 0 ? (
             searchResults.map((user) => (
               <div
                 key={user.id}
+                data-testid={`student-result-${user.id}`}
                 className="result-item"
                 onClick={() => handleSelectStudent(user)}
               >
@@ -122,9 +124,9 @@ const StudentSelector = ({ selectedStudents, onStudentsChange }) => {
 
       {/* Selected Students */}
       {selectedStudents.length > 0 && (
-        <div className="selected-students-list">
+        <div className="selected-students-list" data-testid="student-selector-selected">
           {selectedStudents.map((student) => (
-            <div key={student.id} className="student-chip">
+            <div key={student.id} data-testid={`student-chip-${student.id}`} className="student-chip">
               <div className="chip-avatar">
                 {student.avatarUrl ? (
                   <img src={student.avatarUrl} alt={student.nombre} />
