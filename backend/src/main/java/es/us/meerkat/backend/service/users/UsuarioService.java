@@ -701,6 +701,35 @@ public class UsuarioService {
                 .toList();
     }
 
+    /**
+     * Busca usuarios por nombre o email retornando datos simples (con email incluido).
+     *
+     * <p>Excluye usuarios que tengan 'admin' en el email. Utilizado para selección de alumnos en
+     * cuestionarios.
+     *
+     * @param search Término de búsqueda (nombre parcial o email).
+     * @return Lista de usuarios que coinciden con el término de búsqueda (UserSimpleResponse).
+     */
+    public List<es.us.meerkat.backend.dto.users.UserSimpleResponse> searchUsersSimple(
+            final String search) {
+        if (search == null || search.trim().isEmpty()) {
+            return List.of();
+        }
+
+        List<Usuario> usuarios = usuarioRepository.findByNombreIgnoreCaseOrEmailIgnoreCase(search);
+
+        return usuarios.stream()
+                .filter(usuario -> !usuario.getEmail().toLowerCase().contains("admin"))
+                .map(
+                        usuario ->
+                                new es.us.meerkat.backend.dto.users.UserSimpleResponse(
+                                        usuario.getId(),
+                                        usuario.getNombre(),
+                                        usuario.getEmail(),
+                                        usuario.getFoto()))
+                .toList();
+    }
+
     // ===============================
     // MÉTODOS AUXILIARES
     // ===============================

@@ -258,8 +258,8 @@ public final class UsuarioController {
      * @return Lista de usuarios filtrados.
      */
     @GetMapping("/search")
-    public ResponseEntity<List<UserPublicResponse>> searchUsers(
+    public ResponseEntity<List<es.us.meerkat.backend.dto.users.UserSimpleResponse>> searchUsers(
             @RequestParam(required = false) final String search) {
-        return ResponseEntity.ok(usuarioService.searchUsers(search));
+        return ResponseEntity.ok(usuarioService.searchUsersSimple(search));
     }
 }
