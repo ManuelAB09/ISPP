@@ -677,6 +677,31 @@ public class UsuarioService {
     }
 
     // ===============================
+    // GET /api/v1/users/search
+    // ===============================
+
+    /**
+     * Busca usuarios por nombre o email.
+     *
+     * <p>Excluye usuarios que tengan 'admin' en el email.
+     *
+     * @param search Término de búsqueda (nombre parcial o email).
+     * @return Lista de usuarios que coinciden con el término de búsqueda.
+     */
+    public List<UserPublicResponse> searchUsers(final String search) {
+        if (search == null || search.trim().isEmpty()) {
+            return List.of();
+        }
+
+        List<Usuario> usuarios = usuarioRepository.findByNombreIgnoreCaseOrEmailIgnoreCase(search);
+
+        return usuarios.stream()
+                .filter(usuario -> !usuario.getEmail().toLowerCase().contains("admin"))
+                .map(this::mapToPublicResponse)
+                .toList();
+    }
+
+    // ===============================
     // MÉTODOS AUXILIARES
     // ===============================
 

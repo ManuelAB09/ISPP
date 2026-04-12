@@ -35,10 +35,6 @@ const StudentSelector = ({ selectedStudents, onStudentsChange }) => {
             return false;
           }
           
-          if (user.rol === 'ADMIN' || user.rol === 'ADMINISTRADOR') {
-            return false;
-          }
-          
           if (user.email && user.email.toLowerCase().includes('admin')) {
             return false;
           }

@@ -68,11 +68,6 @@ const Alumnos = () => {
                 const results = await usersApi.searchUsers(searchQuery);
                 
                 const filteredResults = (results || []).filter(user => {
-                
-                    if (user.rol === 'ADMIN' || user.rol === 'ADMINISTRADOR') {
-                        return false;
-                    }
-                
                     if (user.email && user.email.toLowerCase().includes('admin')) {
                         return false;
                     }
