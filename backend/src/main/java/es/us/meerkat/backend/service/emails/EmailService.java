@@ -54,6 +54,9 @@ public class EmailService {
     @Value("${sendgrid.api-key:}")
     private String sendgridApiKey;
 
+    @Value("${app.email.enabled:true}")
+    private boolean emailEnabled = true;
+
     private final JavaMailSender mailSender;
     private final AsistenciaEventoRepository asistenciaEventoRepository;
 
@@ -73,6 +76,13 @@ public class EmailService {
 
     private void doSendHtml(String to, String subject, String htmlContent)
             throws MessagingException {
+        if (!emailEnabled) {
+            log.info(
+                    "Envio de email desactivado por configuracion (app.email.enabled=false)."
+                            + " Destino: {}",
+                    to);
+            return;
+        }
         if (useSendGridApi()) {
             sendViaSendGridApi(to, subject, htmlContent, true);
         } else {
@@ -87,6 +97,13 @@ public class EmailService {
     }
 
     private void doSendPlain(String to, String subject, String text) {
+        if (!emailEnabled) {
+            log.info(
+                    "Envio de email desactivado por configuracion (app.email.enabled=false)."
+                            + " Destino: {}",
+                    to);
+            return;
+        }
         if (useSendGridApi()) {
             sendViaSendGridApi(to, subject, text, false);
         } else {

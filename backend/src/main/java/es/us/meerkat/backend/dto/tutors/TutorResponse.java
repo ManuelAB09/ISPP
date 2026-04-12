@@ -44,11 +44,22 @@ public class TutorResponse {
     @Schema(description = "Ubicación del tutor")
     private UbicacionResponse ubicacion;
 
+    @Schema(description = "Comunidades donde el tutor tiene rol de administrador")
+    private List<ComunidadSummaryDto> comunidadesAdministradas;
+
     @Data
     @Builder
     public static class UsuarioDto {
         private Long id;
         private String nombre;
         private String foto;
+    }
+
+    @Data
+    @Builder
+    public static class ComunidadSummaryDto {
+        private Long id;
+        private String nombre;
+        private String descripcion;
     }
 }

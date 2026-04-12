@@ -294,6 +294,80 @@ class MemberServiceTest {
         verify(miembroComunidadRepository).save(targetMember);
     }
 
+    @Test
+    void joinPublicCommunityShouldFailWhenUserNotFound() {
+        Long userId = 999L;
+        Long communityId = 10L;
+
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> memberService.joinPublicCommunity(userId, communityId, null))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void joinPublicCommunityShouldFailWhenCommunityNotFound() {
+        Long userId = 1L;
+        Long communityId = 999L;
+
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(buildUsuario(userId)));
+        when(comunidadRepository.findById(communityId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> memberService.joinPublicCommunity(userId, communityId, null))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void joinPublicCommunityShouldFailWhenUserAlreadyMember() {
+        Long userId = 1L;
+        Long communityId = 10L;
+
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(buildUsuario(userId)));
+        when(comunidadRepository.findById(communityId))
+                .thenReturn(Optional.of(buildComunidad(communityId, TipoGrupo.COMUNIDAD_PUBLICA)));
+        when(authorizationService.isMemberOf(userId, communityId)).thenReturn(true);
+
+        assertThatThrownBy(() -> memberService.joinPublicCommunity(userId, communityId, null))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(miembroComunidadRepository, never()).save(any());
+    }
+
+    @Test
+    void expelMemberShouldFailWhenUserNotAdmin() {
+        when(authorizationService.isAdminOf(1L, 10L)).thenReturn(false);
+
+        assertThatThrownBy(() -> memberService.expelMember(1L, 10L, 2L))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void promoteToAdminShouldFailWhenNotAdmin() {
+        Long adminId = 1L;
+        Long targetUserId = 2L;
+        Long communityId = 10L;
+
+        when(authorizationService.isAdminOf(adminId, communityId)).thenReturn(false);
+
+        assertThatThrownBy(() -> memberService.promoteToAdmin(adminId, communityId, targetUserId))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void transferAdminShouldFailWhenTargetNotMember() {
+        Long adminId = 1L;
+        Long newAdminId = 2L;
+        Long communityId = 10L;
+
+        when(authorizationService.isAdminOf(adminId, communityId)).thenReturn(true);
+        when(miembroComunidadRepository.findByUsuarioIdAndComunidadId(newAdminId, communityId))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(
+                        () -> memberService.transferAdmin(adminId, communityId, newAdminId, null))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
     private Usuario buildUsuario(final Long id) {
         Usuario usuario = new Usuario();
         usuario.setId(id);

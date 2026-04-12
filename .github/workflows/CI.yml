@@ -7,8 +7,9 @@ name: CI - Integración Continua
 #   2. lint-backend           → Checkstyle (Java)
 #   3. lint-frontend          → ESLint (React/JS)
 #   4. test-backend           → JUnit + JaCoCo + PostgreSQL
-#   5. test-frontend          → Jest + coverage
-#   6. sonarqube              → Análisis de calidad (trunk/main)
+#   5. test-e2e-backend       → Selenium E2E (aceptacion)
+#   6. test-frontend          → Jest + coverage
+#   7. sonarqube              → Análisis de calidad (trunk/main)
 # ════════════════════════════════════════════════════════════
 
 on:
@@ -272,7 +273,114 @@ jobs:
           retention-days: 14
 
   # ──────────────────────────────────────────
-  # 5. Tests Frontend — Jest
+  # 5. Tests Backend E2E — Selenium
+  # ──────────────────────────────────────────
+  test-e2e-backend:
+    name: Tests Backend E2E (Selenium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: [test-backend]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Configurar Google Chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Configurar Node.js 20 (Frontend para E2E)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias del frontend (E2E)
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build del frontend para E2E (sin dev overlay)
+        working-directory: frontend
+        env:
+          CI: "false"
+        run: npm run build
+
+      - name: Levantar frontend estático para Selenium
+        working-directory: frontend
+        run: |
+          npx --yes serve@14.2.4 -s build -l 3000 > /tmp/frontend-e2e.log 2>&1 &
+          echo $! > /tmp/frontend-e2e.pid
+
+          for i in {1..60}; do
+            if curl -fsS http://localhost:3000/ >/dev/null; then
+              echo "Frontend listo en http://localhost:3000"
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "El frontend no arrancó a tiempo"
+          tail -n 200 /tmp/frontend-e2e.log || true
+          exit 1
+
+      - name: Cache Maven
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('backend/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+
+      - name: Validar secreto Stripe para E2E
+        env:
+          STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
+        run: |
+          if [[ -z "$STRIPE_API_KEY" ]]; then
+            echo "[FALLO] Falta el secret STRIPE_API_KEY en GitHub Actions."
+            exit 1
+          fi
+          if [[ "$STRIPE_API_KEY" != sk_* ]]; then
+            echo "[FALLO] STRIPE_API_KEY no parece una clave secreta valida de Stripe (esperado prefijo sk_)."
+            exit 1
+          fi
+          echo "[OK] Secret STRIPE_API_KEY detectado."
+
+      - name: Ejecutar tests E2E de aceptacion
+        working-directory: backend
+        env:
+          SPRING_PROFILES_ACTIVE: test
+          STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          STRIPE_PRICE_PREMIUM: ${{ secrets.STRIPE_PRICE_PREMIUM }}
+        run: |
+          chmod +x ./mvnw
+          ./mvnw selenium -Dheadless=true -DforceVisualNavigation=false -DuiBaseUrl=http://localhost:3000 -De2eWaitSeconds=30
+
+      - name: Mostrar log de frontend si falla E2E
+        if: failure()
+        run: tail -n 200 /tmp/frontend-e2e.log || true
+
+      - name: Apagar frontend E2E
+        if: always()
+        run: |
+          if [[ -f /tmp/frontend-e2e.pid ]]; then
+            kill "$(cat /tmp/frontend-e2e.pid)" || true
+          fi
+
+      - name: Subir reportes E2E
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selenium-e2e-reports
+          path: backend/target/surefire-reports/
+          retention-days: 14
+
+  # ──────────────────────────────────────────
+  # 6. Tests Frontend — Jest
   # ──────────────────────────────────────────
   test-frontend:
     name: Tests Frontend
@@ -307,14 +415,14 @@ jobs:
           retention-days: 14
 
   # ──────────────────────────────────────────
-  # 6. SonarQube — Análisis de calidad
+  # 7. SonarQube — Análisis de calidad
   #    Solo en trunk y main
   # ──────────────────────────────────────────
   sonarqube:
     name: SonarQube
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [test-backend, test-frontend]
+    needs: [test-backend, test-e2e-backend, test-frontend]
     if: github.ref == 'refs/heads/trunk' || github.ref == 'refs/heads/main'
     steps:
       - name: Checkout

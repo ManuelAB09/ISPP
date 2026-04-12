@@ -216,17 +216,17 @@ class SuscripcionControllerTest {
     }
 
     @Test
-    @DisplayName("DELETE /me - Debe cancelar la suscripción exitosamente")
+    @DisplayName("DELETE /me - Debe cancelar la renovación pero mantener el plan activo hasta fin de período")
     void testCancelarSuscripcion_Exito() {
         // Given
         Suscripcion suscripcionCancelada =
                 Suscripcion.builder()
                         .id(1L)
                         .usuario(usuario)
-                        .plan(TipoPlan.FREE)
-                        .fechaInicio(null)
-                        .fechaFin(null)
-                        .activa(false)
+                        .plan(TipoPlan.PREMIUM)
+                        .fechaInicio(LocalDate.now())
+                        .fechaFin(LocalDate.now().plusMonths(1))
+                        .activa(true)
                         .autoRenovar(false)
                         .build();
 
@@ -241,8 +241,8 @@ class SuscripcionControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(1L, response.getBody().getId());
-        assertEquals(TipoPlan.FREE, response.getBody().getPlan());
-        assertFalse(response.getBody().getActiva());
+        assertEquals(TipoPlan.PREMIUM, response.getBody().getPlan());
+        assertTrue(response.getBody().getActiva());
         assertFalse(response.getBody().getAutoRenovar());
         verify(suscripcionService).cancelarSuscripcion(1L);
     }
@@ -349,5 +349,298 @@ class SuscripcionControllerTest {
         assertNotNull(response);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         verify(suscripcionService).suscribirse(1L);
+    }
+
+    @Test
+    @DisplayName("GET /plans - Debe devolver múltiples planes")
+    void testObtenerPlanes_VariosPlanes() {
+        // Given
+        TipoPlan[] planes = {TipoPlan.FREE, TipoPlan.PREMIUM, TipoPlan.PRO};
+        when(suscripcionService.obtenerPlanesDisponibles()).thenReturn(planes);
+
+        // When
+        ResponseEntity<TipoPlan[]> response = suscripcionController.obtenerPlanes();
+
+        // Then
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(3, response.getBody().length);
+    }
+
+    @Test
+    @DisplayName("GET /plans - Debe devolver tipos de planes en orden")
+    void testObtenerPlanes_Orden() {
+        // Given
+        TipoPlan[] planes = {TipoPlan.FREE, TipoPlan.PREMIUM, TipoPlan.PRO};
+        when(suscripcionService.obtenerPlanesDisponibles()).thenReturn(planes);
+
+        // When
+        ResponseEntity<TipoPlan[]> response = suscripcionController.obtenerPlanes();
+
+        // Then
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(TipoPlan.FREE, response.getBody()[0]);
+        assertEquals(TipoPlan.PREMIUM, response.getBody()[1]);
+        assertEquals(TipoPlan.PRO, response.getBody()[2]);
+    }
+
+    @Test
+    @DisplayName("POST /me/confirm-payment - Debe asegurar que se active la suscripción")
+    void testConfirmarPagoSuscripcion_ActivaCorrectamente() {
+        // Given
+        Suscripcion suscripcionActiva =
+                Suscripcion.builder()
+                        .id(1L)
+                        .usuario(usuario)
+                        .plan(TipoPlan.PREMIUM)
+                        .fechaInicio(LocalDate.now())
+                        .fechaFin(LocalDate.now().plusMonths(1))
+                        .activa(true)
+                        .autoRenovar(true)
+                        .build();
+
+        when(suscripcionService.suscribirse(1L)).thenReturn(suscripcionActiva);
+
+        // When
+        ResponseEntity<SubscriptionResponse> response =
+                suscripcionController.confirmarPagoSuscripcion(usuario);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertTrue(response.getBody().getActiva());
+        assertEquals(TipoPlan.PREMIUM, response.getBody().getPlan());
+    }
+
+    @Test
+    @DisplayName("DELETE /me - Debe mantener acceso hasta fin del periodo")
+    void testCancelarSuscripcion_MantienePeriodo() {
+        // Given
+        LocalDate hoyMasUnMes = LocalDate.now().plusMonths(1);
+        Suscripcion suscripcionCancelada =
+                Suscripcion.builder()
+                        .id(1L)
+                        .usuario(usuario)
+                        .plan(TipoPlan.PREMIUM)
+                        .fechaInicio(LocalDate.now().minusMonths(1))
+                        .fechaFin(hoyMasUnMes)
+                        .activa(true) // Aún activa hasta la fecha fin
+                        .autoRenovar(false)
+                        .build();
+
+        when(suscripcionService.cancelarSuscripcion(1L)).thenReturn(suscripcionCancelada);
+
+        // When
+        ResponseEntity<SubscriptionResponse> response =
+                suscripcionController.cancelarSuscripcion(usuario);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody().getActiva());
+        assertFalse(response.getBody().getAutoRenovar());
+    }
+
+    @Test
+    @DisplayName("GET /me - Debe devolver datos completos de suscripción")
+    void testObtenerMiSuscripcion_DatosCompletos() {
+        // Given
+        SubscriptionResponse response_data =
+                SubscriptionResponse.builder()
+                        .id(1L)
+                        .plan(TipoPlan.PREMIUM)
+                        .fechaInicio(LocalDate.now())
+                        .fechaFin(LocalDate.now().plusMonths(1))
+                        .activa(true)
+                        .autoRenovar(true)
+                        .enPeriodoGracia(false)
+                        .build();
+
+        when(suscripcionService.obtenerMiSuscripcionCompleta(1L)).thenReturn(response_data);
+
+        // When
+        ResponseEntity<SubscriptionResponse> response =
+                suscripcionController.obtenerMiSuscripcion(usuario);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody().getId());
+        assertNotNull(response.getBody().getPlan());
+        assertNotNull(response.getBody().getFechaInicio());
+        assertNotNull(response.getBody().getFechaFin());
+    }
+
+    @Test
+    @DisplayName("POST /me - Debe permitir periodos mensuales")
+    void testSuscribirse_PeriodoMensual() throws Exception {
+        // Given
+        SubscribeRequest requestMensual =
+                SubscribeRequest.builder()
+                        .planId("PREMIUM")
+                        .aceptarTerminos(true)
+                        .periodo("mensual")
+                        .build();
+
+        PaymentUrlResponse paymentUrl = new PaymentUrlResponse("https://pay.test", "sess_123");
+
+        when(suscripcionService.tienePlanInstitucionalActivo(usuario)).thenReturn(false);
+        when(paymentService.generarPagoSuscripcion(
+                        eq(usuario), eq(TipoPlan.PREMIUM), eq("mensual")))
+                .thenReturn(paymentUrl);
+
+        // When
+        ResponseEntity<?> response = suscripcionController.suscribirse(usuario, requestMensual);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        verify(paymentService)
+                .generarPagoSuscripcion(eq(usuario), eq(TipoPlan.PREMIUM), eq("mensual"));
+    }
+
+    @Test
+    @DisplayName("DELETE /me - Debe ser idempotente")
+    void testCancelarSuscripcion_Idempotencia() {
+        // Given
+        Suscripcion cancelada =
+                Suscripcion.builder()
+                        .id(1L)
+                        .usuario(usuario)
+                        .plan(TipoPlan.FREE)
+                        .activa(false)
+                        .autoRenovar(false)
+                        .build();
+
+        when(suscripcionService.cancelarSuscripcion(1L)).thenReturn(cancelada);
+
+        // When
+        ResponseEntity<SubscriptionResponse> response1 =
+                suscripcionController.cancelarSuscripcion(usuario);
+        ResponseEntity<SubscriptionResponse> response2 =
+                suscripcionController.cancelarSuscripcion(usuario);
+
+        // Then
+        assertEquals(HttpStatus.OK, response1.getStatusCode());
+        assertEquals(HttpStatus.OK, response2.getStatusCode());
+        verify(suscripcionService, times(2)).cancelarSuscripcion(1L);
+    }
+
+    @Test
+    @DisplayName("POST /me - Debe validar que se acepten los términos")
+    void testSuscribirse_ValidacionTerminos() throws com.stripe.exception.StripeException {
+        // Given
+        SubscribeRequest request =
+                SubscribeRequest.builder()
+                        .planId("PREMIUM")
+                        .aceptarTerminos(true)
+                        .periodo("mensual")
+                        .build();
+
+        when(suscripcionService.tienePlanInstitucionalActivo(usuario)).thenReturn(false);
+        when(paymentService.generarPagoSuscripcion(
+                        eq(usuario), eq(TipoPlan.PREMIUM), eq("mensual")))
+                .thenReturn(new PaymentUrlResponse("https://pay.test", "sess_123"));
+
+        // When
+        ResponseEntity<?> response = suscripcionController.suscribirse(usuario, request);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("GET /me - Debe devolver FREE si nunca se suscribió")
+    void testObtenerMiSuscripcion_DefaultFree() {
+        // Given
+        SubscriptionResponse freeResponse =
+                SubscriptionResponse.builder()
+                        .plan(TipoPlan.FREE)
+                        .fechaInicio(LocalDate.now())
+                        .activa(true)
+                        .autoRenovar(false)
+                        .build();
+
+        when(suscripcionService.obtenerMiSuscripcionCompleta(1L)).thenReturn(freeResponse);
+
+        // When
+        ResponseEntity<SubscriptionResponse> response =
+                suscripcionController.obtenerMiSuscripcion(usuario);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(TipoPlan.FREE, response.getBody().getPlan());
+    }
+
+    @Test
+    @DisplayName("DELETE /me - Debe generar plan FREE después de cancelar")
+    void testCancelarSuscripcion_ResultaEnFree() {
+        // Given
+        Suscripcion suscripcionCancelada =
+                Suscripcion.builder()
+                        .id(1L)
+                        .usuario(usuario)
+                        .plan(TipoPlan.FREE)
+                        .activa(true)
+                        .autoRenovar(false)
+                        .build();
+
+        when(suscripcionService.cancelarSuscripcion(1L)).thenReturn(suscripcionCancelada);
+
+        // When
+        ResponseEntity<SubscriptionResponse> response =
+                suscripcionController.cancelarSuscripcion(usuario);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(TipoPlan.FREE, response.getBody().getPlan());
+    }
+
+    @Test
+    @DisplayName("POST /me/confirm-payment - Debe crear suscripción con datos correctos")
+    void testConfirmarPagoSuscripcion_DatosCorrectos() {
+        // Given
+        Suscripcion expectedSuscripcion =
+                Suscripcion.builder()
+                        .id(99L)
+                        .usuario(usuario)
+                        .plan(TipoPlan.PRO)
+                        .fechaInicio(LocalDate.now())
+                        .fechaFin(LocalDate.now().plusYears(1))
+                        .activa(true)
+                        .autoRenovar(true)
+                        .build();
+
+        when(suscripcionService.suscribirse(1L)).thenReturn(expectedSuscripcion);
+
+        // When
+        ResponseEntity<SubscriptionResponse> response =
+                suscripcionController.confirmarPagoSuscripcion(usuario);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(expectedSuscripcion.getId(), response.getBody().getId());
+        assertEquals(TipoPlan.PRO, response.getBody().getPlan());
+    }
+
+    @Test
+    @DisplayName("GET /plans - Debe siempre devolver planes disponibles")
+    void testObtenerPlanes_NuncaVacio() {
+        // Given
+        TipoPlan[] planes = TipoPlan.values();
+        when(suscripcionService.obtenerPlanesDisponibles()).thenReturn(planes);
+
+        // When
+        ResponseEntity<TipoPlan[]> response = suscripcionController.obtenerPlanes();
+
+        // Then
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody().length > 0);
     }
 }
