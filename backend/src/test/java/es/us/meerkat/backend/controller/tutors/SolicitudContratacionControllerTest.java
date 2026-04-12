@@ -157,4 +157,173 @@ class SolicitudContratacionControllerTest {
         ResponseEntity<?> response = controller.cancelarSolicitud(null, 100L, null);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
+
+    @Test
+    void reservarDirectaShouldReturnCreatedOnSuccess() {
+        Usuario usuario = buildUsuario(1L);
+        SolicitudContratacionRequest request = new SolicitudContratacionRequest();
+        SolicitudContratacionResponse mockResponse = new SolicitudContratacionResponse();
+
+        when(solicitudService.reservarDirecta(eq(1L), eq(10L), any())).thenReturn(mockResponse);
+
+        ResponseEntity<?> response = controller.reservarDirecta(usuario, 10L, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    }
+
+    @Test
+    void reservarDirectaShouldReturnUnauthorizedWhenUserIsNull() {
+        ResponseEntity<?> response = controller.reservarDirecta(null, 10L, null);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void reservarDirectaShouldReturnBadRequestOnError() {
+        Usuario usuario = buildUsuario(1L);
+        when(solicitudService.reservarDirecta(eq(1L), eq(10L), any()))
+                .thenThrow(new IllegalArgumentException("No disponible"));
+
+        ResponseEntity<?> response =
+                controller.reservarDirecta(usuario, 10L, new SolicitudContratacionRequest());
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void obtenerSolicitudesDelTutorShouldReturnListOnSuccess() {
+        Usuario usuario = buildUsuario(2L);
+        when(solicitudService.obtenerSolicitudesDelTutor(2L)).thenReturn(List.of());
+
+        ResponseEntity<?> response = controller.obtenerSolicitudesDelTutor(usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void obtenerSolicitudesDelTutorShouldReturnUnauthorizedWhenUserIsNull() {
+        ResponseEntity<?> response = controller.obtenerSolicitudesDelTutor(null);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void obtenerSolicitudesDelAlumnoShouldReturnUnauthorizedWhenUserIsNull() {
+        ResponseEntity<?> response = controller.obtenerSolicitudesDelAlumno(null);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void cancelarSolicitudShouldReturnOkOnSuccess() {
+        Usuario usuario = buildUsuario(2L);
+        SolicitudContratacionResponse mockResponse = new SolicitudContratacionResponse();
+        when(solicitudService.cancelarSolicitud(100L, 2L, null)).thenReturn(mockResponse);
+
+        ResponseEntity<?> response = controller.cancelarSolicitud(usuario, 100L, null);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void reprogramarSolicitudShouldReturnUnauthorizedWhenUserIsNull() {
+        ResponseEntity<?> response =
+                controller.reprogramarSolicitud(
+                        null, 100L, Map.of("dia", "2025-12-25", "horaInicio", "10:00"));
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void reprogramarSolicitudShouldReturnOkOnSuccess() {
+        Usuario usuario = buildUsuario(2L);
+        SolicitudContratacionResponse mockResponse = new SolicitudContratacionResponse();
+        when(solicitudService.reprogramarSolicitud(eq(100L), eq(2L), any(), any(), any()))
+                .thenReturn(mockResponse);
+
+        ResponseEntity<?> response =
+                controller.reprogramarSolicitud(
+                        usuario,
+                        100L,
+                        Map.of("dia", "2025-12-25", "horaInicio", "10:00", "horaFin", "11:00"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void marcarComoPagadaShouldReturnBadRequestOnError() {
+        Usuario usuario = buildUsuario(1L);
+        when(solicitudService.marcarComoPagada(100L, 1L, null))
+                .thenThrow(new IllegalArgumentException("Solicitud no válida"));
+
+        ResponseEntity<?> response = controller.marcarComoPagada(usuario, 100L);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void cancelarPorAlumnoShouldReturnUnauthorizedWhenUserIsNull() {
+        ResponseEntity<?> response = controller.cancelarPorAlumno(null, 100L, null);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void cancelarPorAlumnoShouldReturnOkOnSuccess() {
+        Usuario usuario = buildUsuario(1L);
+        when(solicitudService.cancelarPorAlumno(100L, 1L, null))
+                .thenReturn(new SolicitudContratacionResponse());
+
+        ResponseEntity<?> response = controller.cancelarPorAlumno(usuario, 100L, null);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void calificarSolicitudShouldReturnUnauthorizedWhenUserIsNull() {
+        ResponseEntity<?> response = controller.calificarSolicitud(null, 100L, Map.of());
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void calificarSolicitudShouldReturnOkOnSuccess() {
+        Usuario usuario = buildUsuario(1L);
+        when(solicitudService.calificarSolicitud(100L, 1L, 5, "Excelente"))
+                .thenReturn(new SolicitudContratacionResponse());
+
+        ResponseEntity<?> response =
+                controller.calificarSolicitud(
+                        usuario, 100L, Map.of("calificacion", 5, "comentario", "Excelente"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void aprobarReprogramacionShouldReturnUnauthorizedWhenUserIsNull() {
+        ResponseEntity<?> response = controller.aprobarReprogramacion(null, 100L);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void aprobarReprogramacionShouldReturnOkOnSuccess() {
+        Usuario usuario = buildUsuario(1L);
+        when(solicitudService.aprobarReprogramacion(100L, 1L))
+                .thenReturn(new SolicitudContratacionResponse());
+
+        ResponseEntity<?> response = controller.aprobarReprogramacion(usuario, 100L);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void rechazarReprogramacionShouldReturnUnauthorizedWhenUserIsNull() {
+        ResponseEntity<?> response = controller.rechazarReprogramacion(null, 100L);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void rechazarReprogramacionShouldReturnOkOnSuccess() {
+        Usuario usuario = buildUsuario(1L);
+        when(solicitudService.rechazarReprogramacion(100L, 1L))
+                .thenReturn(new SolicitudContratacionResponse());
+
+        ResponseEntity<?> response = controller.rechazarReprogramacion(usuario, 100L);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
 }

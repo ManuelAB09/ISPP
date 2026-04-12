@@ -33,6 +33,8 @@ public class SuscripcionService {
     private final PaymentService paymentService;
     private final ComunidadRepository comunidadRepository;
 
+    private static final int PREMIUM_COMMUNITY_MAX_MEMBERS = 75;
+
     /**
      * Obtiene todos los planes disponibles.
      *
@@ -296,6 +298,16 @@ public class SuscripcionService {
         // 3. Actualizar plan del usuario
         usuario.setPlan(planSolicitado);
         usuarioRepository.save(usuario);
+
+        // Upgrade all communities created by the user (non-institutional) to PREMIUM
+        List<Comunidad> comunidades = comunidadRepository.findByCreadorId(usuarioId);
+        for (Comunidad c : comunidades) {
+            if (c.getInstitution() == null && c.getTipoPlan() != TipoPlanComunidad.PREMIUM) {
+                c.setTipoPlan(TipoPlanComunidad.PREMIUM);
+                c.setMaxMiembros(PREMIUM_COMMUNITY_MAX_MEMBERS);
+            }
+        }
+        comunidadRepository.saveAll(comunidades);
     }
 
     /** Compatibilidad: activa suscripción asumiendo plan PREMIUM. */
