@@ -216,17 +216,19 @@ class SuscripcionControllerTest {
     }
 
     @Test
-    @DisplayName("DELETE /me - Debe cancelar la suscripción exitosamente")
+    @DisplayName(
+            "DELETE /me - Debe cancelar la renovación pero mantener el plan activo hasta fin de"
+                    + " período")
     void testCancelarSuscripcion_Exito() {
         // Given
         Suscripcion suscripcionCancelada =
                 Suscripcion.builder()
                         .id(1L)
                         .usuario(usuario)
-                        .plan(TipoPlan.FREE)
-                        .fechaInicio(null)
-                        .fechaFin(null)
-                        .activa(false)
+                        .plan(TipoPlan.PREMIUM)
+                        .fechaInicio(LocalDate.now())
+                        .fechaFin(LocalDate.now().plusMonths(1))
+                        .activa(true)
                         .autoRenovar(false)
                         .build();
 
@@ -241,8 +243,8 @@ class SuscripcionControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(1L, response.getBody().getId());
-        assertEquals(TipoPlan.FREE, response.getBody().getPlan());
-        assertFalse(response.getBody().getActiva());
+        assertEquals(TipoPlan.PREMIUM, response.getBody().getPlan());
+        assertTrue(response.getBody().getActiva());
         assertFalse(response.getBody().getAutoRenovar());
         verify(suscripcionService).cancelarSuscripcion(1L);
     }

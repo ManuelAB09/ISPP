@@ -62,7 +62,9 @@ class CommunityServiceTest {
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
         when(suscripcionService.obtenerMiSuscripcion(userId))
                 .thenReturn(Optional.of(Suscripcion.builder().plan(TipoPlan.FREE).build()));
-        when(comunidadRepository.countByCreadorIdAndInstitutionIsNull(userId)).thenReturn(0L);
+        when(miembroComunidadRepository.countByUsuarioIdAndRolAndComunidadInstitutionIsNull(
+                        userId, RolComunidad.ADMIN))
+                .thenReturn(0L);
         when(comunidadRepository.save(any(Comunidad.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -98,7 +100,9 @@ class CommunityServiceTest {
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(buildUsuario(userId)));
         when(suscripcionService.obtenerMiSuscripcion(userId))
                 .thenReturn(Optional.of(Suscripcion.builder().plan(TipoPlan.FREE).build()));
-        when(comunidadRepository.countByCreadorIdAndInstitutionIsNull(userId)).thenReturn(3L);
+        when(miembroComunidadRepository.countByUsuarioIdAndRolAndComunidadInstitutionIsNull(
+                        userId, RolComunidad.ADMIN))
+                .thenReturn(3L);
 
         assertThatThrownBy(
                         () ->
@@ -199,7 +203,9 @@ class CommunityServiceTest {
         when(tutorRepository.findByUsuario(usuario)).thenReturn(Optional.of(tutor));
         when(suscripcionService.obtenerMiSuscripcion(userId))
                 .thenReturn(Optional.of(Suscripcion.builder().plan(TipoPlan.FREE).build()));
-        when(comunidadRepository.countByCreadorIdAndInstitutionIsNull(userId)).thenReturn(0L);
+        when(miembroComunidadRepository.countByUsuarioIdAndRolAndComunidadInstitutionIsNull(
+                        userId, RolComunidad.ADMIN))
+                .thenReturn(0L);
         when(comunidadRepository.save(any(Comunidad.class)))
                 .thenAnswer(
                         invocation -> {
@@ -574,7 +580,9 @@ class CommunityServiceTest {
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
         when(suscripcionService.obtenerMiSuscripcion(userId))
                 .thenReturn(Optional.of(Suscripcion.builder().plan(TipoPlan.PREMIUM).build()));
-        when(comunidadRepository.countByCreadorIdAndInstitutionIsNull(userId)).thenReturn(0L);
+        when(miembroComunidadRepository.countByUsuarioIdAndRolAndComunidadInstitutionIsNull(
+                        userId, RolComunidad.ADMIN))
+                .thenReturn(0L);
         when(comunidadRepository.save(any(Comunidad.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Comunidad result =
@@ -593,7 +601,9 @@ class CommunityServiceTest {
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
         when(suscripcionService.obtenerMiSuscripcion(userId))
                 .thenReturn(Optional.of(Suscripcion.builder().plan(TipoPlan.FREE).build()));
-        when(comunidadRepository.countByCreadorIdAndInstitutionIsNull(userId)).thenReturn(3L);
+        when(miembroComunidadRepository.countByUsuarioIdAndRolAndComunidadInstitutionIsNull(
+                        userId, RolComunidad.ADMIN))
+                .thenReturn(3L);
 
         assertThatThrownBy(
                         () ->
@@ -611,7 +621,9 @@ class CommunityServiceTest {
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
         when(suscripcionService.obtenerMiSuscripcion(userId))
                 .thenReturn(Optional.of(Suscripcion.builder().plan(TipoPlan.FREE).build()));
-        when(comunidadRepository.countByCreadorIdAndInstitutionIsNull(userId)).thenReturn(0L);
+        when(miembroComunidadRepository.countByUsuarioIdAndRolAndComunidadInstitutionIsNull(
+                        userId, RolComunidad.ADMIN))
+                .thenReturn(0L);
 
         assertThatThrownBy(
                         () ->
@@ -634,7 +646,9 @@ class CommunityServiceTest {
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
         when(suscripcionService.obtenerMiSuscripcion(userId))
                 .thenReturn(Optional.of(Suscripcion.builder().plan(TipoPlan.FREE).build()));
-        when(comunidadRepository.countByCreadorIdAndInstitutionIsNull(userId)).thenReturn(0L);
+        when(miembroComunidadRepository.countByUsuarioIdAndRolAndComunidadInstitutionIsNull(
+                        userId, RolComunidad.ADMIN))
+                .thenReturn(0L);
         when(comunidadRepository.save(any(Comunidad.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Comunidad result =

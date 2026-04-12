@@ -4,7 +4,7 @@
 
 ### Grupo 9 – Turno de tarde
 
-![Logo App](../images/logoapp.jpeg)
+![Logo App](../../images/logoapp.jpeg)
 
 ---
 

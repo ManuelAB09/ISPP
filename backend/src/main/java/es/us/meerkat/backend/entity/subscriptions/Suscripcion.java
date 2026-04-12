@@ -92,14 +92,13 @@ public class Suscripcion {
         return suscribir("MENSUAL");
     }
 
-    /** Cancela la suscripción del usuario. */
+    /**
+     * Cancela la renovación automática de la suscripción. El acceso al plan pagado se mantiene
+     * hasta el final del período actual (fechaFin). El scheduler desactivará la suscripción y
+     * revertirá el plan a FREE cuando fechaFin < hoy.
+     */
     public void cancelar() {
-        this.activa = false;
         this.autoRenovar = false;
-        this.plan = TipoPlan.FREE;
-        // NO PUEDE SER NULL (cambiado)
-        this.fechaInicio = LocalDate.now();
-        this.fechaFin = LocalDate.now();
     }
 
     /** Renueva la suscripción extendiendo las fechas de vigencia para un plan dado. */
