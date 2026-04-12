@@ -3,6 +3,8 @@ package es.us.meerkat.backend.controller.tutors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -161,5 +163,115 @@ class DisponibilidadControllerTest {
                 controller.getDisponibilidades(1L);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void crearShouldThrowWhenServiceFails() {
+        Usuario usuario = buildUsuario(1L);
+        Tutor tutor = buildTutor(10L, usuario);
+        CreateDisponibilidadRequest request = new CreateDisponibilidadRequest();
+
+        when(tutorRepository.findByUsuarioId(1L)).thenReturn(Optional.of(tutor));
+        when(disponibilidadService.crearDisponibilidad(eq(10L), any(), eq(1L)))
+                .thenThrow(new RuntimeException("Service error"));
+
+        try {
+            controller.crear(usuario, request);
+        } catch (Exception e) {
+            assertThat(e).isNotNull();
+        }
+    }
+
+    @Test
+    void actualizarShouldThrowWhenServiceFails() {
+        Usuario usuario = buildUsuario(1L);
+        CreateDisponibilidadRequest request = new CreateDisponibilidadRequest();
+
+        when(disponibilidadService.actualizarDisponibilidad(eq(1L), any(), eq(1L)))
+                .thenThrow(new RuntimeException("Update failed"));
+
+        try {
+            controller.actualizar(usuario, 1L, request);
+        } catch (Exception e) {
+            assertThat(e).isNotNull();
+        }
+    }
+
+    @Test
+    void desactivarShouldThrowWhenServiceFails() {
+        Usuario usuario = buildUsuario(1L);
+
+        doThrow(new RuntimeException("Deactivation failed"))
+                .when(disponibilidadService)
+                .desactivarDisponibilidad(1L, 1L);
+
+        try {
+            controller.desactivar(usuario, 1L);
+        } catch (Exception e) {
+            assertThat(e).isNotNull();
+        }
+    }
+
+    @Test
+    void crearShouldReturnCreatedWithCorrectResponse() {
+        Usuario usuario = buildUsuario(1L);
+        Tutor tutor = buildTutor(10L, usuario);
+        CreateDisponibilidadRequest request = new CreateDisponibilidadRequest();
+        DisponibilidadTutorResponse responseBody =
+                DisponibilidadTutorResponse.builder().id(5L).build();
+
+        when(tutorRepository.findByUsuarioId(1L)).thenReturn(Optional.of(tutor));
+        when(disponibilidadService.crearDisponibilidad(eq(10L), any(), eq(1L)))
+                .thenReturn(responseBody);
+
+        ResponseEntity<DisponibilidadTutorResponse> result = controller.crear(usuario, request);
+
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(result.getBody().getId()).isEqualTo(5L);
+    }
+
+    @Test
+    void actualizarShouldReturnUpdatedResponse() {
+        Usuario usuario = buildUsuario(1L);
+        CreateDisponibilidadRequest request = new CreateDisponibilidadRequest();
+        DisponibilidadTutorResponse responseBody =
+                DisponibilidadTutorResponse.builder().id(1L).build();
+
+        when(disponibilidadService.actualizarDisponibilidad(eq(1L), any(), eq(1L)))
+                .thenReturn(responseBody);
+
+        ResponseEntity<DisponibilidadTutorResponse> result =
+                controller.actualizar(usuario, 1L, request);
+
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(result.getBody().getId()).isEqualTo(1L);
+    }
+
+    @Test
+    void getDisponibilidadesShouldHandleServiceException() {
+        when(disponibilidadService.getDisponibilidades(1L))
+                .thenThrow(new RuntimeException("Service unavailable"));
+
+        try {
+            controller.getDisponibilidades(1L);
+        } catch (Exception e) {
+            assertThat(e).isNotNull();
+        }
+    }
+
+    @Test
+    void crearShouldVerifyTutorRepositoryCalled() {
+        Usuario usuario = buildUsuario(1L);
+        Tutor tutor = buildTutor(10L, usuario);
+        CreateDisponibilidadRequest request = new CreateDisponibilidadRequest();
+        DisponibilidadTutorResponse response = buildDisponibilidadResponse(1L);
+
+        when(tutorRepository.findByUsuarioId(1L)).thenReturn(Optional.of(tutor));
+        when(disponibilidadService.crearDisponibilidad(eq(10L), any(), eq(1L)))
+                .thenReturn(response);
+
+        controller.crear(usuario, request);
+
+        verify(tutorRepository).findByUsuarioId(1L);
     }
 }

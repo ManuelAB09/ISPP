@@ -16,6 +16,9 @@ import es.us.meerkat.backend.entity.communities.Comunidad;
 import es.us.meerkat.backend.entity.communities.MiembroComunidad;
 import es.us.meerkat.backend.entity.communities.RolComunidad;
 import es.us.meerkat.backend.entity.communities.TipoGrupo;
+import es.us.meerkat.backend.entity.subscriptions.Suscripcion;
+import es.us.meerkat.backend.entity.subscriptions.TipoPlan;
+import es.us.meerkat.backend.entity.subscriptions.TipoPlanComunidad;
 import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
@@ -23,6 +26,7 @@ import es.us.meerkat.backend.repository.events.AsistenciaEventoRepository;
 import es.us.meerkat.backend.repository.google.ComunidadClassroomRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import es.us.meerkat.backend.service.google.GoogleClassroomService;
+import es.us.meerkat.backend.service.subscriptions.SuscripcionService;
 
 @ExtendWith(MockitoExtension.class)
 class MemberServiceTest {
@@ -35,6 +39,7 @@ class MemberServiceTest {
     @Mock private AuthorizationService authorizationService;
     @Mock private CommunityService communityService;
     @Mock private GoogleClassroomService googleClassroomService;
+    @Mock private SuscripcionService suscripcionService;
 
     @InjectMocks private MemberService memberService;
 
@@ -134,6 +139,9 @@ class MemberServiceTest {
                 .thenReturn(Optional.of(actual));
         when(miembroComunidadRepository.save(any(MiembroComunidad.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+        // Community is FREE — downgrade block should not trigger
+        when(comunidadRepository.findById(communityId))
+                .thenReturn(Optional.of(buildComunidad(communityId, TipoGrupo.COMUNIDAD_PUBLICA)));
 
         MiembroComunidad result =
                 memberService.transferAdmin(adminId, communityId, newAdminId, null);
@@ -141,6 +149,73 @@ class MemberServiceTest {
         assertThat(actual.getRol()).isEqualTo(RolComunidad.ALUMNO);
         assertThat(nuevo.getRol()).isEqualTo(RolComunidad.ADMIN);
         assertThat(result.getRol()).isEqualTo(RolComunidad.ADMIN);
+    }
+
+    @Test
+    void transferAdminShouldDowngradePremiumCommunityWhenNewAdminIsNotPremium() {
+        Long adminId = 1L;
+        Long newAdminId = 2L;
+        Long communityId = 10L;
+
+        MiembroComunidad actual = MiembroComunidad.builder().rol(RolComunidad.ADMIN).build();
+        MiembroComunidad nuevo = MiembroComunidad.builder().rol(RolComunidad.ALUMNO).build();
+        Comunidad comunidadPremium =
+                Comunidad.builder()
+                        .id(communityId)
+                        .tipoPlan(TipoPlanComunidad.PREMIUM)
+                        .maxMiembros(75)
+                        .build();
+
+        when(authorizationService.isAdminOf(adminId, communityId)).thenReturn(true);
+        when(miembroComunidadRepository.findByUsuarioIdAndComunidadId(newAdminId, communityId))
+                .thenReturn(Optional.of(nuevo));
+        when(miembroComunidadRepository.findByUsuarioIdAndComunidadId(adminId, communityId))
+                .thenReturn(Optional.of(actual));
+        when(miembroComunidadRepository.save(any(MiembroComunidad.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+        when(comunidadRepository.findById(communityId)).thenReturn(Optional.of(comunidadPremium));
+        when(suscripcionService.obtenerMiSuscripcion(newAdminId)).thenReturn(Optional.empty());
+
+        memberService.transferAdmin(adminId, communityId, newAdminId, null);
+
+        assertThat(comunidadPremium.getTipoPlan()).isEqualTo(TipoPlanComunidad.FREE);
+        assertThat(comunidadPremium.getMaxMiembros()).isEqualTo(30);
+        verify(comunidadRepository).save(comunidadPremium);
+    }
+
+    @Test
+    void transferAdminShouldKeepPremiumWhenNewAdminHasPremiumSubscription() {
+        Long adminId = 1L;
+        Long newAdminId = 2L;
+        Long communityId = 10L;
+
+        MiembroComunidad actual = MiembroComunidad.builder().rol(RolComunidad.ADMIN).build();
+        MiembroComunidad nuevo = MiembroComunidad.builder().rol(RolComunidad.ALUMNO).build();
+        Comunidad comunidadPremium =
+                Comunidad.builder()
+                        .id(communityId)
+                        .tipoPlan(TipoPlanComunidad.PREMIUM)
+                        .maxMiembros(75)
+                        .build();
+        Suscripcion suscripcionPremium = new Suscripcion();
+        suscripcionPremium.setPlan(TipoPlan.PREMIUM);
+        suscripcionPremium.setActiva(true);
+
+        when(authorizationService.isAdminOf(adminId, communityId)).thenReturn(true);
+        when(miembroComunidadRepository.findByUsuarioIdAndComunidadId(newAdminId, communityId))
+                .thenReturn(Optional.of(nuevo));
+        when(miembroComunidadRepository.findByUsuarioIdAndComunidadId(adminId, communityId))
+                .thenReturn(Optional.of(actual));
+        when(miembroComunidadRepository.save(any(MiembroComunidad.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+        when(comunidadRepository.findById(communityId)).thenReturn(Optional.of(comunidadPremium));
+        when(suscripcionService.obtenerMiSuscripcion(newAdminId))
+                .thenReturn(Optional.of(suscripcionPremium));
+
+        memberService.transferAdmin(adminId, communityId, newAdminId, null);
+
+        assertThat(comunidadPremium.getTipoPlan()).isEqualTo(TipoPlanComunidad.PREMIUM);
+        verify(comunidadRepository, never()).save(comunidadPremium);
     }
 
     @Test
@@ -217,6 +292,80 @@ class MemberServiceTest {
 
         assertThat(result.getRol()).isEqualTo(RolComunidad.ADMIN);
         verify(miembroComunidadRepository).save(targetMember);
+    }
+
+    @Test
+    void joinPublicCommunityShouldFailWhenUserNotFound() {
+        Long userId = 999L;
+        Long communityId = 10L;
+
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> memberService.joinPublicCommunity(userId, communityId, null))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void joinPublicCommunityShouldFailWhenCommunityNotFound() {
+        Long userId = 1L;
+        Long communityId = 999L;
+
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(buildUsuario(userId)));
+        when(comunidadRepository.findById(communityId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> memberService.joinPublicCommunity(userId, communityId, null))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void joinPublicCommunityShouldFailWhenUserAlreadyMember() {
+        Long userId = 1L;
+        Long communityId = 10L;
+
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(buildUsuario(userId)));
+        when(comunidadRepository.findById(communityId))
+                .thenReturn(Optional.of(buildComunidad(communityId, TipoGrupo.COMUNIDAD_PUBLICA)));
+        when(authorizationService.isMemberOf(userId, communityId)).thenReturn(true);
+
+        assertThatThrownBy(() -> memberService.joinPublicCommunity(userId, communityId, null))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(miembroComunidadRepository, never()).save(any());
+    }
+
+    @Test
+    void expelMemberShouldFailWhenUserNotAdmin() {
+        when(authorizationService.isAdminOf(1L, 10L)).thenReturn(false);
+
+        assertThatThrownBy(() -> memberService.expelMember(1L, 10L, 2L))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void promoteToAdminShouldFailWhenNotAdmin() {
+        Long adminId = 1L;
+        Long targetUserId = 2L;
+        Long communityId = 10L;
+
+        when(authorizationService.isAdminOf(adminId, communityId)).thenReturn(false);
+
+        assertThatThrownBy(() -> memberService.promoteToAdmin(adminId, communityId, targetUserId))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void transferAdminShouldFailWhenTargetNotMember() {
+        Long adminId = 1L;
+        Long newAdminId = 2L;
+        Long communityId = 10L;
+
+        when(authorizationService.isAdminOf(adminId, communityId)).thenReturn(true);
+        when(miembroComunidadRepository.findByUsuarioIdAndComunidadId(newAdminId, communityId))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(
+                        () -> memberService.transferAdmin(adminId, communityId, newAdminId, null))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     private Usuario buildUsuario(final Long id) {
