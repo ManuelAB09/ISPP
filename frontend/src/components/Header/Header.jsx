@@ -117,7 +117,6 @@ export default function Header({ user, page }) {
                 <div className="header-links-desktop">
                     <Link to="/" className={page === 'inicio' ? 'active' : ''}>Inicio</Link>
                     <Link to="/comunidades" className={page === 'comunidades' ? 'active' : ''}>Comunidades</Link>
-                    <Link to="/alumnos" className={page === 'alumnos' ? 'active' : ''}>Alumnos</Link>
                     <Link to="/profesores" className={page === 'profesores' ? 'active' : ''}>Profesores</Link>
                     <Link to="/cuestionarios" className={page === 'cuestionarios' ? 'active' : ''}>Cuestionarios</Link>
                     <Link to="/chats" className={page === 'chats' ? 'active' : ''}>
@@ -167,7 +166,6 @@ export default function Header({ user, page }) {
                 <div className="header-links-mobile">
                     <Link to="/" className={page === 'inicio' ? 'active' : ''} onClick={closeMenu}>Inicio</Link>
                     <Link to="/comunidades" className={page === 'comunidades' ? 'active' : ''} onClick={closeMenu}>Comunidades</Link>
-                    <Link to="/alumnos" className={page === 'alumnos' ? 'active' : ''} onClick={closeMenu}>Alumnos</Link>
                     <Link to="/profesores" className={page === 'profesores' ? 'active' : ''} onClick={closeMenu}>Profesores</Link>
                     <Link to="/cuestionarios" className={page === 'cuestionarios' ? 'active' : ''} onClick={closeMenu}>Cuestionarios</Link>
                     <Link to="/chats" className={page === 'chats' ? 'active' : ''} onClick={closeMenu}>

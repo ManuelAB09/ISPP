@@ -2,11 +2,13 @@ package es.us.meerkat.backend.service.communities;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -157,6 +159,16 @@ public class InstitutionService {
 
         institution.setUpdatedAt(LocalDateTime.now());
         return institutionRepository.save(institution);
+    }
+
+    /**
+     * Lista todas las instituciones para filtros y desplegables públicos.
+     *
+     * @return instituciones ordenadas alfabéticamente
+     */
+    @Transactional(readOnly = true)
+    public List<Institution> listarInstituciones() {
+        return institutionRepository.findAll(Sort.by(Sort.Direction.ASC, "nombre"));
     }
 
     // ===============================

@@ -72,6 +72,57 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class AuthService {
+    // Lista de dominios universitarios permitidos (inyectada desde application.yaml)
+    // Lista hardcodeada de dominios universitarios permitidos
+    private static final List<String> ALLOWED_UNIVERSITY_DOMAINS =
+            List.of(
+                    "ual.es",
+                    "inlumine.ual.es",
+                    "uca.es",
+                    "alum.uca.es",
+                    "uco.es",
+                    "alumno.uco.es",
+                    "ugr.es",
+                    "correo.ugr.es",
+                    "uhu.es",
+                    "alu.uhu.es",
+                    "ujaen.es",
+                    "red.ujaen.es",
+                    "uma.es",
+                    "upo.es",
+                    "alu.upo.es",
+                    "us.es",
+                    "alum.us.es",
+                    "unia.es",
+                    "uloyola.es",
+                    "alumnado.uloyola.es",
+                    "ceu.es",
+                    "ceuandalucia.es",
+                    "alu.ceu.es",
+                    "utamed.es",
+                    "universidadeuropea.es",
+                    "uax.es",
+                    "myuax.com",
+                    "unex.es",
+                    "alumnos.unex.es",
+                    "uv.es",
+                    "alumni.uv.es",
+                    "upv.es",
+                    "upv.edu.es",
+                    "alumno.upv.es",
+                    "ua.es",
+                    "alu.ua.es",
+                    "uji.es",
+                    "umh.es",
+                    "alu.umh.es",
+                    "uchceu.es",
+                    "alumno.uchceu.es",
+                    "ucv.es",
+                    "mail.ucv.es",
+                    "alumnos.ucv.es",
+                    "universidadviu.com",
+                    "alumnos.viu.es",
+                    "uev.es");
 
     /** Longitud mínima requerida para las contraseñas. */
     private static final int MIN_PASSWORD_LENGTH = 8;
@@ -215,6 +266,19 @@ public class AuthService {
         final String emailRegex = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
         if (!request.getEmail().matches(emailRegex)) {
             throw new ValidationException("El formato del email no es válido");
+        }
+
+        // Validar dominio universitario desde la lista de configuración
+        String emailLower = request.getEmail().toLowerCase();
+        String domain = emailLower.substring(emailLower.indexOf("@") + 1);
+        boolean isAllowed =
+                ALLOWED_UNIVERSITY_DOMAINS.stream()
+                        .anyMatch(
+                                allowed ->
+                                        domain.equals(allowed) || domain.endsWith("." + allowed));
+        if (!isAllowed) {
+            throw new ValidationException(
+                    "El email debe pertenecer a un dominio universitario autorizado");
         }
 
         if (request.getNombre() == null || request.getNombre().isBlank()) {

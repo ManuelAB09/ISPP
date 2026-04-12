@@ -7,6 +7,7 @@ import { cuestionariosApi } from "../../api/cuestionarios.api"
 import { getMyTutorProfiles, getVerifiedTutors } from "../../api/tutorEndpoints"
 import Header from "../../components/Header/Header"
 import { useAuth } from "../../contexts/AuthContext"
+import BecomeTutorInfoModal from "./BecomeTutorInfoModal";
 
 import CreateProfileModal from "../teacherProfile/CreateProfileModal"
 
@@ -73,6 +74,11 @@ const MyProfile = () => {
     const [unauthorizedMessage, setUnauthorizedMessage] = useState("")
     const [calendarNotification, setCalendarNotification] = useState(null)
     const { logout } = useAuth()
+    const [showTutorInfoModal, setShowTutorInfoModal] = useState(false);
+
+    // ── Helpers de tipo de perfil ─────────────────────────────
+    const isPublicTutor = !isOwner && publicProfile?.esTutor
+    const isPublicStudent = !isOwner && !publicProfile?.esTutor
 
     useEffect(() => {
         if (isOwner || !userId || !isAuthenticated) {
@@ -113,7 +119,6 @@ const MyProfile = () => {
             .finally(() => setLoadingPublicProfile(false))
     }, [isAuthenticated, isOwner, userId])
 
-    // Cargar perfil de tutor cuando el usuario es tutor
     useEffect(() => {
         if (!isOwner) {
             setMiPerfilTutor(null);
@@ -170,7 +175,6 @@ const MyProfile = () => {
         }
     }, [isAuthenticated, loading, isOwner, publicProfile])
 
-    // Abrir modal de edición/configuración cuando se navega con estado desde otras pantallas.
     useEffect(() => {
         const ubicacion = location.state?.ubicacion;
         const openEditProfile = Boolean(location.state?.openEditProfile);
@@ -207,7 +211,6 @@ const MyProfile = () => {
         setBecomingTutor(false)
     }
 
-    // Cargar comunidades del usuario
     useEffect(() => {
         if (!isOwner) {
             setLoadingCommunities(false);
@@ -227,13 +230,11 @@ const MyProfile = () => {
                 const response = await communitiesApi.listMine({ page: 0, size: 100 });
                 const comunidades = response.content || [];
 
-                // Filtrar comunidades donde soy admin/creador
                 const creadas = comunidades.filter(c =>
                     c.miRol === 'ADMIN' || c.miRol === 'ADMINISTRADOR' ||
                     c.creador?.id === user?.id || parseInt(localStorage.getItem('userId')) === c.creador?.id
                 );
 
-                // Filtrar comunidades donde solo soy miembro
                 const miembro = comunidades.filter(c =>
                     c.miRol !== 'ADMIN' && c.miRol !== 'ADMINISTRADOR' &&
                     c.creador?.id !== user?.id && parseInt(localStorage.getItem('userId')) !== c.creador?.id
@@ -242,7 +243,6 @@ const MyProfile = () => {
                 setComunidadesCreadas(creadas);
                 setMisComunidades(miembro);
 
-                // Actualizar estadísticas
                 setStats(prev => ({
                     ...prev,
                     comunidades: comunidades.length
@@ -268,7 +268,6 @@ const MyProfile = () => {
         )
     }
 
-    // Si no está autenticado y es su propio perfil, mostrar mensaje
     if (!isAuthenticated) {
         return (
             <>
@@ -321,7 +320,6 @@ const MyProfile = () => {
 
     const profileSource = isOwner ? user : publicProfile
 
-    // Datos del usuario desde el contexto
     const userData = {
         nombre: profileSource?.nombre || "Sin nombre",
         descripcion: profileSource?.bio || "",
@@ -340,7 +338,6 @@ const MyProfile = () => {
         intereses: profileSource?.intereses || []
     }
 
-    // Función para mostrar valor o texto de "sin información"
     const displayValue = (value) => {
         if (typeof value !== 'string') {
             return value ? String(value) : <span className="no-info">Sin información</span>;
@@ -348,7 +345,6 @@ const MyProfile = () => {
         return value.trim() !== '' ? value : <span className="no-info">Sin información</span>
     }
 
-    // Función para formatear URL de imagen de comunidad
     const getCommunityImageUrl = (comunidad) => {
         const communityImageRaw = comunidad.imagen || comunidad.imagenUrl || comunidad.foto;
 
@@ -391,9 +387,7 @@ const MyProfile = () => {
         })
     }
 
-    // Función para manejar cierre de sesión
     const handleLogout = async () => {
-        // Validar que sea el propietario
         if (!isOwner) {
             setUnauthorizedMessage("No puedes cerrar sesión de una cuenta que no es tuya.")
             setTimeout(() => setUnauthorizedMessage(""), 3000)
@@ -403,25 +397,96 @@ const MyProfile = () => {
         try {
             await apiClient.post('/api/v1/auth/logout')
         } catch (error) {
-            // Aunque falle la llamada, cerramos sesión localmente
             console.error('Error al cerrar sesión:', error)
         } finally {
-            // Usar logout del contexto para limpiar estado correctamente
             logout()
-            // Redirigir a home
             navigate('/')
         }
     }
+
+    // ── Clases y estilos del header según tipo de perfil ─────
+    const headerClass = [
+        'profile-header',
+        isPublicTutor ? 'profile-header--tutor' : '',
+        isPublicStudent ? 'profile-header--student' : '',
+    ].filter(Boolean).join(' ')
+
+    const headerStyle = isPublicTutor
+        ? {
+            background: 'linear-gradient(135deg, #2d3250 0%, #424769 60%, #676f9d 100%)',
+            border: '1px solid #2d3250',
+            color: '#fff',
+        }
+        : isPublicStudent
+            ? {
+                background: 'linear-gradient(135deg, #f8faff 0%, #eef2ff 100%)',
+                border: '1px solid #c7d2fe',
+            }
+            : {}
+
+    const avatarClass = [
+        'profile-avatar',
+        isPublicTutor ? 'profile-avatar--tutor' : '',
+        isPublicStudent ? 'profile-avatar--student' : '',
+    ].filter(Boolean).join(' ')
+
+    const dataSectionClass = [
+        'profile-data',
+        isPublicTutor ? 'profile-data--tutor' : '',
+        isPublicStudent ? 'profile-data--student' : '',
+    ].filter(Boolean).join(' ')
 
     return (
         <>
             <Header page={'inicio'} />
 
             <main className="my-profile">
-                {/* Sección de perfil principal */}
-                <section className="profile-header">
-                    <div className="profile-header__left">
-                        <div className="profile-avatar" style={{ backgroundColor: userData.fotoBackgroundColor }}>
+
+                {/* ── Banner informativo para perfiles públicos (NUEVO) ── */}
+                {!isOwner && (
+                    <div className={`profile-public-banner profile-public-banner--${isPublicTutor ? 'tutor' : 'student'}`}>
+                        <div className="profile-public-banner__icon">
+                            {isPublicTutor ? '🎓' : '📚'}
+                        </div>
+                        <div className="profile-public-banner__text">
+                            <h3>
+                                {isPublicTutor
+                                    ? `Perfil de Profesor${publicTutorProfile?.verificado ? ' · ✓ Verificado' : ''}`
+                                    : 'Perfil de Estudiante'}
+                            </h3>
+                            <p>
+                                {isPublicTutor
+                                    ? publicTutorProfile?.verificado
+                                        ? 'Este profesor ha sido verificado por el equipo de MeerKatters.'
+                                        : 'Explora el perfil y contáctale si te interesa aprender con él/ella.'
+                                    : 'Este usuario es miembro de la comunidad de estudiantes.'}
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {/* ══════════════════════════════════════════════════
+                    PROFILE HEADER
+                ══════════════════════════════════════════════════ */}
+                <section className={headerClass} style={headerStyle}>
+
+                    {/* ── Franja de tipo de perfil (solo vistas públicas) ── */}
+                    {!isOwner && (
+                        <div className={`profile-type-bar profile-type-bar--${isPublicTutor ? 'tutor' : 'student'}`}>
+                            <span style={{ fontSize: '14px' }}>{isPublicTutor ? '🎓' : '📚'}</span>
+                            {isPublicTutor ? 'Perfil de Profesor' : 'Perfil de Estudiante'}
+                            {isPublicTutor && publicTutorProfile?.verificado && (
+                                <span className="profile-type-bar__verified">✓ Verificado</span>
+                            )}
+                        </div>
+                    )}
+
+                    <div className="profile-header__left" style={!isOwner ? { marginTop: '36px' } : {}}>
+                        {/* Avatar con estilo según tipo */}
+                        <div
+                            className={avatarClass}
+                            style={{ backgroundColor: userData.fotoBackgroundColor }}
+                        >
                             <img
                                 src={toAbsoluteImageUrl(userData.foto, DEFAULT_PROFILE_AVATAR)}
                                 alt={userData.nombre}
@@ -429,17 +494,54 @@ const MyProfile = () => {
                                 onError={e => { e.target.onerror = null; e.target.src = DEFAULT_PROFILE_AVATAR; }}
                             />
                         </div>
+
                         <div className="profile-info">
                             <div className="profile-info__headline">
-                                <h1 className="profile-info__name">{userData.nombre}</h1>
-                                {!isOwner && publicTutorProfile?.verificado && (
-                                    <span className="profile-verified-badge" title="Tutor verificado">
-                                        ✓ Tutor verificado
-                                    </span>
+                                <h1 className="profile-info__name">
+                                    {userData.nombre}
+                                </h1>
+
+                                {/* Badge de tipo (solo perfiles públicos) */}
+                                {!isOwner && (
+                                    isPublicTutor ? (
+                                        publicTutorProfile?.verificado ? (
+                                            <span
+                                                className="profile-verified-badge"
+                                                title="Tutor verificado"
+                                            >
+                                                ✓ Tutor verificado
+                                            </span>
+                                        ) : (
+                                            <span className="profile-type-badge--tutor">
+                                                🎓 Profesor
+                                            </span>
+                                        )
+                                    ) : (
+                                        <span className="profile-type-badge--student">
+                                            📚 Estudiante
+                                        </span>
+                                    )
                                 )}
                             </div>
-                            <p className="profile-info__description">{userData.descripcion}</p>
-                            <span className="profile-info__role">{userData.rol}</span>
+
+                            <p className="profile-info__description">
+                                {userData.descripcion}
+                            </p>
+
+                            {/* Pill de rol */}
+                            {isOwner ? (
+                                <span className="profile-info__role">{userData.rol}</span>
+                            ) : isPublicTutor ? (
+                                <span className="profile-role-pill--tutor">
+                                    🎓 Estudiante y Profesor
+                                </span>
+                            ) : (
+                                <span className="profile-role-pill--student">
+                                    📚 Estudiante
+                                </span>
+                            )}
+
+                            {/* Card de tutor público */}
                             {!isOwner && publicTutorProfile && (
                                 <div className="profile-public-tutor-card">
                                     <div>
@@ -465,21 +567,25 @@ const MyProfile = () => {
                                     </button>
                                 </div>
                             )}
+
                             {userData.intereses && userData.intereses.length > 0 && (
                                 <div className="profile-info__interests">
                                     {userData.intereses.map((interes, index) => (
-                                        <span key={index} className="profile-interest-tag">{interes}</span>
+                                        <span key={index} className="profile-interest-tag">
+                                            {interes}
+                                        </span>
                                     ))}
                                 </div>
                             )}
                         </div>
                     </div>
-                    {/* Mensaje de acceso no autorizado */}
+
                     {unauthorizedMessage && (
                         <div className="settings-unauthorized-message">
                             ⚠️ {unauthorizedMessage}
                         </div>
                     )}
+
                     <div className="profile-header__right">
                         {isOwner && (
                             <>
@@ -494,12 +600,50 @@ const MyProfile = () => {
                                 </button>
                             </>
                         )}
-                    </div >
-                </section >
 
-                {/* Sección Mis datos y Tu Actividad */}
-                < section className="profile-data-section" >
-                    <div className="profile-data">
+                        {/* CTA + stats rápidos para visitante que ve un tutor */}
+                        {isPublicTutor && publicTutorProfile && (
+                            <>
+                                <button
+                                    className="profile-tutor-cta"
+                                    onClick={() => navigate(`/profesores/${publicTutorProfile.id}`)}
+                                >
+                                    🎓 Ver como profesor
+                                </button>
+                                {/* Mini stats debajo del CTA */}
+                                {publicTutorProfile.tarifaPorHora != null && (
+                                    <div className="profile-tutor-quick-stats">
+                                        <div className="profile-tutor-quick-stat">
+                                            <span className="profile-tutor-quick-stat__val">
+                                                {Number(publicTutorProfile.tarifaPorHora).toFixed(0)}€
+                                            </span>
+                                            <span className="profile-tutor-quick-stat__lbl">/ hora</span>
+                                        </div>
+                                        {publicTutorProfile.verificado && (
+                                            <div className="profile-tutor-quick-stat">
+                                                <span className="profile-tutor-quick-stat__val">✓</span>
+                                                <span className="profile-tutor-quick-stat__lbl">Verif.</span>
+                                            </div>
+                                        )}
+                                        {publicTutorProfile.especialidades?.length > 0 && (
+                                            <div className="profile-tutor-quick-stat">
+                                                <span className="profile-tutor-quick-stat__val">
+                                                    {publicTutorProfile.especialidades.length}
+                                                </span>
+                                                <span className="profile-tutor-quick-stat__lbl">Materias</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </section>
+
+                {/* ── El resto del JSX EXACTAMENTE igual que el original ── */}
+
+                <section className="profile-data-section">
+                    <div className={dataSectionClass}>
                         <h2 className="section-title">{isOwner ? 'Mis datos' : 'Datos del perfil'}</h2>
                         <div className="profile-data__content">
                             <div className="data-field">
@@ -540,41 +684,42 @@ const MyProfile = () => {
                     </div>
 
                     {isOwner && (
-                        <div className="profile-nav-actions">
-                            <button className="profile-nav-btn" onClick={() => navigate('/pagos')}>
-                                💳 Mis pagos
-                            </button>
-                            <button className="profile-nav-btn" onClick={() => navigate('/ganancias')}>
-                                💰 Mis ganancias
-                            </button>
+                        <div className="profile-data-section__right">
+                            <div className="profile-nav-actions">
+                                <button className="profile-nav-btn" onClick={() => navigate('/pagos')}>
+                                    💳 Mis pagos
+                                </button>
+                                <button className="profile-nav-btn" onClick={() => navigate('/ganancias')}>
+                                    💰 Mis ganancias
+                                </button>
+                            </div>
+
+                            <div className="activity-card">
+                                <h3 className="activity-card__title">Tu Actividad</h3>
+                                <div className="activity-card__grid">
+                                    <div className="activity-stat">
+                                        <span className="activity-stat__value">{stats.comunidades}</span>
+                                        <span className="activity-stat__label">COMUNIDADES</span>
+                                    </div>
+                                    <div className="activity-stat">
+                                        <span className="activity-stat__value">{stats.apuntesSubidos}</span>
+                                        <span className="activity-stat__label">APUNTES SUBIDOS</span>
+                                    </div>
+                                    <div className="activity-stat">
+                                        <span className="activity-stat__value">{stats.valoracionMedia}</span>
+                                        <span className="activity-stat__label">VALORACIÓN MEDIA</span>
+                                    </div>
+                                    <div className="activity-stat">
+                                        <span className="activity-stat__value">{stats.descargas}</span>
+                                        <span className="activity-stat__label">DESCARGAS</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
+                </section>
 
-                    {isOwner && <div className="activity-card">
-                        <h3 className="activity-card__title">Tu Actividad</h3>
-                        <div className="activity-card__grid">
-                            <div className="activity-stat">
-                                <span className="activity-stat__value">{stats.comunidades}</span>
-                                <span className="activity-stat__label">COMUNIDADES</span>
-                            </div>
-                            <div className="activity-stat">
-                                <span className="activity-stat__value">{stats.apuntesSubidos}</span>
-                                <span className="activity-stat__label">APUNTES SUBIDOS</span>
-                            </div>
-                            <div className="activity-stat">
-                                <span className="activity-stat__value">{stats.valoracionMedia}</span>
-                                <span className="activity-stat__label">VALORACIÓN MEDIA</span>
-                            </div>
-                            <div className="activity-stat">
-                                <span className="activity-stat__value">{stats.descargas}</span>
-                                <span className="activity-stat__label">DESCARGAS</span>
-                            </div>
-                        </div>
-                    </div>}
-                </section >
-
-                {/* Sección Mis comunidades */}
-                {isOwner && < section className="my-communities-section" >
+                {isOwner && <section className="my-communities-section">
                     <h2 className="section-title">Mis comunidades</h2>
                     {
                         loadingCommunities ? (
@@ -624,7 +769,7 @@ const MyProfile = () => {
                             </div>
                         )
                     }
-                </section >}
+                </section>}
 
                 <section className="my-questionnaires-section">
                     <h2 className="section-title">{isOwner ? 'Mis cuestionarios' : 'Cuestionarios públicos'}</h2>
@@ -676,7 +821,6 @@ const MyProfile = () => {
                     )}
                 </section>
 
-                {/* Sección Perfil de Profesor / Convertirse en tutor */}
                 {isOwner &&
                     !user?.esTutor && (
                         <section className="tutor-profile-section">
@@ -687,8 +831,7 @@ const MyProfile = () => {
                                 </div>
                                 <button
                                     className="btn-become-tutor"
-                                    onClick={handleBecomeTutor}
-                                    disabled={becomingTutor}
+                                    onClick={() => setShowTutorInfoModal(true)}
                                 >
                                     <span className="btn-icon">🎓</span>
                                     {becomingTutor ? 'Actualizando...' : 'Convertirme en tutor'}
@@ -759,7 +902,6 @@ const MyProfile = () => {
                     )
                 }
 
-                {/* Sección Comunidades creadas */}
                 {isOwner && <section className="created-communities-section">
                     <div className="created-header">
                         <div>
@@ -816,43 +958,45 @@ const MyProfile = () => {
                         </div>
                     )}
                 </section>}
-            </main >
+            </main>
 
-            {/* Modal de crear perfil de profesor */}
-            {isOwner &&
-                showCreateTutorModal && (
-                    <CreateProfileModal
-                        onClose={() => setShowCreateTutorModal(false)}
-                        onCreado={(newTutor) => {
-                            setMiPerfilTutor(newTutor);
-                            setShowCreateTutorModal(false);
-                            navigate(`/profesores/${newTutor.id}`);
-                        }}
-                    />
-                )
-            }
+            {isOwner && showCreateTutorModal && (
+                <CreateProfileModal
+                    onClose={() => setShowCreateTutorModal(false)}
+                    onCreado={(newTutor) => {
+                        setMiPerfilTutor(newTutor);
+                        setShowCreateTutorModal(false);
+                        navigate(`/profesores/${newTutor.id}`);
+                    }}
+                />
+            )}
 
-            {/* Modal de configuración */}
-            {isOwner &&
-                showSettings && (
-                    <Settings
-                        onClose={() => setShowSettings(false)}
-                        isOwner={isOwner}
-                        calendarNotification={calendarNotification}
-                        onCalendarNotificationRead={() => setCalendarNotification(null)}
-                    />
-                )
-            }
+            {isOwner && showSettings && (
+                <Settings
+                    onClose={() => setShowSettings(false)}
+                    isOwner={isOwner}
+                    calendarNotification={calendarNotification}
+                    onCalendarNotificationRead={() => setCalendarNotification(null)}
+                />
+            )}
 
-            {/* Modal de editar perfil */}
             {isOwner && showEditProfile && (
-                <EditProfile 
-                    onClose={() => setShowEditProfile(false)} 
+                <EditProfile
+                    onClose={() => setShowEditProfile(false)}
                     ubicacionPreseleccionada={ubicacionPreseleccionada}
                     onSave={(updatedUser) => {
-                        // Los datos se actualizan automáticamente en el contexto
                         setShowEditProfile(false)
                         setUbicacionPreseleccionada(null)
+                    }}
+                />
+            )}
+
+            {showTutorInfoModal && (
+                <BecomeTutorInfoModal
+                    onClose={() => setShowTutorInfoModal(false)}
+                    onContinue={async () => {
+                        setShowTutorInfoModal(false);
+                        await handleBecomeTutor();
                     }}
                 />
             )}

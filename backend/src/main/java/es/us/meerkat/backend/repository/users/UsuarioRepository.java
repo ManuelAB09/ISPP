@@ -67,25 +67,4 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
      * @return Optional con el usuario si existe.
      */
     Optional<Usuario> findByGoogleId(String googleId);
-
-    /**
-     * Busca usuarios por nombre o email (para la selección en cuestionarios). Excluye al usuario
-     * especificado y retorna resultados con un límite.
-     *
-     * @param search Texto de búsqueda (nombre o email).
-     * @param excludeUserId ID del usuario a excluir de los resultados.
-     * @return Lista de usuarios que coincidan con la búsqueda.
-     */
-    @Query(
-            """
-                SELECT u FROM Usuario u
-                WHERE u.id != :excludeUserId
-                  AND (
-                    LOWER(u.nombre) LIKE LOWER(CONCAT('%', :search, '%'))
-                    OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%'))
-                  )
-                ORDER BY u.nombre ASC
-            """)
-    List<Usuario> searchByNombreOrEmail(
-            @Param("search") String search, @Param("excludeUserId") Long excludeUserId);
 }

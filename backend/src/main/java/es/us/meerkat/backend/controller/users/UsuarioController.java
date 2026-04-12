@@ -26,7 +26,6 @@ import es.us.meerkat.backend.dto.users.UpdateUserRequest;
 import es.us.meerkat.backend.dto.users.UserActivityResponse;
 import es.us.meerkat.backend.dto.users.UserDetailResponse;
 import es.us.meerkat.backend.dto.users.UserPublicResponse;
-import es.us.meerkat.backend.dto.users.UserSimpleResponse;
 import es.us.meerkat.backend.dto.users.VisibilityRequest;
 import es.us.meerkat.backend.entity.events.AsistenciaEvento;
 import es.us.meerkat.backend.entity.forms.CuestionarioIntento;
@@ -34,7 +33,6 @@ import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.events.AsistenciaEventoRepository;
 import es.us.meerkat.backend.repository.forms.CuestionarioIntentoRepository;
 import es.us.meerkat.backend.repository.recommendations.FeedbackRepository;
-import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import es.us.meerkat.backend.service.users.UsuarioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -57,7 +55,6 @@ public final class UsuarioController {
     private final CuestionarioIntentoRepository intentoRepository;
     private final AsistenciaEventoRepository asistenciaEventoRepository;
     private final FeedbackRepository feedbackRepository;
-    private final UsuarioRepository usuarioRepository;
 
     /**
      * Devuelve el perfil completo del usuario autenticado.
@@ -248,42 +245,5 @@ public final class UsuarioController {
     @GetMapping("/profile-avatars")
     public ResponseEntity<List<String>> getProfileAvatars() {
         return ResponseEntity.ok(usuarioService.obtenerAvataresPerfilDisponibles());
-    }
-
-    /**
-     * Busca usuarios por nombre o email para asignación en cuestionarios.
-     *
-     * <p>GET /api/v1/users/search
-     *
-     * @param search Término de búsqueda (nombre o email)
-     * @param usuario Usuario autenticado (para excluirse de los resultados)
-     * @return Lista de usuarios que coinciden con la búsqueda
-     */
-    @GetMapping("/search")
-    public ResponseEntity<List<UserSimpleResponse>> searchUsers(
-            @RequestParam(required = false, defaultValue = "") String search,
-            @AuthenticationPrincipal Usuario usuario) {
-        if (usuario == null) {
-            return ResponseEntity.status(401).build();
-        }
-
-        if (search.trim().isEmpty()) {
-            return ResponseEntity.ok(new ArrayList<>());
-        }
-
-        List<Usuario> results =
-                usuarioRepository.searchByNombreOrEmail(search.trim(), usuario.getId());
-        List<UserSimpleResponse> dtos =
-                results.stream()
-                        .map(
-                                u ->
-                                        new UserSimpleResponse(
-                                                u.getId(),
-                                                u.getNombre(),
-                                                u.getEmail(),
-                                                u.getFoto()))
-                        .toList();
-
-        return ResponseEntity.ok(dtos);
     }
 }

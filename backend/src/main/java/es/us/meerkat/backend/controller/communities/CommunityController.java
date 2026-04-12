@@ -55,8 +55,10 @@ import es.us.meerkat.backend.entity.communities.Comunidad;
 import es.us.meerkat.backend.entity.communities.MiembroComunidad;
 import es.us.meerkat.backend.entity.communities.RolComunidad;
 import es.us.meerkat.backend.entity.communities.SolicitudComunidad;
+import es.us.meerkat.backend.entity.communities.TipoGrupo;
 import es.us.meerkat.backend.entity.events.Evento;
 import es.us.meerkat.backend.entity.google.ComunidadClassroom;
+import es.us.meerkat.backend.entity.subscriptions.TipoPlanComunidad;
 import es.us.meerkat.backend.entity.tutors.EstadoSolicitud;
 import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.exception.ValidationException;
@@ -110,16 +112,33 @@ public class CommunityController {
     @ApiResponse(responseCode = "200", description = "Lista de comunidades obtenida correctamente")
     public ResponseEntity<CommunityListResponse> listCommunities(
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) List<String> categoria,
+            @RequestParam(required = false) String institucion,
+            @RequestParam(required = false) List<TipoGrupo> tipoGrupo,
+            @RequestParam(required = false) List<TipoPlanComunidad> tipoPlan,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @AuthenticationPrincipal Usuario usuario) {
 
         Long userId = usuario != null ? usuario.getId() : null;
         Pageable pageable = PageRequest.of(page, size);
-        Page<Comunidad> comunidades = communityService.listActiveCommunities(search, pageable);
+        Page<Comunidad> comunidades =
+                communityService.listActiveCommunities(
+                        search, categoria, institucion, tipoGrupo, tipoPlan, pageable);
         Page<CommunityDetailResponse> response =
                 comunidades.map(c -> entityToDetailResponse(c, userId));
         return ResponseEntity.ok(new CommunityListResponse(response));
+    }
+
+    /** Lista las categorías globales para filtros públicos. */
+    @GetMapping("/categories")
+    @Operation(summary = "Listar categorías globales")
+    public ResponseEntity<List<CategoryResponse>> listCategories() {
+        List<CategoryResponse> response =
+                categoryService.listAvailableCategories().stream()
+                        .map(this::entityToCategoryResponse)
+                        .toList();
+        return ResponseEntity.ok(response);
     }
 
     /** Lista las comunidades de las que el usuario autenticado es miembro. */
@@ -428,10 +447,8 @@ public class CommunityController {
     @ApiResponse(responseCode = "200", description = "Lista de miembros obtenida")
     public ResponseEntity<MemberListResponse> listCommunityMembers(
             @PathVariable Long communityId,
-            @RequestParam(required = false) String rol,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-
         Pageable pageable = PageRequest.of(page, size);
         Page<MiembroComunidad> miembros = memberService.listMembers(communityId, pageable);
         Page<MemberResponse> response = miembros.map(this::entityToMemberResponse);
@@ -1074,7 +1091,7 @@ public class CommunityController {
                             request.getAforo(),
                             request.getQueLlevar(),
                             request.getEsVirtual(),
-                            false, // privado por defecto
+                            request.getPrivado(),
                             request.getEnlaceVirtual(),
                             request.getVisibleEnMapa(),
                             request.getUbicacionId());

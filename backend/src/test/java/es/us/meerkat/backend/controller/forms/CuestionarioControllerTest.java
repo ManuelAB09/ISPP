@@ -2,6 +2,7 @@ package es.us.meerkat.backend.controller.forms;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -17,7 +18,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import es.us.meerkat.backend.dto.forms.CreateCuestionarioRequest;
+import es.us.meerkat.backend.dto.forms.SubmitAttemptRequest;
 import es.us.meerkat.backend.entity.forms.Cuestionario;
+import es.us.meerkat.backend.entity.forms.CuestionarioIntento;
 import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.service.forms.CuestionarioService;
 
@@ -31,6 +34,8 @@ class CuestionarioControllerTest {
     private Usuario buildUsuario(Long id) {
         Usuario u = new Usuario();
         u.setId(id);
+        u.setEmail("user@test.es");
+        u.setNombre("Test User");
         return u;
     }
 
@@ -38,32 +43,31 @@ class CuestionarioControllerTest {
         Cuestionario c = new Cuestionario();
         c.setId(id);
         c.setTitulo("Test Cuestionario");
+        c.setDescripcion("Test Description");
         c.setCreador(usuario);
         c.setActivo(true);
         c.setPublicado(false);
         return c;
     }
 
-    @Test
-    void listMineShouldReturnUnauthorizedWhenUserIsNull() {
-        ResponseEntity<?> response = controller.listMine(null);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    private CuestionarioIntento buildIntento(Long id, Cuestionario cuestionario, Usuario usuario) {
+        CuestionarioIntento intento = new CuestionarioIntento();
+        intento.setId(id);
+        intento.setCuestionario(cuestionario);
+        intento.setUsuario(usuario);
+        intento.setPuntuacion(85.0);
+        return intento;
     }
 
-    @Test
-    void getByIdShouldReturnNotFoundWhenCuestionarioDoesNotExist() {
-        when(cuestionarioService.findById(99L)).thenReturn(Optional.empty());
-
-        ResponseEntity<?> response = controller.getById(99L);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-    }
+    // ============================================================================
+    // POST /api/v1/cuestionarios
+    // ============================================================================
 
     @Test
     void createCuestionarioShouldReturnCreatedWhenUserIsValid() {
         Usuario usuario = buildUsuario(1L);
         CreateCuestionarioRequest request = new CreateCuestionarioRequest();
+        request.setTitulo("New Quiz");
         Cuestionario cuestionario = buildCuestionario(1L, usuario);
 
         when(cuestionarioService.createFromDto(eq(request), eq(usuario))).thenReturn(cuestionario);
@@ -71,6 +75,8 @@ class CuestionarioControllerTest {
         ResponseEntity<?> response = controller.createCuestionario(request, usuario);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody()).isNotNull();
+        verify(cuestionarioService).createFromDto(request, usuario);
     }
 
     @Test
@@ -82,6 +88,10 @@ class CuestionarioControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
+    // ============================================================================
+    // GET /api/v1/cuestionarios (mine)
+    // ============================================================================
+
     @Test
     void listMineShouldReturnUserCuestionarios() {
         Usuario usuario = buildUsuario(1L);
@@ -92,27 +102,55 @@ class CuestionarioControllerTest {
         ResponseEntity<?> response = controller.listMine(usuario);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        verify(cuestionarioService).findByCreadorId(1L);
     }
 
     @Test
-    void listByCommunityShouldReturnCuestionarios() {
+    void listMineShouldReturnUnauthorizedWhenUserIsNull() {
+        ResponseEntity<?> response = controller.listMine(null);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void listMineShouldReturnEmptyListWhenNoQuizzes() {
         Usuario usuario = buildUsuario(1L);
-        Cuestionario cuestionario = buildCuestionario(1L, usuario);
 
-        when(cuestionarioService.findByComunidadId(1L)).thenReturn(List.of(cuestionario));
+        when(cuestionarioService.findByCreadorId(1L)).thenReturn(List.of());
 
-        ResponseEntity<List<Map<String, Object>>> response =
-                controller.listByCommunity(1L, usuario);
+        ResponseEntity<?> response = controller.listMine(usuario);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
+    // ============================================================================
+    // GET /api/v1/cuestionarios/assigned-to-me
+    // ============================================================================
+
     @Test
-    void listByCommunityShouldReturnUnauthorizedWhenUserIsNull() {
-        ResponseEntity<List<Map<String, Object>>> response = controller.listByCommunity(1L, null);
+    void listAssignedToMeShouldReturnOkWithAssignedCuestionarios() {
+        Usuario usuario = buildUsuario(1L);
+        Cuestionario cuestionario = buildCuestionario(1L, buildUsuario(2L));
+
+        when(cuestionarioService.findAssignedToUser(1L)).thenReturn(List.of(cuestionario));
+
+        ResponseEntity<?> response = controller.listAssignedToMe(usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        verify(cuestionarioService).findAssignedToUser(1L);
+    }
+
+    @Test
+    void listAssignedToMeShouldReturnUnauthorizedWhenUserIsNull() {
+        ResponseEntity<?> response = controller.listAssignedToMe(null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
+
+    // ============================================================================
+    // GET /api/v1/cuestionarios/public
+    // ============================================================================
 
     @Test
     void listAllPublicShouldReturnPublicCuestionarios() {
@@ -124,26 +162,47 @@ class CuestionarioControllerTest {
         ResponseEntity<List<Map<String, Object>>> response = controller.listAllPublic();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
     }
 
     @Test
-    void listAssignedToMeShouldReturnAssignedCuestionarios() {
-        Usuario usuario = buildUsuario(1L);
-        Cuestionario cuestionario = buildCuestionario(1L, buildUsuario(2L));
+    void listAllPublicShouldReturnEmptyListWhenNonePublished() {
+        when(cuestionarioService.findAllPublic()).thenReturn(List.of());
 
-        when(cuestionarioService.findAssignedToUser(1L)).thenReturn(List.of(cuestionario));
-
-        ResponseEntity<?> response = controller.listAssignedToMe(usuario);
+        ResponseEntity<List<Map<String, Object>>> response = controller.listAllPublic();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEmpty();
+    }
+
+    // ============================================================================
+    // GET /api/v1/cuestionarios/communities/{communityId}
+    // ============================================================================
+
+    @Test
+    void listByCommunityShouldReturnCuestionarios() {
+        Usuario usuario = buildUsuario(1L);
+        Cuestionario cuestionario = buildCuestionario(1L, usuario);
+
+        when(cuestionarioService.findByComunidadId(5L)).thenReturn(List.of(cuestionario));
+
+        ResponseEntity<List<Map<String, Object>>> response =
+                controller.listByCommunity(5L, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        verify(cuestionarioService).findByComunidadId(5L);
     }
 
     @Test
-    void listAssignedToMeShouldReturnUnauthorizedWhenUserIsNull() {
-        ResponseEntity<?> response = controller.listAssignedToMe(null);
+    void listByCommunityShouldReturnUnauthorizedWhenUserIsNull() {
+        ResponseEntity<List<Map<String, Object>>> response = controller.listByCommunity(1L, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
+
+    // ============================================================================
+    // GET /api/v1/cuestionarios/{id}
+    // ============================================================================
 
     @Test
     void getByIdShouldReturnOkWhenExists() {
@@ -155,6 +214,7 @@ class CuestionarioControllerTest {
         ResponseEntity<Map<String, Object>> response = controller.getById(1L);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        verify(cuestionarioService).findById(1L);
     }
 
     @Test
@@ -165,6 +225,10 @@ class CuestionarioControllerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
+
+    // ============================================================================
+    // GET /api/v1/cuestionarios/{id}/preview
+    // ============================================================================
 
     @Test
     void getPreviewShouldReturnOkWhenExists() {
@@ -188,6 +252,20 @@ class CuestionarioControllerTest {
     }
 
     @Test
+    void getPreviewShouldReturnNotFoundWhenQuizNotFound() {
+        Usuario usuario = buildUsuario(1L);
+        when(cuestionarioService.findById(999L)).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = controller.getPreview(999L, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    // ============================================================================
+    // GET /api/v1/cuestionarios/{id}/resolver
+    // ============================================================================
+
+    @Test
     void getResolverShouldReturnOkWhenExists() {
         Usuario usuario = buildUsuario(1L);
         Cuestionario cuestionario = buildCuestionario(1L, usuario);
@@ -207,6 +285,66 @@ class CuestionarioControllerTest {
     }
 
     @Test
+    void getResolverShouldReturnNotFoundWhenQuizNotFound() {
+        Usuario usuario = buildUsuario(1L);
+        when(cuestionarioService.findById(999L)).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = controller.getResolver(999L, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    // ============================================================================
+    // POST /api/v1/cuestionarios/{id}/submit
+    // ============================================================================
+
+    @Test
+    void submitAttemptShouldReturnOkWhenSuccessful() {
+        Usuario usuario = buildUsuario(1L);
+        Cuestionario cuestionario = buildCuestionario(1L, buildUsuario(2L));
+        CuestionarioIntento intento = buildIntento(10L, cuestionario, usuario);
+
+        SubmitAttemptRequest request = new SubmitAttemptRequest();
+
+        CuestionarioService.AttemptSubmissionResult resultado =
+                new CuestionarioService.AttemptSubmissionResult(intento, 5, 4, List.of());
+
+        when(cuestionarioService.submitAttempt(eq(1L), eq(request), eq(usuario)))
+                .thenReturn(resultado);
+
+        ResponseEntity<?> response = controller.submitAttempt(1L, request, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        verify(cuestionarioService).submitAttempt(eq(1L), eq(request), eq(usuario));
+    }
+
+    @Test
+    void submitAttemptShouldReturnUnauthorizedWhenUserIsNull() {
+        SubmitAttemptRequest request = new SubmitAttemptRequest();
+
+        ResponseEntity<?> response = controller.submitAttempt(1L, request, null);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void submitAttemptShouldReturnNotFoundOnValidationError() {
+        Usuario usuario = buildUsuario(1L);
+        SubmitAttemptRequest request = new SubmitAttemptRequest();
+
+        when(cuestionarioService.submitAttempt(eq(1L), eq(request), eq(usuario)))
+                .thenThrow(new IllegalArgumentException("Invalid attempt"));
+
+        ResponseEntity<?> response = controller.submitAttempt(1L, request, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    // ============================================================================
+    // PUT /api/v1/cuestionarios/{id}/publish
+    // ============================================================================
+
+    @Test
     void publishCuestionarioShouldReturnOk() {
         Usuario usuario = buildUsuario(1L);
         Cuestionario cuestionario = buildCuestionario(1L, usuario);
@@ -217,6 +355,7 @@ class CuestionarioControllerTest {
         ResponseEntity<?> response = controller.publishCuestionario(1L, usuario);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        verify(cuestionarioService).updatePublicado(1L, true);
     }
 
     @Test
