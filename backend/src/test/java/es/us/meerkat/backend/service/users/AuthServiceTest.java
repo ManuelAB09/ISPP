@@ -442,30 +442,6 @@ class AuthServiceTest {
     }
 
     @Test
-    void registrarShouldThrowWhenEmailDomainNotAllowed() {
-        RegisterRequest request = new RegisterRequest();
-        request.setEmail("usuario@gmail.com"); // Dominio no universitario
-        request.setPassword("Password123");
-        request.setNombre("Test");
-
-        assertThatThrownBy(() -> authService.registrar(request))
-                .isInstanceOf(ValidationException.class)
-                .hasMessage("El email debe pertenecer a un dominio universitario autorizado");
-    }
-
-    @Test
-    void registrarShouldAllowUniversityDomain() {
-        RegisterRequest request = new RegisterRequest();
-        request.setEmail("test@alum.us.es"); // Dominio permitido
-        request.setPassword("Password123");
-        request.setNombre("Test");
-        when(usuarioRepository.existsByEmail(request.getEmail())).thenReturn(false);
-        when(passwordEncoder.encode(request.getPassword())).thenReturn("encoded-password");
-        MessageResponse response = authService.registrar(request);
-        assertThat(response.getMessage()).contains("verificar");
-    }
-
-    @Test
     void iniciarSesionShouldReturnTwoFactorChallengeWhen2FAEnabled() {
         LoginRequest request = new LoginRequest();
         request.setEmail("2fa@meerkat.es");

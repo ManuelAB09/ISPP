@@ -365,9 +365,8 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose, autoStart, 
     }, [tutorId]);
 
     /**
-     * Envía mensaje automático si el chat es nuevo y autoStart está activo.
-     * La guardia autoStartFiredRef evita que el efecto reenvíe el mensaje cuando
-     * el usuario lo elimina (lo que volvería mensajes.length a 0 y re-dispararía el efecto).
+     * Consume el parámetro autoStart sin enviar mensajes automáticos.
+     * La guardia autoStartFiredRef evita ejecutar esta limpieza más de una vez.
      */
     useEffect(() => {
         if (autoStart && !cargandoHistorial && historialCargadoPara === tutorId
@@ -380,21 +379,6 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose, autoStart, 
                 url.searchParams.delete('autoStart');
                 window.history.replaceState({}, '', url);
             }
-
-            enviarMensajePrivado(tutorId, "¡Hola! Me gustaría contactar contigo.")
-                .then(response => {
-                    const data = response.data;
-                    if (data) {
-                        const msg = {
-                            ...data,
-                            emisorId: Number(data.emisorId),
-                            receptorId: Number(data.receptorId),
-                        };
-                        setMensajes([msg]);
-                        scrollToBottom();
-                    }
-                })
-                .catch(err => console.error("Error enviando mensaje autoStart", err));
         }
         // eslint-disable-next-line
     }, [autoStart, cargandoHistorial, historialCargadoPara, tutorId]);
