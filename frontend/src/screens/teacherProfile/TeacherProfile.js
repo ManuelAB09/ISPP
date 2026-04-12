@@ -502,7 +502,7 @@ const TeacherProfile = () => {
               <div className="tp-section-title-row__line" />
             </div>
             <div className="tp-comunidades__grid tp-comunidades__grid--xl">
-              {(tutor.comunidades || []).map((c, i) => (
+              {(tutor.comunidadesAdministradas || []).map((c, i) => (
                 <div key={i} className="tp-comunidades__card tp-comunidades__card--xl">
                   <div className="tp-comunidades__img tp-comunidades__img--xl" />
                   <div className="tp-comunidades__info tp-comunidades__info--xl">
@@ -528,50 +528,6 @@ const TeacherProfile = () => {
                 onClick={() => navigate('/comunidades')}
                 style={{ cursor: 'pointer' }}
               >Ver todas</span>
-            </div>
-          </section>
-
-          {/* ═══════════════ COMUNIDADES CREADAS (AMPLIADO) ═══════════════ */}
-          <section className="tp-creadas tp-creadas--ampliada">
-            <div className="tp-section-title-row">
-              <h2 className="tp-section-title">Comunidades creadas</h2>
-              <div className="tp-section-title-row__line" />
-            </div>
-            <div className="tp-creadas__header tp-creadas__header--xl">
-              <p className="tp-creadas__subtitle tp-creadas__subtitle--xl">
-                Crea comunidades, une a estudiantes y enseña sobre lo que sabes.
-              </p>
-              {user?.id === tutor.usuario?.id && (
-                <button
-                  className="tp-btn tp-btn--crear tp-btn--crear-xl"
-                  onClick={() => navigate('/crear-comunidad')}
-                >+ Crear Nueva</button>
-              )}
-            </div>
-            <div className="tp-creadas__list tp-creadas__list--xl">
-              {(tutor.comunidadesCreadas || []).map((c, i) => (
-                <div key={i} className="tp-creadas__item tp-creadas__item--xl">
-                  <div className="tp-creadas__img tp-creadas__img--xl" />
-                  <div className="tp-creadas__info tp-creadas__info--xl">
-                    <div className="tp-creadas__name-row tp-creadas__name-row--xl">
-                      <span className="tp-creadas__name tp-creadas__name--xl">{c.nombre}</span>
-                      {c.etiquetas.map((e, j) => (
-                        <span key={j} className="tp-badge tp-badge--tag tp-badge--tag-xl">{e}</span>
-                      ))}
-                    </div>
-                    <p className="tp-creadas__desc tp-creadas__desc--xl">{c.descripcion}</p>
-                    <p className="tp-creadas__inscritos tp-creadas__inscritos--xl">
-                      <b>Personas inscritas: {c.inscritos}/{c.total}</b>
-                    </p>
-                    {user?.id === tutor.usuario?.id && (
-                      <div className="tp-creadas__actions tp-creadas__actions--xl">
-                        <span className="tp-creadas__action tp-creadas__action--xl">Editar</span>
-                        <span className="tp-creadas__action tp-creadas__action--xl">Subir apuntes</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
             </div>
           </section>
 
