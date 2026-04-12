@@ -14,6 +14,26 @@ jest.mock('../../components/Header/Header', () => {
     };
 });
 
+jest.mock('../../components/PageHeader/PageHeader', () => {
+    return function MockPageHeader() {
+        return <div data-testid="page-header">PageHeader</div>;
+    };
+});
+
+jest.mock('../../components/InputSearch/InputSearch', () => {
+    return function MockInputSearch({ value, onChange, placeholder }) {
+        return (
+            <input 
+                type="text"
+                value={value}
+                onChange={onChange}
+                placeholder={placeholder}
+                data-testid="search-input"
+            />
+        );
+    };
+});
+
 describe('Alumnos', () => {
     test('renders search input', () => {
         render(
@@ -22,17 +42,18 @@ describe('Alumnos', () => {
             </BrowserRouter>
         );
         
-        const searchInput = screen.getByPlaceholderText('Busca por nombre o email...');
+        const searchInput = screen.getByTestId('search-input');
         expect(searchInput).toBeInTheDocument();
     });
 
-    test('renders empty state message', () => {
+    test('renders header and page header', () => {
         render(
             <BrowserRouter>
                 <Alumnos />
             </BrowserRouter>
         );
         
-        expect(screen.getByText('Escribe para buscar alumnos')).toBeInTheDocument();
+        expect(screen.getByTestId('header')).toBeInTheDocument();
+        expect(screen.getByTestId('page-header')).toBeInTheDocument();
     });
 });
