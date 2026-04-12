@@ -422,17 +422,20 @@ export default function PlansScreen() {
                     <b>Estado:</b> Activo
                   </div>
                 </div>
-              ) : isPremium ? (
+              ) : isPremium || isPro ? (
                 <div className="statusBox">
                   <div>
                     <b>Plan:</b> {myPlan?.plan} {myPlan?.periodo === "ANUAL" ? "(anual)" : "(mensual)"}
                   </div>
                   <div>
-                    <b>Activa:</b> {String(myPlan?.activa) ? "Sí" : "No"}
+                    <b>Estado:</b>{" "}
+                    {myPlan?.autoRenovar === false
+                      ? "Cancelado (activo hasta fin de período)"
+                      : "Activo"}
                   </div>
                   {myPlan?.fechaFin && (
                     <div>
-                      <b>Fecha de fin de la suscripción:</b> {myPlan.fechaFin}
+                      <b>Fecha de fin:</b> {myPlan.fechaFin}
                     </div>
                   )}
                 </div>
