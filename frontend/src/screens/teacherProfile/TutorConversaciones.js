@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSocketContext } from "../../contexts/SocketContext";
 import { obtenerConversaciones } from "../../api/mensajeService";
 import { getApiBaseUrl } from "../../api/baseUrl";
@@ -21,6 +22,7 @@ const resolvePhoto = (raw) => {
  * Muestra la lista de alumnos que le han contactado y permite abrir el chat.
  */
 const TutorConversaciones = ({ usuarioActual }) => {
+  const navigate = useNavigate();
   const { socket, isConnected } = useSocketContext();
   const [conversaciones, setConversaciones] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -72,6 +74,15 @@ const TutorConversaciones = ({ usuarioActual }) => {
             tutorId={selectedUser.id}
             tutorNombre={selectedUser.nombre}
             usuarioActual={usuarioActual}
+            headerActions={(
+              <button
+                type="button"
+                className="private-chat-close"
+                onClick={() => navigate(`/perfil/${selectedUser.id}`)}
+              >
+                Ver perfil
+              </button>
+            )}
             onClose={() => setSelectedUser(null)}
           />
         </div>

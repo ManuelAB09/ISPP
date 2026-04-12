@@ -790,9 +790,17 @@ export default function Chats() {
                                             tutorId={privateTarget.id}
                                             tutorNombre={privateTarget.nombre}
                                             usuarioActual={currentUser}
-                                            headerActions={renderMuteButton(
-                                                'private',
-                                                privateTarget.id
+                                            headerActions={(
+                                                <>
+                                                    {renderMuteButton('private', privateTarget.id)}
+                                                    <button
+                                                        type="button"
+                                                        className="private-chat-close"
+                                                        onClick={() => navigate(`/perfil/${privateTarget.id}`)}
+                                                    >
+                                                        Ver perfil
+                                                    </button>
+                                                </>
                                             )}
                                             onClose={() => setPrivateTarget(null)}
                                             autoStart={autoStartQuery}
