@@ -10,8 +10,6 @@ import es.us.meerkat.backend.entity.communities.MiembroComunidad;
 import es.us.meerkat.backend.entity.communities.RolComunidad;
 import es.us.meerkat.backend.entity.communities.TipoGrupo;
 import es.us.meerkat.backend.entity.google.ComunidadClassroom;
-import es.us.meerkat.backend.entity.subscriptions.TipoPlan;
-import es.us.meerkat.backend.entity.subscriptions.TipoPlanComunidad;
 import es.us.meerkat.backend.entity.tutors.Tutor;
 import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
@@ -21,7 +19,6 @@ import es.us.meerkat.backend.repository.google.ComunidadClassroomRepository;
 import es.us.meerkat.backend.repository.tutors.TutorRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import es.us.meerkat.backend.service.google.GoogleClassroomService;
-import es.us.meerkat.backend.service.subscriptions.SuscripcionService;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -38,7 +35,6 @@ public class MemberService {
     private final AuthorizationService authorizationService;
     private final CommunityService communityService;
     private final GoogleClassroomService googleClassroomService;
-    private final SuscripcionService suscripcionService;
 
     /**
      * Se une a una comunidad pública (verifica aforo y tipo). Permite especificar el rol deseado
@@ -271,30 +267,7 @@ public class MemberService {
         }
 
         miembroComunidadRepository.save(usuarioActual);
-        MiembroComunidad saved = miembroComunidadRepository.save(nuevoAdmin);
-
-        // Downgrade community if new admin lacks a premium subscription
-        Comunidad comunidad =
-                comunidadRepository
-                        .findById(communityId)
-                        .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
-        if (comunidad.getTipoPlan() == TipoPlanComunidad.PREMIUM) {
-            boolean newAdminHasPremium =
-                    suscripcionService
-                            .obtenerMiSuscripcion(newAdminId)
-                            .map(
-                                    s ->
-                                            s.getPlan() == TipoPlan.PREMIUM
-                                                    || s.getPlan() == TipoPlan.PRO)
-                            .orElse(false);
-            if (!newAdminHasPremium) {
-                comunidad.setTipoPlan(TipoPlanComunidad.FREE);
-                comunidad.setMaxMiembros(30);
-                comunidadRepository.save(comunidad);
-            }
-        }
-
-        return saved;
+        return miembroComunidadRepository.save(nuevoAdmin);
     }
 
     /**

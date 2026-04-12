@@ -5,54 +5,43 @@
   padding-top: 2.5rem;
   padding-bottom: 2.5rem;
 }
-
 .tp-comunidades__grid--xl {
   gap: 2.5rem 2.5rem;
   flex-wrap: wrap;
   justify-content: flex-start;
 }
-
 .tp-comunidades__card--xl {
   width: clamp(320px, 32vw, 420px);
   min-height: 220px;
   border-width: 2.5px;
-  box-shadow: 0 4px 24px 0 rgba(80, 60, 180, 0.07);
+  box-shadow: 0 4px 24px 0 rgba(80,60,180,0.07);
 }
-
 .tp-comunidades__img--xl {
   height: 160px;
 }
-
 .tp-comunidades__info--xl {
   padding: 1.2rem 1.3rem;
   gap: 0.5rem;
 }
-
 .tp-comunidades__name--xl {
   font-size: 1.25rem;
 }
-
 .tp-comunidades__desc--xl {
   font-size: 1.05rem;
 }
-
 .tp-comunidades__card--explore.tp-comunidades__card--xl {
   min-height: 220px;
   padding: 1.5rem 1.2rem;
 }
-
 .tp-comunidades__explore-icon--xl {
   font-size: 3.2rem;
 }
-
 .tp-comunidades__explore-title--xl {
   font-size: 1.15rem;
 }
-
 .tp-comunidades__explore-text--xl {
   font-size: 1.01rem;
 }
-
 .tp-comunidades__ver-todas--xl {
   font-size: 1.15rem;
   margin-top: 1.2rem;
@@ -62,69 +51,54 @@
   padding-top: 2.5rem;
   padding-bottom: 2.5rem;
 }
-
 .tp-creadas__header--xl {
   margin-bottom: 2.2rem;
 }
-
 .tp-creadas__subtitle--xl {
   font-size: 1.15rem;
 }
-
 .tp-btn--crear-xl {
   font-size: 1.1rem;
   padding: 0.7rem 2.2rem;
 }
-
 .tp-creadas__list--xl {
   gap: 2.2rem;
 }
-
 .tp-creadas__item--xl {
   min-height: 180px;
   gap: 2.2rem;
-  box-shadow: 0 4px 24px 0 rgba(80, 60, 180, 0.07);
+  box-shadow: 0 4px 24px 0 rgba(80,60,180,0.07);
 }
-
 .tp-creadas__img--xl {
   width: 320px;
   min-height: 180px;
 }
-
 .tp-creadas__info--xl {
   padding: 1.2rem 1.3rem 1.2rem 0;
   gap: 0.7rem;
 }
-
 .tp-creadas__name-row--xl {
   gap: 0.8rem;
 }
-
 .tp-creadas__name--xl {
   font-size: 1.35rem;
 }
-
 .tp-badge--tag-xl {
   font-size: 1.01rem;
   padding: 0.22em 0.9em;
 }
-
 .tp-creadas__desc--xl {
   font-size: 1.08rem;
 }
-
 .tp-creadas__inscritos--xl {
   font-size: 1.01rem;
 }
-
 .tp-creadas__actions--xl {
   gap: 1.2rem;
 }
-
 .tp-creadas__action--xl {
   font-size: 1.01rem;
 }
-
 /* ===================================================================
    TeacherProfile.css — Vista pública del perfil de tutor
    Fiel al diseño de la imagen proporcionada.
@@ -499,7 +473,6 @@
 }
 
 @media (max-width: 960px) {
-
   .tp-row--datos-actividad,
   .tp-row--bottom {
     grid-template-columns: 1fr;
@@ -583,7 +556,7 @@
   align-items: center;
   text-align: center;
   border: 1px solid var(--tp-border);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 }
 
 .tp-actividad__num {
@@ -600,7 +573,6 @@
   text-transform: uppercase;
   margin-top: 0.3rem;
 }
-
 /* ── Secciones como bloques planos (sin tarjeta) ────────── */
 .tp-comunidades,
 .tp-creadas,
@@ -619,7 +591,6 @@
   border-top: none;
   padding-top: 0;
 }
-
 /* ═══════════════════════════════════════════════════════════════
    COMUNIDADES
    ═══════════════════════════════════════════════════════════════ */
@@ -980,7 +951,6 @@
    ═══════════════════════════════════════════════════════════════ */
 /* ── Tablet ──────────────────────────────────────────────── */
 @media (max-width: 960px) {
-
   .tp-row--datos-actividad,
   .tp-row--bottom {
     grid-template-columns: 1fr;
@@ -1050,7 +1020,6 @@
   gap: 16px;
   margin-top: 8px;
 }
-
 .tp-badge-nivel {
   font-weight: bold;
   font-size: 1.1rem;
@@ -1061,115 +1030,43 @@
   border: 1.5px solid #e5e7eb;
   margin-right: 8px;
 }
-
 .tp-badge-nivel--experto {
   background: #fffbe6;
   color: #bfa100;
   border-color: #ffe066;
 }
-
 .tp-badge-nivel--avanzado {
   background: #e6f0ff;
   color: #1d4ed8;
   border-color: #60a5fa;
 }
-
 .tp-badge-nivel--principiante {
   background: #e6ffed;
   color: #059669;
   border-color: #6ee7b7;
 }
-
 .tp-rating-media {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 1.1rem;
 }
-
 .tp-rating-num {
   font-weight: 600;
   margin-left: 2px;
 }
-
 .tp-rating-count {
   color: #888;
   font-size: 0.98rem;
   margin-left: 4px;
 }
-
 .tp-estrellas {
   color: #fbbf24;
   font-size: 1.2rem;
 }
-
 .tp-star {
   color: #e5e7eb;
 }
-
 .tp-star--filled {
   color: #fbbf24;
-}
-
-/* ============================================================
-   DIFERENCIACIÓN VISUAL — PERFIL DE PROFESOR
-   (Usa solo clases existentes)
-   ============================================================ */
-
-/* Fondo general más claro y profesional */
-.tp-page {
-  background: #f7f7fb;
-}
-
-/* Cabecera profesor más elegante */
-.tp-header {
-  background: linear-gradient(135deg, #2d3250 0%, #424769 100%);
-  padding: 2rem;
-  border-radius: 18px;
-  color: white;
-}
-
-.tp-header__name,
-.tp-header__role,
-.tp-header__rating-num {
-  color: white;
-}
-
-.tp-header__rating-count {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-/* Avatar profesor con anillo premium */
-.tp-header__photo {
-  border: 3px solid #f2c18e;
-  box-shadow: 0 0 0 4px rgba(242, 193, 142, 0.25),
-    0 8px 24px rgba(242, 193, 142, 0.3);
-}
-
-/* Botones profesor más premium */
-.tp-btn--contact,
-.tp-btn--edit,
-.tp-btn--hire,
-.tp-btn--book {
-  border-radius: 14px;
-  font-weight: 700;
-  box-shadow: 0 6px 18px rgba(45, 50, 80, 0.15);
-}
-
-/* Cards profesor con borde izquierdo dorado */
-.tp-card,
-.tp-actividad,
-.tp-creadas__item,
-.tp-comunidades__card {
-  border-left: 4px solid #f2c18e;
-}
-
-/* Stats profesor */
-.tp-actividad__num {
-  color: #f2c18e;
-}
-
-/* Trayectoria profesor más marcada */
-.tp-trayectoria__dot {
-  background: #f2c18e;
 }

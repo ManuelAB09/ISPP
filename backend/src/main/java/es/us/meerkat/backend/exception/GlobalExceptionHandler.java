@@ -10,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.server.ResponseStatusException;
 
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
@@ -139,23 +138,6 @@ public class GlobalExceptionHandler {
         final ErrorResponse errorResponse =
                 new ErrorResponse(HttpStatus.CONFLICT.value(), message, request.getRequestURI());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
-    }
-
-    /**
-     * Maneja ResponseStatusException reenviando el código HTTP y el mensaje indicados (e.g. 403,
-     * 404, 409).
-     *
-     * @param ex Excepción con el estado HTTP y el motivo.
-     * @param request Solicitud HTTP que causó el error.
-     * @return ResponseEntity con el estado y el mensaje de la excepción.
-     */
-    @ExceptionHandler(ResponseStatusException.class)
-    public ResponseEntity<ErrorResponse> handleResponseStatusException(
-            final ResponseStatusException ex, final HttpServletRequest request) {
-        final ErrorResponse errorResponse =
-                new ErrorResponse(
-                        ex.getStatusCode().value(), ex.getReason(), request.getRequestURI());
-        return ResponseEntity.status(ex.getStatusCode()).body(errorResponse);
     }
 
     /**

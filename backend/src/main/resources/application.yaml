@@ -7,7 +7,7 @@ spring:
       max-request-size: ${MAX_UPLOAD_REQUEST_SIZE:50MB}
 
 # ── configuración por defecto: PostgreSQL (usa variables de entorno) ──
-# En Azure se activa "staging", "production" o "sprint3" via SPRING_PROFILES_ACTIVE
+# En Azure se activa "staging" o "production" via SPRING_PROFILES_ACTIVE
   datasource:
     url:      ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/meerkatters}
     username: ${SPRING_DATASOURCE_USERNAME:meerkatters_user}

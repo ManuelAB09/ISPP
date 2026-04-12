@@ -23,65 +23,14 @@
     border-radius: 16px;
     padding: 30px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-    position: relative;
-    overflow: hidden;
-}
-
-/* ── Decoración de fondo para perfil TUTOR ── */
-.profile-header--tutor::before {
-    content: '';
-    position: absolute;
-    top: -60px;
-    right: -60px;
-    width: 280px;
-    height: 280px;
-    background: radial-gradient(circle, rgba(242, 193, 142, 0.18) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
-}
-
-.profile-header--tutor::after {
-    content: '';
-    position: absolute;
-    bottom: -40px;
-    left: 30%;
-    width: 200px;
-    height: 200px;
-    background: radial-gradient(circle, rgba(103, 111, 157, 0.10) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
-}
-
-/* ── Decoración de fondo para perfil ESTUDIANTE público ── */
-.profile-header--student::before {
-    content: '';
-    position: absolute;
-    top: -40px;
-    right: -40px;
-    width: 220px;
-    height: 220px;
-    background: radial-gradient(circle, rgba(99, 102, 241, 0.10) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
 }
 
 .profile-header__left {
     display: flex;
     align-items: center;
     gap: 24px;
-    position: relative;
-    z-index: 1;
 }
 
-.profile-header__right {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    position: relative;
-    z-index: 1;
-}
-
-/* ── Avatar ── */
 .profile-avatar {
     width: 140px;
     height: 140px;
@@ -93,20 +42,7 @@
     justify-content: center;
     overflow: hidden;
     border: 4px solid var(--whiteSmoke);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-    position: relative;
-}
-
-/* Avatar tutor: anillo dorado luminoso */
-.profile-avatar--tutor {
-    border: 4px solid #f2c18e;
-    box-shadow: 0 0 0 4px rgba(242, 193, 142, 0.25), 0 8px 24px rgba(242, 193, 142, 0.3);
-}
-
-/* Avatar estudiante público: anillo índigo suave */
-.profile-avatar--student {
-    border: 4px solid #818cf8;
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15), 0 8px 20px rgba(99, 102, 241, 0.12);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
 
 .profile-avatar-img {
@@ -115,52 +51,11 @@
     object-fit: cover;
 }
 
-/* ── Franja de tipo de perfil (solo vistas públicas) ── */
-.profile-type-bar {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    border-radius: 16px 16px 0 0;
-    padding: 7px 30px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    z-index: 2;
-}
-
-.profile-type-bar--tutor {
-    background: linear-gradient(90deg, #2d3250 0%, #424769 60%, #676f9d 100%);
-    color: rgba(255, 255, 255, 0.85);
-    border-bottom: 1px solid rgba(242, 193, 142, 0.3);
-}
-
-.profile-type-bar--student {
-    background: linear-gradient(90deg, #eef2ff 0%, #e0e7ff 100%);
-    color: #4338ca;
-    border-bottom: 1px solid #c7d2fe;
-}
-
-.profile-type-bar__verified {
-    margin-left: 10px;
-    background: #22c55e;
-    color: #fff;
-    border-radius: 999px;
-    padding: 2px 12px;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.05em;
-}
-
 .profile-info {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-width: 480px;
+    max-width: 450px;
 }
 
 .profile-info__headline {
@@ -176,11 +71,6 @@
     font-weight: 700;
     color: var(--spaceIndigo);
     margin: 0;
-}
-
-/* Nombre en blanco cuando header oscuro (tutor público) */
-.profile-header--tutor .profile-info__name {
-    color: #ffffff;
 }
 
 .profile-verified-badge {
@@ -206,20 +96,13 @@
     margin: 0;
 }
 
-.profile-header--tutor .profile-info__description {
-    color: rgba(255, 255, 255, 0.72);
-}
-
-/* ── Pill de rol ── */
 .profile-info__role {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+    display: inline-block;
     background-color: var(--spaceIndigo);
     color: white;
     font-family: 'inter', sans-serif;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     padding: 6px 16px;
     border-radius: 20px;
     width: fit-content;
@@ -227,71 +110,6 @@
     letter-spacing: 0.5px;
 }
 
-/* Pill tutor público: dorado */
-.profile-role-pill--tutor {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: linear-gradient(135deg, #f2c18e 0%, #e8a86a 100%);
-    color: #2d3250;
-    font-family: 'inter', sans-serif;
-    font-size: 12px;
-    font-weight: 800;
-    padding: 7px 18px;
-    border-radius: 20px;
-    width: fit-content;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    box-shadow: 0 3px 12px rgba(242, 193, 142, 0.4);
-}
-
-/* Pill estudiante público: índigo */
-.profile-role-pill--student {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: #6366f1;
-    color: #fff;
-    font-family: 'inter', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    padding: 7px 18px;
-    border-radius: 20px;
-    width: fit-content;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-}
-
-/* ── Badge de tipo (headline) ── */
-.profile-type-badge--tutor {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: rgba(255, 255, 255, 0.15);
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 999px;
-    padding: 5px 14px;
-    font-family: 'inter', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.profile-type-badge--student {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: #e0e7ff;
-    color: #3730a3;
-    border: 1px solid #a5b4fc;
-    border-radius: 999px;
-    padding: 5px 14px;
-    font-family: 'inter', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-/* ── Tags de interés ── */
 .profile-info__interests {
     display: flex;
     flex-wrap: wrap;
@@ -299,40 +117,16 @@
     margin-top: 4px;
 }
 
-.profile-interest-tag {
-    background-color: var(--whiteSmoke);
-    color: var(--glaucous);
-    font-family: 'inter', sans-serif;
-    font-size: 12px;
-    font-weight: 500;
-    padding: 6px 14px;
-    border-radius: 16px;
-    border: 1px solid var(--alabasterGray);
-}
-
-/* Tags sobre fondo oscuro (tutor público) */
-.profile-header--tutor .profile-interest-tag {
-    background: rgba(255, 255, 255, 0.12);
-    color: rgba(255, 255, 255, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-/* ── Card de tutor público ── */
 .profile-public-tutor-card {
     display: flex;
     justify-content: space-between;
     gap: 16px;
     align-items: center;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.06) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, #f8fafc 0%, #eef6ff 100%);
+    border: 1px solid #dbe7ff;
     border-radius: 14px;
     padding: 14px 16px;
     margin-top: 6px;
-}
-
-.profile-header--student .profile-public-tutor-card {
-    background: linear-gradient(135deg, #f8fafc 0%, #eef6ff 100%);
-    border: 1px solid #dbe7ff;
 }
 
 .profile-public-tutor-card__title {
@@ -340,10 +134,6 @@
     font-family: 'spacegrotesk', sans-serif;
     font-size: 15px;
     font-weight: 700;
-    color: #fff;
-}
-
-.profile-header--student .profile-public-tutor-card__title {
     color: var(--spaceIndigo);
 }
 
@@ -351,10 +141,6 @@
     margin: 0;
     font-family: 'inter', sans-serif;
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.7);
-}
-
-.profile-header--student .profile-public-tutor-card__text {
     color: var(--graphite);
 }
 
@@ -370,66 +156,23 @@
     white-space: nowrap;
 }
 
-/* ── CTA principal para visitante que ve un tutor ── */
-.profile-tutor-cta {
-    background: linear-gradient(135deg, #f2c18e 0%, #e8a86a 100%);
-    color: #2d3250;
+.profile-interest-tag {
+    background-color: var(--whiteSmoke);
+    color: var(--glaucous);
     font-family: 'inter', sans-serif;
-    font-size: 14px;
-    font-weight: 800;
-    padding: 13px 26px;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 6px 20px rgba(242, 193, 142, 0.45);
-    letter-spacing: 0.3px;
-    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 16px;
+    border: 1px solid var(--alabasterGray);
 }
 
-.profile-tutor-cta:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 28px rgba(242, 193, 142, 0.5);
-}
-
-/* ── Stats rápidos de tutor bajo el CTA ── */
-.profile-tutor-quick-stats {
-    display: flex;
-    gap: 16px;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-.profile-tutor-quick-stat {
+.profile-header__right {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    background: rgba(255, 255, 255, 0.10);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 10px;
-    padding: 10px 16px;
-    min-width: 72px;
+    gap: 12px;
 }
 
-.profile-tutor-quick-stat__val {
-    font-family: 'spacegrotesk', sans-serif;
-    font-size: 20px;
-    font-weight: 800;
-    color: #f2c18e;
-}
-
-.profile-tutor-quick-stat__lbl {
-    font-family: 'inter', sans-serif;
-    font-size: 10px;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.65);
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    text-align: center;
-}
-
-/* ── Botones de propietario ── */
 .btn-edit-profile {
     display: flex;
     align-items: center;
@@ -488,22 +231,32 @@
     border-color: #ef4444;
 }
 
-/* ── Mensaje no autorizado ── */
-.settings-unauthorized-message {
-    position: absolute;
-    bottom: 16px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #fef2f2;
-    color: #dc2626;
-    border: 1px solid #fca5a5;
-    border-radius: 8px;
-    padding: 8px 20px;
+/* Botones de navegación de perfil (Mis pagos, Mis ganancias) */
+.profile-nav-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.profile-nav-btn {
     font-family: 'inter', sans-serif;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
-    z-index: 10;
-    white-space: nowrap;
+    padding: 10px 20px;
+    background-color: var(--whiteSmoke);
+    color: var(--spaceIndigo);
+    border: 1px solid var(--alabasterGray);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.profile-nav-btn:hover {
+    background-color: var(--spaceIndigo);
+    color: white;
+    border-color: var(--spaceIndigo);
+    transform: translateY(-1px);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -513,7 +266,6 @@
     display: grid;
     grid-template-columns: 1fr 350px;
     gap: 30px;
-    align-items: start;
 }
 
 .profile-data {
@@ -522,22 +274,6 @@
     border-radius: 16px;
     padding: 30px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-}
-
-/* Datos de tutor público: borde izquierdo dorado */
-.profile-data--tutor {
-    border-left: 4px solid #f2c18e;
-}
-
-/* Datos de estudiante público: borde izquierdo índigo */
-.profile-data--student {
-    border-left: 4px solid #818cf8;
-}
-
-.profile-data-section__right {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
 }
 
 .section-title {
@@ -584,34 +320,7 @@
     font-weight: 400;
 }
 
-/* ── Botones de navegación de perfil ── */
-.profile-nav-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.profile-nav-btn {
-    font-family: 'inter', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    padding: 10px 20px;
-    background-color: var(--whiteSmoke);
-    color: var(--spaceIndigo);
-    border: 1px solid var(--alabasterGray);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.profile-nav-btn:hover {
-    background-color: var(--spaceIndigo);
-    color: white;
-    border-color: var(--spaceIndigo);
-    transform: translateY(-1px);
-}
-
-/* ── Card Tu Actividad ── */
+/* Card Tu Actividad */
 .activity-card {
     background: var(--whiteSmoke);
     border: 1px solid var(--alabasterGray);
@@ -648,12 +357,12 @@
     padding: 16px;
     border-radius: 12px;
     border: 1px solid var(--alabasterGray);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 }
 
 .activity-stat:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     transition: all 0.2s ease;
 }
 
@@ -662,7 +371,7 @@
     font-size: 28px;
     font-weight: 700;
     color: var(--peachGlow);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
 .activity-stat__label {
@@ -678,9 +387,7 @@
 /* ═══════════════════════════════════════════════════════════════
    Sección Mis Comunidades y Comunidades Creadas
    ═══════════════════════════════════════════════════════════════ */
-.my-communities-section,
-.created-communities-section,
-.tutor-profile-section {
+.my-communities-section, .created-communities-section, .tutor-profile-section {
     background: #ffffff;
     border: 1px solid var(--alabasterGray);
     border-radius: 16px;
@@ -760,15 +467,13 @@
     color: #5f6688;
 }
 
-.communities-list,
-.created-communities-list {
+.communities-list, .created-communities-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
     gap: 20px;
 }
 
-.community-card,
-.created-community-card {
+.community-card, .created-community-card {
     display: flex;
     gap: 20px;
     border: 1px solid var(--alabasterGray);
@@ -778,15 +483,13 @@
     transition: all 0.3s ease;
 }
 
-.community-card:hover,
-.created-community-card:hover {
+.community-card:hover, .created-community-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 12px 24px rgba(45, 50, 80, 0.08);
     border-color: var(--glaucous);
 }
 
-.community-card__image,
-.created-community-card__image {
+.community-card__image, .created-community-card__image {
     width: 140px;
     height: 100%;
     min-height: 160px;
@@ -795,8 +498,7 @@
     flex-shrink: 0;
 }
 
-.community-card__info,
-.created-community-card__info {
+.community-card__info, .created-community-card__info {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -804,15 +506,13 @@
     flex: 1;
 }
 
-.community-card__top,
-.created-community-card__top {
+.community-card__top, .created-community-card__top {
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
-.community-card__name,
-.created-community-card__name {
+.community-card__name, .created-community-card__name {
     font-family: 'spacegrotesk', sans-serif;
     font-size: 18px;
     font-weight: 700;
@@ -821,15 +521,13 @@
     line-height: 1.2;
 }
 
-.community-card__tags,
-.created-community-card__tags {
+.community-card__tags, .created-community-card__tags {
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
 }
 
-.community-tag,
-.created-tag {
+.community-tag, .created-tag {
     background-color: var(--whiteSmoke);
     color: var(--glaucous);
     font-family: 'inter', sans-serif;
@@ -846,8 +544,7 @@
     border-color: #BEE3F8;
 }
 
-.community-card__description,
-.created-community-card__description {
+.community-card__description, .created-community-card__description {
     font-family: 'inter', sans-serif;
     font-size: 14px;
     color: var(--graphite);
@@ -859,8 +556,7 @@
     overflow: hidden;
 }
 
-.community-card__bottom,
-.created-community-card__bottom {
+.community-card__bottom, .created-community-card__bottom {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -893,10 +589,6 @@
 .members-text strong {
     font-weight: 700;
     color: var(--spaceIndigo);
-}
-
-.members-icon {
-    font-size: 15px;
 }
 
 .created-community-card__actions {
@@ -981,14 +673,6 @@
     cursor: not-allowed;
 }
 
-.become-tutor-error {
-    color: #dc2626;
-    font-family: 'inter', sans-serif;
-    font-size: 13px;
-    margin-top: 8px;
-    display: block;
-}
-
 .tutor-profile-card {
     display: flex;
     align-items: center;
@@ -998,18 +682,6 @@
     border-radius: 12px;
     padding: 24px;
     gap: 16px;
-}
-
-.tutor-profile-card__info {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.tutor-profile-card__header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
 }
 
 .tutor-profile-card__name {
@@ -1029,12 +701,6 @@
     border-radius: 20px;
 }
 
-.tutor-profile-card__tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
 .tutor-profile-card__tag {
     background: var(--whiteSmoke);
     color: var(--glaucous);
@@ -1045,40 +711,7 @@
     border: 1px solid var(--alabasterGray);
 }
 
-.tutor-profile-card__tarifa {
-    font-family: 'inter', sans-serif;
-    font-size: 14px;
-    color: var(--glaucous);
-    margin: 0;
-}
-
-.tutor-profile-card__tarifa strong {
-    color: var(--spaceIndigo);
-    font-size: 18px;
-}
-
-.tutor-profile-card__actions {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.created-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-}
-
-.section-subtitle {
-    font-family: 'inter', sans-serif;
-    font-size: 14px;
-    color: var(--glaucous);
-    margin: 4px 0 0;
-}
-
-.btn-create-new,
-.btn-create-first {
+.btn-create-new, .btn-create-first {
     background-color: var(--spaceIndigo);
     color: white;
     font-family: 'inter', sans-serif;
@@ -1092,8 +725,7 @@
     box-shadow: 0 4px 12px rgba(45, 50, 80, 0.15);
 }
 
-.btn-create-new:hover,
-.btn-create-first:hover {
+.btn-create-new:hover, .btn-create-first:hover {
     background-color: #1e2240;
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(45, 50, 80, 0.2);
@@ -1106,64 +738,12 @@
 
 .settings-btn--danger:hover {
     background-color: #b91c1c;
-}
 
-/* ─── Banner de bienvenida a perfil público ─────────────────── */
-.profile-public-banner {
-    border-radius: 14px;
-    padding: 20px 24px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: -10px;
-}
-
-.profile-public-banner--tutor {
-    background: linear-gradient(135deg, #2d3250 0%, #424769 100%);
-    border: 1px solid #2d3250;
-    color: #fff;
-}
-
-.profile-public-banner--student {
-    background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
-    border: 1px solid #c7d2fe;
-    color: #3730a3;
-}
-
-.profile-public-banner__icon {
-    font-size: 36px;
-    flex-shrink: 0;
-}
-
-.profile-public-banner__text h3 {
-    margin: 0 0 4px;
-    font-family: 'spacegrotesk', sans-serif;
-    font-size: 18px;
-    font-weight: 700;
-}
-
-.profile-public-banner--tutor .profile-public-banner__text h3 {
-    color: #fff;
-}
-
-.profile-public-banner__text p {
-    margin: 0;
-    font-family: 'inter', sans-serif;
-    font-size: 13px;
-    opacity: 0.75;
 }
 
 /* ═══════════════════════════════════════════════════════════════
    Estados (Cargando, Vacío)
    ═══════════════════════════════════════════════════════════════ */
-.profile-loading {
-    text-align: center;
-    padding: 60px;
-    font-family: 'inter', sans-serif;
-    font-size: 15px;
-    color: var(--glaucous);
-}
-
 .loading-communities {
     text-align: center;
     padding: 40px;
@@ -1172,8 +752,7 @@
     color: var(--glaucous);
 }
 
-.no-communities,
-.no-communities-created {
+.no-communities, .no-communities-created {
     text-align: center;
     padding: 60px 40px;
     background-color: var(--whiteSmoke);
@@ -1185,8 +764,7 @@
     gap: 16px;
 }
 
-.no-communities p,
-.no-communities-created p {
+.no-communities p, .no-communities-created p {
     font-family: 'inter', sans-serif;
     font-size: 15px;
     color: var(--glaucous);
@@ -1222,7 +800,7 @@
     border: 1px solid var(--alabasterGray);
     border-radius: 16px;
     padding: 60px 40px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
 }
 
 .profile-not-logged__icon {
@@ -1287,11 +865,6 @@
     color: white;
 }
 
-/* btn-icon helper */
-.btn-icon {
-    font-size: 16px;
-}
-
 /* ═══════════════════════════════════════════════════════════════
    Responsive
    ═══════════════════════════════════════════════════════════════ */
@@ -1304,7 +877,7 @@
         grid-template-columns: 1fr;
     }
 
-    .profile-data-section__right {
+    .activity-card {
         width: 100%;
     }
 }
@@ -1320,7 +893,7 @@
         text-align: center;
         gap: 24px;
     }
-
+    
     .profile-header__left {
         flex-direction: column;
         align-items: center;
@@ -1345,18 +918,15 @@
         grid-template-columns: 1fr;
     }
 
-    .communities-list,
-    .created-communities-list {
+    .communities-list, .created-communities-list {
         grid-template-columns: 1fr;
     }
 
-    .community-card,
-    .created-community-card {
+    .community-card, .created-community-card {
         flex-direction: column;
     }
 
-    .community-card__image,
-    .created-community-card__image {
+    .community-card__image, .created-community-card__image {
         width: 100%;
         height: 180px;
     }
@@ -1369,134 +939,4 @@
     .btn-create-new {
         width: 100%;
     }
-
-    .profile-tutor-quick-stats {
-        gap: 10px;
-    }
-
-    .profile-tutor-quick-stat {
-        min-width: 60px;
-        padding: 8px 10px;
-    }
-
-    /* ============================================================
-   DIFERENCIACIÓN VISUAL — PERFIL DE ESTUDIANTE
-   (Usa solo clases existentes)
-   ============================================================ */
-
-    /* Fondo general más suave y juvenil */
-    .my-profile {
-        background: #f0f3ff;
-    }
-
-    /* Cabecera estudiante más clara y azulada */
-    .profile-header {
-        background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
-        border: 1px solid #c7d2fe;
-    }
-
-    /* Avatar estudiante con anillo índigo */
-    .profile-avatar {
-        border: 4px solid #6366f1;
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15),
-            0 8px 20px rgba(99, 102, 241, 0.12);
-    }
-
-    /* Nombre y textos en tonos índigo */
-    .profile-info__name {
-        color: #3730a3;
-    }
-
-    .profile-info__description {
-        color: #4b5563;
-    }
-
-    /* Cards estudiante con borde azul */
-    .profile-data,
-    .activity-card,
-    .community-card,
-    .created-community-card {
-        border-left: 4px solid #6366f1;
-        box-shadow: 0 4px 14px rgba(99, 102, 241, 0.12);
-    }
-
-    /* Tags estudiante */
-    .profile-interest-tag {
-        background: #eef2ff;
-        color: #3730a3;
-        border: 1px solid #c7d2fe;
-    }
-
-    /* Botones estudiante */
-    .profile-nav-btn,
-    .btn-settings {
-        background: #eef2ff;
-        color: #3730a3;
-        border-color: #c7d2fe;
-    }
-
-    .profile-nav-btn:hover {
-        background: #6366f1;
-        color: white;
-    }
-
-    /* Stats estudiante */
-    .activity-stat__value {
-        color: #6366f1;
-    }
-
-    /* ============================================================
-   OVERRIDES — PERFIL DE ESTUDIANTE (Tema claro azul pastel)
-   ============================================================ */
-
-    /* Fondo general */
-    .my-profile {
-        background: #eef2ff !important;
-    }
-
-    /* Cabecera clara */
-    .profile-header {
-        background: #ffffff !important;
-        border: 2px solid #c7d2fe !important;
-        border-radius: 20px;
-    }
-
-    /* Avatar estudiante */
-    .profile-avatar {
-        border: 4px solid #6366f1 !important;
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15),
-            0 8px 20px rgba(99, 102, 241, 0.12) !important;
-    }
-
-    /* Textos */
-    .profile-info__name {
-        color: #3730a3 !important;
-    }
-
-    .profile-info__description {
-        color: #4b5563 !important;
-    }
-
-    /* Cards estudiante */
-    .profile-data,
-    .activity-card,
-    .community-card,
-    .created-community-card {
-        background: white !important;
-        border-left: 4px solid #6366f1 !important;
-        box-shadow: 0 4px 14px rgba(99, 102, 241, 0.12) !important;
-    }
-
-    /* Tags */
-    .profile-interest-tag {
-        background: #eef2ff !important;
-        color: #3730a3 !important;
-        border: 1px solid #c7d2fe !important;
-    }
-
-    /* Stats */
-    .activity-stat__value {
-        color: #6366f1 !important;
-    }
-
 }

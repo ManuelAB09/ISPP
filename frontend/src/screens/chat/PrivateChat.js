@@ -39,7 +39,6 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose, autoStart, 
     const [attachmentPreviewByMessageId, setAttachmentPreviewByMessageId] = useState({});
     const messagesEndRef = useRef(null);
     const fileInputRef = useRef(null);
-    const autoStartFiredRef = useRef(false);
     const previewCacheByUrlRef = useRef(new Map());
     const pendingPreviewKeysRef = useRef(new Set());
     const previewsByMessageIdRef = useRef({});
@@ -359,21 +358,11 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose, autoStart, 
         }
     };
 
-    // Resetear la guardia cuando cambia el destinatario para permitir autoStart en nuevas conversaciones
-    useEffect(() => {
-        autoStartFiredRef.current = false;
-    }, [tutorId]);
-
     /**
      * Envía mensaje automático si el chat es nuevo y autoStart está activo.
-     * La guardia autoStartFiredRef evita que el efecto reenvíe el mensaje cuando
-     * el usuario lo elimina (lo que volvería mensajes.length a 0 y re-dispararía el efecto).
      */
     useEffect(() => {
-        if (autoStart && !cargandoHistorial && historialCargadoPara === tutorId
-                && mensajes.length === 0 && tutorId && !autoStartFiredRef.current) {
-            autoStartFiredRef.current = true;
-
+        if (autoStart && !cargandoHistorial && historialCargadoPara === tutorId && mensajes.length === 0 && tutorId) {
             // Eliminar autoStart de la URL para evitar reenvíos al refrescar
             const url = new URL(window.location);
             if (url.searchParams.has('autoStart')) {
@@ -397,7 +386,7 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose, autoStart, 
                 .catch(err => console.error("Error enviando mensaje autoStart", err));
         }
         // eslint-disable-next-line
-    }, [autoStart, cargandoHistorial, historialCargadoPara, tutorId]);
+    }, [autoStart, cargandoHistorial, historialCargadoPara, mensajes.length, tutorId]);
 
     /**
      * Envía un mensaje privado.

@@ -387,27 +387,4 @@ describe('PrivateChat', () => {
             expect(mockEnviarMensajePrivado).toHaveBeenCalledWith(2, '¡Hola! Me gustaría contactar contigo.');
         });
     });
-
-    it('does not resend auto greeting after user deletes it', async () => {
-        const sentMsg = { id: 1, contenido: '¡Hola! Me gustaría contactar contigo.', emisorId: '1', receptorId: '2' };
-        mockEnviarMensajePrivado.mockResolvedValue({ data: sentMsg });
-        mockEliminarMensajePrivado.mockResolvedValue({});
-
-        render(<PrivateChat {...defaultProps} autoStart={true} />);
-
-        // Wait for auto-greeting to be sent and rendered
-        await waitFor(() => {
-            expect(mockEnviarMensajePrivado).toHaveBeenCalledWith(2, '¡Hola! Me gustaría contactar contigo.');
-        });
-        await screen.findByText('¡Hola! Me gustaría contactar contigo.');
-
-        // User deletes the auto-sent message → mensajes becomes empty
-        fireEvent.click(screen.getByText('Eliminar'));
-        await waitFor(() => {
-            expect(mockEliminarMensajePrivado).toHaveBeenCalledWith(1);
-        });
-
-        // The greeting must NOT be sent a second time despite mensajes.length going back to 0
-        expect(mockEnviarMensajePrivado).toHaveBeenCalledTimes(1);
-    });
 });

@@ -15,12 +15,6 @@
   transition: box-shadow 0.2s, border 0.2s;
   position: relative;
 }
-.catab-item-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
 .catab-item:hover {
   box-shadow: 0 8px 32px #6B73A133;
 }
@@ -143,27 +137,6 @@
 }
 .catab-btn-create:hover {
   background: #525983;
-}
-
-.catab-btn-delete {
-  background: #fee2e2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
-  border-radius: 10px;
-  padding: 7px 14px;
-  font-size: 0.92rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.catab-btn-delete:hover:not(:disabled) {
-  background: #fecaca;
-}
-
-.catab-btn-delete:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
 }
 
 .catab-modal-overlay {

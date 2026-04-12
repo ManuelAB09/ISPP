@@ -1,6 +1,5 @@
 package es.us.meerkat.backend.controller.communities;
 
-import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,21 +50,6 @@ public class InstitutionController {
 
     @Autowired private InstitutionService institutionService;
     @Autowired private PaymentService paymentService;
-
-    /**
-     * Lista instituciones para filtros y formularios públicos.
-     *
-     * @return instituciones ordenadas alfabéticamente
-     */
-    @GetMapping
-    @Operation(summary = "Listar instituciones")
-    public ResponseEntity<List<InstitutionResponse>> listarInstituciones() {
-        List<InstitutionResponse> response =
-                institutionService.listarInstituciones().stream()
-                        .map(this::toInstitutionResponse)
-                        .toList();
-        return ResponseEntity.ok(response);
-    }
 
     // ===============================
     // CRUD OPERATIONS
