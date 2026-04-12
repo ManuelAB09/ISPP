@@ -41,7 +41,10 @@ public interface MiembroComunidadRepository extends JpaRepository<MiembroComunid
 
     long countByComunidadIdAndRol(Long comunidadId, RolComunidad rol);
 
-    @Query("SELECT COUNT(m) FROM MiembroComunidad m WHERE m.usuario.id = :userId AND m.rol = :rol AND m.comunidad.institution IS NULL")
+    @Query(
+            "SELECT COUNT(m) FROM MiembroComunidad m"
+                    + " WHERE m.usuario.id = :userId AND m.rol = :rol"
+                    + " AND m.comunidad.institution IS NULL")
     long countByUsuarioIdAndRolAndComunidadInstitutionIsNull(
             @Param("userId") Long userId, @Param("rol") RolComunidad rol);
 
