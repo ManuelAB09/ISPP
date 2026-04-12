@@ -7,7 +7,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -459,67 +458,13 @@ public class CommunityService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Comunidad> listActiveCommunities(
-            String search,
-            List<String> categorias,
-            String institucion,
-            List<TipoGrupo> tipoGrupos,
-            List<TipoPlanComunidad> tipoPlanes,
-            Pageable pageable) {
-        String normalizedSearch = normalizeFilter(search);
-        List<String> normalizedCategorias = normalizeFilters(categorias);
-        String normalizedInstitucion = normalizeFilter(institucion);
-        List<TipoGrupo> normalizedTipoGrupos = normalizeEnumFilters(tipoGrupos);
-        List<TipoPlanComunidad> normalizedTipoPlanes = normalizeEnumFilters(tipoPlanes);
-
-        return comunidadRepository.searchActiveCommunities(
-                normalizedSearch,
-                normalizedCategorias,
-                normalizedInstitucion,
-                normalizedTipoGrupos,
-                normalizedTipoPlanes,
-                EstadoComunidad.ACTIVA,
-                pageable);
-    }
-
-    private List<String> normalizeFilters(List<String> values) {
-        if (values == null || values.isEmpty()) {
-            return null;
+    public Page<Comunidad> listActiveCommunities(String search, Pageable pageable) {
+        if (search != null && !search.isBlank()) {
+            return comunidadRepository.findByNombreContainingIgnoreCaseAndEstado(
+                    search, EstadoComunidad.ACTIVA, pageable);
+        } else {
+            return comunidadRepository.findByEstado(EstadoComunidad.ACTIVA, pageable);
         }
-
-        List<String> normalized =
-                values.stream()
-                        .filter(Objects::nonNull)
-                        .map(String::trim)
-                        .filter(value -> !value.isEmpty())
-                        .map(value -> value.length() > 120 ? value.substring(0, 120) : value)
-                        .map(String::toLowerCase)
-                        .distinct()
-                        .toList();
-
-        return normalized.isEmpty() ? null : normalized;
-    }
-
-    private <T> List<T> normalizeEnumFilters(List<T> values) {
-        if (values == null || values.isEmpty()) {
-            return null;
-        }
-
-        List<T> normalized = values.stream().filter(Objects::nonNull).distinct().toList();
-        return normalized.isEmpty() ? null : normalized;
-    }
-
-    private String normalizeFilter(String value) {
-        if (value == null) {
-            return null;
-        }
-
-        String trimmed = value.trim();
-        if (trimmed.isEmpty()) {
-            return null;
-        }
-
-        return trimmed.length() > 120 ? trimmed.substring(0, 120) : trimmed;
     }
 
     /** Cambia la privacidad de una comunidad (solo ADMIN). */

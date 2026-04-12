@@ -156,28 +156,15 @@ class CommunityServiceTest {
 
     @Test
     void listActiveCommunitiesShouldUseSearchFilterWhenSearchProvided() {
-        when(comunidadRepository.searchActiveCommunities(
-                        "java",
-                        null,
-                        null,
-                        null,
-                        null,
-                        EstadoComunidad.ACTIVA,
-                        PageRequest.of(0, 20)))
+        when(comunidadRepository.findByNombreContainingIgnoreCaseAndEstado(
+                        "java", EstadoComunidad.ACTIVA, PageRequest.of(0, 20)))
                 .thenReturn(new PageImpl<>(java.util.List.of()));
 
-        communityService.listActiveCommunities(
-                "java", null, null, null, null, PageRequest.of(0, 20));
+        communityService.listActiveCommunities("java", PageRequest.of(0, 20));
 
         verify(comunidadRepository)
-                .searchActiveCommunities(
-                        "java",
-                        null,
-                        null,
-                        null,
-                        null,
-                        EstadoComunidad.ACTIVA,
-                        PageRequest.of(0, 20));
+                .findByNombreContainingIgnoreCaseAndEstado(
+                        "java", EstadoComunidad.ACTIVA, PageRequest.of(0, 20));
     }
 
     @Test
@@ -456,52 +443,22 @@ class CommunityServiceTest {
 
     @Test
     void listActiveCommunitiesShouldUseDefaultFilterWhenNoSearch() {
-        when(comunidadRepository.searchActiveCommunities(
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        EstadoComunidad.ACTIVA,
-                        PageRequest.of(0, 10)))
+        when(comunidadRepository.findByEstado(EstadoComunidad.ACTIVA, PageRequest.of(0, 10)))
                 .thenReturn(new PageImpl<>(List.of()));
 
-        communityService.listActiveCommunities(null, null, null, null, null, PageRequest.of(0, 10));
+        communityService.listActiveCommunities(null, PageRequest.of(0, 10));
 
-        verify(comunidadRepository)
-                .searchActiveCommunities(
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        EstadoComunidad.ACTIVA,
-                        PageRequest.of(0, 10));
+        verify(comunidadRepository).findByEstado(EstadoComunidad.ACTIVA, PageRequest.of(0, 10));
     }
 
     @Test
     void listActiveCommunitiesShouldUseDefaultFilterWhenBlankSearch() {
-        when(comunidadRepository.searchActiveCommunities(
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        EstadoComunidad.ACTIVA,
-                        PageRequest.of(0, 10)))
+        when(comunidadRepository.findByEstado(EstadoComunidad.ACTIVA, PageRequest.of(0, 10)))
                 .thenReturn(new PageImpl<>(List.of()));
 
-        communityService.listActiveCommunities("  ", null, null, null, null, PageRequest.of(0, 10));
+        communityService.listActiveCommunities("  ", PageRequest.of(0, 10));
 
-        verify(comunidadRepository)
-                .searchActiveCommunities(
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        EstadoComunidad.ACTIVA,
-                        PageRequest.of(0, 10));
+        verify(comunidadRepository).findByEstado(EstadoComunidad.ACTIVA, PageRequest.of(0, 10));
     }
 
     // ================================================================
@@ -796,27 +753,14 @@ class CommunityServiceTest {
 
     @Test
     void listActiveCommunitiesShouldSearchByName() {
-        when(comunidadRepository.searchActiveCommunities(
-                        eq("java"),
-                        org.mockito.ArgumentMatchers.isNull(),
-                        org.mockito.ArgumentMatchers.isNull(),
-                        org.mockito.ArgumentMatchers.isNull(),
-                        org.mockito.ArgumentMatchers.isNull(),
-                        eq(EstadoComunidad.ACTIVA),
-                        any(Pageable.class)))
+        when(comunidadRepository.findByNombreContainingIgnoreCaseAndEstado(
+                        eq("java"), eq(EstadoComunidad.ACTIVA), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of()));
 
-        communityService.listActiveCommunities(
-                "java", null, null, null, null, PageRequest.of(0, 10));
+        communityService.listActiveCommunities("java", PageRequest.of(0, 10));
 
         verify(comunidadRepository)
-                .searchActiveCommunities(
-                        eq("java"),
-                        org.mockito.ArgumentMatchers.isNull(),
-                        org.mockito.ArgumentMatchers.isNull(),
-                        org.mockito.ArgumentMatchers.isNull(),
-                        org.mockito.ArgumentMatchers.isNull(),
-                        eq(EstadoComunidad.ACTIVA),
-                        any(Pageable.class));
+                .findByNombreContainingIgnoreCaseAndEstado(
+                        eq("java"), eq(EstadoComunidad.ACTIVA), any(Pageable.class));
     }
 }

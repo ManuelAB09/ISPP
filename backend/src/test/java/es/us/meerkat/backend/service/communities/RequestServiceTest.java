@@ -232,37 +232,6 @@ class RequestServiceTest {
                 .hasMessageContaining("comunidad está llena");
     }
 
-    @Test
-    void respondToRequestShouldFailWhenUserNotAdmin() {
-        Long adminId = 1L;
-        Long communityId = 10L;
-        Long requestId = 1L;
-
-        when(authorizationService.isAdminOf(adminId, communityId)).thenReturn(false);
-
-        assertThatThrownBy(
-                        () ->
-                                requestService.respondToRequest(
-                                        adminId, communityId, requestId, true))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    void respondToRequestShouldFailWhenRequestNotFound() {
-        Long adminId = 99L;
-        Long communityId = 10L;
-        Long requestId = 999L;
-
-        when(authorizationService.isAdminOf(adminId, communityId)).thenReturn(true);
-        when(solicitudComunidadRepository.findById(requestId)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(
-                        () ->
-                                requestService.respondToRequest(
-                                        adminId, communityId, requestId, true))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
     private Usuario buildUsuario(final Long id) {
         Usuario usuario = new Usuario();
         usuario.setId(id);

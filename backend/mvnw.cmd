@@ -40,22 +40,9 @@
 @SET __MVNW_ARG0_NAME__=
 @SET MVNW_USERNAME=
 @SET MVNW_PASSWORD=
-@IF /I "%~1"=="selenium" GOTO :__MVNW_RUN_SELENIUM_ALIAS
 @IF NOT "%__MVNW_CMD__%"=="" ("%__MVNW_CMD__%" %*)
 @echo Cannot start maven from wrapper >&2 && exit /b 1
 @GOTO :EOF
-
-:__MVNW_RUN_SELENIUM_ALIAS
-@IF "%__MVNW_CMD__%"=="" (@echo Cannot start maven from wrapper >&2 && exit /b 1)
-@SET "__MVNW_REMAINING_ARGS__=%*"
-@IF "%__MVNW_REMAINING_ARGS__:~8,1%"==" " (
-  @SET "__MVNW_REMAINING_ARGS__=%__MVNW_REMAINING_ARGS__:~9%"
-) ELSE (
-  @SET "__MVNW_REMAINING_ARGS__="
-)
-"%__MVNW_CMD__%" -Dtest=AcceptanceE2ETest -DrunE2E=true test %__MVNW_REMAINING_ARGS__%
-@EXIT /b %ERRORLEVEL%
-
 : end batch / begin powershell #>
 
 $ErrorActionPreference = "Stop"

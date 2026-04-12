@@ -2,21 +2,17 @@ package es.us.meerkat.backend.service.subscriptions;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.dto.subscriptions.SubscriptionResponse;
-import es.us.meerkat.backend.entity.communities.Comunidad;
 import es.us.meerkat.backend.entity.communities.Institution;
 import es.us.meerkat.backend.entity.subscriptions.Suscripcion;
 import es.us.meerkat.backend.entity.subscriptions.TipoPlan;
-import es.us.meerkat.backend.entity.subscriptions.TipoPlanComunidad;
 import es.us.meerkat.backend.entity.subscriptions.TipoTransaccion;
 import es.us.meerkat.backend.entity.users.Usuario;
-import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.InstitutionRepository;
 import es.us.meerkat.backend.repository.subscriptions.SuscripcionRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
@@ -31,7 +27,6 @@ public class SuscripcionService {
     private final UsuarioRepository usuarioRepository;
     private final InstitutionRepository institutionRepository;
     private final PaymentService paymentService;
-    private final ComunidadRepository comunidadRepository;
 
     /**
      * Obtiene todos los planes disponibles.
@@ -205,16 +200,6 @@ public class SuscripcionService {
 
         suscripcion.cancelar();
         Suscripcion cancelada = suscripcionRepository.save(suscripcion);
-
-        List<Comunidad> comunidades = comunidadRepository.findByCreadorId(usuarioId);
-        for (Comunidad c : comunidades) {
-            if (c.getTipoPlan() == TipoPlanComunidad.PREMIUM) {
-                c.setTipoPlan(TipoPlanComunidad.FREE);
-                c.setMaxMiembros(30);
-                comunidadRepository.save(c);
-            }
-        }
-
         return cancelada;
     }
 

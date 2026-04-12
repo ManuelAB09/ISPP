@@ -10,13 +10,11 @@ jest.mock('../../api/baseUrl', () => ({
 
 const mockGet = jest.fn();
 const mockPost = jest.fn();
-const mockDelete = jest.fn();
 jest.mock('../../api/axiosConfig', () => ({
     __esModule: true,
     default: {
         get: (...args) => mockGet(...args),
         post: (...args) => mockPost(...args),
-        delete: (...args) => mockDelete(...args),
     },
 }));
 
@@ -38,7 +36,6 @@ const renderTab = (props = {}) => {
 describe('CommunityAnnouncementsTab', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        window.confirm = jest.fn(() => true);
         getAnnouncementComments.mockImplementation(() => Promise.resolve([]));
         postAnnouncementComment.mockImplementation(() => Promise.resolve({}));
     });
@@ -166,67 +163,5 @@ describe('CommunityAnnouncementsTab', () => {
                 await act(async () => { fireEvent.click(submitBtn); });
             }
         }
-    });
-
-    test('admin can delete announcement from UI', async () => {
-        mockGet.mockResolvedValueOnce({
-            data: {
-                anuncios: [
-                    {
-                        id: 44,
-                        titulo: 'Delete Me',
-                        contenido: 'Delete content',
-                        createdAt: '2025-06-01T10:00:00',
-                        autor: { nombre: 'Admin' },
-                        permitirComentarios: false,
-                    },
-                ],
-            },
-        });
-        mockDelete.mockResolvedValueOnce({});
-
-        await act(async () => {
-            renderTab({ isAdmin: true });
-        });
-
-        await waitFor(() => {
-            expect(screen.getByText('Delete Me')).toBeInTheDocument();
-        });
-
-        await act(async () => {
-            fireEvent.click(screen.getByText('Eliminar'));
-        });
-
-        expect(mockDelete).toHaveBeenCalledWith('/api/v1/communities/1/announcements/44');
-        await waitFor(() => {
-            expect(screen.queryByText('Delete Me')).not.toBeInTheDocument();
-        });
-    });
-
-    test('non-admin cannot see delete action', async () => {
-        mockGet.mockResolvedValueOnce({
-            data: {
-                anuncios: [
-                    {
-                        id: 45,
-                        titulo: 'Read Only',
-                        contenido: 'No delete action for non-admin',
-                        createdAt: '2025-06-01T10:00:00',
-                        autor: { nombre: 'Admin' },
-                        permitirComentarios: false,
-                    },
-                ],
-            },
-        });
-
-        await act(async () => {
-            renderTab({ isAdmin: false });
-        });
-
-        await waitFor(() => {
-            expect(screen.getByText('Read Only')).toBeInTheDocument();
-        });
-
-        expect(screen.queryByText('Eliminar')).not.toBeInTheDocument();
     });
 });

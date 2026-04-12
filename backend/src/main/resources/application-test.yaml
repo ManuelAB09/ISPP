@@ -33,15 +33,15 @@ google:
     redirect-uri: ${GOOGLE_CALENDAR_REDIRECT_URI:http://localhost:8080/api/v1/google-calendar/oauth/callback}
 stripe:
   api:
-    key: ${STRIPE_API_KEY:sk_test_placeholder}
+    key: stripe.api.key
   webhook:
-    secret: ${STRIPE_WEBHOOK_SECRET:whsec_placeholder}
+    secret: stripe.webhook.secret
   success: 
-    url: ${STRIPE_SUCCESS_URL:http://localhost:3000/success}
+    url: http://localhost:3000/success
   cancel:
-    url: ${STRIPE_CANCEL_URL:http://localhost:3000/cancel}
+    url: http://localhost:3000/cancel
   price:
-    premium: ${STRIPE_PRICE_PREMIUM:price_test_placeholder}
+    premium: prod_U3x4AB7AnO2JPG
 
 oauth:
   redirect-uri-login: http://localhost:8080/api/v1/auth/google/callback
