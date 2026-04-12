@@ -14,9 +14,6 @@
 .quiz-result-header h1 {
   margin: 0;
   color: #242c4f;
-  min-width: 0;
-  overflow-wrap: break-word;
-  word-break: break-word;
 }
 
 .quiz-result-header p {
@@ -43,7 +40,6 @@
   border: 1px solid #e7ebf6;
   border-radius: 10px;
   padding: 12px;
-  min-width: 0;
 }
 
 .quiz-result-question.is-correct {
@@ -60,17 +56,11 @@
   margin: 0 0 10px;
   font-size: 1rem;
   color: #2d3250;
-  min-width: 0;
-  overflow-wrap: break-word;
-  word-break: break-word;
 }
 
 .quiz-result-question p {
   margin: 4px 0;
   color: #505980;
-  min-width: 0;
-  overflow-wrap: break-word;
-  word-break: break-word;
 }
 
 .quiz-result-actions {

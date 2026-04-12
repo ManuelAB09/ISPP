@@ -26,16 +26,12 @@
   gap: 10px;
   align-items: center;
   margin-bottom: 8px;
-  min-width: 0;
 }
 
 .quiz-preview-headline h1 {
   margin: 0;
   font-size: 1.6rem;
   color: #242c4f;
-  min-width: 0;
-  overflow-wrap: break-word;
-  word-break: break-word;
 }
 
 .quiz-preview-chip {

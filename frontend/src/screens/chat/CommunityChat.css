@@ -33,65 +33,36 @@
 .chat-floating-actions-row {
     display: flex;
     justify-content: flex-end;
-    align-items: flex-start;
+    align-items: center;
     gap: 0.75rem;
     position: relative;
-    width: auto;
-    max-width: min(100vw - 1.5rem, 720px);
 }
+
 .chat-floating-extra-actions {
     position: relative;
     right: auto;
     top: auto;
     display: block;
     width: auto;
-    max-width: 100%;
-    min-width: 0;
+    max-width: none;
     overflow: visible;
 }
 
 .chat-floating-extra-actions::-webkit-scrollbar {
     display: none;
 }
-@media (max-width: 900px) {
-    body.mobile-menu-open .community-chat-floating {
-        display: none !important;
-    }
-}
 
 @media (max-width: 900px) {
     .chat-floating-actions-row {
         display: flex;
         flex-direction: column;
-        align-items: stretch;
+        align-items: flex-end;
         gap: 0.5rem;
-        width: 100%;
-        max-width: 100%;
     }
 
     .chat-floating-extra-actions {
         position: static;
         width: 100%;
-        max-width: 100%;
-        min-width: 0;
-    }
-
-    .chat-toggle-button {
-        width: 100%;
-        justify-content: center;
-    }
-    .community-chat-floating {
-        position: static;
-        width: 100%;
-        max-width: 100%;
-        margin-top: 1rem;
-        margin-bottom: 1rem;
-    }
-}
-
-@media (max-width: 1200px) {
-    body.mobile-menu-open .community-chat-floating {
-        display: none !important;
     }
 }
 
@@ -103,7 +74,7 @@
     display: flex;
     flex-direction: column;
     width: min(500px, calc(100vw - 1.5rem));
-    height: min(700px, calc(100dvh - 11rem));
+    height: min(700px, calc(100vh - 11rem));
     margin-top: 0.75rem;
     background: #fff;
     border-radius: 1rem;
@@ -145,7 +116,6 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    min-width: 0;
 }
 
 .chat-header-avatar {
@@ -174,8 +144,6 @@
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    flex-wrap: wrap;
-    justify-content: flex-end;
 }
 
 .chat-header-extra-actions {
@@ -271,14 +239,6 @@
     word-wrap: break-word;
     border: 1px solid #EAEBF0;
 }
-.message,
-.message-content,
-.chat-attachment-name,
-.chat-pending-attachment-name {
-    overflow-wrap: anywhere;
-    word-break: break-word;
-    min-width: 0;
-} 
 
 .message.propio {
     align-self: flex-end;
@@ -515,7 +475,6 @@
     padding: 0.8rem 1rem 1rem;
     background: #fff;
     border-top: 1px solid #EAEBF0;
-    align-items: center;
 }
 
 .chat-pending-attachment {
@@ -588,7 +547,6 @@
 
 .message-input-form input {
     flex: 1;
-    min-width: 0;
     padding: 0.65rem 0.75rem;
     border: 1px solid #D7DCEF;
     border-radius: 0.6rem;
@@ -715,20 +673,11 @@
 
     .community-chat-panel {
         width: calc(100vw - 1.6rem);
-        height: min(72dvh, 620px);
+        height: min(72vh, 620px);
     }
 
     .message {
         max-width: 95%;
-    }
-    .community-chat-panel,
-    .private-chat {
-        padding-bottom: 3rem;
-    }
-
-    .message-input-form,
-    .private-chat .message-input-form {
-        margin-bottom: 0.5rem;
     }
 }
 
@@ -749,59 +698,4 @@
 
 .chat-file-label:hover {
     background: #EAF0FF;
-}
-
-@media (max-width: 768px) {
-    .chat-header {
-        padding: 0.75rem;
-        gap: 0.5rem;
-    }
-
-    .chat-header-avatar {
-        width: 3rem;
-        height: 3rem;
-    }
-
-    .chat-header h2 {
-        font-size: 0.9rem;
-    }
-
-    .chat-header p {
-        font-size: 0.75rem;
-    }
-
-    .chat-attachment-card,
-    .chat-pending-attachment {
-        flex-wrap: wrap;
-        align-items: flex-start;
-    }
-}
-
-@media (max-width: 480px) {
-    .message-input-form {
-        flex-wrap: wrap;
-    }
-
-    .message-input-form input {
-        width: 100%;
-    }
-
-    .chat-attachment-actions {
-        width: 100%;
-        flex-direction: row;
-        flex-wrap: wrap;
-    }
-
-    .chat-attachment-actions.row {
-        justify-content: flex-start;
-    }
-
-    .chat-file-label,
-    .message-input-form button {
-        flex: 0 0 auto;
-    }
-
-    .chat-pending-attachment-remove {
-        margin-left: auto;
-    }
 }

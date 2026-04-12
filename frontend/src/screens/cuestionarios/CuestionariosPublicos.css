@@ -2,7 +2,6 @@
   max-width: 980px;
   margin: 0 auto;
   padding: 30px 20px 50px;
-  box-sizing: border-box;
 }
 
 .quizzes-public-header {
@@ -18,9 +17,6 @@
   margin: 0;
   font-size: 1.6rem;
   color: #242c4f;
-  min-width: 0;
-  overflow-wrap: break-word;
-  word-break: break-word;
 }
 
 .quizzes-public-btn-create {
@@ -52,10 +48,6 @@
   padding: 20px;
   cursor: pointer;
   transition: box-shadow 0.2s, border-color 0.2s;
-  min-width: 0;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
 }
 
 .quizzes-public-card:hover {
@@ -68,10 +60,6 @@
   font-weight: 700;
   color: #242c4f;
   margin-bottom: 6px;
-  min-width: 0;
-  overflow-wrap: break-word;
-  word-break: break-word;
-  hyphens: auto;
 }
 
 .quizzes-public-card-meta {
@@ -79,7 +67,6 @@
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 10px;
-  min-width: 0;
 }
 
 .quizzes-public-chip {
@@ -89,8 +76,6 @@
   padding: 4px 10px;
   font-size: 0.78rem;
   font-weight: 600;
-  white-space: nowrap;
-  flex-shrink: 0;
 }
 
 .quizzes-public-chip--difficulty {
@@ -107,8 +92,6 @@
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  word-break: break-word;
-  overflow-wrap: break-word;
 }
 
 .quizzes-public-card-footer {
@@ -117,8 +100,6 @@
   align-items: center;
   color: #94a3b8;
   font-size: 0.82rem;
-  gap: 8px;
-  flex-wrap: wrap;
 }
 
 .quizzes-public-loading,

@@ -153,7 +153,6 @@
 
 .categoria-input {
     flex: 1;
-    min-width: 0;
     padding: 12px 16px;
     border: 1px solid var(--silver);
     border-radius: 8px;
@@ -206,13 +205,6 @@
     font-size: 0.9rem;
     font-weight: 600;
     border: 1px solid var(--alabasterGray);
-    max-width: 100%;
-    min-width: 0;
-}
-.categoria-item span {
-    min-width: 0;
-    overflow-wrap: anywhere;
-    word-break: break-word;
 }
 
 .btn-eliminar {
