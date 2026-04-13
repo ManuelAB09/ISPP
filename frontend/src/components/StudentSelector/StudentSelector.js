@@ -84,7 +84,7 @@ const StudentSelector = ({ selectedStudents, onStudentsChange }) => {
           data-testid="student-selector-input"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          onFocus={() => searchInput.trim() !== '' && setShowResults(true)}
+          onFocus={() => setShowResults(true)}
           onBlur={() => setTimeout(handleClickOutside, 100)}
           placeholder="Busca alumnos por nombre o email..."
         />

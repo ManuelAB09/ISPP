@@ -4948,19 +4948,19 @@ class AcceptanceE2ETest {
         wait.until(ExpectedConditions.visibilityOfElementLocated(studentSelectorInput));
         WebElement input = driver.findElement(studentSelectorInput);
 
-        // Focus on input to activate it
-        ((JavascriptExecutor) driver).executeScript("arguments[0].focus();", input);
-
-        input.sendKeys(student.email());
+        // Focus and set value using JavaScript to ensure React state updates correctly
+        ((JavascriptExecutor) driver)
+                .executeScript(
+                        "arguments[0].focus(); arguments[0].value = arguments[1];"
+                            + " arguments[0].dispatchEvent(new Event('input', { bubbles: true }));"
+                            + " arguments[0].dispatchEvent(new Event('change', { bubbles: true"
+                            + " }));",
+                        input,
+                        student.email());
 
         // Wait for debounce (300ms) + buffer
         Thread.sleep(500);
 
-        // Esperar a que aparezca el resultado en el dropdown
-        By studentResults = By.xpath("//div[@data-testid='student-selector-results']");
-        wait.until(ExpectedConditions.visibilityOfElementLocated(studentResults));
-
-        // Hacer click en el primer resultado (que debe contener el email del estudiante)
         By resultItem =
                 By.xpath(
                         "//div[@data-testid='student-selector-results']//div[contains(@data-testid,'student-result-')][1]");
