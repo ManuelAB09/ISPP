@@ -4946,24 +4946,47 @@ class AcceptanceE2ETest {
         // Usar StudentSelector para buscar y seleccionar estudiante
         By studentSelectorInput = By.xpath("//input[@data-testid='student-selector-input']");
         wait.until(ExpectedConditions.visibilityOfElementLocated(studentSelectorInput));
+
         WebElement input = driver.findElement(studentSelectorInput);
+        // Focus en el input para asegurar que está activo
+        ((JavascriptExecutor) driver).executeScript("arguments[0].focus();", input);
+
+        // Escribir el email
+        input.clear();
         input.sendKeys(student.email());
 
-        // Esperar a que aparezca el resultado en el dropdown
-        By studentResults = By.xpath("//div[@data-testid='student-selector-results']");
-        wait.until(ExpectedConditions.visibilityOfElementLocated(studentResults));
+        // Esperar debounce (300ms + buffer)
+        Thread.sleep(400);
 
-        // Hacer click en el primer resultado (que debe contener el email del estudiante)
+        // Esperar a que aparezca el dropdown de resultados con más intentos
+        By studentResults = By.xpath("//div[@data-testid='student-selector-results']");
+        new WebDriverWait(driver, Duration.ofSeconds(10))
+                .until(ExpectedConditions.visibilityOfElementLocated(studentResults));
+
+        // Esperar a que haya al menos un resultado visible
         By resultItem =
                 By.xpath(
-                        "//div[@data-testid='student-selector-results']//div[contains(@data-testid,'student-result-')]");
-        wait.until(ExpectedConditions.elementToBeClickable(resultItem)).click();
+                        "//div[@data-testid='student-selector-results']//div[contains(@data-testid,'student-result-')][1]");
+        WebElement result =
+                new WebDriverWait(driver, Duration.ofSeconds(10))
+                        .until(ExpectedConditions.elementToBeClickable(resultItem));
+
+        // Hacer scroll hacia el resultado si es necesario (para evitar
+        // ElementNotInteractableException)
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", result);
+        Thread.sleep(200);
+
+        // Click en el resultado
+        result.click();
 
         // Esperar a que el estudiante se agregue a la lista de seleccionados
-        wait.until(
-                ExpectedConditions.visibilityOfElementLocated(
-                        By.xpath(
-                                "//div[@data-testid='student-selector-selected']//div[contains(@data-testid,'student-chip-')]")));
+        new WebDriverWait(driver, Duration.ofSeconds(10))
+                .until(
+                        ExpectedConditions.visibilityOfElementLocated(
+                                By.xpath(
+                                        "//div[@data-testid='student-selector-selected']//div[contains(@data-testid,'student-chip-')]")));
+
+        Thread.sleep(300);
 
         // Continuar con las preguntas
         setInputValue(

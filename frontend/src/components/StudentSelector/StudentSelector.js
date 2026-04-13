@@ -61,6 +61,8 @@ const StudentSelector = ({ selectedStudents, onStudentsChange }) => {
     setSearchInput('');
     setSearchResults([]);
     setShowResults(false);
+    // Dar focus de vuelta al input después de seleccionar
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
   };
 
   const handleRemoveStudent = (studentId) => {
@@ -99,7 +101,10 @@ const StudentSelector = ({ selectedStudents, onStudentsChange }) => {
                 key={user.id}
                 data-testid={`student-result-${user.id}`}
                 className="result-item"
-                onClick={() => handleSelectStudent(user)}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  handleSelectStudent(user);
+                }}
               >
                 <div className="result-avatar">
                   {user.avatarUrl ? (
