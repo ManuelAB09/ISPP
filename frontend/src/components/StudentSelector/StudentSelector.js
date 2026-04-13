@@ -57,12 +57,13 @@ const StudentSelector = ({ selectedStudents, onStudentsChange }) => {
   }, [searchInput, selectedStudents]);
 
   const handleSelectStudent = (student) => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
     onStudentsChange([...selectedStudents, student]);
     setSearchInput('');
     setSearchResults([]);
     setShowResults(false);
-    // Dar focus de vuelta al input después de seleccionar
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
   };
 
   const handleRemoveStudent = (studentId) => {
