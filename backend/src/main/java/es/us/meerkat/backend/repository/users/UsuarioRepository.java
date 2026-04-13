@@ -67,4 +67,15 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
      * @return Optional con el usuario si existe.
      */
     Optional<Usuario> findByGoogleId(String googleId);
+
+    /**
+     * Busca usuarios por nombre o email que contengan el término de búsqueda.
+     *
+     * @param search Término de búsqueda.
+     * @return Lista de usuarios que coinciden.
+     */
+    @Query(
+            "SELECT u FROM Usuario u WHERE LOWER(u.nombre) LIKE LOWER(CONCAT('%', :search, '%')) "
+                    + "OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%'))")
+    List<Usuario> findByNombreIgnoreCaseOrEmailIgnoreCase(@Param("search") String search);
 }

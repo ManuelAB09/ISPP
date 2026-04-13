@@ -1,0 +1,153 @@
+.header {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 20px;
+    align-items: center;
+    padding: 40px 60px 20px;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.search {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.body {
+    background-color: #ffffff;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 60px 60px;
+    min-height: 60vh;
+}
+
+.body .error {
+    text-align: center;
+    color: #dc2626;
+    font-family: 'inter', sans-serif;
+    font-size: 15px;
+    padding: 20px;
+    background: #fef2f2;
+    border-radius: 12px;
+    border: 1px solid #fca5a5;
+    margin-bottom: 24px;
+}
+
+.alumnos-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.alumno-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    text-align: center;
+    border: 2px solid transparent;
+}
+
+.alumno-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+    border-color: #5b7cfa;
+}
+
+.alumno-avatar {
+    margin-bottom: 16px;
+}
+
+.alumno-avatar img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: #e6eaf3;
+}
+
+.alumno-info h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 12px 0 8px 0;
+}
+
+.alumno-info .email {
+    font-size: 14px;
+    color: #666;
+    margin: 4px 0;
+    word-break: break-all;
+}
+
+.alumno-info .apellido {
+    font-size: 13px;
+    color: #999;
+    margin: 4px 0 0 0;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: #999;
+    font-size: 18px;
+    margin: 0;
+}
+
+.loading-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: #666;
+    font-size: 18px;
+    margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .header {
+        padding: 20px 16px;
+    }
+
+    .body {
+        padding: 20px 16px 40px;
+    }
+
+    .alumnos-list {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 16px;
+    }
+
+    .alumno-card {
+        padding: 16px;
+    }
+
+    .alumno-avatar img {
+        width: 80px;
+        height: 80px;
+    }
+
+    .alumno-info h3 {
+        font-size: 16px;
+    }
+}

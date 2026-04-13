@@ -4943,8 +4943,105 @@ class AcceptanceE2ETest {
                                             + " publicación')]/following::select[contains(@class,'form-control')][1]/option[@value='PERSONA']")))
                 .click();
 
-        setInputValue(
-                By.xpath("//input[contains(@placeholder,'alumno1@email.com')]"), student.email());
+        // Usar StudentSelector para buscar y seleccionar estudiante
+        By studentSelectorInput = By.xpath("//input[@data-testid='student-selector-input']");
+        wait.until(ExpectedConditions.visibilityOfElementLocated(studentSelectorInput));
+        WebElement input = driver.findElement(studentSelectorInput);
+
+        // Focus and set value using simple sendKeys which is more reliable
+        ((JavascriptExecutor) driver).executeScript("arguments[0].focus();", input);
+        input.clear();
+        input.sendKeys("pa64.student"); // Search by more specific prefix to avoid selecting creator
+        // instead of student
+
+        // Trigger change event after sendKeys
+        ((JavascriptExecutor) driver)
+                .executeScript(
+                        "arguments[0].dispatchEvent(new Event('input', { bubbles: true"
+                            + " }));arguments[0].dispatchEvent(new Event('change', { bubbles: true"
+                            + " }));",
+                        input);
+
+        // Wait for debounce (300ms) + buffer (the onBlur will keep dropdown open for 1s)
+        Thread.sleep(600);
+
+        // Debug: Check if dropdown is present
+        List<WebElement> dropdownCheck =
+                driver.findElements(By.xpath("//div[@data-testid='student-selector-results']"));
+        if (dropdownCheck.isEmpty()) {
+            System.out.println("[DEBUG PA-64] Dropdown not found in DOM. Page source snippet:");
+            String pageSource = driver.getPageSource();
+            int idx = pageSource.indexOf("student-selector");
+            if (idx >= 0) {
+                System.out.println(
+                        pageSource.substring(
+                                Math.max(0, idx - 200), Math.min(pageSource.length(), idx + 500)));
+            }
+            throw new RuntimeException("StudentSelector dropdown not rendered after search");
+        }
+
+        // Wait for dropdown to be visible before trying to find results
+        By studentResults = By.xpath("//div[@data-testid='student-selector-results']");
+        new WebDriverWait(driver, Duration.ofSeconds(5))
+                .until(ExpectedConditions.visibilityOfElementLocated(studentResults));
+
+        // Now get the first result item
+        By resultItem =
+                By.xpath(
+                        "//div[@data-testid='student-selector-results']//div[contains(@data-testid,'student-result-')][1]");
+        WebElement result =
+                new WebDriverWait(driver, Duration.ofSeconds(5))
+                        .until(ExpectedConditions.elementToBeClickable(resultItem));
+
+        // Scroll into view to ensure visibility
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", result);
+
+        // Dispatch onMouseDown event directly to trigger handleSelectStudent
+        ((JavascriptExecutor) driver)
+                .executeScript(
+                        "let event = new MouseEvent('mousedown', { bubbles: true, cancelable: true"
+                                + " });arguments[0].dispatchEvent(event);",
+                        result);
+
+        // Wait a bit for React to process the event and update state
+        Thread.sleep(300);
+
+        // Debug: Check if chip appeared
+        List<WebElement> chipCheck =
+                driver.findElements(
+                        By.xpath(
+                                "//div[@data-testid='student-selector-selected']//div[contains(@data-testid,'student-chip-')]"));
+
+        if (chipCheck.isEmpty()) {
+            System.out.println(
+                    "[DEBUG PA-64] Chip NOT found after mousedown. Checking page HTML...");
+            String pageSource = driver.getPageSource();
+
+            // Check if selected-students-list exists
+            int selectedIdx = pageSource.indexOf("student-selector-selected");
+            if (selectedIdx >= 0) {
+                System.out.println("[DEBUG PA-64] Found student-selector-selected div:");
+                System.out.println(
+                        pageSource.substring(
+                                selectedIdx, Math.min(pageSource.length(), selectedIdx + 500)));
+            } else {
+                System.out.println("[DEBUG PA-64] student-selector-selected div NOT FOUND in DOM");
+            }
+
+            // Check React errors in console
+            Object consoleErrors =
+                    ((JavascriptExecutor) driver)
+                            .executeScript("return window.__reactErrors || []");
+            System.out.println("[DEBUG PA-64] React errors: " + consoleErrors);
+        }
+
+        // Esperar a que el estudiante se agregue a la lista de seleccionados
+        wait.until(
+                ExpectedConditions.visibilityOfElementLocated(
+                        By.xpath(
+                                "//div[@data-testid='student-selector-selected']//div[contains(@data-testid,'student-chip-')]")));
+
+        // Continuar con las preguntas
         setInputValue(
                 By.xpath(
                         "//div[contains(@class,'pregunta-card')][1]//input[contains(@placeholder,'Escribe"
