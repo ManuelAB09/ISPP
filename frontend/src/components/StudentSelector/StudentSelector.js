@@ -85,7 +85,14 @@ const StudentSelector = ({ selectedStudents, onStudentsChange }) => {
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           onFocus={() => setShowResults(true)}
-          onBlur={() => setTimeout(handleClickOutside, 100)}
+          onBlur={() => {
+            // Only close dropdown if no search in progress (wait 1s to allow debounce + API)
+            setTimeout(() => {
+              if (!isSearching) {
+                handleClickOutside();
+              }
+            }, 1000);
+          }}
           placeholder="Busca alumnos por nombre o email..."
         />
         {isSearching && <div className="search-loader" />}

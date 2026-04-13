@@ -4961,8 +4961,8 @@ class AcceptanceE2ETest {
                             + " }));",
                         input);
 
-        // Wait for debounce (300ms) + buffer
-        Thread.sleep(800);
+        // Wait for debounce (300ms) + buffer (the onBlur will keep dropdown open for 1s)
+        Thread.sleep(600);
 
         // Debug: Check if dropdown is present
         List<WebElement> dropdownCheck =
