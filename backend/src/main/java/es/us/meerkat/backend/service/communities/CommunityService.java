@@ -140,8 +140,7 @@ public class CommunityService {
             Optional<Suscripcion> suscripcionOpt = suscripcionService.obtenerMiSuscripcion(userId);
             TipoPlan userPlan = suscripcionOpt.map(Suscripcion::getPlan).orElse(TipoPlan.FREE);
             long totalCommunities =
-                    miembroComunidadRepository.countByUsuarioIdAndRolAndComunidadInstitutionIsNull(
-                            userId, RolComunidad.ADMIN);
+                    comunidadRepository.countManagedNonInstitutionCommunities(userId);
 
             int maxCommunities = getMaxCommunitiesByPlan(userPlan);
             if (totalCommunities >= maxCommunities) {

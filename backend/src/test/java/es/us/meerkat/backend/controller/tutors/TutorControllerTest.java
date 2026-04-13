@@ -29,9 +29,9 @@ import es.us.meerkat.backend.dto.subscriptions.PaymentUrlResponse;
 import es.us.meerkat.backend.dto.tutors.CreateTutorRequest;
 import es.us.meerkat.backend.dto.tutors.TutorResponse;
 import es.us.meerkat.backend.dto.tutors.UpdateTutorRequest;
+import es.us.meerkat.backend.entity.communities.RolComunidad;
 import es.us.meerkat.backend.entity.tutors.Tutor;
 import es.us.meerkat.backend.entity.users.Usuario;
-import es.us.meerkat.backend.entity.communities.RolComunidad;
 import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.tutors.SolicitudContratacionDirectaRepository;
 import es.us.meerkat.backend.service.google.GoogleCalendarService;
@@ -61,8 +61,9 @@ class TutorControllerTest {
         createTutorRequest = new CreateTutorRequest();
         updateTutorRequest = new UpdateTutorRequest();
         org.mockito.Mockito.lenient()
-                .when(miembroComunidadRepository.findByUsuarioIdAndRolWithComunidad(
-                        anyLong(), any(RolComunidad.class)))
+                .when(
+                        miembroComunidadRepository.findByUsuarioIdAndRolWithComunidad(
+                                anyLong(), any(RolComunidad.class)))
                 .thenReturn(List.of());
     }
 

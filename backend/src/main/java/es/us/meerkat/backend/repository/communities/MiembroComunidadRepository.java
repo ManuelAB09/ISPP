@@ -33,7 +33,9 @@ public interface MiembroComunidadRepository extends JpaRepository<MiembroComunid
 
     List<MiembroComunidad> findByUsuarioIdAndRol(Long usuarioId, RolComunidad rol);
 
-    @Query("SELECT m FROM MiembroComunidad m JOIN FETCH m.comunidad WHERE m.usuario.id = :userId AND m.rol = :rol")
+    @Query(
+            "SELECT m FROM MiembroComunidad m JOIN FETCH m.comunidad WHERE m.usuario.id = :userId"
+                    + " AND m.rol = :rol")
     List<MiembroComunidad> findByUsuarioIdAndRolWithComunidad(
             @Param("userId") Long userId, @Param("rol") RolComunidad rol);
 

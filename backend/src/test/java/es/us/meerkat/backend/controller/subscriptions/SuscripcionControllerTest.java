@@ -216,7 +216,9 @@ class SuscripcionControllerTest {
     }
 
     @Test
-    @DisplayName("DELETE /me - Debe cancelar la renovación pero mantener el plan activo hasta fin de período")
+    @DisplayName(
+            "DELETE /me - Debe cancelar la renovación pero mantener el plan activo hasta fin de"
+                    + " período")
     void testCancelarSuscripcion_Exito() {
         // Given
         Suscripcion suscripcionCancelada =
