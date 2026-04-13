@@ -4995,8 +4995,44 @@ class AcceptanceE2ETest {
         // Scroll into view to ensure visibility
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", result);
 
-        // Use executeScript to click to avoid onBlur interference
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", result);
+        // Dispatch onMouseDown event directly to trigger handleSelectStudent
+        ((JavascriptExecutor) driver)
+                .executeScript(
+                        "let event = new MouseEvent('mousedown', { bubbles: true, cancelable: true"
+                                + " });arguments[0].dispatchEvent(event);",
+                        result);
+
+        // Wait a bit for React to process the event and update state
+        Thread.sleep(300);
+
+        // Debug: Check if chip appeared
+        List<WebElement> chipCheck =
+                driver.findElements(
+                        By.xpath(
+                                "//div[@data-testid='student-selector-selected']//div[contains(@data-testid,'student-chip-')]"));
+
+        if (chipCheck.isEmpty()) {
+            System.out.println(
+                    "[DEBUG PA-64] Chip NOT found after mousedown. Checking page HTML...");
+            String pageSource = driver.getPageSource();
+
+            // Check if selected-students-list exists
+            int selectedIdx = pageSource.indexOf("student-selector-selected");
+            if (selectedIdx >= 0) {
+                System.out.println("[DEBUG PA-64] Found student-selector-selected div:");
+                System.out.println(
+                        pageSource.substring(
+                                selectedIdx, Math.min(pageSource.length(), selectedIdx + 500)));
+            } else {
+                System.out.println("[DEBUG PA-64] student-selector-selected div NOT FOUND in DOM");
+            }
+
+            // Check React errors in console
+            Object consoleErrors =
+                    ((JavascriptExecutor) driver)
+                            .executeScript("return window.__reactErrors || []");
+            System.out.println("[DEBUG PA-64] React errors: " + consoleErrors);
+        }
 
         // Esperar a que el estudiante se agregue a la lista de seleccionados
         wait.until(
