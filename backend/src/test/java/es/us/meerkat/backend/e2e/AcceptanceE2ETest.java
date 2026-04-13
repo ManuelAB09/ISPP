@@ -4951,7 +4951,8 @@ class AcceptanceE2ETest {
         // Focus and set value using simple sendKeys which is more reliable
         ((JavascriptExecutor) driver).executeScript("arguments[0].focus();", input);
         input.clear();
-        input.sendKeys("pa64"); // Search by shorter prefix to ensure match
+        input.sendKeys("pa64.student"); // Search by more specific prefix to avoid selecting creator
+        // instead of student
 
         // Trigger change event after sendKeys
         ((JavascriptExecutor) driver)
