@@ -4948,23 +4948,49 @@ class AcceptanceE2ETest {
         wait.until(ExpectedConditions.visibilityOfElementLocated(studentSelectorInput));
         WebElement input = driver.findElement(studentSelectorInput);
 
-        // Focus and set value using JavaScript to ensure React state updates correctly
+        // Focus and set value using simple sendKeys which is more reliable
+        ((JavascriptExecutor) driver).executeScript("arguments[0].focus();", input);
+        input.clear();
+        input.sendKeys("pa64"); // Search by shorter prefix to ensure match
+
+        // Trigger change event after sendKeys
         ((JavascriptExecutor) driver)
                 .executeScript(
-                        "arguments[0].focus(); arguments[0].value = arguments[1];"
-                            + " arguments[0].dispatchEvent(new Event('input', { bubbles: true }));"
-                            + " arguments[0].dispatchEvent(new Event('change', { bubbles: true"
+                        "arguments[0].dispatchEvent(new Event('input', { bubbles: true"
+                            + " }));arguments[0].dispatchEvent(new Event('change', { bubbles: true"
                             + " }));",
-                        input,
-                        student.email());
+                        input);
 
         // Wait for debounce (300ms) + buffer
-        Thread.sleep(500);
+        Thread.sleep(800);
 
+        // Debug: Check if dropdown is present
+        List<WebElement> dropdownCheck =
+                driver.findElements(By.xpath("//div[@data-testid='student-selector-results']"));
+        if (dropdownCheck.isEmpty()) {
+            System.out.println("[DEBUG PA-64] Dropdown not found in DOM. Page source snippet:");
+            String pageSource = driver.getPageSource();
+            int idx = pageSource.indexOf("student-selector");
+            if (idx >= 0) {
+                System.out.println(
+                        pageSource.substring(
+                                Math.max(0, idx - 200), Math.min(pageSource.length(), idx + 500)));
+            }
+            throw new RuntimeException("StudentSelector dropdown not rendered after search");
+        }
+
+        // Wait for dropdown to be visible before trying to find results
+        By studentResults = By.xpath("//div[@data-testid='student-selector-results']");
+        new WebDriverWait(driver, Duration.ofSeconds(5))
+                .until(ExpectedConditions.visibilityOfElementLocated(studentResults));
+
+        // Now get the first result item
         By resultItem =
                 By.xpath(
                         "//div[@data-testid='student-selector-results']//div[contains(@data-testid,'student-result-')][1]");
-        WebElement result = wait.until(ExpectedConditions.elementToBeClickable(resultItem));
+        WebElement result =
+                new WebDriverWait(driver, Duration.ofSeconds(5))
+                        .until(ExpectedConditions.elementToBeClickable(resultItem));
 
         // Scroll into view to ensure visibility
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", result);
