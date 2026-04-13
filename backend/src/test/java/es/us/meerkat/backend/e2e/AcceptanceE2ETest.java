@@ -2349,20 +2349,24 @@ class AcceptanceE2ETest {
                                 + "')]]");
         WebElement card = waitForVisible(announcementCard);
         WebElement deleteButton = card.findElement(By.cssSelector("button.catab-btn-delete"));
+        ((JavascriptExecutor) driver)
+                .executeScript(
+                        "window.__e2eOriginalConfirm = window.confirm;"
+                                + "window.confirm = function(){ return true; };");
         wait.until(ExpectedConditions.elementToBeClickable(deleteButton)).click();
-
         try {
-            new WebDriverWait(driver, Duration.ofSeconds(5))
-                    .until(ExpectedConditions.alertIsPresent());
-            driver.switchTo().alert().accept();
-        } catch (TimeoutException ignored) {
-            // Some browser configurations may not show the confirm dialog during automated runs.
+            wait.until(ExpectedConditions.invisibilityOfElementLocated(announcementTitle));
+            assertTrue(
+                    driver.findElements(announcementTitle).isEmpty(),
+                    "PA-15 moderated post should disappear from feed using UI controls");
+        } finally {
+            ((JavascriptExecutor) driver)
+                    .executeScript(
+                            "if (window.__e2eOriginalConfirm) {"
+                                    + " window.confirm = window.__e2eOriginalConfirm;"
+                                    + " delete window.__e2eOriginalConfirm;"
+                                    + " }");
         }
-
-        wait.until(ExpectedConditions.invisibilityOfElementLocated(announcementTitle));
-        assertTrue(
-                driver.findElements(announcementTitle).isEmpty(),
-                "PA-15 moderated post should disappear from feed using UI controls");
     }
 
     private void executePa16CreatePrivateEventFlow() throws Exception {
