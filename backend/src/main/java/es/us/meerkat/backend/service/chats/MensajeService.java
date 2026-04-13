@@ -79,30 +79,39 @@ public class MensajeService {
         Usuario emisor =
                 usuarioRepository
                         .findById(usuarioId)
-                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                        .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
-        Usuario receptor;
+        if (request.getUserId() == null && request.getTutorId() == null) {
+            throw new IllegalArgumentException("Debes indicar userId o tutorId");
+        }
+
         Tutor tutor = null;
+        Usuario receptor = null;
 
         if (request.getUserId() != null) {
-            receptor =
-                    usuarioRepository
-                            .findById(request.getUserId())
-                            .orElseThrow(
-                                    () -> new RuntimeException("Usuario receptor no encontrado"));
-        } else if (request.getTutorId() != null) {
+            receptor = usuarioRepository.findById(request.getUserId()).orElse(null);
+            if (receptor == null && request.getTutorId() == null) {
+                tutor = tutorRepository.findById(request.getUserId()).orElse(null);
+                if (tutor != null) {
+                    receptor = tutor.getUsuario();
+                }
+            }
+        }
+
+        if (receptor == null && request.getTutorId() != null) {
             tutor =
                     tutorRepository
                             .findById(request.getTutorId())
-                            .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
-
-            if (!Boolean.TRUE.equals(tutor.getVerificado())) {
-                throw new RuntimeException("No puedes contactar un tutor no verificado");
-            }
-
+                            .orElseThrow(() -> new IllegalArgumentException("Tutor no encontrado"));
             receptor = tutor.getUsuario();
-        } else {
-            throw new IllegalArgumentException("Debes indicar userId o tutorId");
+        }
+
+        if (tutor != null && !Boolean.TRUE.equals(tutor.getVerificado())) {
+            throw new IllegalArgumentException("No puedes contactar un tutor no verificado");
+        }
+
+        if (receptor == null) {
+            throw new IllegalArgumentException("Usuario receptor no encontrado");
         }
 
         if (receptor.getId().equals(usuarioId)) {
@@ -139,30 +148,39 @@ public class MensajeService {
         Usuario emisor =
                 usuarioRepository
                         .findById(usuarioId)
-                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                        .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
-        Usuario receptor;
+        if (userId == null && tutorId == null) {
+            throw new IllegalArgumentException("Debes indicar userId o tutorId");
+        }
+
         Tutor tutor = null;
+        Usuario receptor = null;
 
         if (userId != null) {
-            receptor =
-                    usuarioRepository
-                            .findById(userId)
-                            .orElseThrow(
-                                    () -> new RuntimeException("Usuario receptor no encontrado"));
-        } else if (tutorId != null) {
+            receptor = usuarioRepository.findById(userId).orElse(null);
+            if (receptor == null && tutorId == null) {
+                tutor = tutorRepository.findById(userId).orElse(null);
+                if (tutor != null) {
+                    receptor = tutor.getUsuario();
+                }
+            }
+        }
+
+        if (receptor == null && tutorId != null) {
             tutor =
                     tutorRepository
                             .findById(tutorId)
-                            .orElseThrow(() -> new RuntimeException("Tutor no encontrado"));
-
-            if (!Boolean.TRUE.equals(tutor.getVerificado())) {
-                throw new RuntimeException("No puedes contactar un tutor no verificado");
-            }
-
+                            .orElseThrow(() -> new IllegalArgumentException("Tutor no encontrado"));
             receptor = tutor.getUsuario();
-        } else {
-            throw new IllegalArgumentException("Debes indicar userId o tutorId");
+        }
+
+        if (tutor != null && !Boolean.TRUE.equals(tutor.getVerificado())) {
+            throw new IllegalArgumentException("No puedes contactar un tutor no verificado");
+        }
+
+        if (receptor == null) {
+            throw new IllegalArgumentException("Usuario receptor no encontrado");
         }
 
         if (receptor.getId().equals(usuarioId)) {

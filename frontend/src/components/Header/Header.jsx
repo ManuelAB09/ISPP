@@ -50,6 +50,7 @@ export default function Header({ user, page }) {
             } catch { /* empty */ }
             setDraftsCount(count);
         };
+    
 
         countDrafts();
 
@@ -57,6 +58,18 @@ export default function Header({ user, page }) {
         window.addEventListener('storage', countDrafts);
         return () => window.removeEventListener('storage', countDrafts);
     }, []);
+
+    useEffect(() => {
+    if (isMenuOpen) {
+        document.body.classList.add('mobile-menu-open');
+    } else {
+        document.body.classList.remove('mobile-menu-open');
+    }
+
+    return () => {
+        document.body.classList.remove('mobile-menu-open');
+    };
+    }, [isMenuOpen]);   
 
     const communityUnread = Object.values(communityUnreadById || {}).reduce((acc, n) => acc + (n || 0), 0);
     const totalChatsUnread = privateUnread + communityUnread;

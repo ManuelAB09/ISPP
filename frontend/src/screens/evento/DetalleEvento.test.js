@@ -16,6 +16,8 @@ import { checkAlreadyRated } from '../../api/valoraciones.api';
 import { ZoomApi } from '../../api/zoom.api';
 import DetalleEvento from './DetalleEvento';
 
+const mockNavigate = jest.fn();
+
 // Mocks
 jest.mock('../../api/eventEndpoints');
 jest.mock('../../api/valoraciones.api', () => ({
@@ -64,6 +66,11 @@ jest.mock('../../components/RatingForm', () => {
     return <div data-testid="mock-rating-form"><button onClick={onValorado}>Rate</button></div>;
   };
 });
+
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => mockNavigate,
+}));
 
 // Mock react-leaflet para evitar dependencias de DOM/canvas en tests
 jest.mock('react-leaflet', () => ({
@@ -408,6 +415,15 @@ describe('DetalleEvento', () => {
     expect(await screen.findByText('Ana')).toBeInTheDocument();
     expect(screen.getByText('Luis')).toBeInTheDocument();
     expect(screen.getByText(/Participantes \(2\)/)).toBeInTheDocument();
+  });
+
+  test('permite abrir el perfil público desde participantes', async () => {
+    renderComponent();
+
+    const anaProfileBtn = await screen.findByRole('button', { name: /Ver perfil de Ana/i });
+    fireEvent.click(anaProfileBtn);
+
+    expect(mockNavigate).toHaveBeenCalledWith('/perfil/20');
   });
 
   // --- No participants ---
