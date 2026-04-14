@@ -1,3 +1,4 @@
+// src/components/Header/Header.jsx
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getApiBaseUrl } from '../../api/baseUrl';
@@ -27,23 +28,55 @@ export default function Header({ user, page }) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { showBanner, planName, fechaFin, dismiss } = useSubscriptionExpiry();
     const { communityUnreadById } = useNotificationContext();
-    // Calcular total de no leídos de chats privados y comunidades
     const [privateUnread, setPrivateUnread] = useState(0);
+
+    // Contar borradores guardados para mostrar badge
+    const [draftsCount, setDraftsCount] = useState(0);
+
     useEffect(() => {
-        // Obtener de localStorage o API si es necesario, aquí solo ejemplo simple
         const conversaciones = JSON.parse(localStorage.getItem('conversacionesNoLeidas') || '[]');
         setPrivateUnread(conversaciones.reduce((acc, c) => acc + (c.noLeidos || 0), 0));
     }, []);
+
+    useEffect(() => {
+        const countDrafts = () => {
+            let count = 0;
+            try {
+                const eventDrafts = JSON.parse(localStorage.getItem('eventDrafts') || '[]');
+                count += Array.isArray(eventDrafts) ? eventDrafts.length : 0;
+            } catch { /* empty */ }
+            try {
+                if (localStorage.getItem('crearComunidadDraft')) count += 1;
+            } catch { /* empty */ }
+            setDraftsCount(count);
+        };
+    
+
+        countDrafts();
+
+        // Escuchar cambios en localStorage (por si se guarda un borrador en otra pestaña)
+        window.addEventListener('storage', countDrafts);
+        return () => window.removeEventListener('storage', countDrafts);
+    }, []);
+
+    useEffect(() => {
+    if (isMenuOpen) {
+        document.body.classList.add('mobile-menu-open');
+    } else {
+        document.body.classList.remove('mobile-menu-open');
+    }
+
+    return () => {
+        document.body.classList.remove('mobile-menu-open');
+    };
+    }, [isMenuOpen]);   
+
     const communityUnread = Object.values(communityUnreadById || {}).reduce((acc, n) => acc + (n || 0), 0);
     const totalChatsUnread = privateUnread + communityUnread;
 
-    const toggleMenu = () => {
-        setIsMenuOpen(!isMenuOpen);
-    };
+    const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+    const closeMenu = () => setIsMenuOpen(false);
 
-    const closeMenu = () => {
-        setIsMenuOpen(false);
-    };
     const storedUser = (() => {
         try {
             return JSON.parse(localStorage.getItem('userProfile') || 'null');
@@ -97,10 +130,9 @@ export default function Header({ user, page }) {
                 <div className="header-links-desktop">
                     <Link to="/" className={page === 'inicio' ? 'active' : ''}>Inicio</Link>
                     <Link to="/comunidades" className={page === 'comunidades' ? 'active' : ''}>Comunidades</Link>
+                    <Link to="/alumnos" className={page === 'alumnos' ? 'active' : ''}>Alumnos</Link>
                     <Link to="/profesores" className={page === 'profesores' ? 'active' : ''}>Profesores</Link>
-                    {isAuthenticated && (
-                        <Link to="/cuestionarios/crear" className={page === 'cuestionarios' ? 'active' : ''}>Cuestionarios</Link>
-                    )}
+                    <Link to="/cuestionarios" className={page === 'cuestionarios' ? 'active' : ''}>Cuestionarios</Link>
                     <Link to="/chats" className={page === 'chats' ? 'active' : ''}>
                         Chats
                         {totalChatsUnread > 0 && (
@@ -108,6 +140,14 @@ export default function Header({ user, page }) {
                         )}
                     </Link>
                     <Link to="/planes" className={page === 'planes' ? 'active' : ''}>Planes</Link>
+                    {isAuthenticated && (
+                        <Link to="/mis-borradores" className={page === 'borradores' ? 'active' : ''}>
+                            Borradores
+                            {draftsCount > 0 && (
+                                <span className="header-notification-badge">{draftsCount}</span>
+                            )}
+                        </Link>
+                    )}
                     {!isAuthenticated && (
                         <Link to="/login">Iniciar sesión</Link>
                     )}
@@ -140,10 +180,9 @@ export default function Header({ user, page }) {
                 <div className="header-links-mobile">
                     <Link to="/" className={page === 'inicio' ? 'active' : ''} onClick={closeMenu}>Inicio</Link>
                     <Link to="/comunidades" className={page === 'comunidades' ? 'active' : ''} onClick={closeMenu}>Comunidades</Link>
+                    <Link to="/alumnos" className={page === 'alumnos' ? 'active' : ''} onClick={closeMenu}>Alumnos</Link>
                     <Link to="/profesores" className={page === 'profesores' ? 'active' : ''} onClick={closeMenu}>Profesores</Link>
-                    {isAuthenticated && (
-                        <Link to="/cuestionarios/crear" className={page === 'cuestionarios' ? 'active' : ''} onClick={closeMenu}>Cuestionarios</Link>
-                    )}
+                    <Link to="/cuestionarios" className={page === 'cuestionarios' ? 'active' : ''} onClick={closeMenu}>Cuestionarios</Link>
                     <Link to="/chats" className={page === 'chats' ? 'active' : ''} onClick={closeMenu}>
                         Chats
                         {totalChatsUnread > 0 && (
@@ -151,6 +190,14 @@ export default function Header({ user, page }) {
                         )}
                     </Link>
                     <Link to="/planes" className={page === 'planes' ? 'active' : ''} onClick={closeMenu}>Planes</Link>
+                    {isAuthenticated && (
+                        <Link to="/mis-borradores" className={page === 'borradores' ? 'active' : ''} onClick={closeMenu}>
+                            Borradores
+                            {draftsCount > 0 && (
+                                <span className="header-notification-badge">{draftsCount}</span>
+                            )}
+                        </Link>
+                    )}
                     {!isAuthenticated && (
                         <Link to="/login" onClick={closeMenu}>Iniciar sesión</Link>
                     )}
@@ -159,5 +206,3 @@ export default function Header({ user, page }) {
         </>
     );
 }
-
-

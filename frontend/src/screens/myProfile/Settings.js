@@ -273,6 +273,18 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
             return
         }
 
+        // Validar longitud máxima
+        if (newPassword.trim().length > 128) {
+            setPasswordError("La nueva contraseña no puede tener más de 128 caracteres")
+            return
+        }
+
+        // Validar complejidad: mayúsculas, minúsculas y números
+        if (!/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+            setPasswordError("La contraseña debe contener mayúsculas, minúsculas y números")
+            return
+        }
+
         setIsChangingPassword(true)
 
         try {
@@ -717,91 +729,6 @@ const Settings = ({ onClose, isOwner = true, calendarNotification, onCalendarNot
                                     {label}
                                 </label>
                             ))}
-                        </div>
-                    </div>
-
-                    {/* Notificaciones de actividad en comunidades */}
-                    <div className="settings-subsection">
-                        <h3 className="settings-subsection__title">🗨️ Notificaciones de actividad</h3>
-                        <p className="settings-subsection__text" style={{ marginBottom: '12px' }}>
-                            Elige qué tipos de actividad de comunidades te notificamos.
-                        </p>
-                        {recordatoriosError && (
-                            <p className="settings-password-error" style={{ marginBottom: '8px' }}>{recordatoriosError}</p>
-                        )}
-                        <div className="settings-recordatorios-sub">
-                            <div className="settings-toggle-row">
-                                <span className="settings-toggle-label">
-                                    Mensajes de comunidad
-                                </span>
-                                <button
-                                    className={`settings-toggle ${emailRecordatorios.notificarMensajeComunidad ? 'settings-toggle--active' : ''}`}
-                                    onClick={() => handleToggleRecordatorio('notificarMensajeComunidad')}
-                                    disabled={isSavingRecordatorios}
-                                >
-                                    <span className="settings-toggle__slider"></span>
-                                </button>
-                            </div>
-                            <div className="settings-toggle-row">
-                                <span className="settings-toggle-label">
-                                    Menciones en chat de comunidad
-                                </span>
-                                <button
-                                    className={`settings-toggle ${emailRecordatorios.notificarMenciones ? 'settings-toggle--active' : ''}`}
-                                    onClick={() => handleToggleRecordatorio('notificarMenciones')}
-                                    disabled={isSavingRecordatorios}
-                                >
-                                    <span className="settings-toggle__slider"></span>
-                                </button>
-                            </div>
-                           {/* <div className="settings-toggle-row">
-                                <span className="settings-toggle-label">
-                                    Invitaciones
-                                </span>
-                                <button
-                                    className={`settings-toggle ${emailRecordatorios.notificarInvitaciones ? 'settings-toggle--active' : ''}`}
-                                    onClick={() => handleToggleRecordatorio('notificarInvitaciones')}
-                                    disabled={isSavingRecordatorios}
-                                >
-                                    <span className="settings-toggle__slider"></span>
-                                </button>
-                            </div> */}
-                            <div className="settings-toggle-row">
-                                <span className="settings-toggle-label">
-                                    Anuncios de comunidad
-                                </span>
-                                <button
-                                    className={`settings-toggle ${emailRecordatorios.notificarAnuncios ? 'settings-toggle--active' : ''}`}
-                                    onClick={() => handleToggleRecordatorio('notificarAnuncios')}
-                                    disabled={isSavingRecordatorios}
-                                >
-                                    <span className="settings-toggle__slider"></span>
-                                </button>
-                            </div>
-                            <div className="settings-toggle-row">
-                                <span className="settings-toggle-label">
-                                    Solicitudes de acceso a comunidades privadas
-                                </span>
-                                <button
-                                    className={`settings-toggle ${emailRecordatorios.notificarSolicitudAcceso ? 'settings-toggle--active' : ''}`}
-                                    onClick={() => handleToggleRecordatorio('notificarSolicitudAcceso')}
-                                    disabled={isSavingRecordatorios}
-                                >
-                                    <span className="settings-toggle__slider"></span>
-                                </button>
-                            </div>
-                            <div className="settings-toggle-row">
-                                <span className="settings-toggle-label">
-                                    Cambios en eventos
-                                </span>
-                                <button
-                                    className={`settings-toggle ${emailRecordatorios.notificarCambiosDeEventos ? 'settings-toggle--active' : ''}`}
-                                    onClick={() => handleToggleRecordatorio('notificarCambiosDeEventos')}
-                                    disabled={isSavingRecordatorios}
-                                >
-                                    <span className="settings-toggle__slider"></span>
-                                </button>
-                            </div>
                         </div>
                     </div>
 

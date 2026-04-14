@@ -39,6 +39,7 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose, autoStart, 
     const [attachmentPreviewByMessageId, setAttachmentPreviewByMessageId] = useState({});
     const messagesEndRef = useRef(null);
     const fileInputRef = useRef(null);
+    const autoStartFiredRef = useRef(false);
     const previewCacheByUrlRef = useRef(new Map());
     const pendingPreviewKeysRef = useRef(new Set());
     const previewsByMessageIdRef = useRef({});
@@ -349,38 +350,38 @@ const PrivateChat = ({ tutorId, tutorNombre, usuarioActual, onClose, autoStart, 
      * Desplaza la vista al último mensaje.
      */
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        const container = messagesEndRef.current?.parentElement;
+        if (container) {
+            container.scrollTo({
+                top: container.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
     };
 
+    // Resetear la guardia cuando cambia el destinatario para permitir autoStart en nuevas conversaciones
+    useEffect(() => {
+        autoStartFiredRef.current = false;
+    }, [tutorId]);
+
     /**
-     * Envía mensaje automático si el chat es nuevo y autoStart está activo.
+     * Consume el parámetro autoStart sin enviar mensajes automáticos.
+     * La guardia autoStartFiredRef evita ejecutar esta limpieza más de una vez.
      */
     useEffect(() => {
-        if (autoStart && !cargandoHistorial && historialCargadoPara === tutorId && mensajes.length === 0 && tutorId) {
+        if (autoStart && !cargandoHistorial && historialCargadoPara === tutorId
+                && mensajes.length === 0 && tutorId && !autoStartFiredRef.current) {
+            autoStartFiredRef.current = true;
+
             // Eliminar autoStart de la URL para evitar reenvíos al refrescar
             const url = new URL(window.location);
             if (url.searchParams.has('autoStart')) {
                 url.searchParams.delete('autoStart');
                 window.history.replaceState({}, '', url);
             }
-
-            enviarMensajePrivado(tutorId, "¡Hola! Me gustaría contactar contigo.")
-                .then(response => {
-                    const data = response.data;
-                    if (data) {
-                        const msg = {
-                            ...data,
-                            emisorId: Number(data.emisorId),
-                            receptorId: Number(data.receptorId),
-                        };
-                        setMensajes([msg]);
-                        scrollToBottom();
-                    }
-                })
-                .catch(err => console.error("Error enviando mensaje autoStart", err));
         }
         // eslint-disable-next-line
-    }, [autoStart, cargandoHistorial, historialCargadoPara, mensajes.length, tutorId]);
+    }, [autoStart, cargandoHistorial, historialCargadoPara, tutorId]);
 
     /**
      * Envía un mensaje privado.

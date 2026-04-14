@@ -1,0 +1,176 @@
+package es.us.meerkat.backend.controller.google;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
+
+import java.util.Optional;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+
+import es.us.meerkat.backend.dto.google.ClassroomUserResponse;
+import es.us.meerkat.backend.dto.tutors.CreateStudentRequest;
+import es.us.meerkat.backend.entity.communities.Comunidad;
+import es.us.meerkat.backend.entity.google.ComunidadClassroom;
+import es.us.meerkat.backend.entity.users.Usuario;
+import es.us.meerkat.backend.repository.google.ComunidadClassroomRepository;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
+import es.us.meerkat.backend.service.communities.AuthorizationService;
+import es.us.meerkat.backend.service.google.GoogleClassroomService;
+
+@ExtendWith(MockitoExtension.class)
+class GoogleClassroomControllerTest {
+
+    @Mock private GoogleClassroomService googleClassroomService;
+    @Mock private UsuarioRepository usuarioRepository;
+    @Mock private ComunidadClassroomRepository comunidadClassroomRepository;
+    @Mock private AuthorizationService authorizationService;
+
+    @InjectMocks private GoogleClassroomController controller;
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void createStudentShouldAllowWhenAdminOrProfesor() throws Exception {
+        Usuario u = new Usuario();
+        u.setId(2L);
+
+        Authentication auth = org.mockito.Mockito.mock(Authentication.class);
+        when(auth.isAuthenticated()).thenReturn(true);
+        when(auth.getPrincipal()).thenReturn(u);
+
+        SecurityContext sc = org.mockito.Mockito.mock(SecurityContext.class);
+        when(sc.getAuthentication()).thenReturn(auth);
+        SecurityContextHolder.setContext(sc);
+
+        Comunidad comunidad = Comunidad.builder().id(5L).build();
+        ComunidadClassroom cc = new ComunidadClassroom();
+        cc.setComunidad(comunidad);
+
+        when(comunidadClassroomRepository.findByClassroomCourseId("c1"))
+                .thenReturn(Optional.of(cc));
+        when(authorizationService.isAdminOrProfesor(2L, 5L)).thenReturn(true);
+
+        when(googleClassroomService.crearEstudiante(
+                        org.mockito.Mockito.eq(u),
+                        org.mockito.Mockito.eq("c1"),
+                        org.mockito.Mockito.anyString()))
+                .thenReturn(new ClassroomUserResponse("id1", "userX", "Full", "e@e"));
+
+        CreateStudentRequest req = new CreateStudentRequest("userX", null);
+
+        ResponseEntity<?> resp = controller.createStudent("c1", req);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    }
+
+    @Test
+    void createStudentShouldReturn403WhenNotAuthorized() throws Exception {
+        Usuario u = new Usuario();
+        u.setId(2L);
+
+        Authentication auth = org.mockito.Mockito.mock(Authentication.class);
+        when(auth.isAuthenticated()).thenReturn(true);
+        when(auth.getPrincipal()).thenReturn(u);
+
+        SecurityContext sc = org.mockito.Mockito.mock(SecurityContext.class);
+        when(sc.getAuthentication()).thenReturn(auth);
+        SecurityContextHolder.setContext(sc);
+
+        Comunidad comunidad = Comunidad.builder().id(9L).build();
+        ComunidadClassroom cc = new ComunidadClassroom();
+        cc.setComunidad(comunidad);
+
+        when(comunidadClassroomRepository.findByClassroomCourseId("c2"))
+                .thenReturn(Optional.of(cc));
+        when(authorizationService.isAdminOrProfesor(2L, 9L)).thenReturn(false);
+
+        CreateStudentRequest req = new CreateStudentRequest("userY", null);
+
+        ResponseEntity<?> resp = controller.createStudent("c2", req);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    void createStudentShouldSuccessWithValidDataAndAuth() throws Exception {
+        Usuario u = new Usuario();
+        u.setId(2L);
+
+        Authentication auth = org.mockito.Mockito.mock(Authentication.class);
+        when(auth.isAuthenticated()).thenReturn(true);
+        when(auth.getPrincipal()).thenReturn(u);
+
+        SecurityContext sc = org.mockito.Mockito.mock(SecurityContext.class);
+        when(sc.getAuthentication()).thenReturn(auth);
+        SecurityContextHolder.setContext(sc);
+
+        Comunidad comunidad = Comunidad.builder().id(5L).build();
+        ComunidadClassroom cc = new ComunidadClassroom();
+        cc.setComunidad(comunidad);
+
+        when(comunidadClassroomRepository.findByClassroomCourseId("c1"))
+                .thenReturn(Optional.of(cc));
+        when(authorizationService.isAdminOrProfesor(2L, 5L)).thenReturn(true);
+
+        when(googleClassroomService.crearEstudiante(
+                        org.mockito.Mockito.eq(u),
+                        org.mockito.Mockito.eq("c1"),
+                        org.mockito.Mockito.anyString()))
+                .thenReturn(new ClassroomUserResponse("id1", "userX", "Full", "e@e"));
+
+        CreateStudentRequest req = new CreateStudentRequest("userX", null);
+
+        ResponseEntity<?> resp = controller.createStudent("c1", req);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    }
+
+    @Test
+    void createStudentShouldHandleMultipleAuthorizationChecks() throws Exception {
+        Usuario u1 = new Usuario();
+        u1.setId(1L);
+        Usuario u2 = new Usuario();
+        u2.setId(2L);
+
+        Authentication auth1 = org.mockito.Mockito.mock(Authentication.class);
+        when(auth1.isAuthenticated()).thenReturn(true);
+        when(auth1.getPrincipal()).thenReturn(u1);
+
+        Comunidad comunidad = Comunidad.builder().id(5L).build();
+        ComunidadClassroom cc = new ComunidadClassroom();
+        cc.setComunidad(comunidad);
+
+        when(comunidadClassroomRepository.findByClassroomCourseId("c1"))
+                .thenReturn(Optional.of(cc));
+        when(authorizationService.isAdminOrProfesor(1L, 5L)).thenReturn(true);
+
+        when(googleClassroomService.crearEstudiante(
+                        org.mockito.Mockito.eq(u1),
+                        org.mockito.Mockito.eq("c1"),
+                        org.mockito.Mockito.anyString()))
+                .thenReturn(new ClassroomUserResponse("id1", "user1", "User 1", "u1@e"));
+
+        CreateStudentRequest req = new CreateStudentRequest("user1", null);
+
+        SecurityContext sc1 = org.mockito.Mockito.mock(SecurityContext.class);
+        when(sc1.getAuthentication()).thenReturn(auth1);
+        SecurityContextHolder.setContext(sc1);
+
+        ResponseEntity<?> resp = controller.createStudent("c1", req);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    }
+}

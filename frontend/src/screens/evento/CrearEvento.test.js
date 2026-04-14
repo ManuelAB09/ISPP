@@ -134,50 +134,50 @@ describe('CrearEvento', () => {
   });
 
   test('crea evento correctamente en modo creación', async () => {
-  renderCreate();
+    renderCreate();
 
-  fireEvent.change(screen.getByPlaceholderText(/Ej\. Clase de NodeJS \+ Sequelize/i), {
-    target: { name: 'nombre', value: 'Evento de prueba' },
+    fireEvent.change(screen.getByPlaceholderText(/Ej\. Clase de NodeJS \+ Sequelize/i), {
+      target: { name: 'nombre', value: 'Evento de prueba' },
+    });
+
+    // Fecha inicio (primer bloque)
+    const ddInputs = screen.getAllByPlaceholderText('DD');
+    const mmDateInputs = screen.getAllByPlaceholderText('MM');
+    const yyyyInputs = screen.getAllByPlaceholderText('YYYY');
+
+    fireEvent.change(ddInputs[0], { target: { name: 'dia', value: '10' } });
+    fireEvent.change(mmDateInputs[0], { target: { name: 'mes', value: '12' } });
+    fireEvent.change(yyyyInputs[0], { target: { name: 'anio', value: '2026' } });
+
+    // Hora inicio (primer bloque)
+    const hhInputs = screen.getAllByPlaceholderText('HH');
+    const mmTimeInputs = screen.getAllByPlaceholderText('mm');
+
+    fireEvent.change(hhInputs[0], { target: { name: 'hora', value: '18' } });
+    fireEvent.change(mmTimeInputs[0], { target: { name: 'minuto', value: '30' } });
+
+    fireEvent.change(screen.getByPlaceholderText(/Ej\. 30/i), {
+      target: { name: 'aforo', value: '30' },
+    });
+
+    // Online para evitar requerir ubicacionId
+    fireEvent.click(screen.getByRole('button', { name: /Online/i }));
+
+    await screen.findByText(/Rol detectado en esta comunidad:\s*Administrador/i);
+
+    fireEvent.click(screen.getByRole('button', { name: /Crear Evento/i }));
+
+    await waitFor(() => {
+      expect(createEvent).toHaveBeenCalledWith(
+        '10',
+        expect.objectContaining({
+          titulo: 'Evento de prueba',
+          esVirtual: true,
+          aforo: 30,
+        })
+      );
+    });
   });
-
-  // Fecha inicio (primer bloque)
-  const ddInputs = screen.getAllByPlaceholderText('DD');
-  const mmDateInputs = screen.getAllByPlaceholderText('MM');
-  const yyyyInputs = screen.getAllByPlaceholderText('YYYY');
-
-  fireEvent.change(ddInputs[0], { target: { name: 'dia', value: '10' } });
-  fireEvent.change(mmDateInputs[0], { target: { name: 'mes', value: '12' } });
-  fireEvent.change(yyyyInputs[0], { target: { name: 'anio', value: '2026' } });
-
-  // Hora inicio (primer bloque)
-  const hhInputs = screen.getAllByPlaceholderText('HH');
-  const mmTimeInputs = screen.getAllByPlaceholderText('mm');
-
-  fireEvent.change(hhInputs[0], { target: { name: 'hora', value: '18' } });
-  fireEvent.change(mmTimeInputs[0], { target: { name: 'minuto', value: '30' } });
-
-  fireEvent.change(screen.getByPlaceholderText(/Ej\. 30/i), {
-    target: { name: 'aforo', value: '30' },
-  });
-
-  // Online para evitar requerir ubicacionId
-  fireEvent.click(screen.getByRole('button', { name: /Online/i }));
-
-  await screen.findByText(/Rol detectado en esta comunidad:\s*Administrador/i);
-
-  fireEvent.click(screen.getByRole('button', { name: /Crear Evento/i }));
-
-  await waitFor(() => {
-    expect(createEvent).toHaveBeenCalledWith(
-      '10',
-      expect.objectContaining({
-        titulo: 'Evento de prueba',
-        esVirtual: true,
-        aforo: 30,
-      })
-    );
-  });
-});
 
   test('carga datos y actualiza evento en modo edición', async () => {
     getEventById.mockResolvedValueOnce({
@@ -221,7 +221,7 @@ describe('CrearEvento', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Guardar Borrador/i }));
 
-    expect(localStorage.setItem).toHaveBeenCalledWith('eventDraft', expect.any(String));
+    expect(localStorage.setItem).toHaveBeenCalledWith('eventDrafts', expect.any(String));
     expect(window.alert).toHaveBeenCalledWith('Borrador guardado correctamente.');
   });
 

@@ -11,8 +11,8 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import es.us.meerkat.backend.entity.Usuario;
-import es.us.meerkat.backend.repository.UsuarioRepository;
+import es.us.meerkat.backend.entity.users.Usuario;
+import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -74,6 +74,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 final Usuario usuario = usuarioRepository.findByEmail(email).orElse(null);
 
                 if (usuario != null && jwtService.isTokenValid(token, email)) {
+
+                    // Rechazar tokens emitidos antes del último cambio de contraseña
+                    if (usuario.getPasswordChangedAt() != null) {
+                        final java.util.Date tokenIssuedAt = jwtService.extractIssuedAt(token);
+                        final java.time.Instant passwordChangedInstant =
+                                usuario.getPasswordChangedAt()
+                                        .atZone(java.time.ZoneId.systemDefault())
+                                        .toInstant();
+                        if (tokenIssuedAt.toInstant().isBefore(passwordChangedInstant)) {
+                            filterChain.doFilter(request, response);
+                            return;
+                        }
+                    }
 
                     final UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(

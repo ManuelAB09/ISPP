@@ -225,13 +225,12 @@ export default function PasarelaPagoTutor() {
 
             {/* Información del tutor */}
             <div className="ppt-tutor-card">
-              {tutor.usuario?.foto && (
-                <img
-                  src={toAbsoluteImageUrl(tutor.usuario.foto)}
-                  alt={nombreTutor}
-                  className="ppt-tutor-avatar"
-                />
-              )}
+              <img
+                src={toAbsoluteImageUrl(tutor.usuario?.foto)}
+                alt={nombreTutor}
+                className="ppt-tutor-avatar"
+                onError={e => { e.target.onerror = null; e.target.src = '/MeerKatters_logo.png'; }}
+              />
               <div className="ppt-tutor-info">
                 <h3 className="ppt-tutor-name">{nombreTutor}</h3>
                 {tutor.especialidades && tutor.especialidades.length > 0 && (

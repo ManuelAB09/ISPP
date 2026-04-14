@@ -202,7 +202,7 @@ const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
 
     useEffect(() => {
         return () => {
-            if (profileImagePreview.startsWith('blob:')) {
+            if (profileImagePreview?.startsWith('blob:')) {
                 URL.revokeObjectURL(profileImagePreview)
             }
         }
@@ -454,6 +454,9 @@ const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
                                 <p className="edit-profile-image-hint">
                                     Sube una imagen (JPG, PNG o WEBP, máx. 5MB) o elige un avatar.
                                 </p>
+                                {error && error.includes('imagen') || error && error.includes('Formato') || error && error.includes('5MB') ? (
+                                    <div className="edit-profile-error" style={{ marginTop: '8px' }}>{error}</div>
+                                ) : null}
                             </div>
                         </div>
                         <div className="edit-profile-color-picker">
@@ -503,6 +506,7 @@ const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
                                 placeholder="Tu nombre completo"
                                 className={fieldErrors.nombre ? 'edit-profile-input-error' : ''}
                                 aria-invalid={Boolean(fieldErrors.nombre)}
+                                maxLength={100}
                                 required
                             />
                             {fieldErrors.nombre && (
@@ -520,6 +524,7 @@ const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
                                 placeholder="Cuéntanos sobre ti..."
                                 className={fieldErrors.descripcion ? 'edit-profile-input-error' : ''}
                                 aria-invalid={Boolean(fieldErrors.descripcion)}
+                                maxLength={255}
                                 rows={4}
                             />
                             {fieldErrors.descripcion && (
@@ -543,6 +548,7 @@ const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
                                 placeholder="Tu universidad"
                                 className={fieldErrors.universidad ? 'edit-profile-input-error' : ''}
                                 aria-invalid={Boolean(fieldErrors.universidad)}
+                                maxLength={100}
                             />
                             {fieldErrors.universidad && (
                                 <span className="edit-profile-field-error">{fieldErrors.universidad}</span>
@@ -560,6 +566,7 @@ const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
                                 placeholder="El nombre de tu grado o carrera"
                                 className={fieldErrors.grado ? 'edit-profile-input-error' : ''}
                                 aria-invalid={Boolean(fieldErrors.grado)}
+                                maxLength={100}
                             />
                             {fieldErrors.grado && (
                                 <span className="edit-profile-field-error">{fieldErrors.grado}</span>
@@ -577,6 +584,7 @@ const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
                                 placeholder="Ej: Grado, Máster, Doctorado"
                                 className={fieldErrors.nivelEstudios ? 'edit-profile-input-error' : ''}
                                 aria-invalid={Boolean(fieldErrors.nivelEstudios)}
+                                maxLength={100}
                             />
                             {fieldErrors.nivelEstudios && (
                                 <span className="edit-profile-field-error">{fieldErrors.nivelEstudios}</span>
@@ -594,6 +602,7 @@ const EditProfile = ({ onClose, onSave, ubicacionPreseleccionada = null }) => {
                                 placeholder="Ej: Científico-tecnológica"
                                 className={fieldErrors.baseFormativa ? 'edit-profile-input-error' : ''}
                                 aria-invalid={Boolean(fieldErrors.baseFormativa)}
+                                maxLength={100}
                             />
                             {fieldErrors.baseFormativa && (
                                 <span className="edit-profile-field-error">{fieldErrors.baseFormativa}</span>

@@ -2,8 +2,8 @@ package es.us.meerkat.backend.security;
 
 import org.springframework.stereotype.Component;
 
-import es.us.meerkat.backend.entity.Tutor;
-import es.us.meerkat.backend.entity.Usuario;
+import es.us.meerkat.backend.entity.tutors.Tutor;
+import es.us.meerkat.backend.entity.users.Usuario;
 
 /**
  * Clase utilitaria para obtener información del usuario autenticado desde el contexto de seguridad.

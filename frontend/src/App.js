@@ -7,9 +7,12 @@ import { SocketProvider } from './contexts/SocketContext';
 import Login from './screens/auth/Login';
 import Register from './screens/auth/Register';
 import VerifyEmail from './screens/auth/VerifyEmail';
+import ForgotPassword from './screens/auth/ForgotPassword';
+import ResetPassword from './screens/auth/ResetPassword';
 import Terms from './screens/legal/Terms';
 import Privacy from './screens/legal/Privacy';
 import LandingPage from './screens/landing/LandingPage';
+import Alumnos from './screens/alumnos/Alumnos';
 import CommunityDetail from './screens/comunidades/CommunityDetail';
 import Comunidades from './screens/comunidades/Comunidades';
 import CrearComunidad from './screens/comunidades/CrearComunidad';
@@ -21,6 +24,7 @@ import Home from './screens/home/Home';
 import Profile from './screens/myProfile/Profile';
 import MisPagos from './screens/pagos/MisPagos';
 import MisGanancias from './screens/ganancias/MisGanancias';
+import MisBorradores from './screens/evento/MisBorradores';
 import PagoExitoso from './screens/pagos/PagoExitoso';
 import InstitutionPlansScreen from './screens/planes/InstitutionPlansScreen';
 import PasarelaPago from './screens/planes/PasarelaPago';
@@ -36,13 +40,15 @@ import CuestionarioEditor from './screens/cuestionarios/CuestionarioEditor';
 import CuestionarioPreview from './screens/cuestionarios/CuestionarioPreview';
 import CuestionarioResolver from './screens/cuestionarios/CuestionarioResolver';
 import CuestionarioResultado from './screens/cuestionarios/CuestionarioResultado';
+import CuestionariosPublicos from './screens/cuestionarios/CuestionariosPublicos';
 import Chats from './screens/chat/Chats';
 import NotificationTab from './screens/notificaciones/NotificationTab';
 
 function FloatingNotifButton() {
-  const { panelUnreadCount } = useNotificationContext();
+  const { panelUnreadCount, notificationsEnabled } = useNotificationContext();
   const isAuthenticated = Boolean(localStorage.getItem('accessToken'));
   if (!isAuthenticated) return null;
+  if (!notificationsEnabled) return null;
   return (
     <Link to="/notificaciones" className="floating-notif-btn" aria-label="Notificaciones">
       🔔
@@ -88,6 +94,7 @@ function AppRoutes() {
         <Route path="/planes/instituciones" element={<InstitutionPlansScreen />} />
         <Route path="/pagos" element={<MisPagos />} />
         <Route path="/ganancias" element={<MisGanancias />} />
+        <Route path="/mis-borradores" element={<MisBorradores />} />
         <Route path="/eventos/:eventId" element={<DetalleEvento />} />
         <Route path="/eventos-mapa" element={<EventosMapaScreen />} />
         <Route path="/mis-eventos" element={<MisEventos />} />
@@ -106,49 +113,53 @@ function AppRoutes() {
   return (
     <SocketProvider token={socketToken}>
       <NotificationProvider>
-      <FloatingNotifButton />
-      <Routes>
-        {/* Ruta principal - muestra landing page si no está autenticado */}
-        <Route path="/" element={
-          loading ? (
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              minHeight: '100vh',
-              fontFamily: 'inter, sans-serif',
-              fontSize: '18px',
-              color: '#666'
-            }}>
-              Cargando...
-            </div>
-          ) : isAuthenticated ? (
-            <Home />
-          ) : (
-            <LandingPage />
-          )
-        } />
+        <FloatingNotifButton />
+        <Routes>
+          {/* Ruta principal - muestra landing page si no está autenticado */}
+          <Route path="/" element={
+            loading ? (
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                minHeight: '100vh',
+                fontFamily: 'inter, sans-serif',
+                fontSize: '18px',
+                color: '#666'
+              }}>
+                Cargando...
+              </div>
+            ) : isAuthenticated ? (
+              <Home />
+            ) : (
+              <LandingPage />
+            )
+          } />
 
-        {/* Landing page - siempre accesible */}
-        <Route path="/landing" element={<LandingPage />} />
+          {/* Landing page - siempre accesible */}
+          <Route path="/landing" element={<LandingPage />} />
 
-        {/* Rutas públicas */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/terms" element={<Terms />} />
-        <Route path="/privacy" element={<Privacy />} />
-        <Route path="/comunidades" element={<Comunidades />} />
-        <Route path="/comunidades/:communityId" element={<CommunityDetail />} />
-        <Route path="/comunidades/:communityId/apuntes" element={<CommunityDetail />} />
-        <Route path="/comunidades/:communityId/editar" element={<CommunityDetail />} />
+          {/* Rutas públicas */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/comunidades" element={<Comunidades />} />
+          <Route path="/alumnos" element={<Alumnos />} />
+          <Route path="/comunidades/:communityId" element={<CommunityDetail />} />
+          <Route path="/comunidades/:communityId/apuntes" element={<CommunityDetail />} />
+          <Route path="/comunidades/:communityId/editar" element={<CommunityDetail />} />
+          <Route path="/cuestionarios" element={<CuestionariosPublicos />} />
 
-        {/* Rutas protegidas - solo disponibles si está autenticado */}
-        {ownerRoutes}
+          {/* Rutas protegidas - solo disponibles si está autenticado */}
+          {ownerRoutes}
 
-        {/* Catch-all: redirige rutas no encontradas a inicio */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          {/* Catch-all: redirige rutas no encontradas a inicio */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </NotificationProvider>
     </SocketProvider>
   );
