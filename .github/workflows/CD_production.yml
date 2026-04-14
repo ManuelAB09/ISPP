@@ -67,6 +67,8 @@ jobs:
           context: .
           file: ./backend/Dockerfile
           push: true
+          build-args: |
+            REACT_APP_STRIPE_PUBLIC_KEY=${{ secrets.REACT_APP_STRIPE_PUBLIC_KEY }}
           tags: |
             ${{ env.APP_IMAGE }}:latest
             ${{ env.APP_IMAGE }}:${{ github.event.workflow_run.head_sha }}
