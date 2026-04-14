@@ -72,4 +72,68 @@ class ClassroomLinkRequestControllerTest {
         verify(service).completarSolicitud(100L, 1L, "c1", "Math Course");
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
+
+    @Test
+    void listarSolicitudesPendientesShouldReturnEmptyList() {
+        Usuario tutor = buildUsuario(1L);
+        when(service.listarSolicitudesPendientes(1L)).thenReturn(List.of());
+
+        ResponseEntity<List<ClassroomLinkRequestResponse>> response =
+                controller.listarSolicitudesPendientes(tutor);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEmpty();
+        verify(service).listarSolicitudesPendientes(1L);
+    }
+
+    @Test
+    void listarSolicitudesPendientesShouldReturnMultipleItems() {
+        Usuario tutor = buildUsuario(1L);
+        ClassroomLinkRequestResponse item1 =
+                new ClassroomLinkRequestResponse(1L, 10L, 1L, "PENDIENTE", null);
+        ClassroomLinkRequestResponse item2 =
+                new ClassroomLinkRequestResponse(2L, 11L, 1L, "PENDIENTE", null);
+
+        when(service.listarSolicitudesPendientes(1L)).thenReturn(List.of(item1, item2));
+
+        ResponseEntity<List<ClassroomLinkRequestResponse>> response =
+                controller.listarSolicitudesPendientes(tutor);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).hasSize(2);
+        verify(service).listarSolicitudesPendientes(1L);
+    }
+
+    @Test
+    void completarSolicitudShouldReturnErrorWhenServiceThrowsException() {
+        Usuario tutor = buildUsuario(1L);
+        CompleteClassroomLinkRequest request =
+                new CompleteClassroomLinkRequest("c1", "Math Course");
+
+        org.mockito.Mockito.doThrow(new IllegalArgumentException("Solicitud no encontrada"))
+                .when(service)
+                .completarSolicitud(
+                        org.mockito.ArgumentMatchers.anyLong(),
+                        org.mockito.ArgumentMatchers.anyLong(),
+                        org.mockito.ArgumentMatchers.anyString(),
+                        org.mockito.ArgumentMatchers.anyString());
+
+        try {
+            controller.completarSolicitud(100L, tutor, request);
+        } catch (Exception e) {
+            assertThat(e).isInstanceOf(IllegalArgumentException.class);
+        }
+    }
+
+    @Test
+    void completarSolicitudShouldReturnOkWithDifferentTutorId() {
+        Usuario tutor = buildUsuario(5L);
+        CompleteClassroomLinkRequest request =
+                new CompleteClassroomLinkRequest("c2", "English Course");
+
+        ResponseEntity<?> response = controller.completarSolicitud(200L, tutor, request);
+
+        verify(service).completarSolicitud(200L, 5L, "c2", "English Course");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
 }

@@ -15,6 +15,12 @@
   transition: box-shadow 0.2s, border 0.2s;
   position: relative;
 }
+.catab-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
 .catab-item:hover {
   box-shadow: 0 8px 32px #6B73A133;
 }
@@ -139,6 +145,27 @@
   background: #525983;
 }
 
+.catab-btn-delete {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  padding: 7px 14px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.catab-btn-delete:hover:not(:disabled) {
+  background: #fecaca;
+}
+
+.catab-btn-delete:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .catab-modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -238,4 +265,223 @@
   gap: 8px;
   margin-bottom: 16px;
   font-size: 1rem;
+}
+
+/* Base segura para evitar desbordes */
+.catab-item,
+.catab-comments-section,
+.catab-modal,
+.catab-input,
+.catab-textarea,
+.catab-comment-input {
+  box-sizing: border-box;
+}
+
+.catab-title,
+.catab-content,
+.catab-comment-item,
+.catab-comment-author,
+.catab-input,
+.catab-textarea,
+.catab-comment-input {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.catab-item-header {
+  min-width: 0;
+}
+
+.catab-title {
+  min-width: 0;
+}
+
+/* Comentarios más estables */
+.catab-comment-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.catab-comment-avatar {
+  flex-shrink: 0;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.catab-comment-author {
+  font-weight: 600;
+  color: #2E3559;
+}
+
+.catab-comment-form {
+  align-items: center;
+}
+
+.catab-comment-input {
+  min-width: 0;
+}
+
+
+@media (max-width: 768px) {
+  .catab-list {
+    margin: 1.25rem 0;
+    gap: 1.25rem;
+  }
+
+  .catab-item {
+    padding: 1.1rem 1rem 1rem 1rem;
+    border-radius: 14px;
+  }
+
+  .catab-item-header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .catab-title {
+    font-size: 1.1rem;
+  }
+
+  .catab-meta {
+    font-size: 0.92rem;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+  }
+
+  .catab-content {
+    font-size: 0.98rem;
+    margin-bottom: 1rem;
+  }
+
+  .catab-comments-section {
+    padding: 1rem;
+    border-radius: 10px;
+  }
+
+  .catab-comments-title {
+    font-size: 1rem;
+  }
+
+  .catab-comment-item {
+    font-size: 0.95rem;
+    padding: 0.65rem 0.6rem;
+  }
+
+  .catab-comment-form {
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .catab-comment-input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .catab-comment-btn {
+    width: 100%;
+    padding: 10px 16px;
+  }
+
+  .catab-btn-create {
+    width: 100%;
+    text-align: center;
+    padding: 12px 18px;
+    font-size: 1rem;
+  }
+
+  .catab-btn-delete {
+    padding: 7px 12px;
+    font-size: 0.88rem;
+  }
+
+  .catab-modal-overlay {
+    padding: 16px;
+    box-sizing: border-box;
+    align-items: flex-end;
+  }
+
+  .catab-modal {
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+    padding: 1.25rem 1rem 1rem 1rem;
+    border-radius: 14px;
+  }
+
+  .catab-modal h2 {
+    font-size: 1.2rem;
+    margin-bottom: 14px;
+  }
+
+  .catab-input,
+  .catab-textarea {
+    font-size: 1rem;
+    padding: 10px 12px;
+  }
+
+  .catab-modal-actions {
+    flex-wrap: wrap;
+  }
+
+  .catab-btn-cancel,
+  .catab-btn-submit {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .catab-checkbox-label {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .catab-item {
+    padding: 0.95rem 0.85rem;
+    border-radius: 12px;
+  }
+
+  .catab-title {
+    font-size: 1rem;
+  }
+
+  .catab-meta {
+    font-size: 0.86rem;
+  }
+
+  .catab-content {
+    font-size: 0.94rem;
+  }
+
+  .catab-comments-section {
+    padding: 0.85rem;
+  }
+
+  .catab-comment-item {
+    font-size: 0.9rem;
+  }
+
+  .catab-comment-avatar {
+    width: 22px;
+    height: 22px;
+  }
+
+  .catab-btn-create {
+    font-size: 0.95rem;
+  }
+
+  .catab-modal {
+    padding: 1rem 0.85rem 0.9rem 0.85rem;
+  }
+
+  .catab-modal h2 {
+    font-size: 1.08rem;
+  }
+
+  .catab-label,
+  .catab-checkbox-label {
+    font-size: 0.95rem;
+  }
 }

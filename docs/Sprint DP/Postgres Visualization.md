@@ -1,14 +1,38 @@
 # Visualizar la base de datos PostgreSQL
 
+### Grupo 9 – Turno de tarde
+
+![Logo App](../../images/logoapp.jpeg)
+
+---
+
+**Proyecto:** MeerKatters  
+**Autor:** Arquitectura 
+
+---
+
+## Índice
+
+1. [Introducción](#1-introducción)
+2. [Requisitos previos](#2-requisitos-previos)
+   1. [Instalación de PostgreSQL](#21-instalación-de-postgresql)
+   2. [Arranque automático de PostgreSQL](#22-arranque-automático-de-postgresql)
+3. [Instalación de pgAdmin (GUI recomendada)](#3-instalación-de-pgadmin-gui-recomendada)
+4. [Usar línea de comandos `psql`](#4-usar-línea-de-comandos-psql)
+5. [Alternativas web ligeras (opcional)](#5-alternativas-web-ligeras-opcional)
+6. [Consejos de seguridad](#6-consejos-de-seguridad)
+---
+## 1. Introduccíon
+
 Este documento explica cómo instalar las herramientas necesarias para conectarse y visualizar el contenido de la base de datos PostgreSQL que utiliza el backend del proyecto.
 
-## 1. Requisitos previos
+## 2. Requisitos previos
 
 - Windows (o cualquier otro sistema en el que se ejecuta el proyecto).
 - PostgreSQL ya instalado y en ejecución (ver instrucciones de instalación en la siguiente sección).
 - Usuario y contraseña de PostgreSQL (normalmente `postgres` + la contraseña elegida durante la instalación).
 
-## 1.1 Instalación de PostgreSQL
+## 2.1 Instalación de PostgreSQL
 
 1. Descarga el instalador para tu plataforma desde https://www.postgresql.org/download/.
 2. Elige la versión recomendada (por ejemplo PostgreSQL 18) y descarga el instalador gráfico para Windows.
@@ -28,7 +52,7 @@ Con la base instalada ya puedes seguir a la sección 2 para instalar pgAdmin o l
 
 ---
 
-## 1.2 Arranque automático de PostgreSQL
+## 2.2 Arranque automático de PostgreSQL
 
 Para evitar que el backend falle al iniciar (el error `Connection refused`) asegúrate de que el servicio de
 PostgreSQL arranca automáticamente al iniciar Windows. Hay dos opciones:
@@ -50,7 +74,7 @@ servicio en automático; no se requiere abrir `services.msc` cada vez.
 ---
 
 
-## 2. Instalación de pgAdmin (GUI recomendada)
+## 3. Instalación de pgAdmin (GUI recomendada)
 
 1. Descarga pgAdmin desde https://www.pgadmin.org/download/.
 2. Elige el instalador adecuado para tu plataforma (Windows, macOS, Linux).
@@ -68,7 +92,7 @@ servicio en automático; no se requiere abrir `services.msc` cada vez.
    - Haz clic en **Save**.
 6. Después de conectar, expande `Servers → <tu servidor> → Databases → meerkatters` y navega por los esquemas y tablas.
 
-## 3. Usar línea de comandos `psql`
+## 4. Usar línea de comandos `psql`
 
 Si prefieres la consola textual, el cliente `psql` viene con PostgreSQL.
 
@@ -86,7 +110,7 @@ Si prefieres la consola textual, el cliente `psql` viene con PostgreSQL.
    - SQL estándar (`SELECT * FROM usuario;`, etc.)
    - `\q` para salir.
 
-## 4. Alternativas web ligeras (opcional)
+## 5. Alternativas web ligeras (opcional)
 
 Si no quieres instalar pgAdmin, existen herramientas web ejecutables en un contenedor Docker:
 
@@ -98,7 +122,7 @@ docker run --rm -p 8081:8080 \
 
 Luego navega a `http://localhost:8081` y usa las mismas credenciales para conectarte.
 
-## 5. Consejos de seguridad
+## 6. Consejos de seguridad
 
 - Nunca subas archivos de log o contraseñas a Git.
 - Usa variables de entorno (`SPRING_DATASOURCE_*`) para configurar la aplicación.

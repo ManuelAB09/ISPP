@@ -222,6 +222,103 @@ class InvitacionMiembroServiceTest {
         assertThat(response.usuarioInvitador().nombre()).isEqualTo("Usuario 1");
     }
 
+    @Test
+    void createInvitacionShouldFailWhenCommunityNotFound() {
+        Long userId = 1L;
+        Long communityId = 999L;
+        CreateInvitacionRequest request =
+                new CreateInvitacionRequest("new@meerkat.es", RolComunidad.ALUMNO);
+
+        when(authorizationService.isAdminOf(userId, communityId)).thenReturn(true);
+        when(comunidadRepository.findById(communityId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> invitacionService.createInvitacion(userId, communityId, request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Comunidad");
+    }
+
+    @Test
+    void createInvitacionShouldSendEmailToInvitedMember() {
+        Long userId = 1L;
+        Long communityId = 10L;
+        String invitedEmail = "newuser@meerkat.es";
+
+        Usuario admin = buildUsuario(userId);
+        Comunidad comunidad = buildComunidad(communityId);
+        CreateInvitacionRequest request =
+                new CreateInvitacionRequest(invitedEmail, RolComunidad.PROFESOR);
+
+        when(authorizationService.isAdminOf(userId, communityId)).thenReturn(true);
+        when(comunidadRepository.findById(communityId)).thenReturn(Optional.of(comunidad));
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(admin));
+        when(invitacionRepository.existsByEmailAndComunidadAndEstado(
+                        invitedEmail, comunidad, EstadoInvitacion.PENDIENTE))
+                .thenReturn(false);
+        when(usuarioRepository.findByEmail(invitedEmail)).thenReturn(Optional.empty());
+        when(invitacionRepository.save(any(InvitacionMiembro.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        invitacionService.createInvitacion(userId, communityId, request);
+
+        verify(emailService).sendSimpleEmail(any(), any(), any());
+    }
+
+    @Test
+    void getInvitacionesByCommunityShouldFailWhenNotAdmin() {
+        when(authorizationService.isAdminOf(1L, 10L)).thenReturn(false);
+
+        assertThatThrownBy(
+                        () ->
+                                invitacionService.getInvitacionesByCommunity(
+                                        1L, 10L, PageRequest.of(0, 10)))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void aceptarInvitacionShouldFailWhenEmailsDoNotMatch() {
+        String codigo = "valid-code";
+        Long userId = 5L;
+        String invitedEmail = "newmember@meerkat.es";
+        Usuario usuario = buildUsuario(userId);
+        usuario.setEmail("different@meerkat.es"); // Email doesn't match
+        Comunidad comunidad = buildComunidad(10L);
+        InvitacionMiembro invitacion =
+                buildInvitacion(1L, invitedEmail, comunidad, buildUsuario(1L));
+        invitacion.setCodigo(codigo);
+
+        when(invitacionRepository.findByCodigo(codigo)).thenReturn(Optional.of(invitacion));
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
+
+        assertThatThrownBy(() -> invitacionService.aceptarInvitacion(codigo, userId))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void rechazarInvitacionShouldFailWhenNotFound() {
+        String codigo = "invalid-code";
+
+        when(invitacionRepository.findByCodigo(codigo)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> invitacionService.rechazarInvitacion(codigo))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Invitación no encontrada");
+    }
+
+    @Test
+    void getInvitacionesByCommunityShouldFailWhenCommunityNotFound() {
+        Long userId = 1L;
+        Long communityId = 999L;
+
+        when(authorizationService.isAdminOf(userId, communityId)).thenReturn(true);
+        when(comunidadRepository.findById(communityId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(
+                        () ->
+                                invitacionService.getInvitacionesByCommunity(
+                                        userId, communityId, PageRequest.of(0, 10)))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
     private Usuario buildUsuario(final Long id) {
         Usuario usuario = new Usuario();
         usuario.setId(id);

@@ -1,42 +1,69 @@
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import studyShareLogo from '../../static/images/MeerKatters_logo.png';
 import './LandingPage.css';
 
 const LandingPage = () => {
   const { isAuthenticated } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const features = [
     {
-      icon: '👥',
+      icon: 'CM',
       title: 'Comunidades de Estudio',
       description: 'Crea o únete a comunidades de tu universidad y asignaturas. Estudia junto a compañeros que comparten tus mismos objetivos académicos.'
     },
     {
-      icon: '📅',
+      icon: 'EV',
       title: 'Eventos y Quedadas',
       description: 'Organiza sesiones de estudio presenciales con mapa interactivo. Encuentra lugares recomendados y coordina horarios fácilmente.'
     },
     {
-      icon: '📚',
+      icon: 'RC',
       title: 'Recursos Compartidos',
       description: 'Comparte apuntes, resúmenes y materiales de estudio con tu comunidad. Organiza el contenido por categorías y asignaturas.'
     },
     {
-      icon: '👨‍🏫',
+      icon: 'PV',
       title: 'Profesores Verificados',
       description: 'Accede a profesores particulares verificados. Contrata clases de refuerzo con tutores de confianza directamente desde la plataforma.'
     },
     {
-      icon: '💬',
+      icon: 'CH',
       title: 'Chat en Tiempo Real',
       description: 'Comunícate con tus compañeros de comunidad mediante chat integrado. Resuelve dudas y coordina actividades al instante.'
     },
     {
-      icon: '🎓',
+      icon: 'GC',
       title: 'Integración Google Classroom',
       description: 'Conecta tu cuenta de Google Classroom para sincronizar tus cursos y centralizar toda tu información académica.'
     }
+  ];
+
+  const weeklyFlow = [
+    {
+      day: 'Lunes',
+      title: 'Planificas con tu comunidad',
+      description: 'Arrancas semana con tareas compartidas, calendario común y objetivos claros por asignatura.'
+    },
+    {
+      day: 'Miércoles',
+      title: 'Quedada presencial con mapa',
+      description: 'Encuentras un punto de estudio y coordinais tiempos sin salir de la plataforma.'
+    },
+    {
+      day: 'Viernes',
+      title: 'Refuerzo con profesor verificado',
+      description: 'Resuelves bloqueos antes del examen con tutorías seguras y seguimiento continuo.'
+    }
+  ];
+
+  const socialProof = [
+    { value: '+150', label: 'comunidades activas' },
+    { value: '+2.000', label: 'estudiantes conectados' },
+    { value: '4.8/5', label: 'valoración media' },
+    { value: 'US', label: 'origen universitario' }
   ];
 
   const plans = [
@@ -44,48 +71,46 @@ const LandingPage = () => {
       name: 'Básico',
       price: 'Gratis',
       period: '',
-      description: 'Perfecto para comenzar',
+      description: 'Para empezar sin coste',
       features: [
         'Acceso a comunidades públicas',
-        'Crear hasta 3 comunidades',
+        'Hasta 3 comunidades activas',
+        'Hasta 30 miembros por comunidad',
         'Unirte a eventos de estudio',
-        'Chat con compañeros',
-        'Compartir recursos básicos'
+        'Chat con compañeros'
       ],
       highlighted: false,
       buttonText: 'Comenzar Gratis'
     },
     {
       name: 'Premium',
-      price: '2,99€',
+      price: '4,99€',
       period: '/mes',
-      description: 'Para estudiantes comprometidos',
+      description: 'Más capacidad para comunidades en crecimiento',
       features: [
         'Todo lo del plan Básico',
-        'Comunidades Premium exclusivas',
-        'Sin límite de comunidades',
-        'Comunidades más grandes',
-        'Descarga sin anuncios',
+        'Hasta 10 comunidades activas',
+        'Hasta 75 miembros por comunidad',
+        'Mayor visibilidad de tus comunidades',
         'Soporte prioritario'
       ],
       highlighted: true,
       buttonText: 'Ser Premium'
     },
     {
-      name: 'Profesor',
-      price: '9,99€',
+      name: 'Pro',
+      price: '19,99€',
       period: '/mes',
-      description: 'Para educadores profesionales',
+      description: 'Capacidad avanzada para alta actividad',
       features: [
-        'Perfil verificado destacado',
-        'Posicionamiento en búsquedas',
-        'Gestión de múltiples grupos',
-        'Comisión reducida (10%)',
-        'Herramientas de administración',
-        'Analíticas avanzadas'
+        'Todo lo del plan Premium',
+        'Hasta 25 comunidades activas',
+        'Hasta 250 miembros por comunidad',
+        'Herramientas avanzadas de administración',
+        'Prioridad en nuevas funcionalidades'
       ],
       highlighted: false,
-      buttonText: 'Ser Profesor Premium'
+      buttonText: 'Pasar a Pro'
     }
   ];
 
@@ -122,8 +147,9 @@ const LandingPage = () => {
           
           <nav className="landing-nav">
             <a href="#features" className="landing-nav-link">Funcionalidades</a>
+            <a href="#how-week" className="landing-nav-link">Tu semana</a>
             <a href="#pricing" className="landing-nav-link">Precios</a>
-            <a href="#testimonials" className="landing-nav-link">Testimonios</a>
+            <a href="#testimonials" className="landing-nav-link">Resultados</a>
           </nav>
 
           <div className="landing-auth-buttons">
@@ -144,11 +170,38 @@ const LandingPage = () => {
           </div>
 
           {/* Mobile menu button */}
-          <button className="landing-mobile-menu-btn" aria-label="Menú">
+          <button
+            className="landing-mobile-menu-btn"
+            aria-label="Menú"
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+          >
             <span></span>
             <span></span>
             <span></span>
           </button>
+        </div>
+
+        <div className={`landing-mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
+          <a href="#features" className="landing-nav-link" onClick={() => setMobileMenuOpen(false)}>Funcionalidades</a>
+          <a href="#how-week" className="landing-nav-link" onClick={() => setMobileMenuOpen(false)}>Tu semana</a>
+          <a href="#pricing" className="landing-nav-link" onClick={() => setMobileMenuOpen(false)}>Precios</a>
+          <a href="#testimonials" className="landing-nav-link" onClick={() => setMobileMenuOpen(false)}>Resultados</a>
+
+          {isAuthenticated ? (
+            <Link to="/" className="landing-btn landing-btn-primary" onClick={() => setMobileMenuOpen(false)}>
+              Ir a la App
+            </Link>
+          ) : (
+            <div className="landing-mobile-auth">
+              <Link to="/login" className="landing-btn landing-btn-secondary" onClick={() => setMobileMenuOpen(false)}>
+                Iniciar Sesión
+              </Link>
+              <Link to="/register" className="landing-btn landing-btn-primary" onClick={() => setMobileMenuOpen(false)}>
+                Registrarse
+              </Link>
+            </div>
+          )}
         </div>
       </header>
 
@@ -161,14 +214,14 @@ const LandingPage = () => {
         
         <div className="landing-hero-content">
           <div className="landing-hero-text">
+            <span className="landing-hero-eyebrow">Comunidad + tutorías + organización real</span>
             <h1 className="landing-hero-title">
-              Estudia mejor,<br />
-              <span className="landing-hero-highlight">juntos</span>
+              Deja de estudiar solo.<br />
+              <span className="landing-hero-highlight">Coordínate y avanza en serio.</span>
             </h1>
             <p className="landing-hero-description">
-              MeerKatters es la plataforma de comunidades de estudio colaborativo 
-              donde los estudiantes se unen para aprender, compartir recursos y 
-              preparar exámenes juntos.
+              MeerKatters une comunidades universitarias, quedadas de estudio y profesores
+              verificados en una única experiencia. Menos caos, más progreso cada semana.
             </p>
             
             <div className="landing-hero-cta">
@@ -181,29 +234,48 @@ const LandingPage = () => {
             </div>
 
             <div className="landing-hero-trust">
-              <span className="landing-hero-trust-text">
-                Desarrollado en la Universidad de Sevilla
-              </span>
+              <div className="landing-proof-grid">
+                {socialProof.map((proof) => (
+                  <div key={proof.label} className="landing-proof-item">
+                    <strong>{proof.value}</strong>
+                    <span>{proof.label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
           <div className="landing-hero-visual">
             <div className="landing-hero-card landing-hero-card-1">
-              <span className="landing-card-icon">📚</span>
-              <span className="landing-card-text">Notas compartidas</span>
+              <span className="landing-card-icon">Agenda</span>
+              <span className="landing-card-text">Semana de exámenes organizada</span>
             </div>
             <div className="landing-hero-card landing-hero-card-2">
-              <span className="landing-card-icon">👥</span>
-              <span className="landing-card-text">Grupos de estudio</span>
+              <span className="landing-card-icon">Tutoría</span>
+              <span className="landing-card-text">Refuerzo con profesor verificado</span>
             </div>
             <div className="landing-hero-card landing-hero-card-3">
-              <span className="landing-card-icon">📍</span>
-              <span className="landing-card-text">Eventos presenciales</span>
+              <span className="landing-card-icon">Comunidad</span>
+              <span className="landing-card-text">Materiales compartidos al día</span>
             </div>
             <div className="landing-hero-image">
               <img src={studyShareLogo} alt="MeerKatters App" />
             </div>
+            <div className="landing-campus-chip landing-campus-chip-1">ETSII</div>
+            <div className="landing-campus-chip landing-campus-chip-2">Física</div>
+            <div className="landing-campus-chip landing-campus-chip-3">Medicina</div>
           </div>
+        </div>
+      </section>
+
+      <section className="landing-stats">
+        <div className="landing-stats-content">
+          {socialProof.map((item) => (
+            <div key={item.label} className="landing-stat-item">
+              <span className="landing-stat-value">{item.value}</span>
+              <span className="landing-stat-label">{item.label}</span>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -228,6 +300,30 @@ const LandingPage = () => {
                 <h3 className="landing-feature-title">{feature.title}</h3>
                 <p className="landing-feature-description">{feature.description}</p>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="how-week" className="landing-week-flow">
+        <div className="landing-section-content">
+          <div className="landing-section-header">
+            <span className="landing-section-tag">Tu semana con MeerKatters</span>
+            <h2 className="landing-section-title">
+              Un ritmo de estudio que se mantiene
+            </h2>
+            <p className="landing-section-description">
+              Pasas de improvisar a trabajar con estructura: comunidad, planificación y apoyo real.
+            </p>
+          </div>
+
+          <div className="landing-week-timeline">
+            {weeklyFlow.map((item) => (
+              <article key={item.day} className="landing-week-card">
+                <span className="landing-week-day">{item.day}</span>
+                <h3>{item.title}</h3>
+                <p>{item.description}</p>
+              </article>
             ))}
           </div>
         </div>
@@ -280,7 +376,8 @@ const LandingPage = () => {
               Planes diseñados para todos
             </h2>
             <p className="landing-section-description">
-              Comienza gratis y mejora tu plan cuando lo necesites. 
+              Comienza gratis y mejora tu plan cuando lo necesites.
+              Los límites de comunidades y aforo dependen del plan activo.
               Sin compromisos, cancela cuando quieras.
             </p>
           </div>
@@ -351,11 +448,11 @@ const LandingPage = () => {
       <section className="landing-cta">
         <div className="landing-cta-content">
           <h2 className="landing-cta-title">
-            ¿Listo para mejorar tu forma de estudiar?
+            Estudiar en comunidad no tiene por qué sentirse genérico.
           </h2>
           <p className="landing-cta-description">
-            Únete a miles de estudiantes que ya están aprovechando el poder 
-            del aprendizaje colaborativo con MeerKatters.
+            Diseña tu rutina con gente de tu facultad, comparte recursos de verdad y
+            prepara exámenes con una dinámica que funciona semana tras semana.
           </p>
           <div className="landing-cta-buttons">
             <Link to="/register" className="landing-btn landing-btn-large landing-btn-white">

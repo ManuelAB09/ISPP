@@ -168,7 +168,7 @@ describe('PlansScreen', () => {
     });
     // PREMIUM aparece múltiples veces (en la tarjeta y en el status)
     expect(screen.getAllByText(/PREMIUM/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Activa:/i)).toBeInTheDocument();
+    expect(screen.getByText(/Estado:/i)).toBeInTheDocument();
   });
 
   test('muestra fecha de fin de suscripción para usuario premium', async () => {
@@ -177,7 +177,7 @@ describe('PlansScreen', () => {
     renderScreen();
     
     await waitFor(() => {
-      expect(screen.getByText(/Fecha de fin de la suscripción:/i)).toBeInTheDocument();
+      expect(screen.getByText(/Fecha de fin:/i)).toBeInTheDocument();
     });
     expect(screen.getByText('2025-12-31')).toBeInTheDocument();
   });

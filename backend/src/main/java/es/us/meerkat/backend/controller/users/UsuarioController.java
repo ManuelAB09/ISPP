@@ -246,4 +246,20 @@ public final class UsuarioController {
     public ResponseEntity<List<String>> getProfileAvatars() {
         return ResponseEntity.ok(usuarioService.obtenerAvataresPerfilDisponibles());
     }
+
+    /**
+     * Busca usuarios por nombre o email.
+     *
+     * <p>GET /api/v1/users/search?search=término
+     *
+     * <p>Excluye usuarios con rol ADMIN y aquellos que tengan 'admin' en el email.
+     *
+     * @param search Término de búsqueda.
+     * @return Lista de usuarios filtrados.
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<es.us.meerkat.backend.dto.users.UserSimpleResponse>> searchUsers(
+            @RequestParam(required = false) final String search) {
+        return ResponseEntity.ok(usuarioService.searchUsersSimple(search));
+    }
 }

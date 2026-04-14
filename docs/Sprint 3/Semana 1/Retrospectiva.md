@@ -26,7 +26,7 @@
 - Iana Miranda Carame
 - Alejandro Soult Toscano
 - Beatriz Gutiérrez Arazo
-- Álvari Luque Buzón
+- Álvaro Luque Buzón
 
 ---
 

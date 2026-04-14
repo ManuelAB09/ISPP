@@ -377,37 +377,26 @@ describe('PrivateChat', () => {
 
     // === AutoStart ===
 
-    it('sends auto greeting when autoStart is true', async () => {
-        mockEnviarMensajePrivado.mockResolvedValue({
-            data: { id: 1, contenido: '¡Hola! Me gustaría contactar contigo.', emisorId: '1', receptorId: '2' },
-        });
+    it('does not send auto greeting when autoStart is true', async () => {
         render(<PrivateChat {...defaultProps} autoStart={true} />);
 
         await waitFor(() => {
-            expect(mockEnviarMensajePrivado).toHaveBeenCalledWith(2, '¡Hola! Me gustaría contactar contigo.');
+            expect(mockObtenerHistorialPrivado).toHaveBeenCalledWith(2);
         });
+
+        expect(mockEnviarMensajePrivado).not.toHaveBeenCalledWith(
+            2,
+            '¡Hola! Me gustaría contactar contigo.'
+        );
     });
 
-    it('does not resend auto greeting after user deletes it', async () => {
-        const sentMsg = { id: 1, contenido: '¡Hola! Me gustaría contactar contigo.', emisorId: '1', receptorId: '2' };
-        mockEnviarMensajePrivado.mockResolvedValue({ data: sentMsg });
-        mockEliminarMensajePrivado.mockResolvedValue({});
-
+    it('keeps the message list untouched in empty autoStart chats', async () => {
         render(<PrivateChat {...defaultProps} autoStart={true} />);
 
-        // Wait for auto-greeting to be sent and rendered
         await waitFor(() => {
-            expect(mockEnviarMensajePrivado).toHaveBeenCalledWith(2, '¡Hola! Me gustaría contactar contigo.');
-        });
-        await screen.findByText('¡Hola! Me gustaría contactar contigo.');
-
-        // User deletes the auto-sent message → mensajes becomes empty
-        fireEvent.click(screen.getByText('Eliminar'));
-        await waitFor(() => {
-            expect(mockEliminarMensajePrivado).toHaveBeenCalledWith(1);
+            expect(screen.getByText(/Sin historial de mensajes/)).toBeInTheDocument();
         });
 
-        // The greeting must NOT be sent a second time despite mensajes.length going back to 0
-        expect(mockEnviarMensajePrivado).toHaveBeenCalledTimes(1);
+        expect(screen.queryByText('¡Hola! Me gustaría contactar contigo.')).not.toBeInTheDocument();
     });
 });

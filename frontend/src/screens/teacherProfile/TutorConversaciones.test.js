@@ -1,5 +1,8 @@
 import { render, screen, waitFor, act } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import TutorConversaciones from './TutorConversaciones';
+
+const mockNavigate = jest.fn();
 
 jest.mock('./TutorConversaciones.css', () => ({}));
 
@@ -19,8 +22,17 @@ jest.mock('../../contexts/SocketContext', () => ({
     }),
 }));
 
-jest.mock('../chat/PrivateChat', () => ({ tutorId, tutorNombre, onClose }) => (
-    <div data-testid="private-chat">Chat with {tutorNombre} <button onClick={onClose}>Close</button></div>
+jest.mock('react-router-dom', () => ({
+    ...jest.requireActual('react-router-dom'),
+    useNavigate: () => mockNavigate,
+}));
+
+jest.mock('../chat/PrivateChat', () => ({ tutorNombre, onClose, headerActions }) => (
+    <div data-testid="private-chat">
+        Chat with {tutorNombre}
+        {headerActions}
+        <button onClick={onClose}>Close</button>
+    </div>
 ));
 
 describe('TutorConversaciones', () => {
@@ -83,6 +95,36 @@ describe('TutorConversaciones', () => {
         });
 
         expect(screen.getByTestId('private-chat')).toBeInTheDocument();
+    });
+
+    test('muestra y abre el perfil público del alumno seleccionado', async () => {
+        mockObtenerConversaciones.mockResolvedValueOnce({
+            data: [
+                { usuarioId: 2, usuarioNombre: 'Alumno 1', usuarioFoto: '/photo.jpg', ultimoMensaje: 'Hi' },
+            ],
+        });
+        await act(async () => {
+            render(
+                <MemoryRouter>
+                    <TutorConversaciones usuarioActual={usuarioActual} />
+                </MemoryRouter>
+            );
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText('Alumno 1')).toBeInTheDocument();
+        });
+
+        await act(async () => {
+            screen.getByText('Alumno 1').click();
+        });
+
+        const verPerfilBtn = screen.getByRole('button', { name: /Ver perfil/i });
+        await act(async () => {
+            verPerfilBtn.click();
+        });
+
+        expect(mockNavigate).toHaveBeenCalledWith('/perfil/2');
     });
 
     test('handles API error gracefully', async () => {

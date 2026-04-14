@@ -3,6 +3,7 @@ package es.us.meerkat.backend.controller.communities;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -53,6 +54,16 @@ class CommunityControllerTest {
     @Mock private GoogleClassroomService googleClassroomService;
 
     @InjectMocks private CommunityController communityController;
+
+    private Usuario usuario;
+    private Comunidad comunidad;
+
+    @BeforeEach
+    void setUp() {
+        usuario = buildUsuario(1L);
+        comunidad =
+                buildComunidad(100L, usuario, TipoGrupo.COMUNIDAD_PUBLICA, TipoPlanComunidad.FREE);
+    }
 
     @SuppressWarnings("unchecked")
     @Test
@@ -306,6 +317,80 @@ class CommunityControllerTest {
                         eq(request.getEnlaceVirtual()),
                         eq(request.getVisibleEnMapa()),
                         eq(request.getUbicacionId()));
+    }
+
+    @Test
+    void createCommunityShouldReturnUnauthorizedWhenUserIsNull2() {
+        CreateCommunityRequest request =
+                new CreateCommunityRequest(
+                        "Test", "Desc", "COMUNIDAD_PRIVADA", null, null, null, null);
+
+        ResponseEntity<?> response = communityController.createCommunity(request, null);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void joinPublicCommunityShouldReturnUnauthorizedWhenUserIsNull() {
+        ResponseEntity<?> response =
+                communityController.joinPublicCommunity(100L, new JoinCommunityRequest(null), null);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void requestAccessShouldReturnUnauthorizedWhenUserIsNull() {
+        ResponseEntity<?> response =
+                communityController.requestAccess(100L, new AccessRequestBody("test", null), null);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void respondToRequestShouldReturnUnauthorizedWhenUserIsNull() {
+        ResponseEntity<?> response =
+                communityController.respondToRequest(
+                        100L, 200L, new RespondRequestBody(true), null);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void upgradeCommunityShouldReturnUnauthorizedWhenUserIsNull() {
+        ResponseEntity<?> response =
+                communityController.upgradeCommunity(
+                        100L, new UpgradeCommunityRequest("premium"), null);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void upgradeCommunityShouldReturnForbiddenWhenUserIsNotAdmin() {
+        Usuario usuario = buildUsuario(1L);
+        when(authorizationService.isAdminOf(usuario.getId(), 100L)).thenReturn(false);
+
+        ResponseEntity<?> response =
+                communityController.upgradeCommunity(
+                        100L, new UpgradeCommunityRequest("premium"), usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    void promoteMemberToAdminShouldReturnUnauthorizedWhenUserIsNull() {
+        ResponseEntity<?> response = communityController.promoteMemberToAdmin(100L, 2L, null);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void createEventShouldReturnUnauthorizedWhenUserIsNull() {
+        CreateEventRequest request = new CreateEventRequest();
+        request.setTitulo("Test");
+
+        ResponseEntity<?> response = communityController.createEvent(100L, request, null);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
     private Usuario buildUsuario(final Long id) {
