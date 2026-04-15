@@ -321,6 +321,37 @@
   color: var(--spaceIndigo);
 }
 
+.plansStatus__cancel-btn {
+  margin-top: 12px;
+  width: fit-content;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid #d64545;
+  background: #fff;
+  color: #d64545;
+  font-family: 'inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.plansStatus__cancel-btn:hover:not(:disabled) {
+  background: #d64545;
+  color: #fff;
+}
+
+.plansStatus__cancel-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.plansStatus__cancel-note {
+  margin-top: 10px;
+  color: var(--glaucous);
+  font-size: 14px;
+}
+
 /* ── Institutional plans banner ─────────────────── */
 .instBannerSection {
   margin: 40px 0;

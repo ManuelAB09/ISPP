@@ -3,24 +3,42 @@ package es.us.meerkat.backend.controller.subscriptions;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import com.stripe.exception.SignatureVerificationException;
+import com.stripe.model.Event;
+import com.stripe.model.EventDataObjectDeserializer;
+import com.stripe.model.Invoice;
+import com.stripe.model.StripeObject;
+import com.stripe.model.checkout.Session;
+import com.stripe.net.Webhook;
 
 import es.us.meerkat.backend.dto.subscriptions.TransactionListResponse;
 import es.us.meerkat.backend.dto.subscriptions.TransactionResponse;
+import es.us.meerkat.backend.entity.subscriptions.TipoPlanCorporativo;
+import es.us.meerkat.backend.entity.subscriptions.TipoTransaccion;
 import es.us.meerkat.backend.entity.subscriptions.TransaccionPago;
 import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.service.communities.InstitutionService;
@@ -311,4 +329,227 @@ class PaymentControllerTest {
         assertThat(response.getBody().getId()).isEqualTo(123L);
         assertThat(response.getBody().getMonto()).isEqualTo(java.math.BigDecimal.valueOf(50.00));
     }
+
+    @Test
+    void handleWebhookShouldReturnBadRequestWhenSignatureVerificationFails() {
+        ReflectionTestUtils.setField(controller, "webhookSecret", "secret");
+
+        try (MockedStatic<Webhook> webhookMock = mockStatic(Webhook.class)) {
+            webhookMock
+                    .when(() -> Webhook.constructEvent("payload", "sig", "secret"))
+                    .thenThrow(new SignatureVerificationException("invalid", "sig"));
+
+            ResponseEntity<String> response = controller.handleWebhook("payload", "sig");
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+            assertThat(response.getBody()).isEqualTo("Firma inválida");
+        }
+    }
+
+    @Test
+    void handleWebhookShouldActivateSubscriptionOnSessionCompleted() {
+        ReflectionTestUtils.setField(controller, "webhookSecret", "secret");
+        Event event = mock(Event.class);
+        EventDataObjectDeserializer deserializer = mock(EventDataObjectDeserializer.class);
+        Session session = mock(Session.class);
+
+        when(event.getType()).thenReturn("checkout.session.completed");
+        when(event.getId()).thenReturn("evt_sub_1");
+        when(event.getDataObjectDeserializer()).thenReturn(deserializer);
+        when(deserializer.getObject()).thenReturn(Optional.of((StripeObject) session));
+        when(session.getMetadata())
+                .thenReturn(
+                        Map.of(
+                                "tipo", "SUSCRIPCION",
+                                "usuarioId", "11",
+                                "periodo", "MONTHLY",
+                                "plan", "PRO"));
+        when(session.getAmountTotal()).thenReturn(1234L);
+
+        try (MockedStatic<Webhook> webhookMock = mockStatic(Webhook.class)) {
+            webhookMock
+                    .when(() -> Webhook.constructEvent("payload", "sig", "secret"))
+                    .thenReturn(event);
+
+            ResponseEntity<String> response = controller.handleWebhook("payload", "sig");
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            verify(suscripcionService)
+                    .activarSuscripcionTrasStripe(
+                            11L,
+                            java.math.BigDecimal.valueOf(12.34),
+                            "MONTHLY",
+                            es.us.meerkat.backend.entity.subscriptions.TipoPlan.PRO);
+        }
+    }
+
+    @Test
+    void handleWebhookShouldActivateTutorVerificationWhenPaymentVerificationCompletes() {
+        ReflectionTestUtils.setField(controller, "webhookSecret", "secret");
+        Event event = mock(Event.class);
+        EventDataObjectDeserializer deserializer = mock(EventDataObjectDeserializer.class);
+        Session session = mock(Session.class);
+
+        when(event.getType()).thenReturn("checkout.session.completed");
+        when(event.getId()).thenReturn("evt_ver_1");
+        when(event.getDataObjectDeserializer()).thenReturn(deserializer);
+        when(deserializer.getObject()).thenReturn(Optional.of((StripeObject) session));
+        when(session.getMetadata())
+                .thenReturn(
+                        Map.of(
+                                "tipo", "PAGO_VERIFICACION",
+                                "usuarioId", "9",
+                                "tutorId", "77"));
+        when(session.getAmountTotal()).thenReturn(500L);
+
+        try (MockedStatic<Webhook> webhookMock = mockStatic(Webhook.class)) {
+            webhookMock
+                    .when(() -> Webhook.constructEvent("payload", "sig", "secret"))
+                    .thenReturn(event);
+
+            ResponseEntity<String> response = controller.handleWebhook("payload", "sig");
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            verify(tutorService).activarVerificacion(77L);
+            verify(paymentService)
+                    .procesarPagoExitoso(
+                            eq(9L),
+                            eq(TipoTransaccion.PAGO_VERIFICACION),
+                            org.mockito.ArgumentMatchers.argThat(
+                                    m ->
+                                            m != null
+                                                    && m.compareTo(
+                                                                    new java.math.BigDecimal(
+                                                                            "5.00"))
+                                                            == 0),
+                            eq("Verificación de tutor completada vía Stripe"),
+                            eq(null));
+        }
+    }
+
+    @Test
+    void handleWebhookShouldActivateCorporatePlanWhenCommissionPaymentCompletes() {
+        ReflectionTestUtils.setField(controller, "webhookSecret", "secret");
+        Event event = mock(Event.class);
+        EventDataObjectDeserializer deserializer = mock(EventDataObjectDeserializer.class);
+        Session session = mock(Session.class);
+
+        when(event.getType()).thenReturn("checkout.session.completed");
+        when(event.getId()).thenReturn("evt_comm_1");
+        when(event.getDataObjectDeserializer()).thenReturn(deserializer);
+        when(deserializer.getObject()).thenReturn(Optional.of((StripeObject) session));
+        when(session.getMetadata())
+                .thenReturn(
+                        Map.of(
+                                "tipo", "COMISION",
+                                "usuarioId", "3",
+                                "institucionId", "44",
+                                "duracionMeses", "6",
+                                "emailContacto", "admin@corp.es",
+                                "tipoPlanCorporativo", "PREMIUM"));
+        when(session.getAmountTotal()).thenReturn(9999L);
+
+        try (MockedStatic<Webhook> webhookMock = mockStatic(Webhook.class)) {
+            webhookMock
+                    .when(() -> Webhook.constructEvent("payload", "sig", "secret"))
+                    .thenReturn(event);
+
+            ResponseEntity<String> response = controller.handleWebhook("payload", "sig");
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            verify(institutionService)
+                    .activarPlanCorporativo(
+                            44L, 6, "admin@corp.es", TipoPlanCorporativo.PREMIUM);
+            verify(paymentService)
+                    .procesarPagoExitoso(
+                            eq(3L),
+                            eq(TipoTransaccion.COMISION),
+                            eq(java.math.BigDecimal.valueOf(99.99)),
+                            eq("Pago completado vía Stripe"),
+                            eq(null));
+        }
+    }
+
+    @Test
+    void handleWebhookShouldRenewSubscriptionWhenInvoicePaymentSucceeds() {
+        ReflectionTestUtils.setField(controller, "webhookSecret", "secret");
+        Event event = mock(Event.class);
+        EventDataObjectDeserializer deserializer = mock(EventDataObjectDeserializer.class);
+        Invoice invoice = mock(Invoice.class);
+
+        when(event.getType()).thenReturn("invoice.payment_succeeded");
+        when(event.getId()).thenReturn("evt_inv_ok");
+        when(event.getDataObjectDeserializer()).thenReturn(deserializer);
+        when(deserializer.getObject()).thenReturn(Optional.of((StripeObject) invoice));
+        when(invoice.getBillingReason()).thenReturn("subscription_cycle");
+        when(invoice.getMetadata()).thenReturn(Map.of("usuarioId", "15", "plan", "PREMIUM"));
+        when(invoice.getAmountPaid()).thenReturn(2500L);
+
+        try (MockedStatic<Webhook> webhookMock = mockStatic(Webhook.class)) {
+            webhookMock
+                    .when(() -> Webhook.constructEvent("payload", "sig", "secret"))
+                    .thenReturn(event);
+
+            ResponseEntity<String> response = controller.handleWebhook("payload", "sig");
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            verify(suscripcionService)
+                    .renovarSuscripcionTrasStripe(
+                            eq(15L),
+                            org.mockito.ArgumentMatchers.argThat(
+                                    m ->
+                                            m != null
+                                                    && m.compareTo(
+                                                                    new java.math.BigDecimal(
+                                                                            "25.00"))
+                                                            == 0),
+                            eq(es.us.meerkat.backend.entity.subscriptions.TipoPlan.PREMIUM));
+        }
+    }
+
+    @Test
+    void handleWebhookShouldIgnoreInvoiceWithoutSubscriptionCycle() {
+        ReflectionTestUtils.setField(controller, "webhookSecret", "secret");
+        Event event = mock(Event.class);
+        EventDataObjectDeserializer deserializer = mock(EventDataObjectDeserializer.class);
+        Invoice invoice = mock(Invoice.class);
+
+        when(event.getType()).thenReturn("invoice.payment_succeeded");
+        when(event.getId()).thenReturn("evt_inv_initial");
+        when(event.getDataObjectDeserializer()).thenReturn(deserializer);
+        when(deserializer.getObject()).thenReturn(Optional.of((StripeObject) invoice));
+        when(invoice.getBillingReason()).thenReturn("subscription_create");
+
+        try (MockedStatic<Webhook> webhookMock = mockStatic(Webhook.class)) {
+            webhookMock
+                    .when(() -> Webhook.constructEvent("payload", "sig", "secret"))
+                    .thenReturn(event);
+
+            ResponseEntity<String> response = controller.handleWebhook("payload", "sig");
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            verify(suscripcionService, never())
+                    .renovarSuscripcionTrasStripe(any(Long.class), any(java.math.BigDecimal.class), any());
+        }
+    }
+
+        @Test
+        void handleWebhookShouldReturnOkForUnhandledEventType() {
+                ReflectionTestUtils.setField(controller, "webhookSecret", "secret");
+                Event event = mock(Event.class);
+                when(event.getType()).thenReturn("customer.created");
+                when(event.getId()).thenReturn("evt_other_1");
+                when(event.getDataObjectDeserializer()).thenReturn(mock(EventDataObjectDeserializer.class));
+
+                try (MockedStatic<Webhook> webhookMock = mockStatic(Webhook.class)) {
+                        webhookMock
+                                        .when(() -> Webhook.constructEvent("payload", "sig", "secret"))
+                                        .thenReturn(event);
+
+                        ResponseEntity<String> response = controller.handleWebhook("payload", "sig");
+
+                        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+                        assertThat(response.getBody()).isEqualTo("Evento recibido");
+                }
+        }
 }
