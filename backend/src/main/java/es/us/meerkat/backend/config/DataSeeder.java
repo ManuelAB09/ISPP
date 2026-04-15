@@ -47,7 +47,7 @@ import es.us.meerkat.backend.repository.users.UsuarioRepository;
 public class DataSeeder {
 
     @Bean
-    @Profile("!staging & !production")
+    @Profile("!staging & !production & !test")
     CommandLineRunner seedDatabase(
             final UsuarioRepository usuarioRepo,
             final TutorRepository tutorRepo,
