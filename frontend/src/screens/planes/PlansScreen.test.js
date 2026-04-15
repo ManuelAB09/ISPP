@@ -254,7 +254,7 @@ describe('PlansScreen', () => {
     await waitFor(() => {
       expect(subscriptionsApi.subscriptionsApi.cancelSubscription).toHaveBeenCalledTimes(1);
     });
-    expect(screen.getByText(/Suscripción cancelada correctamente/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Suscripción cancelada correctamente/i)).toBeInTheDocument();
   });
 
   test('muestra error cuando falla la cancelación', async () => {
