@@ -1,18 +1,278 @@
-.home-container {
-    width: 100%;
-    min-height: 100vh;
+/* ==========================================================
+   HOME — HERO PRINCIPAL
+   El hero de inicio es más grande, más rico visualmente y
+   usa una paleta ligeramente diferente para distinguirse.
+   ========================================================== */
+
+.home-hero {
+    position: relative;
+    /* Gradiente más profundo y oscuro que los heroes secundarios */
+    background: linear-gradient(
+        145deg,
+        #080c1f 0%,
+        #111630 25%,
+        #1e2444 55%,
+        #2d3358 80%,
+        #3a4070 100%
+    );
+    min-height: 72vh;
+    margin-top: -84px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
 }
 
-.home-container .header {
+/* ── Orbes de luz (distingue el hero principal) ─────────── */
+.home-hero__orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+}
+
+/* Orbe azul-índigo grande — parte superior derecha */
+.home-hero__orb--1 {
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle, rgba(103, 111, 157, 0.3) 0%, transparent 70%);
+    top: -220px;
+    right: -150px;
+}
+
+/* Orbe cálido (ámbar) — parte inferior izquierda */
+.home-hero__orb--2 {
+    width: 450px;
+    height: 450px;
+    background: radial-gradient(circle, rgba(242, 193, 142, 0.12) 0%, transparent 70%);
+    bottom: -100px;
+    left: 5%;
+    filter: blur(100px);
+}
+
+/* Orbe sutil — centro */
+.home-hero__orb--3 {
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(120, 140, 220, 0.12) 0%, transparent 70%);
+    top: 40%;
+    left: 50%;
+    transform: translateX(-50%);
+    filter: blur(60px);
+}
+
+/* Cuadrícula de puntos — textura exclusiva del home */
+.home-hero__grid {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+    background-size: 36px 36px;
+    pointer-events: none;
+}
+
+/* ── Cuerpo del hero ────────────────────────────────────── */
+.home-hero__body {
+    position: relative;
+    z-index: 2;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 40px 80px;
+    width: 100%;
+    padding: 130px 60px 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* Badge */
+.home-hero__badge {
+    display: inline-flex;
+    align-self: flex-start;
+    padding: 7px 18px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 100px;
+    font-family: 'inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(6px);
+}
+
+/* Título — mucho más grande y con gradiente cálido propio */
+.home-hero__title {
+    font-family: 'spacegrotesk', sans-serif;
+    font-size: clamp(72px, 10.5vw, 148px);
+    font-weight: 800;
+    line-height: 0.92;
+    margin: 0;
+    letter-spacing: -0.02em;
+    /* Gradiente exclusivo: blanco → ámbar suave, diferente a los heroes secundarios */
+    background: linear-gradient(
+        115deg,
+        #ffffff 0%,
+        rgba(240, 245, 255, 0.95) 45%,
+        rgba(242, 193, 142, 0.88) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Tagline */
+.home-hero__tagline {
+    font-family: 'inter', sans-serif;
+    font-size: 17px;
+    font-weight: 400;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.55);
+    margin: 0;
+    max-width: 520px;
+}
+
+/* ── CTAs — usuario no autenticado ─────────────────────── */
+.home-hero__cta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.home-hero__cta-primary {
+    font-family: 'inter', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 14px 32px;
+    background: #ffffff;
+    color: #1e2444;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    letter-spacing: 0.01em;
+}
+
+.home-hero__cta-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3);
+}
+
+.home-hero__cta-secondary {
+    font-family: 'inter', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 13px 28px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.85);
+    border: 1.5px solid rgba(255, 255, 255, 0.28);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.22s ease;
+}
+
+.home-hero__cta-secondary:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-1px);
+}
+
+/* ── Acciones rápidas — usuario autenticado ─────────────── */
+.home-hero__quick {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.home-hero__quick-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 22px;
+    /* Efecto glassmorphism — exclusivo del hero de inicio */
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 12px;
+    font-family: 'inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.88);
+    cursor: pointer;
+    transition: all 0.22s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    white-space: nowrap;
+}
+
+.home-hero__quick-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.32);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.home-hero__quick-icon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+/* ── Franja inferior de pilares ─────────────────────────── */
+.home-hero__pillars {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    padding: 22px 60px;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(4px);
+}
+
+.home-hero__pillar {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    text-align: center;
+}
+
+.home-hero__pillar-name {
+    font-family: 'spacegrotesk', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.88);
+    letter-spacing: 0.01em;
+}
+
+.home-hero__pillar-desc {
+    font-family: 'inter', sans-serif;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.38);
+}
+
+.home-hero__pillar-sep {
+    width: 1px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+}
+
+/* ==========================================================
+   CONTENIDO (body)
+   ========================================================== */
+
+.home-container {
+    width: 100%;
+    min-height: 40vh;
 }
 
 .home-container .body {
     width: 100%;
-    background-color: #f5f5f5;
-    padding: 40px 0;
+    padding: 0px 0;
     min-height: calc(100vh - 300px);
 }
 
@@ -20,33 +280,6 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 40px;
-}
-
-.headerTitle {
-    display: flex;
-    flex-direction: column;
-
-    .title {
-        font-family: 'spacegrotesk', sans-serif;
-        font-size: 100px;
-        font-weight: 700;
-        color: var(--spaceIndigo);
-        width: 600px;
-        padding-left: 20px;
-    }
-
-    & h2 {
-        text-align: right;
-        font-family: 'inter', sans-serif;
-        font-size: 18px;
-        padding-right: 20px;
-        margin-left: 60px;
-        margin-top: 0;
-    }
-
-    &.home {
-        border-bottom: 3px solid var(--spaceIndigo);
-    }
 }
 
 /* Estados de carga y error */
@@ -85,7 +318,7 @@
 }
 
 .login-btn:hover {
-    background-color: var(--spaceIndigoDark, #1a237e);
+    background-color: #1e2444;
     transform: translateY(-2px);
 }
 
@@ -128,35 +361,7 @@
 
 .create-community-btn:hover,
 .explore-btn:hover {
-    background-color: var(--spaceIndigoDark, #1a237e);
-    transform: translateY(-1px);
-}
-
-/* Botones de acceso rápido */
-.home-quick-actions {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-top: 24px;
-    padding-left: 20px;
-}
-
-.home-quick-btn {
-    font-family: 'inter', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    padding: 10px 20px;
-    background-color: transparent;
-    color: var(--spaceIndigo);
-    border: 2px solid var(--spaceIndigo);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.home-quick-btn:hover {
-    background-color: var(--spaceIndigo);
-    color: white;
+    background-color: #1e2444;
     transform: translateY(-1px);
 }
 
@@ -205,37 +410,78 @@
     transform: translateY(-1px);
 }
 
-/* Responsive - Tablet */
+/* ==========================================================
+   RESPONSIVE
+   ========================================================== */
+
 @media (max-width: 1024px) {
-    .home-container .header {
-        padding: 0 30px 60px;
+    .home-hero {
+        margin-top: -68px;
+    }
+
+    .home-hero__body {
+        padding: 138px 40px 50px;
+    }
+
+    .home-hero__pillars {
+        padding: 20px 40px;
+    }
+
+    .home-hero__title {
+        font-size: clamp(60px, 9vw, 110px);
     }
 
     .body-content {
         padding: 0 30px;
     }
-
-    .headerTitle .title {
-        font-size: 80px;
-        width: 100%;
-        padding-left: 0;
-    }
-
-    .headerTitle h2 {
-        font-size: 16px;
-        padding-right: 0;
-        margin-left: 20px;
-    }
-
-    .section-header h2 {
-        font-size: 26px;
-    }
 }
 
-/* Responsive - Móvil */
 @media (max-width: 768px) {
-    .home-container .header {
-        padding: 0 20px 40px;
+    .home-hero {
+        min-height: 60vh;
+        margin-top: -60px;
+    }
+
+    .home-hero__body {
+        padding: 116px 24px 44px;
+        gap: 20px;
+    }
+
+    .home-hero__pillars {
+        padding: 18px 24px;
+        gap: 0;
+    }
+
+    .home-hero__pillar-name {
+        font-size: 13px;
+    }
+
+    .home-hero__pillar-desc {
+        font-size: 11px;
+    }
+
+    .home-hero__tagline {
+        font-size: 15px;
+        br { display: none; }
+    }
+
+    .home-hero__cta {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .home-hero__cta-primary,
+    .home-hero__cta-secondary {
+        text-align: center;
+    }
+
+    .home-hero__quick {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .home-hero__quick-btn {
+        justify-content: center;
     }
 
     .body-content {
@@ -244,32 +490,6 @@
 
     .home-container .body {
         padding: 30px 0;
-    }
-
-    .headerTitle.home {
-        display: flex;
-        flex-direction: column;
-        text-align: left;
-        gap: 0;
-    }
-
-    .headerTitle .title {
-        width: 100%;
-        padding-left: 0;
-        text-align: left;
-    }
-
-    .headerTitle h2 {
-        font-size: 14px;
-        text-align: left;
-        margin-left: 0;
-        padding-right: 0;
-        margin-top: 12px;
-    }
-
-    .communities-section {
-        margin: 30px 0;
-        padding: 15px 0;
     }
 
     .section-header {
@@ -311,10 +531,23 @@
     }
 }
 
-/* Responsive - Móvil pequeño */
 @media (max-width: 480px) {
-    .home-container .header {
-        padding: 0 15px 30px;
+    .home-hero__body {
+        padding: 100px 20px 36px;
+    }
+
+    .home-hero__pillars {
+        flex-wrap: wrap;
+        row-gap: 12px;
+        padding: 16px 20px;
+    }
+
+    .home-hero__pillar {
+        min-width: calc(50% - 0.5px);
+    }
+
+    .home-hero__pillar-sep:last-of-type {
+        display: none;
     }
 
     .body-content {
@@ -323,15 +556,6 @@
 
     .home-container .body {
         padding: 20px 0;
-    }
-
-    .headerTitle .title {
-        font-size: 36px;
-    }
-
-    .headerTitle h2 {
-        font-size: 13px;
-        margin-top: 10px;
     }
 
     .section-header h2 {

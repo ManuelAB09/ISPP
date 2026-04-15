@@ -68,7 +68,7 @@ describe('PlansScreen', () => {
   test('renderiza la página aunque la carga sea lenta', () => {
     subscriptionsApi.subscriptionsApi.listPlans.mockImplementation(() => new Promise(() => {}));
     renderScreen();
-    expect(screen.getByRole('heading', { name: /Planes de Suscripción/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /^Planes$/i, level: 1 })).toBeInTheDocument();
   });
 
   test('carga y muestra los planes disponibles', async () => {
@@ -99,7 +99,7 @@ describe('PlansScreen', () => {
     renderScreen();
     
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /Planes de Suscripción/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /^Planes$/i, level: 1 })).toBeInTheDocument();
     });
   });
 

@@ -57,6 +57,11 @@ const VerifiedTeachers = () => {
     tarifaMin: "",
     tarifaMax: "",
   });
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const activeFiltersCount =
+    (filtrosActivos.tarifaMin ? 1 : 0) +
+    (filtrosActivos.tarifaMax ? 1 : 0) +
+    (busquedaCercaniaActiva ? 1 : 0);
 
   const cargarProfesores = useCallback(
     async (nuevaPagina = 0, filtrosParam = filtrosActivos) => {
@@ -272,79 +277,156 @@ const VerifiedTeachers = () => {
   return (
     <div className="vt-page">
       <Header page={'profesores'} />
-      {/* ── Header ──────────────────────────────────────────── */}
-      <div className="vt-header">
-        <div className="vt-header__inner">
-
-          <div className="headerTitle">
-            <p>Profesionales con identidad confirmada</p>
-            <span className="line"></span>
-            <h1>Profesores</h1>
-          </div>
-
+      {/* ── Hero ─────────────────────────────────────────────── */}
+      <div className="vt-hero">
+        <div className="vt-hero__decoration" aria-hidden="true"/>
+        <div className="vt-hero__content">
+          <span className="vt-hero__badge">Profesionales verificados</span>
+          <h1 className="vt-hero__title">Profesores</h1>
+          <p className="vt-hero__subtitle">Profesionales con identidad confirmada</p>
         </div>
       </div>
 
-      {/* ── Filtros ───────────────────────────────────── */}
-      <div className="vt-filtros-bar">
-        <form className="vt-filtros" onSubmit={handleBuscar}>
-          <input
-            className="vt-filtros__input vt-filtros__input--lg"
-            name="especialidad"
-            type="text"
-            placeholder="Buscar por especialidad…"
-            value={filtros.especialidad}
-            onChange={handleFiltroChange}
-          />
-          <div className="vt-filtros__tarifa">
-            <input
-              className="vt-filtros__input vt-filtros__input--sm"
-              name="tarifaMin"
-              type="number"
-              min="0"
-              step="1"
-              placeholder="€ min"
-              value={filtros.tarifaMin}
-              onChange={handleFiltroChange}
-            />
-            <span className="vt-filtros__sep">—</span>
-            <input
-              className="vt-filtros__input vt-filtros__input--sm"
-              name="tarifaMax"
-              type="number"
-              min="0"
-              step="1"
-              placeholder="€ max"
-              value={filtros.tarifaMax}
-              onChange={handleFiltroChange}
-            />
-            <span className="vt-filtros__unit">€/h</span>
+      {/* ── Controls ─────────────────────────────────────────── */}
+      <form className="vt-controls" onSubmit={handleBuscar}>
+        <div className="vt-search-card">
+          <div className="vt-search-row">
+            {/* Buscador principal */}
+            <div className="vt-search-wrap">
+              <svg className="vt-search-icon" xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input
+                className="vt-search-input"
+                name="especialidad"
+                type="text"
+                placeholder="Buscar por especialidad..."
+                value={filtros.especialidad}
+                onChange={handleFiltroChange}
+              />
+              {filtros.especialidad && (
+                <button type="button" className="vt-search-clear"
+                  onClick={() => {
+                    setFiltros(prev => ({ ...prev, especialidad: '' }));
+                    setFiltrosActivos(prev => ({ ...prev, especialidad: '' }));
+                  }}
+                  aria-label="Limpiar búsqueda">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" strokeWidth="2.5"
+                    strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            {/* Botones */}
+            <div className="vt-action-btns">
+              <button type="submit" className="vt-btn vt-btn--primary vt-btn--search">
+                Buscar
+              </button>
+              <button
+                type="button"
+                className={`vt-filters-toggle${filtersOpen ? ' vt-filters-toggle--open' : ''}`}
+                onClick={() => setFiltersOpen(prev => !prev)}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" strokeWidth="2"
+                  strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="4" y1="6" x2="20" y2="6"/>
+                  <line x1="8" y1="12" x2="16" y2="12"/>
+                  <line x1="11" y1="18" x2="13" y2="18"/>
+                </svg>
+                Filtros
+                {activeFiltersCount > 0 && (
+                  <span className="vt-filters-badge">{activeFiltersCount}</span>
+                )}
+                <svg className="vt-filters-chevron" xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+            </div>
           </div>
-          <button type="submit" className="vt-btn vt-btn--primary">Buscar</button>
-          <button 
-            type="button" 
-            className="vt-btn vt-btn--secondary"
-            onClick={handleBuscarPorCercania}
-          >
-            📍 Buscar por cercanía
-          </button>
-          {(filtrosActivos.especialidad || filtrosActivos.tarifaMin || filtrosActivos.tarifaMax || busquedaCercaniaActiva) && (
-            <button type="button" className="vt-btn vt-btn--ghost" onClick={handleLimpiar}>
-              Limpiar
-            </button>
+
+          {/* Contador de resultados */}
+          {!cargando && !error && (
+            <p className="vt-count">
+              {total} profesor{total !== 1 ? "es" : ""}
+              {busquedaCercaniaActiva && (
+                <span className="vt-count__sub"> · A menos de {radioKm} km de ti</span>
+              )}
+            </p>
           )}
-        </form>
-        {!cargando && !error && (
-          <span className="vt-total">
-            {total} profesor{total !== 1 ? "es" : ""}
-            {busquedaCercaniaActiva && (
-              <span style={{ marginLeft: 8, color: '#676F9D' }}>
-                • A menos de {radioKm} km de ti
-              </span>
-            )}
-          </span>
-        )}
-      </div>
+        </div>
+
+        {/* Panel desplegable de filtros */}
+        <div className={`vt-filter-panel${filtersOpen ? ' vt-filter-panel--open' : ''}`}>
+          <div className="vt-filter-panel-inner">
+            <div className="vt-filter-panel-content">
+              <div className="vt-filter-panel__top">
+                <span className="vt-filter-panel__label">Filtros avanzados</span>
+                {(filtrosActivos.tarifaMin || filtrosActivos.tarifaMax || busquedaCercaniaActiva) && (
+                  <button type="button" className="vt-filters-clear-btn" onClick={handleLimpiar}>
+                    Limpiar filtros
+                  </button>
+                )}
+              </div>
+
+              <div className="vt-filter-groups">
+                {/* Precio */}
+                <div className="vt-filter-group">
+                  <span>Precio por hora (€)</span>
+                  <div className="vt-price-range">
+                    <input
+                      className="vt-filtros__input vt-filtros__input--sm"
+                      name="tarifaMin"
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="Mín"
+                      value={filtros.tarifaMin}
+                      onChange={handleFiltroChange}
+                    />
+                    <span className="vt-filtros__sep">—</span>
+                    <input
+                      className="vt-filtros__input vt-filtros__input--sm"
+                      name="tarifaMax"
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="Máx"
+                      value={filtros.tarifaMax}
+                      onChange={handleFiltroChange}
+                    />
+                    <span className="vt-filtros__unit">€/h</span>
+                  </div>
+                </div>
+
+                {/* Cercanía */}
+                <div className="vt-filter-group">
+                  <span>Ubicación</span>
+                  <div className="vt-cercania-wrap">
+                    <button
+                      type="button"
+                      className="vt-btn vt-btn--secondary"
+                      onClick={handleBuscarPorCercania}
+                    >
+                      📍 Buscar por cercanía
+                    </button>
+                    {busquedaCercaniaActiva && (
+                      <span className="vt-cercania-active">· radio {radioKm} km</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
 
       {/* ── Contenido ─────────────────────────────────── */}
       <div className="vt-content">

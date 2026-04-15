@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -93,6 +92,6 @@ describe('CuestionariosPublicos', () => {
   test('title shows', async () => {
     cuestionariosApi.listPublic.mockResolvedValue([]);
     render(<MemoryRouter><CuestionariosPublicos /></MemoryRouter>);
-    expect(screen.getByText('Cuestionarios públicos')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /^Cuestionarios$/i, level: 1 })).toBeInTheDocument();
   });
 });

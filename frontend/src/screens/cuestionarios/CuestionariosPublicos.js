@@ -71,19 +71,34 @@ export default function CuestionariosPublicos() {
   return (
     <>
       <Header page="cuestionarios" />
-      <div className="quizzes-public-page">
-        <div className="quizzes-public-header">
-          <h1>Cuestionarios públicos</h1>
-          {isAuthenticated && (
+
+      {/* ── Hero ── */}
+      <div className="quizzes-hero">
+        <div className="quizzes-hero__decoration" aria-hidden="true"/>
+        <div className="quizzes-hero__content">
+          <span className="quizzes-hero__badge">Aprende · Evalúa · Mejora</span>
+          <h1 className="quizzes-hero__title">Cuestionarios</h1>
+          <p className="quizzes-hero__subtitle">
+            Pon a prueba tus conocimientos con cuestionarios creados por la comunidad
+          </p>
+        </div>
+      </div>
+
+      {/* ── Controls ── */}
+      {isAuthenticated && (
+        <div className="quizzes-controls">
+          <div className="quizzes-controls__inner">
             <button
-              className="quizzes-public-btn-create"
+              className="quizzes-btn-create"
               onClick={() => navigate('/cuestionarios/crear')}
             >
-              ✏️ Crear cuestionario
+              + Crear cuestionario
             </button>
-          )}
+          </div>
         </div>
+      )}
 
+      <div className="quizzes-public-page">
         {loading ? (
           <div className="quizzes-public-loading">Cargando cuestionarios...</div>
         ) : error ? (

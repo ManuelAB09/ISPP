@@ -1,10 +1,9 @@
-import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import VerifiedTeachers from './VerifiedTeachers';
 import * as tutorEndpoints from '../../api/tutorEndpoints';
 import { useAuth } from '../../contexts/AuthContext';
+import VerifiedTeachers from './VerifiedTeachers';
 
 // Mocks
 jest.mock('../../api/tutorEndpoints');
@@ -125,8 +124,9 @@ describe('VerifiedTeachers', () => {
   test('renderiza los filtros de búsqueda', async () => {
     await renderComponent();
     expect(screen.getByPlaceholderText(/Buscar por especialidad/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/€ min/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/€ max/i)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /filtros/i }));
+    expect(screen.getByPlaceholderText(/m[ií]n/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/m[aá]x/i)).toBeInTheDocument();
   });
 
   test('llama a la API al montar el componente', async () => {
@@ -179,8 +179,9 @@ describe('VerifiedTeachers', () => {
 
   test('aplica filtros de tarifa al buscar', async () => {
     await renderComponent();
-    const minInput = screen.getByPlaceholderText(/€ min/i);
-    const maxInput = screen.getByPlaceholderText(/€ max/i);
+    await userEvent.click(screen.getByRole('button', { name: /filtros/i }));
+    const minInput = screen.getByPlaceholderText(/m[ií]n/i);
+    const maxInput = screen.getByPlaceholderText(/m[aá]x/i);
     await userEvent.type(minInput, '10');
     await userEvent.type(maxInput, '50');
     const buscarBtn = screen.getByRole('button', { name: /^buscar$/i });

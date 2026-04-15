@@ -1,88 +1,375 @@
-.header {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 20px;
-    align-items: center;
-    padding: 40px 60px 20px;
+/* ==========================================================
+   HERO HEADER
+   ========================================================== */
+
+.comunidades-hero {
+    position: relative;
+    background: linear-gradient(140deg, #1a1f3e 0%, var(--spaceIndigo) 55%, #3d4578 100%);
+    overflow: hidden;
+    margin-top: -84px;
+    padding: 132px 60px 88px;
     width: 100%;
-    max-width: 1200px;
+}
+
+/* Decoración geométrica de fondo */
+.comunidades-hero__decoration {
+    position: absolute;
+    inset: 0;
+    background-image:
+        radial-gradient(ellipse at 75% -10%, rgba(130, 150, 255, 0.18) 0%, transparent 55%),
+        radial-gradient(ellipse at 5% 110%, rgba(255, 255, 255, 0.06) 0%, transparent 45%),
+        repeating-linear-gradient(-55deg,
+            transparent,
+            transparent 38px,
+            rgba(255, 255, 255, 0.018) 38px,
+            rgba(255, 255, 255, 0.018) 39px);
+    pointer-events: none;
+}
+
+.comunidades-hero__content {
+    position: relative;
+    max-width: 1050px;
     margin: 0 auto;
-}
-
-.search {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    width: 100%;
+    gap: 14px;
 }
 
-.search-row {
+.comunidades-hero__badge {
+    display: inline-flex;
+    align-self: flex-start;
+    padding: 6px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 100px;
+    font-family: 'inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(6px);
+}
+
+.comunidades-hero__title {
+    font-family: 'spacegrotesk', sans-serif;
+    font-size: 76px;
+    font-weight: 700;
+    line-height: 1;
+    margin: 0;
+    background: linear-gradient(130deg, #ffffff 30%, rgba(200, 210, 255, 0.85) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.comunidades-hero__subtitle {
+    font-family: 'inter', sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.58);
+    margin: 0;
+    max-width: 480px;
+    line-height: 1.55;
+}
+
+/* ==========================================================
+   CONTROLS (search + filters)
+   ========================================================== */
+
+.comunidades-controls {
+    max-width: 1200px;
+    margin: -36px auto 0;
+    padding: 0 60px;
+    position: relative;
+    z-index: 10;
+}
+
+/* ==========================================================
+   SEARCH ROW  (card flotante)
+   ========================================================== */
+
+.comunidades-search-row {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    width: 100%;
+    gap: 10px;
+    background: #ffffff;
+    border: 1px solid #e4e8f2;
+    border-radius: 16px;
+    padding: 10px 12px;
+    box-shadow:
+        0 4px 24px rgba(45, 50, 80, 0.11),
+        0 1px 4px rgba(45, 50, 80, 0.06);
 }
 
-.search-row > :first-child {
+/* ==========================================================
+   ENHANCED SEARCH INPUT
+   ========================================================== */
+
+.comunidades-search-wrap {
     flex: 1;
     min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f5f6fb;
+    border: 1.5px solid transparent;
+    border-radius: 10px;
+    padding: 0 14px;
+    height: 46px;
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
-.create-community-btn {
+.comunidades-search-wrap:focus-within {
+    border-color: var(--spaceIndigo);
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(45, 50, 80, 0.07);
+}
+
+.search-icon {
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+    color: #a0a7c4;
+    transition: color 0.2s ease;
+}
+
+.comunidades-search-wrap:focus-within .search-icon {
+    color: var(--spaceIndigo);
+}
+
+.comunidades-search-input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    outline: none;
+    font-family: 'inter', sans-serif;
+    font-size: 15px;
+    color: var(--spaceIndigo);
+}
+
+.comunidades-search-input::placeholder {
+    color: #b0b8d4;
+}
+
+.search-clear-btn {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(45, 50, 80, 0.09);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    padding: 0;
+}
+
+.search-clear-btn:hover {
+    background: rgba(45, 50, 80, 0.16);
+}
+
+.search-clear-btn svg {
+    width: 13px;
+    height: 13px;
+    color: var(--spaceIndigo);
+}
+
+/* ==========================================================
+   ACTION BUTTONS
+   ========================================================== */
+
+.comunidades-action-btns {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Botón "Filtros" */
+.filters-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 18px;
+    height: 46px;
+    background: #f5f6fb;
+    border: 1.5px solid #e4e8f2;
+    border-radius: 10px;
     font-family: 'inter', sans-serif;
     font-size: 14px;
     font-weight: 600;
-    padding: 12px 24px;
+    color: var(--spaceIndigo);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.22s ease;
+}
+
+.filters-toggle-btn svg:first-child {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+}
+
+.filters-toggle-btn:hover {
+    border-color: var(--spaceIndigo);
+    background: rgba(45, 50, 80, 0.05);
+}
+
+.filters-toggle-btn--open {
+    background: var(--spaceIndigo);
+    border-color: var(--spaceIndigo);
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(45, 50, 80, 0.22);
+}
+
+/* Chevron animado */
+.filters-chevron {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+    transition: transform 0.28s ease;
+}
+
+.filters-toggle-btn--open .filters-chevron {
+    transform: rotate(180deg);
+}
+
+/* Badge con nº de filtros activos */
+.filters-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    background: rgba(45, 50, 80, 0.12);
+    color: var(--spaceIndigo);
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.filters-toggle-btn--open .filters-badge {
+    background: rgba(255, 255, 255, 0.22);
+    color: #ffffff;
+}
+
+/* Botón crear comunidad */
+.create-community-btn {
+    display: inline-flex;
+    align-items: center;
+    font-family: 'inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 0 22px;
+    height: 46px;
     background-color: var(--spaceIndigo);
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.22s ease;
     white-space: nowrap;
     flex-shrink: 0;
-    box-shadow: 0 4px 12px rgba(45, 50, 80, 0.2);
+    box-shadow: 0 4px 14px rgba(45, 50, 80, 0.22);
 }
 
 .create-community-btn:hover {
     background-color: #1e2240;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(45, 50, 80, 0.25);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(45, 50, 80, 0.28);
 }
 
-.filters-panel {
-    width: 100%;
-    background: #f7f8fc;
-    border: 1px solid #e8ebf4;
-    border-radius: 16px;
-    padding: 16px;
-}
+/* ==========================================================
+   SEARCH LIMIT HINT
+   ========================================================== */
 
-.filters-panel__header {
-    margin-bottom: 12px;
-}
-
-.filters-panel__header h2 {
-    margin: 0;
+.search-limit-hint {
+    margin: 5px 4px 0;
+    text-align: right;
     font-family: 'inter', sans-serif;
-    font-size: 18px;
-    color: var(--spaceIndigo);
-}
-
-.filters-panel__eyebrow {
-    margin: 0 0 4px;
-    font-family: 'inter', sans-serif;
-    font-size: 12px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font-size: 11px;
     color: var(--glaucous);
 }
+
+/* ==========================================================
+   COLLAPSIBLE FILTER PANEL
+   CSS grid-template-rows trick: 0fr → 1fr anima la altura
+   ========================================================== */
+
+.filters-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.32s ease, margin-top 0.32s ease;
+    margin-top: 0;
+}
+
+.filters-panel--open {
+    grid-template-rows: 1fr;
+    margin-top: 8px;
+}
+
+.filters-panel-inner {
+    overflow: hidden;
+    min-height: 0;
+}
+
+.filters-panel-content {
+    padding: 16px 16px 20px;
+    background: #f7f8fc;
+    border: 1px solid #e4e8f2;
+    border-radius: 14px;
+    margin-top: 2px;
+    /* pequeño respiro visual al abrir */
+}
+
+.filters-panel__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.filters-panel__label {
+    font-family: 'inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--spaceIndigo);
+    letter-spacing: 0.01em;
+}
+
+.filters-clear-btn {
+    font-family: 'inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--glaucous);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 6px;
+    transition: color 0.2s ease, background 0.2s ease;
+}
+
+.filters-clear-btn:hover {
+    color: #dc2626;
+    background: rgba(220, 38, 38, 0.06);
+}
+
+/* ==========================================================
+   FILTER GROUPS
+   ========================================================== */
 
 .comunidades-filters {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
+    gap: 12px;
 }
 
 .filter-group {
@@ -95,11 +382,13 @@
     border-radius: 12px;
 }
 
-.filter-group > span {
+.filter-group>span {
     font-family: 'inter', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--spaceIndigo);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--glaucous);
 }
 
 .filter-group--wide {
@@ -109,27 +398,27 @@
 .chips-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    padding: 4px 0;
+    gap: 7px;
+    padding: 2px 0;
 }
 
 .chips-container.scrollable {
-    max-height: 120px;
+    max-height: 110px;
     overflow-y: auto;
-    padding-right: 10px;
+    padding-right: 8px;
 }
 
 .filter-chip {
-    padding: 8px 16px;
+    padding: 6px 14px;
     background: #ffffff;
-    border: 1px solid rgba(45, 50, 80, 0.16);
+    border: 1px solid rgba(45, 50, 80, 0.15);
     border-radius: 100px;
     font-family: 'inter', sans-serif;
     font-size: 13px;
     font-weight: 500;
     color: var(--spaceIndigo);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.18s ease;
     white-space: nowrap;
 }
 
@@ -142,36 +431,39 @@
     background: var(--spaceIndigo);
     color: #ffffff;
     border-color: var(--spaceIndigo);
-    box-shadow: 0 4px 10px rgba(45, 50, 80, 0.15);
+    box-shadow: 0 3px 10px rgba(45, 50, 80, 0.18);
 }
 
 .filter-select-simple {
     width: 100%;
-    padding: 11px 12px;
-    border: 1px solid rgba(45, 50, 80, 0.16);
-    border-radius: 12px;
+    padding: 10px 12px;
+    border: 1px solid rgba(45, 50, 80, 0.15);
+    border-radius: 10px;
     background: #fff;
     color: var(--spaceIndigo);
     font-family: 'inter', sans-serif;
     font-size: 14px;
     cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    appearance: auto;
 }
 
-.search-limit-hint {
-    width: 100%;
-    margin: 0;
-    text-align: right;
-    font-family: 'inter', sans-serif;
-    font-size: 12px;
-    color: var(--glaucous);
+.filter-select-simple:focus {
+    border-color: var(--spaceIndigo);
+    box-shadow: 0 0 0 3px rgba(45, 50, 80, 0.07);
 }
+
+/* ==========================================================
+   BODY
+   ========================================================== */
 
 .body {
     background-color: #ffffff;
     width: 100%;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 20px 60px 60px;
+    padding: 28px 60px 60px;
     min-height: 60vh;
 }
 
@@ -187,7 +479,7 @@
     margin-bottom: 24px;
 }
 
-.body > p {
+.body>p {
     text-align: center;
     font-family: 'inter', sans-serif;
     font-size: 16px;
@@ -203,6 +495,10 @@
     margin: 0;
     list-style: none;
 }
+
+/* ==========================================================
+   PAGINACIÓN
+   ========================================================== */
 
 .pagination {
     display: flex;
@@ -246,33 +542,69 @@
     font-weight: 600;
 }
 
+/* ==========================================================
+   RESPONSIVE
+   ========================================================== */
+
 @media (max-width: 1024px) {
-    .header {
-        padding: 30px 40px 10px;
+    .comunidades-hero {
+        margin-top: -68px;
+        padding: 116px 40px 80px;
+    }
+
+    .comunidades-hero__title {
+        font-size: 62px;
+    }
+
+    .comunidades-controls {
+        padding: 0 40px;
     }
 
     .body {
-        padding: 20px 40px 60px;
+        padding: 24px 40px 60px;
     }
 }
 
 @media (max-width: 768px) {
-    .header {
-        padding: 20px 20px 10px;
+    .comunidades-hero {
+        margin-top: -60px;
+        padding: 100px 20px 76px;
+    }
+
+    .comunidades-hero__title {
+        font-size: 46px;
+    }
+
+    .comunidades-hero__subtitle {
+        font-size: 14px;
+    }
+
+    .comunidades-controls {
+        padding: 0 20px;
     }
 
     .body {
-        padding: 20px 20px 40px;
+        padding: 24px 20px 40px;
     }
 
-    .search-row {
+    .comunidades-search-row {
         flex-direction: column;
         align-items: stretch;
+        gap: 8px;
+    }
+
+    .comunidades-action-btns {
+        width: 100%;
+    }
+
+    .filters-toggle-btn {
+        flex: 1;
+        justify-content: center;
     }
 
     .create-community-btn {
-        width: 100%;
-        text-align: center;
+        flex: 1;
+        justify-content: center;
     }
 
     .comunidades-filters {
@@ -281,5 +613,19 @@
 
     .filter-group--wide {
         grid-column: span 1;
+    }
+}
+
+@media (max-width: 480px) {
+    .comunidades-hero__title {
+        font-size: 36px;
+    }
+
+    .comunidades-hero__badge {
+        font-size: 10px;
+    }
+
+    .comunidades-hero__subtitle {
+        font-size: 13px;
     }
 }

@@ -18,28 +18,6 @@ jest.mock('../../components/Comunidad/ComunidadCard', () => {
     return <div data-testid="comunidad-card">{comunidad.nombre}</div>;
   };
 });
-jest.mock('../../components/InputSearch/InputSearch', () => {
-  return function MockInputSearch({ placeholder, onChange, value }) {
-    return (
-      <input
-        data-testid="search-input"
-        placeholder={placeholder}
-        onChange={onChange}
-        value={value}
-      />
-    );
-  };
-});
-jest.mock('../../components/PageHeader', () => {
-  return function MockPageHeader({ title, subtitle }) {
-    return (
-      <div data-testid="page-header">
-        <h1>{title}</h1>
-        <p>{subtitle}</p>
-      </div>
-    );
-  };
-});
 
 describe('Comunidades', () => {
   const mockComunidades = [
@@ -97,6 +75,11 @@ describe('Comunidades', () => {
       expect(institutionsApi.list).toHaveBeenCalled();
     });
     await screen.findByText('Matemáticas Avanzadas');
+
+    // Abre el panel de filtros para que los chips y el select queden accesibles
+    const filtersBtn = await screen.findByRole('button', { name: /Filtros/i });
+    userEvent.click(filtersBtn);
+
     await screen.findByRole('button', { name: 'Matemáticas' });
     await screen.findByRole('option', { name: 'Universidad de Sevilla' });
   };

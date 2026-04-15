@@ -1,11 +1,11 @@
 // src/components/Header/Header.jsx
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getApiBaseUrl } from '../../api/baseUrl';
+import { useNotificationContext } from '../../contexts/NotificationContext';
+import { useSubscriptionExpiry } from '../../hooks/useSubscriptionExpiry';
 import GoogleClassroomButton from '../GoogleClassroomButton/GoogleClassroomButton.jsx';
 import PlanExpiryBanner from '../PlanExpiryBanner/PlanExpiryBanner';
-import { useSubscriptionExpiry } from '../../hooks/useSubscriptionExpiry';
-import { useNotificationContext } from '../../contexts/NotificationContext';
 import './Header.css';
 
 const DEFAULT_PROFILE_AVATAR =
@@ -57,6 +57,27 @@ export default function Header({ user, page }) {
         window.addEventListener('storage', countDrafts);
         return () => window.removeEventListener('storage', countDrafts);
     }, []);
+
+    useEffect(() => {
+        if (!isMenuOpen) {
+            return undefined;
+        }
+
+        const onEscape = (event) => {
+            if (event.key === 'Escape') {
+                setIsMenuOpen(false);
+            }
+        };
+
+        window.addEventListener('keydown', onEscape);
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        return () => {
+            window.removeEventListener('keydown', onEscape);
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [isMenuOpen]);
 
     const communityUnread = Object.values(communityUnreadById || {}).reduce((acc, n) => acc + (n || 0), 0);
     const totalChatsUnread = privateUnread + communityUnread;
@@ -143,6 +164,8 @@ export default function Header({ user, page }) {
                     className={`header-hamburger ${isMenuOpen ? 'open' : ''}`}
                     onClick={toggleMenu}
                     aria-label="Menú"
+                    aria-expanded={isMenuOpen}
+                    aria-controls="header-mobile-sidebar"
                 >
                     <span></span>
                     <span></span>
@@ -156,7 +179,7 @@ export default function Header({ user, page }) {
 
             {/* Modal móvil */}
             <div className={`header-menu-overlay ${isMenuOpen ? 'open' : ''}`} onClick={closeMenu}></div>
-            <div className={`header-menu-sidebar ${isMenuOpen ? 'open' : ''}`}>
+            <div id="header-mobile-sidebar" className={`header-menu-sidebar ${isMenuOpen ? 'open' : ''}`}>
                 <div className="header-menu-header">
                     <button className="header-menu-close" onClick={closeMenu}>✕</button>
                 </div>

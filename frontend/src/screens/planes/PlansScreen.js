@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { subscriptionsApi } from "../../api/subscriptions.api";
 import Header from "../../components/Header/Header";
-import PageHeader from "../../components/PageHeader";
 import CheckoutModal from "../../components/plans/CheckoutModal";
 import "./PlansScreen.css";
 
@@ -227,14 +226,20 @@ export default function PlansScreen() {
   return (
     <>
       <Header page={'planes'} />
-      <div className="plansPage">
-        <div className="header">
-          <PageHeader 
-            title="Planes de Suscripción"
-            subtitle="Elige el plan perfecto para desbloquear todas las funcionalidades y sacar el máximo provecho de MeerKatters"
-          />
-        </div>
 
+      {/* ── Hero ── */}
+      <div className="plans-hero">
+        <div className="plans-hero__decoration" aria-hidden="true"/>
+        <div className="plans-hero__content">
+          <span className="plans-hero__badge">Elige tu plan</span>
+          <h1 className="plans-hero__title">Planes</h1>
+          <p className="plans-hero__subtitle">
+            Elige el plan perfecto para desbloquear todas las funcionalidades de MeerKatters
+          </p>
+        </div>
+      </div>
+
+      <div className="plansPage">
         <main className="plansContent">
           <section className="plansSection">
             <div className="sectionHead">

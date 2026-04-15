@@ -1,5 +1,4 @@
-import React from 'react';
-import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Chats, { resolveCommunityImage } from './Chats';
 
@@ -82,11 +81,6 @@ jest.mock('./PrivateChat', () => {
     };
 });
 
-jest.mock('../../components/PageHeader', () => {
-    return function MockPageHeader({ title, subtitle }) {
-        return <div data-testid="page-header">{title} - {subtitle}</div>;
-    };
-});
 
 const mockCommunities = [
     { id: 10, nombre: 'Comunidad A', descripcion: 'Desc A', imagen: 'imgA.jpg' },
@@ -170,11 +164,11 @@ describe('Chats', () => {
             expect(screen.getByTestId('mock-header')).toBeInTheDocument();
         });
 
-        it('debería mostrar el PageHeader con título y subtítulo', async () => {
+        it('debería mostrar el hero con título', async () => {
             await act(async () => {
                 render(<MemoryRouter><Chats /></MemoryRouter>);
             });
-            expect(screen.getByTestId('page-header')).toBeInTheDocument();
+            expect(screen.getByRole('heading', { name: /^Chats$/i, level: 1 })).toBeInTheDocument();
         });
 
         it('redirige a /login si no hay accessToken', async () => {

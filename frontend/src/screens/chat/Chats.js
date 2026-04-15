@@ -5,7 +5,6 @@ import { getApiBaseUrl } from '../../api/baseUrl';
 import { communitiesApi } from '../../api/communities.api';
 import { marcarComunidadComoLeida, marcarConversacionComoLeida, obtenerConversaciones, obtenerNoLeidosPorComunidad } from '../../api/mensajeService';
 import Header from '../../components/Header/Header';
-import PageHeader from '../../components/PageHeader';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotificationContext } from '../../contexts/NotificationContext';
 import './Chats.css';
@@ -386,14 +385,19 @@ export default function Chats() {
         <>
             <Header page="chats" user={user} />
 
-            <div className="chats-container">
-                <div className="chats-header">
-                    <PageHeader
-                        title="Chats"
-                        subtitle="Gestiona tus conversaciones de comunidades y chats privados"
-                    />
+            {/* ── Hero ── */}
+            <div className="chats-hero">
+                <div className="chats-hero__decoration" aria-hidden="true"/>
+                <div className="chats-hero__content">
+                    <span className="chats-hero__badge">Mensajería</span>
+                    <h1 className="chats-hero__title">Chats</h1>
+                    <p className="chats-hero__subtitle">
+                        Gestiona tus conversaciones de comunidades y chats privados
+                    </p>
                 </div>
+            </div>
 
+            <div className="chats-container">
                 <div className="chats-tabs">
                     <button
                         type="button"
