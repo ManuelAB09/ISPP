@@ -20,7 +20,7 @@
 
 **Vínculo de 9-S3-time-report**: https://uses0.sharepoint.com/:b:/s/ISPP_dvkxr7/IQBdJibh5JNDR5wjaMutvmMmAQEkMnY0mNHT0fn4G-8caX8?e=wcjFJI
 
-**Vínculo de la presentación 9-S3-slides**:
+**Vínculo de la presentación 9-S3-slides**: https://uses0.sharepoint.com/:b:/s/ISPP_dvkxr7/IQCsiV3rH7BiRa9rS-XRM3LfAa7uLSYTiYB7k9AfOxVYMEI?e=qldDDA
 
 **Vínculo de la demo 9-S3-demo usada en la presentación**: https://uses0.sharepoint.com/:v:/s/ISPP_dvkxr7/IQBc9ikBO5dtQJXDuFDZVN6lAW-Z1v_IdgLovuAFsCSe8Bs?e=INK80e
 
