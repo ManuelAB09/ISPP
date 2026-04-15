@@ -1049,7 +1049,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   position: relative;
   z-index: 2;
   width: auto;
@@ -1108,6 +1108,19 @@
 
 .cd-floating-zoom-btn-history:hover:not(:disabled) {
   background: var(--glaucous);
+}
+
+.cd-floating-zoom-btn-end {
+  background: #ff4d4f;
+  box-shadow: 0 8px 24px rgba(255, 77, 79, 0.25);
+  padding: 0 0.5rem;
+  height: 32px;
+  font-size: 0.75rem;
+  min-width: 70px;
+}
+
+.cd-floating-zoom-btn-end:hover:not(:disabled) {
+  background: #ff7875;
 }
 
 .cd-floating-zoom-btn:disabled {

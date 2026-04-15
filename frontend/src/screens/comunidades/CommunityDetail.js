@@ -2050,19 +2050,13 @@ extraActions={(
         </button>
       ) : null}
 
-      {activeMeeting && currentUserId === activeMeeting?.creadorId ? (
+      {activeMeeting && String(currentUserId) === String(activeMeeting?.creadorId) ? (
         <button
           type="button"
           className="cd-floating-zoom-btn cd-floating-zoom-btn-end"
           onClick={handleEndMeeting}
           disabled={meetingLoading}
           title="Finalizar la reunion activa"
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '8px 16px', background: '#ff4d4f', color: '#fff',
-            border: 'none', borderRadius: 6, cursor: 'pointer',
-            fontSize: '0.9rem'
-          }}
         >
           <LuX size={16} />
           <span>Finalizar</span>
