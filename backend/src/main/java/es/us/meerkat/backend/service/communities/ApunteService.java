@@ -20,9 +20,7 @@ import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Servicio para gestionar apuntes en comunidades.
- */
+/** Servicio para gestionar apuntes en comunidades. */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -36,13 +34,13 @@ public class ApunteService {
      * Sube un apunte a una comunidad.
      *
      * @param comunidadId ID de la comunidad
-     * @param usuarioId   ID del usuario que sube el apunte
-     * @param titulo      Título del apunte
+     * @param usuarioId ID del usuario que sube el apunte
+     * @param titulo Título del apunte
      * @param descripcion Descripción del apunte (opcional)
-     * @param file        Archivo del apunte
+     * @param file Archivo del apunte
      * @return DTO del apunte creado
-     * @throws IllegalArgumentException si la comunidad o usuario no existen, o hay
-     *                                  error en el archivo
+     * @throws IllegalArgumentException si la comunidad o usuario no existen, o hay error en el
+     *     archivo
      */
     @Transactional
     public ApunteResponse subirApunte(
@@ -60,30 +58,36 @@ public class ApunteService {
             throw new IllegalArgumentException("El archivo no puede superar 100 MB");
         }
 
-        Comunidad comunidad = comunidadRepository
-                .findById(comunidadId)
-                .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
+        Comunidad comunidad =
+                comunidadRepository
+                        .findById(comunidadId)
+                        .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
 
-        Usuario usuario = usuarioRepository
-                .findById(usuarioId)
-                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        Usuario usuario =
+                usuarioRepository
+                        .findById(usuarioId)
+                        .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
         try {
             byte[] contenido = file.getBytes();
 
-            Apunte apunte = Apunte.builder()
-                    .titulo(titulo != null && !titulo.isBlank() ? titulo : file.getOriginalFilename())
-                    .descripcion(descripcion)
-                    .contenido(contenido)
-                    .nombreArchivo(file.getOriginalFilename())
-                    .tipoMime(file.getContentType())
-                    .tamanioArchivo(file.getSize())
-                    .comunidad(comunidad)
-                    .usuario(usuario)
-                    .createdAt(LocalDateTime.now())
-                    .descargas(0)
-                    .valoracionMedia(0.0)
-                    .build();
+            Apunte apunte =
+                    Apunte.builder()
+                            .titulo(
+                                    titulo != null && !titulo.isBlank()
+                                            ? titulo
+                                            : file.getOriginalFilename())
+                            .descripcion(descripcion)
+                            .contenido(contenido)
+                            .nombreArchivo(file.getOriginalFilename())
+                            .tipoMime(file.getContentType())
+                            .tamanioArchivo(file.getSize())
+                            .comunidad(comunidad)
+                            .usuario(usuario)
+                            .createdAt(LocalDateTime.now())
+                            .descargas(0)
+                            .valoracionMedia(0.0)
+                            .build();
 
             Apunte apunteGuardado = apunteRepository.save(apunte);
             log.info("Apunte subido exitosamente: {}", apunteGuardado.getId());
@@ -99,7 +103,7 @@ public class ApunteService {
      * Obtiene los apuntes de una comunidad con paginación.
      *
      * @param comunidadId ID de la comunidad
-     * @param pageable    Información de paginación
+     * @param pageable Información de paginación
      * @return Página con los apuntes
      */
     @Transactional(readOnly = true)
@@ -119,9 +123,7 @@ public class ApunteService {
     @Transactional(readOnly = true)
     public List<ApunteResponse> obtenerTodosApuntesComunidad(Long comunidadId) {
         verificarComunidadExiste(comunidadId);
-        return apunteRepository
-                .findByComunidadIdOrderByCreatedAtDesc(comunidadId)
-                .stream()
+        return apunteRepository.findByComunidadIdOrderByCreatedAtDesc(comunidadId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -135,9 +137,10 @@ public class ApunteService {
      */
     @Transactional(readOnly = true)
     public ApunteResponse obtenerApunte(Long apunteId) {
-        Apunte apunte = apunteRepository
-                .findById(apunteId)
-                .orElseThrow(() -> new IllegalArgumentException("Apunte no encontrado"));
+        Apunte apunte =
+                apunteRepository
+                        .findById(apunteId)
+                        .orElseThrow(() -> new IllegalArgumentException("Apunte no encontrado"));
         return mapToResponse(apunte);
     }
 
@@ -150,9 +153,10 @@ public class ApunteService {
      */
     @Transactional
     public byte[] descargarApunte(Long apunteId) {
-        Apunte apunte = apunteRepository
-                .findById(apunteId)
-                .orElseThrow(() -> new IllegalArgumentException("Apunte no encontrado"));
+        Apunte apunte =
+                apunteRepository
+                        .findById(apunteId)
+                        .orElseThrow(() -> new IllegalArgumentException("Apunte no encontrado"));
 
         apunte.setDescargas(apunte.getDescargas() != null ? apunte.getDescargas() + 1 : 1);
         apunteRepository.save(apunte);
@@ -164,15 +168,16 @@ public class ApunteService {
     /**
      * Elimina un apunte.
      *
-     * @param apunteId  ID del apunte
+     * @param apunteId ID del apunte
      * @param usuarioId ID del usuario que intenta eliminar
      * @throws IllegalArgumentException si el apunte no existe o no tiene permisos
      */
     @Transactional
     public void eliminarApunte(Long apunteId, Long usuarioId) {
-        Apunte apunte = apunteRepository
-                .findById(apunteId)
-                .orElseThrow(() -> new IllegalArgumentException("Apunte no encontrado"));
+        Apunte apunte =
+                apunteRepository
+                        .findById(apunteId)
+                        .orElseThrow(() -> new IllegalArgumentException("Apunte no encontrado"));
 
         if (!apunte.getUsuario().getId().equals(usuarioId)) {
             throw new IllegalArgumentException("No tienes permisos para eliminar este apunte");
@@ -186,8 +191,8 @@ public class ApunteService {
      * Busca apuntes por título en una comunidad.
      *
      * @param comunidadId ID de la comunidad
-     * @param titulo      Título a buscar
-     * @param pageable    Información de paginación
+     * @param titulo Título a buscar
+     * @param pageable Información de paginación
      * @return Página con los apuntes que coinciden
      */
     @Transactional(readOnly = true)
@@ -202,7 +207,7 @@ public class ApunteService {
      * Obtiene los apuntes subidos por un usuario en una comunidad.
      *
      * @param comunidadId ID de la comunidad
-     * @param usuarioId   ID del usuario
+     * @param usuarioId ID del usuario
      * @return Lista de apuntes del usuario
      */
     @Transactional(readOnly = true)

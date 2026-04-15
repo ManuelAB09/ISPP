@@ -30,8 +30,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Controlador REST para gestionar apuntes en comunidades.
- * Base URL: /api/v1/communities/{communityId}/apuntes
+ * Controlador REST para gestionar apuntes en comunidades. Base URL:
+ * /api/v1/communities/{communityId}/apuntes
  */
 @RestController
 @RequestMapping("/api/v1/communities/{communityId}/apuntes")
@@ -43,11 +43,13 @@ public class ApunteController {
     private final ApunteService apunteService;
 
     /**
-     * Sube un nuevo apunte a la comunidad.
-     * POST /api/v1/communities/{communityId}/apuntes/upload
+     * Sube un nuevo apunte a la comunidad. POST /api/v1/communities/{communityId}/apuntes/upload
      */
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "Subir apunte", description = "Sube un nuevo apunte a la comunidad", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "Subir apunte",
+            description = "Sube un nuevo apunte a la comunidad",
+            security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<ApunteResponse> subirApunte(
             @PathVariable Long communityId,
             @AuthenticationPrincipal Usuario usuario,
@@ -60,8 +62,9 @@ public class ApunteController {
         }
 
         try {
-            ApunteResponse response = apunteService.subirApunte(communityId, usuario.getId(), titulo, descripcion,
-                    file);
+            ApunteResponse response =
+                    apunteService.subirApunte(
+                            communityId, usuario.getId(), titulo, descripcion, file);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IllegalArgumentException e) {
             log.warn("Error al subir apunte: {}", e.getMessage());
@@ -70,8 +73,8 @@ public class ApunteController {
     }
 
     /**
-     * Obtiene todos los apuntes de una comunidad con paginación.
-     * GET /api/v1/communities/{communityId}/apuntes
+     * Obtiene todos los apuntes de una comunidad con paginación. GET
+     * /api/v1/communities/{communityId}/apuntes
      */
     @GetMapping
     @Operation(summary = "Listar apuntes", description = "Obtiene los apuntes de una comunidad")
@@ -82,7 +85,8 @@ public class ApunteController {
 
         try {
             Pageable pageable = PageRequest.of(page, size);
-            Page<ApunteResponse> apuntes = apunteService.obtenerApuntesComunidad(communityId, pageable);
+            Page<ApunteResponse> apuntes =
+                    apunteService.obtenerApuntesComunidad(communityId, pageable);
             return ResponseEntity.ok(apuntes);
         } catch (IllegalArgumentException e) {
             log.warn("Error al obtener apuntes: {}", e.getMessage());
@@ -90,15 +94,13 @@ public class ApunteController {
         }
     }
 
-    /**
-     * Obtiene un apunte específico.
-     * GET /api/v1/communities/{communityId}/apuntes/{apunteId}
-     */
+    /** Obtiene un apunte específico. GET /api/v1/communities/{communityId}/apuntes/{apunteId} */
     @GetMapping("/{apunteId}")
-    @Operation(summary = "Obtener apunte", description = "Obtiene los detalles de un apunte específico")
+    @Operation(
+            summary = "Obtener apunte",
+            description = "Obtiene los detalles de un apunte específico")
     public ResponseEntity<ApunteResponse> obtenerApunte(
-            @PathVariable Long communityId,
-            @PathVariable Long apunteId) {
+            @PathVariable Long communityId, @PathVariable Long apunteId) {
 
         try {
             ApunteResponse apunte = apunteService.obtenerApunte(apunteId);
@@ -113,14 +115,13 @@ public class ApunteController {
     }
 
     /**
-     * Descarga un apunte (devuelve el archivo).
-     * GET /api/v1/communities/{communityId}/apuntes/{apunteId}/download
+     * Descarga un apunte (devuelve el archivo). GET
+     * /api/v1/communities/{communityId}/apuntes/{apunteId}/download
      */
     @GetMapping("/{apunteId}/download")
     @Operation(summary = "Descargar apunte", description = "Descarga el archivo del apunte")
     public ResponseEntity<byte[]> descargarApunte(
-            @PathVariable Long communityId,
-            @PathVariable Long apunteId) {
+            @PathVariable Long communityId, @PathVariable Long apunteId) {
 
         try {
             ApunteResponse apunte = apunteService.obtenerApunte(apunteId);
@@ -130,10 +131,13 @@ public class ApunteController {
             }
 
             byte[] contenido = apunteService.descargarApunte(apunteId);
-            String nombreCodificado = URLEncoder.encode(apunte.getNombreArchivo(), StandardCharsets.UTF_8);
+            String nombreCodificado =
+                    URLEncoder.encode(apunte.getNombreArchivo(), StandardCharsets.UTF_8);
 
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + nombreCodificado)
+                    .header(
+                            HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename*=UTF-8''" + nombreCodificado)
                     .header(HttpHeaders.CONTENT_TYPE, apunte.getTipoMime())
                     .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(contenido.length))
                     .body(contenido);
@@ -143,10 +147,7 @@ public class ApunteController {
         }
     }
 
-    /**
-     * Busca apuntes por título.
-     * GET /api/v1/communities/{communityId}/apuntes/search
-     */
+    /** Busca apuntes por título. GET /api/v1/communities/{communityId}/apuntes/search */
     @GetMapping("/search")
     @Operation(summary = "Buscar apuntes", description = "Busca apuntes por título en la comunidad")
     public ResponseEntity<Page<ApunteResponse>> buscarApuntes(
@@ -157,19 +158,20 @@ public class ApunteController {
 
         try {
             Pageable pageable = PageRequest.of(page, size);
-            Page<ApunteResponse> resultados = apunteService.buscarApuntes(communityId, titulo, pageable);
+            Page<ApunteResponse> resultados =
+                    apunteService.buscarApuntes(communityId, titulo, pageable);
             return ResponseEntity.ok(resultados);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
 
-    /**
-     * Elimina un apunte.
-     * DELETE /api/v1/communities/{communityId}/apuntes/{apunteId}
-     */
+    /** Elimina un apunte. DELETE /api/v1/communities/{communityId}/apuntes/{apunteId} */
     @DeleteMapping("/{apunteId}")
-    @Operation(summary = "Eliminar apunte", description = "Elimina un apunte (solo el propietario)", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "Eliminar apunte",
+            description = "Elimina un apunte (solo el propietario)",
+            security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Void> eliminarApunte(
             @PathVariable Long communityId,
             @PathVariable Long apunteId,

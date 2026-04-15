@@ -50,9 +50,7 @@ import es.us.meerkat.backend.service.communities.AuthorizationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Servicio principal para gestionar reuniones Zoom vinculadas a comunidades.
- */
+/** Servicio principal para gestionar reuniones Zoom vinculadas a comunidades. */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -91,8 +89,7 @@ public class ZoomIntegrationService {
     private long zoomRecordingsRetentionDays;
 
     /**
-     * Crea una reunión Zoom simple (sin vincular a comunidad). Devuelve un Map con
-     * las claves
+     * Crea una reunión Zoom simple (sin vincular a comunidad). Devuelve un Map con las claves
      * "join_url", "start_url" y "password".
      */
     public Map<String, Object> crearReunionSimple(String topic, Integer durationMinutes) {
@@ -109,8 +106,9 @@ public class ZoomIntegrationService {
 
         assertMember(comunidadId, userId);
 
-        Optional<ZoomMeeting> existing = zoomMeetingRepository.findFirstByComunidadIdAndStatusOrderByCreatedAtDesc(
-                comunidadId, ZoomMeetingStatus.ACTIVE);
+        Optional<ZoomMeeting> existing =
+                zoomMeetingRepository.findFirstByComunidadIdAndStatusOrderByCreatedAtDesc(
+                        comunidadId, ZoomMeetingStatus.ACTIVE);
         if (existing.isPresent()) {
             ZoomMeeting activeMeeting = existing.get();
             if (activeMeeting.getStartedAt() != null
@@ -125,37 +123,42 @@ public class ZoomIntegrationService {
             }
         }
 
-        Comunidad comunidad = comunidadRepository
-                .findById(comunidadId)
-                .orElseThrow(() -> new RuntimeException("Comunidad no encontrada"));
-        Usuario user = usuarioRepository
-                .findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        Comunidad comunidad =
+                comunidadRepository
+                        .findById(comunidadId)
+                        .orElseThrow(() -> new RuntimeException("Comunidad no encontrada"));
+        Usuario user =
+                usuarioRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        String topic = (topicParam == null || topicParam.isBlank())
-                ? "Llamada de " + comunidad.getNombre()
-                : topicParam;
+        String topic =
+                (topicParam == null || topicParam.isBlank())
+                        ? "Llamada de " + comunidad.getNombre()
+                        : topicParam;
         if (durationMinutesParam != null && durationMinutesParam < 0) {
             throw new IllegalArgumentException("durationMinutes no puede ser menor que cero");
         }
 
-        Integer durationMinutes = durationMinutesParam != null && durationMinutesParam > 0
-                ? durationMinutesParam
-                : null;
+        Integer durationMinutes =
+                durationMinutesParam != null && durationMinutesParam > 0
+                        ? durationMinutesParam
+                        : null;
 
         Map<String, Object> zoomMeeting = createZoomMeeting(topic, durationMinutes);
 
-        ZoomMeeting meeting = ZoomMeeting.builder()
-                .comunidad(comunidad)
-                .creador(user)
-                .zoomMeetingId(String.valueOf(zoomMeeting.get("id")))
-                .topic(topic)
-                .joinUrl((String) zoomMeeting.get("join_url"))
-                .startUrl((String) zoomMeeting.get("start_url"))
-                .password((String) zoomMeeting.get("password"))
-                .status(ZoomMeetingStatus.ACTIVE)
-                .durationMinutes(durationMinutes)
-                .build();
+        ZoomMeeting meeting =
+                ZoomMeeting.builder()
+                        .comunidad(comunidad)
+                        .creador(user)
+                        .zoomMeetingId(String.valueOf(zoomMeeting.get("id")))
+                        .topic(topic)
+                        .joinUrl((String) zoomMeeting.get("join_url"))
+                        .startUrl((String) zoomMeeting.get("start_url"))
+                        .password((String) zoomMeeting.get("password"))
+                        .status(ZoomMeetingStatus.ACTIVE)
+                        .durationMinutes(durationMinutes)
+                        .build();
 
         ZoomMeeting saved = zoomMeetingRepository.save(meeting);
         broadcastCommunityMeeting(comunidadId, buildMeetingPayload(saved));
@@ -177,9 +180,7 @@ public class ZoomIntegrationService {
         broadcastCommunityMeeting(comunidadId, null);
     }
 
-    /**
-     * Obtiene la reunion activa de una comunidad si el usuario pertenece a ella.
-     */
+    /** Obtiene la reunion activa de una comunidad si el usuario pertenece a ella. */
     public ZoomMeeting getActiveMeeting(final Long comunidadId, final Long userId) {
         assertMember(comunidadId, userId);
 
@@ -195,21 +196,20 @@ public class ZoomIntegrationService {
         return zoomMeetingRepository.findByComunidadIdOrderByCreatedAtDesc(comunidadId);
     }
 
-    /**
-     * Devuelve el acceso a la reunion comun y registra presencia pendiente en la
-     * app.
-     */
+    /** Devuelve el acceso a la reunion comun y registra presencia pendiente en la app. */
     @Transactional
     public ZoomJoinResponse joinActiveMeeting(final Long comunidadId, final Long userId) {
         ZoomMeeting meeting = getActiveMeeting(comunidadId, userId);
-        Usuario user = usuarioRepository
-                .findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        Usuario user =
+                usuarioRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        boolean alreadyTracked = participantRepository
-                .findFirstByZoomMeetingIdAndUsuarioIdOrderByJoinedAtDesc(
-                        meeting.getId(), userId)
-                .isPresent();
+        boolean alreadyTracked =
+                participantRepository
+                        .findFirstByZoomMeetingIdAndUsuarioIdOrderByJoinedAtDesc(
+                                meeting.getId(), userId)
+                        .isPresent();
 
         if (!alreadyTracked) {
             participantRepository.save(
@@ -241,15 +241,16 @@ public class ZoomIntegrationService {
                 .findByZoomMeetingIdAndInCallTrueOrderByJoinedAtAsc(meeting.getId())
                 .stream()
                 .map(
-                        participant -> new ZoomParticipantResponse(
-                                participant.getUsuario() != null
-                                        ? participant.getUsuario().getId()
-                                        : null,
-                                participant.getDisplayName(),
-                                participant.getEmail(),
-                                participant.getInCall(),
-                                participant.getJoinedAt(),
-                                participant.getLeftAt()))
+                        participant ->
+                                new ZoomParticipantResponse(
+                                        participant.getUsuario() != null
+                                                ? participant.getUsuario().getId()
+                                                : null,
+                                        participant.getDisplayName(),
+                                        participant.getEmail(),
+                                        participant.getInCall(),
+                                        participant.getJoinedAt(),
+                                        participant.getLeftAt()))
                 .toList();
     }
 
@@ -259,12 +260,13 @@ public class ZoomIntegrationService {
                 .findByUsuarioIdAndInCallTrueOrderByJoinedAtDesc(userId)
                 .stream()
                 .map(
-                        participant -> new ZoomUserCallResponse(
-                                participant.getZoomMeeting().getComunidad().getId(),
-                                participant.getZoomMeeting().getComunidad().getNombre(),
-                                participant.getZoomMeeting().getZoomMeetingId(),
-                                participant.getZoomMeeting().getTopic(),
-                                participant.getJoinedAt()))
+                        participant ->
+                                new ZoomUserCallResponse(
+                                        participant.getZoomMeeting().getComunidad().getId(),
+                                        participant.getZoomMeeting().getComunidad().getNombre(),
+                                        participant.getZoomMeeting().getZoomMeetingId(),
+                                        participant.getZoomMeeting().getTopic(),
+                                        participant.getJoinedAt()))
                 .toList();
     }
 
@@ -286,9 +288,7 @@ public class ZoomIntegrationService {
         return toRecordingResponse(findRecordingForCommunity(comunidadId, recordingId, userId));
     }
 
-    /**
-     * Sube manualmente una grabacion y la vincula a una reunion de la comunidad.
-     */
+    /** Sube manualmente una grabacion y la vincula a una reunion de la comunidad. */
     @Transactional
     public ZoomRecordingResponse uploadRecordingForMeeting(
             final Long comunidadId,
@@ -299,23 +299,24 @@ public class ZoomIntegrationService {
         ZoomMeeting meeting = findMeetingForCommunity(comunidadId, meetingId, userId);
         ValidatedManualRecording validatedRecording = validateManualRecording(file);
 
-        ZoomRecording recording = ZoomRecording.builder()
-                .zoomMeeting(meeting)
-                .zoomRecordingId(UUID.randomUUID().toString())
-                .fileType(validatedRecording.fileType())
-                .storedInApp(false)
-                .recordingStart(
-                        meeting.getStartedAt() != null
-                                ? meeting.getStartedAt()
-                                : meeting.getCreatedAt())
-                .recordingEnd(meeting.getEndedAt())
-                .expiresAt(LocalDateTime.now().plusDays(zoomRecordingsRetentionDays))
-                .status("UPLOADED")
-                .build();
+        ZoomRecording recording =
+                ZoomRecording.builder()
+                        .zoomMeeting(meeting)
+                        .zoomRecordingId(UUID.randomUUID().toString())
+                        .fileType(validatedRecording.fileType())
+                        .storedInApp(false)
+                        .recordingStart(
+                                meeting.getStartedAt() != null
+                                        ? meeting.getStartedAt()
+                                        : meeting.getCreatedAt())
+                        .recordingEnd(meeting.getEndedAt())
+                        .expiresAt(LocalDateTime.now().plusDays(zoomRecordingsRetentionDays))
+                        .status("UPLOADED")
+                        .build();
 
         ZoomRecording savedRecording = recordingRepository.save(recording);
-        ZoomRecordingStorageService.StoredRecording storedRecording = zoomRecordingStorageService.store(savedRecording,
-                validatedRecording.content());
+        ZoomRecordingStorageService.StoredRecording storedRecording =
+                zoomRecordingStorageService.store(savedRecording, validatedRecording.content());
 
         savedRecording.setStoredInApp(true);
         savedRecording.setStorageProvider(storedRecording.provider());
@@ -347,10 +348,7 @@ public class ZoomIntegrationService {
                 resolveRecordingMimeType(recording.getFileType()));
     }
 
-    /**
-     * Elimina diariamente las grabaciones expiradas del almacenamiento y de la base
-     * de datos.
-     */
+    /** Elimina diariamente las grabaciones expiradas del almacenamiento y de la base de datos. */
     @Scheduled(cron = "${zoom.recordings.cleanup-cron:0 0 3 * * *}")
     @Transactional
     public void cleanupExpiredRecordings() {
@@ -376,15 +374,17 @@ public class ZoomIntegrationService {
             final String topicParam,
             final Integer durationMinutesParam) {
 
-        Evento evento = eventoRepository
-                .findById(eventoId)
-                .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
+        Evento evento =
+                eventoRepository
+                        .findById(eventoId)
+                        .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
 
         Long comunidadId = evento.getComunidad().getId();
         assertMember(comunidadId, userId);
 
-        Optional<ZoomMeeting> existing = zoomMeetingRepository.findFirstByEventoIdAndStatusOrderByCreatedAtDesc(
-                eventoId, ZoomMeetingStatus.ACTIVE);
+        Optional<ZoomMeeting> existing =
+                zoomMeetingRepository.findFirstByEventoIdAndStatusOrderByCreatedAtDesc(
+                        eventoId, ZoomMeetingStatus.ACTIVE);
         if (existing.isPresent()) {
             ZoomMeeting activeMeeting = existing.get();
             if (activeMeeting.getStartedAt() != null
@@ -404,35 +404,39 @@ public class ZoomIntegrationService {
             throw new RuntimeException("Solo el organizador del evento puede iniciar la reunión");
         }
 
-        Usuario user = usuarioRepository
-                .findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        Usuario user =
+                usuarioRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        String topic = (topicParam == null || topicParam.isBlank())
-                ? "Evento: " + evento.getTitulo()
-                : topicParam;
+        String topic =
+                (topicParam == null || topicParam.isBlank())
+                        ? "Evento: " + evento.getTitulo()
+                        : topicParam;
         if (durationMinutesParam != null && durationMinutesParam < 0) {
             throw new IllegalArgumentException("durationMinutes no puede ser menor que cero");
         }
 
-        Integer durationMinutes = durationMinutesParam != null && durationMinutesParam > 0
-                ? durationMinutesParam
-                : null;
+        Integer durationMinutes =
+                durationMinutesParam != null && durationMinutesParam > 0
+                        ? durationMinutesParam
+                        : null;
 
         Map<String, Object> zoomMeeting = createZoomMeeting(topic, durationMinutes);
 
-        ZoomMeeting meeting = ZoomMeeting.builder()
-                .comunidad(evento.getComunidad())
-                .evento(evento)
-                .creador(user)
-                .zoomMeetingId(String.valueOf(zoomMeeting.get("id")))
-                .topic(topic)
-                .joinUrl((String) zoomMeeting.get("join_url"))
-                .startUrl((String) zoomMeeting.get("start_url"))
-                .password((String) zoomMeeting.get("password"))
-                .status(ZoomMeetingStatus.ACTIVE)
-                .durationMinutes(durationMinutes)
-                .build();
+        ZoomMeeting meeting =
+                ZoomMeeting.builder()
+                        .comunidad(evento.getComunidad())
+                        .evento(evento)
+                        .creador(user)
+                        .zoomMeetingId(String.valueOf(zoomMeeting.get("id")))
+                        .topic(topic)
+                        .joinUrl((String) zoomMeeting.get("join_url"))
+                        .startUrl((String) zoomMeeting.get("start_url"))
+                        .password((String) zoomMeeting.get("password"))
+                        .status(ZoomMeetingStatus.ACTIVE)
+                        .durationMinutes(durationMinutes)
+                        .build();
 
         ZoomMeeting saved = zoomMeetingRepository.save(meeting);
         broadcastEventMeeting(eventoId, buildMeetingPayload(saved));
@@ -441,9 +445,10 @@ public class ZoomIntegrationService {
 
     /** Obtiene la reunion activa de un evento. */
     public ZoomMeeting getActiveMeetingForEvent(final Long eventoId, final Long userId) {
-        Evento evento = eventoRepository
-                .findById(eventoId)
-                .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
+        Evento evento =
+                eventoRepository
+                        .findById(eventoId)
+                        .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
         assertMember(evento.getComunidad().getId(), userId);
 
         return zoomMeetingRepository
@@ -452,20 +457,20 @@ public class ZoomIntegrationService {
                 .orElseThrow(() -> new RuntimeException("No hay llamada activa en este evento"));
     }
 
-    /**
-     * Devuelve el acceso a la reunion del evento y registra presencia pendiente.
-     */
+    /** Devuelve el acceso a la reunion del evento y registra presencia pendiente. */
     @Transactional
     public ZoomJoinResponse joinActiveMeetingForEvent(final Long eventoId, final Long userId) {
         ZoomMeeting meeting = getActiveMeetingForEvent(eventoId, userId);
-        Usuario user = usuarioRepository
-                .findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        Usuario user =
+                usuarioRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        boolean alreadyTracked = participantRepository
-                .findFirstByZoomMeetingIdAndUsuarioIdOrderByJoinedAtDesc(
-                        meeting.getId(), userId)
-                .isPresent();
+        boolean alreadyTracked =
+                participantRepository
+                        .findFirstByZoomMeetingIdAndUsuarioIdOrderByJoinedAtDesc(
+                                meeting.getId(), userId)
+                        .isPresent();
 
         if (!alreadyTracked) {
             participantRepository.save(
@@ -497,15 +502,16 @@ public class ZoomIntegrationService {
                 .findByZoomMeetingIdAndInCallTrueOrderByJoinedAtAsc(meeting.getId())
                 .stream()
                 .map(
-                        participant -> new ZoomParticipantResponse(
-                                participant.getUsuario() != null
-                                        ? participant.getUsuario().getId()
-                                        : null,
-                                participant.getDisplayName(),
-                                participant.getEmail(),
-                                participant.getInCall(),
-                                participant.getJoinedAt(),
-                                participant.getLeftAt()))
+                        participant ->
+                                new ZoomParticipantResponse(
+                                        participant.getUsuario() != null
+                                                ? participant.getUsuario().getId()
+                                                : null,
+                                        participant.getDisplayName(),
+                                        participant.getEmail(),
+                                        participant.getInCall(),
+                                        participant.getJoinedAt(),
+                                        participant.getLeftAt()))
                 .toList();
     }
 
@@ -545,7 +551,7 @@ public class ZoomIntegrationService {
             case "meeting.participant_left" -> handleParticipantLeft(zoomMeetingId, object);
             case "meeting.ended" -> handleMeetingEnded(zoomMeetingId);
             default ->
-                log.debug("Evento Zoom no gestionado: {} (meetingId={})", event, zoomMeetingId);
+                    log.debug("Evento Zoom no gestionado: {} (meetingId={})", event, zoomMeetingId);
         }
 
         return Map.of("status", "ok");
@@ -553,7 +559,8 @@ public class ZoomIntegrationService {
 
     private void handleParticipantJoined(
             final String zoomMeetingId, final Map<String, Object> object) {
-        Optional<ZoomMeeting> meetingOptional = zoomMeetingRepository.findByZoomMeetingId(zoomMeetingId);
+        Optional<ZoomMeeting> meetingOptional =
+                zoomMeetingRepository.findByZoomMeetingId(zoomMeetingId);
         if (meetingOptional.isEmpty()) {
             log.warn("Webhook join ignorado: no existe reunion para meetingId={}", zoomMeetingId);
             return;
@@ -561,33 +568,39 @@ public class ZoomIntegrationService {
 
         ZoomMeeting meeting = meetingOptional.get();
         Map<String, Object> participant = getMap(object, "participant");
-        String participantId = String.valueOf(
-                participant.getOrDefault("id", "zoom-" + System.currentTimeMillis()));
+        String participantId =
+                String.valueOf(
+                        participant.getOrDefault("id", "zoom-" + System.currentTimeMillis()));
         String displayName = String.valueOf(participant.getOrDefault("user_name", "Usuario Zoom"));
-        String email = participant.get("email") != null ? String.valueOf(participant.get("email")) : null;
+        String email =
+                participant.get("email") != null ? String.valueOf(participant.get("email")) : null;
         Usuario user = email != null ? usuarioRepository.findByEmail(email).orElse(null) : null;
 
-        Optional<ZoomMeetingParticipant> activeParticipant = participantRepository
-                .findFirstByZoomMeetingZoomMeetingIdAndZoomParticipantIdAndInCallTrueOrderByJoinedAtDesc(
-                        zoomMeetingId, participantId);
+        Optional<ZoomMeetingParticipant> activeParticipant =
+                participantRepository
+                        .findFirstByZoomMeetingZoomMeetingIdAndZoomParticipantIdAndInCallTrueOrderByJoinedAtDesc(
+                                zoomMeetingId, participantId);
         if (activeParticipant.isPresent()) {
             return;
         }
 
-        Optional<ZoomMeetingParticipant> pendingParticipant = email != null
-                ? participantRepository
-                        .findFirstByZoomMeetingIdAndEmailAndInCallFalseOrderByJoinedAtDesc(
-                                meeting.getId(), email)
-                : Optional.empty();
+        Optional<ZoomMeetingParticipant> pendingParticipant =
+                email != null
+                        ? participantRepository
+                                .findFirstByZoomMeetingIdAndEmailAndInCallFalseOrderByJoinedAtDesc(
+                                        meeting.getId(), email)
+                        : Optional.empty();
 
-        ZoomMeetingParticipant participantEntity = pendingParticipant.orElseGet(
-                () -> ZoomMeetingParticipant.builder()
-                        .zoomMeeting(meeting)
-                        .usuario(user)
-                        .zoomParticipantId(participantId)
-                        .displayName(displayName)
-                        .email(email)
-                        .build());
+        ZoomMeetingParticipant participantEntity =
+                pendingParticipant.orElseGet(
+                        () ->
+                                ZoomMeetingParticipant.builder()
+                                        .zoomMeeting(meeting)
+                                        .usuario(user)
+                                        .zoomParticipantId(participantId)
+                                        .displayName(displayName)
+                                        .email(email)
+                                        .build());
 
         participantEntity.setZoomParticipantId(participantId);
         participantEntity.setDisplayName(displayName);
@@ -723,9 +736,10 @@ public class ZoomIntegrationService {
             final Long comunidadId, final Long meetingId, final Long userId) {
         assertMember(comunidadId, userId);
 
-        ZoomMeeting meeting = zoomMeetingRepository
-                .findById(meetingId)
-                .orElseThrow(() -> new RuntimeException("Reunion no encontrada"));
+        ZoomMeeting meeting =
+                zoomMeetingRepository
+                        .findById(meetingId)
+                        .orElseThrow(() -> new RuntimeException("Reunion no encontrada"));
         if (!meeting.getComunidad().getId().equals(comunidadId)) {
             throw new RuntimeException("Reunion no encontrada");
         }
@@ -828,8 +842,10 @@ public class ZoomIntegrationService {
     }
 
     private String resolveManualRecordingFileType(final MultipartFile file) {
-        String filename = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";
-        String contentType = file.getContentType() != null ? file.getContentType().toLowerCase() : "";
+        String filename =
+                file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";
+        String contentType =
+                file.getContentType() != null ? file.getContentType().toLowerCase() : "";
 
         if (filename.endsWith(".mp4") || "video/mp4".equals(contentType)) {
             return "MP4";
@@ -873,8 +889,9 @@ public class ZoomIntegrationService {
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
         @SuppressWarnings("rawtypes")
-        ResponseEntity<Map> response = restTemplate.postForEntity(
-                zoomApiBaseUrl + "/users/me/meetings", request, Map.class);
+        ResponseEntity<Map> response =
+                restTemplate.postForEntity(
+                        zoomApiBaseUrl + "/users/me/meetings", request, Map.class);
 
         if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
             throw new RuntimeException("No se pudo crear la reunion Zoom");
@@ -890,20 +907,23 @@ public class ZoomIntegrationService {
                             + " zoom.account-id");
         }
 
-        String basicAuth = Base64.getEncoder()
-                .encodeToString(
-                        (zoomClientId + ":" + zoomClientSecret)
-                                .getBytes(StandardCharsets.UTF_8));
+        String basicAuth =
+                Base64.getEncoder()
+                        .encodeToString(
+                                (zoomClientId + ":" + zoomClientSecret)
+                                        .getBytes(StandardCharsets.UTF_8));
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Basic " + basicAuth);
 
         HttpEntity<Void> entity = new HttpEntity<>(headers);
-        String tokenUrl = "https://zoom.us/oauth/token?grant_type=account_credentials&account_id="
-                + zoomAccountId;
+        String tokenUrl =
+                "https://zoom.us/oauth/token?grant_type=account_credentials&account_id="
+                        + zoomAccountId;
 
         @SuppressWarnings("rawtypes")
-        ResponseEntity<Map> response = restTemplate.exchange(tokenUrl, HttpMethod.POST, entity, Map.class);
+        ResponseEntity<Map> response =
+                restTemplate.exchange(tokenUrl, HttpMethod.POST, entity, Map.class);
 
         if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
             throw new RuntimeException("No se pudo obtener token OAuth de Zoom");
@@ -953,7 +973,8 @@ public class ZoomIntegrationService {
     private String hmacSha256Hex(final String data, final String secret) {
         try {
             Mac sha256Hmac = Mac.getInstance("HmacSHA256");
-            SecretKeySpec secretKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+            SecretKeySpec secretKey =
+                    new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
             sha256Hmac.init(secretKey);
             byte[] hash = sha256Hmac.doFinal(data.getBytes(StandardCharsets.UTF_8));
 
@@ -987,9 +1008,7 @@ public class ZoomIntegrationService {
         return value == null || value.isBlank();
     }
 
-    private record ValidatedManualRecording(byte[] content, String fileType) {
-    }
+    private record ValidatedManualRecording(byte[] content, String fileType) {}
 
-    public record RecordingDownload(byte[] content, String fileName, String mimeType) {
-    }
+    public record RecordingDownload(byte[] content, String fileName, String mimeType) {}
 }
