@@ -24,9 +24,11 @@ export default function CommunityAnnouncementsTab({ communityId, isAdmin }) {
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [actionError, setActionError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ titulo: '', contenido: '', permitirComentarios: true });
   const [creating, setCreating] = useState(false);
+  const [deletingAnnouncementId, setDeletingAnnouncementId] = useState(null);
   const [formError, setFormError] = useState(null);
   const [searchParams] = useSearchParams();
   const anuncioIdParam = searchParams.get('anuncioId');
@@ -50,6 +52,7 @@ export default function CommunityAnnouncementsTab({ communityId, isAdmin }) {
   const handleOpenModal = () => {
     setForm({ titulo: '', contenido: '', permitirComentarios: true });
     setFormError(null);
+    setActionError(null);
     setShowModal(true);
   };
 
@@ -97,6 +100,24 @@ export default function CommunityAnnouncementsTab({ communityId, isAdmin }) {
     } finally {
       setCreating(false);
       setLoading(false);
+    }
+  };
+
+  const handleDeleteAnnouncement = async (announcementId) => {
+    const confirmed = window.confirm('¿Seguro que quieres eliminar este anuncio?');
+    if (!confirmed) {
+      return;
+    }
+
+    setActionError(null);
+    setDeletingAnnouncementId(announcementId);
+    try {
+      await axiosInstance.delete(`/api/v1/communities/${communityId}/announcements/${announcementId}`);
+      setAnnouncements((prev) => prev.filter((item) => item.id !== announcementId));
+    } catch {
+      setActionError('No se pudo eliminar el anuncio.');
+    } finally {
+      setDeletingAnnouncementId(null);
     }
   };
   
@@ -184,7 +205,19 @@ export default function CommunityAnnouncementsTab({ communityId, isAdmin }) {
               className={`catab-item${isHighlighted ? ' catab-item-highlighted' : ''}`}
               style={isHighlighted ? { border: '2px solid #2b7cff', background: '#eaf2ff' } : {}}
             >
-              <div className="catab-title">{anuncio.titulo}</div>
+              <div className="catab-item-header">
+                <div className="catab-title">{anuncio.titulo}</div>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    className="catab-btn-delete"
+                    onClick={() => handleDeleteAnnouncement(anuncio.id)}
+                    disabled={deletingAnnouncementId === anuncio.id}
+                  >
+                    {deletingAnnouncementId === anuncio.id ? 'Eliminando...' : 'Eliminar'}
+                  </button>
+                )}
+              </div>
               <div className="catab-meta">
                 <span>{formatDateTime(anuncio.createdAt)}</span>
                 {anuncio.editado && <span className="catab-editado">(editado)</span>}
@@ -197,6 +230,7 @@ export default function CommunityAnnouncementsTab({ communityId, isAdmin }) {
           );
         })
       )}
+      {actionError && <div className="catab-error">{actionError}</div>}
     </div>
   );
 }
@@ -266,6 +300,7 @@ function CommentsSection({ anuncioId }) {
                     className="catab-comment-avatar"
                   />
                   <span className="catab-comment-author">{c.usuario?.nombre || 'Usuario'}</span>
+                  {' '}
                   {c.texto}
                   <span style={{ float: 'right', color: '#94a3b8', fontSize: '0.93em' }}>
                     {c.createdAt ? formatDateTime(c.createdAt) : ''}

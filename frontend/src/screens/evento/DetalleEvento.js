@@ -67,6 +67,11 @@ const getUserPhoto = (user) => {
   return user.foto || user.fotoPerfil || user.avatar || user.imagen || user.image || '';
 };
 
+const getAttendeeUserId = (attendee) => {
+  const user = attendee?.usuario || attendee;
+  return user?.id || attendee?.usuarioId || attendee?.userId || null;
+};
+
 const eventIconRed = L.icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
   iconSize: [25, 41],
@@ -98,7 +103,7 @@ const DetalleEvento = () => {
         const ratedEvents = JSON.parse(localStorage.getItem('ratedEvents') || '{}');
         ratedEvents[`${userId}_${eventId}`] = true;
         localStorage.setItem('ratedEvents', JSON.stringify(ratedEvents));
-      } catch {}
+      } catch { }
     }
   }, [valorado, eventId]);
   const navigate = useNavigate();
@@ -229,8 +234,8 @@ const DetalleEvento = () => {
   const isStarted = event?.fechaHora ? new Date(event.fechaHora).getTime() <= Date.now() : false;
   const isEnded = event?.fechaFin
     ? new Date(event.fechaFin).getTime() <= Date.now()
-    : isStarted && event?.fechaHora
-      ? Date.now() - new Date(event.fechaHora).getTime() > 2 * 60 * 60 * 1000
+    : event?.fechaHora
+      ? new Date(event.fechaHora).getTime() <= Date.now()
       : false;
 
   // Abre el modal de confirmación de asistencia
@@ -511,7 +516,7 @@ const DetalleEvento = () => {
       const data = await ZoomApi.listRecordings(event.comunidadId);
       let list = Array.isArray(data) ? data : (data?.recordings || data?.content || data?.items || []);
       setRecordings(list);
-    } catch(err) {
+    } catch (err) {
       setRecordings([]);
     } finally {
       setRecordingsLoading(false);
@@ -528,7 +533,7 @@ const DetalleEvento = () => {
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
-    } catch(err) {
+    } catch (err) {
       alert('Error descargando la grabación');
     }
   };
@@ -1007,8 +1012,8 @@ const DetalleEvento = () => {
                                       <strong style={{ fontSize: '0.85rem', display: 'block' }}>{rec.topic}</strong>
                                       <span style={{ fontSize: '0.8rem', color: '#888' }}>{new Date(rec.startTime).toLocaleString()} • {rec.duration} min</span>
                                     </div>
-                                    <button 
-                                      onClick={() => handleDownloadRecording(rec.id)} 
+                                    <button
+                                      onClick={() => handleDownloadRecording(rec.id)}
                                       style={{ padding: '4px 12px', fontSize: '0.8rem', cursor: 'pointer', background: '#e6f4ff', color: '#1890ff', border: '1px solid #91caff', borderRadius: '4px' }}
                                     >
                                       Descargar
@@ -1302,18 +1307,38 @@ const DetalleEvento = () => {
                   {attendees.map((att) => {
                     const user = att.usuario || att;
                     const participantPhoto = getUserPhoto(user);
+                    const participantUserId = getAttendeeUserId(att);
+                    const participantName = user.nombre || user.username || 'Usuario';
                     return (
                       <li key={att.id || user.id} className="ed-participant">
-                        <div className="ed-participant-avatar">
-                          {participantPhoto ? (
-                            <img src={toAbsoluteImageUrl(participantPhoto)} alt={user.nombre || user.username} />
-                          ) : (
-                            <LuUser />
-                          )}
-                        </div>
-                        <span className="ed-participant-name">
-                          {user.nombre || user.username || 'Usuario'}
-                        </span>
+                        {participantUserId ? (
+                          <button
+                            type="button"
+                            className="ed-participant-link"
+                            onClick={() => navigate(`/perfil/${participantUserId}`)}
+                            aria-label={`Ver perfil de ${participantName}`}
+                          >
+                            <div className="ed-participant-avatar">
+                              {participantPhoto ? (
+                                <img src={toAbsoluteImageUrl(participantPhoto)} alt={participantName} />
+                              ) : (
+                                <LuUser />
+                              )}
+                            </div>
+                            <span className="ed-participant-name">{participantName}</span>
+                          </button>
+                        ) : (
+                          <>
+                            <div className="ed-participant-avatar">
+                              {participantPhoto ? (
+                                <img src={toAbsoluteImageUrl(participantPhoto)} alt={participantName} />
+                              ) : (
+                                <LuUser />
+                              )}
+                            </div>
+                            <span className="ed-participant-name">{participantName}</span>
+                          </>
+                        )}
                       </li>
                     );
                   })}

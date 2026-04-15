@@ -49,6 +49,11 @@ export default function NotificationTab() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!notificationsEnabled) {
+      setNotifications([]);
+      setPanelNotificationsUnreadCount(0);
+      return;
+    }
     Promise.all([
       getAllEventAlerts(),
       getAllUserNotifications(),
@@ -92,7 +97,7 @@ export default function NotificationTab() {
         setNotifications([]);
         setPanelNotificationsUnreadCount(0);
       });
-  }, [setPanelNotificationsUnreadCount]);
+  }, [setPanelNotificationsUnreadCount, notificationsEnabled]);
 
   const handleMarkAsRead = async (id, source) => {
     const current = notifications.find((n) => n.id === id);
@@ -209,11 +214,14 @@ export default function NotificationTab() {
       <div className="notification-tab-container">
         <h2>Notificaciones</h2>
         {!notificationsEnabled && (
-          <div className="notification-warning">Las notificaciones están desactivadas.</div>
+          <div className="notification-warning">
+            Las notificaciones están desactivadas. Actívalas en Configuración para recibir notificaciones.
+          </div>
         )}
-        {notifications.length === 0 ? (
+        {notificationsEnabled && notifications.length === 0 && (
           <div className="notification-empty">No tienes notificaciones recientes.</div>
-        ) : (
+        )}
+        {notificationsEnabled && notifications.length > 0 && (
           <ul className="notification-list">
             {notifications.map((n) => (
               <li
@@ -249,11 +257,13 @@ export default function NotificationTab() {
             ))}
           </ul>
         )}
-        <div className="notification-actions">
-          <button onClick={handleMarkAllAsRead} className="notification-markall-btn">
-            Marcar todo como leído
-          </button>
-        </div>
+        {notificationsEnabled && (
+          <div className="notification-actions">
+            <button onClick={handleMarkAllAsRead} className="notification-markall-btn">
+              Marcar todo como leído
+            </button>
+          </div>
+        )}
       </div>
       {showChangesModal && (
         <Modal isOpen={showChangesModal} onClose={() => setShowChangesModal(false)}>

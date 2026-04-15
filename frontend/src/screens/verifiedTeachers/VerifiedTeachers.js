@@ -21,9 +21,12 @@ const VerifiedTeachers = () => {
     return Number.isFinite(lat) && Number.isFinite(lon);
   };
 
+  const DEFAULT_PROFILE_AVATAR =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='60' fill='%23E6EAF3'/%3E%3Ccircle cx='60' cy='46' r='22' fill='%2395A1BB'/%3E%3Cpath d='M20 106c6-20 22-32 40-32s34 12 40 32' fill='%2395A1BB'/%3E%3C/svg%3E";
+
   const toAbsoluteImageUrl = (imageUrl) => {
     const raw = String(imageUrl || "").trim();
-    if (!raw) return "";
+    if (!raw) return DEFAULT_PROFILE_AVATAR;
     if (/^https?:\/\//i.test(raw) || raw.startsWith("data:") || raw.startsWith("blob:")) {
       return raw;
     }
@@ -405,6 +408,7 @@ const VerifiedTeachers = () => {
                       className="vt-card__avatar-img"
                       src={toAbsoluteImageUrl(tutor.usuario.foto)}
                       alt={nombre}
+                      onError={e => { e.target.onerror = null; e.target.src = DEFAULT_PROFILE_AVATAR; }}
                     />
                   ) : (
                     <div

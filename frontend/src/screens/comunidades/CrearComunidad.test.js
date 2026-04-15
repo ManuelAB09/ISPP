@@ -280,4 +280,165 @@ describe('CrearComunidad', () => {
     renderComponent();
     expect(screen.getByRole('button', { name: /Ir a planes institucionales/i })).toBeInTheDocument();
   });
+
+  // ==============================
+  // TESTS DE BORRADOR
+  // ==============================
+
+  test('guarda borrador al hacer clic en Guardar Borrador', async () => {
+    const setItemSpy = jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {});
+    renderComponent();
+
+    const nameInput = screen.getByLabelText(/Nombre de la Comunidad/i);
+    userEvent.type(nameInput, 'Mi Borrador');
+
+    const draftBtn = screen.getByRole('button', { name: /Guardar Borrador/i });
+    userEvent.click(draftBtn);
+
+    await screen.findByText(/Borrador guardado/i);
+    expect(setItemSpy).toHaveBeenCalledWith('crearComunidadDraft', expect.any(String));
+    setItemSpy.mockRestore();
+  });
+
+  test('carga borrador desde localStorage al montar', async () => {
+    const draft = JSON.stringify({ nombre: 'Borrador Previo', descripcion: 'Desc guardada', tipoComunidad: 'GRUPO_PRIVADO', maxMiembros: 20, categorias: ['Cat1'] });
+    jest.spyOn(Storage.prototype, 'getItem').mockImplementation((key) => {
+      if (key === 'crearComunidadDraft') return draft;
+      return null;
+    });
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Nombre de la Comunidad/i)).toHaveValue('Borrador Previo');
+    });
+    expect(screen.getByLabelText(/Descripción/i)).toHaveValue('Desc guardada');
+    Storage.prototype.getItem.mockRestore();
+  });
+
+  // ==============================
+  // TESTS DE ROL
+  // ==============================
+
+  test('puede seleccionar rol Profesor', () => {
+    renderComponent();
+    const profesorRadio = screen.getByDisplayValue('PROFESOR');
+    userEvent.click(profesorRadio);
+    expect(profesorRadio).toBeChecked();
+  });
+
+  test('muestra error si perfil tutor incompleto al crear como profesor', async () => {
+    getMyTutorProfiles.mockResolvedValue({ especialidades: [], tarifaPorHora: null, biografia: '' });
+    renderComponent();
+
+    const nameInput = screen.getByLabelText(/Nombre de la Comunidad/i);
+    userEvent.type(nameInput, 'Comunidad Profesor');
+
+    const profesorRadio = screen.getByDisplayValue('PROFESOR');
+    userEvent.click(profesorRadio);
+
+    const createButton = screen.getByRole('button', { name: /Crear Comunidad/i });
+    userEvent.click(createButton);
+
+    await screen.findByText(/perfil de tutor configurado/i);
+  });
+
+  test('muestra enlace a configurar perfil cuando tutor requerido', async () => {
+    getMyTutorProfiles.mockRejectedValue(new Error('not found'));
+    renderComponent();
+
+    const nameInput = screen.getByLabelText(/Nombre de la Comunidad/i);
+    userEvent.type(nameInput, 'Comunidad Prof');
+
+    userEvent.click(screen.getByDisplayValue('PROFESOR'));
+    userEvent.click(screen.getByRole('button', { name: /Crear Comunidad/i }));
+
+    await screen.findByText(/Ir a configurar mi perfil de profesor/i);
+  });
+
+  // ==============================
+  // TESTS DE LÍMITES
+  // ==============================
+
+  test('muestra error si se alcanza límite de comunidades', async () => {
+    communitiesApi.listMine.mockResolvedValue({
+      content: Array(3).fill({ id: 1 }),
+      page: { totalElements: 3, totalPages: 1 },
+    });
+    renderComponent();
+
+    await waitFor(() => {
+      const createButton = screen.getByRole('button', { name: /Crear Comunidad/i });
+      expect(createButton).toBeDisabled();
+    });
+  });
+
+  test('slider de miembros con plan Premium tiene máximo 75', async () => {
+    subscriptionsApi.getMySubscription.mockResolvedValue({ plan: 'PREMIUM', activa: true });
+    renderComponent();
+
+    const slider = await screen.findByLabelText(/Máx\. miembros de la comunidad/i);
+    await waitFor(() => {
+      expect(slider).toHaveAttribute('max', '75');
+    });
+  });
+
+  // ==============================
+  // TESTS DE IMAGEN
+  // ==============================
+
+  test('muestra preview de imagen al subir archivo', async () => {
+    renderComponent();
+    const fileInput = document.querySelector('input[type="file"]');
+    const file = new File(['img'], 'foto.png', { type: 'image/png' });
+
+    // Mock FileReader
+    const mockReader = { readAsDataURL: jest.fn(), onloadend: null, result: 'data:image/png;base64,abc' };
+    jest.spyOn(window, 'FileReader').mockImplementation(() => mockReader);
+
+    userEvent.upload(fileInput, file);
+
+    // Trigger onloadend callback
+    mockReader.onloadend();
+
+    await waitFor(() => {
+      expect(screen.getByAltText('Preview')).toBeInTheDocument();
+    });
+    window.FileReader.mockRestore();
+  });
+
+  // ==============================
+  // TESTS DE PLAN INSTITUCIONAL
+  // ==============================
+
+  test('muestra toggle institucional cuando hay plan activo', async () => {
+    subscriptionsApi.getMySubscription.mockResolvedValue({
+      plan: 'PREMIUM', activa: true,
+      planCorporativoActivo: true, planCorporativo: 'BASICO',
+      institutionId: 99, institutionNombre: 'Academia Test',
+    });
+    renderComponent();
+
+    await screen.findByText(/Crear como comunidad institucional/i);
+  });
+
+  test('navega a planes institucionales al hacer clic', async () => {
+    renderComponent();
+    const instBtn = screen.getByRole('button', { name: /Ir a planes institucionales/i });
+    userEvent.click(instBtn);
+    expect(mockNavigate).toHaveBeenCalledWith('/planes/instituciones');
+  });
+
+  test('muestra comunidades activas y restantes', async () => {
+    renderComponent();
+    await waitFor(() => {
+      expect(screen.getByText(/Comunidades activas:/i)).toBeInTheDocument();
+      expect(screen.getByText(/Comunidades restantes:/i)).toBeInTheDocument();
+    });
+  });
+
+  test('muestra rol alumno seleccionado por defecto', () => {
+    renderComponent();
+    const alumnoRadio = screen.getByDisplayValue('ALUMNO');
+    expect(alumnoRadio).toBeChecked();
+  });
 });

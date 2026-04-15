@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import SearchIcon from '../icons/Search';
 import './InputSearch.css';
 
 export default function InputSearch({ 
@@ -20,7 +19,6 @@ export default function InputSearch({
     }, []);
 
     const displayPlaceholder = isMobile && mobilePlaceholder ? mobilePlaceholder : placeholder;
-    const iconSize = isMobile ? 16 : 20;
 
     return (
         <div className="inputSearch">
@@ -30,9 +28,6 @@ export default function InputSearch({
                 onChange={onChange} 
                 value={value}
             />
-            <div className='searchbutton'>
-                <SearchIcon width={iconSize} height={iconSize}/>
-            </div>
         </div>
     );
 }

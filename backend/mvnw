@@ -108,6 +108,11 @@ trim() {
 scriptDir="$(dirname "$0")"
 scriptName="$(basename "$0")"
 
+if [ "${1-}" = "selenium" ]; then
+  shift
+  set -- -Dtest=AcceptanceE2ETest -DrunE2E=true test "$@"
+fi
+
 # parse distributionUrl and optional distributionSha256Sum, requires .mvn/wrapper/maven-wrapper.properties
 while IFS="=" read -r key value; do
   case "${key-}" in

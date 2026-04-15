@@ -3,13 +3,37 @@ import { apiClient } from './client';
 
 export const communitiesApi = {
   /**
+   * GET /api/v1/communities/categories
+   * Lista categorías globales para filtros.
+   */
+  listCategories() {
+    return apiClient.get('/api/v1/communities/categories');
+  },
+
+  /**
    * GET /api/v1/communities
    * Explorar comunidades públicas
-   * @param {Object} params - { search?, page?, size? }
+   * @param {Object} params - { search?, categoria?, institucion?, tipoGrupo?, tipoPlan?, page?, size? }
    */
   list(params = {}) {
     const query = new URLSearchParams();
     if (params.search) query.set('search', params.search);
+    if (Array.isArray(params.categoria)) {
+      params.categoria.forEach((value) => query.append('categoria', value));
+    } else if (params.categoria) {
+      query.set('categoria', params.categoria);
+    }
+    if (params.institucion) query.set('institucion', params.institucion);
+    if (Array.isArray(params.tipoGrupo)) {
+      params.tipoGrupo.forEach((value) => query.append('tipoGrupo', value));
+    } else if (params.tipoGrupo) {
+      query.set('tipoGrupo', params.tipoGrupo);
+    }
+    if (Array.isArray(params.tipoPlan)) {
+      params.tipoPlan.forEach((value) => query.append('tipoPlan', value));
+    } else if (params.tipoPlan) {
+      query.set('tipoPlan', params.tipoPlan);
+    }
     if (params.page !== undefined) query.set('page', String(params.page));
     if (params.size !== undefined) query.set('size', String(params.size));
 

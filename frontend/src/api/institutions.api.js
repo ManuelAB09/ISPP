@@ -3,6 +3,14 @@ import { apiClient } from './client';
 
 export const institutionsApi = {
   /**
+   * GET /api/v1/institutions
+   * Lista instituciones disponibles para filtros.
+   */
+  list() {
+    return apiClient.get('/api/v1/institutions');
+  },
+
+  /**
    * POST /api/v1/institutions
    * Crear institución
    */

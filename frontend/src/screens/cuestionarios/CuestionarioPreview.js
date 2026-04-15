@@ -57,6 +57,14 @@ const CuestionarioPreview = () => {
 
   const attempts = useMemo(() => (Array.isArray(preview?.intentosPrevios) ? preview.intentosPrevios : []), [preview]);
 
+  const handleBackClick = () => {
+    if (preview?.comunidadesIds && preview.comunidadesIds.length > 0) {
+      navigate(`/comunidades/${preview.comunidadesIds[0]}`);
+    } else {
+      navigate('/cuestionarios');
+    }
+  };
+
   return (
     <>
       <Header page={'cuestionarios'} />
@@ -64,7 +72,7 @@ const CuestionarioPreview = () => {
         <button
           className="quiz-preview-back"
           type="button"
-          onClick={() => navigate(-1)}
+          onClick={handleBackClick}
         >
           Volver
         </button>

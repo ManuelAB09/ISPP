@@ -29,6 +29,9 @@ public class JwtService {
     @Value("${jwt.expiration:86400000}")
     private long jwtExpiration;
 
+    /** Tiempo de expiración del token de restablecimiento de contraseña (15 minutos). */
+    private static final long PASSWORD_RESET_EXPIRATION = 15 * 60 * 1000L;
+
     /**
      * Extrae el email (subject) del token JWT.
      *
@@ -62,7 +65,30 @@ public class JwtService {
      * @return true si el token es válido.
      */
     public boolean isTokenValid(final String token, final String email) {
-        return extractEmail(token).equals(email) && !isTokenExpired(token);
+        try {
+            final Claims claims = extractAllClaims(token);
+            final String purpose = claims.get("purpose", String.class);
+            // Rechazar tokens con propósito específico (p.ej. password-reset)
+            if (purpose != null) {
+                return false;
+            }
+            final Date expiration = claims.getExpiration();
+            return claims.getSubject().equals(email)
+                    && expiration != null
+                    && expiration.after(new Date());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Extrae la fecha de emisión (iat) del token JWT.
+     *
+     * @param token Token JWT.
+     * @return Date de emisión del token.
+     */
+    public Date extractIssuedAt(final String token) {
+        return extractClaim(token, Claims::getIssuedAt);
     }
 
     /**
@@ -109,5 +135,37 @@ public class JwtService {
     private Key getSigningKey() {
         final byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    /**
+     * Genera un token JWT de corta duración para restablecer contraseña.
+     *
+     * @param email Email del usuario.
+     * @return Token JWT firmado con expiración de 15 minutos.
+     */
+    public String generatePasswordResetToken(final String email) {
+        return Jwts.builder()
+                .setSubject(email)
+                .claim("purpose", "password-reset")
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + PASSWORD_RESET_EXPIRATION))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    /**
+     * Valida un token de restablecimiento de contraseña y extrae el email.
+     *
+     * @param token Token JWT de restablecimiento.
+     * @return Email del usuario si el token es válido.
+     * @throws io.jsonwebtoken.JwtException si el token es inválido o ha expirado.
+     */
+    public String validatePasswordResetToken(final String token) {
+        final Claims claims = extractAllClaims(token);
+        final String purpose = claims.get("purpose", String.class);
+        if (!"password-reset".equals(purpose)) {
+            throw new io.jsonwebtoken.JwtException("Token no es de restablecimiento de contraseña");
+        }
+        return claims.getSubject();
     }
 }

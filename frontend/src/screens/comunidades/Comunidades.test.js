@@ -2,10 +2,12 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { communitiesApi } from '../../api/communities.api';
+import { institutionsApi } from '../../api/institutions.api';
 import Comunidades from './Comunidades';
 
 // Mocks
 jest.mock('../../api/communities.api');
+jest.mock('../../api/institutions.api');
 jest.mock('../../components/Header/Header', () => {
   return function MockHeader() {
     return <div data-testid="mock-header">Header</div>;
@@ -64,9 +66,21 @@ describe('Comunidades', () => {
     page: { totalPages: 2 },
   };
 
+  const mockCategoriesResponse = [
+    { id: 1, nombre: 'Matemáticas', descripcion: 'Categoria 1', orden: 1 },
+    { id: 2, nombre: 'Física', descripcion: 'Categoria 2', orden: 2 },
+  ];
+
+  const mockInstitutionsResponse = [
+    { id: 1, nombre: 'Universidad de Sevilla' },
+    { id: 2, nombre: 'IES Guadalquivir' },
+  ];
+
   beforeEach(() => {
     jest.clearAllMocks();
     communitiesApi.list.mockResolvedValue(mockPageResponse);
+    communitiesApi.listCategories.mockResolvedValue(mockCategoriesResponse);
+    institutionsApi.list.mockResolvedValue(mockInstitutionsResponse);
   });
 
   const renderComponent = async () => {
@@ -78,7 +92,13 @@ describe('Comunidades', () => {
     await waitFor(() => {
       expect(communitiesApi.list).toHaveBeenCalled();
     });
+    await waitFor(() => {
+      expect(communitiesApi.listCategories).toHaveBeenCalled();
+      expect(institutionsApi.list).toHaveBeenCalled();
+    });
     await screen.findByText('Matemáticas Avanzadas');
+    await screen.findByRole('button', { name: 'Matemáticas' });
+    await screen.findByRole('option', { name: 'Universidad de Sevilla' });
   };
 
   test('renderiza el título de la página', async () => {
@@ -98,7 +118,7 @@ describe('Comunidades', () => {
         <Comunidades />
       </MemoryRouter>
     );
-    expect(screen.getByText(/Cargando comunidades/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Cargando\.{3}/i)).toBeInTheDocument();
   });
 
   test('muestra las comunidades cargadas', async () => {
@@ -115,7 +135,7 @@ describe('Comunidades', () => {
         <Comunidades />
       </MemoryRouter>
     );
-    await screen.findByText(/No se pudieron cargar las comunidades/i);
+    await screen.findByText(/Error al cargar comunidades/i);
     consoleSpy.mockRestore();
   });
 
@@ -162,6 +182,46 @@ describe('Comunidades', () => {
     await waitFor(() => {
       expect(communitiesApi.list).toHaveBeenCalledWith(
         expect.objectContaining({ search: 'Física' })
+      );
+    });
+  });
+
+  test('envia filtros cuando se seleccionan', async () => {
+    await renderComponent();
+
+    const filterInstitucion = screen.getByLabelText(/Filtrar por institución/i);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Privadas' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Públicas' }));
+    await userEvent.click(screen.getByRole('button', { name: 'PREMIUM' }));
+    await userEvent.click(screen.getByRole('button', { name: 'FREE' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Matemáticas' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Física' }));
+    await userEvent.selectOptions(filterInstitucion, 'Universidad de Sevilla');
+
+    await waitFor(() => {
+      expect(communitiesApi.list).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          tipoGrupo: ['GRUPO_PRIVADO', 'COMUNIDAD_PUBLICA'],
+          tipoPlan: ['PREMIUM', 'FREE'],
+          categoria: ['Matemáticas', 'Física'],
+          institucion: 'Universidad de Sevilla',
+        })
+      );
+    });
+  });
+
+  test('limita la longitud de la busqueda para evitar errores por exceso de caracteres', async () => {
+    await renderComponent();
+
+    const searchInput = screen.getByTestId('search-input');
+    const longSearch = 'a'.repeat(160);
+    await userEvent.clear(searchInput);
+    await userEvent.type(searchInput, longSearch);
+
+    await waitFor(() => {
+      expect(communitiesApi.list).toHaveBeenLastCalledWith(
+        expect.objectContaining({ search: 'a'.repeat(120) })
       );
     });
   });
