@@ -4,14 +4,20 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
 
+import com.stripe.exception.ApiException;
+import com.stripe.model.checkout.Session;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -645,4 +651,178 @@ class SuscripcionControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertTrue(response.getBody().length > 0);
     }
+
+        @Test
+        @DisplayName("POST /me/verify-session - Debe activar suscripción para sesión completada")
+        void testVerificarSesion_ActivaSuscripcionCuandoSessionCompleta() throws Exception {
+                Map<String, String> body = new HashMap<>();
+                body.put("sessionId", "sess_ok");
+                Session session = mock(Session.class);
+                when(session.getStatus()).thenReturn("complete");
+                when(session.getAmountTotal()).thenReturn(1299L);
+                when(session.getMetadata())
+                                .thenReturn(Map.of("usuarioId", "1", "periodo", "anual", "plan", "PRO"));
+
+                try (MockedStatic<Session> mockedSession = mockStatic(Session.class)) {
+                        mockedSession.when(() -> Session.retrieve("sess_ok")).thenReturn(session);
+
+                        ResponseEntity<?> response = suscripcionController.verificarSesion(usuario, body);
+
+                        assertEquals(HttpStatus.OK, response.getStatusCode());
+                        verify(suscripcionService)
+                                        .activarSuscripcionTrasStripe(
+                                                        eq(1L),
+                                                        argThat(m -> m != null && m.compareTo(new BigDecimal("12.99")) == 0),
+                                                        eq("anual"),
+                                                        eq(TipoPlan.PRO));
+                }
+        }
+
+        @Test
+        @DisplayName("POST /me/verify-session - Debe devolver BAD_REQUEST si la sesión no está completa")
+        void testVerificarSesion_DevuelveBadRequestSiSessionNoCompleta() throws Exception {
+                Map<String, String> body = new HashMap<>();
+                body.put("sessionId", "sess_pending");
+                Session session = mock(Session.class);
+                when(session.getStatus()).thenReturn("open");
+                when(session.getMetadata()).thenReturn(Map.of("usuarioId", "1"));
+
+                try (MockedStatic<Session> mockedSession = mockStatic(Session.class)) {
+                        mockedSession.when(() -> Session.retrieve("sess_pending")).thenReturn(session);
+
+                        ResponseEntity<?> response = suscripcionController.verificarSesion(usuario, body);
+
+                        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+                }
+        }
+
+        @Test
+        @DisplayName("POST /me/verify-session - Debe devolver FORBIDDEN si la sesión pertenece a otro usuario")
+        void testVerificarSesion_DevuelveForbiddenSiUsuarioNoCoincide() throws Exception {
+                Map<String, String> body = new HashMap<>();
+                body.put("sessionId", "sess_other");
+                Session session = mock(Session.class);
+                when(session.getStatus()).thenReturn("complete");
+                when(session.getMetadata()).thenReturn(Map.of("usuarioId", "999", "periodo", "mensual"));
+
+                try (MockedStatic<Session> mockedSession = mockStatic(Session.class)) {
+                        mockedSession.when(() -> Session.retrieve("sess_other")).thenReturn(session);
+
+                        ResponseEntity<?> response = suscripcionController.verificarSesion(usuario, body);
+
+                        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+                }
+        }
+
+        @Test
+        @DisplayName("POST /me/verify-session - Debe devolver INTERNAL_SERVER_ERROR ante error de Stripe")
+        void testVerificarSesion_Devuelve500AnteStripeException() throws Exception {
+                Map<String, String> body = new HashMap<>();
+                body.put("sessionId", "sess_stripe_error");
+
+                try (MockedStatic<Session> mockedSession = mockStatic(Session.class)) {
+                        mockedSession
+                                        .when(() -> Session.retrieve("sess_stripe_error"))
+                                        .thenThrow(new ApiException("stripe down", null, null, 500, null));
+
+                        ResponseEntity<?> response = suscripcionController.verificarSesion(usuario, body);
+
+                        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+                }
+        }
+
+        @Test
+        @DisplayName("POST /me/confirm-embedded-payment - Debe devolver BAD_REQUEST sin paymentIntentId")
+        void testConfirmarPagoEmbebido_SinPaymentIntentId() {
+                ResponseEntity<?> response =
+                                suscripcionController.confirmarPagoEmbebido(usuario, new HashMap<>());
+
+                assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("POST /me/confirm-embedded-payment - Debe devolver BAD_REQUEST si el pago no está completado")
+        void testConfirmarPagoEmbebido_StatusNoSucceeded() throws Exception {
+                Map<String, String> body = new HashMap<>();
+                body.put("paymentIntentId", "pi_pending");
+                com.stripe.model.PaymentIntent intent = mock(com.stripe.model.PaymentIntent.class);
+                when(intent.getStatus()).thenReturn("processing");
+
+                try (MockedStatic<com.stripe.model.PaymentIntent> mockedIntent =
+                                mockStatic(com.stripe.model.PaymentIntent.class)) {
+                        mockedIntent
+                                        .when(() -> com.stripe.model.PaymentIntent.retrieve("pi_pending"))
+                                        .thenReturn(intent);
+
+                        ResponseEntity<?> response = suscripcionController.confirmarPagoEmbebido(usuario, body);
+
+                        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+                }
+        }
+
+        @Test
+        @DisplayName("POST /me/confirm-embedded-payment - Debe devolver FORBIDDEN si el intent no pertenece al usuario")
+        void testConfirmarPagoEmbebido_UsuarioNoCoincide() throws Exception {
+                Map<String, String> body = new HashMap<>();
+                body.put("paymentIntentId", "pi_other");
+                com.stripe.model.PaymentIntent intent = mock(com.stripe.model.PaymentIntent.class);
+                when(intent.getStatus()).thenReturn("succeeded");
+                when(intent.getMetadata()).thenReturn(Map.of("usuarioId", "999", "periodo", "mensual", "plan", "PREMIUM"));
+
+                try (MockedStatic<com.stripe.model.PaymentIntent> mockedIntent =
+                                mockStatic(com.stripe.model.PaymentIntent.class)) {
+                        mockedIntent
+                                        .when(() -> com.stripe.model.PaymentIntent.retrieve("pi_other"))
+                                        .thenReturn(intent);
+
+                        ResponseEntity<?> response = suscripcionController.confirmarPagoEmbebido(usuario, body);
+
+                        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+                }
+        }
+
+        @Test
+        @DisplayName("POST /me/confirm-embedded-payment - Debe activar suscripción cuando el intent es válido")
+        void testConfirmarPagoEmbebido_ActivaSuscripcion() throws Exception {
+                Map<String, String> body = new HashMap<>();
+                body.put("paymentIntentId", "pi_ok");
+                com.stripe.model.PaymentIntent intent = mock(com.stripe.model.PaymentIntent.class);
+                when(intent.getStatus()).thenReturn("succeeded");
+                when(intent.getAmount()).thenReturn(299L);
+                when(intent.getMetadata())
+                                .thenReturn(Map.of("usuarioId", "1", "periodo", "mensual", "plan", "PREMIUM"));
+
+                try (MockedStatic<com.stripe.model.PaymentIntent> mockedIntent =
+                                mockStatic(com.stripe.model.PaymentIntent.class)) {
+                        mockedIntent.when(() -> com.stripe.model.PaymentIntent.retrieve("pi_ok")).thenReturn(intent);
+
+                        ResponseEntity<?> response = suscripcionController.confirmarPagoEmbebido(usuario, body);
+
+                        assertEquals(HttpStatus.OK, response.getStatusCode());
+                        verify(suscripcionService)
+                                        .activarSuscripcionTrasStripe(
+                                                        eq(1L),
+                                                        argThat(m -> m != null && m.compareTo(new BigDecimal("2.99")) == 0),
+                                                        eq("mensual"),
+                                                        eq(TipoPlan.PREMIUM));
+                }
+        }
+
+        @Test
+        @DisplayName("POST /me/confirm-embedded-payment - Debe devolver 500 ante error de Stripe")
+        void testConfirmarPagoEmbebido_Devuelve500AnteStripeException() throws Exception {
+                Map<String, String> body = new HashMap<>();
+                body.put("paymentIntentId", "pi_err");
+
+                try (MockedStatic<com.stripe.model.PaymentIntent> mockedIntent =
+                                mockStatic(com.stripe.model.PaymentIntent.class)) {
+                        mockedIntent
+                                        .when(() -> com.stripe.model.PaymentIntent.retrieve("pi_err"))
+                                        .thenThrow(new ApiException("stripe error", null, null, 500, null));
+
+                        ResponseEntity<?> response = suscripcionController.confirmarPagoEmbebido(usuario, body);
+
+                        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+                }
+        }
 }

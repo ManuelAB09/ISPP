@@ -42,12 +42,14 @@ describe('PlansScreen', () => {
     plan: 'PREMIUM',
     activa: true,
     periodo: 'MENSUAL',
-    fechaFin: '2025-12-31'
+    fechaFin: '2025-12-31',
+    autoRenovar: true,
   };
 
   beforeEach(() => {
     jest.resetAllMocks();
     mockNavigate.mockClear();
+    window.confirm = jest.fn(() => true);
     // Por defecto, simular carga exitosa de planes y sin suscripción
     subscriptionsApi.subscriptionsApi.listPlans.mockResolvedValue(mockPlans);
     subscriptionsApi.subscriptionsApi.getMySubscription.mockRejectedValue({ status: 404 });
@@ -225,8 +227,51 @@ describe('PlansScreen', () => {
   });
 
   // ==============================
-  // TESTS DE CANCELACIÓN (MOCK)
+  // TESTS DE CANCELACIÓN
   // ==============================
+
+  test('muestra botón para cancelar suscripción cuando está activa', async () => {
+    subscriptionsApi.subscriptionsApi.getMySubscription.mockResolvedValue(mockSubscription);
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Cancelar suscripción/i })).toBeInTheDocument();
+    });
+  });
+
+  test('cancela suscripción y muestra mensaje de éxito', async () => {
+    subscriptionsApi.subscriptionsApi.getMySubscription.mockResolvedValue(mockSubscription);
+    subscriptionsApi.subscriptionsApi.cancelSubscription.mockResolvedValue({
+      ...mockSubscription,
+      autoRenovar: false,
+    });
+
+    renderScreen();
+
+    const cancelBtn = await screen.findByRole('button', { name: /Cancelar suscripción/i });
+    await userEvent.click(cancelBtn);
+
+    await waitFor(() => {
+      expect(subscriptionsApi.subscriptionsApi.cancelSubscription).toHaveBeenCalledTimes(1);
+    });
+    expect(await screen.findByText(/Suscripción cancelada correctamente/i)).toBeInTheDocument();
+  });
+
+  test('muestra error cuando falla la cancelación', async () => {
+    subscriptionsApi.subscriptionsApi.getMySubscription.mockResolvedValue(mockSubscription);
+    subscriptionsApi.subscriptionsApi.cancelSubscription.mockRejectedValue({
+      message: 'No se pudo cancelar',
+    });
+
+    renderScreen();
+
+    const cancelBtn = await screen.findByRole('button', { name: /Cancelar suscripción/i });
+    await userEvent.click(cancelBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/No se pudo cancelar/i)).toBeInTheDocument();
+    });
+  });
 
   // ==============================
   // TESTS DE COMPARACIÓN DE PLANES
