@@ -4,6 +4,7 @@ import PersonIcon from '../icons/Person';
 import { communitiesApi } from '../../api/communities.api';
 import { subscriptionsApi } from '../../api/subscriptions.api';
 import { getApiBaseUrl } from '../../api/baseUrl';
+import { resolveCommunityImage } from '../../utils/imageUtils';
 import './ComunidadCard.css';
 
 const DEFAULT_COMMUNITY_IMAGE =
@@ -59,29 +60,7 @@ export default function ComunidadCard({ comunidad, onJoined }) {
     }
     const hasTeacherProfile = Boolean(userProfile?.esTutor || userProfile?.esProfesor);
     const isMember = comunidad.esMiembro || false;
-    const communityImageRaw = comunidad.imagen || comunidad.imagenUrl || comunidad.foto;
-    const communityImage = (() => {
-        if (!communityImageRaw || !String(communityImageRaw).trim()) {
-            return DEFAULT_COMMUNITY_IMAGE;
-        }
-
-        const value = String(communityImageRaw).trim();
-        const normalizedValue = value.toLowerCase();
-        if (normalizedValue === 'empty' || normalizedValue === 'null' || normalizedValue === 'undefined') {
-            return DEFAULT_COMMUNITY_IMAGE;
-        }
-
-        if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
-            return value;
-        }
-
-        const base = getApiBaseUrl();
-        if (value.startsWith('/')) {
-            return `${base}${value}`;
-        }
-
-        return `${base}/${value}`;
-    })();
+    const communityImage = resolveCommunityImage(comunidad);
 
     useEffect(() => {
         let cancelled = false;

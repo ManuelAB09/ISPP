@@ -78,6 +78,16 @@ describe('CuestionarioEditor', () => {
     await waitFor(() => expect(communitiesApi.listMine).toHaveBeenCalled());
   });
 
+  test('locks the publication mode to public only from the public quizzes flow', async () => {
+    renderEditor('?publicOnly=1');
+    await screen.findByTestId('header');
+
+    expect(screen.getByText('Publicado para cualquier usuario').tagName).toBe('DIV');
+    expect(screen.queryByText('Publicado para una comunidad')).not.toBeInTheDocument();
+    expect(screen.queryByText('Publicado para personas concretas')).not.toBeInTheDocument();
+    expect(screen.queryByText('Privado (solo tú)')).not.toBeInTheDocument();
+  });
+
   test('fills in titulo and materia fields', async () => {
     renderEditor();
     await screen.findByTestId('header');
@@ -212,6 +222,33 @@ describe('CuestionarioEditor', () => {
     if (comunidadOption) {
       fireEvent.click(comunidadOption);
     }
+  });
+
+  test('publishes only as public from the public-only entry point', async () => {
+    cuestionariosApi.createCuestionario.mockResolvedValue({ id: 1 });
+    communitiesApi.listMine.mockResolvedValue([{ id: 5, nombre: 'Hidden Community' }]);
+    renderEditor('?publicOnly=1&communityId=5');
+    await screen.findByTestId('header');
+
+    fireEvent.change(screen.getByPlaceholderText(/Autoevaluación/i), { target: { value: 'Test', name: 'titulo' } });
+    fireEvent.change(screen.getByPlaceholderText(/Matemáticas/i), { target: { value: 'Mate', name: 'materia' } });
+
+    const enunciadoInputs = screen.getAllByPlaceholderText(/enunciado|pregunta/i);
+    fireEvent.change(enunciadoInputs[0], { target: { value: '¿Cuánto es 2+2?' } });
+
+    const optionInputs = screen.getAllByPlaceholderText(/opción|texto/i);
+    fireEvent.change(optionInputs[0], { target: { value: '4' } });
+    fireEvent.change(optionInputs[1], { target: { value: '5' } });
+
+    fireEvent.click(screen.getByText(/Publicar/i));
+
+    await waitFor(() => {
+      expect(cuestionariosApi.createCuestionario).toHaveBeenCalledWith(expect.objectContaining({
+        publicado: true,
+        comunidadesIds: [],
+        alumnosEmails: [],
+      }));
+    });
   });
 
   test('navigates back when Volver clicked', async () => {

@@ -728,6 +728,7 @@ public class ZoomIntegrationService {
                 meeting.getStartedAt() != null ? meeting.getStartedAt().toString() : null);
         payload.put(
                 "endedAt", meeting.getEndedAt() != null ? meeting.getEndedAt().toString() : null);
+        payload.put("creadorId", meeting.getCreador().getId());
         return payload;
     }
 

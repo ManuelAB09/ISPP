@@ -40,6 +40,7 @@ import {
 } from '../../utils/communityRoles';
 import CommunityChat from '../chat/CommunityChat';
 import CommunityAnnouncementsTab from './CommunityAnnouncementsTab';
+import CommunityApuntesTab from './CommunityApuntesTab';
 import './CommunityDetail.css';
 
 const DEFAULT_MEMBER_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%23E6EAF3'/%3E%3Ccircle cx='40' cy='30' r='14' fill='%2395A1BB'/%3E%3Cpath d='M14 68c5-13 15-21 26-21s21 8 26 21' fill='%2395A1BB'/%3E%3C/svg%3E";
@@ -118,10 +119,10 @@ const formatFileSize = (bytes) => {
 };
 
 export default function CommunityDetail() {
-  // Estado para alternar entre pestaña de eventos y anuncios
+  // Estado para alternar entre pestaña de eventos, anuncios y apuntes
   const [searchParams] = useSearchParams();
-  const initialTab = searchParams.get('tab');
-  const [showAnnouncementsTab, setShowAnnouncementsTab] = useState(initialTab === 'anuncios');
+  const initialTab = searchParams.get('tab') || 'eventos';
+  const [activeTab, setActiveTab] = useState(initialTab);
   const { communityId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -186,6 +187,8 @@ export default function CommunityDetail() {
   const [rankingError, setRankingError] = useState(null);
   const fileInputRef = useRef(null);
   const activeMeetingRequestInFlightRef = useRef(false);
+  const scrollPositionRef = useRef(0);
+  const shouldRestoreScrollRef = useRef(false);
 
   const closeAllOverlays = useCallback(({ keepChat = false } = {}) => {
     setShowMeetingForm(false);
@@ -563,6 +566,17 @@ export default function CommunityDetail() {
   }, [fetchMembers]);
 
   useEffect(() => {
+    // Restaurar scroll cuando termine de cargar eventos después del cambio de filtro
+    if (!eventsLoading && shouldRestoreScrollRef.current) {
+      const timer = setTimeout(() => {
+        window.scrollTo(0, scrollPositionRef.current);
+        shouldRestoreScrollRef.current = false;
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [eventsLoading]);
+
+  useEffect(() => {
     if (!currentUserId) {
       setCommunityCuestionarios([]);
       setCuestionariosLoading(false);
@@ -870,6 +884,19 @@ export default function CommunityDetail() {
     } catch (err) {
       console.error('Error al crear o unirse a la reunión:', err);
       setMeetingError(err?.message || 'No se pudo crear o unir a la reunión');
+    } finally {
+      setMeetingLoading(false);
+    }
+  };
+
+  const handleEndMeeting = async () => {
+    try {
+      setMeetingLoading(true);
+      setMeetingError(null);
+      await ZoomApi.endMeeting(communityId);
+      setActiveMeeting(null);
+    } catch (err) {
+      setMeetingError(err?.message || 'No se pudo finalizar la reunión');
     } finally {
       setMeetingLoading(false);
     }
@@ -1705,13 +1732,13 @@ export default function CommunityDetail() {
           />
         )}
 
-        {/* Tabs de eventos y anuncios */}
+        {/* Tabs de eventos, anuncios y apuntes */}
         <div className="cd-tabs-section">
           <div className="cd-tabs-header">
             <button
-              className={`cd-tab-btn${!showAnnouncementsTab ? ' cd-tab-btn-active' : ''}`}
+              className={`cd-tab-btn${activeTab === 'eventos' ? ' cd-tab-btn-active' : ''}`}
               onClick={() => {
-                setShowAnnouncementsTab(false);
+                setActiveTab('eventos');
                 const params = new URLSearchParams(searchParams);
                 params.set('tab', 'eventos');
                 navigate({ search: params.toString() }, { replace: true });
@@ -1721,9 +1748,9 @@ export default function CommunityDetail() {
               <LuCalendar /> Eventos
             </button>
             <button
-              className={`cd-tab-btn${showAnnouncementsTab ? ' cd-tab-btn-active' : ''}`}
+              className={`cd-tab-btn${activeTab === 'anuncios' ? ' cd-tab-btn-active' : ''}`}
               onClick={() => {
-                setShowAnnouncementsTab(true);
+                setActiveTab('anuncios');
                 const params = new URLSearchParams(searchParams);
                 params.set('tab', 'anuncios');
                 navigate({ search: params.toString() }, { replace: true });
@@ -1732,9 +1759,21 @@ export default function CommunityDetail() {
             >
               <span role="img" aria-label="Anuncios">📢</span> Anuncios
             </button>
+            <button
+              className={`cd-tab-btn${activeTab === 'apuntes' ? ' cd-tab-btn-active' : ''}`}
+              onClick={() => {
+                setActiveTab('apuntes');
+                const params = new URLSearchParams(searchParams);
+                params.set('tab', 'apuntes');
+                navigate({ search: params.toString() }, { replace: true });
+              }}
+              type="button"
+            >
+              <span role="img" aria-label="Apuntes">📄</span> Apuntes
+            </button>
           </div>
           <div className="cd-tabs-content">
-            {!showAnnouncementsTab ? (
+            {activeTab === 'eventos' && (
               <>
                 <div className="cd-questionnaires-section">
                   <div className="cd-events-header">
@@ -1796,7 +1835,11 @@ export default function CommunityDetail() {
                         <input
                           type="checkbox"
                           checked={filterCancelled}
-                          onChange={(e) => setFilterCancelled(e.target.checked)}
+                          onChange={(e) => {
+                            scrollPositionRef.current = window.scrollY;
+                            shouldRestoreScrollRef.current = true;
+                            setFilterCancelled(e.target.checked);
+                          }}
                         />
                         Mostrar cancelados
                       </label>
@@ -1872,9 +1915,15 @@ export default function CommunityDetail() {
                   )}
                 </div>
               </>
-            ) : (
+            )}
+            {activeTab === 'anuncios' && (
               <div className="cd-announcements-section">
                 <CommunityAnnouncementsTab communityId={communityId} isAdmin={isAdmin} />
+              </div>
+            )}
+            {activeTab === 'apuntes' && (
+              <div className="cd-apuntes-section">
+                <CommunityApuntesTab communityId={communityId} isAdmin={isAdmin} isMember={isMember} />
               </div>
             )}
           </div>
@@ -2034,6 +2083,19 @@ extraActions={(
         >
           <LuUsers size={18} />
           <span>{participantsOpen ? 'Ocultar participantes' : 'Participantes'}</span>
+        </button>
+      ) : null}
+
+      {activeMeeting && String(currentUserId) === String(activeMeeting?.creadorId) ? (
+        <button
+          type="button"
+          className="cd-floating-zoom-btn cd-floating-zoom-btn-end"
+          onClick={handleEndMeeting}
+          disabled={meetingLoading}
+          title="Finalizar la reunion activa"
+        >
+          <LuX size={16} />
+          <span>Finalizar</span>
         </button>
       ) : null}
     </div>

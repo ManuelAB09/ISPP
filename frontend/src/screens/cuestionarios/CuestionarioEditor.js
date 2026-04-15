@@ -20,6 +20,7 @@ const cloneInitialQuestion = () => ({
 const CuestionarioEditor = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const publicOnly = searchParams.get('publicOnly') === '1';
   const [loading, setLoading] = useState(false);
   const [myCommunities, setMyCommunities] = useState([]);
 
@@ -61,6 +62,12 @@ const CuestionarioEditor = () => {
     };
     loadCommunities();
   }, [searchParams]);
+
+  useEffect(() => {
+    if (publicOnly) {
+      setScope('GENERAL');
+    }
+  }, [publicOnly]);
 
   const handleBasicInfoChange = (e) => {
     const { name, value } = e.target;
@@ -175,20 +182,22 @@ const CuestionarioEditor = () => {
       }
     }
 
-    if (scope === 'COMUNIDAD' && !selectedCommunityId) {
+    const effectiveScope = publicOnly ? 'GENERAL' : scope;
+
+    if (effectiveScope === 'COMUNIDAD' && !selectedCommunityId) {
       alert('Selecciona una comunidad para publicar el cuestionario');
       return;
     }
 
-    if (scope === 'PERSONA' && selectedStudents.length === 0) {
+    if (effectiveScope === 'PERSONA' && selectedStudents.length === 0) {
       alert('Selecciona al menos un alumno para publicar el cuestionario');
       return;
     }
 
     try {
       setLoading(true);
-      const isPrivate = scope === 'PRIVADO';
-      const alumnosEmails = scope === 'PERSONA' && selectedStudents.length > 0
+      const isPrivate = !publicOnly && scope === 'PRIVADO';
+      const alumnosEmails = !publicOnly && effectiveScope === 'PERSONA' && selectedStudents.length > 0
         ? selectedStudents.map(s => s.email)
         : [];
       
@@ -203,7 +212,7 @@ const CuestionarioEditor = () => {
         nivelEducativo: (formData.nivelEducativo || '').trim(),
         tiempoEstimadoMinutos: tiempo,
         dificultad: formData.dificultad || 'INTERMEDIO',
-        comunidadesIds: scope === 'COMUNIDAD' ? [Number(selectedCommunityId)] : [],
+        comunidadesIds: !publicOnly && effectiveScope === 'COMUNIDAD' ? [Number(selectedCommunityId)] : [],
         alumnosEmails: alumnosEmails,
         // Limpiamos los arrays según el tipo
         preguntas: formData.preguntas.map(q => ({
@@ -228,9 +237,9 @@ const CuestionarioEditor = () => {
         alert('Borrador guardado');
       } else if (isPrivate) {
         alert('Cuestionario guardado como privado');
-      } else if (scope === 'GENERAL') {
+      } else if (effectiveScope === 'GENERAL') {
         alert('Cuestionario publicado para cualquier usuario');
-      } else if (scope === 'COMUNIDAD') {
+      } else if (effectiveScope === 'COMUNIDAD') {
         alert('Cuestionario publicado para la comunidad seleccionada');
       } else {
         alert('Cuestionario publicado para los alumnos indicados');
@@ -327,16 +336,22 @@ const CuestionarioEditor = () => {
           <div className="form-group-row">
             <div className="form-group">
               <label>Modo de publicación</label>
-              <select className="form-control" value={scope} onChange={(e) => setScope(e.target.value)}>
-                <option value="GENERAL">Publicado para cualquier usuario</option>
-                <option value="COMUNIDAD">Publicado para una comunidad</option>
-                <option value="PERSONA">Publicado para personas concretas</option>
-                <option value="PRIVADO">Privado (solo tú)</option>
-              </select>
+              {publicOnly ? (
+                <div className="form-control" style={{ display: 'flex', alignItems: 'center', minHeight: 44 }}>
+                  Publicado para cualquier usuario
+                </div>
+              ) : (
+                <select className="form-control" value={scope} onChange={(e) => setScope(e.target.value)}>
+                  <option value="GENERAL">Publicado para cualquier usuario</option>
+                  <option value="COMUNIDAD">Publicado para una comunidad</option>
+                  <option value="PERSONA">Publicado para personas concretas</option>
+                  <option value="PRIVADO">Privado (solo tú)</option>
+                </select>
+              )}
             </div>
           </div>
 
-          {scope === 'COMUNIDAD' && (
+          {!publicOnly && scope === 'COMUNIDAD' && (
             <div className="form-group-row">
               <div className="form-group">
                 <label>Comunidad destino</label>
@@ -354,7 +369,7 @@ const CuestionarioEditor = () => {
             </div>
           )}
 
-          {scope === 'PERSONA' && (
+          {!publicOnly && scope === 'PERSONA' && (
             <div className="form-group-row">
               <div className="form-group">
                 <label>Buscar y seleccionar alumnos</label>

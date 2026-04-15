@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { communitiesApi } from '../../api/communities.api';
 import ComunidadCard from '../../components/Comunidad/ComunidadCard';
+import RecommendationsSection from '../../components/Recomendaciones/RecommendationsSection';
 import Header from "../../components/Header/Header";
 import './Home.css';
 
@@ -12,6 +13,7 @@ const Home = () => {
   const [misComunidades, setMisComunidades] = useState([]);
   const [comunidadesCreadas, setComunidadesCreadas] = useState([]);
   const isAuthenticated = !!localStorage.getItem('accessToken');
+  const currentUserId = String(localStorage.getItem('userId') || '');
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -28,14 +30,14 @@ const Home = () => {
         const response = await communitiesApi.listMine({ page: 0, size: 100 });
         const comunidades = response.content || [];
         
-        // Filtrar comunidades donde soy admin/creador
+        // Filtrar comunidades que he creado
         const creadas = comunidades.filter(c => 
-          c.miRol === 'ADMIN' || c.miRol === 'ADMINISTRADOR' || c.creador?.id === localStorage.getItem('userId')
+          String(c.creador?.id || '') === currentUserId
         );
         
-        // Filtrar comunidades donde solo soy miembro
+        // Filtrar comunidades donde formo parte, excluyendo las que he creado
         const miembro = comunidades.filter(c => 
-          c.miRol !== 'ADMIN' && c.miRol !== 'ADMINISTRADOR' && c.creador?.id !== localStorage.getItem('userId')
+          String(c.creador?.id || '') !== currentUserId
         );
         
         setComunidadesCreadas(creadas);
@@ -106,27 +108,33 @@ const Home = () => {
 
             {isAuthenticated && !loading && !error && (
               <>
-                {/* Comunidades creadas por mí */}
+                {/* Comunidades creadas */}
                 <section className="communities-section">
                   <div className="section-header">
-                    <h2>Mis comunidades creadas</h2>
-                    <button 
-                      onClick={() => navigate('/crear-comunidad')} 
+                    <h2>Comunidades que he creado</h2>
+                    <button
+                      onClick={() => navigate('/crear-comunidad')}
                       className="create-community-btn"
                     >
                       Crear comunidad
                     </button>
                   </div>
-                  
+
                   {comunidadesCreadas.length > 0 ? (
                     <ul className="comunidades-list">
-                      {comunidadesCreadas.map(comunidad => (
+                      {comunidadesCreadas.map((comunidad) => (
                         <ComunidadCard key={comunidad.id} comunidad={comunidad} />
                       ))}
                     </ul>
                   ) : (
                     <div className="empty-state">
-                      <p>Aún no has creado ninguna comunidad. ¡Crea la primera!</p>
+                      <p>No has creado ninguna comunidad todavía.</p>
+                      <button
+                        onClick={() => navigate('/crear-comunidad')}
+                        className="create-community-btn"
+                      >
+                        Crear comunidad
+                      </button>
                     </div>
                   )}
                 </section>

@@ -16,4 +16,5 @@ public record ZoomMeetingResponse(
         Integer durationMinutes,
         LocalDateTime createdAt,
         LocalDateTime startedAt,
-        LocalDateTime endedAt) {}
+        LocalDateTime endedAt,
+        Long creadorId) {}

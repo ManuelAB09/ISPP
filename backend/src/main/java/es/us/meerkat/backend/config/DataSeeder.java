@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import es.us.meerkat.backend.entity.communities.Apunte;
 import es.us.meerkat.backend.entity.communities.Categoria;
 import es.us.meerkat.backend.entity.communities.Comunidad;
 import es.us.meerkat.backend.entity.communities.EstadoComunidad;
@@ -25,6 +26,7 @@ import es.us.meerkat.backend.entity.subscriptions.TipoPlanComunidad;
 import es.us.meerkat.backend.entity.subscriptions.TipoPlanCorporativo;
 import es.us.meerkat.backend.entity.tutors.Tutor;
 import es.us.meerkat.backend.entity.users.Usuario;
+import es.us.meerkat.backend.repository.communities.ApunteRepository;
 import es.us.meerkat.backend.repository.communities.CategoriaRepository;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.InstitutionRepository;
@@ -45,7 +47,7 @@ import es.us.meerkat.backend.repository.users.UsuarioRepository;
 public class DataSeeder {
 
     @Bean
-    @Profile("!staging & !production")
+    @Profile("!staging & !production & !test")
     CommandLineRunner seedDatabase(
             final UsuarioRepository usuarioRepo,
             final TutorRepository tutorRepo,
@@ -56,6 +58,7 @@ public class DataSeeder {
             final EventoRepository eventoRepo,
             final AsistenciaEventoRepository asistenciaRepo,
             final InstitutionRepository institutionRepo,
+            final ApunteRepository apunteRepo,
             final BCryptPasswordEncoder passwordEncoder) {
 
         return args -> {
@@ -799,6 +802,99 @@ public class DataSeeder {
 
             institutionRepo.save(i1);
 
+            // ============================
+            // 9. APUNTES
+            // ============================
+            // Contenido ficticio para los apuntes (en caso real sería un PDF o documento)
+            byte[] contenidoPDF = "Contenido ficticio del documento PDF".getBytes();
+
+            Apunte ap1 =
+                    Apunte.builder()
+                            .titulo("Tema 1: Introducción a Spring Boot")
+                            .descripcion(
+                                    "Apuntes completos sobre los fundamentos de Spring Boot y"
+                                            + " creación de proyectos")
+                            .contenido(contenidoPDF)
+                            .nombreArchivo("tema1-spring-boot.pdf")
+                            .tipoMime("application/pdf")
+                            .tamanioArchivo((long) contenidoPDF.length)
+                            .comunidad(c2)
+                            .usuario(u3)
+                            .createdAt(now.minusDays(5))
+                            .descargas(12)
+                            .valoracionMedia(4.5)
+                            .build();
+
+            Apunte ap2 =
+                    Apunte.builder()
+                            .titulo("Tema 2: Componentes de React")
+                            .descripcion(
+                                    "Ejemplos prácticos y mejores prácticas sobre componentes"
+                                            + " funcionales en React")
+                            .contenido(contenidoPDF)
+                            .nombreArchivo("tema2-react-components.pdf")
+                            .tipoMime("application/pdf")
+                            .tamanioArchivo((long) contenidoPDF.length)
+                            .comunidad(c2)
+                            .usuario(u7)
+                            .createdAt(now.minusDays(3))
+                            .descargas(8)
+                            .valoracionMedia(4.2)
+                            .build();
+
+            Apunte ap3 =
+                    Apunte.builder()
+                            .titulo("Introducción a Machine Learning")
+                            .descripcion(
+                                    "Conceptos fundamentales del machine learning con scikit-learn"
+                                            + " y numpy")
+                            .contenido(contenidoPDF)
+                            .nombreArchivo("intro-ml.pdf")
+                            .tipoMime("application/pdf")
+                            .tamanioArchivo((long) contenidoPDF.length)
+                            .comunidad(c3)
+                            .usuario(u4)
+                            .createdAt(now.minusDays(2))
+                            .descargas(15)
+                            .valoracionMedia(4.8)
+                            .build();
+
+            Apunte ap4 =
+                    Apunte.builder()
+                            .titulo("Álgebra Lineal - Matrices y Determinantes")
+                            .descripcion(
+                                    "Ejercicios resueltos sobre matrices, determinantes y sistemas"
+                                            + " de ecuaciones")
+                            .contenido(contenidoPDF)
+                            .nombreArchivo("algebra-matrices.pdf")
+                            .tipoMime("application/pdf")
+                            .tamanioArchivo((long) contenidoPDF.length)
+                            .comunidad(c5)
+                            .usuario(u6)
+                            .createdAt(now.minusDays(1))
+                            .descargas(20)
+                            .valoracionMedia(4.7)
+                            .build();
+
+            Apunte ap5 =
+                    Apunte.builder()
+                            .titulo("Fundamentos de ISPP")
+                            .descripcion(
+                                    "Resumen de conceptos clave para la asignatura de Ingeniería"
+                                            + " del Software")
+                            .contenido(contenidoPDF)
+                            .nombreArchivo("ispp-fundamentos.pdf")
+                            .tipoMime("application/pdf")
+                            .tamanioArchivo((long) contenidoPDF.length)
+                            .comunidad(c1)
+                            .usuario(u2)
+                            .createdAt(now)
+                            .descargas(5)
+                            .valoracionMedia(4.3)
+                            .build();
+
+            apunteRepo.saveAll(List.of(ap1, ap2, ap3, ap4, ap5));
+
             System.out.println("========================================");
             System.out.println("  SEEDER: Datos de prueba cargados");
             System.out.println("  - " + usuarios.size() + " usuarios");
@@ -809,6 +905,7 @@ public class DataSeeder {
             System.out.println("  - 14 asistencias a eventos");
             System.out.println("  - 4 perfiles de tutor verificados");
             System.out.println("  - 1 institución (Universidad de Sevilla)");
+            System.out.println("  - 5 apuntes en comunidades");
             System.out.println("========================================");
         };
     }

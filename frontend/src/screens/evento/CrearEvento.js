@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { LuCalendar, LuSquareCheck, LuMapPin, LuLink, LuArrowLeft, LuUsers, LuEye, LuEyeOff, LuMap, LuMapPinOff, LuPlus, LuVideo } from 'react-icons/lu';
 import './CrearEvento.css';
@@ -6,6 +6,7 @@ import Header from '../../components/Header/Header';
 import { createEvent, getEventById, updateEvent } from '../../api/eventEndpoints';
 import { communitiesApi } from '../../api/communities.api';
 import { canCreateCommunityEvent, getCommunityRoleLabel, normalizeCommunityRole } from '../../utils/communityRoles';
+import { resolveCommunityImage, DEFAULT_COMMUNITY_IMAGE } from '../../utils/imageUtils';
 
 const DATE_TIME_FIELD_MAX_LENGTH = {
   dia: 2,
@@ -49,6 +50,20 @@ const CrearEvento = () => {
   const rawCommunityId = searchParams.get('communityId') === 'null' ? null : searchParams.get('communityId');
   const [selectedCommunityId, setSelectedCommunityId] = useState(rawCommunityId || '');
   const [myCommunities, setMyCommunities] = useState([]);
+
+  // Computa la comunidad seleccionada completa para acceder a su imagen
+  const selectedCommunity = useMemo(() => {
+    if (!selectedCommunityId) return null;
+    return myCommunities.find(c => c.id.toString() === selectedCommunityId);
+  }, [selectedCommunityId, myCommunities]);
+
+  // Resuelve la imagen de la comunidad seleccionada o usa el default
+  const communityImageUrl = useMemo(() => {
+    if (selectedCommunity) {
+      return resolveCommunityImage(selectedCommunity);
+    }
+    return DEFAULT_COMMUNITY_IMAGE;
+  }, [selectedCommunity]);
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -104,6 +119,7 @@ const CrearEvento = () => {
       const ub = location.state.ubicacion;
       setFormData(prev => ({
         ...prev,
+        tipoLocalizacion: 'Presencial',
         ubicacionId: ub.id,
         ubicacionNombre: ub.nombre || '',
         ubicacionDireccion: ub.direccion || '',
@@ -147,6 +163,7 @@ const CrearEvento = () => {
         try {
           setLoading(true);
           const data = await getEventById(id);
+          const selectedLocation = location.state?.ubicacion || null;
 
           let canEdit = data.creador && data.creador.id?.toString() === currentUserId;
 
@@ -193,17 +210,19 @@ const CrearEvento = () => {
             anioFin: fechaFin ? String(fechaFin.getFullYear()) : '',
             horaFin: fechaFin ? String(fechaFin.getHours()).padStart(2, '0') : '',
             minutoFin: fechaFin ? String(fechaFin.getMinutes()).padStart(2, '0') : '',
-            tipoLocalizacion: data.esVirtual ? 'Online' : 'Presencial',
-            direccion: data.esVirtual ? '' : (data.ubicacion?.nombre || data.ubicacion || ''),
+            tipoLocalizacion: selectedLocation ? 'Presencial' : (data.esVirtual ? 'Online' : 'Presencial'),
+            direccion: selectedLocation
+              ? (selectedLocation.direccion || selectedLocation.nombre || '')
+              : (data.esVirtual ? '' : (data.ubicacion?.nombre || data.ubicacion || '')),
             zoomDuration: 60,
             aforo: data.aforo ? String(data.aforo) : '',
             privado: data.privado || false,
             visibleEnMapa: data.visibleMapa !== undefined ? data.visibleMapa : (data.visibleEnMapa !== undefined ? data.visibleEnMapa : true),
-            ubicacionId: data.ubicacion?.id || null,
-            ubicacionNombre: data.ubicacion?.nombre || '',
-            ubicacionDireccion: data.ubicacion?.direccion || '',
-            ubicacionLatitud: data.ubicacion?.latitud || null,
-            ubicacionLongitud: data.ubicacion?.longitud || null
+            ubicacionId: selectedLocation?.id || data.ubicacion?.id || null,
+            ubicacionNombre: selectedLocation?.nombre || data.ubicacion?.nombre || '',
+            ubicacionDireccion: selectedLocation?.direccion || data.ubicacion?.direccion || '',
+            ubicacionLatitud: selectedLocation?.latitud || data.ubicacion?.latitud || null,
+            ubicacionLongitud: selectedLocation?.longitud || data.ubicacion?.longitud || null
           });
         } catch (err) {
           console.error('Error al cargar el evento:', err);
@@ -450,7 +469,7 @@ const CrearEvento = () => {
       if (selectedCommunityId) {
         navigate(`/comunidades/${selectedCommunityId}`);
       } else {
-        navigate(-1);
+        navigate(`/eventos/${id}`);
       }
     } catch (err) {
       console.error('Error al guardar el evento:', err);
@@ -524,7 +543,14 @@ const CrearEvento = () => {
               <div className="left-column">
                 <div className="community-info">
                   <div className="community-image">
-                    <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=150&q=80" alt="Evento" />
+                    <img 
+                      src={communityImageUrl} 
+                      alt={selectedCommunity?.nombre || 'Evento'}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = DEFAULT_COMMUNITY_IMAGE;
+                      }}
+                    />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
                     <h3 className="community-title">Evento de comunidad</h3>
