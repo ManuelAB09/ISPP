@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { obtenerGananciasTutor } from "../../api/tutorEndpoints";
 import Header from "../../components/Header/Header";
 import PageHeader from "../../components/PageHeader";
@@ -16,22 +17,53 @@ const fmtDate = (iso) => {
   });
 };
 
+const extraerMensajeError = (err) => {
+  const payload = err?.response?.data;
+  if (typeof payload === "string" && payload.trim()) return payload;
+  if (payload && typeof payload === "object") {
+    if (typeof payload.error === "string" && payload.error.trim()) return payload.error;
+    if (typeof payload.message === "string" && payload.message.trim()) return payload.message;
+  }
+  return "No se pudieron cargar las ganancias.";
+};
+
+const esErrorSinPerfilTutor = (err, mensaje) => {
+  const status = err?.response?.status;
+  if (status !== 400 && status !== 404) return false;
+
+  const texto = String(mensaje || "").toLowerCase();
+  return (
+    texto.includes("no tienes un perfil de tutor") ||
+    texto.includes("perfil de tutor") ||
+    texto.includes("perfil tutor")
+  );
+};
+
 const MisGanancias = () => {
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
+  const [sinPerfilTutor, setSinPerfilTutor] = useState(false);
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 15;
 
   const cargar = useCallback(async (p) => {
     setCargando(true);
     setError(null);
+    setSinPerfilTutor(false);
     try {
       const res = await obtenerGananciasTutor({ page: p, size: PAGE_SIZE });
       setData(res);
     } catch (err) {
+      const mensaje = extraerMensajeError(err);
+      const perfilNoExiste = esErrorSinPerfilTutor(err, mensaje);
+
+      setSinPerfilTutor(perfilNoExiste);
       setError(
-        err?.response?.data?.error || "No se pudieron cargar las ganancias."
+        perfilNoExiste
+          ? "No puedes ver tus ganancias porque todavía no has creado tu perfil de tutor."
+          : mensaje
       );
     } finally {
       setCargando(false);
@@ -89,9 +121,17 @@ const MisGanancias = () => {
           {error && (
             <div className="mg-state mg-state--error">
               <p>⚠️ {error}</p>
-              <button className="mg-retry" onClick={() => cargar(page)}>
-                Reintentar
-              </button>
+              <div className="mg-actions">
+                {sinPerfilTutor ? (
+                  <button className="mg-retry" onClick={() => navigate("/profesores/nuevo")}>
+                    Crear perfil de tutor
+                  </button>
+                ) : (
+                  <button className="mg-retry" onClick={() => cargar(page)}>
+                    Reintentar
+                  </button>
+                )}
+              </div>
             </div>
           )}
 

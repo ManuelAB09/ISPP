@@ -33,7 +33,8 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Servicio para gestionar la lógica de negocio relacionada con los eventos.
  *
- * <p>Incluye creación, edición, cancelación y obtención de eventos.
+ * <p>
+ * Incluye creación, edición, cancelación y obtención de eventos.
  */
 @Service
 @RequiredArgsConstructor
@@ -74,19 +75,19 @@ public class EventoService {
     /**
      * Crea un nuevo evento asociado a una comunidad.
      *
-     * @param creadorId Identificador del usuario creador.
-     * @param comunidadId Identificador de la comunidad.
-     * @param tituloParam Título del evento.
-     * @param descripcionParam Descripción del evento.
-     * @param fechaHoraParam Fecha y hora de inicio.
-     * @param fechaFinParam Fecha y hora de fin.
-     * @param aforoParam Aforo máximo.
-     * @param queLlevarParam Qué llevar al evento.
-     * @param esVirtualParam Si es evento virtual.
-     * @param privadoParam Si es un evento privado.
+     * @param creadorId          Identificador del usuario creador.
+     * @param comunidadId        Identificador de la comunidad.
+     * @param tituloParam        Título del evento.
+     * @param descripcionParam   Descripción del evento.
+     * @param fechaHoraParam     Fecha y hora de inicio.
+     * @param fechaFinParam      Fecha y hora de fin.
+     * @param aforoParam         Aforo máximo.
+     * @param queLlevarParam     Qué llevar al evento.
+     * @param esVirtualParam     Si es evento virtual.
+     * @param privadoParam       Si es un evento privado.
      * @param enlaceVirtualParam Enlace virtual (si aplica).
-     * @param visibleMapaParam Si es visible en el mapa.
-     * @param ubicacionId ID de la ubicación (para eventos presenciales).
+     * @param visibleMapaParam   Si es visible en el mapa.
+     * @param ubicacionId        ID de la ubicación (para eventos presenciales).
      * @return El evento creado.
      */
     @Transactional
@@ -108,20 +109,17 @@ public class EventoService {
         validarAforo(aforoParam);
         validarFechaInicioNoPasada(fechaHoraParam);
 
-        final Usuario creador =
-                usuarioRepository
-                        .findById(creadorId)
-                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        final Comunidad comunidad =
-                comunidadRepository
-                        .findById(comunidadId)
-                        .orElseThrow(() -> new RuntimeException("Comunidad no encontrada"));
+        final Usuario creador = usuarioRepository
+                .findById(creadorId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        final Comunidad comunidad = comunidadRepository
+                .findById(comunidadId)
+                .orElseThrow(() -> new RuntimeException("Comunidad no encontrada"));
 
         // Verificar que el usuario es miembro de la comunidad
-        boolean esMiembro =
-                miembroComunidadRepository
-                        .findByUsuarioIdAndComunidadId(creadorId, comunidadId)
-                        .isPresent();
+        boolean esMiembro = miembroComunidadRepository
+                .findByUsuarioIdAndComunidadId(creadorId, comunidadId)
+                .isPresent();
         if (!esMiembro) {
             throw new RuntimeException(
                     "No puedes crear eventos en una comunidad a la que no perteneces");
@@ -150,34 +148,31 @@ public class EventoService {
 
         // Establecer ubicación si se proporcionó
         if (ubicacionId != null) {
-            final Ubicacion ubicacion =
-                    ubicacionRepository
-                            .findById(ubicacionId)
-                            .orElseThrow(() -> new RuntimeException("Ubicación no encontrada"));
+            final Ubicacion ubicacion = ubicacionRepository
+                    .findById(ubicacionId)
+                    .orElseThrow(() -> new RuntimeException("Ubicación no encontrada"));
             evento.setUbicacion(ubicacion);
         }
         // Guardar el evento primero para obtener su ID
         final Evento savedEvento = eventoRepository.save(evento);
 
         // Notificar a todos los miembros de la comunidad (excepto el creador)
-        List<Long> miembrosIds =
-                miembroComunidadRepository.findUsuarioIdsByComunidadId(comunidadId);
+        List<Long> miembrosIds = miembroComunidadRepository.findUsuarioIdsByComunidadId(comunidadId);
         for (Long usuarioId : miembrosIds) {
             if (!usuarioId.equals(creadorId)) {
                 Usuario usuario = usuarioRepository.findById(usuarioId).orElse(null);
                 if (usuario != null) {
-                    Notificacion notificacion =
-                            Notificacion.builder()
-                                    .usuario(usuario)
-                                    .titulo("Nuevo evento en la comunidad " + comunidad.getNombre())
-                                    .mensaje("Se ha creado el evento '" + tituloParam + "'.")
-                                    .tipo("EVENTO")
-                                    .leida(false)
-                                    .comunidadId(comunidad.getId())
-                                    .comunidadNombre(comunidad.getNombre())
-                                    .comunidadImagenUrl(comunidad.getImagenUrl())
-                                    .eventoId(savedEvento.getId())
-                                    .build();
+                    Notificacion notificacion = Notificacion.builder()
+                            .usuario(usuario)
+                            .titulo("Nuevo evento en la comunidad " + comunidad.getNombre())
+                            .mensaje("Se ha creado el evento '" + tituloParam + "'.")
+                            .tipo("EVENTO")
+                            .leida(false)
+                            .comunidadId(comunidad.getId())
+                            .comunidadNombre(comunidad.getNombre())
+                            .comunidadImagenUrl(comunidad.getImagenUrl())
+                            .eventoId(savedEvento.getId())
+                            .build();
                     notificacionService.crearYNotificar(notificacion);
                 }
             }
@@ -208,16 +203,16 @@ public class EventoService {
     /**
      * Edita un evento existente.
      *
-     * @param eventoIdParam Identificador del evento.
-     * @param tituloParam Título del evento.
+     * @param eventoIdParam    Identificador del evento.
+     * @param tituloParam      Título del evento.
      * @param descripcionParam Descripción del evento.
      * @param fechaInicioParam Fecha y hora de inicio.
-     * @param fechaFinParam Fecha y hora de fin.
-     * @param aforoParam Aforo máximo.
-     * @param queLlevarParam Qué llevar al evento.
-     * @param esVirtualParam Si es evento virtual.
-     * @param privadoParam Si es un evento privado.
-     * @param ubicacionId ID de la ubicación (para eventos presenciales).
+     * @param fechaFinParam    Fecha y hora de fin.
+     * @param aforoParam       Aforo máximo.
+     * @param queLlevarParam   Qué llevar al evento.
+     * @param esVirtualParam   Si es evento virtual.
+     * @param privadoParam     Si es un evento privado.
+     * @param ubicacionId      ID de la ubicación (para eventos presenciales).
      * @return El evento actualizado.
      */
     @Transactional
@@ -243,10 +238,9 @@ public class EventoService {
                     "La fecha de inicio no puede ser posterior a la fecha de fin");
         }
 
-        final Evento evento =
-                eventoRepository
-                        .findById(eventoIdParam)
-                        .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
+        final Evento evento = eventoRepository
+                .findById(eventoIdParam)
+                .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
 
         final String tituloAnterior = evento.getTitulo();
         final String descripcionAnterior = evento.getDescripcion();
@@ -256,8 +250,7 @@ public class EventoService {
         final String queLlevarAnterior = evento.getQueLlevar();
         final Boolean esVirtualAnterior = evento.getEsVirtual();
         final Boolean privadoAnterior = evento.getPrivado();
-        final Long ubicacionIdAnterior =
-                evento.getUbicacion() != null ? evento.getUbicacion().getId() : null;
+        final Long ubicacionIdAnterior = evento.getUbicacion() != null ? evento.getUbicacion().getId() : null;
         final Boolean visibleMapaAnterior = evento.getVisibleMapa();
 
         validarEventoNoIniciado(evento);
@@ -274,13 +267,17 @@ public class EventoService {
 
         // Actualizar ubicación
         if (ubicacionId != null) {
-            final Ubicacion ubicacion =
-                    ubicacionRepository
-                            .findById(ubicacionId)
-                            .orElseThrow(() -> new RuntimeException("Ubicación no encontrada"));
+            final Ubicacion ubicacion = ubicacionRepository
+                    .findById(ubicacionId)
+                    .orElseThrow(() -> new RuntimeException("Ubicación no encontrada"));
             evento.setUbicacion(ubicacion);
         } else if (Boolean.TRUE.equals(esVirtualParam)) {
             evento.setUbicacion(null);
+        } else if (Boolean.FALSE.equals(esVirtualParam)
+                && (evento.getUbicacion() == null || ubicacionIdAnterior == null)) {
+            // Si está intentando cambiar a presencial sin proporcionar ubicación
+            throw new IllegalArgumentException(
+                    "Para un evento presencial, debe proporcionar una ubicación");
         }
         try {
             googleCalendarService.sincronizarActualizacion(evento);
@@ -295,21 +292,19 @@ public class EventoService {
 
         final Evento eventoActualizado = eventoRepository.save(evento);
 
-        final Long ubicacionIdActual =
-                eventoActualizado.getUbicacion() != null
-                        ? eventoActualizado.getUbicacion().getId()
-                        : null;
-        final boolean huboCambios =
-                !Objects.equals(tituloAnterior, eventoActualizado.getTitulo())
-                        || !Objects.equals(descripcionAnterior, eventoActualizado.getDescripcion())
-                        || !Objects.equals(fechaHoraAnterior, eventoActualizado.getFechaHora())
-                        || !Objects.equals(fechaFinAnterior, eventoActualizado.getFechaFin())
-                        || !Objects.equals(aforoAnterior, eventoActualizado.getAforo())
-                        || !Objects.equals(queLlevarAnterior, eventoActualizado.getQueLlevar())
-                        || !Objects.equals(esVirtualAnterior, eventoActualizado.getEsVirtual())
-                        || !Objects.equals(privadoAnterior, eventoActualizado.getPrivado())
-                        || !Objects.equals(ubicacionIdAnterior, ubicacionIdActual)
-                        || !Objects.equals(visibleMapaAnterior, eventoActualizado.getVisibleMapa());
+        final Long ubicacionIdActual = eventoActualizado.getUbicacion() != null
+                ? eventoActualizado.getUbicacion().getId()
+                : null;
+        final boolean huboCambios = !Objects.equals(tituloAnterior, eventoActualizado.getTitulo())
+                || !Objects.equals(descripcionAnterior, eventoActualizado.getDescripcion())
+                || !Objects.equals(fechaHoraAnterior, eventoActualizado.getFechaHora())
+                || !Objects.equals(fechaFinAnterior, eventoActualizado.getFechaFin())
+                || !Objects.equals(aforoAnterior, eventoActualizado.getAforo())
+                || !Objects.equals(queLlevarAnterior, eventoActualizado.getQueLlevar())
+                || !Objects.equals(esVirtualAnterior, eventoActualizado.getEsVirtual())
+                || !Objects.equals(privadoAnterior, eventoActualizado.getPrivado())
+                || !Objects.equals(ubicacionIdAnterior, ubicacionIdActual)
+                || !Objects.equals(visibleMapaAnterior, eventoActualizado.getVisibleMapa());
 
         if (huboCambios) {
             // Construir resumen de cambios
@@ -350,13 +345,11 @@ public class EventoService {
                                 + "'\n");
             }
             if (!Objects.equals(queLlevarAnterior, eventoActualizado.getQueLlevar())) {
-                String antes =
-                        (queLlevarAnterior == null || queLlevarAnterior.trim().isEmpty())
-                                ? "vacío"
-                                : queLlevarAnterior;
-                String despues =
-                        (eventoActualizado.getQueLlevar() == null
-                                        || eventoActualizado.getQueLlevar().trim().isEmpty())
+                String antes = (queLlevarAnterior == null || queLlevarAnterior.trim().isEmpty())
+                        ? "vacío"
+                        : queLlevarAnterior;
+                String despues = (eventoActualizado.getQueLlevar() == null
+                        || eventoActualizado.getQueLlevar().trim().isEmpty())
                                 ? "vacío"
                                 : eventoActualizado.getQueLlevar();
                 cambios.append("Qué llevar: '" + antes + "' → '" + despues + "'\n");
@@ -382,36 +375,33 @@ public class EventoService {
                                 + (eventoActualizado.getVisibleMapa() ? "Sí" : "No")
                                 + "\n");
             }
-            String resumenCambios =
-                    cambios.length() > 0 ? cambios.toString() : "Detalles no disponibles.";
+            String resumenCambios = cambios.length() > 0 ? cambios.toString() : "Detalles no disponibles.";
 
             // Notificar a todos los miembros de la comunidad (excepto el creador)
             Comunidad comunidad = eventoActualizado.getComunidad();
             if (comunidad != null) {
-                List<Long> miembrosIds =
-                        miembroComunidadRepository.findUsuarioIdsByComunidadId(comunidad.getId());
+                List<Long> miembrosIds = miembroComunidadRepository.findUsuarioIdsByComunidadId(comunidad.getId());
                 for (Long usuarioId : miembrosIds) {
                     if (!usuarioId.equals(eventoActualizado.getCreador().getId())) {
                         Usuario usuario = usuarioRepository.findById(usuarioId).orElse(null);
                         if (usuario != null) {
-                            Notificacion notificacion =
-                                    Notificacion.builder()
-                                            .usuario(usuario)
-                                            .titulo(
-                                                    "Evento actualizado en la comunidad "
-                                                            + comunidad.getNombre())
-                                            .mensaje(
-                                                    "El evento '"
-                                                            + eventoActualizado.getTitulo()
-                                                            + "' ha sido actualizado.\n\nCambios:\n"
-                                                            + resumenCambios)
-                                            .tipo("EVENTO")
-                                            .leida(false)
-                                            .comunidadId(comunidad.getId())
-                                            .comunidadNombre(comunidad.getNombre())
-                                            .comunidadImagenUrl(comunidad.getImagenUrl())
-                                            .eventoId(eventoActualizado.getId())
-                                            .build();
+                            Notificacion notificacion = Notificacion.builder()
+                                    .usuario(usuario)
+                                    .titulo(
+                                            "Evento actualizado en la comunidad "
+                                                    + comunidad.getNombre())
+                                    .mensaje(
+                                            "El evento '"
+                                                    + eventoActualizado.getTitulo()
+                                                    + "' ha sido actualizado.\n\nCambios:\n"
+                                                    + resumenCambios)
+                                    .tipo("EVENTO")
+                                    .leida(false)
+                                    .comunidadId(comunidad.getId())
+                                    .comunidadNombre(comunidad.getNombre())
+                                    .comunidadImagenUrl(comunidad.getImagenUrl())
+                                    .eventoId(eventoActualizado.getId())
+                                    .build();
                             notificacionService.crearYNotificar(notificacion);
                         }
                     }
@@ -424,9 +414,8 @@ public class EventoService {
     }
 
     private void notificarCambioEvento(final Evento evento) {
-        final List<AsistenciaEvento> asistencias =
-                asistenciaEventoRepository.findByEventoIdAndEstado(
-                        evento.getId(), EstadoAsistencia.CONFIRMADA);
+        final List<AsistenciaEvento> asistencias = asistenciaEventoRepository.findByEventoIdAndEstado(
+                evento.getId(), EstadoAsistencia.CONFIRMADA);
 
         if (asistencias == null || asistencias.isEmpty()) {
             log.info(
@@ -450,11 +439,10 @@ public class EventoService {
             }
 
             try {
-                final PreferenciasNotificacion preferencias =
-                        preferenciasNotificacionService.getOrCreate(asistente.getId());
-                final boolean puedeRecibir =
-                        Boolean.TRUE.equals(preferencias.getEmailsActivados())
-                                && Boolean.TRUE.equals(preferencias.getNotificarCambiosDeEventos());
+                final PreferenciasNotificacion preferencias = preferenciasNotificacionService
+                        .getOrCreate(asistente.getId());
+                final boolean puedeRecibir = Boolean.TRUE.equals(preferencias.getEmailsActivados())
+                        && Boolean.TRUE.equals(preferencias.getNotificarCambiosDeEventos());
 
                 if (!puedeRecibir) {
                     continue;
@@ -486,15 +474,14 @@ public class EventoService {
      * Cancela un evento existente.
      *
      * @param eventoIdParam Identificador del evento.
-     * @param motivoParam Motivo de la cancelación.
+     * @param motivoParam   Motivo de la cancelación.
      * @return El evento cancelado.
      */
     @Transactional
     public Evento cancelarEvento(final Long eventoIdParam, final String motivoParam) {
-        final Evento evento =
-                eventoRepository
-                        .findById(eventoIdParam)
-                        .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
+        final Evento evento = eventoRepository
+                .findById(eventoIdParam)
+                .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
 
         validarEventoNoIniciado(evento);
 
@@ -541,14 +528,13 @@ public class EventoService {
      * Obtiene un evento por su ID, verificando permisos de visibilidad.
      *
      * @param eventoIdParam Identificador del evento.
-     * @param usuarioId Identificador del usuario que solicita (puede ser null).
+     * @param usuarioId     Identificador del usuario que solicita (puede ser null).
      * @return El evento encontrado.
      */
     public Evento obtenerEvento(final Long eventoIdParam, final Long usuarioId) {
-        final Evento evento =
-                eventoRepository
-                        .findById(eventoIdParam)
-                        .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
+        final Evento evento = eventoRepository
+                .findById(eventoIdParam)
+                .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
 
         if (Boolean.TRUE.equals(evento.getPrivado())) {
             if (!puedeVerEventoPrivado(evento, usuarioId)) {
@@ -581,11 +567,12 @@ public class EventoService {
     }
 
     /**
-     * Obtiene todos los eventos visibles en el mapa (públicos, no cancelados). Opcionalmente filtra
+     * Obtiene todos los eventos visibles en el mapa (públicos, no cancelados).
+     * Opcionalmente filtra
      * por radio de distancia respecto a una ubicación.
      *
-     * @param lat Latitud del centro de búsqueda (opcional).
-     * @param lon Longitud del centro de búsqueda (opcional).
+     * @param lat     Latitud del centro de búsqueda (opcional).
+     * @param lon     Longitud del centro de búsqueda (opcional).
      * @param radioKm Radio de búsqueda en kilómetros (opcional).
      * @return Lista de eventos visibles en mapa.
      */
@@ -604,22 +591,22 @@ public class EventoService {
                                     || ubicacion.getLongitud() == null) {
                                 return false;
                             }
-                            double distancia =
-                                    calcularDistanciaKm(
-                                            lat,
-                                            lon,
-                                            ubicacion.getLatitud(),
-                                            ubicacion.getLongitud());
+                            double distancia = calcularDistanciaKm(
+                                    lat,
+                                    lon,
+                                    ubicacion.getLatitud(),
+                                    ubicacion.getLongitud());
                             return distancia <= radioKm;
                         })
                 .collect(Collectors.toList());
     }
 
     /**
-     * Obtiene los nombres de ubicaciones con eventos activos dentro de un radio dado.
+     * Obtiene los nombres de ubicaciones con eventos activos dentro de un radio
+     * dado.
      *
-     * @param lat Latitud del centro de búsqueda.
-     * @param lon Longitud del centro de búsqueda.
+     * @param lat     Latitud del centro de búsqueda.
+     * @param lon     Longitud del centro de búsqueda.
      * @param radioKm Radio de búsqueda en kilómetros.
      * @return Lista de nombres de ubicaciones recomendadas.
      */
@@ -632,25 +619,23 @@ public class EventoService {
         List<Evento> eventos = eventoRepository.findVisibleOnMap(LocalDateTime.now());
         return eventos.stream()
                 .filter(
-                        e ->
-                                e.getUbicacion() != null
-                                        && e.getUbicacion().getLatitud() != null
-                                        && e.getUbicacion().getLongitud() != null)
+                        e -> e.getUbicacion() != null
+                                && e.getUbicacion().getLatitud() != null
+                                && e.getUbicacion().getLongitud() != null)
                 .filter(
-                        e ->
-                                calcularDistanciaKm(
-                                                lat,
-                                                lon,
-                                                e.getUbicacion().getLatitud(),
-                                                e.getUbicacion().getLongitud())
-                                        <= radioKm)
+                        e -> calcularDistanciaKm(
+                                lat,
+                                lon,
+                                e.getUbicacion().getLatitud(),
+                                e.getUbicacion().getLongitud()) <= radioKm)
                 .map(e -> e.getUbicacion().getNombre())
                 .distinct()
                 .collect(Collectors.toList());
     }
 
     /**
-     * Calcula la distancia en kilómetros entre dos puntos geográficos usando la fórmula de
+     * Calcula la distancia en kilómetros entre dos puntos geográficos usando la
+     * fórmula de
      * Haversine.
      */
     private double calcularDistanciaKm(
@@ -658,12 +643,11 @@ public class EventoService {
         final double radioTierra = 6371.0;
         double dLat = Math.toRadians(lat2 - lat1);
         double dLon = Math.toRadians(lon2 - lon1);
-        double a =
-                Math.sin(dLat / 2) * Math.sin(dLat / 2)
-                        + Math.cos(Math.toRadians(lat1))
-                                * Math.cos(Math.toRadians(lat2))
-                                * Math.sin(dLon / 2)
-                                * Math.sin(dLon / 2);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1))
+                        * Math.cos(Math.toRadians(lat2))
+                        * Math.sin(dLon / 2)
+                        * Math.sin(dLon / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return radioTierra * c;
     }
@@ -676,10 +660,9 @@ public class EventoService {
      */
     @Transactional
     public String generarEnlaceVirtual(final Long eventoIdParam) {
-        final Evento evento =
-                eventoRepository
-                        .findById(eventoIdParam)
-                        .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
+        final Evento evento = eventoRepository
+                .findById(eventoIdParam)
+                .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
 
         return evento.generarEnlaceVirtual();
     }
@@ -695,11 +678,11 @@ public class EventoService {
     /**
      * Vincula una tarea de Google Classroom a un evento.
      *
-     * @param eventoId Identificador del evento.
+     * @param eventoId  Identificador del evento.
      * @param usuarioId Identificador del usuario que solicita.
-     * @param taskId ID de la tarea en Classroom.
-     * @param title Título de la tarea en Classroom.
-     * @param url URL de la tarea en Classroom.
+     * @param taskId    ID de la tarea en Classroom.
+     * @param title     Título de la tarea en Classroom.
+     * @param url       URL de la tarea en Classroom.
      * @return El evento actualizado.
      */
     @Transactional
@@ -730,7 +713,7 @@ public class EventoService {
     /**
      * Desvincula una tarea de Google Classroom de un evento.
      *
-     * @param eventoId Identificador del evento.
+     * @param eventoId  Identificador del evento.
      * @param usuarioId Identificador del usuario que solicita.
      * @return El evento actualizado.
      */
@@ -750,11 +733,13 @@ public class EventoService {
     }
 
     /**
-     * Obtiene los eventos de una comunidad, filtrando eventos privados según permisos.
+     * Obtiene los eventos de una comunidad, filtrando eventos privados según
+     * permisos.
      *
-     * @param comunidadId Identificador de la comunidad.
+     * @param comunidadId       Identificador de la comunidad.
      * @param incluirCancelados Si se deben incluir los eventos cancelados.
-     * @param usuarioId Identificador del usuario que solicita (puede ser null).
+     * @param usuarioId         Identificador del usuario que solicita (puede ser
+     *                          null).
      * @return Lista de eventos de la comunidad visibles para el usuario.
      */
     public List<Evento> obtenerEventosPorComunidad(
@@ -764,15 +749,15 @@ public class EventoService {
             eventos = eventoRepository.findByComunidadId(comunidadId);
         } else {
             final LocalDateTime ahora = LocalDateTime.now();
-            eventos =
-                    eventoRepository.findByComunidadIdAndCanceladoFalseAndFuture(
-                            comunidadId, ahora, ahora.minusHours(2), usuarioId);
+            eventos = eventoRepository.findByComunidadIdAndCanceladoFalseAndFuture(
+                    comunidadId, ahora, ahora.minusHours(2), usuarioId);
         }
         return filtrarEventosPrivados(eventos, usuarioId);
     }
 
     /**
-     * Verifica si un usuario puede ver un evento privado. Solo los miembros de la comunidad pueden
+     * Verifica si un usuario puede ver un evento privado. Solo los miembros de la
+     * comunidad pueden
      * verlo.
      */
     private boolean puedeVerEventoPrivado(final Evento evento, final Long usuarioId) {
@@ -785,13 +770,15 @@ public class EventoService {
         return false;
     }
 
-    /** Filtra una lista de eventos eliminando los privados que el usuario no puede ver. */
+    /**
+     * Filtra una lista de eventos eliminando los privados que el usuario no puede
+     * ver.
+     */
     private List<Evento> filtrarEventosPrivados(final List<Evento> eventos, final Long usuarioId) {
         return eventos.stream()
                 .filter(
-                        evento ->
-                                !Boolean.TRUE.equals(evento.getPrivado())
-                                        || puedeVerEventoPrivado(evento, usuarioId))
+                        evento -> !Boolean.TRUE.equals(evento.getPrivado())
+                                || puedeVerEventoPrivado(evento, usuarioId))
                 .collect(Collectors.toList());
     }
 }

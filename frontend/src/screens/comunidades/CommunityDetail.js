@@ -875,6 +875,19 @@ export default function CommunityDetail() {
     }
   };
 
+  const handleEndMeeting = async () => {
+    try {
+      setMeetingLoading(true);
+      setMeetingError(null);
+      await ZoomApi.endMeeting(communityId);
+      setActiveMeeting(null);
+    } catch (err) {
+      setMeetingError(err?.message || 'No se pudo finalizar la reunión');
+    } finally {
+      setMeetingLoading(false);
+    }
+  };
+
   const handleMeetingMainAction = async () => {
     if (activeMeeting) {
       await handleJoinMeeting();
@@ -2034,6 +2047,25 @@ extraActions={(
         >
           <LuUsers size={18} />
           <span>{participantsOpen ? 'Ocultar participantes' : 'Participantes'}</span>
+        </button>
+      ) : null}
+
+      {activeMeeting && currentUserId === activeMeeting?.creadorId ? (
+        <button
+          type="button"
+          className="cd-floating-zoom-btn cd-floating-zoom-btn-end"
+          onClick={handleEndMeeting}
+          disabled={meetingLoading}
+          title="Finalizar la reunion activa"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '8px 16px', background: '#ff4d4f', color: '#fff',
+            border: 'none', borderRadius: 6, cursor: 'pointer',
+            fontSize: '0.9rem'
+          }}
+        >
+          <LuX size={16} />
+          <span>Finalizar</span>
         </button>
       ) : null}
     </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { LuCalendar, LuSquareCheck, LuMapPin, LuLink, LuArrowLeft, LuUsers, LuEye, LuEyeOff, LuMap, LuMapPinOff, LuPlus, LuVideo } from 'react-icons/lu';
 import './CrearEvento.css';
@@ -6,6 +6,7 @@ import Header from '../../components/Header/Header';
 import { createEvent, getEventById, updateEvent } from '../../api/eventEndpoints';
 import { communitiesApi } from '../../api/communities.api';
 import { canCreateCommunityEvent, getCommunityRoleLabel, normalizeCommunityRole } from '../../utils/communityRoles';
+import { resolveCommunityImage, DEFAULT_COMMUNITY_IMAGE } from '../../utils/imageUtils';
 
 const DATE_TIME_FIELD_MAX_LENGTH = {
   dia: 2,
@@ -49,6 +50,20 @@ const CrearEvento = () => {
   const rawCommunityId = searchParams.get('communityId') === 'null' ? null : searchParams.get('communityId');
   const [selectedCommunityId, setSelectedCommunityId] = useState(rawCommunityId || '');
   const [myCommunities, setMyCommunities] = useState([]);
+
+  // Computa la comunidad seleccionada completa para acceder a su imagen
+  const selectedCommunity = useMemo(() => {
+    if (!selectedCommunityId) return null;
+    return myCommunities.find(c => c.id.toString() === selectedCommunityId);
+  }, [selectedCommunityId, myCommunities]);
+
+  // Resuelve la imagen de la comunidad seleccionada o usa el default
+  const communityImageUrl = useMemo(() => {
+    if (selectedCommunity) {
+      return resolveCommunityImage(selectedCommunity);
+    }
+    return DEFAULT_COMMUNITY_IMAGE;
+  }, [selectedCommunity]);
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -104,6 +119,7 @@ const CrearEvento = () => {
       const ub = location.state.ubicacion;
       setFormData(prev => ({
         ...prev,
+        tipoLocalizacion: 'Presencial',
         ubicacionId: ub.id,
         ubicacionNombre: ub.nombre || '',
         ubicacionDireccion: ub.direccion || '',
@@ -524,7 +540,14 @@ const CrearEvento = () => {
               <div className="left-column">
                 <div className="community-info">
                   <div className="community-image">
-                    <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=150&q=80" alt="Evento" />
+                    <img 
+                      src={communityImageUrl} 
+                      alt={selectedCommunity?.nombre || 'Evento'}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = DEFAULT_COMMUNITY_IMAGE;
+                      }}
+                    />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
                     <h3 className="community-title">Evento de comunidad</h3>

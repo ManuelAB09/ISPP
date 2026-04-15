@@ -84,6 +84,12 @@
 
 .mg-state--error { color: #b91c1c; }
 
+.mg-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
 .mg-state--empty {
   color: var(--glaucous);
 }

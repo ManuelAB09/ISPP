@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { communitiesApi } from '../../api/communities.api';
 import ComunidadCard from '../../components/Comunidad/ComunidadCard';
+import RecommendationsSection from '../../components/Recomendaciones/RecommendationsSection';
 import Header from "../../components/Header/Header";
 import './Home.css';
 
@@ -106,6 +107,9 @@ const Home = () => {
 
             {isAuthenticated && !loading && !error && (
               <>
+                {/* Sección de recomendaciones */}
+                <RecommendationsSection />
+
                 {/* Comunidades creadas por mí */}
                 <section className="communities-section">
                   <div className="section-header">
