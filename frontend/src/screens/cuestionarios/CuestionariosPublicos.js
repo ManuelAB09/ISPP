@@ -77,7 +77,7 @@ export default function CuestionariosPublicos() {
           {isAuthenticated && (
             <button
               className="quizzes-public-btn-create"
-              onClick={() => navigate('/cuestionarios/crear')}
+              onClick={() => navigate('/cuestionarios/crear?publicOnly=1')}
             >
               ✏️ Crear cuestionario
             </button>

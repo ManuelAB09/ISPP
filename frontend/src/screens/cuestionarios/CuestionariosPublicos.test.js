@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 jest.mock('../../api/cuestionarios.api', () => ({
@@ -12,12 +12,31 @@ jest.mock('../../components/Header/Header', () => () => <div data-testid="header
 jest.mock('./CuestionariosPublicos.css', () => ({}));
 
 const { cuestionariosApi } = require('../../api/cuestionarios.api');
+const mockNavigate = jest.fn();
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => mockNavigate,
+}));
 const CuestionariosPublicos = require('./CuestionariosPublicos').default;
 
 describe('CuestionariosPublicos', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     localStorage.clear();
+  });
+
+  test('routes create button through public-only flow', async () => {
+    localStorage.setItem('accessToken', 'token');
+    cuestionariosApi.listPublic.mockResolvedValue([]);
+    cuestionariosApi.listAssigned.mockResolvedValue([]);
+
+    render(<MemoryRouter><CuestionariosPublicos /></MemoryRouter>);
+
+    await screen.findByText('No hay cuestionarios públicos disponibles.');
+    const createButton = screen.getByText(/Crear cuestionario/);
+    fireEvent.click(createButton);
+
+    expect(mockNavigate).toHaveBeenCalledWith('/cuestionarios/crear?publicOnly=1');
   });
 
   test('shows loading state', () => {
@@ -55,6 +74,7 @@ describe('CuestionariosPublicos', () => {
     cuestionariosApi.listPublic.mockResolvedValue([]);
     cuestionariosApi.listAssigned.mockResolvedValue([]);
     render(<MemoryRouter><CuestionariosPublicos /></MemoryRouter>);
+    await screen.findByText('No hay cuestionarios públicos disponibles.');
     await screen.findByText(/Crear cuestionario/);
   });
 
@@ -93,6 +113,7 @@ describe('CuestionariosPublicos', () => {
   test('title shows', async () => {
     cuestionariosApi.listPublic.mockResolvedValue([]);
     render(<MemoryRouter><CuestionariosPublicos /></MemoryRouter>);
+    await screen.findByText('No hay cuestionarios públicos disponibles.');
     expect(screen.getByText('Cuestionarios públicos')).toBeInTheDocument();
   });
 });
