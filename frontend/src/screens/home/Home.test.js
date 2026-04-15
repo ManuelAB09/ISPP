@@ -90,6 +90,41 @@ describe('Home', () => {
     });
   });
 
+  test('separa comunidades creadas y comunidades de las que forma parte', async () => {
+    localStorage.setItem('accessToken', 'test-token');
+    localStorage.setItem('userId', '1');
+
+    communitiesApi.listMine.mockResolvedValue({
+      content: [
+        { id: 1, nombre: 'Creada por mi', creador: { id: 1 }, miRol: 'ADMIN' },
+        { id: 2, nombre: 'Mi comunidad', creador: { id: 99 }, miRol: 'MIEMBRO' },
+      ],
+    });
+
+    renderComponent();
+
+    expect(await screen.findByText('Comunidades que he creado')).toBeInTheDocument();
+    expect(screen.getByText('Comunidades de las que formo parte')).toBeInTheDocument();
+    expect(screen.getByText('Creada por mi')).toBeInTheDocument();
+    expect(screen.getByText('Mi comunidad')).toBeInTheDocument();
+  });
+
+  test('muestra CTA de crear comunidad si no hay comunidades creadas', async () => {
+    localStorage.setItem('accessToken', 'test-token');
+    localStorage.setItem('userId', '1');
+
+    communitiesApi.listMine.mockResolvedValue({
+      content: [
+        { id: 2, nombre: 'Mi comunidad', creador: { id: 99 }, miRol: 'MIEMBRO' },
+      ],
+    });
+
+    renderComponent();
+
+    expect(await screen.findByText(/No has creado ninguna comunidad todavía/i)).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Crear comunidad/i }).length).toBeGreaterThan(0);
+  });
+
   test('shows error message on API failure', async () => {
     localStorage.setItem('accessToken', 'test-token');
     communitiesApi.listMine.mockRejectedValue(new Error('Network error'));

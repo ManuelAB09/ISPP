@@ -611,6 +611,7 @@ public class ZoomController {
                 meeting.getDurationMinutes(),
                 meeting.getCreatedAt(),
                 meeting.getStartedAt(),
-                meeting.getEndedAt());
+                meeting.getEndedAt(),
+                meeting.getCreador().getId());
     }
 }

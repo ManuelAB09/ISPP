@@ -281,6 +281,11 @@ public class EventoService {
             evento.setUbicacion(ubicacion);
         } else if (Boolean.TRUE.equals(esVirtualParam)) {
             evento.setUbicacion(null);
+        } else if (Boolean.FALSE.equals(esVirtualParam)
+                && (evento.getUbicacion() == null || ubicacionIdAnterior == null)) {
+            // Si está intentando cambiar a presencial sin proporcionar ubicación
+            throw new IllegalArgumentException(
+                    "Para un evento presencial, debe proporcionar una ubicación");
         }
         try {
             googleCalendarService.sincronizarActualizacion(evento);
@@ -760,13 +765,13 @@ public class EventoService {
     public List<Evento> obtenerEventosPorComunidad(
             final Long comunidadId, final boolean incluirCancelados, final Long usuarioId) {
         List<Evento> eventos;
+        final LocalDateTime ahora = LocalDateTime.now();
         if (incluirCancelados) {
-            eventos = eventoRepository.findByComunidadId(comunidadId);
+            eventos = eventoRepository.findByComunidadIdCancelados(comunidadId);
         } else {
-            final LocalDateTime ahora = LocalDateTime.now();
             eventos =
                     eventoRepository.findByComunidadIdAndCanceladoFalseAndFuture(
-                            comunidadId, ahora, ahora.minusHours(2), usuarioId);
+                            comunidadId, ahora);
         }
         return filtrarEventosPrivados(eventos, usuarioId);
     }

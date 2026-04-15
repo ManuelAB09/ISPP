@@ -72,7 +72,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class AuthService {
-    // Lista de dominios universitarios permitidos (inyectada desde application.yaml)
+    // Lista de dominios universitarios permitidos (inyectada desde
+    // application.yaml)
     // Lista hardcodeada de dominios universitarios permitidos
 
     /** Longitud mínima requerida para las contraseñas. */
@@ -268,8 +269,8 @@ public class AuthService {
 
         if (!Boolean.TRUE.equals(usuario.getEmailVerificado())) {
             throw new EmailNotVerifiedException(
-                    "Debes verificar tu email antes de iniciar sesión. Revisa tu bandeja de entrada"
-                            + " o solicita un nuevo email de verificación.");
+                    "Debes verificar tu email antes de iniciar sesión. Revisa tu bandeja de "
+                            + "entrada o solicita un nuevo email de verificación.");
         }
 
         if (applyPreferenceDefaultsIfNeeded(usuario)) {
@@ -1110,7 +1111,8 @@ public class AuthService {
                                                 "El enlace de recuperación es inválido o ha"
                                                         + " expirado. Solicita uno nuevo."));
 
-        // Rechazar token si la contraseña ya fue cambiada después de su emisión (single-use)
+        // Rechazar token si la contraseña ya fue cambiada después de su emisión
+        // (single-use)
         if (usuario.getPasswordChangedAt() != null) {
             final java.util.Date tokenIssuedAt = jwtService.extractIssuedAt(request.getToken());
             final java.time.Instant passwordChangedInstant =

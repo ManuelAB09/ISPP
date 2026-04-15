@@ -86,34 +86,19 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
     List<Evento> findByComunidadIdAndCanceladoFalse(Long comunidadId);
 
     /**
-     * Obtiene los eventos no cancelados y futuros de una comunidad.
+     * Obtiene los eventos no cancelados y futuros de una comunidad. Solo muestra eventos que aún no
+     * han empezado.
      *
      * @param comunidadId Identificador de la comunidad.
      * @param ahora Momento actual para filtrar eventos futuros.
-     * @return Lista de eventos activos futuros de la comunidad.
+     * @return Lista de eventos no cancelados y futuros de la comunidad.
      */
     @Query(
             "SELECT e FROM Evento e WHERE e.comunidad.id = :comunidadId"
                     + " AND e.cancelado = false"
-                    + " AND ("
-                    + "   e.fechaHora >= :ahora"
-                    + "   OR ("
-                    + "     e.fechaHora < :ahora"
-                    + "     AND ((e.fechaFin IS NOT NULL AND e.fechaFin >= :ahora)"
-                    + "          OR (e.fechaFin IS NULL AND e.fechaHora >= :limiteMargen))"
-                    + "     AND (:usuarioId IS NOT NULL"
-                    + "          AND (e.creador.id = :usuarioId"
-                    + "               OR EXISTS (SELECT ae FROM AsistenciaEvento ae"
-                    + "                          WHERE ae.evento.id = e.id"
-                    + "                          AND ae.usuario.id = :usuarioId"
-                    + "                          AND ae.estado = 'CONFIRMADA')))"
-                    + "   )"
-                    + ")")
+                    + " AND e.fechaHora >= :ahora")
     List<Evento> findByComunidadIdAndCanceladoFalseAndFuture(
-            @Param("comunidadId") Long comunidadId,
-            @Param("ahora") LocalDateTime ahora,
-            @Param("limiteMargen") LocalDateTime limiteMargen,
-            @Param("usuarioId") Long usuarioId);
+            @Param("comunidadId") Long comunidadId, @Param("ahora") LocalDateTime ahora);
 
     // -----------------------------------------------
     // NUEVAS CONSULTAS: Mis Eventos
@@ -241,4 +226,14 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
                     + "WHERE (e.fechaFin IS NOT NULL AND e.fechaFin < :limite) "
                     + "OR (e.fechaFin IS NULL AND e.fechaHora < :limite)")
     List<Evento> findEventosPasadosParaEliminar(@Param("limite") LocalDateTime limite);
+
+    /**
+     * Obtiene solo los eventos cancelados de una comunidad (sin límite de fecha). Usado cuando el
+     * usuario activa el checkbox "Mostrar cancelados".
+     *
+     * @param comunidadId Identificador de la comunidad.
+     * @return Lista de eventos cancelados.
+     */
+    @Query("SELECT e FROM Evento e WHERE e.comunidad.id = :comunidadId AND e.cancelado = true")
+    List<Evento> findByComunidadIdCancelados(@Param("comunidadId") Long comunidadId);
 }
