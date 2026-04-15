@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { communitiesApi } from '../../api/communities.api';
 import ComunidadCard from '../../components/Comunidad/ComunidadCard';
+import RecommendationsSection from '../../components/Recomendaciones/RecommendationsSection';
 import Header from "../../components/Header/Header";
 import './Home.css';
 
@@ -106,30 +107,7 @@ const Home = () => {
 
             {isAuthenticated && !loading && !error && (
               <>
-                {/* Comunidades creadas por mí */}
-                <section className="communities-section">
-                  <div className="section-header">
-                    <h2>Mis comunidades creadas</h2>
-                    <button 
-                      onClick={() => navigate('/crear-comunidad')} 
-                      className="create-community-btn"
-                    >
-                      Crear comunidad
-                    </button>
-                  </div>
-                  
-                  {comunidadesCreadas.length > 0 ? (
-                    <ul className="comunidades-list">
-                      {comunidadesCreadas.map(comunidad => (
-                        <ComunidadCard key={comunidad.id} comunidad={comunidad} />
-                      ))}
-                    </ul>
-                  ) : (
-                    <div className="empty-state">
-                      <p>Aún no has creado ninguna comunidad. ¡Crea la primera!</p>
-                    </div>
-                  )}
-                </section>
+               
 
                 {/* Comunidades a las que pertenezco */}
                 <section className="communities-section">

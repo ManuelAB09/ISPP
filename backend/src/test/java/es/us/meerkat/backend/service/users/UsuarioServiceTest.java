@@ -40,8 +40,10 @@ import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.InstitutionRepository;
 import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.communities.SolicitudComunidadRepository;
+import es.us.meerkat.backend.repository.emails.RecordatorioEmailRepository;
 import es.us.meerkat.backend.repository.events.AsistenciaEventoRepository;
 import es.us.meerkat.backend.repository.events.EventoRepository;
+import es.us.meerkat.backend.repository.forms.CuestionarioRepository;
 import es.us.meerkat.backend.repository.google.GoogleClassroomConnectionRepository;
 import es.us.meerkat.backend.repository.maps.UbicacionRepository;
 import es.us.meerkat.backend.repository.notifications.PreferenciasNotificacionRepository;
@@ -74,6 +76,10 @@ class UsuarioServiceTest {
     @Mock private MensajeComunidadRepository mensajeComunidadRepository;
 
     @Mock private GoogleClassroomConnectionRepository googleClassroomConnectionRepository;
+
+    @Mock private CuestionarioRepository cuestionarioRepository;
+
+    @Mock private RecordatorioEmailRepository recordatorioEmailRepository;
 
     @Mock private InstitutionRepository institutionRepository;
 

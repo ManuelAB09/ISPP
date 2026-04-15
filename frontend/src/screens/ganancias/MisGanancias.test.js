@@ -86,4 +86,39 @@ describe('MisGanancias', () => {
       expect(screen.getByText(/no se pudieron cargar/i)).toBeInTheDocument();
     });
   });
+
+  test('shows create profile CTA when tutor profile does not exist', async () => {
+    obtenerGananciasTutor.mockRejectedValue({
+      response: {
+        status: 400,
+        data: { error: 'No tienes un perfil de tutor' },
+      },
+    });
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText(/no puedes ver tus ganancias/i)).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /crear perfil de tutor/i })
+      ).toBeInTheDocument();
+    });
+  });
+
+  test('shows create profile CTA with app ApiError shape', async () => {
+    obtenerGananciasTutor.mockRejectedValue({
+      status: 400,
+      message: 'No tienes un perfil de tutor',
+      details: { error: 'No tienes un perfil de tutor' },
+    });
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText(/no puedes ver tus ganancias/i)).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /crear perfil de tutor/i })
+      ).toBeInTheDocument();
+    });
+  });
 });

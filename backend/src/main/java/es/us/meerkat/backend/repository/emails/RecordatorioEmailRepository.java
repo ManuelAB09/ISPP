@@ -45,4 +45,9 @@ public interface RecordatorioEmailRepository extends JpaRepository<RecordatorioE
     @Modifying
     @Query("DELETE FROM RecordatorioEmail r WHERE r.evento.id = :eventoId")
     void deleteByEventoId(@Param("eventoId") Long eventoId);
+
+    /** Elimina todos los recordatorios de un usuario. */
+    @Modifying
+    @Query("DELETE FROM RecordatorioEmail r WHERE r.usuario.id = :usuarioId")
+    void deleteByUsuarioId(@Param("usuarioId") Long usuarioId);
 }

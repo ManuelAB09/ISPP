@@ -281,6 +281,11 @@ public class EventoService {
             evento.setUbicacion(ubicacion);
         } else if (Boolean.TRUE.equals(esVirtualParam)) {
             evento.setUbicacion(null);
+        } else if (Boolean.FALSE.equals(esVirtualParam)
+                && (evento.getUbicacion() == null || ubicacionIdAnterior == null)) {
+            // Si está intentando cambiar a presencial sin proporcionar ubicación
+            throw new IllegalArgumentException(
+                    "Para un evento presencial, debe proporcionar una ubicación");
         }
         try {
             googleCalendarService.sincronizarActualizacion(evento);
