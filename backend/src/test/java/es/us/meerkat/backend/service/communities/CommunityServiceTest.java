@@ -35,8 +35,10 @@ import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.InstitutionRepository;
 import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.events.EventoRepository;
+import es.us.meerkat.backend.repository.forms.CuestionarioRepository;
 import es.us.meerkat.backend.repository.tutors.TutorRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
+import es.us.meerkat.backend.repository.zoom.ZoomMeetingRepository;
 import es.us.meerkat.backend.service.subscriptions.SuscripcionService;
 
 @ExtendWith(MockitoExtension.class)
@@ -50,6 +52,8 @@ class CommunityServiceTest {
     @Mock private SuscripcionService suscripcionService;
     @Mock private MensajeComunidadRepository mensajeComunidadRepository;
     @Mock private EventoRepository eventoRepository;
+    @Mock private CuestionarioRepository cuestionarioRepository;
+    @Mock private ZoomMeetingRepository zoomMeetingRepository;
     @Mock private TutorRepository tutorRepository;
 
     @InjectMocks private CommunityService communityService;

@@ -18,17 +18,18 @@ const fmtDate = (iso) => {
 };
 
 const extraerMensajeError = (err) => {
-  const payload = err?.response?.data;
+  const payload = err?.details ?? err?.response?.data;
   if (typeof payload === "string" && payload.trim()) return payload;
   if (payload && typeof payload === "object") {
     if (typeof payload.error === "string" && payload.error.trim()) return payload.error;
     if (typeof payload.message === "string" && payload.message.trim()) return payload.message;
   }
+  if (typeof err?.message === "string" && err.message.trim()) return err.message;
   return "No se pudieron cargar las ganancias.";
 };
 
 const esErrorSinPerfilTutor = (err, mensaje) => {
-  const status = err?.response?.status;
+  const status = err?.status ?? err?.response?.status;
   if (status !== 400 && status !== 404) return false;
 
   const texto = String(mensaje || "").toLowerCase();
