@@ -3,6 +3,7 @@ package es.us.meerkat.backend.service.events;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -286,6 +287,75 @@ class EventoServiceTest {
         List<String> result = eventoService.obtenerUbicacionesRecomendadas(null, null, null);
 
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    void obtenerEventosPorComunidadShouldUseCanceladosQueryWhenRequested() {
+        Long comunidadId = 2L;
+
+        Comunidad comunidad = new Comunidad();
+        comunidad.setId(comunidadId);
+
+        Evento publico = new Evento();
+        publico.setId(1L);
+        publico.setPrivado(false);
+        publico.setComunidad(comunidad);
+
+        Evento privado = new Evento();
+        privado.setId(2L);
+        privado.setPrivado(true);
+        privado.setComunidad(comunidad);
+
+        when(eventoRepository.findByComunidadIdCancelados(comunidadId))
+                .thenReturn(List.of(publico, privado));
+        when(authorizationService.isMemberOf(1L, comunidadId)) // ← cambio clave
+                .thenReturn(true);
+
+        List<Evento> result = eventoService.obtenerEventosPorComunidad(comunidadId, true, 1L);
+
+        assertThat(result).hasSize(2);
+        verify(eventoRepository).findByComunidadIdCancelados(comunidadId);
+    }
+
+    @Test
+    void obtenerEventosPorComunidadShouldUseFutureNonCancelledQueryWhenCanceladosNotIncluded() {
+        Long comunidadId = 2L;
+        Evento publico = new Evento();
+        publico.setId(1L);
+        publico.setPrivado(false);
+        publico.setComunidad(buildComunidad(comunidadId));
+
+        when(eventoRepository.findByComunidadIdAndCanceladoFalseAndFuture(
+                        eq(comunidadId), any(LocalDateTime.class)))
+                .thenReturn(List.of(publico));
+
+        List<Evento> result = eventoService.obtenerEventosPorComunidad(comunidadId, false, null);
+
+        assertThat(result).hasSize(1);
+        verify(eventoRepository)
+                .findByComunidadIdAndCanceladoFalseAndFuture(
+                        eq(comunidadId), any(LocalDateTime.class));
+    }
+
+    @Test
+    void obtenerEventosPorComunidadShouldFilterPrivateEventsForAnonymousUsers() {
+        Long comunidadId = 2L;
+        Evento publico = new Evento();
+        publico.setId(1L);
+        publico.setPrivado(false);
+        publico.setComunidad(buildComunidad(comunidadId));
+
+        Evento privado = new Evento();
+        privado.setId(2L);
+        privado.setPrivado(true);
+        privado.setComunidad(buildComunidad(comunidadId));
+
+        when(eventoRepository.findByComunidadIdCancelados(comunidadId))
+                .thenReturn(List.of(publico, privado));
+
+        List<Evento> result = eventoService.obtenerEventosPorComunidad(comunidadId, true, null);
+
+        assertThat(result).extracting(Evento::getId).containsExactly(1L);
     }
 
     private Usuario buildUsuario(final Long id) {

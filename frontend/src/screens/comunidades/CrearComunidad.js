@@ -373,16 +373,22 @@ export default function CrearComunidad() {
             if (imagenPortada) {
                 const formData = new FormData();
                 formData.append('file', imagenPortada);
-                await communitiesApi.uploadPhoto(response.id, formData);
+                try {
+                    const uploadResponse = await communitiesApi.uploadPhoto(response.id, formData);
+                    console.log("✅ Foto de comunidad subida:", uploadResponse);
+                } catch (uploadErr) {
+                    console.warn("⚠️ La comunidad se creó pero hubo un error al subir la foto:", uploadErr);
+                    // No detener el flujo si la foto falla - la comunidad ya existe
+                }
             }
 
             setSuccess('¡Comunidad creada con éxito!');
             // Clear saved draft on successful creation
             try { localStorage.removeItem('crearComunidadDraft'); } catch (e) { console.warn(e); }
-            // Navegar a la comunidad creada
+            // Navegar a la comunidad creada - esperar breve momento para que el servidor procese todo
             setTimeout(() => {
                 navigate(`/comunidades/${response.id}`);
-            }, 1000);
+            }, 500);
 
         } catch (err) {
             console.error("❌ Error al crear comunidad:", err);

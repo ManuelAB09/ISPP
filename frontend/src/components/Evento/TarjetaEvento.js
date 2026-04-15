@@ -40,6 +40,9 @@ const TarjetaEvento = ({ event, onAttend, onCancelAttendance, attendanceLoading,
   const dateDisplay = formatDate(event.fechaHora);
   const timeDisplay = formatTime(event.fechaHora);
 
+  // Verificar si el evento ya ha pasado
+  const isPast = event.fechaHora ? new Date(event.fechaHora) < new Date() : false;
+
   // Ubicación
   const location = isOnline
     ? 'Online'
@@ -88,6 +91,8 @@ const TarjetaEvento = ({ event, onAttend, onCancelAttendance, attendanceLoading,
       <div className="event-actions-col">
         {isCancelled ? (
           <span className="badge-status badge-cancelled-status">Cancelado</span>
+        ) : isPast ? (
+          <span className="badge-status" style={{ color: '#999', backgroundColor: '#f0f0f0' }}>Pasado</span>
         ) : isConfirmed ? (
           <>
             <span className="badge-status badge-online">Inscrito</span>

@@ -38,8 +38,10 @@ import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.InstitutionRepository;
 import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.events.EventoRepository;
+import es.us.meerkat.backend.repository.forms.CuestionarioRepository;
 import es.us.meerkat.backend.repository.tutors.TutorRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
+import es.us.meerkat.backend.repository.zoom.ZoomMeetingRepository;
 import es.us.meerkat.backend.service.subscriptions.SuscripcionService;
 import lombok.RequiredArgsConstructor;
 
@@ -57,6 +59,8 @@ public class CommunityService {
     private final MensajeComunidadRepository mensajeComunidadRepository;
     private final EventoRepository eventoRepository;
     private final TutorRepository tutorRepository;
+    private final ZoomMeetingRepository zoomMeetingRepository;
+    private final CuestionarioRepository cuestionarioRepository;
 
     private static final int MAX_FREE_COMMUNITIES = 3;
     private static final int MAX_PREMIUM_COMMUNITIES = 10;
@@ -452,6 +456,17 @@ public class CommunityService {
                 comunidadRepository
                         .findById(communityId)
                         .orElseThrow(() -> new IllegalArgumentException("Comunidad no encontrada"));
+
+        // Limpiar referencias de cuestionarios para evitar violación de FK en
+        // cuestionario_comunidades
+        List<es.us.meerkat.backend.entity.forms.Cuestionario> cuestionarios =
+                cuestionarioRepository.findDistinctByComunidadesIdOrderByCreatedAtDesc(communityId);
+        cuestionarios.forEach(q -> q.getComunidades().remove(comunidad));
+        cuestionarioRepository.saveAll(cuestionarios);
+
+        // Eliminar ZoomMeetings antes para evitar violación de FK
+        zoomMeetingRepository.deleteAll(
+                zoomMeetingRepository.findByComunidadIdOrderByCreatedAtDesc(communityId));
 
         // Desvincular eventos antes de eliminar para evitar violación de FK
         eventoRepository.disassociateFromComunidad(communityId);
