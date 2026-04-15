@@ -23,6 +23,7 @@
 1. [Enlace a la Base de Conocimiento compartida](#1-enlace-a-la-base-de-conocimiento-compartida)
 2. [Contenido específico aportado](#2-contenido-específico-aportado)
 3. [Fortalezas, Debilidades y Acciones Tomadas en el grupo](#3-fortalezas-debilidades-y-acciones-tomadas-en-el-grupo)
+4. [Aportaciones a la base de conocimiento común de nuestro grupo](#4-aportaciones-a-la-base-de-conocimiento-común-de-nuestro-grupo)
 
 ---
 
@@ -79,9 +80,20 @@ Nuestro equipo ha contribuido con el feedback específico recibido el 09/04/2026
   - Se ha definido métricas para averiguar el uso real de la aplicación por los usuarios pilotos, definiendo de manera formal la cantidad de usuarios que demuestran mediante el formulario que realmente la usan (pidiendo imágenes y respuestas a preguntas que demuestren que realmente la han usado).
 
 
-## 4. Checklist de presentaciones apuntado por nuestro grupo
+## 4. Aportaciones a la base de conocimiento común de nuestro grupo
+
+Dentro de la organización del grupo, el representante del grupo 9 se encarga de gestionar el repositorio de base comín al completo, representante para preguntar las dudas al profesorado, registrar y apuntar el orden de los grupos en las presentaciones y registrar y apuntar la checklist para la presentación del siguiente día.
+
+### Feedback general apuntado
+- Team building: detallar el tipo de actividades, si está funcionando o no, si están llendo todos o no y el por qué.
+- Hay que saber si nuestros usuarios pilotos están usando la aplicación o no de alguna manera.
+- Cuidado con dar demasiada información en cuanto a números o calculos para no desbordar al oyente. Igual, redondear a las centenas.
+- Cuanto más realista y con más historia la demo mejor.
+- Cuidado con los cuadrantes de rendimientos que no se vean bien.
+- Servicios: comentar los servicios que estamos utilizando, incluyendo los de coste cero. Eso sí, los programas que se descarguen localmente en un ordenador no cuentan.
+- Tiene que haber storyboards
  
-### Checklist
+### Checklist aportada por nuestro grupo
   
   - [ ] **1. Killer Opener y Contexto (FOCO):** Apertura clara, bien hilada con la demo, que introduzca el problema y conecte con una historia realista que se desarrollará durante la presentación.
   - [ ] **2. Idea del Proyecto (FOCO):** Recordatorio breve del valor del producto y del problema que soluciona, completamente alineado con el hilo conductor de la demo.
