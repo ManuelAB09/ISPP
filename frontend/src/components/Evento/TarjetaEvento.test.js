@@ -14,7 +14,7 @@ const baseEvent = {
   titulo: 'Evento de prueba',
   descripcion: 'Descripción del evento',
   esVirtual: false,
-  fechaHora: '2025-06-15T10:00:00',
+  fechaHora: '2027-06-15T10:00:00',
   aforo: 30,
   asistentesConfirmados: 5,
   cancelado: false,

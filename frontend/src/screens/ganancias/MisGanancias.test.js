@@ -79,7 +79,7 @@ describe('MisGanancias', () => {
   });
 
   test('shows error state on API failure', async () => {
-    obtenerGananciasTutor.mockRejectedValue(new Error('Network error'));
+    obtenerGananciasTutor.mockRejectedValue({ details: 'No se pudieron cargar las ganancias.' });
     renderComponent();
 
     await waitFor(() => {
