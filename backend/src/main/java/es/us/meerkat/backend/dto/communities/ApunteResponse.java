@@ -7,9 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * DTO para respuestas de apuntes.
- */
+/** DTO para respuestas de apuntes. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
