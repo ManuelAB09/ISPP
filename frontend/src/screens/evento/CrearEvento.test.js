@@ -56,9 +56,9 @@ describe('CrearEvento', () => {
       </MemoryRouter>
     );
 
-  const renderEdit = () =>
+  const renderEdit = (initialEntries = ['/crear-evento/55?communityId=10']) =>
     render(
-      <MemoryRouter initialEntries={['/crear-evento/55?communityId=10']}>
+      <MemoryRouter initialEntries={initialEntries}>
         <Routes>
           <Route path="/crear-evento/:id" element={<CrearEvento />} />
         </Routes>
@@ -213,6 +213,76 @@ describe('CrearEvento', () => {
           esVirtual: true,
         })
       );
+    });
+  });
+
+  test('mantiene la ubicación presencial al volver desde el mapa en edición', async () => {
+    getEventById.mockResolvedValueOnce({
+      id: 55,
+      titulo: 'Evento online original',
+      descripcion: 'Descripción',
+      fechaHora: '2026-07-01T17:00:00',
+      esVirtual: true,
+      aforo: 50,
+      privado: false,
+      visibleMapa: true,
+      creador: { id: 1 },
+    });
+
+    renderEdit([
+      {
+        pathname: '/crear-evento/55',
+        search: '?communityId=10',
+        state: {
+          ubicacion: {
+            id: 22,
+            nombre: 'Biblioteca Central',
+            direccion: 'Calle Mayor 1',
+            latitud: 37.4,
+            longitud: -5.99,
+          },
+        },
+      },
+    ]);
+
+    expect(await screen.findByText('Biblioteca Central')).toBeInTheDocument();
+    expect(screen.getByText('Calle Mayor 1')).toBeInTheDocument();
+    expect(screen.getByText(/Presencial/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Reunión por Zoom/i)).not.toBeInTheDocument();
+  });
+
+  test('al actualizar una edición sin comunidad navega al detalle del evento y no vuelve atrás', async () => {
+    getEventById.mockResolvedValueOnce({
+      id: 55,
+      titulo: 'Evento existente',
+      descripcion: 'Descripción',
+      fechaHora: '2026-07-01T17:00:00',
+      fechaFin: '2026-07-01T19:00:00',
+      esVirtual: true,
+      aforo: 50,
+      privado: false,
+      visibleMapa: true,
+      creador: { id: 1 },
+    });
+
+    renderEdit(['/crear-evento/55']);
+
+    await screen.findByDisplayValue('Evento existente');
+
+    fireEvent.change(screen.getByDisplayValue('Evento existente'), {
+      target: { name: 'nombre', value: 'Evento actualizado' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Actualizar Evento/i }));
+
+    await waitFor(() => {
+      expect(updateEvent).toHaveBeenCalledWith(
+        '55',
+        expect.objectContaining({
+          titulo: 'Evento actualizado',
+        })
+      );
+      expect(mockNavigate).toHaveBeenCalledWith('/eventos/55');
     });
   });
 

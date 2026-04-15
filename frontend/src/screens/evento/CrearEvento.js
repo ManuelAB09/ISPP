@@ -163,6 +163,7 @@ const CrearEvento = () => {
         try {
           setLoading(true);
           const data = await getEventById(id);
+          const selectedLocation = location.state?.ubicacion || null;
 
           let canEdit = data.creador && data.creador.id?.toString() === currentUserId;
 
@@ -209,17 +210,19 @@ const CrearEvento = () => {
             anioFin: fechaFin ? String(fechaFin.getFullYear()) : '',
             horaFin: fechaFin ? String(fechaFin.getHours()).padStart(2, '0') : '',
             minutoFin: fechaFin ? String(fechaFin.getMinutes()).padStart(2, '0') : '',
-            tipoLocalizacion: data.esVirtual ? 'Online' : 'Presencial',
-            direccion: data.esVirtual ? '' : (data.ubicacion?.nombre || data.ubicacion || ''),
+            tipoLocalizacion: selectedLocation ? 'Presencial' : (data.esVirtual ? 'Online' : 'Presencial'),
+            direccion: selectedLocation
+              ? (selectedLocation.direccion || selectedLocation.nombre || '')
+              : (data.esVirtual ? '' : (data.ubicacion?.nombre || data.ubicacion || '')),
             zoomDuration: 60,
             aforo: data.aforo ? String(data.aforo) : '',
             privado: data.privado || false,
             visibleEnMapa: data.visibleMapa !== undefined ? data.visibleMapa : (data.visibleEnMapa !== undefined ? data.visibleEnMapa : true),
-            ubicacionId: data.ubicacion?.id || null,
-            ubicacionNombre: data.ubicacion?.nombre || '',
-            ubicacionDireccion: data.ubicacion?.direccion || '',
-            ubicacionLatitud: data.ubicacion?.latitud || null,
-            ubicacionLongitud: data.ubicacion?.longitud || null
+            ubicacionId: selectedLocation?.id || data.ubicacion?.id || null,
+            ubicacionNombre: selectedLocation?.nombre || data.ubicacion?.nombre || '',
+            ubicacionDireccion: selectedLocation?.direccion || data.ubicacion?.direccion || '',
+            ubicacionLatitud: selectedLocation?.latitud || data.ubicacion?.latitud || null,
+            ubicacionLongitud: selectedLocation?.longitud || data.ubicacion?.longitud || null
           });
         } catch (err) {
           console.error('Error al cargar el evento:', err);
@@ -466,7 +469,7 @@ const CrearEvento = () => {
       if (selectedCommunityId) {
         navigate(`/comunidades/${selectedCommunityId}`);
       } else {
-        navigate(-1);
+        navigate(`/eventos/${id}`);
       }
     } catch (err) {
       console.error('Error al guardar el evento:', err);
