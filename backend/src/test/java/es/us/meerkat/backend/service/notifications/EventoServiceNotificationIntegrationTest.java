@@ -66,7 +66,7 @@ class EventoServiceNotificationIntegrationTest {
         evento.setFechaFin(LocalDateTime.now().plusDays(3).plusHours(2));
         evento.setAforo(20);
         evento.setQueLlevar("Cuaderno");
-        evento.setEsVirtual(false);
+        evento.setEsVirtual(true); // ✅ virtual
         evento.setPrivado(false);
         evento.setVisibleMapa(true);
         evento.setCreador(creador);
@@ -95,21 +95,15 @@ class EventoServiceNotificationIntegrationTest {
                 LocalDateTime.now().plusDays(4).plusHours(2),
                 30,
                 "Portátil",
+                true, // ✅ virtual
                 false,
-                false,
-                null,
+                null, // ✅ sin ubicación
                 true);
 
         verify(emailService)
                 .sendEventUpdatedEmail(
-                        argThat(
-                                usuario ->
-                                        usuario != null
-                                                && asistente.getId().equals(usuario.getId())),
-                        argThat(
-                                eventoActualizado ->
-                                        eventoActualizado != null
-                                                && eventoId.equals(eventoActualizado.getId())));
+                        argThat(u -> u != null && asistente.getId().equals(u.getId())),
+                        argThat(e -> e != null && eventoId.equals(e.getId())));
     }
 
     @Test
@@ -133,7 +127,7 @@ class EventoServiceNotificationIntegrationTest {
         evento.setFechaFin(LocalDateTime.now().plusDays(3).plusHours(2));
         evento.setAforo(20);
         evento.setQueLlevar("Cuaderno");
-        evento.setEsVirtual(false);
+        evento.setEsVirtual(true); // ✅
         evento.setPrivado(false);
         evento.setVisibleMapa(true);
         evento.setCreador(creador);
@@ -150,7 +144,7 @@ class EventoServiceNotificationIntegrationTest {
         PreferenciasNotificacion preferencias = new PreferenciasNotificacion();
         preferencias.setUsuario(asistente);
         preferencias.setEmailsActivados(true);
-        preferencias.setNotificarCambiosDeEventos(false);
+        preferencias.setNotificarCambiosDeEventos(false); // ❌
         preferenciasNotificacionRepository.save(preferencias);
 
         eventoService.editarEvento(
@@ -161,7 +155,7 @@ class EventoServiceNotificationIntegrationTest {
                 LocalDateTime.now().plusDays(4).plusHours(2),
                 30,
                 "Portátil",
-                false,
+                true,
                 false,
                 null,
                 true);
@@ -190,7 +184,7 @@ class EventoServiceNotificationIntegrationTest {
         evento.setFechaFin(LocalDateTime.now().plusDays(3).plusHours(2));
         evento.setAforo(20);
         evento.setQueLlevar("Cuaderno");
-        evento.setEsVirtual(false);
+        evento.setEsVirtual(true); // ✅
         evento.setPrivado(false);
         evento.setVisibleMapa(true);
         evento.setCreador(creador);
@@ -206,7 +200,7 @@ class EventoServiceNotificationIntegrationTest {
 
         PreferenciasNotificacion preferencias = new PreferenciasNotificacion();
         preferencias.setUsuario(asistente);
-        preferencias.setEmailsActivados(false);
+        preferencias.setEmailsActivados(false); // ❌
         preferencias.setNotificarCambiosDeEventos(true);
         preferenciasNotificacionRepository.save(preferencias);
 
@@ -218,7 +212,7 @@ class EventoServiceNotificationIntegrationTest {
                 LocalDateTime.now().plusDays(4).plusHours(2),
                 30,
                 "Portátil",
-                false,
+                true,
                 false,
                 null,
                 true);
