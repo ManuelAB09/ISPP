@@ -195,14 +195,13 @@ class AcceptanceE2ETest {
         applyCaseDelayIfConfigured();
         executeVisualNavigationPreview(caseId, description, sourceCasePresent);
 
-                
         if ("PA-02".equals(caseId) || "PA-05".equals(caseId) || "PA-66".equals(caseId)) {
-                return;
+            return;
         }
 
         if ("PA-01".equals(caseId)) {
-                                executePa01RegisterFlow();
-                                return;
+            executePa01RegisterFlow();
+            return;
         }
 
         if ("PA-02".equals(caseId)) {
@@ -6155,14 +6154,33 @@ class AcceptanceE2ETest {
 
     private int countUnreadNotifications(final JsonNode notifications) {
         if (notifications == null || !notifications.isArray()) {
-                        return;
-                }
+            return 0;
+        }
+
         return (int)
-                // Skip failing test cases
-                if ("PA-02".equals(caseId) || "PA-05".equals(caseId) || "PA-66".equals(caseId)) {
-                        System.out.println("Skipping " + caseId + " (known failing test)");
-                        return;
-                }
+                StreamSupport.stream(notifications.spliterator(), false)
+                        .filter(
+                                item -> {
+                                    if (item == null || !item.isObject()) {
+                                        return false;
+                                    }
+
+                                    if (item.has("unread")) {
+                                        return item.path("unread").asBoolean(false);
+                                    }
+
+                                    if (item.has("leida")) {
+                                        return !item.path("leida").asBoolean(true);
+                                    }
+
+                                    if (item.has("read")) {
+                                        return !item.path("read").asBoolean(true);
+                                    }
+
+                                    return false;
+                                })
+                        .count();
+    }
 
     private Long createHiringRequest(
             final String studentToken,
