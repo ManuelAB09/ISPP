@@ -167,3 +167,4 @@ describe('TarjetaEvento', () => {
     expect(screen.queryByText('Apuntarse')).not.toBeInTheDocument();
     expect(onAttend).not.toHaveBeenCalled();
   });
+});
