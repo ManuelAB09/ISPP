@@ -8,7 +8,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
@@ -373,5 +376,144 @@ class ZoomControllerTest {
                 controller.uploadRecording(communityId, meetingId, usuario, file);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void downloadRecordingShouldReturnBinaryBodyAndHeadersWhenSuccessful() {
+    when(authorizationService.isMemberOf(usuario.getId(), communityId)).thenReturn(true);
+    byte[] content = "recording-data".getBytes(StandardCharsets.UTF_8);
+    ZoomIntegrationService.RecordingDownload download =
+        new ZoomIntegrationService.RecordingDownload(
+            content, "meeting.mp4", "video/mp4");
+
+    when(zoomIntegrationService.downloadRecordingForCommunity(communityId, "rec_1", 1L))
+        .thenReturn(download);
+
+    ResponseEntity<?> response = controller.downloadRecording(communityId, "rec_1", usuario);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getHeaders().get(HttpHeaders.CONTENT_DISPOSITION).get(0))
+        .contains("meeting.mp4");
+    assertThat(response.getBody()).isEqualTo(content);
+    }
+
+    @Test
+    void downloadRecordingShouldReturnNotFoundWhenRecordingDoesNotExist() {
+    when(authorizationService.isMemberOf(usuario.getId(), communityId)).thenReturn(true);
+    when(zoomIntegrationService.downloadRecordingForCommunity(communityId, "missing", 1L))
+        .thenThrow(new RuntimeException("No encontrada"));
+
+    ResponseEntity<?> response =
+        controller.downloadRecording(communityId, "missing", usuario);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void endMeetingShouldReturnForbiddenWhenUserIsNotCreator() {
+    when(authorizationService.isMemberOf(usuario.getId(), communityId)).thenReturn(true);
+    org.mockito.Mockito.doThrow(
+            new RuntimeException("Solo el creador puede finalizar la llamada"))
+        .when(zoomIntegrationService)
+        .endActiveMeeting(communityId, 1L);
+
+    ResponseEntity<?> response = controller.endMeeting(communityId, usuario);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    void endMeetingShouldReturnNotFoundWhenNoActiveMeeting() {
+    when(authorizationService.isMemberOf(usuario.getId(), communityId)).thenReturn(true);
+    org.mockito.Mockito.doThrow(new RuntimeException("No hay llamada activa en esta comunidad"))
+        .when(zoomIntegrationService)
+        .endActiveMeeting(communityId, 1L);
+
+    ResponseEntity<?> response = controller.endMeeting(communityId, usuario);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void createOrGetEventMeetingShouldReturnUnauthorizedWhenUserIsNull() {
+    ResponseEntity<?> response = controller.createOrGetEventMeeting(55L, null, null);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void createOrGetEventMeetingShouldReturnServiceUnavailableWhenZoomNotConfigured()
+        throws Exception {
+    when(zoomIntegrationService.createOrGetActiveMeetingForEvent(eq(66L), eq(1L), any(), any()))
+        .thenThrow(new RuntimeException("Faltan credenciales Zoom en entorno"));
+
+    ResponseEntity<?> response = controller.createOrGetEventMeeting(66L, null, usuario);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
+    @Test
+    void getActiveEventMeetingShouldReturnNotFoundWhenNoMeetingExists() {
+    when(zoomIntegrationService.getActiveMeetingForEvent(77L, 1L))
+        .thenThrow(new RuntimeException("No hay llamada activa en este evento"));
+
+    ResponseEntity<?> response = controller.getActiveEventMeeting(77L, usuario);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void joinEventMeetingShouldReturnNotFoundWhenNoMeetingExists() {
+    when(zoomIntegrationService.joinActiveMeetingForEvent(88L, 1L))
+        .thenThrow(new RuntimeException("No hay llamada activa en este evento"));
+
+    ResponseEntity<?> response = controller.joinEventMeeting(88L, usuario);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void listEventParticipantsShouldReturnNotFoundWhenNoMeetingExists() {
+    when(zoomIntegrationService.getActiveParticipantsForEvent(99L, 1L))
+        .thenThrow(new RuntimeException("No hay llamada activa en este evento"));
+
+    ResponseEntity<?> response = controller.listEventParticipants(99L, usuario);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void endEventMeetingShouldReturnForbiddenWhenNotCreator() {
+    org.mockito.Mockito.doThrow(new RuntimeException("Solo el creador puede finalizar la llamada"))
+        .when(zoomIntegrationService)
+        .endActiveMeetingForEvent(101L, 1L);
+
+    ResponseEntity<?> response = controller.endEventMeeting(101L, usuario);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    void zoomWebhookShouldReturnUnauthorizedWhenServiceThrowsError() {
+    when(zoomIntegrationService.processWebhook(any(), eq("sig"), eq("ts")))
+        .thenThrow(new RuntimeException("invalid webhook"));
+
+    ResponseEntity<Map<String, Object>> response =
+        controller.zoomWebhook(Map.of("type", "event"), "sig", "ts");
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    assertThat(response.getBody()).containsEntry("error", "invalid webhook");
+    }
+
+    @Test
+    void zoomWebhookShouldReturnOkWhenProcessedSuccessfully() {
+    when(zoomIntegrationService.processWebhook(any(), eq(null), eq(null)))
+        .thenReturn(Map.of("status", "ok", "challenge", "abc"));
+
+    ResponseEntity<Map<String, Object>> response =
+        controller.zoomWebhook(Map.of("event", "endpoint.url_validation"), null, null);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody()).containsEntry("status", "ok");
     }
 }

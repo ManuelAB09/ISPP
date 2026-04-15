@@ -66,6 +66,25 @@ describe('eventEndpoints', () => {
         expect(mockPost).toHaveBeenCalledTimes(2);
     });
 
+    test('createEvent fallback on 405', async () => {
+        mockPost.mockRejectedValueOnce({ response: { status: 405 } });
+        mockPost.mockResolvedValueOnce({ data: { id: 2 } });
+
+        const result = await createEvent(5, { titulo: 'Fallback405' });
+
+        expect(mockPost).toHaveBeenNthCalledWith(1, '/api/v1/communities/5/events', expect.any(Object));
+        expect(mockPost).toHaveBeenNthCalledWith(2, '/api/v1/events/5', expect.any(Object));
+        expect(result).toEqual({ id: 2 });
+    });
+
+    test('createEvent rethrows non-fallback errors', async () => {
+        const error = { response: { status: 500 }, message: 'boom' };
+        mockPost.mockRejectedValueOnce(error);
+
+        await expect(createEvent(5, { titulo: 'Explota' })).rejects.toBe(error);
+        expect(mockPost).toHaveBeenCalledTimes(1);
+    });
+
     test('getEventById', async () => {
         mockGet.mockResolvedValue({ data: { id: 1 } });
         const result = await getEventById(1);
