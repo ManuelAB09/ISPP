@@ -25,7 +25,8 @@ export default function CuestionariosPublicos() {
   const navigate = useNavigate();
   const isAuthenticated = Boolean(localStorage.getItem('accessToken'));
 
-  const [quizzes, setQuizzes] = useState([]);
+  const [publicQuizzes, setPublicQuizzes] = useState([]);
+  const [forYouQuizzes, setForYouQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -34,32 +35,44 @@ export default function CuestionariosPublicos() {
     setError('');
 
     const fetchQuizzes = async () => {
+      const normalizeList = (data) => {
+        if (Array.isArray(data)) return data;
+        if (Array.isArray(data?.content)) return data.content;
+        return [];
+      };
+
       try {
         const publicData = await cuestionariosApi.listPublic();
-        const publicList = Array.isArray(publicData) ? publicData : [];
+        setPublicQuizzes(normalizeList(publicData));
 
-        let assignedList = [];
         if (isAuthenticated) {
           try {
             const assignedData = await cuestionariosApi.listAssigned();
-            assignedList = Array.isArray(assignedData) ? assignedData : [];
-          } catch {
-            // ignore - user may not have assigned quizzes
-          }
-        }
+            const mineData = await cuestionariosApi.listMine();
 
-        // Merge and deduplicate by id
-        const seen = new Set();
-        const merged = [];
-        for (const q of [...assignedList, ...publicList]) {
-          if (!seen.has(q.id)) {
-            seen.add(q.id);
-            merged.push(q);
+            const assignedList = normalizeList(assignedData);
+            const privateMineList = normalizeList(mineData).filter((quiz) => quiz && quiz.publicado === false);
+
+            // Merge both sources without duplicates by quiz id.
+            const seen = new Set();
+            const mergedForYou = [];
+            for (const quiz of [...assignedList, ...privateMineList]) {
+              if (quiz?.id && !seen.has(quiz.id)) {
+                seen.add(quiz.id);
+                mergedForYou.push(quiz);
+              }
+            }
+
+            setForYouQuizzes(mergedForYou);
+          } catch {
+            setForYouQuizzes([]);
           }
+        } else {
+          setForYouQuizzes([]);
         }
-        setQuizzes(merged);
       } catch {
         setError('No se pudieron cargar los cuestionarios públicos.');
+        setPublicQuizzes([]);
       } finally {
         setLoading(false);
       }
@@ -73,7 +86,7 @@ export default function CuestionariosPublicos() {
       <Header page="cuestionarios" />
       <div className="quizzes-public-page">
         <div className="quizzes-public-header">
-          <h1>Cuestionarios públicos</h1>
+          <h1>Cuestionarios</h1>
           {isAuthenticated && (
             <button
               className="quizzes-public-btn-create"
@@ -88,41 +101,91 @@ export default function CuestionariosPublicos() {
           <div className="quizzes-public-loading">Cargando cuestionarios...</div>
         ) : error ? (
           <div className="quizzes-public-error">{error}</div>
-        ) : quizzes.length === 0 ? (
-          <div className="quizzes-public-empty">No hay cuestionarios públicos disponibles.</div>
         ) : (
-          <div className="quizzes-public-grid">
-            {quizzes.map((q) => (
-              <div
-                key={q.id}
-                className="quizzes-public-card"
-                onClick={() => navigate(`/cuestionarios/${q.id}`)}
-              >
-                <div className="quizzes-public-card-title">{q.titulo}</div>
-                <div className="quizzes-public-card-meta">
-                  {q.materia && <span className="quizzes-public-chip">{q.materia}</span>}
-                  {q.dificultad && (
-                    <span className="quizzes-public-chip quizzes-public-chip--difficulty">
-                      {DIFFICULTY_LABELS[q.dificultad] || q.dificultad}
-                    </span>
-                  )}
-                  {q.numPreguntas > 0 && (
-                    <span className="quizzes-public-chip">
-                      {q.numPreguntas} pregunta{q.numPreguntas !== 1 ? 's' : ''}
-                    </span>
-                  )}
+          <div className="quizzes-public-sections">
+            <section className="quizzes-public-section">
+              <h2 className="quizzes-public-section-title">Cuestionarios públicos</h2>
+              {publicQuizzes.length === 0 ? (
+                <div className="quizzes-public-empty">No hay cuestionarios públicos disponibles.</div>
+              ) : (
+                <div className="quizzes-public-grid">
+                  {publicQuizzes.map((q) => (
+                    <div
+                      key={q.id}
+                      className="quizzes-public-card"
+                      onClick={() => navigate(`/cuestionarios/${q.id}`)}
+                    >
+                      <div className="quizzes-public-card-title">{q.titulo}</div>
+                      <div className="quizzes-public-card-meta">
+                        {q.materia && <span className="quizzes-public-chip">{q.materia}</span>}
+                        {q.dificultad && (
+                          <span className="quizzes-public-chip quizzes-public-chip--difficulty">
+                            {DIFFICULTY_LABELS[q.dificultad] || q.dificultad}
+                          </span>
+                        )}
+                        {q.numPreguntas > 0 && (
+                          <span className="quizzes-public-chip">
+                            {q.numPreguntas} pregunta{q.numPreguntas !== 1 ? 's' : ''}
+                          </span>
+                        )}
+                      </div>
+                      {q.descripcion && (
+                        <div className="quizzes-public-card-desc">{q.descripcion}</div>
+                      )}
+                      <div className="quizzes-public-card-footer">
+                        <span>{q.createdAt ? formatDate(q.createdAt) : ''}</span>
+                        {q.tiempoEstimadoMinutos > 0 && (
+                          <span>⏱ {q.tiempoEstimadoMinutos} min</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                {q.descripcion && (
-                  <div className="quizzes-public-card-desc">{q.descripcion}</div>
+              )}
+            </section>
+
+            {isAuthenticated && (
+              <section className="quizzes-public-section">
+                <h2 className="quizzes-public-section-title">Cuestionarios para ti</h2>
+                {forYouQuizzes.length === 0 ? (
+                  <div className="quizzes-public-empty">No tienes cuestionarios para ti.</div>
+                ) : (
+                  <div className="quizzes-public-grid">
+                    {forYouQuizzes.map((q) => (
+                      <div
+                        key={q.id}
+                        className="quizzes-public-card"
+                        onClick={() => navigate(`/cuestionarios/${q.id}`)}
+                      >
+                        <div className="quizzes-public-card-title">{q.titulo}</div>
+                        <div className="quizzes-public-card-meta">
+                          {q.materia && <span className="quizzes-public-chip">{q.materia}</span>}
+                          {q.dificultad && (
+                            <span className="quizzes-public-chip quizzes-public-chip--difficulty">
+                              {DIFFICULTY_LABELS[q.dificultad] || q.dificultad}
+                            </span>
+                          )}
+                          {q.numPreguntas > 0 && (
+                            <span className="quizzes-public-chip">
+                              {q.numPreguntas} pregunta{q.numPreguntas !== 1 ? 's' : ''}
+                            </span>
+                          )}
+                        </div>
+                        {q.descripcion && (
+                          <div className="quizzes-public-card-desc">{q.descripcion}</div>
+                        )}
+                        <div className="quizzes-public-card-footer">
+                          <span>{q.createdAt ? formatDate(q.createdAt) : ''}</span>
+                          {q.tiempoEstimadoMinutos > 0 && (
+                            <span>⏱ {q.tiempoEstimadoMinutos} min</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
-                <div className="quizzes-public-card-footer">
-                  <span>{q.createdAt ? formatDate(q.createdAt) : ''}</span>
-                  {q.tiempoEstimadoMinutos > 0 && (
-                    <span>⏱ {q.tiempoEstimadoMinutos} min</span>
-                  )}
-                </div>
-              </div>
-            ))}
+              </section>
+            )}
           </div>
         )}
       </div>

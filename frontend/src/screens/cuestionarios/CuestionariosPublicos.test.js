@@ -6,6 +6,7 @@ jest.mock('../../api/cuestionarios.api', () => ({
   cuestionariosApi: {
     listPublic: jest.fn(),
     listAssigned: jest.fn(),
+    listMine: jest.fn(),
   },
 }));
 jest.mock('../../components/Header/Header', () => () => <div data-testid="header">Header</div>);
@@ -29,6 +30,7 @@ describe('CuestionariosPublicos', () => {
     localStorage.setItem('accessToken', 'token');
     cuestionariosApi.listPublic.mockResolvedValue([]);
     cuestionariosApi.listAssigned.mockResolvedValue([]);
+    cuestionariosApi.listMine.mockResolvedValue([]);
 
     render(<MemoryRouter><CuestionariosPublicos /></MemoryRouter>);
 
@@ -73,6 +75,7 @@ describe('CuestionariosPublicos', () => {
     localStorage.setItem('accessToken', 'token');
     cuestionariosApi.listPublic.mockResolvedValue([]);
     cuestionariosApi.listAssigned.mockResolvedValue([]);
+    cuestionariosApi.listMine.mockResolvedValue([]);
     render(<MemoryRouter><CuestionariosPublicos /></MemoryRouter>);
     await screen.findByText('No hay cuestionarios públicos disponibles.');
     await screen.findByText(/Crear cuestionario/);
@@ -85,20 +88,41 @@ describe('CuestionariosPublicos', () => {
     expect(screen.queryByText(/Crear cuestionario/)).not.toBeInTheDocument();
   });
 
-  test('merges assigned and public quizzes, deduplicating by id', async () => {
+  test('shows assigned and private-mine quizzes in the for-you section', async () => {
     localStorage.setItem('accessToken', 'token');
     cuestionariosApi.listPublic.mockResolvedValue([
       { id: 1, titulo: 'Public Quiz' },
-      { id: 2, titulo: 'Shared Quiz' },
     ]);
     cuestionariosApi.listAssigned.mockResolvedValue([
-      { id: 2, titulo: 'Shared Quiz' },
-      { id: 3, titulo: 'Assigned Quiz' },
+      { id: 10, titulo: 'Assigned Quiz' },
+      { id: 11, titulo: 'Assigned Public Quiz' },
+    ]);
+    cuestionariosApi.listMine.mockResolvedValue([
+      { id: 20, titulo: 'Private Mine Quiz', publicado: false },
+      { id: 21, titulo: 'My Public Quiz', publicado: true },
     ]);
     render(<MemoryRouter><CuestionariosPublicos /></MemoryRouter>);
     await screen.findByText('Public Quiz');
+    expect(screen.getByText('Cuestionarios para ti')).toBeInTheDocument();
     expect(screen.getByText('Assigned Quiz')).toBeInTheDocument();
-    // Shared Quiz should appear only once
+    expect(screen.getByText('Assigned Public Quiz')).toBeInTheDocument();
+    expect(screen.getByText('Private Mine Quiz')).toBeInTheDocument();
+    expect(screen.queryByText('My Public Quiz')).not.toBeInTheDocument();
+  });
+
+  test('deduplicates quizzes between assigned and private-mine lists', async () => {
+    localStorage.setItem('accessToken', 'token');
+    cuestionariosApi.listPublic.mockResolvedValue([]);
+    cuestionariosApi.listAssigned.mockResolvedValue([
+      { id: 33, titulo: 'Shared Quiz' },
+    ]);
+    cuestionariosApi.listMine.mockResolvedValue([
+      { id: 33, titulo: 'Shared Quiz', publicado: false },
+    ]);
+
+    render(<MemoryRouter><CuestionariosPublicos /></MemoryRouter>);
+
+    await screen.findByText('Shared Quiz');
     expect(screen.getAllByText('Shared Quiz')).toHaveLength(1);
   });
 
@@ -106,6 +130,7 @@ describe('CuestionariosPublicos', () => {
     localStorage.setItem('accessToken', 'token');
     cuestionariosApi.listPublic.mockResolvedValue([{ id: 1, titulo: 'Public' }]);
     cuestionariosApi.listAssigned.mockRejectedValue(new Error('fail'));
+    cuestionariosApi.listMine.mockResolvedValue([]);
     render(<MemoryRouter><CuestionariosPublicos /></MemoryRouter>);
     await screen.findByText('Public');
   });
@@ -115,5 +140,12 @@ describe('CuestionariosPublicos', () => {
     render(<MemoryRouter><CuestionariosPublicos /></MemoryRouter>);
     await screen.findByText('No hay cuestionarios públicos disponibles.');
     expect(screen.getByText('Cuestionarios públicos')).toBeInTheDocument();
+  });
+
+  test('hides for-you section when not authenticated', async () => {
+    cuestionariosApi.listPublic.mockResolvedValue([]);
+    render(<MemoryRouter><CuestionariosPublicos /></MemoryRouter>);
+    await screen.findByText('No hay cuestionarios públicos disponibles.');
+    expect(screen.queryByText('Cuestionarios para ti')).not.toBeInTheDocument();
   });
 });
