@@ -78,7 +78,7 @@ export default function PlansScreen() {
   const [myPlan, setMyPlan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [successMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [showCheckout, setShowCheckout] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -143,6 +143,34 @@ export default function PlansScreen() {
         setError("Por favor, inicia sesión para continuar");
       } else {
         setError(e?.message || "No se pudo iniciar la suscripción");
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    const confirmed = window.confirm(
+      "¿Seguro que quieres cancelar tu suscripción? Mantendrás el acceso hasta el fin del período actual."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setSubmitting(true);
+    setError("");
+    setSuccessMessage("");
+
+    try {
+      const response = await subscriptionsApi.cancelSubscription();
+      setMyPlan(response || null);
+      setSuccessMessage("Suscripción cancelada correctamente.");
+    } catch (e) {
+      if (e?.status === 403) {
+        setError("Por favor, inicia sesión para continuar");
+      } else {
+        setError(e?.message || "No se pudo cancelar la suscripción");
       }
     } finally {
       setSubmitting(false);
@@ -437,6 +465,21 @@ export default function PlansScreen() {
                     <div>
                       <b>Fecha de fin:</b> {myPlan.fechaFin}
                     </div>
+                  )}
+
+                  {myPlan?.autoRenovar !== false ? (
+                    <button
+                      type="button"
+                      className="plansStatus__cancel-btn"
+                      onClick={handleCancel}
+                      disabled={submitting}
+                    >
+                      {submitting ? "Cancelando..." : "Cancelar suscripción"}
+                    </button>
+                  ) : (
+                    <p className="plansStatus__cancel-note">
+                      La renovación automática está desactivada.
+                    </p>
                   )}
                 </div>
               ) : (

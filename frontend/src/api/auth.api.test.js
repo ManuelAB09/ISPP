@@ -58,6 +58,11 @@ describe('authApi', () => {
         expect(mockGet).toHaveBeenCalledWith('/api/v1/users/profile-avatars');
     });
 
+    test('getUserPublicProfile calls correct URL', () => {
+        authApi.getUserPublicProfile(99);
+        expect(mockGet).toHaveBeenCalledWith('/api/v1/users/99');
+    });
+
     test('verifyEmail calls correct URL with encoded token', () => {
         authApi.verifyEmail('abc=123');
         expect(mockGet).toHaveBeenCalledWith('/api/v1/auth/verify?token=abc%3D123');
