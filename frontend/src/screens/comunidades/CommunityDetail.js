@@ -186,6 +186,8 @@ export default function CommunityDetail() {
   const [rankingError, setRankingError] = useState(null);
   const fileInputRef = useRef(null);
   const activeMeetingRequestInFlightRef = useRef(false);
+  const scrollPositionRef = useRef(0);
+  const shouldRestoreScrollRef = useRef(false);
 
   const closeAllOverlays = useCallback(({ keepChat = false } = {}) => {
     setShowMeetingForm(false);
@@ -561,6 +563,17 @@ export default function CommunityDetail() {
   useEffect(() => {
     fetchMembers();
   }, [fetchMembers]);
+
+  useEffect(() => {
+    // Restaurar scroll cuando termine de cargar eventos después del cambio de filtro
+    if (!eventsLoading && shouldRestoreScrollRef.current) {
+      const timer = setTimeout(() => {
+        window.scrollTo(0, scrollPositionRef.current);
+        shouldRestoreScrollRef.current = false;
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [eventsLoading]);
 
   useEffect(() => {
     if (!currentUserId) {
@@ -1809,7 +1822,11 @@ export default function CommunityDetail() {
                         <input
                           type="checkbox"
                           checked={filterCancelled}
-                          onChange={(e) => setFilterCancelled(e.target.checked)}
+                          onChange={(e) => {
+                            scrollPositionRef.current = window.scrollY;
+                            shouldRestoreScrollRef.current = true;
+                            setFilterCancelled(e.target.checked);
+                          }}
                         />
                         Mostrar cancelados
                       </label>

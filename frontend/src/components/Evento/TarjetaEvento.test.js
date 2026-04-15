@@ -138,4 +138,32 @@ describe('TarjetaEvento', () => {
     );
     expect(screen.getByText('Apuntarse')).toBeDisabled();
   });
-});
+
+  test('shows Pasado badge when event date has passed', () => {
+    const pastEvent = {
+      ...baseEvent,
+      fechaHora: '2020-01-01T10:00:00', // Fecha en el pasado
+    };
+    render(
+      <MemoryRouter>
+        <TarjetaEvento event={pastEvent} onAttend={jest.fn()} />
+      </MemoryRouter>
+    );
+    expect(screen.getByText('Pasado')).toBeInTheDocument();
+    expect(screen.queryByText('Apuntarse')).not.toBeInTheDocument();
+  });
+
+  test('does not show Apuntarse button for past events even with onAttend callback', () => {
+    const pastEvent = {
+      ...baseEvent,
+      fechaHora: '2020-01-01T10:00:00',
+    };
+    const onAttend = jest.fn();
+    render(
+      <MemoryRouter>
+        <TarjetaEvento event={pastEvent} onAttend={onAttend} />
+      </MemoryRouter>
+    );
+    expect(screen.queryByText('Apuntarse')).not.toBeInTheDocument();
+    expect(onAttend).not.toHaveBeenCalled();
+  });
