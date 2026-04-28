@@ -184,6 +184,7 @@ Para reforzar la estrategia de linkbuilding y aumentar la autoridad del dominio,
 **Coste asociado:**
  
 - La inversión consiste en ofrecer **un mes gratuito de uso de la plataforma** a cambio de que la academia incluya un enlace visible hacia Meerkatters en su web.
+- Con un presupuesto mensual de **240 €**, Meerkatters puede obtener dos referencias al mes.
 
 **Motivo para Meerkatters:**  
 Los enlaces desde academias aportan autoridad, mejoran el posicionamiento en Google y atraen a alumnos que ya forman parte de esos centros.
@@ -197,6 +198,6 @@ Los enlaces desde academias aportan autoridad, mejoran el posicionamiento en Goo
 | Instagram Ads | 150 € | 250–700 clics |
 | TikTok Ads | 100 € | 330–1.000 clics |
 | YouTube Ads | 100 € | 1.200–5.000 visualizaciones |
-| Google Ads (SEM) | 100–200 € | 150–400 clics |
-| Acuerdos con academias | 1 mes gratuito por academia | Enlaces + captación de alumnos |
+| Google Ads (SEM) | 150 € | 125–375 clics |
+| Acuerdos con academias | 240 € | 2 Enlaces + captación de alumnos |
 
