@@ -29,6 +29,7 @@ public class ApunteService {
     private final ApunteRepository apunteRepository;
     private final ComunidadRepository comunidadRepository;
     private final UsuarioRepository usuarioRepository;
+    private final AuthorizationService authorizationService;
 
     /**
      * Sube un apunte a una comunidad.
@@ -179,7 +180,9 @@ public class ApunteService {
                         .findById(apunteId)
                         .orElseThrow(() -> new IllegalArgumentException("Apunte no encontrado"));
 
-        if (!apunte.getUsuario().getId().equals(usuarioId)) {
+        boolean esCreador = apunte.getUsuario().getId().equals(usuarioId);
+        boolean esAdmin = authorizationService.isAdminOf(usuarioId, apunte.getComunidad().getId());
+        if (!esCreador && !esAdmin) {
             throw new IllegalArgumentException("No tienes permisos para eliminar este apunte");
         }
 

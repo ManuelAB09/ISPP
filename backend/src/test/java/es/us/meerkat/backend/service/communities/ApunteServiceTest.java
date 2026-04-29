@@ -36,6 +36,7 @@ class ApunteServiceTest {
     @Mock private ApunteRepository apunteRepository;
     @Mock private ComunidadRepository comunidadRepository;
     @Mock private UsuarioRepository usuarioRepository;
+    @Mock private AuthorizationService authorizationService;
     @Mock private MultipartFile file;
 
     @InjectMocks private ApunteService apunteService;
@@ -270,8 +271,19 @@ class ApunteServiceTest {
     }
 
     @Test
+    void eliminarApunteShouldDeleteWhenUserIsAdmin() {
+        when(apunteRepository.findById(100L)).thenReturn(Optional.of(apunte));
+        when(authorizationService.isAdminOf(99L, 10L)).thenReturn(true);
+
+        apunteService.eliminarApunte(100L, 99L);
+
+        verify(apunteRepository).delete(apunte);
+    }
+
+    @Test
     void eliminarApunteShouldFailWhenUserHasNoPermissions() {
         when(apunteRepository.findById(100L)).thenReturn(Optional.of(apunte));
+        when(authorizationService.isAdminOf(99L, 10L)).thenReturn(false);
 
         assertThatThrownBy(() -> apunteService.eliminarApunte(100L, 99L))
                 .isInstanceOf(IllegalArgumentException.class)
