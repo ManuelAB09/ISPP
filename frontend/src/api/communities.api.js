@@ -310,6 +310,45 @@ export const communitiesApi = {
     return apiClient.put(`/api/v1/communities/${communityId}`, data);
   },
 
+  /**
+   * PUT /api/v1/communities/{communityId}/privacy
+   * Cambiar privacidad (tipo de grupo) de la comunidad
+   * @param {number} communityId
+   * @param {'COMUNIDAD_PUBLICA'|'GRUPO_PRIVADO'} tipoGrupo
+   */
+  updatePrivacy(communityId, tipoGrupo) {
+    return apiClient.put(`/api/v1/communities/${communityId}/privacy`, { tipoGrupo });
+  },
+
+  /**
+   * GET /api/v1/communities/{communityId}/categories
+   * Listar categorías de una comunidad
+   * @param {number} communityId
+   */
+  listCommunityCategories(communityId) {
+    return apiClient.get(`/api/v1/communities/${communityId}/categories`);
+  },
+
+  /**
+   * POST /api/v1/communities/{communityId}/categories
+   * Crear nueva categoría en la comunidad (solo admin)
+   * @param {number} communityId
+   * @param {{ nombre: string, descripcion?: string }} data
+   */
+  createCategory(communityId, data) {
+    return apiClient.post(`/api/v1/communities/${communityId}/categories`, data);
+  },
+
+  /**
+   * DELETE /api/v1/communities/{communityId}/categories/{categoryId}
+   * Eliminar categoría de la comunidad (solo admin)
+   * @param {number} communityId
+   * @param {number} categoryId
+   */
+  deleteCategory(communityId, categoryId) {
+    return apiClient.delete(`/api/v1/communities/${communityId}/categories/${categoryId}`);
+  },
+
   // ─── Google Classroom ───
 
   /**
