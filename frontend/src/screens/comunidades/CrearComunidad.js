@@ -8,6 +8,9 @@ import PageHeader from "../../components/PageHeader";
 import { useAuth } from "../../contexts/AuthContext";
 import "./CrearComunidad.css";
 
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_IMAGE_SIZE_MB = 5;
+
 const PLAN_LIMITS = {
     FREE: { planLabel: "Gratuito", maxCommunities: 3, maxMembers: 30 },
     PREMIUM: { planLabel: "Premium", maxCommunities: 10, maxMembers: 75 },
@@ -109,14 +112,25 @@ export default function CrearComunidad() {
 
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
-        if (file) {
-            setImagenPortada(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagenPreview(reader.result);
-            };
-            reader.readAsDataURL(file);
+        if (!file) return;
+
+        if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+            setError("Formato de imagen no válido. Solo se aceptan JPG, PNG y WEBP.");
+            e.target.value = "";
+            return;
         }
+
+        if (file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
+            setError(`La imagen no puede superar ${MAX_IMAGE_SIZE_MB} MB.`);
+            e.target.value = "";
+            return;
+        }
+
+        setError(null);
+        setImagenPortada(file);
+        const reader = new FileReader();
+        reader.onloadend = () => setImagenPreview(reader.result);
+        reader.readAsDataURL(file);
     };
 
     const agregarCategoria = () => {
@@ -378,7 +392,12 @@ export default function CrearComunidad() {
                     console.log("✅ Foto de comunidad subida:", uploadResponse);
                 } catch (uploadErr) {
                     console.warn("⚠️ La comunidad se creó pero hubo un error al subir la foto:", uploadErr);
-                    // No detener el flujo si la foto falla - la comunidad ya existe
+                    const msg = uploadErr?.response?.data?.message || uploadErr?.message;
+                    setError(
+                        msg
+                            ? `La comunidad se creó, pero no se pudo subir la foto: ${msg}`
+                            : "La comunidad se creó, pero no se pudo subir la foto. Comprueba el formato (JPG, PNG o WEBP, máx. 5 MB)."
+                    );
                 }
             }
 
@@ -423,7 +442,7 @@ export default function CrearComunidad() {
                         <input
                             id="file-input"
                             type="file"
-                            accept="image/*"
+                            accept="image/jpeg,image/png,image/webp"
                             onChange={handleImageUpload}
                             className="file-input"
                         />
