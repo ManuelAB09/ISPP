@@ -123,6 +123,9 @@ export default function CommunityDetail() {
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'eventos';
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [publishMenuOpen, setPublishMenuOpen] = useState(false);
+  const [openApuntesUpload, setOpenApuntesUpload] = useState(false);
+  const publishMenuRef = useRef(null);
   const { communityId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -567,6 +570,17 @@ export default function CommunityDetail() {
   useEffect(() => {
     fetchMembers();
   }, [fetchMembers]);
+
+  useEffect(() => {
+    if (!publishMenuOpen) return undefined;
+    const handleClickOutside = (event) => {
+      if (publishMenuRef.current && !publishMenuRef.current.contains(event.target)) {
+        setPublishMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [publishMenuOpen]);
 
   useEffect(() => {
     // Restaurar scroll cuando termine de cargar eventos después del cambio de filtro
@@ -1746,6 +1760,55 @@ export default function CommunityDetail() {
 
         {/* Tabs de eventos, anuncios y apuntes */}
         <div className="cd-tabs-section">
+          {isMember && (
+            <div className="cd-publish-bar">
+              <div className="cd-publish-wrapper" ref={publishMenuRef}>
+                <button
+                  type="button"
+                  className="cd-btn cd-btn-publish"
+                  onClick={() => setPublishMenuOpen((prev) => !prev)}
+                  aria-haspopup="menu"
+                  aria-expanded={publishMenuOpen}
+                >
+                  <LuPlus /> Publicar <LuChevronDown />
+                </button>
+                {publishMenuOpen && (
+                  <ul className="cd-publish-menu" role="menu">
+                    <li>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="cd-publish-menu-item"
+                        onClick={() => {
+                          setPublishMenuOpen(false);
+                          setActiveTab('apuntes');
+                          const params = new URLSearchParams(searchParams);
+                          params.set('tab', 'apuntes');
+                          navigate({ search: params.toString() }, { replace: true });
+                          setOpenApuntesUpload(true);
+                        }}
+                      >
+                        Publicar apunte
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="cd-publish-menu-item"
+                        onClick={() => {
+                          setPublishMenuOpen(false);
+                          navigate(`/cuestionarios/crear?communityId=${communityId}`);
+                        }}
+                      >
+                        Publicar cuestionario
+                      </button>
+                    </li>
+                  </ul>
+                )}
+              </div>
+            </div>
+          )}
           <div className="cd-tabs-header">
             <button
               className={`cd-tab-btn${activeTab === 'eventos' ? ' cd-tab-btn-active' : ''}`}
@@ -1935,7 +1998,13 @@ export default function CommunityDetail() {
             )}
             {activeTab === 'apuntes' && (
               <div className="cd-apuntes-section">
-                <CommunityApuntesTab communityId={communityId} isAdmin={isAdmin} isMember={isMember} />
+                <CommunityApuntesTab
+                  communityId={communityId}
+                  isAdmin={isAdmin}
+                  isMember={isMember}
+                  openUploadOnMount={openApuntesUpload}
+                  onUploadFormOpened={() => setOpenApuntesUpload(false)}
+                />
               </div>
             )}
           </div>
