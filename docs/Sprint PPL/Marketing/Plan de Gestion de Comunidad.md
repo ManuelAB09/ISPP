@@ -139,7 +139,7 @@ Teniendo en cuenta los resultados anteriores, el tamaño actual de la cuenta y l
 | Nuevos seguidores | 0 | +17 a +37 |
 | Visualizaciones totales | 12.333 | +6.000 a +12.000 |
 | Porcentaje estimado de no seguidores | 55% aprox. | 55% - 65% |
-| Respuestas a encuestas | — | 40 - 100 |
+| Interacciones | 407 | +200 a + 400 |
 
 ## TikTok
 
@@ -147,8 +147,9 @@ Teniendo en cuenta los resultados anteriores, el tamaño actual de la cuenta y l
 |---|---:|---:|
 | Seguidores | 11 | 18 - 30 |
 | Nuevos seguidores | 0 | +7 a +19 |
-| Visualizaciones totales acumuladas | 4.270 | +4.000 a +10.000 |
-| Likes totales | 55 | 80 - 150 |
+| Visualizaciones totales | 4.270 | +4.000 a +10.000 |
+| Porcentaje estimado de no seguidores | 92% aprox. | 90% - 95% |
+| Interacciones | 114 | +100 a +200 |
 
 ---
 
