@@ -173,6 +173,7 @@ export default function CommunityDetail() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [requestsLoading, setRequestsLoading] = useState(false);
+  const [requestsError, setRequestsError] = useState(null);
   const [respondingId, setRespondingId] = useState(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [communityCuestionarios, setCommunityCuestionarios] = useState([]);
@@ -507,12 +508,14 @@ export default function CommunityDetail() {
   const fetchPendingRequests = useCallback(async () => {
     try {
       setRequestsLoading(true);
+      setRequestsError(null);
       const data = await communitiesApi.listRequests(communityId, { estado: 'PENDIENTE' });
       const list = data?.content || data?.solicitudes || [];
       setPendingRequests(Array.isArray(list) ? list : []);
     } catch (err) {
       console.error('Error al cargar solicitudes:', err);
       setPendingRequests([]);
+      setRequestsError('No se pudieron cargar las solicitudes. Intenta recargar la página.');
     } finally {
       setRequestsLoading(false);
     }
@@ -1310,6 +1313,7 @@ export default function CommunityDetail() {
   const handleRespondRequest = async (requestId, aceptado) => {
     try {
       setRespondingId(requestId);
+      setRequestsError(null);
       await communitiesApi.respondToRequest(communityId, requestId, aceptado);
       setPendingRequests(prev => prev.filter(r => r.id !== requestId));
       if (aceptado) {
@@ -1317,6 +1321,11 @@ export default function CommunityDetail() {
       }
     } catch (err) {
       console.error('Error al responder solicitud:', err);
+      setRequestsError(
+        err.details?.message ||
+        err.message ||
+        (aceptado ? 'No se pudo aceptar la solicitud.' : 'No se pudo rechazar la solicitud.')
+      );
     } finally {
       setRespondingId(null);
     }
@@ -1675,6 +1684,9 @@ export default function CommunityDetail() {
                 <span className="cd-requests-badge">{pendingRequests.length}</span>
               )}
             </h2>
+            {requestsError && (
+              <p className="cd-membership-error">{requestsError}</p>
+            )}
             {requestsLoading ? (
               <p className="cd-loading">Cargando solicitudes...</p>
             ) : pendingRequests.length > 0 ? (
