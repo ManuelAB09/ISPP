@@ -12,7 +12,6 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -418,9 +417,7 @@ class PaymentControllerTest {
                             org.mockito.ArgumentMatchers.argThat(
                                     m ->
                                             m != null
-                                                    && m.compareTo(
-                                                                    new java.math.BigDecimal(
-                                                                            "5.00"))
+                                                    && m.compareTo(new java.math.BigDecimal("5.00"))
                                                             == 0),
                             eq("Verificación de tutor completada vía Stripe"),
                             eq(null));
@@ -458,8 +455,7 @@ class PaymentControllerTest {
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             verify(institutionService)
-                    .activarPlanCorporativo(
-                            44L, 6, "admin@corp.es", TipoPlanCorporativo.PREMIUM);
+                    .activarPlanCorporativo(44L, 6, "admin@corp.es", TipoPlanCorporativo.PREMIUM);
             verify(paymentService)
                     .procesarPagoExitoso(
                             eq(3L),
@@ -529,27 +525,28 @@ class PaymentControllerTest {
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             verify(suscripcionService, never())
-                    .renovarSuscripcionTrasStripe(any(Long.class), any(java.math.BigDecimal.class), any());
+                    .renovarSuscripcionTrasStripe(
+                            any(Long.class), any(java.math.BigDecimal.class), any());
         }
     }
 
-        @Test
-        void handleWebhookShouldReturnOkForUnhandledEventType() {
-                ReflectionTestUtils.setField(controller, "webhookSecret", "secret");
-                Event event = mock(Event.class);
-                when(event.getType()).thenReturn("customer.created");
-                when(event.getId()).thenReturn("evt_other_1");
-                when(event.getDataObjectDeserializer()).thenReturn(mock(EventDataObjectDeserializer.class));
+    @Test
+    void handleWebhookShouldReturnOkForUnhandledEventType() {
+        ReflectionTestUtils.setField(controller, "webhookSecret", "secret");
+        Event event = mock(Event.class);
+        when(event.getType()).thenReturn("customer.created");
+        when(event.getId()).thenReturn("evt_other_1");
+        when(event.getDataObjectDeserializer()).thenReturn(mock(EventDataObjectDeserializer.class));
 
-                try (MockedStatic<Webhook> webhookMock = mockStatic(Webhook.class)) {
-                        webhookMock
-                                        .when(() -> Webhook.constructEvent("payload", "sig", "secret"))
-                                        .thenReturn(event);
+        try (MockedStatic<Webhook> webhookMock = mockStatic(Webhook.class)) {
+            webhookMock
+                    .when(() -> Webhook.constructEvent("payload", "sig", "secret"))
+                    .thenReturn(event);
 
-                        ResponseEntity<String> response = controller.handleWebhook("payload", "sig");
+            ResponseEntity<String> response = controller.handleWebhook("payload", "sig");
 
-                        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-                        assertThat(response.getBody()).isEqualTo("Evento recibido");
-                }
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody()).isEqualTo("Evento recibido");
         }
+    }
 }

@@ -20,6 +20,7 @@ import es.us.meerkat.backend.repository.chats.MensajeComunidadRepository;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
+import es.us.meerkat.backend.service.communities.AuthorizationService;
 import es.us.meerkat.backend.service.emails.EmailService;
 import es.us.meerkat.backend.service.notifications.PreferenciasNotificacionService;
 import lombok.RequiredArgsConstructor;
@@ -84,6 +85,7 @@ public class MensajeComunidadService {
     private final MiembroComunidadRepository miembroComunidadRepository;
     private final PreferenciasNotificacionService preferenciasNotificacionService;
     private final EmailService emailService;
+    private final AuthorizationService authorizationService;
 
     /**
      * Envía un mensaje en el chat de una comunidad.
@@ -263,7 +265,8 @@ public class MensajeComunidadService {
                         .findById(mensajeId)
                         .orElseThrow(() -> new RuntimeException("Mensaje no encontrado"));
 
-        if (!mensaje.getUsuario().getId().equals(usuarioId)) {
+        if (!mensaje.getUsuario().getId().equals(usuarioId)
+                && !authorizationService.isAdminOf(usuarioId, mensaje.getComunidad().getId())) {
             throw new RuntimeException("No tienes permiso para eliminar este mensaje");
         }
 

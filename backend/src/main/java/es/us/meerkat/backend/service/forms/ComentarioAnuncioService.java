@@ -14,6 +14,7 @@ import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.communities.AnuncioRepository;
 import es.us.meerkat.backend.repository.communities.ComentarioAnuncioRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
+import es.us.meerkat.backend.service.communities.AuthorizationService;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -23,6 +24,7 @@ public class ComentarioAnuncioService {
     private final ComentarioAnuncioRepository comentarioRepo;
     private final AnuncioRepository anuncioRepo;
     private final UsuarioRepository usuarioRepo;
+    private final AuthorizationService authorizationService;
 
     public ComentarioAnuncioResponse crearComentario(
             Long anuncioId, Long userId, CreateComentarioAnuncioRequest req) {
@@ -30,6 +32,16 @@ public class ComentarioAnuncioService {
                 anuncioRepo
                         .findById(anuncioId)
                         .orElseThrow(() -> new IllegalArgumentException("Anuncio no encontrado"));
+        if (!Boolean.TRUE.equals(anuncio.getPermitirComentarios())) {
+            throw new IllegalArgumentException(
+                    "Los comentarios estan desactivados en este anuncio");
+        }
+        if (authorizationService != null
+                && anuncio.getComunidad() != null
+                && !authorizationService.canParticipate(userId, anuncio.getComunidad().getId())) {
+            throw new IllegalArgumentException(
+                    "Debes ser miembro para comentar en una comunidad privada");
+        }
         Usuario usuario =
                 usuarioRepo
                         .findById(userId)

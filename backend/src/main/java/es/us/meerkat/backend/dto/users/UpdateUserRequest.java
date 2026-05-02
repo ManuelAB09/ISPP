@@ -50,6 +50,12 @@ public class UpdateUserRequest {
     @Size(max = 100, message = "La ubicación no puede exceder 100 caracteres")
     private String ubicacion;
 
+    /** Latitud seleccionada desde el mapa. Opcional si se envia ubicacion textual. */
+    private Double latitud;
+
+    /** Longitud seleccionada desde el mapa. Opcional si se envia ubicacion textual. */
+    private Double longitud;
+
     /** Estado de autenticación de dos factores del usuario. */
     private Boolean autenticacionDosFactores;
 
