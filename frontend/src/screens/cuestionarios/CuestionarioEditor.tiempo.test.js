@@ -123,33 +123,33 @@ describe('UC-64: Propiedades del input HTML', () => {
     );
 
     test('Debe tener step="1" para rechazar decimales', () => {
-        const { getByTestId } = render(<TimeInput value={30} onChange={() => {}} />);
-        const input = getByTestId('time-input');
+        render(<TimeInput value={30} onChange={() => {}} />);
+        const input = screen.getByTestId('time-input');
         
         expect(input).toHaveAttribute('step', '1');
     });
 
     test('Debe tener min="1" para rechazar cero y negativos', () => {
-        const { getByTestId } = render(<TimeInput value={30} onChange={() => {}} />);
-        const input = getByTestId('time-input');
+        render(<TimeInput value={30} onChange={() => {}} />);
+        const input = screen.getByTestId('time-input');
         
         expect(input).toHaveAttribute('min', '1');
     });
 
     test('Debe tener max="1440" para limitar a 24 horas', () => {
-        const { getByTestId } = render(<TimeInput value={30} onChange={() => {}} />);
-        const input = getByTestId('time-input');
+        render(<TimeInput value={30} onChange={() => {}} />);
+        const input = screen.getByTestId('time-input');
         
         expect(input).toHaveAttribute('max', '1440');
     });
 
     test('Debe permitir escribir valores válidos', async () => {
         const handleChange = jest.fn();
-        const { getByTestId } = render(
+        render(
             <TimeInput value={30} onChange={handleChange} />
         );
         
-        const input = getByTestId('time-input');
+        const input = screen.getByTestId('time-input');
         
         await userEvent.clear(input);
         await userEvent.type(input, '45');
@@ -158,8 +158,8 @@ describe('UC-64: Propiedades del input HTML', () => {
     });
 
     test('El navegador debería rechazar decimales (HTML5)', () => {
-        const { getByTestId } = render(<TimeInput value={30} onChange={() => {}} />);
-        const input = getByTestId('time-input');
+        render(<TimeInput value={30} onChange={() => {}} />);
+        const input = screen.getByTestId('time-input');
         
         // Simular que el navegador valida el atributo type="number"
         expect(input.type).toBe('number');
@@ -189,30 +189,30 @@ describe('UC-64: Visualización de tiempo inválido', () => {
     };
 
     test('Debe mostrar tiempo válido correctamente', () => {
-        const { getByTestId } = render(<TimeDisplay minutos={30} />);
-        const display = getByTestId('time-display');
+        render(<TimeDisplay minutos={30} />);
+        const display = screen.getByTestId('time-display');
         
         expect(display).toHaveTextContent('30 min');
         expect(display).not.toHaveTextContent('- min');
     });
 
     test('Debe mostrar "- min" para tiempo inválido (decimal)', () => {
-        const { getByTestId } = render(<TimeDisplay minutos={0.3} />);
-        const display = getByTestId('time-display');
+        render(<TimeDisplay minutos={0.3} />);
+        const display = screen.getByTestId('time-display');
         
         expect(display).toHaveTextContent('- min');
     });
 
     test('Debe mostrar "- min" para tiempo negativo', () => {
-        const { getByTestId } = render(<TimeDisplay minutos={-5} />);
-        const display = getByTestId('time-display');
+        render(<TimeDisplay minutos={-5} />);
+        const display = screen.getByTestId('time-display');
         
         expect(display).toHaveTextContent('- min');
     });
 
     test('Debe mostrar "- min" para tiempo cero', () => {
-        const { getByTestId } = render(<TimeDisplay minutos={0} />);
-        const display = getByTestId('time-display');
+        render(<TimeDisplay minutos={0} />);
+        const display = screen.getByTestId('time-display');
         
         expect(display).toHaveTextContent('- min');
     });
