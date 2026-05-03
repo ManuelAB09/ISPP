@@ -14,7 +14,7 @@ const getInitials = (nombre) => {
     }
     return String(nombre)
         .trim()
-        .split(' ')
+        .split(/\s+/)
         .slice(0, 2)
         .map((word) => word[0]?.toUpperCase() ?? '')
         .join('');
@@ -150,7 +150,7 @@ describe('UC-05: Renderización del avatar sin foto', () => {
         );
         
         const container = screen.getByTestId('avatar-container');
-        expect(container).toHaveStyle('backgroundColor', '#f2c18e');
+        expect(container).toHaveStyle({ backgroundColor: '#f2c18e' });
     });
 
     test('Debe mostrar "U" si el nombre no está disponible', () => {
