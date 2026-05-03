@@ -4,9 +4,9 @@ import java.util.List;
 
 import es.us.meerkat.backend.entity.forms.NivelDificultad;
 import es.us.meerkat.backend.entity.recommendations.TipoPregunta;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Max;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

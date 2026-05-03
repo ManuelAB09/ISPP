@@ -10,8 +10,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Test para validar las restricciones de duración en SolicitudContratacionRequest.
- * UC-47: Duración inválida en videollamadas
+ * Test para validar las restricciones de duración en SolicitudContratacionRequest. UC-47: Duración
+ * inválida en videollamadas
  */
 @DisplayName("UC-47: Validación de duración en videollamadas")
 class SolicitudContratacionRequestTest {
@@ -22,12 +22,13 @@ class SolicitudContratacionRequestTest {
     @BeforeEach
     void setUp() {
         futureDate = LocalDate.now().plusDays(1);
-        request = SolicitudContratacionRequest.builder()
-            .dia(futureDate)
-            .horaInicio(LocalTime.of(10, 0))
-            .horaFin(LocalTime.of(11, 0))
-            .modalidad("ONLINE")
-            .build();
+        request =
+                SolicitudContratacionRequest.builder()
+                        .dia(futureDate)
+                        .horaInicio(LocalTime.of(10, 0))
+                        .horaFin(LocalTime.of(11, 0))
+                        .modalidad("ONLINE")
+                        .build();
     }
 
     @Test
@@ -36,12 +37,11 @@ class SolicitudContratacionRequestTest {
         request.setHoraInicio(LocalTime.of(11, 0));
         request.setHoraFin(LocalTime.of(10, 0));
 
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
-            () -> request.validateDuration()
-        );
-        
-        assertEquals("La hora de fin debe ser posterior a la hora de inicio", exception.getMessage());
+        IllegalArgumentException exception =
+                assertThrows(IllegalArgumentException.class, () -> request.validateDuration());
+
+        assertEquals(
+                "La hora de fin debe ser posterior a la hora de inicio", exception.getMessage());
     }
 
     @Test
@@ -50,11 +50,9 @@ class SolicitudContratacionRequestTest {
         request.setHoraInicio(LocalTime.of(0, 0));
         request.setHoraFin(LocalTime.of(23, 59));
 
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
-            () -> request.validateDuration()
-        );
-        
+        IllegalArgumentException exception =
+                assertThrows(IllegalArgumentException.class, () -> request.validateDuration());
+
         assertEquals("La duración máxima permitida es de 24 horas", exception.getMessage());
     }
 
@@ -65,11 +63,9 @@ class SolicitudContratacionRequestTest {
         request.setHoraInicio(LocalTime.of(0, 0));
         request.setHoraFin(LocalTime.of(23, 59));
 
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
-            () -> request.validateDuration()
-        );
-        
+        IllegalArgumentException exception =
+                assertThrows(IllegalArgumentException.class, () -> request.validateDuration());
+
         assertEquals("La duración máxima permitida es de 24 horas", exception.getMessage());
     }
 
@@ -100,11 +96,9 @@ class SolicitudContratacionRequestTest {
         request.setHoraFin(LocalTime.of(23, 59));
 
         // 23:59 - 00:00 es 1439 minutos, que está dentro del límite
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
-            () -> request.validateDuration()
-        );
-        
+        IllegalArgumentException exception =
+                assertThrows(IllegalArgumentException.class, () -> request.validateDuration());
+
         // Esto falla porque 1439 es casi 24 horas, así que la validación lo rechaza
         // Para que pase, necesitamos una duración de exactamente 24h o menos
         assertEquals("La duración máxima permitida es de 24 horas", exception.getMessage());
