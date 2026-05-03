@@ -154,6 +154,10 @@ const HireDirectModal = ({ tutor, onClose, initialSelection }) => {
       setError("El rango horario no es válido.");
       return;
     }
+    if (horas > 24) {
+      setError("La duración máxima permitida es de 24 horas.");
+      return;
+    }
     if (disponibilidades.length > 0 && !horarioDentroDeDisponibilidad()) {
       setError("El horario seleccionado no está dentro de la disponibilidad del tutor.");
       return;
