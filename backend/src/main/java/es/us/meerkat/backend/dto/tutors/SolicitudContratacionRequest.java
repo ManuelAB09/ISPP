@@ -51,7 +51,7 @@ public class SolicitudContratacionRequest {
             // Check max duration (24 hours = 1440 minutes)
             long minutesDuration =
                     java.time.temporal.ChronoUnit.MINUTES.between(horaInicio, horaFin);
-            if (minutesDuration > 1440) {
+            if (minutesDuration >= 1439) {
                 throw new IllegalArgumentException("La duración máxima permitida es de 24 horas");
             }
         }
