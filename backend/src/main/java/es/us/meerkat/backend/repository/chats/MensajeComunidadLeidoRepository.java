@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -29,6 +30,10 @@ public interface MensajeComunidadLeidoRepository
                     + "AND ml.mensajeComunidad.id IN :mensajeIds")
     List<Long> findMensajeIdsLeidosByUsuario(
             @Param("usuarioId") Long usuarioId, @Param("mensajeIds") List<Long> mensajeIds);
+
+    @Modifying
+    @Query("DELETE FROM MensajeComunidadLeido ml WHERE ml.mensajeComunidad.id = :mensajeId")
+    void deleteByMensajeComunidadId(@Param("mensajeId") Long mensajeId);
 
     long countByMensajeComunidadAndUsuario(MensajeComunidad mensaje, Usuario usuario);
 }

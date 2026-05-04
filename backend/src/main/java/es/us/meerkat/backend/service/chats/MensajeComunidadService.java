@@ -270,6 +270,7 @@ public class MensajeComunidadService {
             throw new RuntimeException("No tienes permiso para eliminar este mensaje");
         }
 
+        mensajeComunidadLeidoRepository.deleteByMensajeComunidadId(mensajeId);
         mensajeComunidadRepository.delete(mensaje);
     }
 
