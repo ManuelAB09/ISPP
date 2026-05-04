@@ -83,6 +83,7 @@ class ApunteServiceTest {
         when(file.getContentType()).thenReturn("application/pdf");
         when(comunidadRepository.findById(10L)).thenReturn(Optional.of(comunidad));
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(authorizationService.canParticipate(1L, 10L)).thenReturn(true);
         when(apunteRepository.save(any(Apunte.class)))
                 .thenAnswer(
                         invocation -> {
@@ -114,6 +115,7 @@ class ApunteServiceTest {
         when(file.getContentType()).thenReturn("application/pdf");
         when(comunidadRepository.findById(10L)).thenReturn(Optional.of(comunidad));
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(authorizationService.canParticipate(1L, 10L)).thenReturn(true);
         when(apunteRepository.save(any(Apunte.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -175,6 +177,7 @@ class ApunteServiceTest {
         when(file.getBytes()).thenThrow(new RuntimeException("boom"));
         when(comunidadRepository.findById(10L)).thenReturn(Optional.of(comunidad));
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(authorizationService.canParticipate(1L, 10L)).thenReturn(true);
 
         assertThatThrownBy(() -> apunteService.subirApunte(10L, 1L, "Tema 1", "Resumen", file))
                 .isInstanceOf(IllegalArgumentException.class)
