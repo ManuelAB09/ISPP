@@ -324,10 +324,10 @@ class EventoControllerTest {
     @Test
     void obtenerEventosEnMapaShouldReturnEventsWithoutFilters() {
         List<Evento> eventos = List.of(evento2);
-        when(eventoService.obtenerEventosEnMapa(null, null, null)).thenReturn(eventos);
+        when(eventoService.obtenerEventosEnMapa(null, null, null, null)).thenReturn(eventos);
 
         ResponseEntity<List<EventSummaryResponse>> response =
-                controller.obtenerEventosEnMapa(null, null, null);
+                controller.obtenerEventosEnMapa(null, null, null, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).hasSize(1);
@@ -339,22 +339,26 @@ class EventoControllerTest {
         Double lon = -5.9842;
         Double radioKm = 5.0;
         List<Evento> eventos = List.of(evento2);
-        when(eventoService.obtenerEventosEnMapa(lat, lon, radioKm)).thenReturn(eventos);
+        when(eventoService.obtenerEventosEnMapa(lat, lon, radioKm, null)).thenReturn(eventos);
 
         ResponseEntity<List<EventSummaryResponse>> response =
-                controller.obtenerEventosEnMapa(lat, lon, radioKm);
+                controller.obtenerEventosEnMapa(lat, lon, radioKm, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        verify(eventoService).obtenerEventosEnMapa(lat, lon, radioKm);
+        verify(eventoService).obtenerEventosEnMapa(lat, lon, radioKm, null);
     }
 
     @Test
     void obtenerEventosEnMapaShouldReturnEmptyListWhenNoEventsFound() {
-        when(eventoService.obtenerEventosEnMapa(anyDouble(), anyDouble(), anyDouble()))
+        when(eventoService.obtenerEventosEnMapa(
+                        anyDouble(),
+                        anyDouble(),
+                        anyDouble(),
+                        org.mockito.ArgumentMatchers.isNull()))
                 .thenReturn(List.of());
 
         ResponseEntity<List<EventSummaryResponse>> response =
-                controller.obtenerEventosEnMapa(37.0, -5.0, 10.0);
+                controller.obtenerEventosEnMapa(37.0, -5.0, 10.0, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEmpty();
