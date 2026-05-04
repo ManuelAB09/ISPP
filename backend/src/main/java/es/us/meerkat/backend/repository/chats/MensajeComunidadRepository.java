@@ -50,13 +50,14 @@ public interface MensajeComunidadRepository extends JpaRepository<MensajeComunid
     List<Object[]> countMensajesByComunidad(@Param("comunidadId") Long comunidadId);
 
     @Query(
-            "SELECT mc.comunidad.id, (COUNT(m.id) - COUNT(ml.id)) "
+            "SELECT mc.comunidad.id, COUNT(m.id) - COUNT(ml.id) "
                     + "FROM MiembroComunidad mc "
                     + "LEFT JOIN MensajeComunidad m ON m.comunidad.id = mc.comunidad.id "
-                    + "LEFT JOIN MensajeComunidadLeido ml ON ml.mensajeComunidad.id = m.id AND"
-                    + " ml.usuario.id = :usuarioId "
+                    + "  AND m.usuario.id <> :usuarioId "
+                    + "LEFT JOIN MensajeComunidadLeido ml ON ml.mensajeComunidad.id = m.id "
+                    + "  AND ml.usuario.id = :usuarioId "
                     + "WHERE mc.usuario.id = :usuarioId "
                     + "GROUP BY mc.comunidad.id "
-                    + "HAVING COUNT(m.id) > 0")
+                    + "HAVING (COUNT(m.id) - COUNT(ml.id)) > 0")
     List<Object[]> countNoLeidosByComunidadParaUsuario(@Param("usuarioId") Long usuarioId);
 }

@@ -14,6 +14,7 @@ import es.us.meerkat.backend.entity.notifications.Notificacion;
 import es.us.meerkat.backend.entity.notifications.PreferenciasNotificacion;
 import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.communities.AnuncioRepository;
+import es.us.meerkat.backend.repository.communities.ComentarioAnuncioRepository;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
@@ -36,6 +37,7 @@ public class AnuncioService {
     private final NotificacionService notificacionService;
     private final PreferenciasNotificacionService preferenciasNotificacionService;
     private final EmailService emailService;
+    private final ComentarioAnuncioRepository comentarioAnuncioRepository;
 
     /**
      * Crea un nuevo anuncio en una comunidad.
@@ -47,10 +49,11 @@ public class AnuncioService {
      * @throws IllegalArgumentException si el usuario no tiene permisos
      */
     public Anuncio createAnuncio(Long userId, Long communityId, CreateAnuncioRequest request) {
-        // Verificar que el usuario es admin de la comunidad
-        if (!authorizationService.isAdminOf(userId, communityId)) {
-            throw new IllegalArgumentException(
-                    "Solo administradores pueden crear anuncios en esta comunidad");
+        if (!authorizationService.isAdminOf(userId, communityId)
+                && !authorizationService.canParticipate(userId, communityId)) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.FORBIDDEN,
+                    "No tienes permisos para crear anuncios en esta comunidad");
         }
 
         Usuario usuario =
@@ -176,7 +179,9 @@ public class AnuncioService {
         // Verificar que el usuario es admin de la comunidad o creador del anuncio
         if (!authorizationService.isAdminOf(userId, anuncio.getComunidad().getId())
                 && !anuncio.getUsuario().getId().equals(userId)) {
-            throw new IllegalArgumentException("No tienes permisos para actualizar este anuncio");
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.FORBIDDEN,
+                    "No tienes permisos para eliminar este anuncio");
         }
 
         if (request.titulo() != null && !request.titulo().isBlank()) {
@@ -207,9 +212,13 @@ public class AnuncioService {
         // Verificar que el usuario es admin de la comunidad o creador del anuncio
         if (!authorizationService.isAdminOf(userId, anuncio.getComunidad().getId())
                 && !anuncio.getUsuario().getId().equals(userId)) {
-            throw new IllegalArgumentException("No tienes permisos para eliminar este anuncio");
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.FORBIDDEN,
+                    "No tienes permisos para eliminar este anuncio");
         }
-
+        if (comentarioAnuncioRepository != null) {
+            comentarioAnuncioRepository.deleteByAnuncio(anuncio);
+        }
         anuncioRepository.delete(anuncio);
     }
 

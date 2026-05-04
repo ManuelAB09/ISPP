@@ -40,7 +40,8 @@ class WebSocketAuthChannelInterceptorTest {
                 new WebSocketAuthChannelInterceptor(jwtService, usuarioRepository);
 
         StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.SEND);
-        Message<byte[]> message = MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
+        Message<byte[]> message =
+                MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
 
         Message<?> result = interceptor.preSend(message, mock(MessageChannel.class));
 
@@ -53,7 +54,8 @@ class WebSocketAuthChannelInterceptorTest {
                 new WebSocketAuthChannelInterceptor(jwtService, usuarioRepository);
 
         StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.CONNECT);
-        Message<byte[]> message = MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
+        Message<byte[]> message =
+                MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
 
         assertThatThrownBy(() -> interceptor.preSend(message, mock(MessageChannel.class)))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -67,7 +69,8 @@ class WebSocketAuthChannelInterceptorTest {
 
         StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.CONNECT);
         accessor.setNativeHeader("Authorization", "Bearer bad-token");
-        Message<byte[]> message = MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
+        Message<byte[]> message =
+                MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
 
         when(jwtService.extractEmail("bad-token")).thenThrow(new RuntimeException("invalid"));
 
@@ -83,7 +86,8 @@ class WebSocketAuthChannelInterceptorTest {
 
         StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.CONNECT);
         accessor.setNativeHeader("Authorization", "Bearer token-1");
-        Message<byte[]> message = MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
+        Message<byte[]> message =
+                MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
 
         when(jwtService.extractEmail("token-1")).thenReturn("user@meerkat.es");
         when(jwtService.isTokenValid("token-1", "user@meerkat.es")).thenReturn(false);
@@ -100,7 +104,8 @@ class WebSocketAuthChannelInterceptorTest {
 
         StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.CONNECT);
         accessor.setNativeHeader("Authorization", "Bearer token-2");
-        Message<byte[]> message = MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
+        Message<byte[]> message =
+                MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
 
         when(jwtService.extractEmail("token-2")).thenReturn("user@meerkat.es");
         when(jwtService.isTokenValid("token-2", "user@meerkat.es")).thenReturn(true);
@@ -122,7 +127,8 @@ class WebSocketAuthChannelInterceptorTest {
 
         StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.CONNECT);
         accessor.setNativeHeader("Authorization", "Bearer token-ok");
-        Message<byte[]> message = MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
+        Message<byte[]> message =
+                MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
 
         when(jwtService.extractEmail("token-ok")).thenReturn("ok@meerkat.es");
         when(jwtService.isTokenValid("token-ok", "ok@meerkat.es")).thenReturn(true);

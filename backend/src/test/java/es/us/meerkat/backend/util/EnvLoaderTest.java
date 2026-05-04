@@ -50,11 +50,7 @@ class EnvLoaderTest {
         try {
             Files.write(
                     envPath,
-                    List.of(
-                            "# comment",
-                            "// comment",
-                            "INVALID_LINE",
-                            key + "=\"value from env\""),
+                    List.of("# comment", "// comment", "INVALID_LINE", key + "=\"value from env\""),
                     StandardCharsets.UTF_8);
 
             System.clearProperty(key);

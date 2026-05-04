@@ -232,7 +232,7 @@ public class MensajeService {
                 mensaje.getArchivoData(), mensaje.getArchivoNombre(), mensaje.getArchivoMimeType());
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<MensajeResponse> obtenerConversacion(Long usuarioId, Long tutorId) {
 
         Tutor tutor =
@@ -245,10 +245,12 @@ public class MensajeService {
         List<Mensaje> mensajes =
                 mensajeRepository.findConversationWithTutor(tutorId, usuarioId, tutorUserId);
 
+        marcarConversacionComoLeida(usuarioId, tutorUserId);
+
         return mensajes.stream().map(this::mapToResponse).toList();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<MensajeResponse> obtenerConversacionConUsuario(Long usuarioId, Long otherUserId) {
         if (otherUserId == null) {
             throw new IllegalArgumentException("Usuario destino no indicado");
@@ -260,6 +262,8 @@ public class MensajeService {
 
         List<Mensaje> mensajes =
                 mensajeRepository.findConversationBetweenUsers(usuarioId, otherUserId);
+
+        marcarConversacionComoLeida(usuarioId, otherUserId);
 
         return mensajes.stream().map(this::mapToResponse).toList();
     }

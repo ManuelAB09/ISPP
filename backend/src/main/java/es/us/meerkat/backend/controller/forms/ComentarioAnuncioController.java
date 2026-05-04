@@ -58,4 +58,32 @@ public class ComentarioAnuncioController {
                 comentarioService.crearComentario(anuncioId, usuario.getId(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(resp);
     }
+
+    @DeleteMapping("/{comentarioId}")
+    @Operation(
+            summary = "Eliminar comentario",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Comentario eliminado"),
+        @ApiResponse(responseCode = "403", description = "Sin permisos"),
+        @ApiResponse(responseCode = "404", description = "Comentario no encontrado")
+    })
+    public ResponseEntity<Void> eliminarComentario(
+            @PathVariable Long anuncioId,
+            @PathVariable Long comentarioId,
+            @AuthenticationPrincipal Usuario usuario) {
+
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            comentarioService.eliminarComentario(comentarioId, usuario.getId());
+            return ResponseEntity.noContent().build();
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }

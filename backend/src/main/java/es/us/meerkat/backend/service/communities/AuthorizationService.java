@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.entity.communities.MiembroComunidad;
 import es.us.meerkat.backend.entity.communities.RolComunidad;
+import es.us.meerkat.backend.entity.communities.TipoGrupo;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
 import lombok.RequiredArgsConstructor;
@@ -76,6 +77,17 @@ public class AuthorizationService {
                             RolComunidad r = m.getRol();
                             return r == RolComunidad.ADMIN || r == RolComunidad.PROFESOR;
                         })
+                .orElse(false);
+    }
+
+    /** Permite participar si la comunidad es publica o si el usuario ya es miembro. */
+    public boolean canParticipate(Long userId, Long communityId) {
+        return comunidadRepository
+                .findById(communityId)
+                .map(
+                        comunidad ->
+                                comunidad.getTipoGrupo() == TipoGrupo.COMUNIDAD_PUBLICA
+                                        || isMemberOf(userId, communityId))
                 .orElse(false);
     }
 }

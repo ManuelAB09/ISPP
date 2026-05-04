@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.web.server.ResponseStatusException;
 
 import es.us.meerkat.backend.dto.communities.AnuncioResponse;
 import es.us.meerkat.backend.dto.communities.CreateAnuncioRequest;
@@ -133,14 +134,17 @@ class AnuncioServiceTest {
     void createAnuncioShouldFailWhenUserIsNotAdmin() {
         Long userId = 1L;
         Long communityId = 10L;
+
         CreateAnuncioRequest request =
                 new CreateAnuncioRequest("Anuncio Title", "Contenido del anuncio", true);
 
         when(authorizationService.isAdminOf(userId, communityId)).thenReturn(false);
+        when(authorizationService.canParticipate(userId, communityId))
+                .thenReturn(false); // 👈 importante
 
         assertThatThrownBy(() -> anuncioService.createAnuncio(userId, communityId, request))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Solo administradores");
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("No tienes permisos");
     }
 
     @Test
@@ -243,7 +247,7 @@ class AnuncioServiceTest {
                 .thenReturn(false);
 
         assertThatThrownBy(() -> anuncioService.updateAnuncio(userId, anuncioId, request))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("permisos");
     }
 
@@ -286,7 +290,7 @@ class AnuncioServiceTest {
                 .thenReturn(false);
 
         assertThatThrownBy(() -> anuncioService.deleteAnuncio(userId, anuncioId))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("permisos");
     }
 

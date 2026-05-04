@@ -20,11 +20,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import es.us.meerkat.backend.entity.communities.Apunte;
+import es.us.meerkat.backend.entity.communities.Categoria;
 import es.us.meerkat.backend.entity.communities.Comunidad;
 import es.us.meerkat.backend.entity.communities.Institution;
 import es.us.meerkat.backend.entity.communities.MiembroComunidad;
-import es.us.meerkat.backend.entity.communities.Apunte;
-import es.us.meerkat.backend.entity.communities.Categoria;
 import es.us.meerkat.backend.entity.events.AsistenciaEvento;
 import es.us.meerkat.backend.entity.events.Evento;
 import es.us.meerkat.backend.entity.maps.Ubicacion;

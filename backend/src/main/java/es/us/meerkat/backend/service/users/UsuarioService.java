@@ -206,7 +206,37 @@ public class UsuarioService {
         if (requestParam.getBaseFormativa() != null) {
             usuario.setBaseFormativa(requestParam.getBaseFormativa());
         }
-        if (requestParam.getUbicacion() != null) {
+        if (requestParam.getLatitud() != null || requestParam.getLongitud() != null) {
+            if (!coordenadasValidas(requestParam.getLatitud(), requestParam.getLongitud())) {
+                throw new ValidationException("Coordenadas de ubicacion invalidas");
+            }
+
+            final String nombreUbicacion =
+                    StringUtils.hasText(requestParam.getUbicacion())
+                            ? requestParam.getUbicacion().trim()
+                            : String.format(
+                                    java.util.Locale.US,
+                                    "Ubicacion %.5f, %.5f",
+                                    requestParam.getLatitud(),
+                                    requestParam.getLongitud());
+
+            Ubicacion ubicacion =
+                    ubicacionRepository
+                            .findByLatitudAndLongitud(
+                                    requestParam.getLatitud(), requestParam.getLongitud())
+                            .orElseGet(
+                                    () ->
+                                            ubicacionRepository.save(
+                                                    Ubicacion.builder()
+                                                            .nombre(nombreUbicacion)
+                                                            .direccion(nombreUbicacion)
+                                                            .latitud(requestParam.getLatitud())
+                                                            .longitud(requestParam.getLongitud())
+                                                            .tipo("general")
+                                                            .coste("desconocido")
+                                                            .build()));
+            usuario.setUbicacion(ubicacion);
+        } else if (requestParam.getUbicacion() != null) {
             String nombreUbicacion = requestParam.getUbicacion().trim();
             if (nombreUbicacion.isEmpty()) {
                 usuario.setUbicacion(null);
@@ -336,6 +366,10 @@ public class UsuarioService {
                 .createQuery("DELETE FROM Anuncio a WHERE a.usuario.id = :id")
                 .setParameter("id", usuarioId)
                 .executeUpdate();
+        entityManager
+                .createQuery("DELETE FROM Apunte a WHERE a.usuario.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
 
         // ═══════════════════════════════════════════════════════
         // FASE C: Classroom, entregas, cuestionarios
@@ -367,6 +401,14 @@ public class UsuarioService {
         // ═══════════════════════════════════════════════════════
         entityManager
                 .createQuery("DELETE FROM FeedbackRecomendacion fr WHERE fr.usuario.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+        entityManager
+                .createQuery("DELETE FROM Recomendacion r WHERE r.usuario.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+        entityManager
+                .createQuery("DELETE FROM RecomendacionComunidad r WHERE r.usuario.id = :id")
                 .setParameter("id", usuarioId)
                 .executeUpdate();
         entityManager
@@ -418,6 +460,10 @@ public class UsuarioService {
                 .createQuery(
                         "UPDATE GrabacionClase g SET g.subidoPor = null"
                                 + " WHERE g.subidoPor.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+        entityManager
+                .createQuery("DELETE FROM ZoomMeetingParticipant z WHERE z.usuario.id = :id")
                 .setParameter("id", usuarioId)
                 .executeUpdate();
 
@@ -529,6 +575,19 @@ public class UsuarioService {
         // PASO 3: Manipular comunidades
         List<Comunidad> comunidadesUsuario = comunidadRepository.findByCreadorId(usuarioId);
         for (Comunidad comunidad : comunidadesUsuario) {
+            entityManager
+                    .createQuery(
+                            "DELETE FROM ComentarioAnuncio c WHERE c.anuncio.comunidad.id = :cid")
+                    .setParameter("cid", comunidad.getId())
+                    .executeUpdate();
+            entityManager
+                    .createQuery("DELETE FROM Anuncio a WHERE a.comunidad.id = :cid")
+                    .setParameter("cid", comunidad.getId())
+                    .executeUpdate();
+            entityManager
+                    .createQuery("DELETE FROM Apunte a WHERE a.comunidad.id = :cid")
+                    .setParameter("cid", comunidad.getId())
+                    .executeUpdate();
             // Limpiar referencias de cuestionarios para evitar violación de FK en
             // cuestionario_comunidades
             List<es.us.meerkat.backend.entity.forms.Cuestionario> cuestionarios =
@@ -568,6 +627,12 @@ public class UsuarioService {
         solicitudComunidadRepository.deleteByRespondidaPorId(usuarioId);
         googleClassroomConnectionRepository.deleteByUsuarioId(usuarioId);
         institutionRepository.deleteByUsuarioAdminId(usuarioId);
+        entityManager
+                .createQuery(
+                        "UPDATE TutorContratacion t SET t.transaccion = null"
+                                + " WHERE t.transaccion.usuario.id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
         transaccionPagoRepository.deleteByUsuarioId(usuarioId);
         suscripcionRepository.deleteByUsuarioId(usuarioId);
         miembroComunidadRepository.deleteByUsuarioId(usuarioId);
@@ -579,6 +644,21 @@ public class UsuarioService {
         preferenciasNotificacionRepository
                 .findByUsuarioId(usuarioId)
                 .ifPresent(preferenciasNotificacionRepository::delete);
+
+        entityManager
+                .createNativeQuery("DELETE FROM usuario_intereses WHERE usuario_id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+        entityManager
+                .createNativeQuery("DELETE FROM usuario_backup_codes WHERE usuario_id = :id")
+                .setParameter("id", usuarioId)
+                .executeUpdate();
+        if (usuario.getTutor() != null) {
+            entityManager
+                    .createNativeQuery("DELETE FROM esp WHERE t_id = :tid")
+                    .setParameter("tid", usuario.getTutor().getId())
+                    .executeUpdate();
+        }
 
         // PASO 6: Eliminar el usuario
         usuarioRepository.delete(usuario);
@@ -884,6 +964,18 @@ public class UsuarioService {
     }
 
     /** Construye ruta pública de Renata si el archivo existe en recursos estáticos. */
+    private boolean coordenadasValidas(final Double latitud, final Double longitud) {
+        if (latitud == null || longitud == null) {
+            return false;
+        }
+        return Double.isFinite(latitud)
+                && Double.isFinite(longitud)
+                && latitud >= -90.0
+                && latitud <= 90.0
+                && longitud >= -180.0
+                && longitud <= 180.0;
+    }
+
     private String construirRutaRenataSiExiste(final String fileName, final String fallbackValue) {
         if (!StringUtils.hasText(fileName)) {
             return null;
