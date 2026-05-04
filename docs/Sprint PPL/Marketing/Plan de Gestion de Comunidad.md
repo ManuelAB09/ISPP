@@ -57,11 +57,11 @@ La estrategia busca aumentar la visibilidad de la aplicación, generar cercanía
 | Fecha | Día | Contenido planificado |
 |---|---|---|
 | **18/05** | Lunes | Historia deseando mucha suerte a todos con los exámenes parciales, conectando con el momento académico del público objetivo. |
-| **19/05** | Martes | Historia informativa anunciando que el jueves tendrá lugar el PPL en la ETSII, indicando la hora y generando expectación sobre la presentación. |
+| **19/05** | Martes | Historia informativa anunciando que el jueves tendrá lugar el WPL en la ETSII, indicando la hora y generando expectación sobre la presentación. |
 | **20/05** | Miércoles | **Miércoles de memes.** Publicación del meme semanal, junto con la encuesta habitual para elegir la temática de memes de la semana siguiente. |
-| **21/05** | Jueves | Historia recordando que el PPL se celebra ese mismo día, indicando la hora y la ubicación en el salón de actos de la ETSII. |
-| **22/05** | Viernes | Publicación relacionada con el PPL, acompañada de historias del día de la presentación: preparación, momentos del equipo, ambiente y participación. |
-| **23/05** | Sábado | Encuesta dirigida a los asistentes del PPL: “¿Qué te pareció la presentación del grupo MeerKatters?”. Se busca recoger feedback y generar interacción posterior al evento. |
+| **21/05** | Jueves | Historia recordando que el WPL se celebra ese mismo día, indicando la hora y la ubicación en el salón de actos de la ETSII. |
+| **22/05** | Viernes | Publicación relacionada con el WPL, acompañada de historias del día de la presentación: preparación, momentos del equipo, ambiente y participación. |
+| **23/05** | Sábado | Encuesta dirigida a los asistentes del WPL: “¿Qué te pareció la presentación del grupo MeerKatters?”. Se busca recoger feedback y generar interacción posterior al evento. |
 | **24/05** | Domingo | Carrusel de fotos del equipo durante el desarrollo del proyecto: momentos de trabajo, team building, situaciones de estrés, preparación y evolución del grupo. |
 
 ---
