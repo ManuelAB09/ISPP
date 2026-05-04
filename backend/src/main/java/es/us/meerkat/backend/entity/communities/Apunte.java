@@ -2,14 +2,18 @@ package es.us.meerkat.backend.entity.communities;
 
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import es.us.meerkat.backend.entity.users.Usuario;
+import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -48,7 +52,9 @@ public class Apunte {
     private String descripcion;
 
     @NotNull(message = "El archivo es requerido")
-    @Lob
+    @Basic(fetch = FetchType.LAZY)
+    @JdbcTypeCode(SqlTypes.VARBINARY)
+    @Column(columnDefinition = "BYTEA")
     private byte[] contenido;
 
     @NotBlank(message = "El nombre del archivo es requerido")

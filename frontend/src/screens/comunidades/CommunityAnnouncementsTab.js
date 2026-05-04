@@ -1,26 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axiosInstance from '../../api/axiosConfig';
-import { getAnnouncementComments, postAnnouncementComment } from '../../api/announcementComments';
+import { getAnnouncementComments, postAnnouncementComment, deleteAnnouncementComment } from '../../api/announcementComments';
 import './CommunityAnnouncementsTab.css';
 import { getApiBaseUrl } from '../../api/baseUrl';
 
 const DEFAULT_PROFILE_AVATAR =
-    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='60' fill='%23E6EAF3'/%3E%3Ccircle cx='60' cy='46' r='22' fill='%2395A1BB'/%3E%3Cpath d='M20 106c6-20 22-32 40-32s34 12 40 32' fill='%2395A1BB'/%3E%3C/svg%3E";
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='60' fill='%23E6EAF3'/%3E%3Ccircle cx='60' cy='46' r='22' fill='%2395A1BB'/%3E%3Cpath d='M20 106c6-20 22-32 40-32s34 12 40 32' fill='%2395A1BB'/%3E%3C/svg%3E";
 
 const toAbsoluteImageUrl = (imageUrl, fallback = DEFAULT_PROFILE_AVATAR) => {
-    const raw = String(imageUrl || '').trim();
-    if (!raw) {
-        return fallback;
-    }
-    if (/^https?:\/\//i.test(raw) || raw.startsWith('data:') || raw.startsWith('blob:')) {
-        return raw;
-    }
-    const base = getApiBaseUrl();
-    return raw.startsWith('/') ? `${base}${raw}` : `${base}/${raw}`;
+  const raw = String(imageUrl || '').trim();
+  if (!raw) {
+    return fallback;
+  }
+  if (/^https?:\/\//i.test(raw) || raw.startsWith('data:') || raw.startsWith('blob:')) {
+    return raw;
+  }
+  const base = getApiBaseUrl();
+  return raw.startsWith('/') ? `${base}${raw}` : `${base}/${raw}`;
 };
 
 export default function CommunityAnnouncementsTab({ communityId, isAdmin }) {
+  const currentUserId = localStorage.getItem('userId');
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -91,7 +92,6 @@ export default function CommunityAnnouncementsTab({ communityId, isAdmin }) {
       });
       setShowModal(false);
       setForm({ titulo: '', contenido: '', permitirComentarios: true });
-      // Refrescar anuncios
       setLoading(true);
       const res = await axiosInstance.get(`/api/v1/communities/${communityId}/announcements?page=0&size=50`);
       setAnnouncements(res.data.anuncios || []);
@@ -120,18 +120,18 @@ export default function CommunityAnnouncementsTab({ communityId, isAdmin }) {
       setDeletingAnnouncementId(null);
     }
   };
-  
-    function formatDateTime(dateString) {
-      const date = new Date(dateString);
-      return date.toLocaleString(undefined, {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      });
-    }
+
+  function formatDateTime(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleString(undefined, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  }
 
   return (
     <div className="catab-list">
@@ -224,7 +224,11 @@ export default function CommunityAnnouncementsTab({ communityId, isAdmin }) {
               </div>
               <div className="catab-content">{anuncio.contenido}</div>
               {anuncio.permitirComentarios && (
-                <CommentsSection anuncioId={anuncio.id} />
+                <CommentsSection
+                  anuncioId={anuncio.id}
+                  isAdmin={isAdmin}
+                  currentUserId={currentUserId}
+                />
               )}
             </div>
           );
@@ -236,12 +240,13 @@ export default function CommunityAnnouncementsTab({ communityId, isAdmin }) {
 }
 
 // --- Componente de comentarios ---
-function CommentsSection({ anuncioId }) {
+function CommentsSection({ anuncioId, isAdmin, currentUserId }) {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [input, setInput] = useState("");
   const [posting, setPosting] = useState(false);
+  const [deletingCommentId, setDeletingCommentId] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -267,17 +272,30 @@ function CommentsSection({ anuncioId }) {
     }
   };
 
-  function formatDateTime(dateString) {
-      const date = new Date(dateString);
-      return date.toLocaleString(undefined, {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      });
+  const handleDeleteComment = async (comentarioId) => {
+    if (!window.confirm('¿Eliminar este comentario?')) return;
+    try {
+      setDeletingCommentId(comentarioId);
+      await deleteAnnouncementComment(anuncioId, comentarioId);
+      setComments(prev => prev.filter(c => c.id !== comentarioId));
+    } catch {
+      setError('No se pudo eliminar el comentario.');
+    } finally {
+      setDeletingCommentId(null);
     }
+  };
+
+  function formatDateTime(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleString(undefined, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  }
 
   return (
     <div className="catab-comments-section">
@@ -285,28 +303,46 @@ function CommentsSection({ anuncioId }) {
       {loading ? (
         <div style={{ color: '#64748b', marginBottom: 8 }}>Cargando comentarios...</div>
       ) : error ? (
-        <div style={{ color: '#c00', marginBottom: 8 }}>Error al cargar comentarios</div>
+        <div style={{ color: '#c00', marginBottom: 8 }}>{error}</div>
       ) : (
         <>
           <div className="catab-comment-list">
             {comments.length === 0 ? (
               <div style={{ color: '#64748b', fontSize: '0.98rem' }}>Sé el primero en comentar</div>
             ) : (
-              comments.map(c => (
-                <div key={c.id} className="catab-comment-item">
-                  <img
-                    src={toAbsoluteImageUrl(c.usuario?.avatarUrl, DEFAULT_PROFILE_AVATAR)}
-                    alt={c.usuario?.nombre || 'Usuario'}
-                    className="catab-comment-avatar"
-                  />
-                  <span className="catab-comment-author">{c.usuario?.nombre || 'Usuario'}</span>
-                  {' '}
-                  {c.texto}
-                  <span style={{ float: 'right', color: '#94a3b8', fontSize: '0.93em' }}>
-                    {c.createdAt ? formatDateTime(c.createdAt) : ''}
-                  </span>
-                </div>
-              ))
+              comments.map(c => {
+                const esAutor = String(c.usuario?.id) === String(currentUserId);
+                const puedeEliminar = isAdmin || esAutor;
+                return (
+                  <div key={c.id} className="catab-comment-item">
+                    <img
+                      src={toAbsoluteImageUrl(c.usuario?.foto || c.usuario?.avatarUrl, DEFAULT_PROFILE_AVATAR)}
+                      alt={c.usuario?.nombre || 'Usuario'}
+                      className="catab-comment-avatar"
+                    />
+                    <div className="catab-comment-body">
+                      <span className="catab-comment-author">{c.usuario?.nombre || 'Usuario'}</span>
+                      {' '}
+                      <span className="catab-comment-texto">{c.texto}</span>
+                    </div>
+                    <div className="catab-comment-footer">
+                      <span style={{ color: '#94a3b8', fontSize: '0.93em' }}>
+                        {c.createdAt ? formatDateTime(c.createdAt) : ''}
+                      </span>
+                      {puedeEliminar && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteComment(c.id)}
+                          disabled={deletingCommentId === c.id}
+                          className="catab-comment-delete-btn"
+                        >
+                          {deletingCommentId === c.id ? '...' : '🗑️'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
             )}
           </div>
           <form className="catab-comment-form" onSubmit={handlePost}>

@@ -271,6 +271,14 @@ export const AuthProvider = ({ children }) => {
             ? profileData.ubicacion
             : (profileData.ubicacion?.nombre || ''),
       };
+      const selectedLocation =
+        ubicacionSeleccionada || (typeof profileData.ubicacion === 'object' ? profileData.ubicacion : null);
+      if (selectedLocation?.latitud != null && selectedLocation?.longitud != null) {
+        requestPayload.latitud = Number(selectedLocation.latitud);
+        requestPayload.longitud = Number(selectedLocation.longitud);
+        requestPayload.ubicacion =
+          selectedLocation.nombre || selectedLocation.direccion || requestPayload.ubicacion || '';
+      }
 
       const updatedUser = await authApi.updateMe(requestPayload);
       // La API no devuelve universidad, grado, ubicacion, así que los mantenemos del profileData enviado

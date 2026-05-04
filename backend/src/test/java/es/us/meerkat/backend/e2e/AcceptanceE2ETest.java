@@ -60,6 +60,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -100,6 +101,8 @@ class AcceptanceE2ETest {
 
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private EventoRepository eventoRepository;
+
+    @Autowired private BCryptPasswordEncoder passwordEncoder;
 
     @Autowired
     private SolicitudContratacionDirectaRepository solicitudContratacionDirectaRepository;
@@ -1113,7 +1116,7 @@ class AcceptanceE2ETest {
                                     Usuario newAdmin = new Usuario();
                                     newAdmin.setEmail(ADMIN_EMAIL);
                                     newAdmin.setNombre("admin");
-                                    newAdmin.setPassword(ADMIN_PASSWORD);
+                                    newAdmin.setPassword(passwordEncoder.encode(ADMIN_PASSWORD));
                                     newAdmin.setEmailVerificado(true);
                                     newAdmin.setAutenticacionDosFactores(false);
                                     return usuarioRepository.save(newAdmin);
@@ -7040,16 +7043,27 @@ class AcceptanceE2ETest {
                                     Usuario newAdmin = new Usuario();
                                     newAdmin.setEmail(ADMIN_EMAIL);
                                     newAdmin.setNombre("admin");
-                                    newAdmin.setPassword(ADMIN_PASSWORD);
+                                    newAdmin.setPassword(passwordEncoder.encode(ADMIN_PASSWORD));
                                     newAdmin.setEmailVerificado(true);
                                     newAdmin.setAutenticacionDosFactores(false);
                                     return usuarioRepository.save(newAdmin);
                                 });
 
-        if (!Boolean.TRUE.equals(admin.getEmailVerificado())
-                || Boolean.TRUE.equals(admin.getAutenticacionDosFactores())) {
+        boolean needsPasswordUpdate =
+                admin.getPassword() == null
+                        || !passwordEncoder.matches(ADMIN_PASSWORD, admin.getPassword());
+        boolean needsFlagsUpdate =
+                !Boolean.TRUE.equals(admin.getEmailVerificado())
+                        || Boolean.TRUE.equals(admin.getAutenticacionDosFactores());
+
+        if (needsPasswordUpdate) {
+            admin.setPassword(passwordEncoder.encode(ADMIN_PASSWORD));
+        }
+        if (needsFlagsUpdate) {
             admin.setEmailVerificado(true);
             admin.setAutenticacionDosFactores(false);
+        }
+        if (needsPasswordUpdate || needsFlagsUpdate) {
             usuarioRepository.save(admin);
         }
     }

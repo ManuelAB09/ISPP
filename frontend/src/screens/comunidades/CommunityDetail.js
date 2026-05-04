@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    LuArrowLeft,
-    LuCalendar,
-    LuCheck,
-    LuChevronDown,
-    LuChevronUp,
-    LuLogIn,
-    LuLogOut,
-    LuPencil,
-    LuPlay,
-    LuPlus,
-    LuTrash2,
-    LuUserPlus,
-    LuUsers,
-    LuVideo,
-    LuX,
+  LuArrowLeft,
+  LuCalendar,
+  LuCheck,
+  LuChevronDown,
+  LuChevronUp,
+  LuLogIn,
+  LuLogOut,
+  LuPencil,
+  LuPlay,
+  LuPlus,
+  LuTrash2,
+  LuUserPlus,
+  LuUsers,
+  LuVideo,
+  LuX,
 } from 'react-icons/lu';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import axiosInstance from '../../api/axiosConfig';
@@ -31,12 +31,12 @@ import Header from '../../components/Header/Header';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSocketContext } from '../../contexts/SocketContext';
 import {
-    canCreateCommunityEvent,
-    getCommunityRoleCapabilities,
-    getCommunityRoleLabel,
-    isAdminRole,
-    isTeacherRole,
-    normalizeCommunityRole,
+  canCreateCommunityEvent,
+  getCommunityRoleCapabilities,
+  getCommunityRoleLabel,
+  isAdminRole,
+  isTeacherRole,
+  normalizeCommunityRole,
 } from '../../utils/communityRoles';
 import CommunityChat from '../chat/CommunityChat';
 import CommunityAnnouncementsTab from './CommunityAnnouncementsTab';
@@ -505,6 +505,7 @@ export default function CommunityDetail() {
   }, [communityId, filterCancelled, currentUserId]);
 
   const fetchPendingRequests = useCallback(async () => {
+    if (!communityId) return; // guarda extra
     try {
       setRequestsLoading(true);
       const data = await communitiesApi.listRequests(communityId, { estado: 'PENDIENTE' });
@@ -519,47 +520,47 @@ export default function CommunityDetail() {
   }, [communityId]);
 
   useEffect(() => {
-      if (!communityId) return;
-    
-      const load = async () => {
-        try {
-          setLoading(true);
-          const data = await communitiesApi.getById(communityId);
-          setCommunity(data);
-        
-          if (data.esMiembro !== undefined) {
-            setIsMember(data.esMiembro);
-          } else if (currentUserId) {
-            try {
-              await communitiesApi.getMyMembership(communityId);
-              setIsMember(true);
-            } catch {
-              setIsMember(false);
-            }
-          }
+    if (!communityId) return;
 
-          // Si es comunidad privada y el usuario no es miembro, comprobar solicitud pendiente
-          if (data.tipoGrupo === 'GRUPO_PRIVADO' && !data.esMiembro && currentUserId) {
-            try {
-              const status = await communitiesApi.getMyRequestStatus(communityId);
-              setRequestSent(status && status.pending);
-            } catch (err) {
-              console.warn('No se pudo verificar solicitud pendiente', err);
-            }
-          } else if (!data.esMiembro) {
-            setRequestSent(false);
+    const load = async () => {
+      try {
+        setLoading(true);
+        const data = await communitiesApi.getById(communityId);
+        setCommunity(data);
+
+        if (data.esMiembro !== undefined) {
+          setIsMember(data.esMiembro);
+        } else if (currentUserId) {
+          try {
+            await communitiesApi.getMyMembership(communityId);
+            setIsMember(true);
+          } catch {
+            setIsMember(false);
           }
-        } catch (err) {
-          console.error('Error al cargar la comunidad:', err);
-          setError('No se pudo cargar la comunidad.');
-        } finally {
-          setLoading(false);
         }
-      };
-    
-      load();
+
+        // Si es comunidad privada y el usuario no es miembro, comprobar solicitud pendiente
+        if (data.tipoGrupo === 'GRUPO_PRIVADO' && !data.esMiembro && currentUserId) {
+          try {
+            const status = await communitiesApi.getMyRequestStatus(communityId);
+            setRequestSent(status && status.pending);
+          } catch (err) {
+            console.warn('No se pudo verificar solicitud pendiente', err);
+          }
+        } else if (!data.esMiembro) {
+          setRequestSent(false);
+        }
+      } catch (err) {
+        console.error('Error al cargar la comunidad:', err);
+        setError('No se pudo cargar la comunidad.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
     fetchEvents();
-    }, [communityId, currentUserId, fetchEvents]);
+  }, [communityId, currentUserId, fetchEvents]);
 
   useEffect(() => {
     fetchMembers();
@@ -642,10 +643,10 @@ export default function CommunityDetail() {
 
   // Cargar solicitudes pendientes cuando el admin accede a una comunidad privada
   useEffect(() => {
-    if (isAdmin && isPrivate) {
+    if (isAdmin && isPrivate && communityId) {
       fetchPendingRequests();
     }
-  }, [isAdmin, isPrivate, fetchPendingRequests]);
+  }, [isAdmin, isPrivate, communityId, fetchPendingRequests]);
 
   const fetchActiveMeeting = useCallback(async ({ silent = false } = {}) => {
     if (!currentUserId || !isMember) {
@@ -1269,9 +1270,9 @@ export default function CommunityDetail() {
       await communitiesApi.leave(communityId);
       // Si el admin era el único miembro, el backend elimina la comunidad
       // Cualquier persona que abandone la comunidad será redirigida a la lista de comunidades
-      
+
       navigate('/comunidades');
-      
+
       setIsMember(false);
       await fetchCommunity(); // Refresh member count
       await fetchEvents(); // Refresh events to hide private events
@@ -1311,10 +1312,13 @@ export default function CommunityDetail() {
     try {
       setRespondingId(requestId);
       await communitiesApi.respondToRequest(communityId, requestId, aceptado);
+      // Quitar de la lista local inmediatamente
       setPendingRequests(prev => prev.filter(r => r.id !== requestId));
-      if (aceptado) {
-        await fetchCommunity();
-      }
+      // Refrescar comunidad y miembros siempre (no solo si aceptado)
+      await fetchCommunity();
+      await fetchMembers();
+      // Refrescar solicitudes restantes desde servidor
+      await fetchPendingRequests();
     } catch (err) {
       console.error('Error al responder solicitud:', err);
     } finally {
@@ -1541,13 +1545,13 @@ export default function CommunityDetail() {
                 {currentUserId ? (
                   isMember ? (
                     community?.miembrosActuales > 1 && (
-                    <button
-                      className="cd-btn cd-btn-leave"
-                      onClick={handleLeaveCommunity}
-                      disabled={joinLoading}
-                    >
-                      <LuLogOut /> {joinLoading ? 'Saliendo...' : 'Abandonar comunidad'}
-                    </button>
+                      <button
+                        className="cd-btn cd-btn-leave"
+                        onClick={handleLeaveCommunity}
+                        disabled={joinLoading}
+                      >
+                        <LuLogOut /> {joinLoading ? 'Saliendo...' : 'Abandonar comunidad'}
+                      </button>
                     )
                   ) : requestSent ? (
                     <button className="cd-btn cd-btn-pending" disabled>
@@ -1928,7 +1932,7 @@ export default function CommunityDetail() {
             )}
           </div>
         </div>
-        
+
         {isMember && (
           <div className="cd-ranking-section">
             <h2 className="cd-ranking-title">
@@ -2002,7 +2006,7 @@ export default function CommunityDetail() {
                               {item.puntos}
                             </span>
                           </td>
-                          
+
                           {/* Resto de estadísticas */}
                           <td>{item.mensajes}</td>
                           <td>{item.eventosCreados}</td>
@@ -2031,265 +2035,265 @@ export default function CommunityDetail() {
             initiallyOpen={openChatOnLoad}
             isOpen={chatOpen}
             onOpenChange={handleChatOpenChange}
-extraActions={(
-  <div className="cd-floating-tools">
-    <div className="cd-floating-toolbar">
-      {activeMeeting ? (
-        <div className="cd-floating-meeting-timer" title="Tiempo de la reunión activa">
-          <span>Activa: {formatDuration(elapsedMs)}</span>
-          <span>
-            {hasFiniteDuration
-              ? `Restante: ${formatDuration(remainingMs)}`
-              : 'Restante: 60 min máx.'}
-          </span>
-        </div>
-      ) : null}
+            extraActions={(
+              <div className="cd-floating-tools">
+                <div className="cd-floating-toolbar">
+                  {activeMeeting ? (
+                    <div className="cd-floating-meeting-timer" title="Tiempo de la reunión activa">
+                      <span>Activa: {formatDuration(elapsedMs)}</span>
+                      <span>
+                        {hasFiniteDuration
+                          ? `Restante: ${formatDuration(remainingMs)}`
+                          : 'Restante: 60 min máx.'}
+                      </span>
+                    </div>
+                  ) : null}
 
-      <button
-        type="button"
-        className="cd-floating-zoom-btn cd-floating-zoom-btn-history"
-        onClick={handleToggleMeetings}
-        disabled={meetingsLoading}
-        title="Ver historial de reuniones"
-      >
-        <LuCalendar size={18} />
-        <span>{meetingsOpen ? 'Ocultar historial' : 'Historial'}</span>
-      </button>
+                  <button
+                    type="button"
+                    className="cd-floating-zoom-btn cd-floating-zoom-btn-history"
+                    onClick={handleToggleMeetings}
+                    disabled={meetingsLoading}
+                    title="Ver historial de reuniones"
+                  >
+                    <LuCalendar size={18} />
+                    <span>{meetingsOpen ? 'Ocultar historial' : 'Historial'}</span>
+                  </button>
 
-      <button
-        type="button"
-        className={`cd-floating-zoom-btn ${activeMeeting ? 'cd-floating-zoom-btn-join' : ''}`}
-        onClick={handleMeetingMainAction}
-        disabled={meetingLoading}
-        title={activeMeeting ? 'Unirse a la reunion activa' : 'Crear reunion con formulario'}
-      >
-        {activeMeeting ? <LuPlay size={18} /> : <LuVideo size={18} />}
-        <span>
-          {meetingLoading
-            ? 'Procesando...'
-            : activeMeeting
-              ? 'Unirse'
-              : 'Crear y unirse'}
-        </span>
-      </button>
+                  <button
+                    type="button"
+                    className={`cd-floating-zoom-btn ${activeMeeting ? 'cd-floating-zoom-btn-join' : ''}`}
+                    onClick={handleMeetingMainAction}
+                    disabled={meetingLoading}
+                    title={activeMeeting ? 'Unirse a la reunion activa' : 'Crear reunion con formulario'}
+                  >
+                    {activeMeeting ? <LuPlay size={18} /> : <LuVideo size={18} />}
+                    <span>
+                      {meetingLoading
+                        ? 'Procesando...'
+                        : activeMeeting
+                          ? 'Unirse'
+                          : 'Crear y unirse'}
+                    </span>
+                  </button>
 
-      {activeMeeting ? (
-        <button
-          type="button"
-          className="cd-floating-zoom-btn cd-floating-zoom-btn-participants"
-          onClick={handleToggleParticipants}
-          disabled={participantsLoading}
-          title="Ver participantes activos"
-        >
-          <LuUsers size={18} />
-          <span>{participantsOpen ? 'Ocultar participantes' : 'Participantes'}</span>
-        </button>
-      ) : null}
+                  {activeMeeting ? (
+                    <button
+                      type="button"
+                      className="cd-floating-zoom-btn cd-floating-zoom-btn-participants"
+                      onClick={handleToggleParticipants}
+                      disabled={participantsLoading}
+                      title="Ver participantes activos"
+                    >
+                      <LuUsers size={18} />
+                      <span>{participantsOpen ? 'Ocultar participantes' : 'Participantes'}</span>
+                    </button>
+                  ) : null}
 
-      {activeMeeting && String(currentUserId) === String(activeMeeting?.creadorId) ? (
-        <button
-          type="button"
-          className="cd-floating-zoom-btn cd-floating-zoom-btn-end"
-          onClick={handleEndMeeting}
-          disabled={meetingLoading}
-          title="Finalizar la reunion activa"
-        >
-          <LuX size={16} />
-          <span>Finalizar</span>
-        </button>
-      ) : null}
-    </div>
-
-    {!activeMeeting && showMeetingForm ? (
-      <div className="cd-floating-popover cd-floating-popover-create">
-        <div className="cd-meeting-form-card">
-          <div className="cd-meeting-form-row">
-            <label htmlFor="meeting-topic">Tema</label>
-            <input
-              id="meeting-topic"
-              type="text"
-              value={meetingTopic}
-              onChange={(e) => setMeetingTopic(e.target.value)}
-              placeholder="Ej. Tutorias semanales"
-              maxLength={120}
-            />
-          </div>
-          <div className="cd-meeting-form-row">
-            <label htmlFor="meeting-duration">Duracion (min)</label>
-            <input
-              id="meeting-duration"
-              type="number"
-              min="5"
-              max="180"
-              step="5"
-              value={meetingDurationForm}
-              onChange={(e) => setMeetingDurationForm(e.target.value)}
-            />
-          </div>
-          <div className="cd-meeting-form-actions">
-            <button
-              type="button"
-              className="cd-btn cd-btn-create"
-              onClick={handleCreateAndJoinMeeting}
-              disabled={meetingLoading}
-            >
-              <LuVideo /> {meetingLoading ? 'Creando...' : 'Crear reunion'}
-            </button>
-            <button
-              type="button"
-              className="cd-btn cd-btn-leave"
-              onClick={() => setShowMeetingForm(false)}
-              disabled={meetingLoading}
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-      </div>
-    ) : null}
-
-    {meetingsOpen ? (
-      <div className="cd-floating-popover cd-floating-popover-history">
-        <div className="cd-floating-meetings-panel">
-          {meetingsError ? (
-            <p className="cd-floating-meetings-error">{meetingsError}</p>
-          ) : meetingHistory.length > 0 ? (
-            <>
-              <p className="cd-floating-meetings-title">
-                Historial de reuniones ({meetingHistory.length})
-              </p>
-              {uploadFeedback ? (
-                <p className={`cd-floating-upload-feedback ${uploadFeedback.type === 'error' ? 'is-error' : 'is-success'}`}>
-                  {uploadFeedback.message}
-                </p>
-              ) : null}
-              <ul className="cd-floating-meetings-list">
-                {meetingHistory.map((meeting, index) => (
-                  <li key={meeting?.id || meeting?.zoomMeetingId || index}>
-                    {(() => {
-                      const meetingRecordings = getMeetingRecordings(meeting);
-                      const hasRecordings = meetingRecordings.length > 0;
-
-                      return (
-                        <>
-                          <strong>{meeting?.topic || `Reunion ${index + 1}`}</strong>
-                          <span>{meeting?.status || 'SIN_ESTADO'}</span>
-                          <span>Creada: {formatDateTime(meeting?.createdAt)}</span>
-                          {meeting?.startedAt ? <span>Inicio: {formatDateTime(meeting.startedAt)}</span> : null}
-                          {meeting?.endedAt ? <span>Fin: {formatDateTime(meeting.endedAt)}</span> : null}
-                          <div className="cd-meeting-history-actions">
-                            {hasRecordings ? (
-                              <button
-                                type="button"
-                                className="cd-meeting-history-link"
-                                onClick={() => handleShowMeetingRecordings(meeting)}
-                                disabled={recordingsLoading}
-                              >
-                                {recordingsLoading && selectedRecordingMeetingId === meeting?.zoomMeetingId
-                                  ? 'Cargando grabaciones...'
-                                  : `Ver grabaciones (${meetingRecordings.length})`}
-                              </button>
-                            ) : (
-                              <span className="cd-meeting-history-muted">Sin grabaciones</span>
-                            )}
-                            <button
-                              type="button"
-                              className="cd-meeting-history-link"
-                              onClick={() => handleSelectRecordingFile(meeting?.id)}
-                              disabled={uploadingMeetingId === meeting?.id}
-                            >
-                              {uploadingMeetingId === meeting?.id ? 'Subiendo...' : 'Subir grabacion'}
-                            </button>
-                          </div>
-                        </>
-                      );
-                    })()}
-                  </li>
-                ))}
-              </ul>
-
-              {recordingsOpen ? (
-                <div className="cd-inline-recordings-section">
-                  {recordingsError ? (
-                    <p className="cd-floating-recordings-error">{recordingsError}</p>
-                  ) : visibleRecordings.length > 0 ? (
-                    <>
-                      <p className="cd-floating-recordings-title">
-                        {selectedRecordingMeetingId
-                          ? `Grabaciones de la reunion (${visibleRecordings.length})`
-                          : `Grabaciones de la comunidad (${visibleRecordings.length})`}
-                      </p>
-                      <ul className="cd-floating-recordings-list">
-                        {visibleRecordings.map((recording, index) => (
-                          <li key={recording?.zoomRecordingId || index}>
-                            <strong>{recording?.fileType || 'Grabacion'}</strong>
-                            <span>Inicio: {formatDateTime(recording?.recordingStart || recording?.createdAt)}</span>
-                            {recording?.recordingEnd ? <span>Fin: {formatDateTime(recording.recordingEnd)}</span> : null}
-                            <span>{formatFileSize(recording?.fileSizeBytes)}</span>
-                            <div className="cd-floating-recordings-links">
-                              {recording?.playUrl ? (
-                                <a href={recording.playUrl} target="_blank" rel="noreferrer">Abrir</a>
-                              ) : null}
-                              {(recording?.appDownloadUrl || recording?.downloadUrl) ? (
-                                <button
-                                  type="button"
-                                  className="cd-recording-link-button"
-                                  onClick={() => handleDownloadRecording(recording)}
-                                  disabled={downloadingRecordingId === recording?.zoomRecordingId}
-                                >
-                                  {downloadingRecordingId === recording?.zoomRecordingId ? 'Descargando...' : 'Descargar'}
-                                </button>
-                              ) : null}
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </>
-                  ) : (
-                    <p className="cd-floating-recordings-empty">No hay grabaciones disponibles para esta reunión.</p>
-                  )}
+                  {activeMeeting && String(currentUserId) === String(activeMeeting?.creadorId) ? (
+                    <button
+                      type="button"
+                      className="cd-floating-zoom-btn cd-floating-zoom-btn-end"
+                      onClick={handleEndMeeting}
+                      disabled={meetingLoading}
+                      title="Finalizar la reunion activa"
+                    >
+                      <LuX size={16} />
+                      <span>Finalizar</span>
+                    </button>
+                  ) : null}
                 </div>
-              ) : null}
-            </>
-          ) : (
-            <p className="cd-floating-meetings-empty">No hay reuniones registradas todavia.</p>
-          )}
-        </div>
-      </div>
-    ) : null}
 
-    {activeMeeting && participantsOpen ? (
-      <div className="cd-floating-popover cd-floating-popover-participants">
-        <div className="cd-floating-participants-panel">
-          {participantsLoading ? (
-            <p className="cd-floating-participants-empty">Cargando participantes...</p>
-          ) : participantsError ? (
-            <p className="cd-floating-participants-error">{participantsError}</p>
-          ) : activeParticipants.length > 0 ? (
-            <>
-              <p className="cd-floating-participants-title">
-                Participantes activos ({activeParticipants.length})
-              </p>
-              <ul className="cd-floating-participants-list">
-                {activeParticipants.map((participant, index) => (
-                  <li key={participant?.id || participant?.usuarioId || participant?.email || index}>
-                    {getParticipantLabel(participant, index)}
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : (
-            <p className="cd-floating-participants-empty">No hay participantes activos en este momento.</p>
-          )}
-        </div>
-      </div>
-    ) : null}
+                {!activeMeeting && showMeetingForm ? (
+                  <div className="cd-floating-popover cd-floating-popover-create">
+                    <div className="cd-meeting-form-card">
+                      <div className="cd-meeting-form-row">
+                        <label htmlFor="meeting-topic">Tema</label>
+                        <input
+                          id="meeting-topic"
+                          type="text"
+                          value={meetingTopic}
+                          onChange={(e) => setMeetingTopic(e.target.value)}
+                          placeholder="Ej. Tutorias semanales"
+                          maxLength={120}
+                        />
+                      </div>
+                      <div className="cd-meeting-form-row">
+                        <label htmlFor="meeting-duration">Duracion (min)</label>
+                        <input
+                          id="meeting-duration"
+                          type="number"
+                          min="5"
+                          max="180"
+                          step="5"
+                          value={meetingDurationForm}
+                          onChange={(e) => setMeetingDurationForm(e.target.value)}
+                        />
+                      </div>
+                      <div className="cd-meeting-form-actions">
+                        <button
+                          type="button"
+                          className="cd-btn cd-btn-create"
+                          onClick={handleCreateAndJoinMeeting}
+                          disabled={meetingLoading}
+                        >
+                          <LuVideo /> {meetingLoading ? 'Creando...' : 'Crear reunion'}
+                        </button>
+                        <button
+                          type="button"
+                          className="cd-btn cd-btn-leave"
+                          onClick={() => setShowMeetingForm(false)}
+                          disabled={meetingLoading}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
 
-    {meetingError ? (
-      <span className="cd-floating-zoom-error">{meetingError}</span>
-    ) : null}
-  </div>
-)}
+                {meetingsOpen ? (
+                  <div className="cd-floating-popover cd-floating-popover-history">
+                    <div className="cd-floating-meetings-panel">
+                      {meetingsError ? (
+                        <p className="cd-floating-meetings-error">{meetingsError}</p>
+                      ) : meetingHistory.length > 0 ? (
+                        <>
+                          <p className="cd-floating-meetings-title">
+                            Historial de reuniones ({meetingHistory.length})
+                          </p>
+                          {uploadFeedback ? (
+                            <p className={`cd-floating-upload-feedback ${uploadFeedback.type === 'error' ? 'is-error' : 'is-success'}`}>
+                              {uploadFeedback.message}
+                            </p>
+                          ) : null}
+                          <ul className="cd-floating-meetings-list">
+                            {meetingHistory.map((meeting, index) => (
+                              <li key={meeting?.id || meeting?.zoomMeetingId || index}>
+                                {(() => {
+                                  const meetingRecordings = getMeetingRecordings(meeting);
+                                  const hasRecordings = meetingRecordings.length > 0;
+
+                                  return (
+                                    <>
+                                      <strong>{meeting?.topic || `Reunion ${index + 1}`}</strong>
+                                      <span>{meeting?.status || 'SIN_ESTADO'}</span>
+                                      <span>Creada: {formatDateTime(meeting?.createdAt)}</span>
+                                      {meeting?.startedAt ? <span>Inicio: {formatDateTime(meeting.startedAt)}</span> : null}
+                                      {meeting?.endedAt ? <span>Fin: {formatDateTime(meeting.endedAt)}</span> : null}
+                                      <div className="cd-meeting-history-actions">
+                                        {hasRecordings ? (
+                                          <button
+                                            type="button"
+                                            className="cd-meeting-history-link"
+                                            onClick={() => handleShowMeetingRecordings(meeting)}
+                                            disabled={recordingsLoading}
+                                          >
+                                            {recordingsLoading && selectedRecordingMeetingId === meeting?.zoomMeetingId
+                                              ? 'Cargando grabaciones...'
+                                              : `Ver grabaciones (${meetingRecordings.length})`}
+                                          </button>
+                                        ) : (
+                                          <span className="cd-meeting-history-muted">Sin grabaciones</span>
+                                        )}
+                                        <button
+                                          type="button"
+                                          className="cd-meeting-history-link"
+                                          onClick={() => handleSelectRecordingFile(meeting?.id)}
+                                          disabled={uploadingMeetingId === meeting?.id}
+                                        >
+                                          {uploadingMeetingId === meeting?.id ? 'Subiendo...' : 'Subir grabacion'}
+                                        </button>
+                                      </div>
+                                    </>
+                                  );
+                                })()}
+                              </li>
+                            ))}
+                          </ul>
+
+                          {recordingsOpen ? (
+                            <div className="cd-inline-recordings-section">
+                              {recordingsError ? (
+                                <p className="cd-floating-recordings-error">{recordingsError}</p>
+                              ) : visibleRecordings.length > 0 ? (
+                                <>
+                                  <p className="cd-floating-recordings-title">
+                                    {selectedRecordingMeetingId
+                                      ? `Grabaciones de la reunion (${visibleRecordings.length})`
+                                      : `Grabaciones de la comunidad (${visibleRecordings.length})`}
+                                  </p>
+                                  <ul className="cd-floating-recordings-list">
+                                    {visibleRecordings.map((recording, index) => (
+                                      <li key={recording?.zoomRecordingId || index}>
+                                        <strong>{recording?.fileType || 'Grabacion'}</strong>
+                                        <span>Inicio: {formatDateTime(recording?.recordingStart || recording?.createdAt)}</span>
+                                        {recording?.recordingEnd ? <span>Fin: {formatDateTime(recording.recordingEnd)}</span> : null}
+                                        <span>{formatFileSize(recording?.fileSizeBytes)}</span>
+                                        <div className="cd-floating-recordings-links">
+                                          {recording?.playUrl ? (
+                                            <a href={recording.playUrl} target="_blank" rel="noreferrer">Abrir</a>
+                                          ) : null}
+                                          {(recording?.appDownloadUrl || recording?.downloadUrl) ? (
+                                            <button
+                                              type="button"
+                                              className="cd-recording-link-button"
+                                              onClick={() => handleDownloadRecording(recording)}
+                                              disabled={downloadingRecordingId === recording?.zoomRecordingId}
+                                            >
+                                              {downloadingRecordingId === recording?.zoomRecordingId ? 'Descargando...' : 'Descargar'}
+                                            </button>
+                                          ) : null}
+                                        </div>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </>
+                              ) : (
+                                <p className="cd-floating-recordings-empty">No hay grabaciones disponibles para esta reunión.</p>
+                              )}
+                            </div>
+                          ) : null}
+                        </>
+                      ) : (
+                        <p className="cd-floating-meetings-empty">No hay reuniones registradas todavia.</p>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+
+                {activeMeeting && participantsOpen ? (
+                  <div className="cd-floating-popover cd-floating-popover-participants">
+                    <div className="cd-floating-participants-panel">
+                      {participantsLoading ? (
+                        <p className="cd-floating-participants-empty">Cargando participantes...</p>
+                      ) : participantsError ? (
+                        <p className="cd-floating-participants-error">{participantsError}</p>
+                      ) : activeParticipants.length > 0 ? (
+                        <>
+                          <p className="cd-floating-participants-title">
+                            Participantes activos ({activeParticipants.length})
+                          </p>
+                          <ul className="cd-floating-participants-list">
+                            {activeParticipants.map((participant, index) => (
+                              <li key={participant?.id || participant?.usuarioId || participant?.email || index}>
+                                {getParticipantLabel(participant, index)}
+                              </li>
+                            ))}
+                          </ul>
+                        </>
+                      ) : (
+                        <p className="cd-floating-participants-empty">No hay participantes activos en este momento.</p>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+
+                {meetingError ? (
+                  <span className="cd-floating-zoom-error">{meetingError}</span>
+                ) : null}
+              </div>
+            )}
           />
         ) : null}
 

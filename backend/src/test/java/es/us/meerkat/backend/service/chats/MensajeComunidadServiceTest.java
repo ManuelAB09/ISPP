@@ -30,6 +30,7 @@ import es.us.meerkat.backend.repository.chats.MensajeComunidadRepository;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
+import es.us.meerkat.backend.service.communities.AuthorizationService;
 import es.us.meerkat.backend.service.emails.EmailService;
 import es.us.meerkat.backend.service.notifications.PreferenciasNotificacionService;
 
@@ -43,6 +44,7 @@ class MensajeComunidadServiceTest {
     @Mock private MiembroComunidadRepository miembroComunidadRepository;
     @Mock private PreferenciasNotificacionService preferenciasNotificacionService;
     @Mock private EmailService emailService;
+    @Mock private AuthorizationService authorizationService;
 
     @InjectMocks private MensajeComunidadService service;
 
@@ -380,10 +382,20 @@ class MensajeComunidadServiceTest {
     @Test
     void eliminarMensajeShouldThrowWhenNotAuthor() {
         Usuario other = buildUsuario(2L, "Other");
+
+        Comunidad comunidad = Comunidad.builder().id(10L).nombre("Test").build();
+
         MensajeComunidad mensaje =
-                MensajeComunidad.builder().id(100L).usuario(other).contenido("bye").build();
+                MensajeComunidad.builder()
+                        .id(100L)
+                        .usuario(other)
+                        .comunidad(comunidad) // 👈 ESTO FALTABA
+                        .contenido("bye")
+                        .build();
 
         when(mensajeComunidadRepository.findById(100L)).thenReturn(Optional.of(mensaje));
+
+        when(authorizationService.isAdminOf(1L, 10L)).thenReturn(false); // 👈 importante también
 
         assertThatThrownBy(() -> service.eliminarMensaje(1L, 100L))
                 .isInstanceOf(RuntimeException.class)

@@ -3,6 +3,7 @@ package es.us.meerkat.backend.service.forms;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
@@ -14,15 +15,18 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.server.ResponseStatusException;
 
 import es.us.meerkat.backend.dto.communities.ComentarioAnuncioResponse;
 import es.us.meerkat.backend.dto.communities.CreateComentarioAnuncioRequest;
 import es.us.meerkat.backend.entity.communities.Anuncio;
 import es.us.meerkat.backend.entity.communities.ComentarioAnuncio;
+import es.us.meerkat.backend.entity.communities.Comunidad;
 import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.repository.communities.AnuncioRepository;
 import es.us.meerkat.backend.repository.communities.ComentarioAnuncioRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
+import es.us.meerkat.backend.service.communities.AuthorizationService;
 
 @ExtendWith(MockitoExtension.class)
 class ComentarioAnuncioServiceTest {
@@ -30,6 +34,7 @@ class ComentarioAnuncioServiceTest {
     @Mock private ComentarioAnuncioRepository comentarioRepo;
     @Mock private AnuncioRepository anuncioRepo;
     @Mock private UsuarioRepository usuarioRepo;
+    @Mock private AuthorizationService authorizationService;
 
     @InjectMocks private ComentarioAnuncioService comentarioAnuncioService;
 
@@ -197,5 +202,90 @@ class ComentarioAnuncioServiceTest {
         ComentarioAnuncioResponse response = comentarioAnuncioService.toResponse(c);
 
         assertThat(response.usuario().avatarUrl()).isNull();
+    }
+
+    // ================================================================
+    // eliminarComentario
+    // ================================================================
+
+    @Test
+    void eliminarComentarioByAuthorShouldDelete() {
+        Comunidad comunidad = Comunidad.builder().id(1L).build();
+        Anuncio anuncio =
+                Anuncio.builder().id(1L).titulo("A").contenido("C").comunidad(comunidad).build();
+        Usuario autor =
+                Usuario.builder().id(10L).nombre("Autor").email("a@t.com").password("p").build();
+        ComentarioAnuncio comentario =
+                ComentarioAnuncio.builder()
+                        .id(5L)
+                        .anuncio(anuncio)
+                        .usuario(autor)
+                        .texto("Mi texto")
+                        .createdAt(LocalDateTime.now())
+                        .build();
+
+        when(comentarioRepo.findById(5L)).thenReturn(Optional.of(comentario));
+        when(authorizationService.isAdminOf(10L, 1L)).thenReturn(false);
+
+        comentarioAnuncioService.eliminarComentario(5L, 10L);
+
+        verify(comentarioRepo).delete(comentario);
+    }
+
+    @Test
+    void eliminarComentarioByAdminShouldDelete() {
+        Comunidad comunidad = Comunidad.builder().id(1L).build();
+        Anuncio anuncio =
+                Anuncio.builder().id(1L).titulo("A").contenido("C").comunidad(comunidad).build();
+        Usuario autor =
+                Usuario.builder().id(10L).nombre("Autor").email("a@t.com").password("p").build();
+        ComentarioAnuncio comentario =
+                ComentarioAnuncio.builder()
+                        .id(5L)
+                        .anuncio(anuncio)
+                        .usuario(autor)
+                        .texto("Texto")
+                        .createdAt(LocalDateTime.now())
+                        .build();
+
+        when(comentarioRepo.findById(5L)).thenReturn(Optional.of(comentario));
+        when(authorizationService.isAdminOf(99L, 1L)).thenReturn(true);
+
+        comentarioAnuncioService.eliminarComentario(5L, 99L);
+
+        verify(comentarioRepo).delete(comentario);
+    }
+
+    @Test
+    void eliminarComentarioShouldThrowForbiddenWhenNotAuthorNorAdmin() {
+        Comunidad comunidad = Comunidad.builder().id(1L).build();
+        Anuncio anuncio =
+                Anuncio.builder().id(1L).titulo("A").contenido("C").comunidad(comunidad).build();
+        Usuario autor =
+                Usuario.builder().id(10L).nombre("Autor").email("a@t.com").password("p").build();
+        ComentarioAnuncio comentario =
+                ComentarioAnuncio.builder()
+                        .id(5L)
+                        .anuncio(anuncio)
+                        .usuario(autor)
+                        .texto("Texto")
+                        .createdAt(LocalDateTime.now())
+                        .build();
+
+        when(comentarioRepo.findById(5L)).thenReturn(Optional.of(comentario));
+        when(authorizationService.isAdminOf(77L, 1L)).thenReturn(false);
+
+        assertThatThrownBy(() -> comentarioAnuncioService.eliminarComentario(5L, 77L))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("permisos");
+    }
+
+    @Test
+    void eliminarComentarioShouldThrowWhenNotFound() {
+        when(comentarioRepo.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> comentarioAnuncioService.eliminarComentario(999L, 1L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Comentario no encontrado");
     }
 }
