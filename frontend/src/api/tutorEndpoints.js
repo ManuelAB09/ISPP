@@ -2,17 +2,19 @@ import { apiClient } from './client';
 
 /**
  * GET /api/v1/tutors
- * Listar tutores (por defecto verificados)
- * @param {Object} params - { especialidad, tarifaMin, tarifaMax, page, size }
+ * Listar tutores. Si `verificado` es true/false, filtra exclusivamente por ese estado;
+ * si es undefined, devuelve todos (verificados primero por orden).
+ * @param {Object} params - { especialidad, tarifaMin, tarifaMax, verificado, page, size }
  */
 export const getVerifiedTutors = (params = {}) => {
   const query = new URLSearchParams();
   if (params.especialidad) query.set('especialidad', params.especialidad);
   if (params.tarifaMin) query.set('tarifaMin', String(params.tarifaMin));
   if (params.tarifaMax) query.set('tarifaMax', String(params.tarifaMax));
+  if (params.verificado !== undefined) query.set('verificado', String(Boolean(params.verificado)));
   if (params.page !== undefined) query.set('page', String(params.page));
   if (params.size !== undefined) query.set('size', String(params.size));
-  
+
   const queryString = query.toString();
   return apiClient.get(`/api/v1/tutors${queryString ? '?' + queryString : ''}`);
 };

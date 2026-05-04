@@ -213,15 +213,16 @@ class TutorServiceTest {
         tutor.setVerificado(true);
         Page<Tutor> page = new PageImpl<>(List.of(tutor));
 
-        when(tutorRepository.findAllFiltrados(isNull(), isNull(), isNull(), any(PageRequest.class)))
+        when(tutorRepository.findAllFiltrados(
+                        isNull(), isNull(), isNull(), isNull(), any(PageRequest.class)))
                 .thenReturn(page);
 
         Page<TutorProfileResponse> result =
-                tutorService.obtenerTutoresVerificados(null, null, null, 0, 20);
+                tutorService.obtenerTutoresVerificados(null, null, null, null, 0, 20);
 
         assertThat(result.getContent()).hasSize(1);
         verify(tutorRepository)
-                .findAllFiltrados(isNull(), isNull(), isNull(), any(PageRequest.class));
+                .findAllFiltrados(isNull(), isNull(), isNull(), isNull(), any(PageRequest.class));
     }
 
     @Test
@@ -234,12 +235,18 @@ class TutorServiceTest {
                         eq("Matemáticas"),
                         any(BigDecimal.class),
                         any(BigDecimal.class),
+                        eq(Boolean.TRUE),
                         any(PageRequest.class)))
                 .thenReturn(page);
 
         Page<TutorProfileResponse> result =
                 tutorService.obtenerTutoresVerificados(
-                        "Matemáticas", new BigDecimal("10"), new BigDecimal("50"), 0, 20);
+                        "Matemáticas",
+                        new BigDecimal("10"),
+                        new BigDecimal("50"),
+                        Boolean.TRUE,
+                        0,
+                        20);
 
         assertThat(result.getContent()).hasSize(1);
     }
