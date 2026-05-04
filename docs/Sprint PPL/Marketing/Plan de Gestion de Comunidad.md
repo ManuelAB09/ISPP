@@ -34,10 +34,10 @@ La estrategia busca aumentar la visibilidad de la aplicación, generar cercanía
 |---|---|---|
 | **04/05** | Lunes | Primer post de Renata desaparecida. Con pistas para que nos ayuden a encontrarla. |
 | **05/05** | Martes | Subir dos posts más de Renata desaparecida, enfocado a la Yincana |
-| **06/05** | Miércoles | **Miércoles de memes.** Publicación de un meme relacionado con estudiantes y organización académica, junto con una encuesta para decidir qué tipo de memes quiere ver la audiencia la semana siguiente. |
-| **07/05** | Jueves | Encuesta sobre funcionalidades: “¿Qué funcionalidad de MeerKatters te parece más útil?”. Opciones: cuestionarios en comunidades, chat con profesores, subida de apuntes y reuniones por Zoom. |
-| **08/05** | Viernes | Historia previa a la yincana para mantener el interés por la actividad, acompañada de algún vídeo gracioso en TikTok relacionado con el estudio o la vida universitaria. |
-| **09/05** | Sábado | Publicación de un vídeo breve y desenfadado en TikTok e Instagram, con un tono humorístico y ligero para mantener actividad durante el fin de semana. |
+| **06/05** | Miércoles | **Miércoles de memes.** Publicación de un meme relacionado con estudiantes y organización académica, junto con contenido sobre la yincana |
+| **07/05** | Jueves | Subir posts de la yincana y de Renata, para que los usuarios vayan interactuando con ella. |
+| **08/05** | Viernes | Subir posts de la yincana para mantener el interés por la actividad. |
+| **09/05** | Sábado | Encuesta sobre funcionalidades: “¿Qué funcionalidad de MeerKatters te parece más útil?”. Opciones: cuestionarios en comunidades, chat con profesores, subida de apuntes y reuniones por Zoom. |
 | **10/05** | Domingo | Reel tipo POV: “Quieres estudiarte todo el temario en una tarde y no encuentras los apuntes ni los resúmenes en el chat de tus amigos”. El objetivo es mostrar un problema cotidiano que MeerKatters puede resolver. |
 
 ---
