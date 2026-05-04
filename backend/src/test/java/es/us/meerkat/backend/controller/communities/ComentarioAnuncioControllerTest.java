@@ -1,6 +1,8 @@
 package es.us.meerkat.backend.controller.communities;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -15,9 +17,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
 
 import es.us.meerkat.backend.controller.forms.ComentarioAnuncioController;
 import es.us.meerkat.backend.dto.communities.ComentarioAnuncioResponse;
+import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.service.forms.ComentarioAnuncioService;
 
 @ExtendWith(MockitoExtension.class)
@@ -27,10 +31,17 @@ class ComentarioAnuncioControllerTest {
 
     @InjectMocks private ComentarioAnuncioController controller;
 
+    private Usuario usuario;
+
     @BeforeEach
     void setUp() {
-        // Setup if needed
+        usuario =
+                Usuario.builder().id(1L).nombre("Admin").email("admin@t.com").password("p").build();
     }
+
+    // ================================================================
+    // listarComentarios
+    // ================================================================
 
     @Test
     void listarComentariosShouldReturnOk() {
@@ -112,5 +123,59 @@ class ComentarioAnuncioControllerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).containsExactly(comment1, comment2);
+    }
+
+    // ================================================================
+    // eliminarComentario
+    // ================================================================
+
+    @Test
+    void eliminarComentarioShouldReturnNoContent() {
+        doNothing().when(comentarioService).eliminarComentario(10L, usuario.getId());
+
+        ResponseEntity<Void> response = controller.eliminarComentario(1L, 10L, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        verify(comentarioService).eliminarComentario(10L, usuario.getId());
+    }
+
+    @Test
+    void eliminarComentarioShouldReturnUnauthorizedWhenNoUser() {
+        ResponseEntity<Void> response = controller.eliminarComentario(1L, 10L, null);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void eliminarComentarioShouldReturnForbiddenWhenNoPermission() {
+        doThrow(
+                        new ResponseStatusException(
+                                org.springframework.http.HttpStatus.FORBIDDEN, "Sin permisos"))
+                .when(comentarioService)
+                .eliminarComentario(10L, usuario.getId());
+
+        ResponseEntity<Void> response = controller.eliminarComentario(1L, 10L, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    void eliminarComentarioShouldReturnNotFoundWhenCommentNotFound() {
+        doThrow(new IllegalArgumentException("Comentario no encontrado"))
+                .when(comentarioService)
+                .eliminarComentario(99L, usuario.getId());
+
+        ResponseEntity<Void> response = controller.eliminarComentario(1L, 99L, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void eliminarComentarioDelegatesCorrectCommentIdToService() {
+        doNothing().when(comentarioService).eliminarComentario(55L, usuario.getId());
+
+        controller.eliminarComentario(1L, 55L, usuario);
+
+        verify(comentarioService).eliminarComentario(55L, usuario.getId());
     }
 }

@@ -31,17 +31,8 @@ const normalizeMutedChats = (value) => {
 
 const escapeRegex = (value) => String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/**
- * Contexto para manejar notificaciones push de mensajes y eventos en toda la aplicación.
- */
 const NotificationContext = createContext(null);
 
-/**
- * Provider de notificaciones push que funciona en toda la aplicación.
- * - Solicita permisos de notificaciones al usuario
- * - Usa WebSocket para detectar mensajes nuevos, solicitudes y eventos en tiempo real
- * - Muestra notificaciones push cuando llegan eventos mientras el usuario está en la app
- */
 export const NotificationProvider = ({ children }) => {
     const location = useLocation();
     const navigate = useNavigate();
@@ -49,7 +40,7 @@ export const NotificationProvider = ({ children }) => {
     const { socket, isConnected } = useSocketContext();
     const { permission, requestPermission, showNotification, isSupported } = useNotifications();
     const knownConversationsRef = useRef(new Map());
-    const conversationUsersRef = useRef(new Map()); // Mapa de usuarioId -> {nombre, foto}
+    const conversationUsersRef = useRef(new Map());
     const shownNotificationsRef = useRef(new Set());
     const [hasRequestedPermission, setHasRequestedPermission] = useState(false);
     const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
@@ -154,6 +145,22 @@ export const NotificationProvider = ({ children }) => {
         });
     }, []);
 
+    // NUEVO: inicializa el mapa de no leídos desde el servidor sin pisar
+    // los incrementos que ya haya acumulado el tiempo real
+    const initCommunityUnread = useCallback((unreadMap) => {
+        if (!unreadMap || typeof unreadMap !== 'object') return;
+        setCommunityUnreadById((prev) => {
+            const next = { ...prev };
+            Object.entries(unreadMap).forEach(([id, count]) => {
+                const key = String(id);
+                const serverCount = Number(count) || 0;
+                // Usar el mayor entre lo que ya tenemos (tiempo real) y el servidor
+                next[key] = Math.max(prev[key] || 0, serverCount);
+            });
+            return next;
+        });
+    }, []);
+
     const markOnePanelNotificationRead = useCallback(() => {
         setPanelUnreadCount((prev) => Math.max(0, prev - 1));
     }, []);
@@ -180,23 +187,18 @@ export const NotificationProvider = ({ children }) => {
                 setPanelUnreadCount(eventUnread + notifUnread);
             })
             .catch((error) => {
-                // Keep last known count if refresh fails
                 console.error('Error al refrescar el contador de notificaciones:', error);
             });
     }, [isAuthenticated, notificationsEnabled]);
 
-    /**
-     * Obtiene datos del usuario desde el mapa de caché o desde la API
-     */
     const getUserData = useCallback((userId) => {
         const cacheKey = String(userId);
         const cached = conversationUsersRef.current.get(cacheKey);
-        
+
         if (cached && cached.nombre) {
             return Promise.resolve(cached);
         }
 
-        // Si no está cacheado, intentar obtener de la API
         return authApi.getUserPublicProfile(userId)
             ?.then((response) => {
                 const userData = {
@@ -207,7 +209,6 @@ export const NotificationProvider = ({ children }) => {
                 return userData;
             })
             .catch(() => {
-                // Si falla la API, devolver un objeto vacío
                 return { nombre: null, foto: null };
             });
     }, []);
@@ -218,11 +219,8 @@ export const NotificationProvider = ({ children }) => {
         return false;
     }, [permission, notificationsEnabled, user?.id]);
 
-    // Determinar si estamos en la ruta de chats
     const isInChatRoute = location.pathname === '/chats';
 
-    // Refs for volatile values used inside the WS handler — avoids
-    // unsubscribing/resubscribing every time these change.
     const isInChatRouteRef = useRef(isInChatRoute);
     isInChatRouteRef.current = isInChatRoute;
     const navigateRef = useRef(navigate);
@@ -230,7 +228,6 @@ export const NotificationProvider = ({ children }) => {
     const showNotificationRef = useRef(showNotification);
     showNotificationRef.current = showNotification;
 
-    // Solicitar permisos de notificación cuando el usuario esté autenticado
     useEffect(() => {
         if (isAuthenticated && isSupported && !hasRequestedPermission && permission === 'default') {
             const timer = setTimeout(() => {
@@ -243,8 +240,6 @@ export const NotificationProvider = ({ children }) => {
         }
     }, [isAuthenticated, isSupported, hasRequestedPermission, permission, requestPermission]);
 
-    // Seed the known-conversations map on mount so the first real-time message
-    // doesn't trigger a spurious notification
     useEffect(() => {
         if (!isAuthenticated || initializedRef.current) return;
         initializedRef.current = true;
@@ -258,7 +253,6 @@ export const NotificationProvider = ({ children }) => {
                         `user-${conv.usuarioId}`,
                         conv.ultimoMensaje || ''
                     );
-                    // Guardar también los datos del usuario para usarlos en notificaciones
                     conversationUsersRef.current.set(String(conv.usuarioId), {
                         nombre: conv.usuarioNombre,
                         foto: conv.usuarioFoto,
@@ -319,7 +313,6 @@ export const NotificationProvider = ({ children }) => {
         };
     }, [isAuthenticated, notificationsEnabled, refreshPanelUnreadCount]);
 
-    // Listen for real-time private messages via WebSocket
     useEffect(() => {
         if (!socket || !isConnected || !isAuthenticated) return;
 
@@ -328,92 +321,63 @@ export const NotificationProvider = ({ children }) => {
             if (shouldSkipNotification(msg.emisorId)) return;
             if (isChatMuted('private', msg.emisorId)) return;
 
-            // Bloquear notificación push para el mensaje automático de inicio de chat
             if (msg.contenido === "¡Hola! Me gustaría contactar contigo.") return;
             const notificationId = `dm-${msg.id}`;
             const alreadyShown = shownNotificationsRef.current.has(notificationId);
-            
+
             if (alreadyShown) return;
             shownNotificationsRef.current.add(notificationId);
 
-            // Buscar nombre del usuario en el mapa de conversaciones
             const userKey = String(msg.emisorId);
             const cachedUser = conversationUsersRef.current.get(userKey);
             const senderName = msg.emisorNombre?.trim() || cachedUser?.nombre;
             const senderPhoto = msg.emisorFoto || cachedUser?.foto;
-            
-            // Si tenemos nombre (del mensaje o del caché), mostrar inmediatamente
-            if (senderName) {
-                const title = `Mensaje de ${senderName}`;
-                const body = msg.contenido || 'Tienes un nuevo mensaje';
 
+            if (senderName) {
                 showPrettyNotification(
-                    title,
-                    body,
+                    `Mensaje de ${senderName}`,
+                    msg.contenido || 'Tienes un nuevo mensaje',
                     senderPhoto,
                     `msg-${msg.emisorId}-${msg.id}`,
-                    () => {
-                        navigateRef.current(`/chats?userId=${msg.emisorId}`);
-                    }
+                    () => { navigateRef.current(`/chats?userId=${msg.emisorId}`); }
                 );
             } else {
-                // Si no tenemos nombre, intentar obtenerlo de la API
                 getUserData(msg.emisorId)
                     .then((userData) => {
-                        const finalName = userData?.nombre || 'Alguien';
-                        const finalPhoto = userData?.foto || senderPhoto;
-                        const title = `Mensaje de ${finalName}`;
-                        const body = msg.contenido || 'Tienes un nuevo mensaje';
-
                         showPrettyNotification(
-                            title,
-                            body,
-                            finalPhoto,
+                            `Mensaje de ${userData?.nombre || 'Alguien'}`,
+                            msg.contenido || 'Tienes un nuevo mensaje',
+                            userData?.foto || senderPhoto,
                             `msg-${msg.emisorId}-${msg.id}`,
-                            () => {
-                                navigateRef.current(`/chats?userId=${msg.emisorId}`);
-                            }
+                            () => { navigateRef.current(`/chats?userId=${msg.emisorId}`); }
                         );
                     })
                     .catch(() => {
-                        // Si falla todo, mostrar con "Alguien"
-                        const title = 'Mensaje de Alguien';
-                        const body = msg.contenido || 'Tienes un nuevo mensaje';
-
                         showPrettyNotification(
-                            title,
-                            body,
+                            'Mensaje de Alguien',
+                            msg.contenido || 'Tienes un nuevo mensaje',
                             senderPhoto,
                             `msg-${msg.emisorId}-${msg.id}`,
-                            () => {
-                                navigateRef.current(`/chats?userId=${msg.emisorId}`);
-                            }
+                            () => { navigateRef.current(`/chats?userId=${msg.emisorId}`); }
                         );
                     });
             }
         };
 
-        // Handler para nuevas solicitudes de contratación
         const handleSolicitudContratacion = (solicitud) => {
             if (!solicitud) return;
             refreshPanelUnreadCount();
             if (shouldSkipNotification(solicitud.alumnoId)) return;
 
-            const title = '📋 Nueva solicitud de contratación';
-            const body = `${solicitud.alumnoNombre || 'Un alumno'} te ha solicitado una clase`;
-
             showPrettyNotification(
-                title,
-                body,
+                '📋 Nueva solicitud de contratación',
+                `${solicitud.alumnoNombre || 'Un alumno'} te ha solicitado una clase`,
                 solicitud.alumnoFoto,
                 `solicitud-${solicitud.id}`,
-                () => {
-                    navigateRef.current('/mis-solicitudes');
-                }
+                () => { navigateRef.current('/mis-solicitudes'); }
             );
         };
 
-        // Handler para respuestas a solicitudes (aceptada/rechazada)
         const handleSolicitudRespuesta = (solicitud) => {
             if (!solicitud) return;
             refreshPanelUnreadCount();
@@ -433,38 +397,25 @@ export const NotificationProvider = ({ children }) => {
                 body = `Tu solicitud ha sido ${estado.toLowerCase()}`;
             }
 
-            showPrettyNotification(
-                title,
-                body,
-                solicitud.tutorFoto,
-                `solicitud-respuesta-${solicitud.id}`,
-                () => {
-                    navigateRef.current('/mis-solicitudes');
-                }
+            showPrettyNotification(title, body, solicitud.tutorFoto, `solicitud-respuesta-${solicitud.id}`,
+                () => { navigateRef.current('/mis-solicitudes'); }
             );
         };
 
-        // Handler para pagos completados
         const handleSolicitudPagada = (solicitud) => {
             if (!solicitud) return;
             refreshPanelUnreadCount();
             if (shouldSkipNotification(solicitud.alumnoId)) return;
 
-            const title = '💰 Clase pagada y confirmada';
-            const body = `${solicitud.alumnoNombre || 'El alumno'} ha completado el pago. Clase confirmada.`;
-
             showPrettyNotification(
-                title,
-                body,
+                '💰 Clase pagada y confirmada',
+                `${solicitud.alumnoNombre || 'El alumno'} ha completado el pago. Clase confirmada.`,
                 solicitud.alumnoFoto,
                 `solicitud-pagada-${solicitud.id}`,
-                () => {
-                    navigateRef.current('/mis-solicitudes');
-                }
+                () => { navigateRef.current('/mis-solicitudes'); }
             );
         };
 
-        // Handler para actualizaciones de alertas/contador
         const handleAlertsCount = (data) => {
             if (!data) return;
 
@@ -473,14 +424,7 @@ export const NotificationProvider = ({ children }) => {
                 return;
             }
 
-            const candidates = [
-                data.total,
-                data.count,
-                data.unread,
-                data.unreadCount,
-                data.alertsCount,
-            ];
-
+            const candidates = [data.total, data.count, data.unread, data.unreadCount, data.alertsCount];
             const numeric = candidates.find((value) => Number.isFinite(Number(value)));
             if (numeric !== undefined) {
                 setPanelNotificationsUnreadCount(Number(numeric));
@@ -490,25 +434,14 @@ export const NotificationProvider = ({ children }) => {
             refreshPanelUnreadCount();
         };
 
-        // Handler para mensajes de comunidades
-        const handleCommunityHistory = (data) => {
-            if (!data) return;
-            // Los mensajes de comunidades pueden procesarse aquí si es necesario
-        };
-
         const handleUserNotification = (notification) => {
             if (!notification) return;
 
             if (notification?.tipo === 'EVENT_ALERT') {
                 if (permission === 'granted' && notificationsEnabled) {
-                    const title = notification?.comunidadNombre
-                        ? `${notification.comunidadNombre}`
-                        : 'Recordatorio de evento';
-                    const body = notification?.mensaje || `Tienes un evento proximo: ${notification?.eventoTitulo || ''}`;
-
                     showPrettyNotification(
-                        title,
-                        body,
+                        notification?.comunidadNombre || 'Recordatorio de evento',
+                        notification?.mensaje || `Tienes un evento próximo: ${notification?.eventoTitulo || ''}`,
                         DEFAULT_PROFILE_AVATAR,
                         `event-alert-${notification?.eventoId || Date.now()}`,
                         () => {
@@ -522,8 +455,6 @@ export const NotificationProvider = ({ children }) => {
                 }
             }
 
-            // El canal "notificaciones" actualiza badge/contador; los popups de chat
-            // se manejan en dm_message y community_message para respetar silenciados.
             if (!notification.leida) {
                 setPanelUnreadCount((prev) => prev + 1);
             }
@@ -543,7 +474,6 @@ export const NotificationProvider = ({ children }) => {
             if (isChatMuted('community', msg.comunidadId) && !isMentioned) return;
 
             const key = `community-${msg.comunidadId}`;
-
             const known = knownConversationsRef.current;
             const current = msg.contenido || msg.archivoNombre || '';
             const prev = known.get(key);
@@ -551,40 +481,28 @@ export const NotificationProvider = ({ children }) => {
             if (prev !== undefined && prev === current) return;
             known.set(key, current);
 
-            const title = `${msg.comunidadNombre || 'Comunidad'}`;
-            const body = msg.contenido
-                ? `${msg.usuarioNombre || 'Alguien'}: ${msg.contenido}`
-                : `${msg.usuarioNombre || 'Alguien'} ha enviado un archivo en la comunidad`;
-
-            // Usar la misma lógica de Chats para la imagen de comunidad
             const fakeCommunity = { imagen: msg.comunidadImagenUrl, imagenUrl: msg.comunidadImagenUrl, foto: msg.comunidadImagenUrl };
             const communityImage = resolveCommunityImage(fakeCommunity);
 
-            // --- MENCIÓN: notificación push con prioridad incluso si el chat está silenciado ---
             if (isMentioned) {
-                const mentionTitle = `Mención en ${msg.comunidadNombre || 'Comunidad'}`;
-                const mentionBody = `${msg.usuarioNombre || 'Alguien'} te mencionó: ${msg.contenido}`;
                 showPrettyNotification(
-                    mentionTitle,
-                    mentionBody,
+                    `Mención en ${msg.comunidadNombre || 'Comunidad'}`,
+                    `${msg.usuarioNombre || 'Alguien'} te mencionó: ${msg.contenido}`,
                     communityImage,
                     `mention-${msg.comunidadId}-${msg.id || Date.now()}`,
-                    () => {
-                        navigateRef.current(`/chats?communityId=${msg.comunidadId}`);
-                    }
+                    () => { navigateRef.current(`/chats?communityId=${msg.comunidadId}`); }
                 );
-                // No mostrar la notificación normal de mensaje si es mención
                 return;
             }
 
             showPrettyNotification(
-                title,
-                body,
+                `${msg.comunidadNombre || 'Comunidad'}`,
+                msg.contenido
+                    ? `${msg.usuarioNombre || 'Alguien'}: ${msg.contenido}`
+                    : `${msg.usuarioNombre || 'Alguien'} ha enviado un archivo en la comunidad`,
                 communityImage,
                 `community-msg-${msg.comunidadId}-${msg.id || Date.now()}`,
-                () => {
-                    navigateRef.current(`/chats?communityId=${msg.comunidadId}`);
-                }
+                () => { navigateRef.current(`/chats?communityId=${msg.comunidadId}`); }
             );
         };
 
@@ -594,7 +512,6 @@ export const NotificationProvider = ({ children }) => {
         socket.on('solicitud_contratacion_pagada', handleSolicitudPagada);
         socket.on('alerts_count', handleAlertsCount);
         socket.on('notificaciones', handleUserNotification);
-        socket.on('community_history', handleCommunityHistory);
         socket.on('community_message', handleCommunityMessage);
 
         return () => {
@@ -604,7 +521,6 @@ export const NotificationProvider = ({ children }) => {
             socket.off('solicitud_contratacion_pagada', handleSolicitudPagada);
             socket.off('alerts_count', handleAlertsCount);
             socket.off('notificaciones', handleUserNotification);
-            socket.off('community_history', handleCommunityHistory);
             socket.off('community_message', handleCommunityMessage);
         };
     }, [
@@ -626,7 +542,6 @@ export const NotificationProvider = ({ children }) => {
         getUserData,
     ]);
 
-    // Resetear el estado conocido cuando entramos a /chats o /comunidades
     useEffect(() => {
         if ((isInChatRoute || location.pathname.startsWith('/comunidades/')) && isAuthenticated) {
             obtenerConversaciones()
@@ -635,7 +550,6 @@ export const NotificationProvider = ({ children }) => {
                     const newMap = knownConversationsRef.current;
                     conversations.forEach((conv) => {
                         newMap.set(`user-${conv.usuarioId}`, conv.ultimoMensaje || '');
-                        // Actualizar también los datos del usuario
                         conversationUsersRef.current.set(String(conv.usuarioId), {
                             nombre: conv.usuarioNombre,
                             foto: conv.usuarioFoto,
@@ -646,14 +560,12 @@ export const NotificationProvider = ({ children }) => {
         }
     }, [isInChatRoute, location.pathname, isAuthenticated]);
 
-    // Sync notificationsEnabled from user backend preference
     useEffect(() => {
         if (user?.notificacionesPush != null) {
             setNotificationsEnabled(user.notificacionesPush);
         }
     }, [user?.notificacionesPush]);
 
-    // Save notifications preference to localStorage when it changes
     useEffect(() => {
         localStorage.setItem('notificationsEnabled', JSON.stringify(notificationsEnabled));
     }, [notificationsEnabled]);
@@ -702,6 +614,7 @@ export const NotificationProvider = ({ children }) => {
         setPanelNotificationsUnreadCount,
         communityUnreadById,
         clearCommunityUnread,
+        initCommunityUnread,   // NUEVO
         mutedChats,
         isChatMuted,
         toggleChatMuted,
@@ -714,9 +627,6 @@ export const NotificationProvider = ({ children }) => {
     );
 };
 
-/**
- * Hook para acceder al contexto de notificaciones.
- */
 export const useNotificationContext = () => {
     return useContext(NotificationContext);
 };

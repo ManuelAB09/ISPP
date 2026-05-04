@@ -20,12 +20,14 @@ jest.mock('../../api/axiosConfig', () => ({
     },
 }));
 
+const mockGetComments = jest.fn();
+const mockPostComment = jest.fn();
+const mockDeleteComment = jest.fn();
 jest.mock('../../api/announcementComments', () => ({
-    getAnnouncementComments: jest.fn(() => Promise.resolve([])),
-    postAnnouncementComment: jest.fn(() => Promise.resolve({})),
+    getAnnouncementComments: (...args) => mockGetComments(...args),
+    postAnnouncementComment: (...args) => mockPostComment(...args),
+    deleteAnnouncementComment: (...args) => mockDeleteComment(...args),
 }));
-
-const { getAnnouncementComments, postAnnouncementComment } = require('../../api/announcementComments');
 
 const renderTab = (props = {}) => {
     return render(
@@ -35,12 +37,24 @@ const renderTab = (props = {}) => {
     );
 };
 
+const announcementWithComments = {
+    id: 1,
+    titulo: 'Test Announcement',
+    contenido: 'Content',
+    createdAt: '2025-06-01T10:00:00',
+    autor: { nombre: 'Admin', foto: null },
+    permitirComentarios: true,
+};
+
 describe('CommunityAnnouncementsTab', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         window.confirm = jest.fn(() => true);
-        getAnnouncementComments.mockImplementation(() => Promise.resolve([]));
-        postAnnouncementComment.mockImplementation(() => Promise.resolve({}));
+        mockGetComments.mockResolvedValue([]);
+        mockPostComment.mockResolvedValue({});
+        mockDeleteComment.mockResolvedValue(undefined);
+        // Clear localStorage userId between tests
+        localStorage.removeItem('userId');
     });
 
     test('renders loading then announcements', async () => {
@@ -228,5 +242,157 @@ describe('CommunityAnnouncementsTab', () => {
         });
 
         expect(screen.queryByText('Eliminar')).not.toBeInTheDocument();
+    });
+
+    // ─── Tests de eliminación de comentarios ───
+
+    test('admin can see delete button on any comment', async () => {
+        mockGet.mockResolvedValueOnce({ data: { anuncios: [announcementWithComments] } });
+        mockGetComments.mockResolvedValueOnce([
+            { id: 10, texto: 'Comentario de otro', createdAt: '2025-06-01T10:00:00', usuario: { id: 99, nombre: 'Otro', foto: null } },
+        ]);
+
+        await act(async () => {
+            renderTab({ isAdmin: true });
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText('Comentario de otro')).toBeInTheDocument();
+        });
+
+        expect(screen.getByText('🗑️')).toBeInTheDocument();
+    });
+
+    test('non-admin author can see delete button on own comment', async () => {
+        localStorage.setItem('userId', '42');
+        mockGet.mockResolvedValueOnce({ data: { anuncios: [announcementWithComments] } });
+        mockGetComments.mockResolvedValueOnce([
+            { id: 10, texto: 'Mi propio comentario', createdAt: '2025-06-01T10:00:00', usuario: { id: 42, nombre: 'Yo', foto: null } },
+        ]);
+
+        await act(async () => {
+            renderTab({ isAdmin: false });
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText('Mi propio comentario')).toBeInTheDocument();
+        });
+
+        expect(screen.getByText('🗑️')).toBeInTheDocument();
+    });
+
+    test('non-admin cannot see delete button on others comment', async () => {
+        localStorage.setItem('userId', '42');
+        mockGet.mockResolvedValueOnce({ data: { anuncios: [announcementWithComments] } });
+        mockGetComments.mockResolvedValueOnce([
+            { id: 10, texto: 'Comentario ajeno', createdAt: '2025-06-01T10:00:00', usuario: { id: 99, nombre: 'Otro', foto: null } },
+        ]);
+
+        await act(async () => {
+            renderTab({ isAdmin: false });
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText('Comentario ajeno')).toBeInTheDocument();
+        });
+
+        expect(screen.queryByText('🗑️')).not.toBeInTheDocument();
+    });
+
+    test('deleting a comment calls API and removes it from UI', async () => {
+        localStorage.setItem('userId', '42');
+        mockGet.mockResolvedValueOnce({ data: { anuncios: [announcementWithComments] } });
+        mockGetComments.mockResolvedValueOnce([
+            { id: 10, texto: 'Borrame', createdAt: '2025-06-01T10:00:00', usuario: { id: 42, nombre: 'Yo', foto: null } },
+        ]);
+        mockDeleteComment.mockResolvedValueOnce(undefined);
+
+        await act(async () => {
+            renderTab({ isAdmin: false });
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText('Borrame')).toBeInTheDocument();
+        });
+
+        await act(async () => {
+            fireEvent.click(screen.getByText('🗑️'));
+        });
+
+        expect(mockDeleteComment).toHaveBeenCalledWith(1, 10);
+        await waitFor(() => {
+            expect(screen.queryByText('Borrame')).not.toBeInTheDocument();
+        });
+    });
+
+    test('delete comment shows confirmation dialog', async () => {
+        localStorage.setItem('userId', '42');
+        mockGet.mockResolvedValueOnce({ data: { anuncios: [announcementWithComments] } });
+        mockGetComments.mockResolvedValueOnce([
+            { id: 10, texto: 'Confirmame', createdAt: '2025-06-01T10:00:00', usuario: { id: 42, nombre: 'Yo', foto: null } },
+        ]);
+
+        await act(async () => {
+            renderTab({ isAdmin: false });
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText('Confirmame')).toBeInTheDocument();
+        });
+
+        await act(async () => {
+            fireEvent.click(screen.getByText('🗑️'));
+        });
+
+        expect(window.confirm).toHaveBeenCalledWith('¿Eliminar este comentario?');
+    });
+
+    test('cancel on confirm dialog does not delete comment', async () => {
+        window.confirm = jest.fn(() => false);
+        localStorage.setItem('userId', '42');
+        mockGet.mockResolvedValueOnce({ data: { anuncios: [announcementWithComments] } });
+        mockGetComments.mockResolvedValueOnce([
+            { id: 10, texto: 'No me borres', createdAt: '2025-06-01T10:00:00', usuario: { id: 42, nombre: 'Yo', foto: null } },
+        ]);
+
+        await act(async () => {
+            renderTab({ isAdmin: false });
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText('No me borres')).toBeInTheDocument();
+        });
+
+        await act(async () => {
+            fireEvent.click(screen.getByText('🗑️'));
+        });
+
+        expect(mockDeleteComment).not.toHaveBeenCalled();
+        expect(screen.getByText('No me borres')).toBeInTheDocument();
+    });
+
+    test('delete comment API error shows error message', async () => {
+        localStorage.setItem('userId', '42');
+        mockGet.mockResolvedValueOnce({ data: { anuncios: [announcementWithComments] } });
+        mockGetComments.mockResolvedValueOnce([
+            { id: 10, texto: 'Error al borrar', createdAt: '2025-06-01T10:00:00', usuario: { id: 42, nombre: 'Yo', foto: null } },
+        ]);
+        mockDeleteComment.mockRejectedValueOnce(new Error('Server error'));
+
+        await act(async () => {
+            renderTab({ isAdmin: false });
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText('Error al borrar')).toBeInTheDocument();
+        });
+
+        await act(async () => {
+            fireEvent.click(screen.getByText('🗑️'));
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText(/No se pudo eliminar el comentario/i)).toBeInTheDocument();
+        });
     });
 });

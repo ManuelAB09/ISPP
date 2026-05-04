@@ -11,4 +11,6 @@ import es.us.meerkat.backend.entity.communities.ComentarioAnuncio;
 @Repository
 public interface ComentarioAnuncioRepository extends JpaRepository<ComentarioAnuncio, Long> {
     List<ComentarioAnuncio> findByAnuncioOrderByCreatedAtDesc(Anuncio anuncio);
+
+    void deleteByAnuncio(Anuncio anuncio);
 }

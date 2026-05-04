@@ -125,11 +125,19 @@ public class MensajeComunidadController {
      * @param comunidadId ID de la comunidad.
      * @return lista de mensajes de la comunidad.
      */
-    @GetMapping("/{comunidadId}/mensajes")
     public ResponseEntity<?> obtenerHistorial(@PathVariable final Long comunidadId) {
+        return obtenerHistorial(comunidadId, null);
+    }
+
+    @GetMapping("/{comunidadId}/mensajes")
+    public ResponseEntity<?> obtenerHistorial(
+            @PathVariable final Long comunidadId, @AuthenticationPrincipal final Usuario usuario) {
         try {
             final List<MensajeComunidadResponse> mensajes =
                     mensajeComunidadService.obtenerHistorial(comunidadId);
+            if (usuario != null && authorizationService.isMemberOf(usuario.getId(), comunidadId)) {
+                mensajeComunidadService.marcarComunidadComoLeida(usuario.getId(), comunidadId);
+            }
             return ResponseEntity.ok(mensajes);
         } catch (final Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

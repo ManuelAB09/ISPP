@@ -69,6 +69,12 @@ public class ApunteService {
                         .findById(usuarioId)
                         .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
+        if (authorizationService != null
+                && !authorizationService.canParticipate(usuarioId, comunidadId)) {
+            throw new IllegalArgumentException(
+                    "Debes ser miembro para publicar en una comunidad privada");
+        }
+
         try {
             byte[] contenido = file.getBytes();
 

@@ -3,7 +3,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authApi } from '../../api/auth.api';
 import { getApiBaseUrl } from '../../api/baseUrl';
 import { communitiesApi } from '../../api/communities.api';
-import { marcarComunidadComoLeida, marcarConversacionComoLeida, obtenerConversaciones, obtenerNoLeidosPorComunidad } from '../../api/mensajeService';
+import {
+    marcarComunidadComoLeida,
+    marcarConversacionComoLeida,
+    obtenerConversaciones,
+    obtenerNoLeidosPorComunidad,
+} from '../../api/mensajeService';
 import Header from '../../components/Header/Header';
 import PageHeader from '../../components/PageHeader';
 import { useAuth } from '../../contexts/AuthContext';
@@ -80,6 +85,7 @@ export default function Chats() {
         toggleChatMuted,
         communityUnreadById,
         clearCommunityUnread,
+        initCommunityUnread, // NUEVO
     } = useNotificationContext();
 
     const [loading, setLoading] = useState(false);
@@ -92,9 +98,6 @@ export default function Chats() {
         searchParams.get('userId') ? 'private' : 'communities'
     );
     const [isMobileDropdownOpen, setIsMobileDropdownOpen] = useState(false);
-    const [, setCommunityUnreadMap] = useState({});
-
-
 
     const currentUser = {
         id: Number(localStorage.getItem('userId')),
@@ -106,7 +109,6 @@ export default function Chats() {
     let privateUnread = 0;
     let communityUnread = 0;
     if (Array.isArray(conversaciones)) {
-        // Sumar todos los noLeidos de las conversaciones privadas
         privateUnread = conversaciones.reduce((acc, c) => acc + (c.noLeidos || 0), 0);
     }
     if (communityUnreadById && typeof communityUnreadById === 'object') {
@@ -170,6 +172,16 @@ export default function Chats() {
                     }
                 }
 
+                // NUEVO: cargar no leídos persistidos en servidor e inicializar el contexto
+                try {
+                    const { data: noLeidos } = await obtenerNoLeidosPorComunidad();
+                    if (noLeidos && typeof noLeidos === 'object') {
+                        initCommunityUnread(noLeidos);
+                    }
+                } catch (e) {
+                    console.error('Error al cargar no leídos iniciales:', e);
+                }
+
                 // Si vienen params para abrir privado directamente
                 if (privateUserIdFromQuery) {
                     try {
@@ -229,6 +241,7 @@ export default function Chats() {
         privateUserNameFromQuery,
         privateUserPhotoFromQuery,
         clearCommunityUnread,
+        initCommunityUnread,
     ]);
 
     useEffect(() => {
@@ -337,18 +350,12 @@ export default function Chats() {
         const fotoBackgroundColor =
             target.userPhotoBg ?? target.fotoBackgroundColor ?? '#ffffff';
 
-        const nextTarget = {
-            id,
-            nombre,
-            foto,
-            fotoBackgroundColor,
-        };
+        const nextTarget = { id, nombre, foto, fotoBackgroundColor };
 
         setPrivateTarget(nextTarget);
         setActiveTab('private');
         setIsMobileDropdownOpen(false);
 
-        // Marcar la conversación como leída al abrirla y refrescar siempre las conversaciones
         try {
             await marcarConversacionComoLeida(id);
         } catch (e) {
@@ -356,27 +363,22 @@ export default function Chats() {
         } finally {
             try {
                 const { data } = await obtenerConversaciones();
-                setConversaciones(prev => {
-                    const convs = Array.isArray(data) ? data : [];
-                    return convs;
-                });
+                setConversaciones(Array.isArray(data) ? data : []);
             } catch (err) {
                 setConversaciones([]);
             }
         }
     };
 
+    // CORREGIDO: limpia el badge en el contexto Y persiste en servidor
     const openCommunityChat = async (community) => {
         setSelectedCommunityId(community.id);
         setPrivateTarget(null);
-        // Marcar como leída la comunidad
+        clearCommunityUnread(community.id); // limpia el badge inmediatamente
         try {
-            await marcarComunidadComoLeida(community.id);
-            // Refrescar contadores
-            const { data } = await obtenerNoLeidosPorComunidad();
-            setCommunityUnreadMap(data || {});
+            await marcarComunidadComoLeida(community.id); // persiste en servidor
         } catch (e) {
-            // No bloquear la UI si falla
+            console.error('Error al marcar comunidad como leída:', e);
         }
     };
 
@@ -397,9 +399,7 @@ export default function Chats() {
                 <div className="chats-tabs">
                     <button
                         type="button"
-                        className={`chats-tab ${
-                            activeTab === 'communities' ? 'active' : ''
-                        }`}
+                        className={`chats-tab ${activeTab === 'communities' ? 'active' : ''}`}
                         onClick={() => {
                             setActiveTab('communities');
                             setIsMobileDropdownOpen(false);
@@ -413,9 +413,7 @@ export default function Chats() {
 
                     <button
                         type="button"
-                        className={`chats-tab ${
-                            activeTab === 'private' ? 'active' : ''
-                        }`}
+                        className={`chats-tab ${activeTab === 'private' ? 'active' : ''}`}
                         onClick={() => {
                             setActiveTab('private');
                             setIsMobileDropdownOpen(false);
@@ -467,17 +465,14 @@ export default function Chats() {
                                             onError={handleCommunityImageError}
                                         />
                                         <span className="mobile-selector-text">
-                                            {selectedCommunity?.nombre ||
-                                                'Selecciona una comunidad'}
+                                            {selectedCommunity?.nombre || 'Selecciona una comunidad'}
                                         </span>
                                         <svg
                                             width="20"
                                             height="20"
                                             viewBox="0 0 20 20"
                                             fill="none"
-                                            className={`mobile-selector-arrow ${
-                                                isMobileDropdownOpen ? 'open' : ''
-                                            }`}
+                                            className={`mobile-selector-arrow ${isMobileDropdownOpen ? 'open' : ''}`}
                                         >
                                             <path
                                                 d="M5 7.5L10 12.5L15 7.5"
@@ -495,45 +490,22 @@ export default function Chats() {
                                                 <button
                                                     key={community.id}
                                                     type="button"
-                                                    className={`mobile-dropdown-item ${
-                                                        community.id ===
-                                                        selectedCommunityId
-                                                            ? 'active'
-                                                            : ''
-                                                    }`}
+                                                    className={`mobile-dropdown-item ${community.id === selectedCommunityId ? 'active' : ''}`}
                                                     onClick={() => {
-                                                        setSelectedCommunityId(
-                                                            community.id
-                                                        );
-                                                        clearCommunityUnread(
-                                                            community.id
-                                                        );
-                                                        setPrivateTarget(null);
-                                                        setIsMobileDropdownOpen(
-                                                            false
-                                                        );
+                                                        openCommunityChat(community);
+                                                        setIsMobileDropdownOpen(false);
                                                     }}
                                                 >
                                                     <div className="community-icon-with-badge">
                                                         <img
-                                                            src={resolveCommunityImage(
-                                                                community
-                                                            )}
+                                                            src={resolveCommunityImage(community)}
                                                             alt={community.nombre}
                                                             className="mobile-dropdown-image"
                                                             onError={handleCommunityImageError}
                                                         />
-                                                        {communityUnreadById[
-                                                            String(community.id)
-                                                        ] > 0 && (
+                                                        {communityUnreadById[String(community.id)] > 0 && (
                                                             <span className="community-unread-badge">
-                                                                {
-                                                                    communityUnreadById[
-                                                                        String(
-                                                                            community.id
-                                                                        )
-                                                                    ]
-                                                                }
+                                                                {communityUnreadById[String(community.id)]}
                                                             </span>
                                                         )}
                                                     </div>
@@ -546,8 +518,7 @@ export default function Chats() {
 
                                 <aside className="chats-sidebar">
                                     {communities.map((community) => {
-                                        const isSelected =
-                                            community.id === selectedCommunityId;
+                                        const isSelected = community.id === selectedCommunityId;
 
                                         return (
                                             <button
@@ -558,20 +529,14 @@ export default function Chats() {
                                             >
                                                 <div className="community-icon-with-badge">
                                                     <img
-                                                        src={resolveCommunityImage(
-                                                            community
-                                                        )}
+                                                        src={resolveCommunityImage(community)}
                                                         alt={community.nombre}
                                                         className="chat-list-image"
                                                         onError={handleCommunityImageError}
                                                     />
-                                                    {communityUnreadById[
-                                                        String(community.id)
-                                                    ] > 0 && (
+                                                    {communityUnreadById[String(community.id)] > 0 && (
                                                         <span className="community-unread-badge">
-                                                            {communityUnreadById[
-                                                                String(community.id)
-                                                            ]}
+                                                            {communityUnreadById[String(community.id)]}
                                                         </span>
                                                     )}
                                                 </div>
@@ -579,8 +544,7 @@ export default function Chats() {
                                                 <div className="chat-list-content">
                                                     <h3>{community.nombre}</h3>
                                                     <p>
-                                                        {community.descripcion ||
-                                                            'Sin descripción disponible.'}
+                                                        {community.descripcion || 'Sin descripción disponible.'}
                                                     </p>
                                                 </div>
                                             </button>
@@ -594,24 +558,16 @@ export default function Chats() {
                                             comunidadId={selectedCommunityId}
                                             usuarioActual={currentUser}
                                             comunidadNombre={selectedCommunity.nombre}
-                                            comunidadImagen={resolveCommunityImage(
-                                                selectedCommunity
-                                            )}
+                                            comunidadImagen={resolveCommunityImage(selectedCommunity)}
                                             mode="embedded"
                                             initiallyOpen={true}
-                                            headerActions={renderMuteButton(
-                                                'community',
-                                                selectedCommunityId
-                                            )}
+                                            headerActions={renderMuteButton('community', selectedCommunityId)}
                                             onOpenPrivateChat={openPrivateChat}
                                         />
                                     ) : (
                                         <div className="chats-main-empty">
                                             <h3>Selecciona una comunidad</h3>
-                                            <p>
-                                                Elige una comunidad de la izquierda
-                                                para abrir su chat.
-                                            </p>
+                                            <p>Elige una comunidad de la izquierda para abrir su chat.</p>
                                         </div>
                                     )}
                                 </section>
@@ -623,45 +579,29 @@ export default function Chats() {
                 {activeTab === 'private' && (
                     <>
                         {!loading && (privateTarget || conversaciones.length > 0) && (
-                            <div
-                                className={`chats-layout ${
-                                    hasPrivateSidebar ? '' : 'no-sidebar'
-                                }`}
-                            >
+                            <div className={`chats-layout ${hasPrivateSidebar ? '' : 'no-sidebar'}`}>
                                 {hasPrivateSidebar && (
                                     <div className="chats-mobile-selector">
                                         {isMobileDropdownOpen && (
                                             <div
                                                 className="mobile-selector-overlay"
-                                                onClick={() =>
-                                                    setIsMobileDropdownOpen(false)
-                                                }
+                                                onClick={() => setIsMobileDropdownOpen(false)}
                                             />
                                         )}
 
                                         <button
                                             type="button"
                                             className="mobile-selector-button"
-                                            onClick={() =>
-                                                setIsMobileDropdownOpen(
-                                                    !isMobileDropdownOpen
-                                                )
-                                            }
+                                            onClick={() => setIsMobileDropdownOpen(!isMobileDropdownOpen)}
                                         >
                                             {privateTarget ? (
                                                 <>
                                                     <img
-                                                        src={resolveUserImage(
-                                                            privateTarget.foto
-                                                        )}
+                                                        src={resolveUserImage(privateTarget.foto)}
                                                         alt={privateTarget.nombre}
                                                         className="mobile-selector-image"
                                                         onError={handleProfileImageError}
-                                                        style={{
-                                                            backgroundColor:
-                                                                privateTarget.fotoBackgroundColor ||
-                                                                '#ffffff',
-                                                        }}
+                                                        style={{ backgroundColor: privateTarget.fotoBackgroundColor || '#ffffff' }}
                                                     />
                                                     <span className="mobile-selector-text">
                                                         {privateTarget.nombre}
@@ -678,11 +618,7 @@ export default function Chats() {
                                                 height="20"
                                                 viewBox="0 0 20 20"
                                                 fill="none"
-                                                className={`mobile-selector-arrow ${
-                                                    isMobileDropdownOpen
-                                                        ? 'open'
-                                                        : ''
-                                                }`}
+                                                className={`mobile-selector-arrow ${isMobileDropdownOpen ? 'open' : ''}`}
                                             >
                                                 <path
                                                     d="M5 7.5L10 12.5L15 7.5"
@@ -697,8 +633,7 @@ export default function Chats() {
                                         {isMobileDropdownOpen && (
                                             <div className="mobile-selector-dropdown">
                                                 {sidebarConversations.map((conv, idx) => {
-                                                    const isSelected =
-                                                        privateTarget?.id === conv.usuarioId;
+                                                    const isSelected = privateTarget?.id === conv.usuarioId;
                                                     return (
                                                         <button
                                                             key={`${conv.usuarioId}-${idx}`}
@@ -717,9 +652,7 @@ export default function Chats() {
                                                                     alt={conv.usuarioNombre}
                                                                     className="chat-list-image"
                                                                     onError={handleProfileImageError}
-                                                                    style={{
-                                                                        backgroundColor: conv.usuarioFotoBackgroundColor || '#ffffff',
-                                                                    }}
+                                                                    style={{ backgroundColor: conv.usuarioFotoBackgroundColor || '#ffffff' }}
                                                                 />
                                                                 {conv.noLeidos > 0 && (
                                                                     <span className="private-unread-badge">
@@ -742,8 +675,7 @@ export default function Chats() {
                                 {hasPrivateSidebar && (
                                     <aside className="chats-sidebar">
                                         {sidebarConversations.map((conv, idx) => {
-                                            const isSelected =
-                                                privateTarget?.id === conv.usuarioId;
+                                            const isSelected = privateTarget?.id === conv.usuarioId;
                                             return (
                                                 <button
                                                     key={`${conv.usuarioId}-${idx}`}
@@ -762,9 +694,7 @@ export default function Chats() {
                                                             alt={conv.usuarioNombre}
                                                             className="chat-list-image"
                                                             onError={handleProfileImageError}
-                                                            style={{
-                                                                backgroundColor: conv.usuarioFotoBackgroundColor || '#ffffff',
-                                                            }}
+                                                            style={{ backgroundColor: conv.usuarioFotoBackgroundColor || '#ffffff' }}
                                                         />
                                                         {conv.noLeidos > 0 && (
                                                             <span className="private-unread-badge">
@@ -774,9 +704,7 @@ export default function Chats() {
                                                     </div>
                                                     <div className="chat-list-content">
                                                         <h3>{conv.usuarioNombre}</h3>
-                                                        <p className="last-message">
-                                                            {conv.ultimoMensaje}
-                                                        </p>
+                                                        <p className="last-message">{conv.ultimoMensaje}</p>
                                                     </div>
                                                 </button>
                                             );
@@ -808,10 +736,7 @@ export default function Chats() {
                                     ) : (
                                         <div className="chats-main-empty">
                                             <h3>Selecciona una conversación</h3>
-                                            <p>
-                                                Elige una conversación de la izquierda
-                                                para abrir el chat.
-                                            </p>
+                                            <p>Elige una conversación de la izquierda para abrir el chat.</p>
                                         </div>
                                     )}
                                 </section>
