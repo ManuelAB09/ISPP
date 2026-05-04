@@ -120,7 +120,12 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
     SELECT DISTINCT t
     FROM Tutor t
     LEFT JOIN t.especialidades e
-    WHERE (:especialidad IS NULL OR LOWER(e) LIKE LOWER(CONCAT('%', CAST(:especialidad AS string), '%')))
+    WHERE (:especialidad IS NULL
+        OR LOWER(FUNCTION('translate', e,
+                'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunAEIOUUN'))
+            LIKE LOWER(CONCAT('%', FUNCTION('translate',
+                CAST(:especialidad AS string),
+                'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunAEIOUUN'), '%')))
     AND (:tarifaMin IS NULL OR t.tarifaHora >= :tarifaMin)
     AND (:tarifaMax IS NULL OR t.tarifaHora <= :tarifaMax)
     ORDER BY t.verificado DESC, t.createdAt DESC
@@ -130,7 +135,12 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
     SELECT COUNT(DISTINCT t)
     FROM Tutor t
     LEFT JOIN t.especialidades e
-    WHERE (:especialidad IS NULL OR LOWER(e) LIKE LOWER(CONCAT('%', CAST(:especialidad AS string), '%')))
+    WHERE (:especialidad IS NULL
+        OR LOWER(FUNCTION('translate', e,
+                'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunAEIOUUN'))
+            LIKE LOWER(CONCAT('%', FUNCTION('translate',
+                CAST(:especialidad AS string),
+                'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunAEIOUUN'), '%')))
     AND (:tarifaMin IS NULL OR t.tarifaHora >= :tarifaMin)
     AND (:tarifaMax IS NULL OR t.tarifaHora <= :tarifaMax)
 """)
