@@ -23,22 +23,22 @@ La estrategia busca aumentar la visibilidad de la aplicación, generar cercanía
 | **27/04** | Lunes | Publicación de un vídeo centrado en el problema de Álvaro, mostrando una situación cotidiana relacionada con la desorganización académica y la necesidad de una herramienta como MeerKatters. |
 | **28/04** | Martes | Publicación de imágenes de Renata en redes sociales para empezar a introducir la mascota/personaje de la marca y generar reconocimiento visual. |
 | **29/04** | Miércoles | **Miércoles de memes.** Publicación de contenido humorístico relacionado con el estudio, acompañado de una encuesta para preguntar qué tipo de memes le gustaría ver a la comunidad la semana siguiente. |
-| **30/04** | Jueves | Historias con encuestas para conectar con problemas reales del público: “¿Alguna vez has sentido que necesitabas un profesor particular?” y “¿Has intentado quedar con amigos para estudiar y no habéis conseguido organizaros?”. |
-| **01/05** | Viernes | Publicación sobre **3 motivos para elegir MeerKatters**, destacando sus principales ventajas de forma clara, visual y atractiva. |
-| **02/05** | Sábado | Historias con encuestas: “¿Prefieres estudiar solo o en grupo?”. Posteriormente, compartir los resultados en historias y publicar un vídeo breve y desenfadado en TikTok. |
-| **03/05** | Domingo | Mini demo de la aplicación, enseñando funcionalidades básicas y presentando de forma sencilla cómo MeerKatters puede ayudar a estudiantes y profesores. |
+| **30/04** | Jueves | Anuncio de que vamos a estar más activos que nunca en las redes y pregunta a los seguidores si están disfrutando del progreso de nuestro trabajo. |
+| **01/05** | Viernes | Historias con encuestas para conectar con problemas reales del público: “¿Alguna vez has sentido que necesitabas un profesor particular?” y “¿Has intentado quedar con amigos para estudiar y no habéis conseguido organizaros?” |
+| **02/05** | Sábado | Publicar vídeo de MeerKatters en tiktok y darle visibilidad por instagram. |
+| **03/05** | Domingo | Post de próximas novedades (SIN RENATA) para captar la atención del público que nos interesa|
 
 ---
 
 | Fecha | Día | Contenido planificado |
 |---|---|---|
-| **04/05** | Lunes | Historia previa a la yincana, generando expectación y contextualizando la actividad para la comunidad. |
-| **05/05** | Martes | Reel tipo POV: “Quieres estudiarte todo el temario en una tarde y no encuentras los apuntes ni los resúmenes en el chat de tus amigos”. El objetivo es mostrar un problema cotidiano que MeerKatters puede resolver. |
+| **04/05** | Lunes | Primer post de Renata desaparecida. Con pistas para que nos ayuden a encontrarla. |
+| **05/05** | Martes | Subir dos posts más de Renata desaparecida, enfocado a la Yincana |
 | **06/05** | Miércoles | **Miércoles de memes.** Publicación de un meme relacionado con estudiantes y organización académica, junto con una encuesta para decidir qué tipo de memes quiere ver la audiencia la semana siguiente. |
 | **07/05** | Jueves | Encuesta sobre funcionalidades: “¿Qué funcionalidad de MeerKatters te parece más útil?”. Opciones: cuestionarios en comunidades, chat con profesores, subida de apuntes y reuniones por Zoom. |
 | **08/05** | Viernes | Historia previa a la yincana para mantener el interés por la actividad, acompañada de algún vídeo gracioso en TikTok relacionado con el estudio o la vida universitaria. |
 | **09/05** | Sábado | Publicación de un vídeo breve y desenfadado en TikTok e Instagram, con un tono humorístico y ligero para mantener actividad durante el fin de semana. |
-| **10/05** | Domingo | Nueva historia previa a la yincana, reforzando la expectación y recordando la actividad a la comunidad. |
+| **10/05** | Domingo | Reel tipo POV: “Quieres estudiarte todo el temario en una tarde y no encuentras los apuntes ni los resúmenes en el chat de tus amigos”. El objetivo es mostrar un problema cotidiano que MeerKatters puede resolver. |
 
 ---
 
@@ -133,7 +133,7 @@ Teniendo en cuenta los resultados anteriores, el tamaño actual de la cuenta y l
 
 ## Instagram
 
-| Métrica | Situación actual | Objetivo realista al 25/05 |
+| Métrica | Situación inicial | Objetivo realista al 25/05 |
 |---|---:|---:|
 | Seguidores | 133 | 150 - 170 |
 | Nuevos seguidores | 0 | +17 a +37 |
@@ -143,7 +143,7 @@ Teniendo en cuenta los resultados anteriores, el tamaño actual de la cuenta y l
 
 ## TikTok
 
-| Métrica | Situación actual | Objetivo realista al 25/05 |
+| Métrica | Situación inicial | Objetivo realista al 25/05 |
 |---|---:|---:|
 | Seguidores | 11 | 18 - 30 |
 | Nuevos seguidores | 0 | +7 a +19 |
@@ -176,10 +176,9 @@ Aunque no haya un coste económico directo, sí existe un coste en tiempo de tra
 | Semana | Seguidores Instagram | Visualizaciones Instagram | Seguidores TikTok | Visualizaciones TikTok | Observaciones |
 |---|---:|---:|---:|---:|---|
 | Inicio | 133 | 12.333 acumuladas | 11 | 4.270 acumuladas | Situación inicial |
-| Semana 1 |  |  |  |  |  |
+| Semana 1 | 137 | 13.956 acumuladas | 12 | 4.570 acumuladas | Días después de estar desconectados de las redes |
 | Semana 2 |  |  |  |  |  |
 | Semana 3 |  |  |  |  |  |
-| Semana 4 |  |  |  |  |  |
 | Cierre 25/05 |  |  |  |  |  |
 
 
