@@ -106,6 +106,10 @@ export const NotificationProvider = ({ children }) => {
         return Boolean(chatMap[String(chatId)]);
     }, [mutedChats]);
 
+    // FIX: ref para leer isChatMuted actualizado dentro de closures de socket
+    const isChatMutedRef = useRef(isChatMuted);
+    isChatMutedRef.current = isChatMuted;
+
     const toggleChatMuted = useCallback((chatType, chatId) => {
         if (!chatType || chatId === null || chatId === undefined) return;
 
@@ -145,8 +149,6 @@ export const NotificationProvider = ({ children }) => {
         });
     }, []);
 
-    // NUEVO: inicializa el mapa de no leídos desde el servidor sin pisar
-    // los incrementos que ya haya acumulado el tiempo real
     const initCommunityUnread = useCallback((unreadMap) => {
         if (!unreadMap || typeof unreadMap !== 'object') return;
         setCommunityUnreadById((prev) => {
@@ -154,7 +156,6 @@ export const NotificationProvider = ({ children }) => {
             Object.entries(unreadMap).forEach(([id, count]) => {
                 const key = String(id);
                 const serverCount = Number(count) || 0;
-                // Usar el mayor entre lo que ya tenemos (tiempo real) y el servidor
                 next[key] = Math.max(prev[key] || 0, serverCount);
             });
             return next;
@@ -319,7 +320,7 @@ export const NotificationProvider = ({ children }) => {
         const handleDM = (msg) => {
             if (!msg || !msg.id) return;
             if (shouldSkipNotification(msg.emisorId)) return;
-            if (isChatMuted('private', msg.emisorId)) return;
+            if (isChatMutedRef.current('private', msg.emisorId)) return;
 
             if (msg.contenido === "¡Hola! Me gustaría contactar contigo.") return;
             const notificationId = `dm-${msg.id}`;
@@ -465,13 +466,22 @@ export const NotificationProvider = ({ children }) => {
         const handleCommunityMessage = (msg) => {
             if (!msg || !msg.comunidadId) return;
 
+            const isMentioned = hasUserMention(msg.contenido)
+                && Number(msg.usuarioId) !== Number(user?.id);
+
+            // FIX: usar ref para leer el estado actualizado de mute
+            const muted = isChatMutedRef.current('community', msg.comunidadId);
+
+            // Solo incrementar el badge si el mensaje no es propio
+            // Las menciones siempre incrementan aunque el chat esté silenciado
             if (Number(msg.usuarioId) !== Number(user?.id)) {
-                incrementCommunityUnread(msg.comunidadId);
+                if (!muted || isMentioned) {
+                    incrementCommunityUnread(msg.comunidadId);
+                }
             }
 
-            const isMentioned = hasUserMention(msg.contenido) && Number(msg.usuarioId) !== Number(user?.id);
             if (shouldSkipNotification(msg.usuarioId)) return;
-            if (isChatMuted('community', msg.comunidadId) && !isMentioned) return;
+            if (muted && !isMentioned) return;
 
             const key = `community-${msg.comunidadId}`;
             const known = knownConversationsRef.current;
@@ -614,7 +624,8 @@ export const NotificationProvider = ({ children }) => {
         setPanelNotificationsUnreadCount,
         communityUnreadById,
         clearCommunityUnread,
-        initCommunityUnread,   // NUEVO
+        initCommunityUnread,
+        incrementCommunityUnread,  // FIX: exponer en el contexto
         mutedChats,
         isChatMuted,
         toggleChatMuted,
