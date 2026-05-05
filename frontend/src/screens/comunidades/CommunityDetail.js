@@ -123,6 +123,9 @@ export default function CommunityDetail() {
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'eventos';
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [publishMenuOpen, setPublishMenuOpen] = useState(false);
+  const [openApuntesUpload, setOpenApuntesUpload] = useState(false);
+  const publishMenuRef = useRef(null);
   const { communityId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -173,6 +176,7 @@ export default function CommunityDetail() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [requestsLoading, setRequestsLoading] = useState(false);
+  const [requestsError, setRequestsError] = useState(null);
   const [respondingId, setRespondingId] = useState(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [communityCuestionarios, setCommunityCuestionarios] = useState([]);
@@ -508,12 +512,14 @@ export default function CommunityDetail() {
     if (!communityId) return; // guarda extra
     try {
       setRequestsLoading(true);
+      setRequestsError(null);
       const data = await communitiesApi.listRequests(communityId, { estado: 'PENDIENTE' });
       const list = data?.content || data?.solicitudes || [];
       setPendingRequests(Array.isArray(list) ? list : []);
     } catch (err) {
       console.error('Error al cargar solicitudes:', err);
       setPendingRequests([]);
+      setRequestsError('No se pudieron cargar las solicitudes. Intenta recargar la página.');
     } finally {
       setRequestsLoading(false);
     }
@@ -565,6 +571,17 @@ export default function CommunityDetail() {
   useEffect(() => {
     fetchMembers();
   }, [fetchMembers]);
+
+  useEffect(() => {
+    if (!publishMenuOpen) return undefined;
+    const handleClickOutside = (event) => {
+      if (publishMenuRef.current && !publishMenuRef.current.contains(event.target)) {
+        setPublishMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [publishMenuOpen]);
 
   useEffect(() => {
     // Restaurar scroll cuando termine de cargar eventos después del cambio de filtro
@@ -1311,6 +1328,7 @@ export default function CommunityDetail() {
   const handleRespondRequest = async (requestId, aceptado) => {
     try {
       setRespondingId(requestId);
+      setRequestsError(null);
       await communitiesApi.respondToRequest(communityId, requestId, aceptado);
       // Quitar de la lista local inmediatamente
       setPendingRequests(prev => prev.filter(r => r.id !== requestId));
@@ -1321,6 +1339,11 @@ export default function CommunityDetail() {
       await fetchPendingRequests();
     } catch (err) {
       console.error('Error al responder solicitud:', err);
+      setRequestsError(
+        err.details?.message ||
+        err.message ||
+        (aceptado ? 'No se pudo aceptar la solicitud.' : 'No se pudo rechazar la solicitud.')
+      );
     } finally {
       setRespondingId(null);
     }
@@ -1679,6 +1702,9 @@ export default function CommunityDetail() {
                 <span className="cd-requests-badge">{pendingRequests.length}</span>
               )}
             </h2>
+            {requestsError && (
+              <p className="cd-membership-error">{requestsError}</p>
+            )}
             {requestsLoading ? (
               <p className="cd-loading">Cargando solicitudes...</p>
             ) : pendingRequests.length > 0 ? (
@@ -1738,6 +1764,55 @@ export default function CommunityDetail() {
 
         {/* Tabs de eventos, anuncios y apuntes */}
         <div className="cd-tabs-section">
+          {isMember && (
+            <div className="cd-publish-bar">
+              <div className="cd-publish-wrapper" ref={publishMenuRef}>
+                <button
+                  type="button"
+                  className="cd-btn cd-btn-publish"
+                  onClick={() => setPublishMenuOpen((prev) => !prev)}
+                  aria-haspopup="menu"
+                  aria-expanded={publishMenuOpen}
+                >
+                  <LuPlus /> Publicar <LuChevronDown />
+                </button>
+                {publishMenuOpen && (
+                  <ul className="cd-publish-menu" role="menu">
+                    <li>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="cd-publish-menu-item"
+                        onClick={() => {
+                          setPublishMenuOpen(false);
+                          setActiveTab('apuntes');
+                          const params = new URLSearchParams(searchParams);
+                          params.set('tab', 'apuntes');
+                          navigate({ search: params.toString() }, { replace: true });
+                          setOpenApuntesUpload(true);
+                        }}
+                      >
+                        Publicar apunte
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="cd-publish-menu-item"
+                        onClick={() => {
+                          setPublishMenuOpen(false);
+                          navigate(`/cuestionarios/crear?communityId=${communityId}`);
+                        }}
+                      >
+                        Publicar cuestionario
+                      </button>
+                    </li>
+                  </ul>
+                )}
+              </div>
+            </div>
+          )}
           <div className="cd-tabs-header">
             <button
               className={`cd-tab-btn${activeTab === 'eventos' ? ' cd-tab-btn-active' : ''}`}
@@ -1927,7 +2002,13 @@ export default function CommunityDetail() {
             )}
             {activeTab === 'apuntes' && (
               <div className="cd-apuntes-section">
-                <CommunityApuntesTab communityId={communityId} isAdmin={isAdmin} isMember={isMember} />
+                <CommunityApuntesTab
+                  communityId={communityId}
+                  isAdmin={isAdmin}
+                  isMember={isMember}
+                  openUploadOnMount={openApuntesUpload}
+                  onUploadFormOpened={() => setOpenApuntesUpload(false)}
+                />
               </div>
             )}
           </div>

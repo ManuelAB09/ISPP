@@ -7,6 +7,10 @@ import { communitiesApi } from '../../api/communities.api';
 jest.mock('../../api/communities.api', () => ({
   communitiesApi: {
     update: jest.fn(),
+    updatePrivacy: jest.fn().mockResolvedValue({}),
+    listCommunityCategories: jest.fn().mockResolvedValue({ data: { categorias: [] } }),
+    createCategory: jest.fn().mockResolvedValue({}),
+    deleteCategory: jest.fn().mockResolvedValue({}),
   },
 }));
 

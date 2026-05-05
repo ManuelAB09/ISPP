@@ -332,6 +332,12 @@ const TeacherProfile = () => {
                 >
                   {tutor.stripeConfigured ? '✅ Pagos configurados' : '💳 Configurar pagos'}
                 </button>
+                <button
+                  className="tp-btn tp-btn--edit"
+                  onClick={() => navigate('/ganancias')}
+                >
+                  💰 Mis ganancias
+                </button>
               </div>
             )}
 

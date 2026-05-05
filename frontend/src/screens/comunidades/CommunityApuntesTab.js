@@ -3,7 +3,13 @@ import { LuDownload, LuPlus, LuSearch, LuTrash2, LuX } from 'react-icons/lu';
 import { apuntesApi } from '../../api/apuntes.api';
 import './CommunityApuntesTab.css';
 
-export default function CommunityApuntesTab({ communityId, isAdmin, isMember }) {
+export default function CommunityApuntesTab({
+  communityId,
+  isAdmin,
+  isMember,
+  openUploadOnMount = false,
+  onUploadFormOpened,
+}) {
   const [apuntes, setApuntes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -46,6 +52,13 @@ export default function CommunityApuntesTab({ communityId, isAdmin, isMember }) 
   useEffect(() => {
     fetchApuntes();
   }, [fetchApuntes]);
+
+  useEffect(() => {
+    if (openUploadOnMount && isMember) {
+      setShowUploadForm(true);
+      onUploadFormOpened?.();
+    }
+  }, [openUploadOnMount, isMember, onUploadFormOpened]);
 
   // Búsqueda
   const handleSearch = (e) => {

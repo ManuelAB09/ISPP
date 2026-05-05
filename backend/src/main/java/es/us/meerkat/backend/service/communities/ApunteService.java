@@ -186,7 +186,9 @@ public class ApunteService {
                         .findById(apunteId)
                         .orElseThrow(() -> new IllegalArgumentException("Apunte no encontrado"));
 
-        if (!apunte.getUsuario().getId().equals(usuarioId)) {
+        boolean esCreador = apunte.getUsuario().getId().equals(usuarioId);
+        boolean esAdmin = authorizationService.isAdminOf(usuarioId, apunte.getComunidad().getId());
+        if (!esCreador && !esAdmin) {
             throw new IllegalArgumentException("No tienes permisos para eliminar este apunte");
         }
 

@@ -689,9 +689,6 @@ const MyProfile = () => {
                                 <button className="profile-nav-btn" onClick={() => navigate('/pagos')}>
                                     💳 Mis pagos
                                 </button>
-                                <button className="profile-nav-btn" onClick={() => navigate('/ganancias')}>
-                                    💰 Mis ganancias
-                                </button>
                             </div>
 
                             <div className="activity-card">

@@ -36,6 +36,7 @@ class ApunteServiceTest {
     @Mock private ApunteRepository apunteRepository;
     @Mock private ComunidadRepository comunidadRepository;
     @Mock private UsuarioRepository usuarioRepository;
+    @Mock private AuthorizationService authorizationService;
     @Mock private MultipartFile file;
 
     @InjectMocks private ApunteService apunteService;
@@ -82,6 +83,7 @@ class ApunteServiceTest {
         when(file.getContentType()).thenReturn("application/pdf");
         when(comunidadRepository.findById(10L)).thenReturn(Optional.of(comunidad));
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(authorizationService.canParticipate(1L, 10L)).thenReturn(true);
         when(apunteRepository.save(any(Apunte.class)))
                 .thenAnswer(
                         invocation -> {
@@ -113,6 +115,7 @@ class ApunteServiceTest {
         when(file.getContentType()).thenReturn("application/pdf");
         when(comunidadRepository.findById(10L)).thenReturn(Optional.of(comunidad));
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(authorizationService.canParticipate(1L, 10L)).thenReturn(true);
         when(apunteRepository.save(any(Apunte.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -174,6 +177,7 @@ class ApunteServiceTest {
         when(file.getBytes()).thenThrow(new RuntimeException("boom"));
         when(comunidadRepository.findById(10L)).thenReturn(Optional.of(comunidad));
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(authorizationService.canParticipate(1L, 10L)).thenReturn(true);
 
         assertThatThrownBy(() -> apunteService.subirApunte(10L, 1L, "Tema 1", "Resumen", file))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -270,8 +274,19 @@ class ApunteServiceTest {
     }
 
     @Test
+    void eliminarApunteShouldDeleteWhenUserIsAdmin() {
+        when(apunteRepository.findById(100L)).thenReturn(Optional.of(apunte));
+        when(authorizationService.isAdminOf(99L, 10L)).thenReturn(true);
+
+        apunteService.eliminarApunte(100L, 99L);
+
+        verify(apunteRepository).delete(apunte);
+    }
+
+    @Test
     void eliminarApunteShouldFailWhenUserHasNoPermissions() {
         when(apunteRepository.findById(100L)).thenReturn(Optional.of(apunte));
+        when(authorizationService.isAdminOf(99L, 10L)).thenReturn(false);
 
         assertThatThrownBy(() -> apunteService.eliminarApunte(100L, 99L))
                 .isInstanceOf(IllegalArgumentException.class)

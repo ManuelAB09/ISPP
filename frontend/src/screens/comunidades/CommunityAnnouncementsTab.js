@@ -31,6 +31,10 @@ export default function CommunityAnnouncementsTab({ communityId, isAdmin }) {
   const [creating, setCreating] = useState(false);
   const [deletingAnnouncementId, setDeletingAnnouncementId] = useState(null);
   const [formError, setFormError] = useState(null);
+  const [editingAnnouncement, setEditingAnnouncement] = useState(null);
+  const [editForm, setEditForm] = useState({ titulo: '', contenido: '', permitirComentarios: true });
+  const [editFormError, setEditFormError] = useState(null);
+  const [editing, setEditing] = useState(false);
   const [searchParams] = useSearchParams();
   const anuncioIdParam = searchParams.get('anuncioId');
 
@@ -121,17 +125,65 @@ export default function CommunityAnnouncementsTab({ communityId, isAdmin }) {
     }
   };
 
+
+  const handleOpenEdit = (anuncio) => {
+    setEditingAnnouncement(anuncio);
+    setEditForm({ titulo: anuncio.titulo, contenido: anuncio.contenido, permitirComentarios: anuncio.permitirComentarios });
+    setEditFormError(null);
+    setActionError(null);
+  };
+
+  const handleCloseEdit = () => {
+    setEditingAnnouncement(null);
+    setEditFormError(null);
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setEditForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    const titulo = editForm.titulo.trim();
+    const contenido = editForm.contenido.trim();
+    if (titulo.length < 5 || titulo.length > 200) {
+      setEditFormError('El título debe tener entre 5 y 200 caracteres.');
+      return;
+    }
+    if (contenido.length < 10 || contenido.length > 5000) {
+      setEditFormError('El contenido debe tener entre 10 y 5000 caracteres.');
+      return;
+    }
+    setEditing(true);
+    setEditFormError(null);
+    try {
+      const res = await axiosInstance.put(
+        `/api/v1/communities/${communityId}/announcements/${editingAnnouncement.id}`,
+        { titulo, contenido, permitirComentarios: editForm.permitirComentarios }
+      );
+      setAnnouncements((prev) =>
+        prev.map((a) => (a.id === editingAnnouncement.id ? res.data : a))
+      );
+      setEditingAnnouncement(null);
+    } catch {
+      setEditFormError('Error al editar el anuncio.');
+    } finally {
+      setEditing(false);
+    }
+  };
+
   function formatDateTime(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleString(undefined, {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
-  }
+      const date = new Date(dateString);
+      return date.toLocaleString(undefined, {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+    }
 
   return (
     <div className="catab-list">
@@ -139,6 +191,55 @@ export default function CommunityAnnouncementsTab({ communityId, isAdmin }) {
         <button className="catab-btn-create" onClick={handleOpenModal}>
           📢 Crear anuncio
         </button>
+      )}
+
+      {editingAnnouncement && (
+        <div className="catab-modal-overlay">
+          <div className="catab-modal">
+            <h2>Editar anuncio</h2>
+            <form onSubmit={handleEditSubmit}>
+              <label className="catab-label">Título</label>
+              <input
+                type="text"
+                name="titulo"
+                placeholder="Título del anuncio"
+                value={editForm.titulo}
+                onChange={handleEditChange}
+                minLength={5}
+                maxLength={200}
+                required
+                className="catab-input"
+                autoFocus
+              />
+              <label className="catab-label">Contenido</label>
+              <textarea
+                name="contenido"
+                placeholder="Contenido del anuncio"
+                value={editForm.contenido}
+                onChange={handleEditChange}
+                minLength={10}
+                maxLength={5000}
+                required
+                className="catab-textarea"
+                rows={6}
+              />
+              <label className="catab-label catab-checkbox-label">
+                <input
+                  type="checkbox"
+                  name="permitirComentarios"
+                  checked={editForm.permitirComentarios}
+                  onChange={handleEditChange}
+                />
+                Permitir comentarios en este anuncio
+              </label>
+              {editFormError && <div className="catab-form-error">{editFormError}</div>}
+              <div className="catab-modal-actions">
+                <button type="button" onClick={handleCloseEdit} disabled={editing} className="catab-btn-cancel">Cancelar</button>
+                <button type="submit" disabled={editing} className="catab-btn-submit">{editing ? 'Guardando...' : 'Guardar'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       {showModal && (
@@ -207,15 +308,24 @@ export default function CommunityAnnouncementsTab({ communityId, isAdmin }) {
             >
               <div className="catab-item-header">
                 <div className="catab-title">{anuncio.titulo}</div>
-                {isAdmin && (
-                  <button
-                    type="button"
-                    className="catab-btn-delete"
-                    onClick={() => handleDeleteAnnouncement(anuncio.id)}
-                    disabled={deletingAnnouncementId === anuncio.id}
-                  >
-                    {deletingAnnouncementId === anuncio.id ? 'Eliminando...' : 'Eliminar'}
-                  </button>
+                {(isAdmin || anuncio.usuario?.id === currentUserId) && (
+                  <div className="catab-item-actions">
+                    <button
+                      type="button"
+                      className="catab-btn-edit"
+                      onClick={() => handleOpenEdit(anuncio)}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      className="catab-btn-delete"
+                      onClick={() => handleDeleteAnnouncement(anuncio.id)}
+                      disabled={deletingAnnouncementId === anuncio.id}
+                    >
+                      {deletingAnnouncementId === anuncio.id ? 'Eliminando...' : 'Eliminar'}
+                    </button>
+                  </div>
                 )}
               </div>
               <div className="catab-meta">

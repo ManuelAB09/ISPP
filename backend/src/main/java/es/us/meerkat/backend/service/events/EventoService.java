@@ -595,8 +595,8 @@ public class EventoService {
      * @return Lista de eventos visibles en mapa.
      */
     public List<Evento> obtenerEventosEnMapa(
-            final Double lat, final Double lon, final Double radioKm) {
-        List<Evento> eventos = eventoRepository.findVisibleOnMap(LocalDateTime.now());
+            final Double lat, final Double lon, final Double radioKm, final Long userId) {
+        List<Evento> eventos = eventoRepository.findVisibleOnMap(LocalDateTime.now(), userId);
         if (lat == null || lon == null || radioKm == null) {
             return eventos;
         }
@@ -634,7 +634,7 @@ public class EventoService {
         if (lat == null || lon == null || radioKm == null) {
             return List.of();
         }
-        List<Evento> eventos = eventoRepository.findVisibleOnMap(LocalDateTime.now());
+        List<Evento> eventos = eventoRepository.findVisibleOnMap(LocalDateTime.now(), null);
         return eventos.stream()
                 .filter(
                         e ->
