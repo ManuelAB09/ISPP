@@ -2,7 +2,6 @@ import { render, screen, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { NotificationProvider, useNotificationContext } from './NotificationContext';
 
-// Mock all dependencies
 const mockSocketOn = jest.fn();
 const mockSocketOff = jest.fn();
 
@@ -67,7 +66,6 @@ jest.mock('./SocketContext', () => ({
     }),
 }));
 
-// Test component that uses the context
 function TestConsumer() {
     const ctx = useNotificationContext();
     return (
@@ -101,6 +99,13 @@ const renderWithProvider = () => {
     );
 };
 
+// Helper: get the registered socket handler for a given event
+const getSocketHandler = (eventName) => {
+    const call = mockSocketOn.mock.calls.find(c => c[0] === eventName);
+    expect(call).toBeTruthy();
+    return call[1];
+};
+
 describe('NotificationContext', () => {
     beforeEach(() => {
         jest.clearAllMocks();
@@ -118,33 +123,23 @@ describe('NotificationContext', () => {
 
     test('toggleNotifications toggles value', async () => {
         await act(async () => { renderWithProvider(); });
-
         expect(screen.getByTestId('enabled').textContent).toBe('false');
 
-        await act(async () => {
-            screen.getByTestId('toggle').click();
-        });
-
+        await act(async () => { screen.getByTestId('toggle').click(); });
         expect(screen.getByTestId('enabled').textContent).toBe('true');
     });
 
     test('clearPanelNotificationsUnread resets count', async () => {
         await act(async () => { renderWithProvider(); });
 
-        await act(async () => {
-            screen.getByTestId('clear-panel').click();
-        });
-
+        await act(async () => { screen.getByTestId('clear-panel').click(); });
         expect(screen.getByTestId('unread').textContent).toBe('0');
     });
 
     test('markOnePanelNotificationRead decrements', async () => {
         await act(async () => { renderWithProvider(); });
 
-        await act(async () => {
-            screen.getByTestId('mark-one').click();
-        });
-
+        await act(async () => { screen.getByTestId('mark-one').click(); });
         expect(screen.getByTestId('unread').textContent).toBe('0');
     });
 
@@ -169,16 +164,10 @@ describe('NotificationContext', () => {
 
         expect(screen.getByTestId('is-muted-private').textContent).toBe('false');
 
-        await act(async () => {
-            screen.getByTestId('toggle-mute-private').click();
-        });
-
+        await act(async () => { screen.getByTestId('toggle-mute-private').click(); });
         expect(screen.getByTestId('is-muted-private').textContent).toBe('true');
 
-        await act(async () => {
-            screen.getByTestId('toggle-mute-private').click();
-        });
-
+        await act(async () => { screen.getByTestId('toggle-mute-private').click(); });
         expect(screen.getByTestId('is-muted-private').textContent).toBe('false');
     });
 
@@ -189,13 +178,19 @@ describe('NotificationContext', () => {
         expect(screen.getByTestId('community-unread').textContent).toBe('{}');
     });
 
+    test('incrementCommunityUnread increments via button', async () => {
+        await act(async () => { renderWithProvider(); });
+
+        await act(async () => { screen.getByTestId('inc-community').click(); });
+
+        const unread = JSON.parse(screen.getByTestId('community-unread').textContent);
+        expect(unread['10']).toBe(1);
+    });
+
     test('setPanelNotificationsUnreadCount sets count', async () => {
         await act(async () => { renderWithProvider(); });
 
-        await act(async () => {
-            screen.getByTestId('set-panel').click();
-        });
-
+        await act(async () => { screen.getByTestId('set-panel').click(); });
         expect(screen.getByTestId('unread').textContent).toBe('7');
     });
 
@@ -215,19 +210,14 @@ describe('NotificationContext', () => {
     test('saves notificationsEnabled to localStorage', async () => {
         await act(async () => { renderWithProvider(); });
 
-        await act(async () => {
-            screen.getByTestId('toggle').click();
-        });
-
+        await act(async () => { screen.getByTestId('toggle').click(); });
         expect(localStorage.getItem('notificationsEnabled')).toBe('true');
     });
 
     test('persists mutedChats in localStorage per user', async () => {
         await act(async () => { renderWithProvider(); });
 
-        await act(async () => {
-            screen.getByTestId('toggle-mute-community').click();
-        });
+        await act(async () => { screen.getByTestId('toggle-mute-community').click(); });
 
         const key = `mutedChatNotificationsByUser:${mockUser.id}`;
         const stored = JSON.parse(localStorage.getItem(key));
@@ -248,9 +238,7 @@ describe('NotificationContext', () => {
     test('clearCommunityUnread resets community unread count via socket then clear', async () => {
         await act(async () => { renderWithProvider(); });
 
-        // First increment via community_message socket handler
-        const communityMsgCall = mockSocketOn.mock.calls.find(c => c[0] === 'community_message');
-        const handler = communityMsgCall[1];
+        const handler = getSocketHandler('community_message');
 
         await act(async () => {
             handler({
@@ -265,9 +253,7 @@ describe('NotificationContext', () => {
         const unread = JSON.parse(screen.getByTestId('community-unread').textContent);
         expect(unread['10']).toBe(1);
 
-        await act(async () => {
-            screen.getByTestId('clear-community').click();
-        });
+        await act(async () => { screen.getByTestId('clear-community').click(); });
 
         const cleared = JSON.parse(screen.getByTestId('community-unread').textContent);
         expect(cleared['10']).toBe(0);
@@ -276,13 +262,8 @@ describe('NotificationContext', () => {
     test('community_message handler increments community unread', async () => {
         await act(async () => { renderWithProvider(); });
 
-        // Find the community_message handler from mockSocketOn calls
-        const communityMsgCall = mockSocketOn.mock.calls.find(c => c[0] === 'community_message');
-        expect(communityMsgCall).toBeTruthy();
+        const handler = getSocketHandler('community_message');
 
-        const handler = communityMsgCall[1];
-
-        // Invoke with message from another user
         await act(async () => {
             handler({
                 comunidadId: 42,
@@ -297,75 +278,99 @@ describe('NotificationContext', () => {
         expect(unread['42']).toBe(1);
     });
 
+    // NEW: muted community does NOT increment badge
+    test('community_message does not increment unread when chat is muted', async () => {
+        await act(async () => { renderWithProvider(); });
+
+        // Mute community 10
+        await act(async () => { screen.getByTestId('toggle-mute-community').click(); });
+
+        const handler = getSocketHandler('community_message');
+
+        await act(async () => {
+            handler({
+                comunidadId: 10,
+                usuarioId: 999,
+                usuarioNombre: 'Other',
+                contenido: 'msg',
+                comunidadNombre: 'C',
+            });
+        });
+
+        const unread = JSON.parse(screen.getByTestId('community-unread').textContent);
+        expect(unread['10']).toBeUndefined();
+    });
+
+    // NEW: mention in muted community STILL increments badge
+    test('community_message increments unread for mention even when muted', async () => {
+        await act(async () => { renderWithProvider(); });
+
+        // Mute community 10
+        await act(async () => { screen.getByTestId('toggle-mute-community').click(); });
+
+        const handler = getSocketHandler('community_message');
+
+        await act(async () => {
+            handler({
+                comunidadId: 10,
+                usuarioId: 999,
+                usuarioNombre: 'Other',
+                contenido: '@Test User hey!',   // mentions mockUser.nombre
+                comunidadNombre: 'C',
+            });
+        });
+
+        const unread = JSON.parse(screen.getByTestId('community-unread').textContent);
+        expect(unread['10']).toBe(1);
+    });
+
     test('alerts_count handler updates panel unread count with number', async () => {
         await act(async () => { renderWithProvider(); });
 
-        const alertsCall = mockSocketOn.mock.calls.find(c => c[0] === 'alerts_count');
-        expect(alertsCall).toBeTruthy();
+        const handler = getSocketHandler('alerts_count');
 
-        const handler = alertsCall[1];
-
-        await act(async () => {
-            handler(5);
-        });
-
+        await act(async () => { handler(5); });
         expect(screen.getByTestId('unread').textContent).toBe('5');
     });
 
     test('alerts_count handler updates panel with object containing total', async () => {
         await act(async () => { renderWithProvider(); });
 
-        const alertsCall = mockSocketOn.mock.calls.find(c => c[0] === 'alerts_count');
-        const handler = alertsCall[1];
+        const handler = getSocketHandler('alerts_count');
 
-        await act(async () => {
-            handler({ total: 3 });
-        });
-
+        await act(async () => { handler({ total: 3 }); });
         expect(screen.getByTestId('unread').textContent).toBe('3');
     });
 
     test('notificaciones handler processes notification without crash', async () => {
         await act(async () => { renderWithProvider(); });
 
-        const notifCall = mockSocketOn.mock.calls.find(c => c[0] === 'notificaciones');
-        expect(notifCall).toBeTruthy();
-
-        const handler = notifCall[1];
+        const handler = getSocketHandler('notificaciones');
 
         await act(async () => {
             handler({ tipo: 'GENERAL', leida: false, mensaje: 'New notification' });
         });
 
-        // Component should still be rendered
         expect(screen.getByTestId('enabled')).toBeInTheDocument();
     });
 
     test('handles null payload gracefully for socket handlers', async () => {
         await act(async () => { renderWithProvider(); });
 
-        const communityMsgCall = mockSocketOn.mock.calls.find(c => c[0] === 'community_message');
-        const alertsCall = mockSocketOn.mock.calls.find(c => c[0] === 'alerts_count');
-        const notifCall = mockSocketOn.mock.calls.find(c => c[0] === 'notificaciones');
-        const dmCall = mockSocketOn.mock.calls.find(c => c[0] === 'dm_message');
-
-        // All should handle null without crashing
         await act(async () => {
-            communityMsgCall[1](null);
-            alertsCall[1](null);
-            notifCall[1](null);
-            dmCall[1](null);
+            getSocketHandler('community_message')(null);
+            getSocketHandler('alerts_count')(null);
+            getSocketHandler('notificaciones')(null);
+            getSocketHandler('dm_message')(null);
         });
 
-        // Component should still be rendered
         expect(screen.getByTestId('enabled')).toBeInTheDocument();
     });
 
     test('community_message does not increment unread for own messages', async () => {
         await act(async () => { renderWithProvider(); });
 
-        const communityMsgCall = mockSocketOn.mock.calls.find(c => c[0] === 'community_message');
-        const handler = communityMsgCall[1];
+        const handler = getSocketHandler('community_message');
 
         await act(async () => {
             handler({
@@ -384,18 +389,13 @@ describe('NotificationContext', () => {
     test('muting community chat persists correctly', async () => {
         await act(async () => { renderWithProvider(); });
 
-        await act(async () => {
-            screen.getByTestId('toggle-mute-community').click();
-        });
+        await act(async () => { screen.getByTestId('toggle-mute-community').click(); });
 
         const key = `mutedChatNotificationsByUser:${mockUser.id}`;
         const stored = JSON.parse(localStorage.getItem(key));
         expect(stored.community['10']).toBe(true);
 
-        // Toggle again to unmute
-        await act(async () => {
-            screen.getByTestId('toggle-mute-community').click();
-        });
+        await act(async () => { screen.getByTestId('toggle-mute-community').click(); });
 
         const storedAfter = JSON.parse(localStorage.getItem(key));
         expect(storedAfter.community['10']).toBe(false);
@@ -404,21 +404,14 @@ describe('NotificationContext', () => {
     test('markOnePanelNotificationRead decrements but not below 0', async () => {
         await act(async () => { renderWithProvider(); });
 
-        // Set count to 0, then mark one read
-        await act(async () => {
-            screen.getByTestId('mark-one').click();
-        });
-
+        await act(async () => { screen.getByTestId('mark-one').click(); });
         expect(screen.getByTestId('unread').textContent).toBe('0');
     });
 
     test('setPanelNotificationsUnreadCount ignores negative values', async () => {
         await act(async () => { renderWithProvider(); });
 
-        // Set to 7 first
-        await act(async () => {
-            screen.getByTestId('set-panel').click();
-        });
+        await act(async () => { screen.getByTestId('set-panel').click(); });
         expect(screen.getByTestId('unread').textContent).toBe('7');
     });
 });
