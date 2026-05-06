@@ -145,6 +145,29 @@
   background: #525983;
 }
 
+.catab-item-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.catab-btn-edit {
+  background: #e0f0ff;
+  color: #1a5fa8;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 7px 14px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.catab-btn-edit:hover {
+  background: #bfdbfe;
+}
+
 .catab-btn-delete {
   background: #fee2e2;
   color: #991b1b;

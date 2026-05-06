@@ -183,9 +183,11 @@ public class EventoController {
                     @Parameter(description = "Longitud del centro de búsqueda")
                     final Double lon,
             @RequestParam(required = false) @Parameter(description = "Radio de búsqueda en km")
-                    final Double radioKm) {
+                    final Double radioKm,
+            @AuthenticationPrincipal Usuario usuario) {
+        Long userId = usuario != null ? usuario.getId() : null;
         List<EventSummaryResponse> response =
-                eventoService.obtenerEventosEnMapa(lat, lon, radioKm).stream()
+                eventoService.obtenerEventosEnMapa(lat, lon, radioKm, userId).stream()
                         .map(Evento::toSummaryDTO)
                         .collect(Collectors.toList());
         return ResponseEntity.ok(response);

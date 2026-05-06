@@ -236,12 +236,18 @@ public class TutorService {
      */
     @Transactional(readOnly = true)
     public Page<TutorProfileResponse> obtenerTutoresVerificados(
-            String especialidad, BigDecimal tarifaMin, BigDecimal tarifaMax, int page, int size) {
+            String especialidad,
+            BigDecimal tarifaMin,
+            BigDecimal tarifaMax,
+            Boolean verificado,
+            int page,
+            int size) {
 
         PageRequest pageable = PageRequest.of(page, size);
 
         Page<Tutor> pageResult =
-                tutorRepository.findAllFiltrados(especialidad, tarifaMin, tarifaMax, pageable);
+                tutorRepository.findAllFiltrados(
+                        especialidad, tarifaMin, tarifaMax, verificado, pageable);
 
         return pageResult.map(this::mapToResponse);
     }

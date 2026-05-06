@@ -90,6 +90,12 @@ public class CommunityService {
                         .findById(userId)
                         .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
+        // Validar nombre único
+        if (comunidadRepository.existsByNombreIgnoreCase(nombre)) {
+            throw new IllegalArgumentException(
+                    "Ya existe una comunidad con el nombre \"" + nombre + "\". Elige otro nombre.");
+        }
+
         // Si es una comunidad institucional, no aplicar límites de FREE
         Institution institution = null;
         TipoPlanComunidad tipoPlan = TipoPlanComunidad.FREE;

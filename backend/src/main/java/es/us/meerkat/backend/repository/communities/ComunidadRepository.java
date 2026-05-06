@@ -42,6 +42,8 @@ WHERE c.institution IS NULL
 
     long countByInstitutionId(Long institutionId);
 
+    boolean existsByNombreIgnoreCase(String nombre);
+
     List<Comunidad> findByCreadorId(Long userId);
 
     Page<Comunidad> findByTipoGrupoAndNombreContainingIgnoreCaseAndEstado(

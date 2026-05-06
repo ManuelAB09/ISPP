@@ -117,6 +117,24 @@ class CommunityServiceTest {
     }
 
     @Test
+    void createCommunityShouldFailWhenNameAlreadyExists() {
+        Long userId = 1L;
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(buildUsuario(userId)));
+        when(comunidadRepository.existsByNombreIgnoreCase("Comunidad Existente")).thenReturn(true);
+
+        assertThatThrownBy(
+                        () ->
+                                communityService.createCommunity(
+                                        userId,
+                                        "Comunidad Existente",
+                                        "Desc",
+                                        TipoGrupo.COMUNIDAD_PUBLICA,
+                                        null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Ya existe una comunidad con el nombre");
+    }
+
+    @Test
     void getCommunityByIdShouldFailForPrivateCommunityWhenUserIsNotMember() {
         Comunidad comunidad = buildComunidad(10L, TipoGrupo.GRUPO_PRIVADO, TipoPlanComunidad.FREE);
         when(comunidadRepository.findById(10L)).thenReturn(Optional.of(comunidad));

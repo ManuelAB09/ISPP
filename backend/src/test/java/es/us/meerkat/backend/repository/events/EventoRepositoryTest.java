@@ -13,6 +13,7 @@ import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
 
 import es.us.meerkat.backend.entity.communities.Comunidad;
+import es.us.meerkat.backend.entity.communities.MiembroComunidad;
 import es.us.meerkat.backend.entity.events.Evento;
 import es.us.meerkat.backend.entity.users.Usuario;
 
@@ -59,12 +60,48 @@ class EventoRepositoryTest {
         em.persist(buildEvento(LocalDateTime.now().minusDays(1), false, false, true));
         em.flush();
 
-        List<Evento> result = repository.findVisibleOnMap(LocalDateTime.now());
+        List<Evento> result = repository.findVisibleOnMap(LocalDateTime.now(), null);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getVisibleMapa()).isTrue();
         assertThat(result.get(0).getPrivado()).isFalse();
         assertThat(result.get(0).getCancelado()).isFalse();
+    }
+
+    @Test
+    void findVisibleOnMap_includesPrivateEventsForCommunityMembers() {
+        Evento publico = buildEvento(LocalDateTime.now().plusDays(1), false, false, true);
+        publico.setComunidad(comunidad);
+        em.persist(publico);
+
+        Evento privadoVisible = buildEvento(LocalDateTime.now().plusDays(2), true, false, true);
+        privadoVisible.setComunidad(comunidad);
+        em.persist(privadoVisible);
+
+        em.persist(MiembroComunidad.builder().usuario(creador).comunidad(comunidad).build());
+        em.flush();
+
+        List<Evento> asMember = repository.findVisibleOnMap(LocalDateTime.now(), creador.getId());
+        assertThat(asMember).hasSize(2);
+
+        List<Evento> asAnonymous = repository.findVisibleOnMap(LocalDateTime.now(), null);
+        assertThat(asAnonymous).hasSize(1);
+        assertThat(asAnonymous.get(0).getPrivado()).isFalse();
+    }
+
+    @Test
+    void findVisibleOnMap_excludesPrivateEventsForNonMembers() {
+        Evento privadoVisible = buildEvento(LocalDateTime.now().plusDays(2), true, false, true);
+        privadoVisible.setComunidad(comunidad);
+        em.persist(privadoVisible);
+
+        Usuario foraneo = Usuario.builder().email("ajeno@test.com").password("pass").build();
+        em.persist(foraneo);
+        em.flush();
+
+        List<Evento> result = repository.findVisibleOnMap(LocalDateTime.now(), foraneo.getId());
+
+        assertThat(result).isEmpty();
     }
 
     @Test

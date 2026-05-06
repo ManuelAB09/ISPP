@@ -96,12 +96,13 @@ public class TutorController {
             @RequestParam(required = false) String especialidad,
             @RequestParam(required = false) BigDecimal tarifaMin,
             @RequestParam(required = false) BigDecimal tarifaMax,
+            @RequestParam(required = false) Boolean verificado,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
         Page<TutorProfileResponse> tutores =
                 tutorService.obtenerTutoresVerificados(
-                        especialidad, tarifaMin, tarifaMax, page, size);
+                        especialidad, tarifaMin, tarifaMax, verificado, page, size);
 
         var pageInfo =
                 PageInfo.builder()

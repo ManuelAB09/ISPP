@@ -78,6 +78,23 @@
 .vt-filtros__sep { color: #C0C0C0; font-weight: 600; }
 .vt-filtros__unit { font-size: 0.83rem; color: #9CA3AF; font-weight: 500; }
 
+.vt-filtros__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: #2D3250;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+.vt-filtros__toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #676F9D;
+  cursor: pointer;
+}
+
 .vt-total {
   font-size: 0.85rem;
   color: #9CA3AF;
