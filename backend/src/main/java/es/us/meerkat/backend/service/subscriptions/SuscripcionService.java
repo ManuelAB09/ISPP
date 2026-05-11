@@ -2,6 +2,7 @@ package es.us.meerkat.backend.service.subscriptions;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -52,6 +53,45 @@ public class SuscripcionService {
      */
     public Optional<Suscripcion> obtenerMiSuscripcion(Long usuarioId) {
         return suscripcionRepository.findByUsuarioIdAndActiva(usuarioId, true);
+    }
+
+    /**
+     * Garantiza que el usuario tenga, como máximo, una única suscripción activa y devuelve su
+     * suscripción "principal".
+     *
+     * <p>Cuando existen varias suscripciones activas simultáneamente (p. ej. PREMIUM y PRO) se
+     * aplica la jerarquía de planes ({@code FREE < PREMIUM < PRO}): se conserva activa la de mayor
+     * nivel —y, a igualdad de nivel, la de fecha de fin más lejana— y el resto se desactivan. Si el
+     * usuario no tiene ninguna suscripción activa, se devuelve la más reciente (para poder
+     * reactivarla en una nueva contratación).
+     *
+     * @param usuarioId ID del usuario
+     * @return la suscripción principal del usuario, o {@code Optional.empty()} si no tiene ninguna
+     */
+    private Optional<Suscripcion> consolidarSuscripciones(Long usuarioId) {
+        List<Suscripcion> suscripciones = suscripcionRepository.findAllByUsuarioId(usuarioId);
+        if (suscripciones.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Comparator<Suscripcion> porPrioridad =
+                Comparator.comparing((Suscripcion s) -> Boolean.TRUE.equals(s.getActiva()))
+                        .thenComparingInt(s -> s.getPlan() != null ? s.getPlan().getNivel() : 0)
+                        .thenComparing(
+                                Suscripcion::getFechaFin,
+                                Comparator.nullsFirst(Comparator.naturalOrder()));
+
+        Suscripcion principal = suscripciones.stream().max(porPrioridad).orElseThrow();
+
+        for (Suscripcion otra : suscripciones) {
+            if (otra != principal && Boolean.TRUE.equals(otra.getActiva())) {
+                otra.setActiva(false);
+                otra.setAutoRenovar(false);
+                suscripcionRepository.save(otra);
+            }
+        }
+
+        return Optional.of(principal);
     }
 
     /**
@@ -230,8 +270,7 @@ public class SuscripcionService {
     @Transactional
     public Suscripcion renovarSuscripcion(Long usuarioId) {
         Suscripcion suscripcion =
-                suscripcionRepository
-                        .findByUsuarioId(usuarioId)
+                consolidarSuscripciones(usuarioId)
                         .orElseThrow(
                                 () ->
                                         new IllegalArgumentException(
@@ -270,21 +309,25 @@ public class SuscripcionService {
 
         TipoPlan planSolicitado = (plan == null || plan == TipoPlan.FREE) ? TipoPlan.PREMIUM : plan;
 
-        // 1. Crear o reutilizar suscripción
-        Optional<Suscripcion> existente = suscripcionRepository.findByUsuarioId(usuarioId);
-        Suscripcion suscripcion;
-
-        if (existente.isPresent()) {
-            // Ya tenía una suscripción anterior (cancelada o expirada): reactivar
-            suscripcion = existente.get();
-            suscripcion.setPeriodo(periodo != null ? periodo.toUpperCase() : "MENSUAL");
-            suscripcion.renovar(planSolicitado);
-
-        } else {
-            // Primera vez
-            suscripcion = Suscripcion.suscribir(periodo, planSolicitado);
-            suscripcion.setUsuario(usuario);
-        }
+        // 1. Crear o reutilizar suscripción, garantizando un único plan activo.
+        // Si el usuario ya tiene varias suscripciones, consolidarSuscripciones deja activa solo
+        // la de mayor jerarquía y devuelve esa como suscripción principal a reutilizar.
+        Suscripcion suscripcion =
+                consolidarSuscripciones(usuarioId)
+                        .map(
+                                existente -> {
+                                    existente.setPeriodo(
+                                            periodo != null ? periodo.toUpperCase() : "MENSUAL");
+                                    existente.renovar(planSolicitado);
+                                    return existente;
+                                })
+                        .orElseGet(
+                                () -> {
+                                    Suscripcion nueva =
+                                            Suscripcion.suscribir(periodo, planSolicitado);
+                                    nueva.setUsuario(usuario);
+                                    return nueva;
+                                });
         suscripcionRepository.save(suscripcion);
 
         // 2. Registrar transacción de pago
@@ -342,10 +385,9 @@ public class SuscripcionService {
     public void renovarSuscripcionTrasStripe(Long usuarioId, BigDecimal monto, TipoPlan plan) {
         TipoPlan planSolicitado = (plan == null || plan == TipoPlan.FREE) ? TipoPlan.PREMIUM : plan;
 
-        // 1. Renovar suscripción
+        // 1. Renovar suscripción (consolidando para mantener un único plan activo)
         Suscripcion suscripcion =
-                suscripcionRepository
-                        .findByUsuarioId(usuarioId)
+                consolidarSuscripciones(usuarioId)
                         .orElseThrow(
                                 () ->
                                         new IllegalArgumentException(
