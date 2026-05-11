@@ -4,6 +4,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import CrearEvento from './CrearEvento';
 import { createEvent, getEventById, updateEvent } from '../../api/eventEndpoints';
 import { communitiesApi } from '../../api/communities.api';
+import { ubicacionesApi } from '../../api/ubicaciones.api';
 
 // Mocks
 jest.mock('../../api/eventEndpoints');
@@ -12,6 +13,13 @@ jest.mock('../../api/communities.api', () => ({
     getMyMembership: jest.fn(),
     listMine: jest.fn(),
     getClassroom: jest.fn(),
+  },
+}));
+jest.mock('../../api/ubicaciones.api', () => ({
+  ubicacionesApi: {
+    listAll: jest.fn(),
+    buscarEstudio: jest.fn(),
+    create: jest.fn(),
   },
 }));
 jest.mock('../../components/Header/Header', () => {
@@ -40,6 +48,7 @@ describe('CrearEvento', () => {
     communitiesApi.getMyMembership.mockResolvedValue({ rol: 'ADMIN' });
     communitiesApi.listMine.mockResolvedValue([]);
     communitiesApi.getClassroom.mockResolvedValue({});
+    ubicacionesApi.listAll.mockResolvedValue([]);
     createEvent.mockResolvedValue({});
     updateEvent.mockResolvedValue({});
     getEventById.mockResolvedValue({});
@@ -359,6 +368,47 @@ describe('CrearEvento', () => {
       await screen.findByText(/Solo un administrador o un profesor de la comunidad pueden hacerlo/i)
     ).toBeInTheDocument();
     expect(screen.queryByDisplayValue('Evento de alumno')).not.toBeInTheDocument();
+  });
+
+  test('muestra ubicaciones recomendadas y permite seleccionar una al crear', async () => {
+    ubicacionesApi.listAll.mockResolvedValue([
+      { id: 7, nombre: 'Biblioteca Rector Machado', direccion: 'Calle Palos de la Frontera, Sevilla', latitud: 37.38, longitud: -5.99 },
+      { id: 8, nombre: 'Centro Cívico Las Sirenas', direccion: 'Alameda de Hércules, Sevilla', latitud: 37.40, longitud: -5.99 },
+    ]);
+
+    renderCreate();
+
+    const sugerencia = await screen.findByText('Biblioteca Rector Machado');
+    fireEvent.click(sugerencia);
+
+    // Tras seleccionarla, aparece la tarjeta de ubicación elegida con su dirección
+    expect(await screen.findByText('Calle Palos de la Frontera, Sevilla')).toBeInTheDocument();
+    expect(screen.queryByText(/Debes seleccionar una ubicación/i)).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText(/Ej\. Clase de NodeJS \+ Sequelize/i), {
+      target: { name: 'nombre', value: 'Evento presencial' },
+    });
+    const ddInputs = screen.getAllByPlaceholderText('DD');
+    const mmDateInputs = screen.getAllByPlaceholderText('MM');
+    const yyyyInputs = screen.getAllByPlaceholderText('YYYY');
+    const hhInputs = screen.getAllByPlaceholderText('HH');
+    const mmTimeInputs = screen.getAllByPlaceholderText('mm');
+    fireEvent.change(ddInputs[0], { target: { name: 'dia', value: '10' } });
+    fireEvent.change(mmDateInputs[0], { target: { name: 'mes', value: '12' } });
+    fireEvent.change(yyyyInputs[0], { target: { name: 'anio', value: '2026' } });
+    fireEvent.change(hhInputs[0], { target: { name: 'hora', value: '18' } });
+    fireEvent.change(mmTimeInputs[0], { target: { name: 'minuto', value: '30' } });
+    fireEvent.change(screen.getByPlaceholderText(/Ej\. 30/i), { target: { name: 'aforo', value: '30' } });
+
+    await screen.findByText(/Rol detectado en esta comunidad:\s*Administrador/i);
+    fireEvent.click(screen.getByRole('button', { name: /Crear Evento/i }));
+
+    await waitFor(() => {
+      expect(createEvent).toHaveBeenCalledWith(
+        '10',
+        expect.objectContaining({ titulo: 'Evento presencial', esVirtual: false, ubicacionId: 7 })
+      );
+    });
   });
 
   test('permite editar un evento comunitario si el usuario es profesor', async () => {

@@ -3,7 +3,8 @@ import { useParams, useNavigate, useSearchParams, useLocation } from 'react-rout
 import { LuCalendar, LuSquareCheck, LuMapPin, LuLink, LuArrowLeft, LuUsers, LuEye, LuEyeOff, LuMap, LuMapPinOff, LuPlus, LuVideo } from 'react-icons/lu';
 import './CrearEvento.css';
 import Header from '../../components/Header/Header';
-import { createEvent, getEventById, updateEvent } from '../../api/eventEndpoints';
+import { createEvent, getEventById, updateEvent, getRecommendedLocations } from '../../api/eventEndpoints';
+import { ubicacionesApi } from '../../api/ubicaciones.api';
 import { communitiesApi } from '../../api/communities.api';
 import { canCreateCommunityEvent, getCommunityRoleLabel, normalizeCommunityRole } from '../../utils/communityRoles';
 import { resolveCommunityImage, DEFAULT_COMMUNITY_IMAGE } from '../../utils/imageUtils';
@@ -100,6 +101,8 @@ const CrearEvento = () => {
   const [materialInput, setMaterialInput] = useState('');
   const [selectedCommunityRole, setSelectedCommunityRole] = useState(null);
   const [communityHasClassroom, setCommunityHasClassroom] = useState(false);
+  const [suggestedLocations, setSuggestedLocations] = useState([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   const isEdit = id && id !== 'new';
   const currentUserId = localStorage.getItem('userId');
@@ -274,6 +277,99 @@ const CrearEvento = () => {
       .then(() => setCommunityHasClassroom(true))
       .catch(() => setCommunityHasClassroom(false));
   }, [selectedCommunityId, myCommunities]);
+
+  // Carga las ubicaciones registradas para sugerirlas al crear/editar el evento.
+  // De forma best-effort, si el navegador comparte la ubicación, prioriza las
+  // ubicaciones "recomendadas" (lugares con eventos activos cercanos).
+  useEffect(() => {
+    let cancelled = false;
+
+    const markRecommended = (locations, recommendedNames) => {
+      const names = new Set(
+        (recommendedNames || [])
+          .filter((n) => typeof n === 'string')
+          .map((n) => n.trim().toLowerCase())
+      );
+      if (names.size === 0) return locations;
+      const enriched = locations.map((loc) => ({
+        ...loc,
+        recomendada: names.has(String(loc?.nombre || '').trim().toLowerCase()),
+      }));
+      return enriched.sort((a, b) => Number(b.recomendada) - Number(a.recomendada));
+    };
+
+    const loadSuggestions = async () => {
+      setLoadingSuggestions(true);
+      try {
+        const data = await ubicacionesApi.listAll();
+        let locations = Array.isArray(data) ? data : (data?.content || []);
+        locations = locations.filter((loc) => loc && loc.latitud != null && loc.longitud != null);
+
+        if (
+          typeof navigator !== 'undefined' &&
+          navigator.geolocation &&
+          typeof navigator.geolocation.getCurrentPosition === 'function'
+        ) {
+          try {
+            const recommendedNames = await new Promise((resolve) => {
+              navigator.geolocation.getCurrentPosition(
+                async (pos) => {
+                  try {
+                    const recommended = await getRecommendedLocations({
+                      lat: pos.coords.latitude,
+                      lon: pos.coords.longitude,
+                      radioKm: 25,
+                    });
+                    resolve(Array.isArray(recommended) ? recommended : []);
+                  } catch {
+                    resolve([]);
+                  }
+                },
+                () => resolve([]),
+                { timeout: 5000, maximumAge: 600000 }
+              );
+            });
+            locations = markRecommended(locations, recommendedNames);
+          } catch {
+            // Ignorar: las sugerencias siguen disponibles sin geolocalización.
+          }
+        }
+
+        if (!cancelled) {
+          setSuggestedLocations(locations);
+        }
+      } catch (err) {
+        console.warn('No se pudieron cargar las ubicaciones sugeridas:', err?.message || err);
+        if (!cancelled) {
+          setSuggestedLocations([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingSuggestions(false);
+        }
+      }
+    };
+
+    loadSuggestions();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleSelectSuggestion = (ubicacion) => {
+    if (!ubicacion) return;
+    setFormData((prev) => ({
+      ...prev,
+      tipoLocalizacion: 'Presencial',
+      ubicacionId: ubicacion.id,
+      ubicacionNombre: ubicacion.nombre || '',
+      ubicacionDireccion: ubicacion.direccion || '',
+      ubicacionLatitud: ubicacion.latitud ?? null,
+      ubicacionLongitud: ubicacion.longitud ?? null,
+      direccion: ubicacion.direccion || ubicacion.nombre || prev.direccion,
+    }));
+    setValidationErrors((prev) => ({ ...prev, ubicacion: null }));
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -837,6 +933,44 @@ const CrearEvento = () => {
                       </div>
                     ) : (
                       <>
+                        {(loadingSuggestions || suggestedLocations.length > 0) && (
+                          <div className="ubicaciones-sugeridas" style={{ marginBottom: 12 }}>
+                            <p style={{ margin: '0 0 8px 0', fontWeight: 600, color: '#333', fontSize: '0.95rem' }}>
+                              Ubicaciones recomendadas
+                            </p>
+                            {loadingSuggestions ? (
+                              <span className="field-hint">Cargando ubicaciones…</span>
+                            ) : (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                {suggestedLocations.slice(0, 6).map((ub) => (
+                                  <button
+                                    key={ub.id}
+                                    type="button"
+                                    className="btn btn-outline"
+                                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2, textAlign: 'left', padding: '10px 14px' }}
+                                    onClick={() => handleSelectSuggestion(ub)}
+                                  >
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
+                                      <LuMapPin style={{ color: '#52c41a' }} />
+                                      {ub.nombre || ub.direccion || 'Ubicación'}
+                                      {ub.recomendada && (
+                                        <span style={{ background: '#f6ffed', border: '1px solid #b7eb8f', color: '#389e0d', borderRadius: 6, fontSize: '0.7rem', padding: '1px 6px', fontWeight: 600 }}>
+                                          Recomendada
+                                        </span>
+                                      )}
+                                    </span>
+                                    {ub.direccion && (
+                                      <span style={{ color: '#777', fontSize: '0.8rem', fontWeight: 400 }}>{ub.direccion}</span>
+                                    )}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                            <span className="field-hint" style={{ marginTop: 6, display: 'block' }}>
+                              Elige una de las ubicaciones ya registradas o añade una nueva.
+                            </span>
+                          </div>
+                        )}
                         <button
                           type="button"
                           className="btn btn-outline"
