@@ -316,7 +316,8 @@ class CommunityServiceTest {
         when(comunidadRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         Comunidad result =
-                communityService.updateCommunity(1L, 10L, "Nuevo nombre", "Nueva desc", "img.png");
+                communityService.updateCommunity(
+                        1L, 10L, "Nuevo nombre", "Nueva desc", "img.png", null);
 
         assertThat(result.getNombre()).isEqualTo("Nuevo nombre");
         assertThat(result.getDescripcion()).isEqualTo("Nueva desc");
@@ -327,7 +328,7 @@ class CommunityServiceTest {
     void updateCommunityShouldThrowWhenNotAdmin() {
         when(authorizationService.isAdminOf(1L, 10L)).thenReturn(false);
 
-        assertThatThrownBy(() -> communityService.updateCommunity(1L, 10L, "N", "D", null))
+        assertThatThrownBy(() -> communityService.updateCommunity(1L, 10L, "N", "D", null, null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -339,9 +340,37 @@ class CommunityServiceTest {
         when(comunidadRepository.findById(10L)).thenReturn(Optional.of(comunidad));
         when(comunidadRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        Comunidad result = communityService.updateCommunity(1L, 10L, "  ", null, null);
+        Comunidad result = communityService.updateCommunity(1L, 10L, "  ", null, null, null);
 
         assertThat(result.getNombre()).isEqualTo("Comunidad"); // unchanged
+    }
+
+    @Test
+    void updateCommunityShouldUpdateMaxMiembrosWhenAboveCurrent() {
+        Comunidad comunidad =
+                buildComunidad(10L, TipoGrupo.COMUNIDAD_PUBLICA, TipoPlanComunidad.FREE);
+        when(authorizationService.isAdminOf(1L, 10L)).thenReturn(true);
+        when(comunidadRepository.findById(10L)).thenReturn(Optional.of(comunidad));
+        when(miembroComunidadRepository.countByComunidadId(10L)).thenReturn(3L);
+        when(comunidadRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Comunidad result = communityService.updateCommunity(1L, 10L, null, null, null, 20);
+
+        assertThat(result.getMaxMiembros()).isEqualTo(20);
+    }
+
+    @Test
+    void updateCommunityShouldRejectMaxMiembrosBelowCurrentCount() {
+        Comunidad comunidad =
+                buildComunidad(10L, TipoGrupo.COMUNIDAD_PUBLICA, TipoPlanComunidad.FREE);
+        when(authorizationService.isAdminOf(1L, 10L)).thenReturn(true);
+        when(comunidadRepository.findById(10L)).thenReturn(Optional.of(comunidad));
+        when(miembroComunidadRepository.countByComunidadId(10L)).thenReturn(8L);
+
+        assertThatThrownBy(
+                        () -> communityService.updateCommunity(1L, 10L, null, null, null, 5))
+                .isInstanceOf(es.us.meerkat.backend.exception.ValidationException.class)
+                .hasMessageContaining("miembros actuales");
     }
 
     // ================================================================

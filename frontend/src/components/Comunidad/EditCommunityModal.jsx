@@ -3,10 +3,17 @@ import { communitiesApi } from '../../api/communities.api';
 import './EditCommunityModal.css';
 
 export default function EditCommunityModal({ community, onClose, onSaved }) {
+  const miembrosActuales = Number(community.miembrosActuales) || 0;
+  const minAforo = Math.max(1, miembrosActuales);
+  const initialMaxMiembros = Number(community.maxMiembros) || minAforo;
+
   const [nombre, setNombre] = useState(community.nombre || '');
   const [descripcion, setDescripcion] = useState(community.descripcion || '');
   const [imagenPreview, setImagenPreview] = useState(community.imagenUrl || null);
   const [nuevaImagen, setNuevaImagen] = useState(null);
+  const [maxMiembros, setMaxMiembros] = useState(
+    Math.max(initialMaxMiembros, minAforo)
+  );
   const [tipoComunidad, setTipoComunidad] = useState(
     community.tipoGrupo === 'GRUPO_PRIVADO' ? 'GRUPO_PRIVADO' : 'COMUNIDAD_PUBLICA'
   );
@@ -97,6 +104,17 @@ export default function EditCommunityModal({ community, onClose, onSaved }) {
       setError('El nombre es obligatorio');
       return;
     }
+    const parsedMax = Number(maxMiembros);
+    if (!Number.isFinite(parsedMax) || parsedMax < 1) {
+      setError('El aforo debe ser al menos 1');
+      return;
+    }
+    if (parsedMax < miembrosActuales) {
+      setError(
+        `El aforo no puede ser menor que los miembros actuales (${miembrosActuales}).`
+      );
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -105,6 +123,7 @@ export default function EditCommunityModal({ community, onClose, onSaved }) {
         nombre: nombre.trim(),
         descripcion: descripcion.trim(),
         imagenUrl: nuevaImagen ? undefined : community.imagenUrl,
+        maxMiembros: parsedMax,
       });
 
       // Privacidad si cambió
@@ -237,6 +256,23 @@ export default function EditCommunityModal({ community, onClose, onSaved }) {
                 <span>Privada (requiere solicitud)</span>
               </label>
             </div>
+          </div>
+
+          {/* Aforo */}
+          <div className="ecm-field">
+            <label htmlFor="ecm-max-miembros">Aforo máximo</label>
+            <input
+              id="ecm-max-miembros"
+              type="number"
+              min={minAforo}
+              value={maxMiembros}
+              onChange={(e) => setMaxMiembros(e.target.value)}
+              disabled={saving}
+            />
+            <p className="ecm-image-help">
+              Miembros actuales: {miembrosActuales}. No puedes bajar el aforo por debajo de esta
+              cifra.
+            </p>
           </div>
 
           {/* Categorías */}

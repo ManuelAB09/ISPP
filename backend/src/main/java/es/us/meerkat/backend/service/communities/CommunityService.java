@@ -33,6 +33,7 @@ import es.us.meerkat.backend.entity.subscriptions.TipoPlanComunidad;
 import es.us.meerkat.backend.entity.subscriptions.TipoPlanCorporativo;
 import es.us.meerkat.backend.entity.tutors.Tutor;
 import es.us.meerkat.backend.entity.users.Usuario;
+import es.us.meerkat.backend.exception.ValidationException;
 import es.us.meerkat.backend.repository.chats.MensajeComunidadRepository;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.InstitutionRepository;
@@ -429,7 +430,12 @@ public class CommunityService {
 
     /** Actualiza una comunidad (solo ADMIN). */
     public Comunidad updateCommunity(
-            Long userId, Long communityId, String nombre, String descripcion, String imagenUrl) {
+            Long userId,
+            Long communityId,
+            String nombre,
+            String descripcion,
+            String imagenUrl,
+            Integer maxMiembros) {
         if (!authorizationService.isAdminOf(userId, communityId)) {
             throw new IllegalArgumentException("Solo admins pueden actualizar la comunidad");
         }
@@ -447,6 +453,19 @@ public class CommunityService {
         }
         if (imagenUrl != null) {
             comunidad.setImagenUrl(imagenUrl);
+        }
+        if (maxMiembros != null) {
+            if (maxMiembros < 1) {
+                throw new ValidationException("El aforo debe ser al menos 1");
+            }
+            long miembrosActuales = countMembers(communityId);
+            if (maxMiembros < miembrosActuales) {
+                throw new ValidationException(
+                        "El aforo no puede ser menor que los miembros actuales ("
+                                + miembrosActuales
+                                + ")");
+            }
+            comunidad.setMaxMiembros(maxMiembros);
         }
 
         return comunidadRepository.save(comunidad);

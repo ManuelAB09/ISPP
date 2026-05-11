@@ -1,5 +1,6 @@
 package es.us.meerkat.backend.dto.communities;
 
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 
 public record UpdateCommunityRequest(
@@ -7,4 +8,5 @@ public record UpdateCommunityRequest(
                 String nombre,
         @Size(max = 1000, message = "La descripción no puede exceder 1000 caracteres")
                 String descripcion,
-        String imagenUrl) {}
+        String imagenUrl,
+        @Min(value = 1, message = "El aforo debe ser al menos 1") Integer maxMiembros) {}

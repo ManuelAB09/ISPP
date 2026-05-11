@@ -54,6 +54,7 @@ public class Notificacion {
     private String comunidadNombre;
 
     /** URL de la imagen de la comunidad relacionada (si aplica). */
+    @Column(columnDefinition = "TEXT")
     private String comunidadImagenUrl;
 
     @PrePersist
