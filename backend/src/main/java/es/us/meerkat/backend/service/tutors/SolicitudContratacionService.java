@@ -92,6 +92,9 @@ public class SolicitudContratacionService {
                     "La hora de fin debe ser posterior a la hora de inicio");
         }
 
+        // Validate duration constraints
+        request.validateDuration();
+
         // Validar modalidad
         String modalidad =
                 request.getModalidad() != null ? request.getModalidad().toUpperCase() : "ONLINE";
@@ -183,6 +186,9 @@ public class SolicitudContratacionService {
             throw new IllegalArgumentException(
                     "La hora de fin debe ser posterior a la hora de inicio");
         }
+
+        // Validate duration constraints
+        request.validateDuration();
 
         // Validar modalidad
         String modalidad =
