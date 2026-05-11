@@ -10,6 +10,12 @@ public class SubmitAttemptRequest {
     /** Lista de respuestas por pregunta. */
     private List<Answer> answers;
 
+    /**
+     * Segundos transcurridos desde que el cliente abrió el cuestionario. Se usa para impedir el
+     * envío cuando se ha superado el tiempo límite (ver {@code tiempoEstimadoMinutos}).
+     */
+    private Long tiempoEmpleadoSegundos;
+
     @Data
     public static class Answer {
         private Long preguntaId;
