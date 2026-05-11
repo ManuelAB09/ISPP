@@ -76,12 +76,14 @@ const CreateProfileModal = ({ onClose, onCreado }) => {
         fieldErrors && typeof fieldErrors === "object"
           ? Object.values(fieldErrors).filter(Boolean).join(" ")
           : "";
+      const isBackendError =
+        err?.status != null || err?.response != null || err?.data != null;
       const backendMsg = fieldMsg
         || err?.response?.data?.message
         || err?.response?.data?.error
         || err?.data?.message
         || err?.data?.error
-        || err?.message;
+        || (isBackendError ? err?.message : "");
       if (backendMsg) {
         setError(backendMsg);
       } else {
