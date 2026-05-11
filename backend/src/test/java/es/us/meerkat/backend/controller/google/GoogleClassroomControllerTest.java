@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -235,6 +236,183 @@ class GoogleClassroomControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FOUND);
         assertThat(response.getHeaders().getLocation().toString())
                 .isEqualTo("https://accounts.google.com/redirect");
+    }
+
+    @Test
+    void authorizeShouldReturnUnauthorizedWhenPrincipalIsInvalid() {
+        setAuthContext("bad-principal", true);
+
+        ResponseEntity<Void> response = controller.authorize();
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void callbackShouldReturnErrorWhenErrorParamProvided() throws Exception {
+        ResponseEntity<String> response = controller.callback(null, "access_denied", "state");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).contains("access_denied");
+    }
+
+    @Test
+    void callbackShouldReturnErrorWhenStateIsMissing() throws Exception {
+        ResponseEntity<String> response = controller.callback("code", null, null);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).contains("no_state");
+    }
+
+    @Test
+    void callbackShouldReturnTokenErrorWhenTokenResponseNotOk() throws Exception {
+        RestTemplate restTemplate = org.mockito.Mockito.mock(RestTemplate.class);
+        ReflectionTestUtils.setField(controller, "rest", restTemplate);
+        ReflectionTestUtils.setField(controller, "clientId", "client-id");
+        ReflectionTestUtils.setField(controller, "clientSecret", "client-secret");
+        ReflectionTestUtils.setField(controller, "redirectUri", "http://localhost/callback");
+
+        Usuario user = new Usuario();
+        user.setId(77L);
+        when(googleClassroomService.consumeState("state-token-fail"))
+                .thenReturn(new GoogleClassroomService.OAuthCtx(77L, null, null));
+        when(usuarioRepository.findById(77L)).thenReturn(Optional.of(user));
+
+        when(restTemplate.postForEntity(
+                        eq("https://oauth2.googleapis.com/token"),
+                        any(HttpEntity.class),
+                        eq(String.class)))
+                .thenReturn(ResponseEntity.status(HttpStatus.BAD_REQUEST).body("oops"));
+
+        ResponseEntity<String> response = controller.callback("code", null, "state-token-fail");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).contains("token_error");
+    }
+
+    @Test
+    void callbackShouldReturnErrorWhenAccessTokenMissing() throws Exception {
+        RestTemplate restTemplate = org.mockito.Mockito.mock(RestTemplate.class);
+        ReflectionTestUtils.setField(controller, "rest", restTemplate);
+        ReflectionTestUtils.setField(controller, "clientId", "client-id");
+        ReflectionTestUtils.setField(controller, "clientSecret", "client-secret");
+        ReflectionTestUtils.setField(controller, "redirectUri", "http://localhost/callback");
+
+        Usuario user = new Usuario();
+        user.setId(78L);
+        when(googleClassroomService.consumeState("state-no-token"))
+                .thenReturn(new GoogleClassroomService.OAuthCtx(78L, null, null));
+        when(usuarioRepository.findById(78L)).thenReturn(Optional.of(user));
+
+        when(restTemplate.postForEntity(
+                        eq("https://oauth2.googleapis.com/token"),
+                        any(HttpEntity.class),
+                        eq(String.class)))
+                .thenReturn(ResponseEntity.ok("{\"refresh_token\":\"rt\"}"));
+
+        ResponseEntity<String> response = controller.callback("code", null, "state-no-token");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).contains("no_access_token");
+    }
+
+    @Test
+    void authorizeManagementUrlShouldReturnUnauthorizedWhenNoAuth() {
+        SecurityContextHolder.clearContext();
+
+        ResponseEntity<Map<String, String>> response = controller.authorizeManagementUrl();
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(response.getBody()).containsEntry("error", "unauthorized");
+    }
+
+    @Test
+    void authorizeManagementUrlShouldReturnUrlWhenAuthenticated() {
+        Usuario u = new Usuario();
+        u.setId(5L);
+        setAuthContext(u, true);
+        when(googleClassroomService.generateState()).thenReturn("state-1");
+        ReflectionTestUtils.setField(
+                googleClassroomService, "oauthStateStore", new ConcurrentHashMap<>());
+        ReflectionTestUtils.setField(controller, "clientId", "client-id");
+        ReflectionTestUtils.setField(controller, "redirectUri", "http://localhost/callback");
+
+        ResponseEntity<Map<String, String>> response = controller.authorizeManagementUrl();
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().get("url")).contains("client_id=client-id");
+    }
+
+    @Test
+    void callbackManagementShouldReturnSuccessWhenTokenOk() throws Exception {
+        RestTemplate restTemplate = org.mockito.Mockito.mock(RestTemplate.class);
+        ReflectionTestUtils.setField(controller, "rest", restTemplate);
+        ReflectionTestUtils.setField(controller, "clientId", "client-id");
+        ReflectionTestUtils.setField(controller, "clientSecret", "client-secret");
+        ReflectionTestUtils.setField(controller, "redirectUri", "http://localhost/callback");
+
+        var store = new ConcurrentHashMap<String, GoogleClassroomService.OAuthCtx>();
+        store.put("state-2", new GoogleClassroomService.OAuthCtx(99L, null, null));
+        ReflectionTestUtils.setField(googleClassroomService, "oauthStateStore", store);
+
+        Usuario user = new Usuario();
+        user.setId(99L);
+        when(usuarioRepository.findById(99L)).thenReturn(Optional.of(user));
+
+        when(restTemplate.postForEntity(
+                        eq("https://oauth2.googleapis.com/token"),
+                        any(HttpEntity.class),
+                        eq(String.class)))
+                .thenReturn(
+                        ResponseEntity.ok(
+                                "{\"access_token\":\"at\",\"refresh_token\":\"rt\",\"expires_in\":3600}"));
+
+        ResponseEntity<String> response = controller.callbackManagement("code", null, "state-2");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).contains("status:'success'");
+    }
+
+    @Test
+    void createStudentShouldReturnUnauthorizedWhenNoAuth() {
+        SecurityContextHolder.clearContext();
+
+        ResponseEntity<?> response =
+                controller.createStudent("c1", new CreateStudentRequest("user", null));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void createStudentShouldReturnUnauthorizedWhenPrincipalInvalid() {
+        setAuthContext("bad-principal", true);
+
+        ResponseEntity<?> response =
+                controller.createStudent("c1", new CreateStudentRequest("user", null));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(response.getBody()).isInstanceOf(Map.class);
+    }
+
+    @Test
+    void listarArchivosCursoVinculadoShouldReturnUnauthorizedWhenNoAuth() {
+        SecurityContextHolder.clearContext();
+
+        ResponseEntity<?> response = controller.listarArchivosCursoVinculado(22L);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void createTeacherShouldReturnUnauthorizedWhenPrincipalInvalid() {
+        setAuthContext("bad-principal", true);
+
+        ResponseEntity<?> response =
+                controller.createTeacher(
+                        "course-1", new CreateTeacherRequest("teacher@example.com"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(response.getBody()).isInstanceOf(Map.class);
     }
 
     @Test
