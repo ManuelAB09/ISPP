@@ -30,6 +30,7 @@ import es.us.meerkat.backend.entity.subscriptions.TipoPlan;
 import es.us.meerkat.backend.entity.subscriptions.TipoPlanComunidad;
 import es.us.meerkat.backend.entity.tutors.Tutor;
 import es.us.meerkat.backend.entity.users.Usuario;
+import es.us.meerkat.backend.repository.chats.MensajeComunidadLeidoRepository;
 import es.us.meerkat.backend.repository.chats.MensajeComunidadRepository;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.InstitutionRepository;
@@ -51,6 +52,7 @@ class CommunityServiceTest {
     @Mock private AuthorizationService authorizationService;
     @Mock private SuscripcionService suscripcionService;
     @Mock private MensajeComunidadRepository mensajeComunidadRepository;
+    @Mock private MensajeComunidadLeidoRepository mensajeComunidadLeidoRepository;
     @Mock private EventoRepository eventoRepository;
     @Mock private CuestionarioRepository cuestionarioRepository;
     @Mock private ZoomMeetingRepository zoomMeetingRepository;

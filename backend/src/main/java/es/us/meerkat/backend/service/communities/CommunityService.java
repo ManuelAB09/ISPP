@@ -34,6 +34,7 @@ import es.us.meerkat.backend.entity.subscriptions.TipoPlanCorporativo;
 import es.us.meerkat.backend.entity.tutors.Tutor;
 import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.exception.ValidationException;
+import es.us.meerkat.backend.repository.chats.MensajeComunidadLeidoRepository;
 import es.us.meerkat.backend.repository.chats.MensajeComunidadRepository;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.InstitutionRepository;
@@ -58,6 +59,7 @@ public class CommunityService {
     private final AuthorizationService authorizationService;
     private final SuscripcionService suscripcionService;
     private final MensajeComunidadRepository mensajeComunidadRepository;
+    private final MensajeComunidadLeidoRepository mensajeComunidadLeidoRepository;
     private final EventoRepository eventoRepository;
     private final TutorRepository tutorRepository;
     private final ZoomMeetingRepository zoomMeetingRepository;
@@ -492,6 +494,10 @@ public class CommunityService {
         // Eliminar ZoomMeetings antes para evitar violación de FK
         zoomMeetingRepository.deleteAll(
                 zoomMeetingRepository.findByComunidadIdOrderByCreatedAtDesc(communityId));
+
+        // Eliminar marcas de lectura del chat antes para evitar violación de FK
+        // sobre mensajes_comunidad (que sí se eliminan en cascada con la comunidad)
+        mensajeComunidadLeidoRepository.deleteByComunidadId(communityId);
 
         // Desvincular eventos antes de eliminar para evitar violación de FK
         eventoRepository.disassociateFromComunidad(communityId);
