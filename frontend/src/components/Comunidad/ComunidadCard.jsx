@@ -196,7 +196,7 @@ export default function ComunidadCard({ comunidad, onJoined }) {
                 <div className='bottom-info'>
                     <div className="members-info">
                         <PersonIcon width={20} height={20} />
-                        <p>{comunidad.miembrosActuales || 0}/ <span>{comunidad.maxMiembros || 0}</span></p>
+                        <p>{comunidad.miembrosActuales || 0}/ <span>{comunidad.maxMiembros ?? '∞'}</span></p>
                     </div>
                     {error && <span style={{ color: 'red', fontSize: '0.8rem' }}>{error}</span>}
                     {currentUserId && !joined && !requestSent && (
