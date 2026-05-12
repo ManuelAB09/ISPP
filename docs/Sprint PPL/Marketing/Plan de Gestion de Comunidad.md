@@ -37,20 +37,20 @@ La estrategia busca aumentar la visibilidad de la aplicación, generar cercanía
 | **06/05** | Miércoles | **Miércoles de memes.** Publicación de un meme relacionado con estudiantes y organización académica, junto con contenido sobre la yincana |
 | **07/05** | Jueves | Subir posts de la yincana y de Renata, para que los usuarios vayan interactuando con ella. |
 | **08/05** | Viernes | Subir posts de la yincana para mantener el interés por la actividad. |
-| **09/05** | Sábado | Encuesta sobre funcionalidades: “¿Qué funcionalidad de MeerKatters te parece más útil?”. Opciones: cuestionarios en comunidades, chat con profesores, subida de apuntes y reuniones por Zoom. |
-| **10/05** | Domingo | Reel tipo POV: “Quieres estudiarte todo el temario en una tarde y no encuentras los apuntes ni los resúmenes en el chat de tus amigos”. El objetivo es mostrar un problema cotidiano que MeerKatters puede resolver. |
+| **09/05** | Sábado | Subir vídeo anuncio de clientes a Instagram. |
+| **10/05** | Domingo | Subir historia de la yincana para incentivar a los usuarios a que participen. |
 
 ---
 
 | Fecha | Día | Contenido planificado |
 |---|---|---|
-| **11/05** | Lunes | Publicación de contenido relacionado con la yincana: imágenes, vídeos, momentos destacados o resumen de la actividad. |
-| **12/05** | Martes | Historia dirigida a profesores particulares: “Si buscas alumnos para dar clases cerca de ti, de forma cómoda y con confianza, MeerKatters es tu solución”. |
+| **11/05** | Lunes | Encuesta sobre el primer puzzle de la Yincana. |
+| **12/05** | Martes | Reel tipo POV: “Quieres estudiarte todo el temario en una tarde y no encuentras los apuntes ni los resúmenes en el chat de tus amigos”. El objetivo es mostrar un problema cotidiano que MeerKatters puede resolver. |
 | **13/05** | Miércoles | **Miércoles de memes.** Publicación del meme semanal, acompañado de la encuesta habitual para preguntar qué tipo de memes desea ver la comunidad la semana siguiente. |
-| **14/05** | Jueves | Encuestas orientadas a conocer el interés del público: “¿Usarías nuestra app para mejorar tu desempeño académico?” y “¿Qué es lo que más te llama la atención de MeerKatters?”. |
+| **14/05** | Jueves | Aparición oficial de Renata en redes sociales, presentándola como parte de la identidad visual de MeerKatters y reforzando su papel dentro del proyecto. |
 | **15/05** | Viernes | Story comparativa: **“Antes de usar MeerKatters vs. después de usar MeerKatters”**, mostrando de forma visual el contraste entre la desorganización académica y una experiencia más ordenada. |
 | **16/05** | Sábado | Historia participativa: “Cuéntanos tu peor experiencia estudiando en grupo”. Después, compartir las respuestas más divertidas o representativas en historias. |
-| **17/05** | Domingo | Aparición oficial de Renata en redes sociales, presentándola como parte de la identidad visual de MeerKatters y reforzando su papel dentro del proyecto. |
+| **17/05** | Domingo | Encuestas orientadas a conocer el interés del público: “¿Usarías nuestra app para mejorar tu desempeño académico?” y “¿Qué es lo que más te llama la atención de MeerKatters?”. Encuesta sobre funcionalidades: “¿Qué funcionalidad de MeerKatters te parece más útil?”. Opciones: cuestionarios en comunidades, chat con profesores, subida de apuntes y reuniones por Zoom. |
 
 ---
 
@@ -77,7 +77,7 @@ La estrategia busca aumentar la visibilidad de la aplicación, generar cercanía
 
 ## Situación actual de las redes sociales
 
-Antes de plantear objetivos para la campaña, se ha analizado la evolución real de las redes sociales de MeerKatters. Actualmente, la cuenta de Instagram tiene **133 seguidores**. En TikTok, la cuenta tiene **11 seguidores**, **55 likes** y **6 publicaciones**, que acumulan un total de **4.270 visualizaciones**.
+Antes de plantear objetivos para la campaña, se ha analizado la evolución real de las redes sociales de MeerKatters. Inicialmente, la cuenta de Instagram tenía **133 seguidores** (final de Abril). En TikTok, la cuenta tenía **11 seguidores**, **55 likes** y **6 publicaciones**, que acumulaban un total de **4.270 visualizaciones**.
 
 ---
 
@@ -86,27 +86,22 @@ Antes de plantear objetivos para la campaña, se ha analizado la evolución real
 | Periodo | Seguidores | Variación | Publicaciones | Visualizaciones | Usuarios que no seguían la cuenta |
 |---|---:|---:|---:|---:|---:|
 | Enero | 97 | — | 0 | 0 | — |
-| Febrero | 127 | +30 | 6 | 6.924 | 66% |
-| Marzo | 137 | +10 | 2 | 4.353 | 47% |
-| 30 marzo - actualidad | 133 | -4 | 1 Reel | 1.056 | 55% |
+| Febrero | 127 | +30 | 6 posts | 6.924 | 66% |
+| Marzo | 137 | +10 | 2 posts | 4.353 | 47% |
+| Abril | 133 | -4 | 1 Reel | 1.056 | 55% |
+| Mayo (hasta 12/05/2026) | 146 | +13 | 6 posts, 2 Reels | 11.455 | 48% |
 
 ---
 
 ## Situación de TikTok
 
-| Métrica | Valor actual |
+| Métrica | Valor actual (12/0/2026) |
 |---|---:|
-| Seguidores | 11 |
-| Likes totales | 55 |
-| Publicaciones | 6 |
-| Visualizaciones totales | 4.270 |
-| Media aproximada de visualizaciones por publicación | 712 |
-
-## Lectura de los datos de TikTok
-
-Aunque la cuenta de TikTok todavía tiene pocos seguidores, las publicaciones han conseguido un número de visualizaciones interesante en comparación con el tamaño de la cuenta. Con solo **11 seguidores**, se han alcanzado **4.270 visualizaciones**, lo que indica que TikTok puede servir para llegar a personas que todavía no conocen MeerKatters.
-
-Por ello, TikTok se utilizará principalmente para contenido breve, humorístico y fácil de consumir, especialmente vídeos tipo meme, POV o situaciones cotidianas de estudiantes.
+| Seguidores | 14 |
+| Likes totales | 77 |
+| Publicaciones | 7 |
+| Visualizaciones totales | 4.728 |
+| Media aproximada de visualizaciones por publicación | 675 |
 
 ---
 
@@ -138,7 +133,7 @@ Teniendo en cuenta los resultados anteriores, el tamaño actual de la cuenta y l
 | Seguidores | 133 | 150 - 170 |
 | Nuevos seguidores | 0 | +17 a +37 |
 | Visualizaciones totales | 12.333 | +6.000 a +12.000 |
-| Porcentaje estimado de no seguidores | 55% aprox. | 55% - 65% |
+| Porcentaje estimado de no seguidores | 55% aprox. | 45% - 55% |
 | Interacciones | 407 | +200 a + 400 |
 
 ## TikTok
@@ -148,7 +143,7 @@ Teniendo en cuenta los resultados anteriores, el tamaño actual de la cuenta y l
 | Seguidores | 11 | 18 - 30 |
 | Nuevos seguidores | 0 | +7 a +19 |
 | Visualizaciones totales | 4.270 | +4.000 a +10.000 |
-| Porcentaje estimado de no seguidores | 92% aprox. | 90% - 95% |
+| Porcentaje estimado de no seguidores | 92% aprox. | 85% - 90% |
 | Interacciones | 114 | +100 a +200 |
 
 ---
@@ -177,7 +172,7 @@ Aunque no haya un coste económico directo, sí existe un coste en tiempo de tra
 |---|---:|---:|---:|---:|---|
 | Inicio | 133 | 12.333 acumuladas | 11 | 4.270 acumuladas | Situación inicial |
 | Semana 1 | 137 | 13.956 acumuladas | 12 | 4.570 acumuladas | Días después de estar desconectados de las redes |
-| Semana 2 |  |  |  |  |  |
+| Semana 2 | 146 | 29.750 acumuladas | 14 | 4.728 acumuladas | Semana intensa con el tema de la yincana |
 | Semana 3 |  |  |  |  |  |
 | Cierre 25/05 |  |  |  |  |  |
 
