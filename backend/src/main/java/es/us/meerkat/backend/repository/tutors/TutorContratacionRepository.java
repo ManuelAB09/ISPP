@@ -6,6 +6,9 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import es.us.meerkat.backend.entity.tutors.TutorContratacion;
@@ -64,4 +67,9 @@ public interface TutorContratacionRepository extends JpaRepository<TutorContrata
      * @return lista de contrataciones
      */
     List<TutorContratacion> findByComunidadId(Long comunidadId);
+
+    /** Elimina todas las contrataciones de una comunidad (bulk). */
+    @Modifying
+    @Query("DELETE FROM TutorContratacion tc WHERE tc.comunidad.id = :comunidadId")
+    void deleteByComunidadId(@Param("comunidadId") Long comunidadId);
 }

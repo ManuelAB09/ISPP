@@ -275,7 +275,8 @@ public class CommunityController {
                         communityId,
                         request.nombre(),
                         request.descripcion(),
-                        request.imagenUrl());
+                        request.imagenUrl(),
+                        request.maxMiembros());
         return ResponseEntity.ok(entityToDetailResponse(comunidad, usuario.getId()));
     }
 

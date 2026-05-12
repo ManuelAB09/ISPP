@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -50,4 +51,9 @@ public interface TareaClassroomRepository extends JpaRepository<TareaClassroom, 
             """)
     List<TareaClassroom> findTareasProximas(
             @Param("comunidadId") Long comunidadId, @Param("fecha") LocalDateTime fecha);
+
+    /** Elimina todas las tareas de una comunidad (bulk). */
+    @Modifying
+    @Query("DELETE FROM TareaClassroom t WHERE t.comunidad.id = :comunidadId")
+    void deleteByComunidadId(@Param("comunidadId") Long comunidadId);
 }
