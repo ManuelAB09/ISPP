@@ -27,14 +27,27 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
     List<Evento> findByCanceladoFalse();
 
     /**
-     * Obtiene todos los eventos visibles en el mapa (solo públicos de comunidades públicas).
+     * Obtiene los eventos visibles en el mapa para un usuario dado: públicos siempre, y privados
+     * solo si el usuario pertenece a la comunidad del evento. Si {@code userId} es {@code null}
+     * (anónimo), solo devuelve eventos públicos.
      *
-     * @return Lista de eventos visibles en mapa.
+     * @param ahora Fecha actual; solo se devuelven eventos futuros.
+     * @param userId Identificador del usuario solicitante (puede ser {@code null}).
+     * @return Lista de eventos visibles en mapa para el usuario.
      */
     @Query(
-            "SELECT e FROM Evento e WHERE e.visibleMapa = true AND e.cancelado = false AND"
-                    + " e.privado = false AND e.fechaHora >= :ahora")
-    List<Evento> findVisibleOnMap(@Param("ahora") LocalDateTime ahora);
+            "SELECT e FROM Evento e"
+                    + " WHERE e.visibleMapa = true"
+                    + " AND e.cancelado = false"
+                    + " AND e.fechaHora >= :ahora"
+                    + " AND (e.privado = false"
+                    + "   OR (:userId IS NOT NULL AND EXISTS ("
+                    + "       SELECT 1 FROM MiembroComunidad m"
+                    + "       WHERE m.usuario.id = :userId"
+                    + "       AND m.comunidad.id = e.comunidad.id"
+                    + "   )))")
+    List<Evento> findVisibleOnMap(
+            @Param("ahora") LocalDateTime ahora, @Param("userId") Long userId);
 
     /**
      * Obtiene todos los eventos públicos de una comunidad.

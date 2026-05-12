@@ -406,6 +406,31 @@ describe('CrearComunidad', () => {
     window.FileReader.mockRestore();
   });
 
+  test('muestra error al subir archivo con formato no válido', async () => {
+    renderComponent();
+    const fileInput = document.querySelector('input[type="file"]');
+    const file = new File(['audio'], 'audio.mp3', { type: 'audio/mpeg' });
+
+    userEvent.upload(fileInput, file);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Formato de imagen no válido/i)).toBeInTheDocument();
+    });
+  });
+
+  test('muestra error al subir imagen mayor de 5 MB', async () => {
+    renderComponent();
+    const fileInput = document.querySelector('input[type="file"]');
+    const bigContent = new Uint8Array(6 * 1024 * 1024);
+    const file = new File([bigContent], 'grande.png', { type: 'image/png' });
+
+    userEvent.upload(fileInput, file);
+
+    await waitFor(() => {
+      expect(screen.getByText(/La imagen no puede superar 5 MB/i)).toBeInTheDocument();
+    });
+  });
+
   // ==============================
   // TESTS DE PLAN INSTITUCIONAL
   // ==============================

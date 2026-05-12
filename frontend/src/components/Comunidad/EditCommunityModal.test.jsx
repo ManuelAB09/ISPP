@@ -7,6 +7,10 @@ import { communitiesApi } from '../../api/communities.api';
 jest.mock('../../api/communities.api', () => ({
   communitiesApi: {
     update: jest.fn(),
+    updatePrivacy: jest.fn().mockResolvedValue({}),
+    listCommunityCategories: jest.fn().mockResolvedValue({ data: { categorias: [] } }),
+    createCategory: jest.fn().mockResolvedValue({}),
+    deleteCategory: jest.fn().mockResolvedValue({}),
   },
 }));
 
@@ -15,6 +19,8 @@ const baseCommunity = {
   nombre: 'Comunidad Original',
   descripcion: 'Descripción original',
   imagenUrl: 'https://example.com/img.png',
+  maxMiembros: 30,
+  miembrosActuales: 5,
 };
 
 describe('EditCommunityModal', () => {
@@ -53,6 +59,7 @@ describe('EditCommunityModal', () => {
         nombre: 'Nuevo nombre',
         descripcion: 'Descripción original',
         imagenUrl: 'https://example.com/img.png',
+        maxMiembros: 30,
       });
     });
     expect(onSaved).toHaveBeenCalled();

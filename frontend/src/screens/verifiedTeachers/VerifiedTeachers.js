@@ -51,11 +51,13 @@ const VerifiedTeachers = () => {
     especialidad: "",
     tarifaMin: "",
     tarifaMax: "",
+    soloVerificados: false,
   });
   const [filtrosActivos, setFiltrosActivos] = useState({
     especialidad: "",
     tarifaMin: "",
     tarifaMax: "",
+    soloVerificados: false,
   });
 
   const cargarProfesores = useCallback(
@@ -67,6 +69,7 @@ const VerifiedTeachers = () => {
           especialidad: filtrosParam.especialidad || undefined,
           tarifaMin: filtrosParam.tarifaMin || undefined,
           tarifaMax: filtrosParam.tarifaMax || undefined,
+          verificado: filtrosParam.soloVerificados ? true : undefined,
           page: nuevaPagina,
           size: 20,
         });
@@ -149,8 +152,11 @@ const VerifiedTeachers = () => {
   ]);
 
   const handleFiltroChange = (e) => {
-    const { name, value } = e.target;
-    setFiltros((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFiltros((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
   };
 
   const handleBuscar = (e) => {
@@ -159,7 +165,12 @@ const VerifiedTeachers = () => {
   };
 
   const handleLimpiar = () => {
-    const vacios = { especialidad: "", tarifaMin: "", tarifaMax: "" };
+    const vacios = {
+      especialidad: "",
+      tarifaMin: "",
+      tarifaMax: "",
+      soloVerificados: false,
+    };
     setFiltros(vacios);
     setFiltrosActivos(vacios);
     setBusquedaCercaniaActiva(false);
@@ -320,15 +331,24 @@ const VerifiedTeachers = () => {
             />
             <span className="vt-filtros__unit">€/h</span>
           </div>
+          <label className="vt-filtros__toggle">
+            <input
+              type="checkbox"
+              name="soloVerificados"
+              checked={filtros.soloVerificados}
+              onChange={handleFiltroChange}
+            />
+            <span>Solo verificados</span>
+          </label>
           <button type="submit" className="vt-btn vt-btn--primary">Buscar</button>
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="vt-btn vt-btn--secondary"
             onClick={handleBuscarPorCercania}
           >
             📍 Buscar por cercanía
           </button>
-          {(filtrosActivos.especialidad || filtrosActivos.tarifaMin || filtrosActivos.tarifaMax || busquedaCercaniaActiva) && (
+          {(filtrosActivos.especialidad || filtrosActivos.tarifaMin || filtrosActivos.tarifaMax || busquedaCercaniaActiva || filtrosActivos.soloVerificados) && (
             <button type="button" className="vt-btn vt-btn--ghost" onClick={handleLimpiar}>
               Limpiar
             </button>

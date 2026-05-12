@@ -120,9 +120,15 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
     SELECT DISTINCT t
     FROM Tutor t
     LEFT JOIN t.especialidades e
-    WHERE (:especialidad IS NULL OR LOWER(e) LIKE LOWER(CONCAT('%', CAST(:especialidad AS string), '%')))
+    WHERE (:especialidad IS NULL
+        OR LOWER(FUNCTION('translate', e,
+                'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunAEIOUUN'))
+            LIKE LOWER(CONCAT('%', FUNCTION('translate',
+                CAST(:especialidad AS string),
+                'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunAEIOUUN'), '%')))
     AND (:tarifaMin IS NULL OR t.tarifaHora >= :tarifaMin)
     AND (:tarifaMax IS NULL OR t.tarifaHora <= :tarifaMax)
+    AND (:verificado IS NULL OR t.verificado = :verificado)
     ORDER BY t.verificado DESC, t.createdAt DESC
 """,
             countQuery =
@@ -130,14 +136,21 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
     SELECT COUNT(DISTINCT t)
     FROM Tutor t
     LEFT JOIN t.especialidades e
-    WHERE (:especialidad IS NULL OR LOWER(e) LIKE LOWER(CONCAT('%', CAST(:especialidad AS string), '%')))
+    WHERE (:especialidad IS NULL
+        OR LOWER(FUNCTION('translate', e,
+                'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunAEIOUUN'))
+            LIKE LOWER(CONCAT('%', FUNCTION('translate',
+                CAST(:especialidad AS string),
+                'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunAEIOUUN'), '%')))
     AND (:tarifaMin IS NULL OR t.tarifaHora >= :tarifaMin)
     AND (:tarifaMax IS NULL OR t.tarifaHora <= :tarifaMax)
+    AND (:verificado IS NULL OR t.verificado = :verificado)
 """)
     Page<Tutor> findAllFiltrados(
             @Param("especialidad") String especialidad,
             @Param("tarifaMin") BigDecimal tarifaMin,
             @Param("tarifaMax") BigDecimal tarifaMax,
+            @Param("verificado") Boolean verificado,
             Pageable pageable);
 
     /** Busca un tutor por el ID del usuario asociado. */

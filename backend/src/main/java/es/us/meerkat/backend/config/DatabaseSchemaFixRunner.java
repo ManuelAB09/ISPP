@@ -77,11 +77,31 @@ public class DatabaseSchemaFixRunner implements ApplicationRunner {
                 END
                 $$;
                 """);
+        jdbcTemplate.execute(
+                """
+                DO $$
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1
+                        FROM information_schema.columns
+                        WHERE table_schema = 'public'
+                          AND table_name = 'notificaciones'
+                          AND column_name = 'comunidad_imagen_url'
+                          AND data_type = 'character varying'
+                    ) THEN
+                        ALTER TABLE notificaciones
+                        ALTER COLUMN comunidad_imagen_url TYPE TEXT;
+                    END IF;
+                END
+                $$;
+                """);
         log.info("Schema check applied: columna email_verificado verificada en tabla usuario");
         log.info(
                 "Schema check applied: constraint de rol de miembros normalizado a"
                         + " ADMIN/PROFESOR/ALUMNO");
         log.info("Schema check applied: constraint de estado de transaccion_pago actualizado");
+        log.info(
+                "Schema check applied: notificaciones.comunidad_imagen_url ampliada a TEXT");
     }
 
     private boolean isPostgres() {

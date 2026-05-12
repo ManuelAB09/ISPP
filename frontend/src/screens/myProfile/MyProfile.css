@@ -115,6 +115,16 @@
     object-fit: cover;
 }
 
+.profile-avatar__initials {
+    font-size: 48px;
+    font-weight: 700;
+    color: #ffffff;
+    text-align: center;
+    line-height: 1;
+    letter-spacing: 0.1em;
+    user-select: none;
+}
+
 /* ── Franja de tipo de perfil (solo vistas públicas) ── */
 .profile-type-bar {
     position: absolute;

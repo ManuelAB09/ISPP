@@ -30,7 +30,20 @@ import es.us.meerkat.backend.entity.subscriptions.TipoPlan;
 import es.us.meerkat.backend.entity.subscriptions.TipoPlanComunidad;
 import es.us.meerkat.backend.entity.tutors.Tutor;
 import es.us.meerkat.backend.entity.users.Usuario;
+import es.us.meerkat.backend.repository.chats.MensajeComunidadLeidoRepository;
 import es.us.meerkat.backend.repository.chats.MensajeComunidadRepository;
+import es.us.meerkat.backend.repository.communities.AnuncioRepository;
+import es.us.meerkat.backend.repository.communities.ApunteRepository;
+import es.us.meerkat.backend.repository.communities.ComentarioAnuncioRepository;
+import es.us.meerkat.backend.repository.communities.InvitacionMiembroRepository;
+import es.us.meerkat.backend.repository.google.CalificacionClassroomRepository;
+import es.us.meerkat.backend.repository.google.ComunidadClassroomRepository;
+import es.us.meerkat.backend.repository.google.RecursoClassroomRepository;
+import es.us.meerkat.backend.repository.google.TareaClassroomRepository;
+import es.us.meerkat.backend.repository.recommendations.FeedbackRepository;
+import es.us.meerkat.backend.repository.recommendations.RecomendacionComunidadRepository;
+import es.us.meerkat.backend.repository.tutors.TutorContratacionRepository;
+import es.us.meerkat.backend.repository.zoom.GrabacionClaseRepository;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.InstitutionRepository;
 import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
@@ -51,6 +64,19 @@ class CommunityServiceTest {
     @Mock private AuthorizationService authorizationService;
     @Mock private SuscripcionService suscripcionService;
     @Mock private MensajeComunidadRepository mensajeComunidadRepository;
+    @Mock private MensajeComunidadLeidoRepository mensajeComunidadLeidoRepository;
+    @Mock private ComunidadClassroomRepository comunidadClassroomRepository;
+    @Mock private AnuncioRepository anuncioRepository;
+    @Mock private ComentarioAnuncioRepository comentarioAnuncioRepository;
+    @Mock private ApunteRepository apunteRepository;
+    @Mock private InvitacionMiembroRepository invitacionMiembroRepository;
+    @Mock private TareaClassroomRepository tareaClassroomRepository;
+    @Mock private RecursoClassroomRepository recursoClassroomRepository;
+    @Mock private CalificacionClassroomRepository calificacionClassroomRepository;
+    @Mock private GrabacionClaseRepository grabacionClaseRepository;
+    @Mock private TutorContratacionRepository tutorContratacionRepository;
+    @Mock private RecomendacionComunidadRepository recomendacionComunidadRepository;
+    @Mock private FeedbackRepository feedbackRepository;
     @Mock private EventoRepository eventoRepository;
     @Mock private CuestionarioRepository cuestionarioRepository;
     @Mock private ZoomMeetingRepository zoomMeetingRepository;
@@ -114,6 +140,24 @@ class CommunityServiceTest {
                                         null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("límite de 3 comunidades");
+    }
+
+    @Test
+    void createCommunityShouldFailWhenNameAlreadyExists() {
+        Long userId = 1L;
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(buildUsuario(userId)));
+        when(comunidadRepository.existsByNombreIgnoreCase("Comunidad Existente")).thenReturn(true);
+
+        assertThatThrownBy(
+                        () ->
+                                communityService.createCommunity(
+                                        userId,
+                                        "Comunidad Existente",
+                                        "Desc",
+                                        TipoGrupo.COMUNIDAD_PUBLICA,
+                                        null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Ya existe una comunidad con el nombre");
     }
 
     @Test
@@ -298,7 +342,8 @@ class CommunityServiceTest {
         when(comunidadRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         Comunidad result =
-                communityService.updateCommunity(1L, 10L, "Nuevo nombre", "Nueva desc", "img.png");
+                communityService.updateCommunity(
+                        1L, 10L, "Nuevo nombre", "Nueva desc", "img.png", null);
 
         assertThat(result.getNombre()).isEqualTo("Nuevo nombre");
         assertThat(result.getDescripcion()).isEqualTo("Nueva desc");
@@ -309,7 +354,7 @@ class CommunityServiceTest {
     void updateCommunityShouldThrowWhenNotAdmin() {
         when(authorizationService.isAdminOf(1L, 10L)).thenReturn(false);
 
-        assertThatThrownBy(() -> communityService.updateCommunity(1L, 10L, "N", "D", null))
+        assertThatThrownBy(() -> communityService.updateCommunity(1L, 10L, "N", "D", null, null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -321,9 +366,37 @@ class CommunityServiceTest {
         when(comunidadRepository.findById(10L)).thenReturn(Optional.of(comunidad));
         when(comunidadRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        Comunidad result = communityService.updateCommunity(1L, 10L, "  ", null, null);
+        Comunidad result = communityService.updateCommunity(1L, 10L, "  ", null, null, null);
 
         assertThat(result.getNombre()).isEqualTo("Comunidad"); // unchanged
+    }
+
+    @Test
+    void updateCommunityShouldUpdateMaxMiembrosWhenAboveCurrent() {
+        Comunidad comunidad =
+                buildComunidad(10L, TipoGrupo.COMUNIDAD_PUBLICA, TipoPlanComunidad.FREE);
+        when(authorizationService.isAdminOf(1L, 10L)).thenReturn(true);
+        when(comunidadRepository.findById(10L)).thenReturn(Optional.of(comunidad));
+        when(miembroComunidadRepository.countByComunidadId(10L)).thenReturn(3L);
+        when(comunidadRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Comunidad result = communityService.updateCommunity(1L, 10L, null, null, null, 20);
+
+        assertThat(result.getMaxMiembros()).isEqualTo(20);
+    }
+
+    @Test
+    void updateCommunityShouldRejectMaxMiembrosBelowCurrentCount() {
+        Comunidad comunidad =
+                buildComunidad(10L, TipoGrupo.COMUNIDAD_PUBLICA, TipoPlanComunidad.FREE);
+        when(authorizationService.isAdminOf(1L, 10L)).thenReturn(true);
+        when(comunidadRepository.findById(10L)).thenReturn(Optional.of(comunidad));
+        when(miembroComunidadRepository.countByComunidadId(10L)).thenReturn(8L);
+
+        assertThatThrownBy(
+                        () -> communityService.updateCommunity(1L, 10L, null, null, null, 5))
+                .isInstanceOf(es.us.meerkat.backend.exception.ValidationException.class)
+                .hasMessageContaining("miembros actuales");
     }
 
     // ================================================================

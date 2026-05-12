@@ -133,9 +133,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(
             final DataIntegrityViolationException ex, final HttpServletRequest request) {
+        log.warn(
+                "Conflicto de integridad en {} {}: {}",
+                request.getMethod(),
+                request.getRequestURI(),
+                ex.getMostSpecificCause().getMessage());
         final String message =
-                "Conflicto de datos al guardar. Revisa que la franja no se solape con otra"
-                        + " existente.";
+                request.getRequestURI().contains("/disponibilidades")
+                        ? "Conflicto de datos al guardar. Revisa que la franja no se solape con"
+                                + " otra existente."
+                        : "Conflicto de datos: existen relaciones asociadas que impiden completar"
+                                + " la operacion.";
         final ErrorResponse errorResponse =
                 new ErrorResponse(HttpStatus.CONFLICT.value(), message, request.getRequestURI());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);

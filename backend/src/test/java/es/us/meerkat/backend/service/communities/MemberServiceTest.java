@@ -42,7 +42,7 @@ class MemberServiceTest {
     @Mock private ComunidadClassroomRepository comunidadClassroomRepository;
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private AsistenciaEventoRepository asistenciaEventoRepository;
-        @Mock private TutorRepository tutorRepository;
+    @Mock private TutorRepository tutorRepository;
     @Mock private AuthorizationService authorizationService;
     @Mock private CommunityService communityService;
     @Mock private GoogleClassroomService googleClassroomService;
@@ -460,7 +460,10 @@ class MemberServiceTest {
         Long communityId = 13L;
         Comunidad comunidad = buildComunidad(communityId, TipoGrupo.COMUNIDAD_PUBLICA);
         MiembroComunidad miembro =
-                MiembroComunidad.builder().usuario(buildUsuario(userId)).comunidad(comunidad).build();
+                MiembroComunidad.builder()
+                        .usuario(buildUsuario(userId))
+                        .comunidad(comunidad)
+                        .build();
 
         when(miembroComunidadRepository.findByUsuarioIdAndComunidadId(userId, communityId))
                 .thenReturn(Optional.of(miembro));
@@ -486,7 +489,8 @@ class MemberServiceTest {
         when(miembroComunidadRepository.findByUsuarioIdAndComunidadId(userId, communityId))
                 .thenReturn(Optional.of(miembro));
         when(miembroComunidadRepository.countByComunidadId(communityId)).thenReturn(2L);
-        when(asistenciaEventoRepository.countActiveEventAttendances(eq(userId), eq(communityId), any()))
+        when(asistenciaEventoRepository.countActiveEventAttendances(
+                        eq(userId), eq(communityId), any()))
                 .thenReturn(2L);
 
         assertThatThrownBy(() -> memberService.leaveCommunity(userId, communityId))
@@ -534,7 +538,8 @@ class MemberServiceTest {
         when(miembroComunidadRepository.findByUsuarioId(1L, PageRequest.of(0, 10)))
                 .thenReturn(page);
 
-        Page<MiembroComunidad> result = memberService.listUserMemberships(1L, PageRequest.of(0, 10));
+        Page<MiembroComunidad> result =
+                memberService.listUserMemberships(1L, PageRequest.of(0, 10));
 
         assertThat(result.getTotalElements()).isEqualTo(1);
     }
@@ -565,7 +570,11 @@ class MemberServiceTest {
                         .build();
         Usuario admin = buildUsuario(100L);
         MiembroComunidad adminMember =
-                MiembroComunidad.builder().usuario(admin).comunidad(comunidad).rol(RolComunidad.ADMIN).build();
+                MiembroComunidad.builder()
+                        .usuario(admin)
+                        .comunidad(comunidad)
+                        .rol(RolComunidad.ADMIN)
+                        .build();
 
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
         when(comunidadRepository.findById(communityId)).thenReturn(Optional.of(comunidad));
@@ -583,7 +592,9 @@ class MemberServiceTest {
 
         verify(googleClassroomService)
                 .crearEstudiante(
-                        eq(admin), eq("course-1"), eq("{\"userId\":\"" + usuario.getEmail() + "\"}"));
+                        eq(admin),
+                        eq("course-1"),
+                        eq("{\"userId\":\"" + usuario.getEmail() + "\"}"));
     }
 
     @Test
@@ -607,7 +618,11 @@ class MemberServiceTest {
                         .build();
         Usuario admin = buildUsuario(101L);
         MiembroComunidad adminMember =
-                MiembroComunidad.builder().usuario(admin).comunidad(comunidad).rol(RolComunidad.ADMIN).build();
+                MiembroComunidad.builder()
+                        .usuario(admin)
+                        .comunidad(comunidad)
+                        .rol(RolComunidad.ADMIN)
+                        .build();
 
         when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
         when(comunidadRepository.findById(communityId)).thenReturn(Optional.of(comunidad));
@@ -626,7 +641,9 @@ class MemberServiceTest {
 
         verify(googleClassroomService)
                 .crearProfesor(
-                        eq(admin), eq("course-2"), eq("{\"userId\":\"" + usuario.getEmail() + "\"}"));
+                        eq(admin),
+                        eq("course-2"),
+                        eq("{\"userId\":\"" + usuario.getEmail() + "\"}"));
     }
 
     @Test
@@ -637,7 +654,11 @@ class MemberServiceTest {
         usuario.setEsTutor(false);
         Comunidad comunidad = buildComunidad(communityId, TipoGrupo.COMUNIDAD_PUBLICA);
         MiembroComunidad miembro =
-                MiembroComunidad.builder().usuario(usuario).comunidad(comunidad).rol(RolComunidad.ALUMNO).build();
+                MiembroComunidad.builder()
+                        .usuario(usuario)
+                        .comunidad(comunidad)
+                        .rol(RolComunidad.ALUMNO)
+                        .build();
         ComunidadClassroom vinculacion =
                 ComunidadClassroom.builder()
                         .comunidad(comunidad)
@@ -647,12 +668,17 @@ class MemberServiceTest {
                         .build();
         Usuario admin = buildUsuario(102L);
         MiembroComunidad adminMember =
-                MiembroComunidad.builder().usuario(admin).comunidad(comunidad).rol(RolComunidad.ADMIN).build();
+                MiembroComunidad.builder()
+                        .usuario(admin)
+                        .comunidad(comunidad)
+                        .rol(RolComunidad.ADMIN)
+                        .build();
 
         when(miembroComunidadRepository.findByUsuarioIdAndComunidadId(userId, communityId))
                 .thenReturn(Optional.of(miembro));
         when(miembroComunidadRepository.countByComunidadId(communityId)).thenReturn(3L);
-        when(asistenciaEventoRepository.countActiveEventAttendances(eq(userId), eq(communityId), any()))
+        when(asistenciaEventoRepository.countActiveEventAttendances(
+                        eq(userId), eq(communityId), any()))
                 .thenReturn(0L);
         when(comunidadClassroomRepository.findByComunidadId(communityId))
                 .thenReturn(Optional.of(vinculacion));
@@ -674,7 +700,11 @@ class MemberServiceTest {
         target.setEsTutor(true);
         Comunidad comunidad = buildComunidad(communityId, TipoGrupo.COMUNIDAD_PUBLICA);
         MiembroComunidad targetMember =
-                MiembroComunidad.builder().usuario(target).comunidad(comunidad).rol(RolComunidad.ALUMNO).build();
+                MiembroComunidad.builder()
+                        .usuario(target)
+                        .comunidad(comunidad)
+                        .rol(RolComunidad.ALUMNO)
+                        .build();
         ComunidadClassroom vinculacion =
                 ComunidadClassroom.builder()
                         .comunidad(comunidad)
@@ -684,7 +714,11 @@ class MemberServiceTest {
                         .build();
         Usuario admin = buildUsuario(103L);
         MiembroComunidad adminMember =
-                MiembroComunidad.builder().usuario(admin).comunidad(comunidad).rol(RolComunidad.ADMIN).build();
+                MiembroComunidad.builder()
+                        .usuario(admin)
+                        .comunidad(comunidad)
+                        .rol(RolComunidad.ADMIN)
+                        .build();
 
         when(authorizationService.isAdminOf(adminUserId, communityId)).thenReturn(true);
         when(miembroComunidadRepository.findByUsuarioIdAndComunidadId(targetUserId, communityId))

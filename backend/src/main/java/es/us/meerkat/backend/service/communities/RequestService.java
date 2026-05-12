@@ -251,12 +251,14 @@ public class RequestService {
         solicitud.setFechaRespuesta(LocalDateTime.now());
 
         if (aceptado) {
-            // Validar aforo
-            long currentMembers = communityService.countMembers(communityId);
-            int maxMembers = communityService.getMaxMembers(communityId);
-            if (currentMembers >= maxMembers) {
-                throw new IllegalArgumentException(
-                        "La comunidad está llena, no se puede aceptar más miembros");
+            // Validar aforo (maxMembers null = ilimitado)
+            Integer maxMembers = communityService.getMaxMembers(communityId);
+            if (maxMembers != null) {
+                long currentMembers = communityService.countMembers(communityId);
+                if (currentMembers >= maxMembers) {
+                    throw new IllegalArgumentException(
+                            "La comunidad está llena, no se puede aceptar más miembros");
+                }
             }
 
             solicitud.setEstado(EstadoSolicitud.ACEPTADA);
