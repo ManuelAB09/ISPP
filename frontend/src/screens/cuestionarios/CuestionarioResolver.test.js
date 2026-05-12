@@ -200,4 +200,45 @@ describe('CuestionarioResolver', () => {
     await screen.findByText('Empty');
     expect(screen.getByText('0 preguntas')).toBeInTheDocument();
   });
+
+  test('shows countdown timer when quiz has a time limit', async () => {
+    cuestionariosApi.getResolver.mockResolvedValue({
+      titulo: 'Timed Quiz',
+      tiempoEstimadoMinutos: 5,
+      preguntas: [{ id: 1, enunciado: 'Q1', tipo: 'TEXTO' }],
+    });
+    renderWithRouter();
+    await screen.findByText('Timed Quiz');
+    expect(screen.getByRole('timer')).toHaveTextContent(/Tiempo restante/);
+  });
+
+  test('does not show timer when quiz has no time limit', async () => {
+    cuestionariosApi.getResolver.mockResolvedValue({
+      titulo: 'Untimed',
+      preguntas: [{ id: 1, enunciado: 'Q1', tipo: 'TEXTO' }],
+    });
+    renderWithRouter();
+    await screen.findByText('Untimed');
+    expect(screen.queryByRole('timer')).not.toBeInTheDocument();
+  });
+
+  test('blocks submission and shows error when the time limit is exceeded', async () => {
+    let now = 1_000_000;
+    const dateSpy = jest.spyOn(Date, 'now').mockImplementation(() => now);
+    cuestionariosApi.getResolver.mockResolvedValue({
+      titulo: 'Timed Quiz',
+      tiempoEstimadoMinutos: 1,
+      preguntas: [{ id: 1, enunciado: 'Q1', tipo: 'TEXTO' }],
+    });
+    renderWithRouter();
+    await screen.findByText('Timed Quiz');
+
+    // El alumno tarda 5 minutos (límite: 1 min) antes de pulsar "Entregar".
+    now += 5 * 60 * 1000;
+    fireEvent.click(screen.getByText('Entregar cuestionario'));
+
+    await screen.findByText(/Se ha superado el tiempo límite/i);
+    expect(cuestionariosApi.submitAttempt).not.toHaveBeenCalled();
+    dateSpy.mockRestore();
+  });
 });

@@ -19,6 +19,7 @@ import es.us.meerkat.backend.entity.forms.Opcion;
 import es.us.meerkat.backend.entity.forms.Pregunta;
 import es.us.meerkat.backend.entity.recommendations.TipoPregunta;
 import es.us.meerkat.backend.entity.users.Usuario;
+import es.us.meerkat.backend.exception.ValidationException;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.forms.CuestionarioIntentoRepository;
 import es.us.meerkat.backend.repository.forms.CuestionarioRepository;
@@ -160,6 +161,19 @@ public class CuestionarioService {
                         .findById(cuestionarioId)
                         .orElseThrow(
                                 () -> new IllegalArgumentException("Cuestionario no encontrado"));
+
+        // UC-65: si el cuestionario tiene tiempo límite, rechazar el envío cuando se ha superado.
+        Integer limiteMinutos = c.getTiempoEstimadoMinutos();
+        if (limiteMinutos != null
+                && limiteMinutos > 0
+                && request.getTiempoEmpleadoSegundos() != null) {
+            long limiteSegundos = limiteMinutos.longValue() * 60L;
+            long graciaSegundos = 15L;
+            if (request.getTiempoEmpleadoSegundos() > limiteSegundos + graciaSegundos) {
+                throw new ValidationException(
+                        "Se ha superado el tiempo límite del cuestionario; el envío no es válido.");
+            }
+        }
 
         // Map preguntaId -> answer for quick lookup
         Map<Long, SubmitAttemptRequest.Answer> answersMap = new HashMap<>();

@@ -19,6 +19,26 @@ export const listMapEvents = async ({ lat, lon, radioKm } = {}) => {
 };
 
 
+/**
+ * Obtiene los nombres de ubicaciones recomendadas (lugares con eventos activos cercanos)
+ * GET /events/recommended-locations
+ * @param {Object} options
+ * @param {number} options.lat - Latitud del centro de búsqueda
+ * @param {number} options.lon - Longitud del centro de búsqueda
+ * @param {number} [options.radioKm=10] - Radio de búsqueda en km
+ * @returns {Promise<string[]>} Lista de nombres de ubicaciones recomendadas
+ */
+export const getRecommendedLocations = async ({ lat, lon, radioKm = 10 } = {}) => {
+  if (lat == null || lon == null) {
+    return [];
+  }
+  const response = await axiosInstance.get('/api/v1/events/recommended-locations', {
+    params: { lat, lon, radioKm },
+  });
+  return response.data;
+};
+
+
 // Helper para obtener el userId del usuario autenticado
 const getUserId = () => localStorage.getItem('userId');
 

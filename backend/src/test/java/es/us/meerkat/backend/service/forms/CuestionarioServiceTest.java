@@ -27,6 +27,7 @@ import es.us.meerkat.backend.entity.forms.Opcion;
 import es.us.meerkat.backend.entity.forms.Pregunta;
 import es.us.meerkat.backend.entity.recommendations.TipoPregunta;
 import es.us.meerkat.backend.entity.users.Usuario;
+import es.us.meerkat.backend.exception.ValidationException;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.forms.CuestionarioIntentoRepository;
 import es.us.meerkat.backend.repository.forms.CuestionarioRepository;
@@ -518,6 +519,85 @@ class CuestionarioServiceTest {
 
         assertThat(result.preguntasCorrectas()).isEqualTo(0);
         assertThat(result.preguntas().get(0).respuestaCorrecta()).containsExactly("4");
+    }
+
+    // ================================================================
+    // submitAttempt — tiempo límite (UC-65)
+    // ================================================================
+
+    @Test
+    void submitAttemptShouldRejectWhenTimeLimitExceeded() {
+        Usuario usuario =
+                Usuario.builder().id(1L).nombre("Al").email("a@t.com").password("p").build();
+
+        Pregunta pregunta =
+                Pregunta.builder()
+                        .id(10L)
+                        .enunciado("¿2+2?")
+                        .tipo(TipoPregunta.TEST)
+                        .opciones(new ArrayList<>())
+                        .build();
+
+        Cuestionario cuestionario =
+                Cuestionario.builder()
+                        .id(1L)
+                        .titulo("Q")
+                        .materia("M")
+                        .dificultad(NivelDificultad.BASICO)
+                        .tiempoEstimadoMinutos(1)
+                        .preguntas(new ArrayList<>(List.of(pregunta)))
+                        .build();
+
+        SubmitAttemptRequest request = new SubmitAttemptRequest();
+        request.setAnswers(List.of());
+        request.setTiempoEmpleadoSegundos(300L); // 5 min para un límite de 1 min
+
+        when(cuestionarioRepository.findById(1L)).thenReturn(Optional.of(cuestionario));
+
+        assertThatThrownBy(() -> cuestionarioService.submitAttempt(1L, request, usuario))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("tiempo límite");
+
+        verify(intentoRepository, org.mockito.Mockito.never()).save(any(CuestionarioIntento.class));
+        verify(cuestionarioRepository, org.mockito.Mockito.never()).incrementarIntentos(any());
+    }
+
+    @Test
+    void submitAttemptShouldAllowWhenWithinTimeLimit() {
+        Usuario usuario =
+                Usuario.builder().id(1L).nombre("Al").email("a@t.com").password("p").build();
+
+        Pregunta pregunta =
+                Pregunta.builder()
+                        .id(10L)
+                        .enunciado("¿2+2?")
+                        .tipo(TipoPregunta.TEST)
+                        .opciones(new ArrayList<>())
+                        .build();
+
+        Cuestionario cuestionario =
+                Cuestionario.builder()
+                        .id(1L)
+                        .titulo("Q")
+                        .materia("M")
+                        .dificultad(NivelDificultad.BASICO)
+                        .tiempoEstimadoMinutos(10)
+                        .preguntas(new ArrayList<>(List.of(pregunta)))
+                        .build();
+
+        SubmitAttemptRequest request = new SubmitAttemptRequest();
+        request.setAnswers(List.of());
+        request.setTiempoEmpleadoSegundos(45L);
+
+        when(cuestionarioRepository.findById(1L)).thenReturn(Optional.of(cuestionario));
+        when(intentoRepository.save(any(CuestionarioIntento.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        CuestionarioService.AttemptSubmissionResult result =
+                cuestionarioService.submitAttempt(1L, request, usuario);
+
+        assertThat(result.totalPreguntas()).isEqualTo(1);
+        verify(cuestionarioRepository).incrementarIntentos(1L);
     }
 
     // ================================================================
