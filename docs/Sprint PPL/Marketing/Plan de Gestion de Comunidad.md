@@ -172,9 +172,7 @@ Aunque no haya un coste económico directo, sí existe un coste en tiempo de tra
 |---|---:|---:|---:|---:|---|
 | Inicio | 133 | 12.333 acumuladas | 11 | 4.270 acumuladas | Situación inicial |
 | Semana 1 | 137 | 13.956 acumuladas | 12 | 4.570 acumuladas | Días después de estar desconectados de las redes |
-| Semana 2 | 146 | 29.750 acumuladas | 14 | 4.728 acumuladas | Semana intensa con el tema de la yincana |
-| Semana 3 |  |  |  |  |  |
-| Cierre 25/05 |  |  |  |  |  |
+| Semana 2 (hasta 12/05/2026) | 146 | 29.750 acumuladas | 14 | 4.728 acumuladas | Semana intensa con el tema de la yincana |
 
 
 
