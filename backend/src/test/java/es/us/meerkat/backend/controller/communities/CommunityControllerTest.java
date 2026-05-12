@@ -474,7 +474,7 @@ class CommunityControllerTest {
 
         when(authorizationService.isAdminOf(usuario.getId(), comunidad.getId())).thenReturn(true);
         when(communityService.updateCommunity(
-                        usuario.getId(), comunidad.getId(), "Nuevo", "Desc", "img.png"))
+                        usuario.getId(), comunidad.getId(), "Nuevo", "Desc", "img.png", null))
                 .thenReturn(comunidad);
         when(communityService.countMembers(comunidad.getId())).thenReturn(1L);
         when(authorizationService.getMembership(usuario.getId(), comunidad.getId()))
@@ -484,7 +484,7 @@ class CommunityControllerTest {
         ResponseEntity<CommunityDetailResponse> response =
                 communityController.updateCommunity(
                         comunidad.getId(),
-                        new UpdateCommunityRequest("Nuevo", "Desc", "img.png"),
+                        new UpdateCommunityRequest("Nuevo", "Desc", "img.png", null),
                         usuario);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
