@@ -21,6 +21,12 @@ const extractDomain = (email) => {
   return parts.length === 2 ? parts[1].toLowerCase().trim() : "";
 };
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const NOMBRE_MAX = 200;
+const NOMBRE_MIN = 3;
+const DESCRIPCION_MAX = 1000;
+const TELEFONO_MAX = 20;
+
 const STEPS_WITH_ELIGIBILITY = ["eligibility", "details", "config", "confirm", "payment"];
 const STEPS_WITHOUT_ELIGIBILITY = ["details", "config", "confirm", "payment"];
 
@@ -96,8 +102,24 @@ export default function InstitutionPlanModal({ plan, onClose }) {
         setError("El nombre de la institución es obligatorio.");
         return false;
       }
+      if (nombre.trim().length < NOMBRE_MIN || nombre.trim().length > NOMBRE_MAX) {
+        setError(`El nombre de la institución debe tener entre ${NOMBRE_MIN} y ${NOMBRE_MAX} caracteres.`);
+        return false;
+      }
       if (!emailContacto.trim()) {
         setError("El email de contacto es obligatorio.");
+        return false;
+      }
+      if (!EMAIL_REGEX.test(emailContacto.trim())) {
+        setError("Introduce un email de contacto válido (ej: contacto@institucion.es).");
+        return false;
+      }
+      if (descripcion.trim().length > DESCRIPCION_MAX) {
+        setError(`La descripción no puede superar los ${DESCRIPCION_MAX} caracteres.`);
+        return false;
+      }
+      if (telefono.trim().length > TELEFONO_MAX) {
+        setError(`El teléfono no puede superar los ${TELEFONO_MAX} caracteres.`);
         return false;
       }
       if (!dominioEmail.trim()) {
@@ -158,6 +180,14 @@ export default function InstitutionPlanModal({ plan, onClose }) {
         } else if (e?.status === 409) {
           setError(
             "Ya existe una institución con ese dominio de email. Si crees que es un error, contacta con soporte."
+          );
+        } else if (e?.status === 400) {
+          const fieldMessages =
+            e?.errors && typeof e.errors === "object"
+              ? Object.values(e.errors).filter(Boolean).join(" ")
+              : "";
+          setError(
+            fieldMessages || e?.message || "Revisa los datos introducidos: alguno no es válido."
           );
         } else {
           setError(e?.message || "Error al procesar la solicitud. Inténtalo de nuevo.");
@@ -431,7 +461,10 @@ function StepDetails({
             placeholder="ej. Universidad de Sevilla"
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
+            minLength={NOMBRE_MIN}
+            maxLength={NOMBRE_MAX}
           />
+          <span className="instFormHint">Entre {NOMBRE_MIN} y {NOMBRE_MAX} caracteres.</span>
         </div>
         <div className="instFormGroup">
           <label>Email de contacto *</label>
@@ -467,6 +500,7 @@ function StepDetails({
             placeholder="+34 954 000 000"
             value={telefono}
             onChange={(e) => setTelefono(e.target.value)}
+            maxLength={TELEFONO_MAX}
           />
         </div>
       </div>
@@ -502,7 +536,9 @@ function StepDetails({
           placeholder="Breve descripción de tu institución (opcional)"
           value={descripcion}
           onChange={(e) => setDescripcion(e.target.value)}
+          maxLength={DESCRIPCION_MAX}
         />
+        <span className="instFormHint">{descripcion.length}/{DESCRIPCION_MAX} caracteres.</span>
       </div>
     </div>
   );

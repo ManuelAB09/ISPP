@@ -34,6 +34,27 @@
   color: #6c749a;
 }
 
+.quiz-resolver-timer {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #eef1fb;
+  color: #2d3250;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.quiz-resolver-timer--low {
+  background: #fff3cd;
+  color: #8a6d00;
+}
+
+.quiz-resolver-timer--expired {
+  background: #ffe5e5;
+  color: #ac2222;
+}
+
 .quiz-resolver-questions {
   margin-top: 18px;
   display: grid;

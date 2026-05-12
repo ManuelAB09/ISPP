@@ -21,12 +21,13 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> 
     Optional<Suscripcion> findByUsuarioIdAndActiva(Long usuarioId, Boolean activa);
 
     /**
-     * Busca cualquier suscripción de un usuario, independientemente de su estado.
+     * Busca todas las suscripciones de un usuario, independientemente de su estado. Permite
+     * detectar (y consolidar) situaciones en las que un usuario tiene más de una suscripción.
      *
      * @param usuarioId ID del usuario
-     * @return Suscripción si existe
+     * @return Lista de suscripciones del usuario (posiblemente vacía)
      */
-    Optional<Suscripcion> findByUsuarioId(Long usuarioId);
+    List<Suscripcion> findAllByUsuarioId(Long usuarioId);
 
     /**
      * Elimina todas las suscripciones de un usuario.

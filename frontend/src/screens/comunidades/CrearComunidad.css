@@ -438,3 +438,10 @@
         gap: 16px;
     }
 }
+
+.form-char-counter {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: #6b7280;
+}

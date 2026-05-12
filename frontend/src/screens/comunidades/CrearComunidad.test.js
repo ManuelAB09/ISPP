@@ -113,17 +113,15 @@ describe('CrearComunidad', () => {
     await screen.findByText(/El nombre debe tener al menos 3 caracteres/i);
   });
 
-  test('muestra error si el nombre excede 100 caracteres', async () => {
+  test('impide escribir un nombre de más de 100 caracteres y muestra el contador', async () => {
     renderComponent();
 
     const nameInput = screen.getByLabelText(/Nombre de la Comunidad/i);
-    const longName = 'A'.repeat(101);
+    const longName = 'A'.repeat(150);
     userEvent.type(nameInput, longName);
 
-    const createButton = screen.getByRole('button', { name: /Crear Comunidad/i });
-    userEvent.click(createButton);
-
-    await screen.findByText(/El nombre no puede exceder 100 caracteres/i);
+    expect(nameInput.value).toHaveLength(100);
+    expect(screen.getByText(/Entre 3 y 100 caracteres \(100\/100\)/i)).toBeInTheDocument();
   });
 
   test('puede agregar categorías', async () => {
