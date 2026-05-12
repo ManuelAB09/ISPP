@@ -3,25 +3,44 @@ package es.us.meerkat.backend.controller.communities;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import es.us.meerkat.backend.dto.communities.CategoryListResponse;
+import es.us.meerkat.backend.dto.communities.CategoryResponse;
 import es.us.meerkat.backend.dto.communities.CommunityDetailResponse;
+import es.us.meerkat.backend.dto.communities.CommunityListResponse;
+import es.us.meerkat.backend.dto.communities.CommunityRankingEntryResponse;
+import es.us.meerkat.backend.dto.communities.CreateCategoryRequest;
 import es.us.meerkat.backend.dto.communities.CreateCommunityRequest;
 import es.us.meerkat.backend.dto.communities.JoinCommunityRequest;
+import es.us.meerkat.backend.dto.communities.MemberListResponse;
 import es.us.meerkat.backend.dto.communities.MemberResponse;
+import es.us.meerkat.backend.dto.communities.ReorderCategoriesRequest;
+import es.us.meerkat.backend.dto.communities.TransferAdminRequest;
+import es.us.meerkat.backend.dto.communities.UpdateCategoryRequest;
+import es.us.meerkat.backend.dto.communities.UpdateCommunityRequest;
 import es.us.meerkat.backend.dto.communities.UpgradeCommunityRequest;
 import es.us.meerkat.backend.dto.events.CreateEventRequest;
+import es.us.meerkat.backend.dto.events.EventSummaryResponse;
+import es.us.meerkat.backend.dto.google.LinkClassroomRequest;
 import es.us.meerkat.backend.dto.users.AccessRequestBody;
 import es.us.meerkat.backend.dto.users.PrivacyRequest;
 import es.us.meerkat.backend.dto.users.RequestResponse;
 import es.us.meerkat.backend.dto.users.RespondRequestBody;
+import es.us.meerkat.backend.entity.communities.Categoria;
 import es.us.meerkat.backend.entity.communities.Comunidad;
 import es.us.meerkat.backend.entity.communities.EstadoComunidad;
 import es.us.meerkat.backend.entity.communities.MiembroComunidad;
@@ -29,6 +48,7 @@ import es.us.meerkat.backend.entity.communities.RolComunidad;
 import es.us.meerkat.backend.entity.communities.SolicitudComunidad;
 import es.us.meerkat.backend.entity.communities.TipoGrupo;
 import es.us.meerkat.backend.entity.events.Evento;
+import es.us.meerkat.backend.entity.google.ComunidadClassroom;
 import es.us.meerkat.backend.entity.subscriptions.TipoPlanComunidad;
 import es.us.meerkat.backend.entity.tutors.EstadoSolicitud;
 import es.us.meerkat.backend.entity.users.Usuario;
@@ -391,6 +411,308 @@ class CommunityControllerTest {
         ResponseEntity<?> response = communityController.createEvent(100L, request, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void listCommunitiesShouldReturnOkWithContent() {
+        Usuario usuario = buildUsuario(1L);
+        Comunidad comunidad =
+                buildComunidad(10L, usuario, TipoGrupo.COMUNIDAD_PUBLICA, TipoPlanComunidad.FREE);
+        Page<Comunidad> page = new PageImpl<>(List.of(comunidad), PageRequest.of(0, 20), 1);
+
+        when(communityService.listActiveCommunities(any(), any(), any(), any(), any(), any()))
+                .thenReturn(page);
+        when(communityService.countMembers(comunidad.getId())).thenReturn(3L);
+        when(authorizationService.getMembership(usuario.getId(), comunidad.getId()))
+                .thenReturn(MiembroComunidad.builder().rol(RolComunidad.ALUMNO).build());
+        when(googleClassroomService.getVinculacion(comunidad.getId())).thenReturn(Optional.empty());
+
+        ResponseEntity<CommunityListResponse> response =
+                communityController.listCommunities(null, null, null, null, null, 0, 20, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().content()).hasSize(1);
+        assertThat(response.getBody().content().get(0).id()).isEqualTo(comunidad.getId());
+    }
+
+    @Test
+    void listMyCommunitiesShouldReturnUnauthorizedWhenUserIsNull() {
+        ResponseEntity<?> response = communityController.listMyCommunities(0, 20, null);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void listMyCommunitiesShouldReturnOkWhenMembershipsExist() {
+        Usuario usuario = buildUsuario(2L);
+        Comunidad comunidad =
+                buildComunidad(12L, usuario, TipoGrupo.COMUNIDAD_PUBLICA, TipoPlanComunidad.FREE);
+        MiembroComunidad membership =
+                MiembroComunidad.builder().usuario(usuario).comunidad(comunidad).build();
+        Page<MiembroComunidad> page = new PageImpl<>(List.of(membership));
+
+        when(memberService.listUserMemberships(eq(usuario.getId()), any())).thenReturn(page);
+        when(communityService.countMembers(comunidad.getId())).thenReturn(1L);
+        when(authorizationService.getMembership(usuario.getId(), comunidad.getId()))
+                .thenReturn(membership);
+        when(googleClassroomService.getVinculacion(comunidad.getId())).thenReturn(Optional.empty());
+
+        ResponseEntity<CommunityListResponse> response =
+                communityController.listMyCommunities(0, 20, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().content()).hasSize(1);
+    }
+
+    @Test
+    void updateCommunityShouldReturnOkWhenAdmin() {
+        Usuario usuario = buildUsuario(3L);
+        Comunidad comunidad =
+                buildComunidad(30L, usuario, TipoGrupo.COMUNIDAD_PUBLICA, TipoPlanComunidad.FREE);
+
+        when(authorizationService.isAdminOf(usuario.getId(), comunidad.getId())).thenReturn(true);
+        when(communityService.updateCommunity(
+                        usuario.getId(), comunidad.getId(), "Nuevo", "Desc", "img.png", null))
+                .thenReturn(comunidad);
+        when(communityService.countMembers(comunidad.getId())).thenReturn(1L);
+        when(authorizationService.getMembership(usuario.getId(), comunidad.getId()))
+                .thenReturn(MiembroComunidad.builder().rol(RolComunidad.ADMIN).build());
+        when(googleClassroomService.getVinculacion(comunidad.getId())).thenReturn(Optional.empty());
+
+        ResponseEntity<CommunityDetailResponse> response =
+                communityController.updateCommunity(
+                        comunidad.getId(),
+                        new UpdateCommunityRequest("Nuevo", "Desc", "img.png", null),
+                        usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void deleteCommunityShouldReturnNoContentWhenAdmin() {
+        Usuario usuario = buildUsuario(4L);
+        when(authorizationService.isAdminOf(usuario.getId(), 40L)).thenReturn(true);
+
+        ResponseEntity<Void> response = communityController.deleteCommunity(40L, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        verify(communityService).deleteCommunity(usuario.getId(), 40L);
+    }
+
+    @Test
+    void listCommunityMembersShouldReturnMemberList() {
+        Usuario usuario = buildUsuario(5L);
+        MiembroComunidad miembro =
+                MiembroComunidad.builder().id(1L).usuario(usuario).rol(RolComunidad.ALUMNO).build();
+        Page<MiembroComunidad> page = new PageImpl<>(List.of(miembro));
+
+        when(memberService.listMembers(eq(50L), any())).thenReturn(page);
+
+        ResponseEntity<MemberListResponse> response =
+                communityController.listCommunityMembers(50L, 0, 20);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().content()).hasSize(1);
+    }
+
+    @Test
+    void getMyMembershipShouldReturnNotFoundWhenMissing() {
+        Usuario usuario = buildUsuario(6L);
+        when(memberService.getMyMembership(usuario.getId(), 60L))
+                .thenThrow(new IllegalArgumentException("not member"));
+
+        ResponseEntity<MemberResponse> response = communityController.getMyMembership(60L, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void leaveCommunityShouldReturnConflictWhenOnlyAdmin() {
+        Usuario usuario = buildUsuario(7L);
+        doThrow(new IllegalStateException("only admin"))
+                .when(memberService)
+                .leaveCommunity(usuario.getId(), 70L);
+
+        ResponseEntity<Void> response = communityController.leaveCommunity(70L, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+    }
+
+    @Test
+    void expelMemberShouldReturnNotFoundWhenMemberMissing() {
+        Usuario usuario = buildUsuario(8L);
+        when(authorizationService.isAdminOf(usuario.getId(), 80L)).thenReturn(true);
+        doThrow(new IllegalArgumentException("not found"))
+                .when(memberService)
+                .expelMember(usuario.getId(), 80L, 9L);
+
+        ResponseEntity<Void> response = communityController.expelMember(80L, 9L, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void transferAdminShouldReturnBadRequestWhenRoleInvalid() {
+        Usuario usuario = buildUsuario(9L);
+        when(authorizationService.isAdminOf(usuario.getId(), 90L)).thenReturn(true);
+
+        ResponseEntity<MemberResponse> response =
+                communityController.transferAdmin(
+                        90L, new TransferAdminRequest(2L, "INVALID"), usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void getCommunityRankingShouldReturnForbiddenWhenNotMember() {
+        Usuario usuario = buildUsuario(10L);
+        when(authorizationService.isMemberOf(usuario.getId(), 100L)).thenReturn(false);
+
+        ResponseEntity<List<CommunityRankingEntryResponse>> response =
+                communityController.getCommunityRanking(100L, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    void addAdminToCommunityShouldReturnBadRequestOnError() {
+        Usuario usuario = buildUsuario(11L);
+        when(authorizationService.isAdminOf(usuario.getId(), 110L)).thenReturn(true);
+        when(memberService.addAdmin(usuario.getId(), 110L, 21L))
+                .thenThrow(new IllegalArgumentException("invalid"));
+
+        ResponseEntity<?> response = communityController.addAdminToCommunity(110L, 21L, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void listRequestsShouldReturnForbiddenWhenNotAdmin() {
+        Usuario usuario = buildUsuario(12L);
+        when(authorizationService.isAdminOf(usuario.getId(), 120L)).thenReturn(false);
+
+        ResponseEntity<?> response = communityController.listRequests(120L, null, 0, 20, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    void getMyRequestStatusShouldReturnPendingFlag() {
+        Usuario usuario = buildUsuario(13L);
+        when(requestService.hasPendingRequest(usuario.getId(), 130L)).thenReturn(true);
+
+        ResponseEntity<java.util.Map<String, Boolean>> response =
+                communityController.getMyRequestStatus(130L, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).containsEntry("pending", true);
+    }
+
+    @Test
+    void createCategoryShouldReturnCreatedWhenAdmin() {
+        Usuario usuario = buildUsuario(14L);
+        when(authorizationService.isAdminOf(usuario.getId(), 140L)).thenReturn(true);
+        Categoria categoria =
+                Categoria.builder().id(5L).nombre("Cat").descripcion("Desc").orden(1).build();
+        when(categoryService.createCategory(usuario.getId(), 140L, "Cat", "Desc"))
+                .thenReturn(categoria);
+
+        ResponseEntity<CategoryResponse> response =
+                communityController.createCategory(
+                        140L, new CreateCategoryRequest("Cat", "Desc"), usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody()).isNotNull();
+    }
+
+    @Test
+    void updateCategoryShouldReturnNotFoundWhenMissing() {
+        Usuario usuario = buildUsuario(15L);
+        when(authorizationService.isAdminOf(usuario.getId(), 150L)).thenReturn(true);
+        when(categoryService.updateCategory(usuario.getId(), 150L, 7L, "New", "Desc"))
+                .thenThrow(new IllegalArgumentException("missing"));
+
+        ResponseEntity<CategoryResponse> response =
+                communityController.updateCategory(
+                        150L, 7L, new UpdateCategoryRequest("New", "Desc"), usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void reorderCategoriesShouldReturnOkWhenAdmin() {
+        Usuario usuario = buildUsuario(16L);
+        when(authorizationService.isAdminOf(usuario.getId(), 160L)).thenReturn(true);
+        when(categoryService.listCategories(160L))
+                .thenReturn(List.of(Categoria.builder().id(1L).nombre("A").build()));
+
+        ResponseEntity<CategoryListResponse> response =
+                communityController.reorderCategories(
+                        160L, new ReorderCategoriesRequest(List.of(1L)), usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+    }
+
+    @Test
+    void listCommunityEventsShouldReturnNotFoundWhenCommunityMissing() {
+        Usuario usuario = buildUsuario(17L);
+        when(communityService.getCommunityById(170L, usuario.getId()))
+                .thenThrow(new IllegalArgumentException("missing"));
+
+        ResponseEntity<List<EventSummaryResponse>> response =
+                communityController.listCommunityEvents(170L, false, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void linkClassroomShouldReturnOkWhenAdmin() {
+        Usuario usuario = buildUsuario(18L);
+        Comunidad comunidad =
+                buildComunidad(180L, usuario, TipoGrupo.COMUNIDAD_PUBLICA, TipoPlanComunidad.FREE);
+        ComunidadClassroom cc =
+                ComunidadClassroom.builder()
+                        .id(1L)
+                        .comunidad(comunidad)
+                        .classroomCourseId("c1")
+                        .classroomCourseName("Curso")
+                        .activa(true)
+                        .build();
+
+        when(authorizationService.isAdminOf(usuario.getId(), 180L)).thenReturn(true);
+        when(googleClassroomService.vincularCurso(180L, "c1", "Curso")).thenReturn(cc);
+
+        ResponseEntity<?> response =
+                communityController.linkClassroom(
+                        180L, new LinkClassroomRequest("c1", "Curso"), usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void unlinkClassroomShouldReturnNotFoundWhenMissing() {
+        Usuario usuario = buildUsuario(19L);
+        when(authorizationService.isAdminOf(usuario.getId(), 190L)).thenReturn(true);
+        doThrow(new RuntimeException("missing"))
+                .when(googleClassroomService)
+                .desvincularCurso(190L);
+
+        ResponseEntity<Void> response = communityController.unlinkClassroom(190L, usuario);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void getLinkedClassroomShouldReturnNotFoundWhenAbsent() {
+        when(googleClassroomService.getVinculacion(200L)).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = communityController.getLinkedClassroom(200L);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     private Usuario buildUsuario(final Long id) {

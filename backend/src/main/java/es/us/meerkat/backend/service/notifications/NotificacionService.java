@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import es.us.meerkat.backend.entity.notifications.Notificacion;
@@ -34,7 +35,7 @@ public class NotificacionService {
                 .orElse(false);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Notificacion crearYNotificar(Notificacion notificacion) {
         Notificacion guardada = notificacionRepository.save(notificacion);
         // Enviar por WebSocket solo si el usuario tiene las notificaciones push activadas

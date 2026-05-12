@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import es.us.meerkat.backend.entity.google.RecursoClassroom;
 
@@ -30,4 +33,9 @@ public interface RecursoClassroomRepository extends JpaRepository<RecursoClassro
 
     /** Encuentra el orden máximo en una comunidad. */
     Integer findMaxOrdenByComunidadId(Long comunidadId);
+
+    /** Elimina todos los recursos de una comunidad (bulk). */
+    @Modifying
+    @Query("DELETE FROM RecursoClassroom r WHERE r.comunidad.id = :comunidadId")
+    void deleteByComunidadId(@Param("comunidadId") Long comunidadId);
 }

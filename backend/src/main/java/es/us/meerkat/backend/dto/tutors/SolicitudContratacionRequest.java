@@ -36,4 +36,24 @@ public class SolicitudContratacionRequest {
 
     @Size(max = 500, message = "La ubicación no puede superar los 500 caracteres")
     private String ubicacionClase;
+
+    /**
+     * Validates that horaFin is after horaInicio and duration is within valid range. Max duration:
+     * 24 hours.
+     */
+    public void validateDuration() {
+        if (horaFin != null && horaInicio != null) {
+            if (!horaFin.isAfter(horaInicio)) {
+                throw new IllegalArgumentException(
+                        "La hora de fin debe ser posterior a la hora de inicio");
+            }
+
+            // Check max duration (24 hours = 1440 minutes)
+            long minutesDuration =
+                    java.time.temporal.ChronoUnit.MINUTES.between(horaInicio, horaFin);
+            if (minutesDuration >= 1439) {
+                throw new IllegalArgumentException("La duración máxima permitida es de 24 horas");
+            }
+        }
+    }
 }

@@ -35,5 +35,11 @@ public interface MensajeComunidadLeidoRepository
     @Query("DELETE FROM MensajeComunidadLeido ml WHERE ml.mensajeComunidad.id = :mensajeId")
     void deleteByMensajeComunidadId(@Param("mensajeId") Long mensajeId);
 
+    @Modifying
+    @Query(
+            "DELETE FROM MensajeComunidadLeido ml "
+                    + "WHERE ml.mensajeComunidad.comunidad.id = :comunidadId")
+    void deleteByComunidadId(@Param("comunidadId") Long comunidadId);
+
     long countByMensajeComunidadAndUsuario(MensajeComunidad mensaje, Usuario usuario);
 }

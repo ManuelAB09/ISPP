@@ -4,6 +4,8 @@ import java.util.List;
 
 import es.us.meerkat.backend.entity.forms.NivelDificultad;
 import es.us.meerkat.backend.entity.recommendations.TipoPregunta;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,6 +35,8 @@ public class CreateCuestionarioRequest {
 
     private Integer numPreguntas;
 
+    @Min(value = 1, message = "El tiempo estimado debe ser al menos 1 minuto")
+    @Max(value = 1440, message = "El tiempo estimado no puede superar 1440 minutos (24 horas)")
     private Integer tiempoEstimadoMinutos;
 
     private Boolean activo;

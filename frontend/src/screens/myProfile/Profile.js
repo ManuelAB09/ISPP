@@ -41,6 +41,22 @@ const toAbsoluteImageUrl = (imageUrl, fallback = DEFAULT_PROFILE_AVATAR) => {
     return `${base}/${value}`;
 };
 
+/**
+ * Extrae las iniciales del nombre (máximo 2).
+ * Ej: "Juan Pérez" -> "JP", "Maria" -> "M"
+ */
+const getInitials = (nombre) => {
+    if (!nombre || !String(nombre).trim()) {
+        return 'U';
+    }
+    return String(nombre)
+        .trim()
+        .split(' ')
+        .slice(0, 2)
+        .map((word) => word[0]?.toUpperCase() ?? '')
+        .join('');
+};
+
 const MyProfile = () => {
     const { isAuthenticated, loading, user, updateProfile } = useAuth()
     const { userId } = useParams()
@@ -487,12 +503,18 @@ const MyProfile = () => {
                             className={avatarClass}
                             style={{ backgroundColor: userData.fotoBackgroundColor }}
                         >
-                            <img
-                                src={toAbsoluteImageUrl(userData.foto, DEFAULT_PROFILE_AVATAR)}
-                                alt={userData.nombre}
-                                className="profile-avatar-img"
-                                onError={e => { e.target.onerror = null; e.target.src = DEFAULT_PROFILE_AVATAR; }}
-                            />
+                            {userData.foto ? (
+                                <img
+                                    src={toAbsoluteImageUrl(userData.foto, DEFAULT_PROFILE_AVATAR)}
+                                    alt={userData.nombre}
+                                    className="profile-avatar-img"
+                                    onError={e => { e.target.onerror = null; e.target.src = DEFAULT_PROFILE_AVATAR; }}
+                                />
+                            ) : (
+                                <div className="profile-avatar__initials">
+                                    {getInitials(userData.nombre)}
+                                </div>
+                            )}
                         </div>
 
                         <div className="profile-info">

@@ -19,6 +19,8 @@ const baseCommunity = {
   nombre: 'Comunidad Original',
   descripcion: 'Descripción original',
   imagenUrl: 'https://example.com/img.png',
+  maxMiembros: 30,
+  miembrosActuales: 5,
 };
 
 describe('EditCommunityModal', () => {
@@ -57,6 +59,7 @@ describe('EditCommunityModal', () => {
         nombre: 'Nuevo nombre',
         descripcion: 'Descripción original',
         imagenUrl: 'https://example.com/img.png',
+        maxMiembros: 30,
       });
     });
     expect(onSaved).toHaveBeenCalled();

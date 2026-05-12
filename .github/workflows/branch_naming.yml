@@ -21,6 +21,7 @@ on:
       - sprint1
       - sprint2
       - sprint3
+      - sprintPPL
       - 'dependabot/**'
 
 jobs:

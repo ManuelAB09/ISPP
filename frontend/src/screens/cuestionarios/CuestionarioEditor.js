@@ -328,7 +328,10 @@ const CuestionarioEditor = () => {
                 className="form-control" 
                 name="tiempoEstimadoMinutos" 
                 value={formData.tiempoEstimadoMinutos} 
-                onChange={handleBasicInfoChange} 
+                onChange={handleBasicInfoChange}
+                step="1"
+                min="1"
+                max="1440"
               />
             </div>
           </div>

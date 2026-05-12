@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -40,4 +41,9 @@ public interface GrabacionClaseRepository extends JpaRepository<GrabacionClase, 
             @Param("comunidadId") Long comunidadId,
             @Param("desde") LocalDateTime desde,
             @Param("hasta") LocalDateTime hasta);
+
+    /** Elimina todas las grabaciones de una comunidad (bulk). */
+    @Modifying
+    @Query("DELETE FROM GrabacionClase g WHERE g.comunidad.id = :comunidadId")
+    void deleteByComunidadId(@Param("comunidadId") Long comunidadId);
 }
