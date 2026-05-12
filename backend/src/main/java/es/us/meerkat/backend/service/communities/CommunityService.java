@@ -36,9 +36,21 @@ import es.us.meerkat.backend.entity.users.Usuario;
 import es.us.meerkat.backend.exception.ValidationException;
 import es.us.meerkat.backend.repository.chats.MensajeComunidadLeidoRepository;
 import es.us.meerkat.backend.repository.chats.MensajeComunidadRepository;
+import es.us.meerkat.backend.repository.communities.AnuncioRepository;
+import es.us.meerkat.backend.repository.communities.ApunteRepository;
+import es.us.meerkat.backend.repository.communities.ComentarioAnuncioRepository;
 import es.us.meerkat.backend.repository.communities.ComunidadRepository;
 import es.us.meerkat.backend.repository.communities.InstitutionRepository;
+import es.us.meerkat.backend.repository.communities.InvitacionMiembroRepository;
 import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.google.CalificacionClassroomRepository;
+import es.us.meerkat.backend.repository.google.ComunidadClassroomRepository;
+import es.us.meerkat.backend.repository.google.RecursoClassroomRepository;
+import es.us.meerkat.backend.repository.google.TareaClassroomRepository;
+import es.us.meerkat.backend.repository.recommendations.FeedbackRepository;
+import es.us.meerkat.backend.repository.recommendations.RecomendacionComunidadRepository;
+import es.us.meerkat.backend.repository.tutors.TutorContratacionRepository;
+import es.us.meerkat.backend.repository.zoom.GrabacionClaseRepository;
 import es.us.meerkat.backend.repository.events.EventoRepository;
 import es.us.meerkat.backend.repository.forms.CuestionarioRepository;
 import es.us.meerkat.backend.repository.tutors.TutorRepository;
@@ -60,6 +72,18 @@ public class CommunityService {
     private final SuscripcionService suscripcionService;
     private final MensajeComunidadRepository mensajeComunidadRepository;
     private final MensajeComunidadLeidoRepository mensajeComunidadLeidoRepository;
+    private final ComunidadClassroomRepository comunidadClassroomRepository;
+    private final AnuncioRepository anuncioRepository;
+    private final ComentarioAnuncioRepository comentarioAnuncioRepository;
+    private final ApunteRepository apunteRepository;
+    private final InvitacionMiembroRepository invitacionMiembroRepository;
+    private final TareaClassroomRepository tareaClassroomRepository;
+    private final RecursoClassroomRepository recursoClassroomRepository;
+    private final CalificacionClassroomRepository calificacionClassroomRepository;
+    private final GrabacionClaseRepository grabacionClaseRepository;
+    private final TutorContratacionRepository tutorContratacionRepository;
+    private final RecomendacionComunidadRepository recomendacionComunidadRepository;
+    private final FeedbackRepository feedbackRepository;
     private final EventoRepository eventoRepository;
     private final TutorRepository tutorRepository;
     private final ZoomMeetingRepository zoomMeetingRepository;
@@ -498,6 +522,33 @@ public class CommunityService {
         // Eliminar marcas de lectura del chat antes para evitar violación de FK
         // sobre mensajes_comunidad (que sí se eliminan en cascada con la comunidad)
         mensajeComunidadLeidoRepository.deleteByComunidadId(communityId);
+
+        // Eliminar vinculación con Google Classroom para evitar violación de FK
+        comunidadClassroomRepository.deleteByComunidadId(communityId);
+
+        // Eliminar comentarios de anuncios y luego anuncios (FK comentario -> anuncio,
+        // anuncio -> comunidad)
+        comentarioAnuncioRepository.deleteByComunidadId(communityId);
+        anuncioRepository.deleteByComunidadId(communityId);
+
+        // Eliminar apuntes e invitaciones (ambos con FK a comunidad)
+        apunteRepository.deleteByComunidadId(communityId);
+        invitacionMiembroRepository.deleteByComunidadId(communityId);
+
+        // Datos derivados de Classroom: calificaciones (FK a tarea) antes que tareas/recursos
+        calificacionClassroomRepository.deleteByComunidadId(communityId);
+        tareaClassroomRepository.deleteByComunidadId(communityId);
+        recursoClassroomRepository.deleteByComunidadId(communityId);
+
+        // Grabaciones de Zoom (FK NOT NULL a comunidad)
+        grabacionClaseRepository.deleteByComunidadId(communityId);
+
+        // Contrataciones de tutores (FK NOT NULL a comunidad) y recomendaciones de comunidad
+        tutorContratacionRepository.deleteByComunidadId(communityId);
+        recomendacionComunidadRepository.deleteByComunidadId(communityId);
+
+        // Feedback (FK nullable): desvincular para preservar historial del usuario
+        feedbackRepository.disassociateFromComunidad(communityId);
 
         // Desvincular eventos antes de eliminar para evitar violación de FK
         eventoRepository.disassociateFromComunidad(communityId);

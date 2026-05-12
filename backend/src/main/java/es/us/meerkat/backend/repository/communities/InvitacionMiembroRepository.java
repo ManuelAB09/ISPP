@@ -6,6 +6,9 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import es.us.meerkat.backend.entity.communities.Comunidad;
@@ -75,4 +78,9 @@ public interface InvitacionMiembroRepository extends JpaRepository<InvitacionMie
      * @return número de invitaciones pendientes
      */
     long countByComunidadAndEstado(Comunidad comunidad, EstadoInvitacion estado);
+
+    /** Elimina todas las invitaciones de una comunidad (bulk). */
+    @Modifying
+    @Query("DELETE FROM InvitacionMiembro i WHERE i.comunidad.id = :comunidadId")
+    void deleteByComunidadId(@Param("comunidadId") Long comunidadId);
 }
