@@ -100,7 +100,11 @@ export default function CommunityAnnouncementsTab({ communityId, isAdmin }) {
       const res = await axiosInstance.get(`/api/v1/communities/${communityId}/announcements?page=0&size=50`);
       setAnnouncements(res.data.anuncios || []);
     } catch (err) {
-      setFormError('Error al crear el anuncio.');
+      const backendErrors = err?.response?.data?.errors;
+      const fieldMsg = backendErrors && typeof backendErrors === 'object'
+        ? Object.values(backendErrors).filter(Boolean).join(' ')
+        : '';
+      setFormError(fieldMsg || err?.response?.data?.message || 'Error al crear el anuncio.');
     } finally {
       setCreating(false);
       setLoading(false);
@@ -166,8 +170,12 @@ export default function CommunityAnnouncementsTab({ communityId, isAdmin }) {
         prev.map((a) => (a.id === editingAnnouncement.id ? res.data : a))
       );
       setEditingAnnouncement(null);
-    } catch {
-      setEditFormError('Error al editar el anuncio.');
+    } catch (err) {
+      const backendErrors = err?.response?.data?.errors;
+      const fieldMsg = backendErrors && typeof backendErrors === 'object'
+        ? Object.values(backendErrors).filter(Boolean).join(' ')
+        : '';
+      setEditFormError(fieldMsg || err?.response?.data?.message || 'Error al editar el anuncio.');
     } finally {
       setEditing(false);
     }
@@ -369,14 +377,24 @@ function CommentsSection({ anuncioId, isAdmin, currentUserId }) {
 
   const handlePost = async (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    const texto = input.trim();
+    if (!texto) return;
+    if (texto.length > 500) {
+      setError('El comentario no puede superar los 500 caracteres.');
+      return;
+    }
     setPosting(true);
+    setError(null);
     try {
-      const nuevo = await postAnnouncementComment(anuncioId, input);
+      const nuevo = await postAnnouncementComment(anuncioId, texto);
       setComments(prev => [nuevo, ...prev]);
       setInput("");
-    } catch {
-      setError('Error al publicar el comentario');
+    } catch (err) {
+      const backendErrors = err?.response?.data?.errors;
+      const fieldMsg = backendErrors && typeof backendErrors === 'object'
+        ? Object.values(backendErrors).filter(Boolean).join(' ')
+        : '';
+      setError(fieldMsg || err?.response?.data?.message || 'Error al publicar el comentario');
     } finally {
       setPosting(false);
     }

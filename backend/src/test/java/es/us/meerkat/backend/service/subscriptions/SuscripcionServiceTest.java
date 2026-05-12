@@ -195,20 +195,20 @@ class SuscripcionServiceTest {
     @Test
     @DisplayName("Debe renovar la suscripción exitosamente")
     void testRenovarSuscripcion_Exito() {
-        when(suscripcionRepository.findByUsuarioId(1L)).thenReturn(Optional.of(suscripcion));
+        when(suscripcionRepository.findAllByUsuarioId(1L)).thenReturn(List.of(suscripcion));
         when(suscripcionRepository.save(any(Suscripcion.class))).thenReturn(suscripcion);
 
         Suscripcion resultado = suscripcionService.renovarSuscripcion(1L);
 
         assertNotNull(resultado);
-        verify(suscripcionRepository).findByUsuarioId(1L);
+        verify(suscripcionRepository).findAllByUsuarioId(1L);
         verify(suscripcionRepository).save(suscripcion);
     }
 
     @Test
     @DisplayName("Debe lanzar excepción si el usuario no tiene suscripción al renovar")
     void testRenovarSuscripcion_NoTieneSuscripcion() {
-        when(suscripcionRepository.findByUsuarioId(1L)).thenReturn(Optional.empty());
+        when(suscripcionRepository.findAllByUsuarioId(1L)).thenReturn(List.of());
 
         IllegalArgumentException exception =
                 assertThrows(
@@ -216,7 +216,7 @@ class SuscripcionServiceTest {
                         () -> suscripcionService.renovarSuscripcion(1L));
 
         assertEquals("El usuario no tiene suscripción", exception.getMessage());
-        verify(suscripcionRepository).findByUsuarioId(1L);
+        verify(suscripcionRepository).findAllByUsuarioId(1L);
         verify(suscripcionRepository, never()).save(any());
     }
 
@@ -395,7 +395,7 @@ class SuscripcionServiceTest {
         Long usuarioId = 1L;
         Suscripcion suscripcion = buildSuscripcion(1L, usuarioId, false);
 
-        when(suscripcionRepository.findByUsuarioId(usuarioId)).thenReturn(Optional.of(suscripcion));
+        when(suscripcionRepository.findAllByUsuarioId(usuarioId)).thenReturn(List.of(suscripcion));
         when(suscripcionRepository.save(any(Suscripcion.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -409,7 +409,7 @@ class SuscripcionServiceTest {
     void renovarSuscripcionShouldFailWhenNoSuscripcion() {
         Long usuarioId = 999L;
 
-        when(suscripcionRepository.findByUsuarioId(usuarioId)).thenReturn(Optional.empty());
+        when(suscripcionRepository.findAllByUsuarioId(usuarioId)).thenReturn(List.of());
 
         assertThatThrownBy(() -> suscripcionService.renovarSuscripcion(usuarioId))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -423,7 +423,7 @@ class SuscripcionServiceTest {
         BigDecimal monto = new BigDecimal("9.99");
 
         when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
-        when(suscripcionRepository.findByUsuarioId(usuarioId)).thenReturn(Optional.empty());
+        when(suscripcionRepository.findAllByUsuarioId(usuarioId)).thenReturn(List.of());
         when(suscripcionRepository.save(any(Suscripcion.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -443,7 +443,7 @@ class SuscripcionServiceTest {
         BigDecimal monto = new BigDecimal("9.99");
 
         when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
-        when(suscripcionRepository.findByUsuarioId(usuarioId)).thenReturn(Optional.of(existente));
+        when(suscripcionRepository.findAllByUsuarioId(usuarioId)).thenReturn(List.of(existente));
         when(suscripcionRepository.save(any(Suscripcion.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -459,7 +459,7 @@ class SuscripcionServiceTest {
         BigDecimal monto = new BigDecimal("9.99");
 
         when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
-        when(suscripcionRepository.findByUsuarioId(usuarioId)).thenReturn(Optional.empty());
+        when(suscripcionRepository.findAllByUsuarioId(usuarioId)).thenReturn(List.of());
         when(suscripcionRepository.save(any(Suscripcion.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -482,7 +482,7 @@ class SuscripcionServiceTest {
         BigDecimal monto = new BigDecimal("9.99");
 
         when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
-        when(suscripcionRepository.findByUsuarioId(usuarioId)).thenReturn(Optional.empty());
+        when(suscripcionRepository.findAllByUsuarioId(usuarioId)).thenReturn(List.of());
         when(suscripcionRepository.save(any(Suscripcion.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -502,7 +502,7 @@ class SuscripcionServiceTest {
         BigDecimal monto = new BigDecimal("9.99");
 
         when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
-        when(suscripcionRepository.findByUsuarioId(usuarioId)).thenReturn(Optional.of(suscripcion));
+        when(suscripcionRepository.findAllByUsuarioId(usuarioId)).thenReturn(List.of(suscripcion));
         when(suscripcionRepository.save(any(Suscripcion.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -519,7 +519,7 @@ class SuscripcionServiceTest {
         BigDecimal monto = new BigDecimal("9.99");
 
         when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
-        when(suscripcionRepository.findByUsuarioId(usuarioId)).thenReturn(Optional.of(suscripcion));
+        when(suscripcionRepository.findAllByUsuarioId(usuarioId)).thenReturn(List.of(suscripcion));
         when(suscripcionRepository.save(any(Suscripcion.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -539,7 +539,7 @@ class SuscripcionServiceTest {
         Long usuarioId = 999L;
         BigDecimal monto = new BigDecimal("9.99");
 
-        when(suscripcionRepository.findByUsuarioId(usuarioId)).thenReturn(Optional.empty());
+        when(suscripcionRepository.findAllByUsuarioId(usuarioId)).thenReturn(List.of());
 
         assertThatThrownBy(() -> suscripcionService.renovarSuscripcionTrasStripe(usuarioId, monto))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -775,7 +775,7 @@ class SuscripcionServiceTest {
         when(institutionRepository
                         .findFirstByUsuarioAdminIdAndPlanActivoTrueOrderByFechaFinPlanDesc(1L))
                 .thenReturn(Optional.empty());
-        when(suscripcionRepository.findByUsuarioId(1L)).thenReturn(Optional.empty());
+        when(suscripcionRepository.findAllByUsuarioId(1L)).thenReturn(List.of());
         when(suscripcionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         suscripcionService.activarSuscripcionTrasStripe(
@@ -834,7 +834,7 @@ class SuscripcionServiceTest {
         Suscripcion suscripcion = buildSuscripcion(1L, 1L, true);
         Usuario usuario = buildUsuario(1L);
 
-        when(suscripcionRepository.findByUsuarioId(1L)).thenReturn(Optional.of(suscripcion));
+        when(suscripcionRepository.findAllByUsuarioId(1L)).thenReturn(List.of(suscripcion));
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
 
         suscripcionService.renovarSuscripcionTrasStripe(1L, BigDecimal.TEN, TipoPlan.PREMIUM);
@@ -849,7 +849,7 @@ class SuscripcionServiceTest {
         Suscripcion suscripcion = buildSuscripcion(1L, 1L, true);
         Usuario usuario = buildUsuario(1L);
 
-        when(suscripcionRepository.findByUsuarioId(1L)).thenReturn(Optional.of(suscripcion));
+        when(suscripcionRepository.findAllByUsuarioId(1L)).thenReturn(List.of(suscripcion));
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
 
         suscripcionService.renovarSuscripcionTrasStripe(1L, BigDecimal.TEN, null);
@@ -862,7 +862,7 @@ class SuscripcionServiceTest {
         Suscripcion suscripcion = buildSuscripcion(1L, 1L, true);
         Usuario usuario = buildUsuario(1L);
 
-        when(suscripcionRepository.findByUsuarioId(1L)).thenReturn(Optional.of(suscripcion));
+        when(suscripcionRepository.findAllByUsuarioId(1L)).thenReturn(List.of(suscripcion));
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
 
         suscripcionService.renovarSuscripcionTrasStripe(1L, BigDecimal.TEN, TipoPlan.FREE);
@@ -872,7 +872,7 @@ class SuscripcionServiceTest {
 
     @Test
     void renovarSuscripcionTrasStripeShouldThrowWhenNoSuscripcion() {
-        when(suscripcionRepository.findByUsuarioId(99L)).thenReturn(Optional.empty());
+        when(suscripcionRepository.findAllByUsuarioId(99L)).thenReturn(List.of());
 
         assertThatThrownBy(
                         () ->
@@ -886,7 +886,7 @@ class SuscripcionServiceTest {
     void renovarSuscripcionTrasStripeShouldThrowWhenUserNotFound() {
         Suscripcion suscripcion = buildSuscripcion(1L, 1L, true);
 
-        when(suscripcionRepository.findByUsuarioId(1L)).thenReturn(Optional.of(suscripcion));
+        when(suscripcionRepository.findAllByUsuarioId(1L)).thenReturn(List.of(suscripcion));
         when(usuarioRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(
@@ -895,5 +895,51 @@ class SuscripcionServiceTest {
                                         1L, BigDecimal.TEN, TipoPlan.PREMIUM))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Usuario no encontrado");
+    }
+
+    // ================================================================
+    // Consolidación: un único plan activo con jerarquía clara
+    // ================================================================
+
+    @Test
+    void activarSuscripcionTrasStripeShouldKeepHighestTierWhenMultipleActiveSubscriptions() {
+        Long usuarioId = 1L;
+        Usuario usuario = buildUsuario(usuarioId);
+        Suscripcion premium = buildSuscripcion(10L, usuarioId, true);
+        premium.setPlan(TipoPlan.PREMIUM);
+        Suscripcion pro = buildSuscripcion(11L, usuarioId, true);
+        pro.setPlan(TipoPlan.PRO);
+
+        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
+        when(suscripcionRepository.findAllByUsuarioId(usuarioId)).thenReturn(List.of(premium, pro));
+        when(suscripcionRepository.save(any(Suscripcion.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        suscripcionService.activarSuscripcionTrasStripe(
+                usuarioId, new BigDecimal("19.99"), "MENSUAL", TipoPlan.PRO);
+
+        assertThat(premium.getActiva()).isFalse();
+        assertThat(premium.getAutoRenovar()).isFalse();
+        assertThat(pro.getActiva()).isTrue();
+        assertThat(pro.getPlan()).isEqualTo(TipoPlan.PRO);
+    }
+
+    @Test
+    void renovarSuscripcionShouldConsolidateMultipleActiveSubscriptionsToHighestTier() {
+        Long usuarioId = 1L;
+        Suscripcion premium = buildSuscripcion(20L, usuarioId, true);
+        premium.setPlan(TipoPlan.PREMIUM);
+        Suscripcion pro = buildSuscripcion(21L, usuarioId, true);
+        pro.setPlan(TipoPlan.PRO);
+
+        when(suscripcionRepository.findAllByUsuarioId(usuarioId)).thenReturn(List.of(premium, pro));
+        when(suscripcionRepository.save(any(Suscripcion.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        Suscripcion resultado = suscripcionService.renovarSuscripcion(usuarioId);
+
+        assertThat(resultado).isSameAs(pro);
+        assertThat(premium.getActiva()).isFalse();
+        assertThat(pro.getActiva()).isTrue();
     }
 }

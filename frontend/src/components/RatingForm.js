@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { crearValoracion } from "../api/valoraciones.api";
 import "./RatingForm.css";
 
+const COMENTARIO_MAX_LENGTH = 1000;
+
 const RatingForm = ({ profesorId, alumnoId, eventoId, onValorado, alreadyRated }) => {
   const [puntuacion, setPuntuacion] = useState(0);
   const [comentario, setComentario] = useState("");
@@ -11,6 +13,10 @@ const RatingForm = ({ profesorId, alumnoId, eventoId, onValorado, alreadyRated }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (comentario.length > COMENTARIO_MAX_LENGTH) {
+      setError(`El comentario no puede superar los ${COMENTARIO_MAX_LENGTH} caracteres.`);
+      return;
+    }
     setEnviando(true);
     setError(null);
     try {
@@ -59,7 +65,9 @@ const RatingForm = ({ profesorId, alumnoId, eventoId, onValorado, alreadyRated }
         value={comentario}
         onChange={(e) => setComentario(e.target.value)}
         rows={3}
+        maxLength={COMENTARIO_MAX_LENGTH}
       />
+      <small className="rating-form__counter">{comentario.length}/{COMENTARIO_MAX_LENGTH}</small>
       <button className="rating-form__submit" type="submit" disabled={enviando || puntuacion === 0}>
         {enviando ? "Enviando..." : "Enviar valoración"}
       </button>

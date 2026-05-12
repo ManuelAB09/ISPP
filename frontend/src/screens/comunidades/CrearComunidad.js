@@ -323,6 +323,11 @@ export default function CrearComunidad() {
             return;
         }
 
+        if (descripcion.length > 1000) {
+            setError("La descripción no puede exceder 1000 caracteres.");
+            return;
+        }
+
         if (reachedCommunityLimit) {
             const maxCommunitiesText = isUnlimitedCommunities ? "ilimitadas" : maxCommunitiesAllowed;
             setError(
@@ -457,7 +462,12 @@ export default function CrearComunidad() {
                                 onChange={(e) => setNombre(e.target.value)}
                                 placeholder="Ingresa el nombre de la comunidad"
                                 className="form-input"
+                                minLength={3}
+                                maxLength={100}
                             />
+                            <small className="form-char-counter">
+                                Entre 3 y 100 caracteres ({nombre.length}/100)
+                            </small>
                         </div>
                         <div className="form-group">
                             <label htmlFor="descripcion">Descripción</label>
@@ -468,7 +478,11 @@ export default function CrearComunidad() {
                                 placeholder="Describe tu comunidad"
                                 className="form-textarea"
                                 rows="5"
+                                maxLength={1000}
                             />
+                            <small className="form-char-counter">
+                                {descripcion.length}/1000 caracteres
+                            </small>
                         </div>
                     </div>
                 </div>

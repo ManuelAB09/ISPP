@@ -46,6 +46,7 @@ export default function ComunidadCard({ comunidad, onJoined }) {
     const navigate = useNavigate();
     const [joining, setJoining] = useState(false);
     const [joined, setJoined] = useState(comunidad.esMiembro || false);
+    const [justJoined, setJustJoined] = useState(false);
     const [requestSent, setRequestSent] = useState(Boolean(comunidad.solicitudPendiente));
     const [showRolePicker, setShowRolePicker] = useState(false);
     const [error, setError] = useState(null);
@@ -61,6 +62,7 @@ export default function ComunidadCard({ comunidad, onJoined }) {
     const hasTeacherProfile = Boolean(userProfile?.esTutor || userProfile?.esProfesor);
     const isMember = comunidad.esMiembro || false;
     const communityImage = resolveCommunityImage(comunidad);
+    const displayedMemberCount = (comunidad.miembrosActuales || 0) + (justJoined ? 1 : 0);
 
     useEffect(() => {
         let cancelled = false;
@@ -103,6 +105,7 @@ export default function ComunidadCard({ comunidad, onJoined }) {
             } else {
                 await communitiesApi.join(comunidad.id, role);
                 setJoined(true);
+                setJustJoined(true);
                 setShowRolePicker(false);
                 if (onJoined) onJoined(comunidad.id);
             }
@@ -196,7 +199,7 @@ export default function ComunidadCard({ comunidad, onJoined }) {
                 <div className='bottom-info'>
                     <div className="members-info">
                         <PersonIcon width={20} height={20} />
-                        <p>{comunidad.miembrosActuales || 0}/ <span>{comunidad.maxMiembros ?? '∞'}</span></p>
+                        <p>{displayedMemberCount}/ <span>{comunidad.maxMiembros ?? '∞'}</span></p>
                     </div>
                     {error && <span style={{ color: 'red', fontSize: '0.8rem' }}>{error}</span>}
                     {currentUserId && !joined && !requestSent && (

@@ -728,6 +728,31 @@ export default function CommunityDetail() {
     return () => socket.off(topic, handler);
   }, [socket, communityId, currentUserId, isMember]);
 
+  // Sincronización en tiempo real de solicitudes de acceso (comunidades privadas).
+  // - El admin recibe SOLICITUD_ACCESO -> refresca el panel de solicitudes pendientes.
+  // - El solicitante recibe RESPUESTA_SOLICITUD_ACCESO -> refresca su estado de membresía
+  //   (si fue aceptado, la comunidad pasa a mostrarse como miembro sin recargar).
+  useEffect(() => {
+    if (!socket || !communityId || !currentUserId) {
+      return undefined;
+    }
+
+    const handleNotificacion = (notif) => {
+      if (!notif || String(notif.comunidadId) !== String(communityId)) {
+        return;
+      }
+      if (notif.tipo === 'SOLICITUD_ACCESO') {
+        fetchPendingRequests();
+      } else if (notif.tipo === 'RESPUESTA_SOLICITUD_ACCESO') {
+        fetchCommunity();
+        fetchMembers();
+      }
+    };
+
+    socket.on('notificaciones', handleNotificacion);
+    return () => socket.off('notificaciones', handleNotificacion);
+  }, [socket, communityId, currentUserId, fetchPendingRequests, fetchCommunity, fetchMembers]);
+
   useEffect(() => {
     if (!activeMeeting) {
       return undefined;
@@ -1250,6 +1275,7 @@ export default function CommunityDetail() {
         setIsMember(true);
         setShowJoinRoleChooser(false);
         await fetchCommunity();
+        await fetchMembers();
         await fetchEvents();
       }
     } catch (err) {

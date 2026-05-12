@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { createTutorProfile } from "../../api/tutorEndpoints";
 import "./TutorModals.css";
 
+const BIO_MAX_LENGTH = 1000;
+
 /**
  * Modal para crear un perfil de tutor nuevo.
  * Llama a POST /api/v1/tutors
@@ -31,7 +33,24 @@ const CreateProfileModal = ({ onClose, onCreado }) => {
     setError(null);
 
     if (!form.bio.trim()) {
-      setError("La biografia es obligatoria. Por favor, escribe una breve descripcion profesional.");
+      setError("La biografía es obligatoria. Por favor, escribe una breve descripción profesional.");
+      setCreando(false);
+      return;
+    }
+
+    if (form.bio.trim().length > BIO_MAX_LENGTH) {
+      setError(`La biografía no puede exceder ${BIO_MAX_LENGTH} caracteres.`);
+      setCreando(false);
+      return;
+    }
+
+    if (
+      !form.especialidades
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean).length
+    ) {
+      setError("Indica al menos una especialidad (separadas por coma).");
       setCreando(false);
       return;
     }
@@ -52,14 +71,23 @@ const CreateProfileModal = ({ onClose, onCreado }) => {
       onClose();
     } catch (err) {
       console.error("Error al crear perfil de tutor:", err);
-      const backendMsg = err?.response?.data?.message
+      const fieldErrors = err?.response?.data?.errors || err?.data?.errors || err?.errors;
+      const fieldMsg =
+        fieldErrors && typeof fieldErrors === "object"
+          ? Object.values(fieldErrors).filter(Boolean).join(" ")
+          : "";
+      const isBackendError =
+        err?.status != null || err?.response != null || err?.data != null;
+      const backendMsg = fieldMsg
+        || err?.response?.data?.message
         || err?.response?.data?.error
         || err?.data?.message
-        || err?.data?.error;
+        || err?.data?.error
+        || (isBackendError ? err?.message : "");
       if (backendMsg) {
         setError(backendMsg);
       } else {
-        setError("No se pudo crear el perfil. Intentalo de nuevo.");
+        setError("No se pudo crear el perfil. Inténtalo de nuevo.");
       }
     } finally {
       setCreando(false);
@@ -140,8 +168,10 @@ const CreateProfileModal = ({ onClose, onCreado }) => {
               rows={4}
               value={form.bio}
               onChange={handleChange}
+              maxLength={BIO_MAX_LENGTH}
               placeholder="Cuéntales a los alumnos quién eres y qué experiencia tienes…"
             />
+            <span className="tm-field__hint">{form.bio.length}/{BIO_MAX_LENGTH} caracteres</span>
           </div>
 
           {error && <p className="tm-error">{error}</p>}

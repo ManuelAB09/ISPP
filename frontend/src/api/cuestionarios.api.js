@@ -45,8 +45,8 @@ export const cuestionariosApi = {
     const response = await axiosInstance.put(`/api/v1/cuestionarios/${id}/draft`);
     return response.data;
   },
-  submitAttempt: async (id, answers) => {
-    const response = await axiosInstance.post(`/api/v1/cuestionarios/${id}/submit`, answers);
+  submitAttempt: async (id, payload) => {
+    const response = await axiosInstance.post(`/api/v1/cuestionarios/${id}/submit`, payload);
     return response.data;
   }
 };
