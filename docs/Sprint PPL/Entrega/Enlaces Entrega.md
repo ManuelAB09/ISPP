@@ -34,12 +34,12 @@
 
 ## 2. Enlaces de demos
 
-**Vínculo de la demo 9-S3-demo usada en la presentación**: *TODO*
+**Vínculo de la demo 9-S3-demo usada en la presentación**: https://www.youtube.com/watch?v=vGWXO2tupCw 
 
-**Vínculo de la demo 9-S3-demo extendida**: *TODO*
+**Vínculo de la demo 9-S3-demo extendida**: https://www.youtube.com/watch?v=wp4Tw0sJEa8&t=1s 
 
 ## 3. Enlaces de anuncios
 
-**Vínculo del anuncio de clientes**: *TODO*
+**Vínculo del anuncio de clientes**: https://www.youtube.com/watch?v=ur5XOiMlFfA
 
-**Vínculo del anuncio de inversores**: *TODO*
+**Vínculo del anuncio de inversores**: https://www.youtube.com/watch?v=Nbeo03Fjsd4 
