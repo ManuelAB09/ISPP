@@ -12,7 +12,7 @@
 **Documento:** Entrega  
 **Sprint:** Sprint S3
 **Semana:** Semana 2  
-**Estado:** Borrador
+**Estado:** Aprobado
 **Fecha:** 14/04/2026  
 **Autor(es):** Alejandro Soult Toscano / Iana Miranda Caramé
 
