@@ -12,7 +12,7 @@
 **Documento:** Entrega  
 **Sprint:** Sprint PPL  
 **Semana:** Semana 2  
-**Estado:** Borrador  
+**Estado:** Aprobado  
 **Fecha:** 10/05/2026  
 **Autor(es):** Alejandro Soult Toscano
 
@@ -23,12 +23,13 @@
 1. [Enlaces de archivos](#1-enlaces-de-archivos)
 2. [Enlaces de demos](#2-enlaces-de-demos)
 3. [Enlaces de anuncios](#3-enlaces-de-anuncios)
+4. [Enlaces de preparación del WPL](#4-enlaces-de-preparación-del-wpl)
 
 ---
 
 ## 1. Enlaces de archivos
 
-**Vínculo de 9-PPL-time-report**: *TODO*
+**Vínculo de 9-PPL-time-report**: https://uses0.sharepoint.com/:b:/s/ISPP_dvkxr7/IQDVir31FXQHQbYsKJNMDrjhATqbNPy3k6M96pj_FsIMye4?e=3jU4zi
 
 **Vínculo de la presentación 9-PPL-slides-1 (Presentación Principal)**: https://uses0.sharepoint.com/:b:/s/ISPP_dvkxr7/IQCPGKY8ErHwQbcDHM96jlFiAWot4J7OpScJB__SwBZUOco?e=dx0Vw2
 
