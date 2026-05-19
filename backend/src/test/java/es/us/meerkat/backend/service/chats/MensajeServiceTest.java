@@ -213,6 +213,7 @@ class MensajeServiceTest {
 
         mensajeService.eliminarMensaje(1L, 10L);
 
+        verify(mensajeLeidoRepository).deleteByMensajeId(10L);
         verify(mensajeRepository).delete(mensaje);
     }
 

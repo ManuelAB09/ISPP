@@ -26,6 +26,7 @@ import es.us.meerkat.backend.dto.chats.MensajeComunidadResponse;
 import es.us.meerkat.backend.dto.chats.MensajeResponse;
 import es.us.meerkat.backend.entity.chats.Mensaje;
 import es.us.meerkat.backend.entity.users.Usuario;
+import es.us.meerkat.backend.repository.chats.MensajeLeidoRepository;
 import es.us.meerkat.backend.repository.chats.MensajeRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import es.us.meerkat.backend.service.chats.MensajeComunidadService;
@@ -39,6 +40,7 @@ class SocketChatControllerTest {
     @Mock private MensajeComunidadService mensajeComunidadService;
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private MensajeRepository mensajeRepository;
+    @Mock private MensajeLeidoRepository mensajeLeidoRepository;
 
     @InjectMocks private SocketChatController controller;
 
@@ -413,6 +415,7 @@ class SocketChatControllerTest {
 
         controller.deleteDm(Map.of("messageId", 55L), (Principal) authWithUser(sender));
 
+        verify(mensajeLeidoRepository).deleteByMensajeId(55L);
         verify(mensajeRepository).delete(mensaje);
         verify(broker).convertAndSendToUser(eq("1"), eq("/queue/dm_delete_success"), eq(55L));
         verify(broker).convertAndSendToUser(eq("2"), eq("/queue/dm_delete_success"), eq(55L));

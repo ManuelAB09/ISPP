@@ -353,6 +353,7 @@ public class MensajeService {
             throw new IllegalArgumentException("No tienes permiso para eliminar este mensaje");
         }
 
+        mensajeLeidoRepository.deleteByMensajeId(mensajeId);
         mensajeRepository.delete(mensaje);
     }
 

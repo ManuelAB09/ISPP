@@ -35,7 +35,12 @@ import es.us.meerkat.backend.repository.chats.MensajeComunidadRepository;
 import es.us.meerkat.backend.repository.communities.AnuncioRepository;
 import es.us.meerkat.backend.repository.communities.ApunteRepository;
 import es.us.meerkat.backend.repository.communities.ComentarioAnuncioRepository;
+import es.us.meerkat.backend.repository.communities.ComunidadRepository;
+import es.us.meerkat.backend.repository.communities.InstitutionRepository;
 import es.us.meerkat.backend.repository.communities.InvitacionMiembroRepository;
+import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
+import es.us.meerkat.backend.repository.events.EventoRepository;
+import es.us.meerkat.backend.repository.forms.CuestionarioRepository;
 import es.us.meerkat.backend.repository.google.CalificacionClassroomRepository;
 import es.us.meerkat.backend.repository.google.ComunidadClassroomRepository;
 import es.us.meerkat.backend.repository.google.RecursoClassroomRepository;
@@ -43,14 +48,9 @@ import es.us.meerkat.backend.repository.google.TareaClassroomRepository;
 import es.us.meerkat.backend.repository.recommendations.FeedbackRepository;
 import es.us.meerkat.backend.repository.recommendations.RecomendacionComunidadRepository;
 import es.us.meerkat.backend.repository.tutors.TutorContratacionRepository;
-import es.us.meerkat.backend.repository.zoom.GrabacionClaseRepository;
-import es.us.meerkat.backend.repository.communities.ComunidadRepository;
-import es.us.meerkat.backend.repository.communities.InstitutionRepository;
-import es.us.meerkat.backend.repository.communities.MiembroComunidadRepository;
-import es.us.meerkat.backend.repository.events.EventoRepository;
-import es.us.meerkat.backend.repository.forms.CuestionarioRepository;
 import es.us.meerkat.backend.repository.tutors.TutorRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
+import es.us.meerkat.backend.repository.zoom.GrabacionClaseRepository;
 import es.us.meerkat.backend.repository.zoom.ZoomMeetingRepository;
 import es.us.meerkat.backend.service.subscriptions.SuscripcionService;
 
@@ -393,8 +393,7 @@ class CommunityServiceTest {
         when(comunidadRepository.findById(10L)).thenReturn(Optional.of(comunidad));
         when(miembroComunidadRepository.countByComunidadId(10L)).thenReturn(8L);
 
-        assertThatThrownBy(
-                        () -> communityService.updateCommunity(1L, 10L, null, null, null, 5))
+        assertThatThrownBy(() -> communityService.updateCommunity(1L, 10L, null, null, null, 5))
                 .isInstanceOf(es.us.meerkat.backend.exception.ValidationException.class)
                 .hasMessageContaining("miembros actuales");
     }
