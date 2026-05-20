@@ -28,7 +28,7 @@
 
 ## 1. Enlaces de archivos
 
-**Vínculo de 9-WPL-time-report**: TODO
+**Vínculo de 9-WPL-time-report**: https://uses0.sharepoint.com/:b:/s/ISPP_dvkxr7/IQAzny8RFEFsT7hmTn_tIc5xAW5gj1JP4LvOScnF_uzemdM?e=dat5Oh
 
 **Vínculo de la presentación 9-WPL-slides**: https://uses0.sharepoint.com/:b:/s/ISPP_dvkxr7/IQBFkRNY0HUmRYs3RzYN14MzAQxwhL5iFOkYZL6ukzu3VWE?e=UXD4QM
 
