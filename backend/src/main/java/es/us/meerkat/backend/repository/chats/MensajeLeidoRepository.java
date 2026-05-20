@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -26,6 +27,10 @@ public interface MensajeLeidoRepository extends JpaRepository<MensajeLeido, Long
                     + "AND ml.mensaje.id IN :mensajeIds")
     List<Long> findMensajeIdsLeidosByUsuario(
             @Param("usuarioId") Long usuarioId, @Param("mensajeIds") List<Long> mensajeIds);
+
+    @Modifying
+    @Query("DELETE FROM MensajeLeido ml WHERE ml.mensaje.id = :mensajeId")
+    void deleteByMensajeId(@Param("mensajeId") Long mensajeId);
 
     long countByMensajeAndUsuario(Mensaje mensaje, Usuario usuario);
 }

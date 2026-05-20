@@ -16,6 +16,7 @@ import es.us.meerkat.backend.dto.chats.MensajeComunidadResponse;
 import es.us.meerkat.backend.dto.chats.MensajeResponse;
 import es.us.meerkat.backend.entity.chats.Mensaje;
 import es.us.meerkat.backend.entity.users.Usuario;
+import es.us.meerkat.backend.repository.chats.MensajeLeidoRepository;
 import es.us.meerkat.backend.repository.chats.MensajeRepository;
 import es.us.meerkat.backend.repository.users.UsuarioRepository;
 import es.us.meerkat.backend.service.chats.MensajeComunidadService;
@@ -32,6 +33,7 @@ public class SocketChatController {
     private final MensajeComunidadService mensajeComunidadService;
     private final UsuarioRepository usuarioRepository;
     private final MensajeRepository mensajeRepository;
+    private final MensajeLeidoRepository mensajeLeidoRepository;
 
     /**
      * Carga el historial de conversaciones privadas del usuario autenticado.
@@ -172,6 +174,7 @@ public class SocketChatController {
                 return;
             }
 
+            mensajeLeidoRepository.deleteByMensajeId(messageId);
             mensajeRepository.delete(mensaje);
             final Usuario receptor = mensaje.getReceptor();
 

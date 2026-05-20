@@ -100,8 +100,7 @@ public class DatabaseSchemaFixRunner implements ApplicationRunner {
                 "Schema check applied: constraint de rol de miembros normalizado a"
                         + " ADMIN/PROFESOR/ALUMNO");
         log.info("Schema check applied: constraint de estado de transaccion_pago actualizado");
-        log.info(
-                "Schema check applied: notificaciones.comunidad_imagen_url ampliada a TEXT");
+        log.info("Schema check applied: notificaciones.comunidad_imagen_url ampliada a TEXT");
     }
 
     private boolean isPostgres() {
