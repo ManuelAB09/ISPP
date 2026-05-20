@@ -11,8 +11,8 @@
 **Proyecto:** MeerKatters  
 **Documento:** Entrega  
 **Sprint:** Sprint WPL  
-**Estado:** Borrador  
-**Fecha:** 15/05/2026  
+**Estado:** Aprobado  
+**Fecha:** 20/05/2026  
 **Autor(es):** Alejandro Soult Toscano
 
 ---
