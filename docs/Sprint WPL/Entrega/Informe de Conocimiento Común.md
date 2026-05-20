@@ -36,7 +36,7 @@ Todo esta desplegado en un documento [Docusaurus](https://asoult10.github.io/Kno
 
 ## 2. Contenido específico aportado
 
-Nuestro equipo ha contribuido con el feedback específico recibido el 30/04/2026 y acciones tomadas. Además, se ha contribuido a la checklist general con el contenido necesario en las presentaciones del Sprint PPL.
+Nuestro equipo ha contribuido con el feedback específico recibido el 14/05/2026 y acciones tomadas. Además, se ha contribuido a la checklist general con el contenido necesario en la presentación del Sprint WPL.
 
 ---
 
